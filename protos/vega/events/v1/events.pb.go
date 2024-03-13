@@ -493,10 +493,15 @@ type AMMPool_Status int32
 
 const (
 	AMMPool_STATUS_UNSPECIFIED AMMPool_Status = 0
-	AMMPool_STATUS_ACTIVE      AMMPool_Status = 1
-	AMMPool_STATUS_REJECTED    AMMPool_Status = 2
-	AMMPool_STATUS_CANCELLED   AMMPool_Status = 3
-	AMMPool_STATUS_STOPPED     AMMPool_Status = 4
+	// AMM is active on the market and can be traded against.
+	AMMPool_STATUS_ACTIVE AMMPool_Status = 1
+	// AMM submission was rejected.
+	AMMPool_STATUS_REJECTED AMMPool_Status = 2
+	// AMM has been cancelled by the owner and is no longer trading.
+	AMMPool_STATUS_CANCELLED AMMPool_Status = 3
+	// AMM has been stopped by the network and is no longer trading.
+	AMMPool_STATUS_STOPPED AMMPool_Status = 4
+	// AMM will only trade such that it will reduce its position.
 	AMMPool_STATUS_REDUCE_ONLY AMMPool_Status = 5
 )
 
@@ -550,14 +555,21 @@ func (AMMPool_Status) EnumDescriptor() ([]byte, []int) {
 type AMMPool_StatusReason int32
 
 const (
-	AMMPool_STATUS_REASON_UNSPECIFIED               AMMPool_StatusReason = 0
-	AMMPool_STATUS_REASON_CANCELLED_BY_PARTY        AMMPool_StatusReason = 1
-	AMMPool_STATUS_REASON_CANNOT_FILL_COMMITMENT    AMMPool_StatusReason = 2
+	AMMPool_STATUS_REASON_UNSPECIFIED AMMPool_StatusReason = 0
+	// AMM was cancelled by the owner of the AMM.
+	AMMPool_STATUS_REASON_CANCELLED_BY_PARTY AMMPool_StatusReason = 1
+	// Party does not have enough funds in their general account to meet the AMM's commitment.
+	AMMPool_STATUS_REASON_CANNOT_FILL_COMMITMENT AMMPool_StatusReason = 2
+	// Party already has an AMM operating on this market and cannot create another one.
 	AMMPool_STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL AMMPool_StatusReason = 3
-	AMMPool_STATUS_REASON_PARTY_CLOSED_OUT          AMMPool_StatusReason = 4
-	AMMPool_STATUS_REASON_MARKET_CLOSED             AMMPool_StatusReason = 5
-	AMMPool_STATUS_REASON_COMMITMENT_TOO_LOW        AMMPool_StatusReason = 6
-	AMMPool_STATUS_REASON_CANNOT_REBASE             AMMPool_StatusReason = 7
+	// AMM was liquidated and stopped by the network.
+	AMMPool_STATUS_REASON_PARTY_CLOSED_OUT AMMPool_StatusReason = 4
+	// AMM was stopped by the network because the market it operated in was closed.
+	AMMPool_STATUS_REASON_MARKET_CLOSED AMMPool_StatusReason = 5
+	// Party does not have enough funds in their general account to meet the AMM's commitment.
+	AMMPool_STATUS_REASON_COMMITMENT_TOO_LOW AMMPool_StatusReason = 6
+	// AMM was unable to rebase its fair-price such that it does no enter crossed.
+	AMMPool_STATUS_REASON_CANNOT_REBASE AMMPool_StatusReason = 7
 )
 
 // Enum value maps for AMMPool_StatusReason.
@@ -979,14 +991,22 @@ type AMMPool struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PartyId      string                                   `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	MarketId     string                                   `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	PoolId       string                                   `protobuf:"bytes,3,opt,name=pool_id,json=poolId,proto3" json:"pool_id,omitempty"`
-	SubAccount   string                                   `protobuf:"bytes,4,opt,name=sub_account,json=subAccount,proto3" json:"sub_account,omitempty"`
-	Commitment   string                                   `protobuf:"bytes,5,opt,name=commitment,proto3" json:"commitment,omitempty"`
-	Parameters   *AMMPool_ConcentratedLiquidityParameters `protobuf:"bytes,6,opt,name=parameters,proto3" json:"parameters,omitempty"`
-	Status       AMMPool_Status                           `protobuf:"varint,7,opt,name=status,proto3,enum=vega.events.v1.AMMPool_Status" json:"status,omitempty"`
-	StatusReason AMMPool_StatusReason                     `protobuf:"varint,8,opt,name=status_reason,json=statusReason,proto3,enum=vega.events.v1.AMMPool_StatusReason" json:"status_reason,omitempty"`
+	// Owner of the AMM.
+	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
+	// Market ID that the AMM provides liquidity for.
+	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
+	// ID of the AMM.
+	PoolId string `protobuf:"bytes,3,opt,name=pool_id,json=poolId,proto3" json:"pool_id,omitempty"`
+	// Party ID that the AMM operates as.
+	SubAccount string `protobuf:"bytes,4,opt,name=sub_account,json=subAccount,proto3" json:"sub_account,omitempty"`
+	// Amount committed to the AMM.
+	Commitment string `protobuf:"bytes,5,opt,name=commitment,proto3" json:"commitment,omitempty"`
+	// Liquidity parameters that define the size and range of the AMM's tradeable volume.
+	Parameters *AMMPool_ConcentratedLiquidityParameters `protobuf:"bytes,6,opt,name=parameters,proto3" json:"parameters,omitempty"`
+	// Current status of the AMM.
+	Status AMMPool_Status `protobuf:"varint,7,opt,name=status,proto3,enum=vega.events.v1.AMMPool_Status" json:"status,omitempty"`
+	// Reason for the AMM's current status.
+	StatusReason AMMPool_StatusReason `protobuf:"varint,8,opt,name=status_reason,json=statusReason,proto3,enum=vega.events.v1.AMMPool_StatusReason" json:"status_reason,omitempty"`
 }
 
 func (x *AMMPool) Reset() {
@@ -9816,15 +9836,21 @@ func (*BusEvent_Market) isBusEvent_Event() {}
 
 func (*BusEvent_TxErrEvent) isBusEvent_Event() {}
 
+// Liquidity parameters that define the range and shape of the AMM's curve.
 type AMMPool_ConcentratedLiquidityParameters struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Base                    string `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
-	LowerBound              string `protobuf:"bytes,2,opt,name=lower_bound,json=lowerBound,proto3" json:"lower_bound,omitempty"`
-	UpperBound              string `protobuf:"bytes,3,opt,name=upper_bound,json=upperBound,proto3" json:"upper_bound,omitempty"`
+	// Base price bound configuration for the pool.
+	Base string `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
+	// Upper price bound configuration for the pool. If unset, the AMM will never hold a short position.
+	LowerBound string `protobuf:"bytes,2,opt,name=lower_bound,json=lowerBound,proto3" json:"lower_bound,omitempty"`
+	// Lower price bound configuration for the pool. If unset, the AMM will never hold a long position.
+	UpperBound string `protobuf:"bytes,3,opt,name=upper_bound,json=upperBound,proto3" json:"upper_bound,omitempty"`
+	// Margin ratio at upper bounds.
 	MarginRatioAtUpperBound string `protobuf:"bytes,4,opt,name=margin_ratio_at_upper_bound,json=marginRatioAtUpperBound,proto3" json:"margin_ratio_at_upper_bound,omitempty"`
+	// Margin ratio at upper bounds.
 	MarginRatioAtLowerBound string `protobuf:"bytes,5,opt,name=margin_ratio_at_lower_bound,json=marginRatioAtLowerBound,proto3" json:"margin_ratio_at_lower_bound,omitempty"`
 }
 
