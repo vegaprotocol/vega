@@ -31,7 +31,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination core/risk/mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
 
 var (
 	ErrInsufficientFundsForInitialMargin          = errors.New("insufficient funds for initial margin")
