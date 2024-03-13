@@ -306,7 +306,10 @@ func (m *Market) Update(ctx context.Context, config *types.Market) error {
 		for _, po := range peggedOrders {
 			order, err := m.matching.GetOrderByID(po)
 			if err != nil {
-				continue
+				order = m.peggedOrders.GetParkedByID(po)
+				if order == nil {
+					continue
+				}
 			}
 			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() {
 				m.cancelOrder(ctx, order.Party, order.ID)
