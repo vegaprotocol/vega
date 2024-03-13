@@ -145,18 +145,19 @@ type allServices struct {
 	primaryEthConfirmations     *ethclient.EthereumConfirmations
 	primaryEthClient            *ethclient.PrimaryClient
 	primaryBridgeView           *bridges.ERC20LogicView
+	primaryMultisig             *erc20multisig.Topology
 
 	secondaryEventForwarder       *evtforward.Forwarder
 	secondaryEventForwarderEngine EventForwarderEngine
 	secondaryEthConfirmations     *ethclient.EthereumConfirmations
 	secondaryEthClient            *ethclient.SecondaryClient
 	secondaryBridgeView           *bridges.ERC20LogicView
+	secondaryMultisig             *erc20multisig.Topology
 
 	// staking
-	stakingAccounts       *staking.Accounting
-	stakeVerifier         *staking.StakeVerifier
-	stakeCheckpoint       *staking.Checkpoint
-	erc20MultiSigTopology *erc20multisig.Topology
+	stakingAccounts *staking.Accounting
+	stakeVerifier   *staking.StakeVerifier
+	stakeCheckpoint *staking.Checkpoint
 
 	commander  *nodewallets.Commander
 	gastimator *processor.Gastimator
@@ -230,19 +231,21 @@ func newServices(
 
 	svcs.netParams = netparams.New(svcs.log, svcs.conf.NetworkParameters, svcs.broker)
 
-	svcs.erc20MultiSigTopology = erc20multisig.NewERC20MultisigTopology(svcs.conf.ERC20MultiSig, svcs.log, nil, svcs.broker, svcs.primaryEthClient, svcs.primaryEthConfirmations, svcs.netParams)
+	svcs.primaryMultisig = erc20multisig.NewERC20MultisigTopology(svcs.conf.ERC20MultiSig, svcs.log, nil, svcs.broker, svcs.primaryEthClient, svcs.primaryEthConfirmations, svcs.netParams, "primary")
+	svcs.secondaryMultisig = erc20multisig.NewERC20MultisigTopology(svcs.conf.ERC20MultiSig, svcs.log, nil, svcs.broker, svcs.secondaryEthClient, svcs.secondaryEthConfirmations, svcs.netParams, "secondary")
 
 	if svcs.conf.IsValidator() {
-		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.erc20MultiSigTopology, svcs.timeService)
+		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.primaryMultisig, svcs.secondaryMultisig, svcs.timeService)
 	} else {
-		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, nil, svcs.broker, svcs.conf.IsValidator(), nil, svcs.erc20MultiSigTopology, svcs.timeService)
+		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, nil, svcs.broker, svcs.conf.IsValidator(), nil, svcs.primaryMultisig, svcs.secondaryMultisig, svcs.timeService)
 	}
 
 	svcs.protocolUpgradeEngine = protocolupgrade.New(svcs.log, svcs.conf.ProtocolUpgrade, svcs.broker, svcs.topology, version.Get())
 	svcs.witness = validators.NewWitness(svcs.ctx, svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
 
 	// this is done to go around circular deps...
-	svcs.erc20MultiSigTopology.SetWitness(svcs.witness)
+	svcs.primaryMultisig.SetWitness(svcs.witness)
+	svcs.secondaryMultisig.SetWitness(svcs.witness)
 	svcs.primaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology, "primary")
 	svcs.secondaryEventForwarder = evtforward.New(svcs.log, svcs.conf.SecondaryEvtForward, svcs.commander, svcs.timeService, svcs.topology, "secondary")
 
@@ -275,7 +278,8 @@ func newServices(
 	svcs.oracleAdaptors = oracleAdaptors.New()
 
 	// this is done to go around circular deps again..s
-	svcs.erc20MultiSigTopology.SetEthereumEventSource(svcs.primaryEventForwarderEngine)
+	svcs.primaryMultisig.SetEthereumEventSource(svcs.primaryEventForwarderEngine)
+	svcs.secondaryMultisig.SetEthereumEventSource(svcs.secondaryEventForwarderEngine)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
 		svcs.log, svcs.conf.Staking, svcs.timeService, svcs.broker, svcs.witness, svcs.primaryEthClient, svcs.netParams, svcs.primaryEventForwarder, svcs.conf.HaveEthClient(), svcs.primaryEthConfirmations, svcs.primaryEventForwarderEngine,
@@ -383,7 +387,7 @@ func newServices(
 	svcs.registerTimeServiceCallbacks()
 
 	// checkpoint engine
-	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology, svcs.marketActivityTracker, svcs.executionEngine)
+	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.primaryMultisig, svcs.marketActivityTracker, svcs.executionEngine)
 	if err != nil {
 		return nil, err
 	}
@@ -420,10 +424,37 @@ func newServices(
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	svcs.topology.NotifyOnKeyChange(svcs.governance.ValidatorKeyChanged)
 
-	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
-		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.primaryEventForwarder, svcs.secondaryEventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount,
-		svcs.teamsEngine, svcs.spam, svcs.l2Verifiers)
+	svcs.snapshotEngine.AddProviders(
+		svcs.checkpoint,
+		svcs.collateral,
+		svcs.governance,
+		svcs.delegation,
+		svcs.netParams,
+		svcs.epochService,
+		svcs.assets,
+		svcs.banking,
+		svcs.witness,
+		svcs.notary,
+		svcs.stakingAccounts,
+		svcs.stakeVerifier,
+		svcs.limits,
+		svcs.topology,
+		svcs.primaryEventForwarder,
+		svcs.secondaryEventForwarder,
+		svcs.executionEngine,
+		svcs.marketActivityTracker,
+		svcs.statevar,
+		svcs.primaryMultisig,
+		svcs.secondaryMultisig,
+		svcs.protocolUpgradeEngine,
+		svcs.ethereumOraclesVerifier,
+		svcs.vesting,
+		svcs.activityStreak,
+		svcs.referralProgram,
+		svcs.volumeDiscount,
+		svcs.teamsEngine,
+		svcs.spam,
+		svcs.l2Verifiers)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW)
 
@@ -481,7 +512,8 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.epochService.OnTick,
 		svcs.builtinOracle.OnTick,
 		svcs.netParams.OnTick,
-		svcs.erc20MultiSigTopology.OnTick,
+		svcs.primaryMultisig.OnTick,
+		svcs.secondaryMultisig.OnTick,
 		svcs.witness.OnTick,
 
 		svcs.primaryEventForwarder.OnTick,
@@ -585,6 +617,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			{
 				Param:   netparams.SpamProtectionMinMultisigUpdates,
 				Watcher: svcs.spam.OnMinTokensForMultisigUpdatesChanged,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxMultisigUpdates,
+				Watcher: svcs.spam.OnMaxMultisigUpdatesChanged,
 			},
 			{
 				Param:   netparams.ReferralProgramMinStakedVegaTokens,

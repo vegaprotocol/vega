@@ -59,8 +59,9 @@ type EthereumEventSource interface {
 // Topology keeps track of all the validators
 // registered in the erc20 bridge.
 type Topology struct {
-	config Config
-	log    *logging.Logger
+	config  Config
+	log     *logging.Logger
+	chainID string
 
 	currentTime time.Time
 
@@ -93,6 +94,9 @@ type Topology struct {
 	// snapshot state
 	tss            *topologySnapshotState
 	ethEventSource EthereumEventSource
+
+	// whether it is multisig top for the first or second bridge
+	scope string
 }
 
 type pendingSigner struct {
@@ -133,6 +137,7 @@ func NewTopology(
 	witness Witness,
 	ocv MultiSigOnChainVerifier,
 	broker broker.Interface,
+	scope string,
 ) *Topology {
 	log = log.Named(namedLogger + ".topology")
 	log.SetLevel(config.Level.Get())
@@ -150,8 +155,18 @@ func NewTopology(
 		witnessedThresholds: map[string]struct{}{},
 		witnessedSigners:    map[string]struct{}{},
 		tss:                 &topologySnapshotState{},
+		scope:               scope,
 	}
 	return t
+}
+
+// SetChainID sets the chainID of the EVM chain this multisig tracker belongs to.
+func (t *Topology) SetChainID(chainID string) {
+	t.chainID = chainID
+}
+
+func (t *Topology) ChainID() string {
+	return t.chainID
 }
 
 func (t *Topology) SetWitness(w Witness) {
@@ -209,6 +224,7 @@ func (t *Topology) GetThreshold() uint32 {
 func (t *Topology) ProcessSignerEvent(event *types.SignerEvent) error {
 	if ok := t.ensureNotDuplicate(event.Hash()); !ok {
 		t.log.Error("signer event already exists",
+			logging.String("chain-id", t.chainID),
 			logging.String("event", event.String()))
 		return ErrDuplicatedSignerEvent
 	}
@@ -219,6 +235,7 @@ func (t *Topology) ProcessSignerEvent(event *types.SignerEvent) error {
 	}
 	t.pendingSigners[event.ID] = pending
 	t.log.Info("signer event received, starting validation",
+		logging.String("chain-id", t.chainID),
 		logging.String("event", event.String()))
 
 	return t.witness.StartCheck(
@@ -228,6 +245,7 @@ func (t *Topology) ProcessSignerEvent(event *types.SignerEvent) error {
 func (t *Topology) ProcessThresholdEvent(event *types.SignerThresholdSetEvent) error {
 	if ok := t.ensureNotDuplicate(event.Hash()); !ok {
 		t.log.Error("threshold event already exists",
+			logging.String("chain-id", t.chainID),
 			logging.String("event", event.String()))
 		return ErrDuplicatedThresholdEvent
 	}
@@ -238,6 +256,7 @@ func (t *Topology) ProcessThresholdEvent(event *types.SignerThresholdSetEvent) e
 	}
 	t.pendingThresholds[event.ID] = pending
 	t.log.Info("signer threshold set event received, starting validation",
+		logging.String("chain-id", t.chainID),
 		logging.String("event", event.String()))
 
 	return t.witness.StartCheck(
@@ -272,7 +291,9 @@ func (t *Topology) onEventVerified(event interface{}, ok bool) {
 		}
 		t.witnessedThresholds[e.ID] = struct{}{}
 	default:
-		t.log.Error("stake verifier received invalid event")
+		t.log.Error("multisig verifier received invalid event",
+			logging.String("chain-id", t.chainID),
+		)
 		return
 	}
 }

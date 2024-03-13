@@ -187,7 +187,16 @@ func getValScore(inScores ...map[string]num.Decimal) map[string]num.Decimal {
 // if the val_score = raw_score x performance_score  is in the top <numberEthMultisigSigners> and the validator is on the multisig contract => 1
 // else 0
 // that means a validator in tendermint set only gets a reward if it is in the top <numberEthMultisigSigners> and their registered with the multisig contract.
-func getMultisigScore(log *logging.Logger, status ValidatorStatus, rawScores map[string]num.Decimal, perfScore map[string]num.Decimal, multiSigTopology MultiSigTopology, numberEthMultisigSigners int, nodeIDToEthAddress map[string]string) map[string]num.Decimal {
+func getMultisigScore(
+	log *logging.Logger,
+	status ValidatorStatus,
+	rawScores map[string]num.Decimal,
+	perfScore map[string]num.Decimal,
+	primaryMultisig MultiSigTopology,
+	secondaryMultisig MultiSigTopology,
+	numberEthMultisigSigners int,
+	nodeIDToEthAddress map[string]string,
+) map[string]num.Decimal {
 	if status == ValidatorStatusErsatz {
 		scores := make(map[string]num.Decimal, len(rawScores))
 		for k := range rawScores {
@@ -206,7 +215,7 @@ func getMultisigScore(log *logging.Logger, status ValidatorStatus, rawScores map
 	}
 	sort.Strings(ethAddresses)
 
-	if multiSigTopology.ExcessSigners(ethAddresses) {
+	if primaryMultisig.ExcessSigners(ethAddresses) || secondaryMultisig.ExcessSigners(ethAddresses) {
 		res := make(map[string]num.Decimal, len(rawScores))
 		for rs := range rawScores {
 			res[rs] = num.DecimalZero()
@@ -232,7 +241,7 @@ func getMultisigScore(log *logging.Logger, status ValidatorStatus, rawScores map
 			if eth, ok := nodeIDToEthAddress[vs.ID]; !ok {
 				log.Panic("missing eth address in mapping", logging.String("node-id", vs.ID))
 			} else {
-				if multiSigTopology.IsSigner(eth) {
+				if primaryMultisig.IsSigner(eth) && secondaryMultisig.IsSigner(eth) {
 					res[vs.ID] = decimalOne
 				}
 			}
@@ -294,7 +303,7 @@ func (t *Topology) calculateScores(delegationState []*types.ValidatorData, valid
 	scores.PerformanceScores = t.getPerformanceScore(delegationForStatus)
 
 	// calculate multisig score for the validators
-	scores.MultisigScores = getMultisigScore(t.log, validatorStatus, scores.RawValScores, scores.PerformanceScores, t.multiSigTopology, t.numberEthMultisigSigners, nodeIDToEthAddress)
+	scores.MultisigScores = getMultisigScore(t.log, validatorStatus, scores.RawValScores, scores.PerformanceScores, t.primaryMultisig, t.secondaryMultisig, t.numberEthMultisigSigners, nodeIDToEthAddress)
 
 	// calculate the final score
 	scores.ValScores = getValScore(scores.RawValScores, scores.PerformanceScores, scores.MultisigScores)

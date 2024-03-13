@@ -113,6 +113,7 @@ func (e *Engine) SetupEthereumEngine(
 		ethCfg.VestingBridge(),
 		ethCfg.MultiSigControl(),
 		assets,
+		ethCfg.ChainID(),
 	)
 	if err != nil {
 		return fmt.Errorf("couldn't create the log filterer: %w", err)
@@ -151,18 +152,18 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 	assets ethereum.Assets,
 ) error {
 	if e.log.IsDebug() {
-		e.log.Debug("Ethereum configuration has been loaded")
+		e.log.Debug("Secondary Ethereum configuration has been loaded")
 	}
 
 	if e.ethEngine != nil {
 		if e.log.IsDebug() {
-			e.log.Debug("Stopping previous Ethereum Event Forwarder")
+			e.log.Debug("Stopping previous secondary Ethereum Event Forwarder")
 		}
 		e.Stop()
 	}
 
 	if e.log.IsDebug() {
-		e.log.Debug("Setting up the Ethereum Event Forwarder")
+		e.log.Debug("Setting up secondary the Ethereum Event Forwarder")
 	}
 
 	ethLogger := e.log.Named(ethereumLogger)
@@ -177,6 +178,7 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 		types.EthereumContract{},
 		ethCfg.MultiSigControl(),
 		assets,
+		ethCfg.ChainID(),
 	)
 	if err != nil {
 		return fmt.Errorf("couldn't create the log filterer: %w", err)
