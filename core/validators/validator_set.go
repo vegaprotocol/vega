@@ -289,12 +289,14 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	sortValidatorDescRankingScoreAscBlockcompare(remainingValidators, rankingScore, byBlockAdded, t.rng)
 
 	signers := map[string]struct{}{}
-	for _, sig := range t.multiSigTopology.GetSigners() {
+	for _, sig := range t.primaryMultisig.GetSigners() {
 		signers[sig] = struct{}{}
 	}
 
+	threshold := num.MaxV(t.primaryMultisig.GetThreshold(), t.secondaryMultisig.GetThreshold())
+
 	// if there are not enough slots, demote from tm to remaining
-	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, int64(t.currentBlockHeight+1), rankingScore, signers, t.multiSigTopology.GetThreshold())
+	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, int64(t.currentBlockHeight+1), rankingScore, signers, threshold)
 	t.log.Info("removedFromTM", logging.Strings("IDs", removedFromTM))
 
 	// now we're sorting the remaining validators - some of which may be eratz, some may have been tendermint (as demoted above) and some just in the waiting list

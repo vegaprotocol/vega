@@ -77,7 +77,8 @@ type LogFilterer struct {
 	cfg Config
 	log *logging.Logger
 
-	client Client
+	client  Client
+	chainID string
 
 	collateralBridgeABI      ethabi.ABI
 	collateralBridgeFilterer *bridge.Erc20BridgeLogicRestrictedFilterer
@@ -105,6 +106,7 @@ func NewLogFilterer(
 	vestingBridge types.EthereumContract,
 	multiSigControl types.EthereumContract,
 	assets Assets,
+	chainID string,
 ) (*LogFilterer, error) {
 	l := log.Named(logFiltererLogger)
 
@@ -145,6 +147,7 @@ func NewLogFilterer(
 		cfg:                      cfg,
 		log:                      l,
 		client:                   ethClient,
+		chainID:                  chainID,
 		collateralBridgeABI:      collateralBridgeABI,
 		collateralBridgeFilterer: collateralBridgeFilterer,
 		collateralBridge:         collateralBridge,
@@ -171,6 +174,7 @@ func (f *LogFilterer) CurrentHeight(ctx context.Context) uint64 {
 		if f.log.IsDebug() {
 			f.log.Debug("Current height of Ethereum blockchain has been retrieved",
 				logging.Uint64("height", height),
+				logging.String("chain-id", f.chainID),
 			)
 		}
 
@@ -259,6 +263,7 @@ func (f *LogFilterer) filterLogs(ctx context.Context, query eth.FilterQuery) []e
 				toBlock = query.ToBlock
 			}
 			f.log.Error("Couldn't subscribe to the Ethereum log filterer",
+				logging.String("chain-id", f.chainID),
 				logging.BigInt("from-block", fromBlock),
 				logging.BigInt("to-block", toBlock),
 				logging.EthereumAddresses(query.Addresses),
@@ -414,6 +419,7 @@ func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) *types.ChainEvent
 func (f *LogFilterer) debugAssetWithdrawn(event *bridge.Erc20BridgeLogicRestrictedAssetWithdrawn) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found AssetWithdrawn event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
 			logging.String("user-ethereum-address", event.UserAddress.Hex()),
 			logging.String("asset-id", event.AssetSource.Hex()),
@@ -443,6 +449,7 @@ func (f *LogFilterer) toERC20Withdraw(event *bridge.Erc20BridgeLogicRestrictedAs
 func (f *LogFilterer) debugAssetDeposited(event *bridge.Erc20BridgeLogicRestrictedAssetDeposited) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found AssetDeposited event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
 			logging.String("user-ethereum-address", event.UserAddress.Hex()),
 			logging.String("user-vega-address", hex.EncodeToString(event.VegaPublicKey[:])),
@@ -474,6 +481,7 @@ func (f *LogFilterer) toERC20Deposit(event *bridge.Erc20BridgeLogicRestrictedAss
 func (f *LogFilterer) debugAssetListed(event *bridge.Erc20BridgeLogicRestrictedAssetListed) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found AssetListed event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
 			logging.String("asset-id", event.AssetSource.Hex()),
 		)
@@ -501,6 +509,7 @@ func toERC20AssetList(event *bridge.Erc20BridgeLogicRestrictedAssetListed) *comm
 func (f *LogFilterer) debugAssetRemoved(event *bridge.Erc20BridgeLogicRestrictedAssetRemoved) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found AssetRemoved event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
 			logging.String("asset-id", event.AssetSource.Hex()),
 		)
@@ -527,6 +536,7 @@ func toERC20AssetDelist(event *bridge.Erc20BridgeLogicRestrictedAssetRemoved) *c
 func (f *LogFilterer) debugAssetLimitsUpdated(event *bridge.Erc20BridgeLogicRestrictedAssetLimitsUpdated) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found AssetLimitsUpdated event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
 			logging.String("asset-id", event.AssetSource.Hex()),
 		)
@@ -556,6 +566,7 @@ func (f *LogFilterer) toERC20AssetLimitsUpdated(event *bridge.Erc20BridgeLogicRe
 func (f *LogFilterer) debugBridgeStopped() {
 	if f.log.IsDebug() {
 		f.log.Debug("Found BridgeStopped event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
 		)
 	}
@@ -579,6 +590,7 @@ func (f *LogFilterer) toERC20BridgeStopped(event *bridge.Erc20BridgeLogicRestric
 func (f *LogFilterer) debugBridgeResumed() {
 	if f.log.IsDebug() {
 		f.log.Debug("Found BridgeResumed event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
 		)
 	}
@@ -634,6 +646,7 @@ func (f *LogFilterer) toStakingChainEvent(log ethtypes.Log, blockTime uint64) *t
 func (f *LogFilterer) debugStakeDeposited(event *staking.StakingStakeDeposited) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found StakeDeposited event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.stakingBridge.HexAddress()),
 			logging.String("user-ethereum-address", event.User.Hex()),
 			logging.String("user-vega-address", hex.EncodeToString(event.VegaPublicKey[:])),
@@ -665,6 +678,7 @@ func toStakeDeposited(event *staking.StakingStakeDeposited, blockTime uint64) *c
 func (f *LogFilterer) debugStakeRemoved(event *staking.StakingStakeRemoved) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found StakeRemoved event",
+			logging.String("chain-id", f.chainID),
 			logging.String("bridge-address", f.stakingBridge.HexAddress()),
 			logging.String("user-ethereum-address", event.User.Hex()),
 			logging.String("user-vega-address", hex.EncodeToString(event.VegaPublicKey[:])),
@@ -729,6 +743,7 @@ func (f *LogFilterer) toMultisigControlChainEvent(log ethtypes.Log, blockTime ui
 func (f *LogFilterer) debugSignerAdded(event *multisig.MultisigControlSignerAdded) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found SignerAdded event",
+			logging.String("chain-id", f.chainID),
 			logging.String("multisig-control-address", f.multiSigControl.HexAddress()),
 			logging.String("new-signer", event.NewSigner.Hex()),
 			logging.String("nonce", event.Nonce.String()),
@@ -758,6 +773,7 @@ func toSignerAdded(event *multisig.MultisigControlSignerAdded, blockTime uint64)
 func (f *LogFilterer) debugSignerRemoved(event *multisig.MultisigControlSignerRemoved) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found SignerRemoved event",
+			logging.String("chain-id", f.chainID),
 			logging.String("multisig-control-address", f.multiSigControl.HexAddress()),
 			logging.String("oldsigner", event.OldSigner.Hex()),
 			logging.String("nonce", event.Nonce.String()),
@@ -787,6 +803,7 @@ func toSignerRemoved(event *multisig.MultisigControlSignerRemoved, blockTime uin
 func (f *LogFilterer) debugThresholdSet(event *multisig.MultisigControlThresholdSet) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found SignerRemoved event",
+			logging.String("chain-id", f.chainID),
 			logging.String("multisig-control-address", f.multiSigControl.HexAddress()),
 			logging.Uint16("new-threshold", event.NewThreshold),
 			logging.String("nonce", event.Nonce.String()),

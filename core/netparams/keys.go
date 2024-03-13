@@ -166,6 +166,7 @@ const (
 	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
+	SpamProtectionMaxMultisigUpdates               = "spam.protection.max.MultisigUpdates"
 	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
 
 	SpamProtectionMaxCreateReferralSet     = "spam.protection.max.createReferralSet"
@@ -434,6 +435,7 @@ var AllKeys = map[string]struct{}{
 	ValidatorPerformanceScalingFactor:                            {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:               {},
 	SpamProtectionMinMultisigUpdates:                             {},
+	SpamProtectionMaxMultisigUpdates:                             {},
 	MarketSuccessorLaunchWindow:                                  {},
 	SpamProtectionMaxStopOrdersPerMarket:                         {},
 	ReferralProgramMaxReferralTiers:                              {},

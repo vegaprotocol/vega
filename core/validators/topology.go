@@ -63,6 +63,7 @@ type MultiSigTopology interface {
 	ExcessSigners(addresses []string) bool
 	GetSigners() []string
 	GetThreshold() uint32
+	ChainID() string
 }
 
 type ValidatorPerformance interface {
@@ -124,7 +125,8 @@ type Topology struct {
 	broker               Broker
 	timeService          TimeService
 	validatorPerformance ValidatorPerformance
-	multiSigTopology     MultiSigTopology
+	primaryMultisig      MultiSigTopology
+	secondaryMultisig    MultiSigTopology
 
 	// vega pubkey to validator data
 	validators validators
@@ -216,7 +218,15 @@ func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 func NewTopology(
-	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander, msTopology MultiSigTopology, timeService TimeService,
+	log *logging.Logger,
+	cfg Config,
+	wallets NodeWallets,
+	broker Broker,
+	isValidatorSetup bool,
+	cmd Commander,
+	primaryMultisig MultiSigTopology,
+	secondaryMultisig MultiSigTopology,
+	timeService TimeService,
 ) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -237,7 +247,8 @@ func NewTopology(
 		validatorPerformance:          NewValidatorPerformance(log),
 		validatorIncumbentBonusFactor: num.DecimalZero(),
 		ersatzValidatorsFactor:        num.DecimalZero(),
-		multiSigTopology:              msTopology,
+		primaryMultisig:               primaryMultisig,
+		secondaryMultisig:             secondaryMultisig,
 		cmd:                           cmd,
 		signatures:                    &noopSignatures{log},
 	}
@@ -264,7 +275,7 @@ func (t *Topology) OnEpochLengthUpdate(ctx context.Context, l time.Duration) err
 // anyway we may want to extract the code requiring the notary somewhere
 // else or have different pattern somehow...
 func (t *Topology) SetNotary(notary Notary) {
-	t.signatures = NewSignatures(t.log, t.multiSigTopology, notary, t.wallets, t.broker, t.isValidatorSetup)
+	t.signatures = NewSignatures(t.log, t.primaryMultisig, t.secondaryMultisig, notary, t.wallets, t.broker, t.isValidatorSetup)
 	t.notary = notary
 }
 
@@ -640,14 +651,14 @@ func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 	t.isValidator = true
 }
 
-func (t *Topology) IssueSignatures(ctx context.Context, submitter, nodeID string, kind types.NodeSignatureKind) error {
+func (t *Topology) IssueSignatures(ctx context.Context, submitter, nodeID, chainID string, kind types.NodeSignatureKind) error {
 	t.log.Debug("received IssueSignatures txn", logging.String("submitter", submitter), logging.String("nodeID", nodeID))
 	currentTime := t.timeService.GetTimeNow()
 	switch kind {
 	case types.NodeSignatureKindERC20MultiSigSignerAdded:
-		return t.signatures.EmitValidatorAddedSignatures(ctx, submitter, nodeID, currentTime)
+		return t.signatures.EmitValidatorAddedSignatures(ctx, submitter, nodeID, chainID, currentTime)
 	case types.NodeSignatureKindERC20MultiSigSignerRemoved:
-		return t.signatures.EmitValidatorRemovedSignatures(ctx, submitter, nodeID, currentTime)
+		return t.signatures.EmitValidatorRemovedSignatures(ctx, submitter, nodeID, chainID, currentTime)
 	default:
 		return ErrIssueSignaturesUnexpectedKind
 	}

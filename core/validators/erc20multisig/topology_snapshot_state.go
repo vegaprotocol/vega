@@ -42,7 +42,10 @@ type topologySnapshotState struct {
 }
 
 func (t *Topology) Namespace() types.SnapshotNamespace {
-	return types.ERC20MultiSigTopologySnapshot
+	if t.scope == "primary" {
+		return types.ERC20MultiSigTopologySnapshot
+	}
+	return types.SecondaryERC20MultiSigTopologySnapshot
 }
 
 func (t *Topology) Keys() []string {
@@ -160,7 +163,9 @@ func (t *Topology) restorePendingState(
 }
 
 func (t *Topology) serialiseVerifiedState() ([]byte, error) {
-	out := &snapshotpb.ERC20MultiSigTopologyVerified{}
+	out := &snapshotpb.ERC20MultiSigTopologyVerified{
+		Scope: t.scope,
+	}
 	t.log.Debug("serialising snapshot verified state")
 	// first serialise seen events
 	t.log.Debug("serialising seen", logging.Int("n", len(t.seen)))
@@ -215,7 +220,9 @@ func (t *Topology) serialiseVerifiedState() ([]byte, error) {
 
 func (t *Topology) serialisePendingState() ([]byte, error) {
 	t.log.Debug("serialising pending state")
-	out := &snapshotpb.ERC20MultiSigTopologyPending{}
+	out := &snapshotpb.ERC20MultiSigTopologyPending{
+		Scope: t.scope,
+	}
 
 	t.log.Debug("serialising witness signers", logging.Int("n", len(t.witnessedSigners)))
 	out.WitnessedSigners = make([]string, 0, len(t.witnessedSigners))

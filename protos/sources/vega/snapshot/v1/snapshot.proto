@@ -905,6 +905,7 @@ message IssuedERC20MultisigControlSignature {
   string resource_id = 1;
   string ethereum_address = 2;
   string submitter_address = 3;
+  string chain_id = 4;
 }
 
 message ValidatorState {
@@ -1107,6 +1108,7 @@ message ERC20MultiSigTopologyVerified {
   repeated SignerEventsPerAddress events_per_address = 2;
   vega.events.v1.ERC20MultiSigThresholdSetEvent threshold = 3;
   repeated string seen_events = 4;
+  string scope = 5;
 }
 
 message ERC20MultiSigTopologyPending {
@@ -1114,6 +1116,7 @@ message ERC20MultiSigTopologyPending {
   repeated vega.events.v1.ERC20MultiSigThresholdSetEvent pending_threshold_set = 2;
   repeated string witnessed_signers = 3;
   repeated string witnessed_threshold_sets = 4;
+  string scope = 5;
 }
 
 message ProofOfWork {

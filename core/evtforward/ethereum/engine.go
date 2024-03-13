@@ -141,7 +141,6 @@ func (e *Engine) Start() {
 	defer cancelEthereumQueries()
 
 	e.cancelEthereumQueries = cancelEthereumQueries
-
 	if e.log.IsDebug() {
 		e.log.Debug("Start listening for Ethereum events from")
 	}
@@ -149,6 +148,7 @@ func (e *Engine) Start() {
 	e.poller.Loop(func() {
 		if e.log.IsDebug() {
 			e.log.Debug("Clock is ticking, gathering Ethereum events",
+				logging.String("chain-id", e.chainID),
 				logging.Uint64("next-collateral-block-number", e.nextCollateralBlockNumber),
 				logging.Uint64("next-multisig-control-block-number", e.nextMultiSigControlBlockNumber),
 				logging.Uint64("next-staking-block-number", e.nextStakingBlockNumber),
