@@ -1,10 +1,10 @@
-Feature: Ensure the vAMM positions follow the market correctly
+Feature: vAMM has the same ELS as liquidity provision with the same commitment amount
 
   Background:
     Given the average block duration is "1"
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
-      | 1.2           | 1.5            | 1.7            |
+      | 0.5           | 0.6            | 1.0            |
     And the log normal risk model named "log-normal-risk-model":
       | risk aversion | tau                   | mu | r   | sigma |
       | 0.001         | 0.0011407711613050422 | 0  | 0.9 | 3.0   |
@@ -22,11 +22,11 @@ Feature: Ensure the vAMM positions follow the market correctly
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
       | market.liquidity.equityLikeShareFeeFraction         | 1     |
-	    | market.amm.minCommitmentQuantum                       | 1     |
+	    | market.amm.minCommitmentQuantum                     | 1     |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
-      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.1   |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
       | validators.epoch.length                             | 10s   |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
@@ -81,22 +81,23 @@ Feature: Ensure the vAMM positions follow the market correctly
     And the current epoch is "1"
 
   @VAMM
-  Scenario: 0087-VAMM-006: If other traders trade to move the market mid price to 140 the vAMM has a short position.
+  Scenario: 0087-VAMM-016: A vAMM's virtual ELS should be equal to the ELS of a regular LP with the same committed volume on the book (i.e. if a vAMM has an average volume on each side of the book across the epoch of 10k USDT, their ELS should be equal to that of a regular LP who has a commitment which requires supplying 10k USDT who joined at the same time as them).
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 39           | 9000           | 1             | 100       | 100       | 100              |
+      | 100        | TRADING_MODE_CONTINUOUS | 39           | 10000           | 0             | 100       | 100       | 100              |
 
     When the parties submit the following liquidity provision:
+      # Using 10,093 instead of exactly 10,000 makes things easier because getting exactly 10,000 from an AMM pool as virtual stake can be tricky due to complex math.
       | id   | party | market id | commitment amount | fee   | lp type    |
-      | lp_2 | lp2   | ETH/MAR22 | 10000             | 0.03  | submission |
+      | lp_2 | lp2   | ETH/MAR22 | 10093             | 0.03  | submission |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 10000  | 0.8      | 100  | 95          | 105         | 1                | 1                |
+      | vamm1 | ETH/MAR22 | 10000  | 0.8      | 100  | 95          | 105         | 0.96               | 0.96              |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 95          | 105         | 1               | 1               |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 95          | 105         | 0.96               | 0.96               |
     
     And set the following AMM sub account aliases:
       | party | market id | alias    |
@@ -107,39 +108,53 @@ Feature: Ensure the vAMM positions follow the market correctly
 
     Then the network moves ahead "1" epochs
     And the current epoch is "2"
-
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 0.9               | 9000                    |
-      | lp2   | 0.1               | 10000                   |
+      | party                                                            | equity like share  | virtual stake          | average entry valuation |
+      | lp2                                                              | 0.3343602994765785 | 10093.0000000000000000 | 30186                   |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0.3343602994765785 | 10093.0000000000000000 | 20093                   |  
+  
+  @VAMM
+  Scenario: 0087-VAMM-017: A vAMM's virtual ELS should be equal to the ELS of a regular LP with the same committed volume on the book (i.e. if a vAMM has an average volume on each side of the book across the epoch of 10k USDT, their ELS should be equal to that of a regular LP who has a commitment which requires supplying 10k USDT who joined at the same time as them).
 
-    # When the parties submit the following AMM:
-    #   | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-    #   | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               |
-    # Then the AMM pool status should be:
-    #   | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-    #   | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 39           | 10000           | 0             | 100       | 100       | 100              |
 
-    # And set the following AMM sub account aliases:
-    #   | party | market id | alias    |
-    #   | vamm1 | ETH/MAR22 | vamm1-id |
-    # And the following transfers should happen:
-    #   | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
-    #   | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+    When the parties submit the following liquidity provision:
+      # Using 10,093 instead of exactly 10,000 makes things easier because getting exactly 10,000 from an AMM pool as virtual stake can be tricky due to complex math.
+      | id   | party | market id | commitment amount | fee   | lp type    |
+      | lp_2 | lp2   | ETH/MAR22 | 10093             | 0.03  | submission |
 
-    # When the parties place the following orders:
-    #   | party  | market id | side | volume | price | resulting trades | type       | tif     |
-    #   | party4 | ETH/MAR22 | buy  | 265    | 141   | 1                | TYPE_LIMIT | TIF_GTC |
-    # # see the trades that make the vAMM go short
-    # Then the following trades should be executed:
-    #   | buyer  | price | size | seller   | is amm |
-    #   | party4 | 118   | 265  | vamm1-id | true   |
-    # And the network moves ahead "1" blocks
-    # # Check best offer/bid as this scenario matches 0087-VAMM-027: if other traders trade to move the market mid price to 140 quotes with a mid price of 140 (volume quotes above 140 should be sells, volume quotes below 140 should be buys).
-    # Then the market data for the market "ETH/MAR22" should be:
-    #   | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-    #   | 118        | TRADING_MODE_CONTINUOUS | 140       | 140              | 141              | 139            |
-    # Then the parties should have the following profit and loss:
-    #   | party    | volume | unrealised pnl | realised pnl | is amm |
-    #   | party4   | 265    | 0              | 0            |        |
-    #   | vamm1-id | -265   | 0              | 0            | true   |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif   |
+      | lp2   | ETH/MAR22 | buy  | 1000   | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp2   | ETH/MAR22 | sell | 1000   | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 10000  | 0.8      | 100  | 95          | 105         | 0.96               | 0.96              |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 95          | 105         | 0.96               | 0.96               |
+    
+    And set the following AMM sub account aliases:
+      | party | market id | alias    |
+      | vamm1 | ETH/MAR22 | vamm1-id |
+    And the following transfers should happen:
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+
+    Then the network moves ahead "1" epochs
+    And the current epoch is "2"
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party                                                            | equity like share  | virtual stake          | average entry valuation |
+      | lp2                                                              | 0.3343602994765785 | 10093.0000000000000000 | 30186                   |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0.3343602994765785 | 10093.0000000000000000 | 20093                   |
+
+  Then the network moves ahead "2" epochs
+  And the current epoch is "4"
+
+  And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    | party                                                            | equity like share  | average entry valuation |
+    | lp2                                                              | 0.3343602994765785 | 30186                   |
+    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0.3343602994765785 | 20093                   |
