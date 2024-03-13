@@ -591,7 +591,7 @@ type Query {
     "Pool ID to filter for. Party ID and Market ID filters must not be set if used."
     poolId: ID
     """
-    Party's underlying AMM sub account to filter for. A party will only ever have one AMM sub account regardless of how many AMM pools they have created.
+    Party's underlying AMM sub-account to filter for. A party will only ever have one AMM sub-account regardless of how many AMM pools they have created.
     This filter is ignored if party ID, market ID, or pool ID is set.
     """
     subAccountId: ID
@@ -1445,7 +1445,7 @@ enum IndividualScope {
   INDIVIDUAL_SCOPE_IN_TEAM
   "All parties that are not part of a team are within the scope of this reward"
   INDIVIDUAL_SCOPE_NOT_IN_TEAM
-  "All keys representing AMM parties, excluding those directly controlled by parties are within the scope of this reward"
+  "All keys representing AMMs are within the scope of this reward"
   INDIVIDUAL_SCOPE_AMM
 }
 
@@ -7349,7 +7349,7 @@ type AMMPool {
   marketID: ID!
   "Pool ID"
   poolID: ID!
-  "Sub account of the pool"
+  "Sub-account of the pool"
   subAccount: String!
   "Amount committed to the pool"
   commitment: String!
@@ -7394,7 +7394,7 @@ enum AMMPoolStatusReason {
   STATUS_REASON_CANCELLED_BY_PARTY
   "AMM pool commitment cannot be fulfilled"
   STATUS_REASON_CANNOT_FILL_COMMITMENT
-  "Party already owns an AMM pool"
+  "Party already owns an AMM pool on this market"
   STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL
   "Party was closed out"
   STATUS_REASON_PARTY_CLOSED_OUT
