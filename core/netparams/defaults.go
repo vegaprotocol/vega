@@ -219,6 +219,7 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMinTokensForDelegation:           NewDecimal(gteD1).Mutable(true).MustUpdate("1000000000000000000"),
 		SpamProtectionMinimumWithdrawalQuantumMultiple: NewDecimal(gtD0, DecimalLT(num.MustDecimalFromString("1e6"))).Mutable(true).MustUpdate("10"),
 		SpamProtectionMinMultisigUpdates:               NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxMultisigUpdates:               NewInt(gteI0).Mutable(true).MustUpdate("4"),
 		SpamProtectionMaxCreateReferralSet:             NewInt(gteI0).Mutable(true).MustUpdate("3"),
 		SpamProtectionMaxUpdateReferralSet:             NewInt(gteI0).Mutable(true).MustUpdate("3"),
 		SpamProtectionMaxApplyReferralCode:             NewInt(gteI0).Mutable(true).MustUpdate("5"),

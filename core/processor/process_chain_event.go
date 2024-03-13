@@ -33,6 +33,7 @@ var (
 	ErrNotABuiltinAssetEvent                          = errors.New("not an builtin asset event")
 	ErrUnsupportedEventAction                         = errors.New("unsupported event action")
 	ErrChainEventAssetListERC20WithoutEnoughSignature = errors.New("chain event for erc20 asset list received with missing node signatures")
+	ErrNotBridgeChainID                               = errors.New("not the chainID of any bridge")
 )
 
 func (app *App) processChainEvent(
@@ -108,33 +109,7 @@ func (app *App) processChainEvent(
 		}
 		return app.processChainEventERC20(ctx, ceErc, id, ce.TxId)
 	case *commandspb.ChainEvent_Erc20Multisig:
-		blockNumber := c.Erc20Multisig.Block
-		logIndex := c.Erc20Multisig.Index
-		switch pevt := c.Erc20Multisig.Action.(type) {
-		case *vgproto.ERC20MultiSigEvent_SignerAdded:
-			evt, err := types.SignerEventFromSignerAddedProto(
-				pevt.SignerAdded, blockNumber, logIndex, ce.TxId, id, c.Erc20Multisig.ChainId)
-			if err != nil {
-				return err
-			}
-			return app.primaryErc20MultiSigTopology.ProcessSignerEvent(evt)
-		case *vgproto.ERC20MultiSigEvent_SignerRemoved:
-			evt, err := types.SignerEventFromSignerRemovedProto(
-				pevt.SignerRemoved, blockNumber, logIndex, ce.TxId, id, c.Erc20Multisig.ChainId)
-			if err != nil {
-				return err
-			}
-			return app.primaryErc20MultiSigTopology.ProcessSignerEvent(evt)
-		case *vgproto.ERC20MultiSigEvent_ThresholdSet:
-			evt, err := types.SignerThresholdSetEventFromProto(
-				pevt.ThresholdSet, blockNumber, logIndex, ce.TxId, id, c.Erc20Multisig.ChainId)
-			if err != nil {
-				return err
-			}
-			return app.primaryErc20MultiSigTopology.ProcessThresholdEvent(evt)
-		default:
-			return errors.New("unsupported erc20 multisig event")
-		}
+		return app.processChainEventMultisig(c, id, ce.TxId)
 	case *commandspb.ChainEvent_ContractCall:
 		callResult, err := ethcall.EthereumContractCallResultFromProto(c.ContractCall)
 		if err != nil {
@@ -197,6 +172,58 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 		return errors.New("unreachable")
 	default:
 		return ErrUnsupportedEventAction
+	}
+}
+
+func (app *App) processChainEventMultisig(
+	c *commandspb.ChainEvent_Erc20Multisig, id, txID string,
+) error {
+	if c.Erc20Multisig == nil {
+		return ErrNotAnERC20Event
+	}
+
+	cid, err := strconv.ParseUint(c.Erc20Multisig.ChainId, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	var multisig ERC20MultiSigTopology
+	switch cid {
+	case app.primaryChainID:
+		multisig = app.primaryErc20MultiSigTopology
+	case app.secondaryChainID:
+		multisig = app.secondaryErc20MultiSigTopology
+	default:
+		return ErrNotBridgeChainID
+	}
+
+	blockNumber := c.Erc20Multisig.Block
+	logIndex := c.Erc20Multisig.Index
+	switch pevt := c.Erc20Multisig.Action.(type) {
+	case *vgproto.ERC20MultiSigEvent_SignerAdded:
+		evt, err := types.SignerEventFromSignerAddedProto(
+			pevt.SignerAdded, blockNumber, logIndex, txID, id, c.Erc20Multisig.ChainId)
+		if err != nil {
+			return err
+		}
+
+		return multisig.ProcessSignerEvent(evt)
+	case *vgproto.ERC20MultiSigEvent_SignerRemoved:
+		evt, err := types.SignerEventFromSignerRemovedProto(
+			pevt.SignerRemoved, blockNumber, logIndex, txID, id, c.Erc20Multisig.ChainId)
+		if err != nil {
+			return err
+		}
+		return multisig.ProcessSignerEvent(evt)
+	case *vgproto.ERC20MultiSigEvent_ThresholdSet:
+		evt, err := types.SignerThresholdSetEventFromProto(
+			pevt.ThresholdSet, blockNumber, logIndex, txID, id, c.Erc20Multisig.ChainId)
+		if err != nil {
+			return err
+		}
+		return multisig.ProcessThresholdEvent(evt)
+	default:
+		return errors.New("unsupported erc20 multisig event")
 	}
 }
 

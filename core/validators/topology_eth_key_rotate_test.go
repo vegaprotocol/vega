@@ -290,14 +290,15 @@ func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 		err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 		require.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
-
 	submitter := "some-eth-address"
 
+	top.multisigTop.EXPECT().ChainID().Times(1)
+	top.multisigTop2.EXPECT().ChainID().Times(1)
 	top.signatures.EXPECT().PrepareValidatorSignatures(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3)
-	top.signatures.EXPECT().EmitValidatorRemovedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any()).Times(2)
-	top.signatures.EXPECT().EmitValidatorAddedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any()).Times(1)
+	top.signatures.EXPECT().EmitValidatorRemovedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any(), gomock.Any()).Times(4)
+	top.signatures.EXPECT().EmitValidatorAddedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 	top.signatures.EXPECT().ClearStaleSignatures().AnyTimes()
-	top.timeService.EXPECT().GetTimeNow().Times(1)
+	top.timeService.EXPECT().GetTimeNow().Times(2)
 
 	// add ethereum key rotations
 	err := top.ProcessEthereumKeyRotation(ctx, "vega-key-1", newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11, submitter), MockVerify)
@@ -306,7 +307,9 @@ func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	// when
 	now := time.Unix(666, 666)
 	top.signatures.EXPECT().SetNonce(now).Times(1)
-	top.timeService.EXPECT().GetTimeNow().Times(5).Return(now)
+	top.timeService.EXPECT().GetTimeNow().Times(6).Return(now)
+	top.multisigTop.EXPECT().ChainID().Times(1)
+	top.multisigTop2.EXPECT().ChainID().Times(1)
 	top.BeginBlock(ctx, 11, "")
 
 	// then
@@ -324,7 +327,9 @@ func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 
 	now = now.Add(time.Second)
 	top.signatures.EXPECT().SetNonce(now).Times(1)
-	top.timeService.EXPECT().GetTimeNow().Times(5).Return(now)
+	top.timeService.EXPECT().GetTimeNow().Times(6).Return(now)
+	top.multisigTop.EXPECT().ChainID().Times(1)
+	top.multisigTop2.EXPECT().ChainID().Times(1)
 	top.BeginBlock(ctx, 140, "")
 
 	// try to submit again

@@ -288,7 +288,8 @@ func NewApp(log *logging.Logger,
 	referralProgram ReferralProgram,
 	volumeDiscountProgram VolumeDiscountProgram,
 	blockchainClient BlockchainClient,
-	erc20MultiSigTopology ERC20MultiSigTopology,
+	primaryMultisig ERC20MultiSigTopology,
+	secondaryMultisig ERC20MultiSigTopology,
 	version string,
 	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
@@ -342,8 +343,8 @@ func NewApp(log *logging.Logger,
 		volumeDiscountProgram:          volumeDiscountProgram,
 		version:                        version,
 		blockchainClient:               blockchainClient,
-		primaryErc20MultiSigTopology:   erc20MultiSigTopology,
-		secondaryErc20MultiSigTopology: erc20MultiSigTopology,
+		primaryErc20MultiSigTopology:   primaryMultisig,
+		secondaryErc20MultiSigTopology: secondaryMultisig,
 		protocolUpgradeService:         protocolUpgradeService,
 		gastimator:                     gastimator,
 		ethCallEngine:                  ethCallEngine,
@@ -649,7 +650,7 @@ func (app *App) ensureConfig() {
 	if err := app.netp.GetJSONStruct(netparams.BlockchainsSecondaryEthereumConfig, secondaryChainConfig); err != nil {
 		return
 	}
-	secondaryChainID, err := strconv.ParseUint(v.ChainId, 10, 64)
+	secondaryChainID, err := strconv.ParseUint(secondaryChainConfig.ChainId, 10, 64)
 	if err != nil {
 		return
 	}
@@ -1556,7 +1557,8 @@ func (app *App) DeliverIssueSignatures(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(is); err != nil {
 		return err
 	}
-	return app.top.IssueSignatures(ctx, vgcrypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
+
+	return app.top.IssueSignatures(ctx, vgcrypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.ChainId, is.Kind)
 }
 
 func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {

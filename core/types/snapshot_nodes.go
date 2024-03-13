@@ -1101,7 +1101,10 @@ func (p *PayloadERC20MultiSigTopologyVerified) plToProto() interface{} {
 	}
 }
 
-func (*PayloadERC20MultiSigTopologyVerified) Namespace() SnapshotNamespace {
+func (p *PayloadERC20MultiSigTopologyVerified) Namespace() SnapshotNamespace {
+	if p.Verified.Scope == "secondary" {
+		return SecondaryERC20MultiSigTopologySnapshot
+	}
 	return ERC20MultiSigTopologySnapshot
 }
 
@@ -1125,7 +1128,10 @@ func (p *PayloadERC20MultiSigTopologyPending) plToProto() interface{} {
 	}
 }
 
-func (*PayloadERC20MultiSigTopologyPending) Namespace() SnapshotNamespace {
+func (p *PayloadERC20MultiSigTopologyPending) Namespace() SnapshotNamespace {
+	if p.Pending.Scope == "secondary" {
+		return SecondaryERC20MultiSigTopologySnapshot
+	}
 	return ERC20MultiSigTopologySnapshot
 }
 
