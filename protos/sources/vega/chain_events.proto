@@ -18,6 +18,8 @@ message EthContractCallEvent {
   optional string error = 5;
   // Source chain for this chain event.
   optional uint64 source_chain_id = 6;
+  // If true the event does not correspond to a contract call and is only a notification to core of the last checked block height.
+  bool heartbeat = 7;
 }
 
 // Deposit for a Vega built-in asset
