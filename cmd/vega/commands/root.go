@@ -84,6 +84,7 @@ func Main(ctx context.Context) error {
 		Start,
 		Node,
 		BlockExplorer,
+		Prune,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
