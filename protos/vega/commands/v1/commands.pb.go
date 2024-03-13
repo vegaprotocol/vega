@@ -2733,6 +2733,7 @@ func (x *UpdateReferralSet_Team) GetAllowList() []string {
 	return nil
 }
 
+// Liquidity parameters that define the size and range of the AMM's tradeable volume.
 type SubmitAMM_ConcentratedLiquidityParameters struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2817,6 +2818,7 @@ func (x *SubmitAMM_ConcentratedLiquidityParameters) GetMarginRatioAtLowerBound()
 	return ""
 }
 
+// Liquidity parameters that define the size and range of the AMM's tradeable volume.
 type AmendAMM_ConcentratedLiquidityParameters struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

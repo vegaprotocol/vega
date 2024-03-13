@@ -32,40 +32,66 @@ message TimeWeightedNotionalPositionUpdated {
 }
 
 message AMMPool {
+  // Owner of the AMM.
   string party_id = 1;
+  // Market ID that the AMM provides liquidity for.
   string market_id = 2;
+  // ID of the AMM.
   string pool_id = 3;
+  // Party ID that the AMM operates as.
   string sub_account = 4;
+  // Amount committed to the AMM.
   string commitment = 5;
+  // Liquidity parameters that define the size and range of the AMM's tradeable volume.
   ConcentratedLiquidityParameters parameters = 6;
+  // Current status of the AMM.
   Status status = 7;
+  // Reason for the AMM's current status.
   StatusReason status_reason = 8;
 
   enum Status {
     STATUS_UNSPECIFIED = 0;
+    // AMM is active on the market and can be traded against.
     STATUS_ACTIVE = 1;
+    // AMM submission was rejected.
     STATUS_REJECTED = 2;
+    // AMM has been cancelled by the owner and is no longer trading.
     STATUS_CANCELLED = 3;
+    // AMM has been stopped by the network and is no longer trading.
     STATUS_STOPPED = 4;
+    // AMM will only trade such that it will reduce its position.
     STATUS_REDUCE_ONLY = 5;
   }
 
   enum StatusReason {
     STATUS_REASON_UNSPECIFIED = 0;
+    // AMM was cancelled by the owner of the AMM.
     STATUS_REASON_CANCELLED_BY_PARTY = 1;
+    // Party does not have enough funds in their general account to meet the AMM's commitment.
     STATUS_REASON_CANNOT_FILL_COMMITMENT = 2;
+    // Party already has an AMM operating on this market and cannot create another one.
     STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL = 3;
+    // AMM was liquidated and stopped by the network.
     STATUS_REASON_PARTY_CLOSED_OUT = 4;
+    // AMM was stopped by the network because the market it operated in was closed.
     STATUS_REASON_MARKET_CLOSED = 5;
+    // Party does not have enough funds in their general account to meet the AMM's commitment.
     STATUS_REASON_COMMITMENT_TOO_LOW = 6;
+    // AMM was unable to rebase its fair-price such that it does no enter crossed.
     STATUS_REASON_CANNOT_REBASE = 7;
   }
 
+  // Liquidity parameters that define the range and shape of the AMM's curve.
   message ConcentratedLiquidityParameters {
+    // Base price bound configuration for the pool.
     string base = 1;
+    // Upper price bound configuration for the pool. If unset, the AMM will never hold a short position.
     string lower_bound = 2;
+    // Lower price bound configuration for the pool. If unset, the AMM will never hold a long position.
     string upper_bound = 3;
+    // Margin ratio at upper bounds.
     string margin_ratio_at_upper_bound = 4;
+    // Margin ratio at upper bounds.
     string margin_ratio_at_lower_bound = 5;
   }
 }
