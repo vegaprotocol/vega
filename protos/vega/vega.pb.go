@@ -924,9 +924,9 @@ const (
 	TransferType_TRANSFER_TYPE_ISOLATED_MARGIN_LOW TransferType = 47
 	// Transfer from excess order margin account to general account.
 	TransferType_TRANSFER_TYPE_ISOLATED_MARGIN_HIGH TransferType = 48
-	// Transfer from a party's general account to thei AMM's sub-accounts.
+	// Transfer from a party's general account to their AMM's sub-account.
 	TransferType_TRANSFER_TYPE_AMM_SUBACCOUNT_LOW TransferType = 49
-	// Transfer from an AMM's sub-accounts to their owner's general account.
+	// Transfer from an AMM's sub-account to their owner's general account.
 	TransferType_TRANSFER_TYPE_AMM_SUBACCOUNT_HIGH TransferType = 50
 	// Transfer releasing an AMM's general account upon closure.
 	TransferType_TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE TransferType = 51
@@ -1195,8 +1195,7 @@ const (
 	IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM IndividualScope = 2
 	// All parties that are not part of a team are within the scope of this reward.
 	IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM IndividualScope = 3
-	// All keys representing AMM parties, excluding those directly controlled by parties
-	// are within the scope of this reward.
+	// All keys representing AMMs are within the scope of this reward.
 	IndividualScope_INDIVIDUAL_SCOPE_AMM IndividualScope = 4
 )
 

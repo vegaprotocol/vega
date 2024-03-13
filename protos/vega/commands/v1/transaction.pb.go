@@ -569,12 +569,12 @@ type InputData_SubmitAmm struct {
 }
 
 type InputData_AmendAmm struct {
-	// Command to amend an AMM pool to a market
+	// Command to amend an AMM pool on a market
 	AmendAmm *AmendAMM `protobuf:"bytes,1026,opt,name=amend_amm,json=amendAmm,proto3,oneof"`
 }
 
 type InputData_CancelAmm struct {
-	// Command to cancel an AMM pool to a market
+	// Command to cancel an AMM pool on a market
 	CancelAmm *CancelAMM `protobuf:"bytes,1027,opt,name=cancel_amm,json=cancelAmm,proto3,oneof"`
 }
 
