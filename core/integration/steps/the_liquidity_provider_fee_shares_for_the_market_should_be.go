@@ -40,6 +40,7 @@ func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine Execution, marketI
 		var got []types.LiquidityProviderFeeShare
 		for _, v := range marketData.LiquidityProviderFeeShare {
 			got = append(got, *v)
+			fmt.Printf("v: %v\n", v)
 			if v.Party == expected.Party &&
 				v.EquityLikeShare == expected.EquityLikeShare &&
 				v.AverageEntryValuation == expected.AverageEntryValuation {
