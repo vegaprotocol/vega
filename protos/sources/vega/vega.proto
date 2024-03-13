@@ -1041,9 +1041,9 @@ enum TransferType {
   TRANSFER_TYPE_ISOLATED_MARGIN_LOW = 47;
   // Transfer from excess order margin account to general account.
   TRANSFER_TYPE_ISOLATED_MARGIN_HIGH = 48;
-  // Transfer from a party's general account to thei AMM's sub-accounts.
+  // Transfer from a party's general account to their AMM's sub-account.
   TRANSFER_TYPE_AMM_SUBACCOUNT_LOW = 49;
-  // Transfer from an AMM's sub-accounts to their owner's general account.
+  // Transfer from an AMM's sub-account to their owner's general account.
   TRANSFER_TYPE_AMM_SUBACCOUNT_HIGH = 50;
   // Transfer releasing an AMM's general account upon closure.
   TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE = 51;
@@ -1099,8 +1099,7 @@ enum IndividualScope {
   INDIVIDUAL_SCOPE_IN_TEAM = 2;
   // All parties that are not part of a team are within the scope of this reward.
   INDIVIDUAL_SCOPE_NOT_IN_TEAM = 3;
-  // All keys representing AMM parties, excluding those directly controlled by parties
-  // are within the scope of this reward.
+  // All keys representing AMMs are within the scope of this reward.
   INDIVIDUAL_SCOPE_AMM = 4;
 }
 
