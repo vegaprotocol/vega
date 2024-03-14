@@ -557,6 +557,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		transactionResults:            g.transactionResults,
 		gamesService:                  g.gamesService,
 		marginModesService:            g.marginModesService,
+		twNotionalPositionService:     g.timeWeightedNotionalPositionService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
