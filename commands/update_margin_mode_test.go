@@ -98,7 +98,7 @@ func TestUpdateMarginMode(t *testing.T) {
 				MarginFactor: &negativeMarginFactor,
 			},
 			"update_margin_mode.margin_factor",
-			commands.ErrMustBeBetween01,
+			commands.ErrMustBePositive,
 		},
 		{
 			"cross margin mode with 0 as margin factor",
@@ -107,16 +107,17 @@ func TestUpdateMarginMode(t *testing.T) {
 				MarginFactor: &zeroMarginFactor,
 			},
 			"update_margin_mode.margin_factor",
-			commands.ErrMustBeBetween01,
+			commands.ErrMustBePositive,
 		},
 		{
 			"cross margin mode with >1 as margin factor",
 			&commandspb.UpdateMarginMode{
 				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
 				MarginFactor: &largeMarginFactor101,
+				MarketId:     "123",
 			},
 			"update_margin_mode.margin_factor",
-			commands.ErrMustBeBetween01,
+			nil,
 		},
 		{
 			"cross margin mode with missing market id",
@@ -151,7 +152,7 @@ func TestUpdateMarginMode(t *testing.T) {
 	for _, v := range txs {
 		err := checkUpdateMarginMode(t, v.cmd)
 		if v.err == nil {
-			require.Empty(t, len(err))
+			require.Empty(t, len(err), v.name)
 		} else {
 			require.Contains(t, err.Get(v.errName), v.err, v.name)
 		}
