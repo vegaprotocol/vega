@@ -35,6 +35,9 @@
 - [10846](https://github.com/vegaprotocol/vega/issues/10846) - Change min requirement for margin factor.
 - [10754](https://github.com/vegaprotocol/vega/issues/10754) - Simplify margin calculation (remove order book slippage).
 - [10831](https://github.com/vegaprotocol/vega/issues/10831) - Add API for `notionalTimeWeightedAveragePosition`.
+- [10879](https://github.com/vegaprotocol/vega/issues/10879) - Upgrade to cometbft 0.38.6.
+- [10885](https://github.com/vegaprotocol/vega/issues/10885) - Allow margin factor to be any positive. 
+
 
 ### 🐛 Fixes
 
@@ -64,7 +67,11 @@
 - [10862](https://github.com/vegaprotocol/vega/issues/10862) - Add witness configuration for node vote resend interval.
 - [10852](https://github.com/vegaprotocol/vega/issues/10852) - Fix order margin account release issue (isolated margin mode).
 - [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot.
+- [10864](https://github.com/vegaprotocol/vega/issues/10864) - Fix snapshot non determinism for pegged orders. 
 - [10877](https://github.com/vegaprotocol/vega/issues/10877) - Fix event binding for time weight event.
+- [10882](https://github.com/vegaprotocol/vega/issues/10882) - Fix data-node panic due to event sequence not being set.
+- [10895](https://github.com/vegaprotocol/vega/issues/10895) - Initialise `tw notional` service in data node. 
+
 ## 0.74.3
 
 ### 🛠 Improvements
