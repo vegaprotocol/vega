@@ -812,7 +812,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	teams := cmocks.NewMockTeams(ctrl)
 	balanceChecker := cmocks.NewMockAccountBalanceChecker(ctrl)
 
-	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
 	eng := New(logging.NewTestLogger(), broker, col, market, risk, pos, num.UintOne(), num.DecimalOne(), mat)
 
