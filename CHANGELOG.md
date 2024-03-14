@@ -70,6 +70,7 @@
 - [10864](https://github.com/vegaprotocol/vega/issues/10864) - Fix snapshot non determinism for pegged orders. 
 - [10877](https://github.com/vegaprotocol/vega/issues/10877) - Fix event binding for time weight event.
 - [10882](https://github.com/vegaprotocol/vega/issues/10882) - Fix data-node panic due to event sequence not being set.
+- [10895](https://github.com/vegaprotocol/vega/issues/10895) - Initialise `tw notional` service in data node. 
 
 ## 0.74.3
 
