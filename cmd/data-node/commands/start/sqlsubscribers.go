@@ -245,6 +245,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.vestingSummarySub,
 		s.transactionResultsSub,
 		s.marginModesSub,
+		s.timeWeightedNotionalPositionSub,
 	}
 }
 
@@ -305,6 +306,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.partyVestingBalancesStore = sqlstore.NewPartyVestingBalances(transactionalConnectionSource)
 	s.gamesStore = sqlstore.NewGames(transactionalConnectionSource)
 	s.marginModesStore = sqlstore.NewMarginModes(transactionalConnectionSource)
+	s.timeWeightedNotionalPositionStore = sqlstore.NewTimeWeightedNotionalPosition(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
