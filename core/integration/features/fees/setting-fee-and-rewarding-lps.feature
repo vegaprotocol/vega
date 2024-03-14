@@ -7,15 +7,15 @@ Feature: Test liquidity provider reward distribution
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 500         | 500           | 0.1                    |
     And the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.00             | 24h         | 1              |  
-      
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 0.00             | 24h         | 1              |
+
     And the following network parameters are set:
-      | name                                          | value |
-      | market.value.windowLength                     | 1h    |
-      | network.markPriceUpdateMaximumFrequency       | 1s    |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | limits.markets.maxPeggedOrders                | 612   |
+      | name                                    | value |
+      | market.value.windowLength               | 1h    |
+      | network.markPriceUpdateMaximumFrequency | 1s    |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 612   |
     And the log normal risk model named "lognormal-risk-model-1":
       | risk aversion | tau  | mu | r   | sigma |
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
@@ -354,6 +354,7 @@ Feature: Test liquidity provider reward distribution
     When the network moves ahead "6" blocks
     # lp2 has increased their liquidity score by placing limit orders closer to the mid (and within price monitoring bounds),
     # hence their fee share is larger (and no longer 0) now.
+    # 0034-PROB-005
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC22 | 24     | ETH   |
@@ -635,7 +636,7 @@ Feature: Test liquidity provider reward distribution
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the target stake should be "7200" for the market "ETH/DEC21"
     And the supplied stake should be "20000" for the market "ETH/DEC21"
-     #AC 0042-LIQF-024:lp4 joining a market that is above the target stake with a commitment large enough to push one of two higher bids above the target stake, and a higher fee bid than the current fee: the fee doesn't change
+    #AC 0042-LIQF-024:lp4 joining a market that is above the target stake with a commitment large enough to push one of two higher bids above the target stake, and a higher fee bid than the current fee: the fee doesn't change
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
       | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | submission |
