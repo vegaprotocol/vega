@@ -185,7 +185,7 @@ func NewMarketFromSnapshot(
 
 	if em.Closed {
 		market.closed = true
-		stateVarEngine.UnregisterStateVariable(baseAsset+"_"+quoteAsset, mkt.ID)
+		stateVarEngine.UnregisterStateVariable(quoteAsset, mkt.ID)
 	}
 	return market, nil
 }
