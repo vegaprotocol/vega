@@ -96,8 +96,8 @@ Feature: Spot market
 
    And the orders should have the following states:
     | party  | market id | reference | side | volume | remaining | price | status         |
-    | party1 | BTC/ETH   | buy1      | buy  | 1      | 0         | 1006  | STATUS_FILLED  |
+    | party1 | BTC/ETH   | buy1      | buy  | 1      | 1         | 1006  | STATUS_ACTIVE  |
     | party5 | BTC/ETH   | sell1     | sell | 1      | 0         | 1006  | STATUS_FILLED  |
     | party2 | BTC/ETH   | buy2      | buy  | 5      | 0         | 1007  | STATUS_FILLED  |
-    | party4 | BTC/ETH   | sell2     | sell | 5      | 0         | 1007  | STATUS_FILLED  |
+    | party4 | BTC/ETH   | sell2     | sell | 5      | 1         | 1007  | STATUS_ACTIVE  |
 
