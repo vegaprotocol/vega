@@ -533,9 +533,20 @@ func (t *TradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
+	// By default we will require a valid date range for this API to help the database find the appropriate data without scanning the entire table
+	dateRangeRequired := true
+
+	// If a pagination object is provided and there is a cursor, a reference date is available from the cursor
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
+	}
+	if (pagination.HasForward() && pagination.Forward.HasCursor()) || (pagination.HasBackward() && pagination.Backward.HasCursor()) {
+		dateRangeRequired = false
+	}
+
+	if err = dateRange.Validate(dateRangeRequired); err != nil {
+		return nil, formatE(ErrDateRangeValidationFailed, err)
 	}
 
 	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(ctx, filter, dateRange, pagination)
