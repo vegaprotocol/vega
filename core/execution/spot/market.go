@@ -2776,7 +2776,7 @@ func (m *Market) processFeesReleaseOnLeaveAuction(ctx context.Context) {
 	for _, party := range parties {
 		orders := m.matching.GetOrdersPerParty(party)
 		for _, o := range orders {
-			if o.Side == types.SideBuy {
+			if o.Side == types.SideBuy && o.PeggedOrder == nil {
 				transfer, err := m.orderHoldingTracker.ReleaseFeeFromHoldingAccount(ctx, o.ID, party, m.quoteAsset)
 				if err != nil {
 					m.log.Panic("failed to release fee from holding account at the end of an auction", logging.Order(o), logging.Error(err))
