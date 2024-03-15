@@ -52,6 +52,7 @@ var (
 		recurringTransfersKey,
 		scheduledTransfersKey,
 		primaryBridgeStateKey,
+		secondaryBridgeStateKey,
 		recurringGovTransfersKey,
 		scheduledGovTransfersKey,
 		transferFeeDiscountsKey,
@@ -94,21 +95,19 @@ func (e *Engine) serialisePrimaryBridgeState() ([]byte, error) {
 			},
 		},
 	}
-
 	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseSecondaryBridgeState() ([]byte, error) {
 	payload := types.Payload{
-		Data: &types.PayloadBankingPrimaryBridgeState{
+		Data: &types.PayloadBankingSecondaryBridgeState{
 			BankingBridgeState: &types.BankingBridgeState{
-				Active:      e.primaryBridgeState.active,
-				BlockHeight: e.primaryBridgeState.block,
-				LogIndex:    e.primaryBridgeState.logIndex,
+				Active:      e.secondaryBridgeState.active,
+				BlockHeight: e.secondaryBridgeState.block,
+				LogIndex:    e.secondaryBridgeState.logIndex,
 			},
 		},
 	}
-
 	return proto.Marshal(payload.IntoProto())
 }
 
