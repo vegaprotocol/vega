@@ -1,6 +1,8 @@
 Feature: Probability of trading decreases away from the mid-price in Spot market
 
-  Scenario: 001 0034-PROB-008
+  Scenario: 001 0034-PROB-008, lp1, lp2, lp3 are making the same amount of liuquidity commitment, but with different orders, lp1 places orders the furthest to mid while lp3 places orders closest to the mid
+  #when liquidity fee is distributed, lp1 gets the least liquidity fee while lp3 gets the most liquidity fee
+  #it demonstrates the fact that probability of trading decreases away from the mid-price in Spot market
 
     Given time is updated to "2023-07-20T00:00:00Z"
 
