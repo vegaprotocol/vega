@@ -707,7 +707,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 		return err
 	}
 
-	m.stateVarEngine.UnregisterStateVariable(m.baseAsset+"_"+m.quoteAsset, m.mkt.ID)
+	m.stateVarEngine.UnregisterStateVariable(m.quoteAsset, m.mkt.ID)
 	if len(clearMarketTransfers) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
 	}
@@ -2604,7 +2604,7 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 		return
 	}
 
-	m.stateVarEngine.UnregisterStateVariable(m.baseAsset+"_"+m.quoteAsset, m.mkt.ID)
+	m.stateVarEngine.UnregisterStateVariable(m.quoteAsset, m.mkt.ID)
 	if len(tresps) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, tresps))
 	}
