@@ -593,7 +593,15 @@ type Query {
   balanceChanges(
     "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
     filter: AccountFilter
-    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
+    """
+    Date range to retrieve historical balances from/to.
+    Start and end time should be expressed as an integer value of Unix nanoseconds.
+    If a cursor is not provided in the pagination controls,
+    the date range must be provided with a start or end date, or both.
+    The date range is inclusive of the start date and exclusive of the end date.
+    The date range must be no more than 1 year in duration.
+    Dates before 2020-01-01 will not be accepted.
+    """
     dateRange: DateRange
     "Optional pagination information"
     pagination: Pagination
