@@ -2808,7 +2808,16 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 		}
 
 		// release buyer's trade + fees quote quantity from the holding account
-		transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
+		var transfer *types.LedgerMovement
+		var err error
+		if m.as.IsMonitorAuction() || m.as.IsOpeningAuction() {
+			// in auction the buyer and seller split the fees, but that just means that total they need to have in the holding account
+			// is still quantity + fees/2 because the other half of the fees (the seller half) is paid out of what is supposed to go to the seller
+			transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccountAuctionEnd(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
+		} else {
+			transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
+		}
+
 		if err != nil {
 			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
 		}
