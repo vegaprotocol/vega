@@ -139,7 +139,7 @@ func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccount(ctx context.Cont
 	total := num.Sum(quantity, fee)
 	if !fee.IsZero() {
 		lockedFee, ok := hat.orderIDToFee[orderID]
-		if !ok || (!lockedFee.IsZero() && lockedFee.LT(fee)) {
+		if !ok || lockedFee.LT(fee) {
 			return nil, fmt.Errorf("insufficient locked fee to release for order %s", orderID)
 		}
 	}
