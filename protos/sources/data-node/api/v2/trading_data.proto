@@ -1568,7 +1568,11 @@ message ListBalanceChangesRequest {
   AccountFilter filter = 1;
   // Pagination controls.
   optional Pagination pagination = 5;
-  // Date range over which to query.
+  // Date range over which to query. If a cursor is not provided in the pagination controls,
+  // the date range must be provided with a start or end date, or both.
+  // The date range is inclusive of the start date and exclusive of the end date.
+  // The date range must be no more than 1 year in duration.
+  // Dates before 2020-01-01 will not be accepted.
   optional DateRange date_range = 6;
 }
 
