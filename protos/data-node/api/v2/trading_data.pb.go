@@ -3883,7 +3883,11 @@ type ListBalanceChangesRequest struct {
 	Filter *AccountFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Date range over which to query.
+	// Date range over which to query. If a cursor is not provided in the pagination controls,
+	// the date range must be provided with a start or end date, or both.
+	// The date range is inclusive of the start date and exclusive of the end date.
+	// The date range must be no more than 1 year in duration.
+	// Dates before 2020-01-01 will not be accepted.
 	DateRange *DateRange `protobuf:"bytes,6,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
 }
 
