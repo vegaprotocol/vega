@@ -196,24 +196,27 @@ Feature: Spot market matching engine
             | party1 | buy-15-self | 15    | 1          | TIF_GFA | OrderError: Invalid Order ID |
             | party1 | party1-GTT  | 8     | 1          | TIF_GFA | OrderError: Invalid Order ID |
 
-        #0068-MATC-092:
+        #0068-MATC-092:The TIF of any persistent order can be updated to and from GTC and GTT only. Expiry time is required if amending to GTT and must not be given if amending to GTC.
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | expires in |
             | party1 | BTC/ETH   | buy  | 1      | 12    | 0                | TYPE_LIMIT | TIF_GTT | party1-GTT-1 | 2          |
             | party1 | BTC/ETH   | buy  | 1      | 12    | 0                | TYPE_LIMIT | TIF_GTC | party1-GTC-1 |            |
+            | party1 | BTC/ETH   | buy  | 1      | 12    | 0                | TYPE_LIMIT | TIF_GFN | party1-GFN-1 |            |
 
         When the parties amend the following orders:
-            | party  | reference    | price | size delta | tif     | error |
-            | party1 | party1-GTT-1 | 12    | 0          | TIF_GTC |       |
+            | party  | reference    | price | size delta | tif     | error                                        |
+            | party1 | party1-GTT-1 | 12    | 0          | TIF_GTC |                                              |
+            | party1 | party1-GFN-1 | 12    | 0          | TIF_GTC | OrderError: Cannot amend TIF from GFA or GFN |
+            | party1 | party1-GFN-1 | 12    | 0          | TIF_GFA | OrderError: Cannot amend TIF to GFA or GFN   |
         When the parties amend the following orders:
-            | party  | reference    | price | size delta | tif     | expires in | error |
-            | party1 | party1-GTC-1 | 12    | 0          | TIF_GTT | 5          |       |
+            | party  | reference    | price | size delta | tif     | expiration date      | error |
+            | party1 | party1-GTC-1 | 12    | 0          | TIF_GTT | 2030-11-30T00:00:00Z |       |
 
         Then the network moves ahead "4" blocks
         Then the orders should have the following status:
-            | party  | reference    | status           |
-            | party1 | party1-GTT-1 | STATUS_ACTIVE    |
-            | party1 | party1-GTC-1 | STATUS_CANCELLED |
+            | party  | reference    | status        |
+            | party1 | party1-GTT-1 | STATUS_ACTIVE |
+            | party1 | party1-GTC-1 | STATUS_ACTIVE |
 
 
 
