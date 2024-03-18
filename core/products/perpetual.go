@@ -87,6 +87,10 @@ func (a *auctionIntervals) update(t int64, enter bool) {
 
 		a.auctions = slices.Delete(a.auctions, len(a.auctions)-2, len(a.auctions))
 		a.auctionStart = st
+
+		// now we've "re-opened" this auction period, remove its contribution from
+		// the cached total of completed auction periods.
+		a.total -= (nd - st)
 		return
 	}
 
