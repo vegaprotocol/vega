@@ -203,13 +203,15 @@ type DepositStatus = vegapb.Deposit_Status
 
 const (
 	// DepositStatusUnspecified Default value, always invalid.
-	DepositStatusUnspecified DepositStatus = 0
+	DepositStatusUnspecified DepositStatus = vegapb.Deposit_STATUS_UNSPECIFIED
 	// DepositStatusOpen The deposit is being processed by the network.
-	DepositStatusOpen DepositStatus = 1
-	// DepositStatusCancelled The deposit has been cancelled by the network.
-	DepositStatusCancelled DepositStatus = 2
+	DepositStatusOpen DepositStatus = vegapb.Deposit_STATUS_OPEN
+	// DepositStatusCancelled The deposit has been cancelled or failed to be verified by the network.
+	DepositStatusCancelled DepositStatus = vegapb.Deposit_STATUS_CANCELLED
 	// DepositStatusFinalized The deposit has been finalised and accounts have been updated.
-	DepositStatusFinalized DepositStatus = 3
+	DepositStatusFinalized DepositStatus = vegapb.Deposit_STATUS_FINALIZED
+	// DepositStatusDuplicateRejected The deposit was rejected as a duplicate.
+	DepositStatusDuplicateRejected DepositStatus = vegapb.Deposit_STATUS_DUPLICATE_REJECTED
 )
 
 // Deposit represent a deposit on to the Vega network.

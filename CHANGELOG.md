@@ -72,6 +72,7 @@
 - [10882](https://github.com/vegaprotocol/vega/issues/10882) - Fix data-node panic due to event sequence not being set.
 - [10895](https://github.com/vegaprotocol/vega/issues/10895) - Initialise `tw notional` service in data node. 
 - [10904](https://github.com/vegaprotocol/vega/issues/10904) - Balance changes API should validate date range properly.
+- [10915](https://github.com/vegaprotocol/vega/issues/10915) - Fix duplicate deposit entries, add new `STATUS_DUPLICATE_REJECTED` status.
 
 ## 0.74.3
 

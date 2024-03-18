@@ -3861,10 +3861,12 @@ type Deposit {
 enum DepositStatus {
   "The deposit is open and being processed by the network"
   STATUS_OPEN
-  "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  "The deposit have been cancelled by the network, either because it expired, could not be verified, or something went wrong with the foreign chain"
   STATUS_CANCELLED
   "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
   STATUS_FINALIZED
+  "The deposit was rejected as a duplicate transaction"
+  STATUS_DUPLICATE_REJECTED
 }
 
 "Valid order types, these determine what happens when an order is added to the book"
