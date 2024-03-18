@@ -53,6 +53,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | market    | margin_mode     | margin_factor |
       | party1 | ETH/FEB23 | isolated margin | 0.6           |
 
+    #maintenance margin level: 15900*10*(0.1+0.25)=55650
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party1 | ETH/FEB23 | 55650       | 0      | 66780   | 0       | isolated margin | 0.6           | 76320 |
@@ -87,6 +88,11 @@ Feature: Test mark price changes and closeout under isolated margin mode
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
       | party1 | USD   | ETH/FEB23 | 151920 | 780     | 0            |
+
+    #maintenance margin level: 17000*10*(0.1+0.25)=59500????
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 107100      | 0      | 128520  | 0       | isolated margin | 0.6           | 0     |
 
     And the following transfers should happen:
       | from   | to              | from account            | to account              | market id | amount | asset |
