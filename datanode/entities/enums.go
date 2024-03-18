@@ -445,10 +445,11 @@ func (s *MarketState) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 type DepositStatus vega.Deposit_Status
 
 const (
-	DepositStatusUnspecified = DepositStatus(vega.Deposit_STATUS_UNSPECIFIED)
-	DepositStatusOpen        = DepositStatus(vega.Deposit_STATUS_OPEN)
-	DepositStatusCancelled   = DepositStatus(vega.Deposit_STATUS_CANCELLED)
-	DepositStatusFinalized   = DepositStatus(vega.Deposit_STATUS_FINALIZED)
+	DepositStatusUnspecified       = DepositStatus(vega.Deposit_STATUS_UNSPECIFIED)
+	DepositStatusOpen              = DepositStatus(vega.Deposit_STATUS_OPEN)
+	DepositStatusCancelled         = DepositStatus(vega.Deposit_STATUS_CANCELLED)
+	DepositStatusFinalized         = DepositStatus(vega.Deposit_STATUS_FINALIZED)
+	DepositStatusDuplicateRejected = DepositStatus(vega.Deposit_STATUS_DUPLICATE_REJECTED)
 )
 
 func (s DepositStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

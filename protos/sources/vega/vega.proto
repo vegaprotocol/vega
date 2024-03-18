@@ -742,10 +742,12 @@ message Deposit {
     STATUS_UNSPECIFIED = 0;
     // Deposit is being processed by the network
     STATUS_OPEN = 1;
-    // Deposit has been cancelled by the network
+    // Deposit has been cancelled or failed to be verified by the network
     STATUS_CANCELLED = 2;
     // Deposit has been finalised and accounts have been updated
     STATUS_FINALIZED = 3;
+    // Deposit has been rejected as a duplicate transaction.
+    STATUS_DUPLICATE_REJECTED = 4;
   }
 
   // Unique ID for the deposit.
