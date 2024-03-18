@@ -89,7 +89,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | asset | market id | margin | general | order margin |
       | party1 | USD   | ETH/FEB23 | 151920 | 780     | 0            |
 
-    #maintenance margin level: 17000*10*(0.1+0.25)=59500????
+    #maintenance margin level: 17000*18*(0.1+0.25)=107100
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party1 | ETH/FEB23 | 107100      | 0      | 128520  | 0       | isolated margin | 0.6           | 0     |
@@ -108,6 +108,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | mark price | trading mode            |
       | 17000      | TRADING_MODE_CONTINUOUS |
     And the network moves ahead "1" blocks
+    #maintenance margin level: 20000*18*(0.1+0.25)=126000
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
