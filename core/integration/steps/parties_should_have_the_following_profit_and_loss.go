@@ -53,6 +53,9 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 			p, err := positionService.GetPositionsByMarketAndParty(row.market(), party)
 			pos = []*types.Position{p}
 			if err != nil {
+				if row.volume() == 0 && row.realisedPNL().IsZero() && row.unrealisedPNL().IsZero() {
+					return nil
+				}
 				return errCannotGetPositionForParty(party, err)
 			}
 		} else {
@@ -60,6 +63,9 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 		}
 
 		if err != nil {
+			if row.volume() == 0 && row.realisedPNL().IsZero() && row.unrealisedPNL().IsZero() {
+				return nil
+			}
 			return errCannotGetPositionForParty(party, err)
 		}
 
@@ -79,6 +85,9 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 	}
 
 	if len(pos) == 0 {
+		if row.volume() == 0 && row.realisedPNL().IsZero() && row.unrealisedPNL().IsZero() {
+			return nil
+		}
 		return errNoPositionForMarket(row.party())
 	}
 
