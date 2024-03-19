@@ -387,7 +387,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price should be "133000" for the market "ETH/DEC21"
 
-    Scenario: Non-persistent order results in no trades. Persistent order which results in an n-th trade braching the trigger and causing auction - all previous n-1 trades get executed.
+    Scenario: Non-persistent order results in no trades. Persistent order which results in an n-th trade breaching the trigger and causing auction - all previous n-1 trades get executed.
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
       | party1 | ETH   | 10000000000  |
