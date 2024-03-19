@@ -1,14 +1,28 @@
 # Changelog
 
-## Unreleased 0.75.0
+## Unreleased 0.76.0
 
 ### 🚨 Breaking changes
 
-- [10635](https://github.com/vegaprotocol/vega/issues/10635) - Add support for tick size
+- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
 
 ### 🗑️ Deprecation
 
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+### 🛠 Improvements
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+
+### 🐛 Fixes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+
+## 0.75.0
+
+### 🚨 Breaking changes
+
+- [10635](https://github.com/vegaprotocol/vega/issues/10635) - Add support for tick size
 
 ### 🛠 Improvements
 
@@ -37,7 +51,6 @@
 - [10831](https://github.com/vegaprotocol/vega/issues/10831) - Add API for `notionalTimeWeightedAveragePosition`.
 - [10879](https://github.com/vegaprotocol/vega/issues/10879) - Upgrade to cometbft 0.38.6.
 - [10885](https://github.com/vegaprotocol/vega/issues/10885) - Allow margin factor to be any positive.
-
 
 ### 🐛 Fixes
 
