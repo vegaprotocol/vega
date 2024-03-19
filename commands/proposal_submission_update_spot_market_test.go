@@ -78,6 +78,7 @@ func TestCheckProposalSubmissionForUpdateSpotMarket(t *testing.T) {
 	t.Run("Submitting a spot market update with invalid hysteresis epochs fails", testUpdateSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a spot market update with valid hysteresis epochs succeeds", testUpdateSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
 	t.Run("Submitting a spot market update with invalid tick size fails and valid tick size succeeds", testUpdateSpotMarketTickSize)
+	t.Run("Submitting a spot market update without instrument name or code fails", testUpdateSpotMarketChangeSubmissionWithoutInstrumentNameFails)
 }
 
 func testUpdateSpotMarketTickSize(t *testing.T) {
@@ -1240,4 +1241,31 @@ func testUpdateSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSuc
 		},
 	})
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
+}
+
+func testUpdateSpotMarketChangeSubmissionWithoutInstrumentNameFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_UpdateSpotMarket{
+				UpdateSpotMarket: &protoTypes.UpdateSpotMarket{
+					Changes: &protoTypes.UpdateSpotMarketConfiguration{},
+				},
+			},
+		},
+	})
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.instrument"), commands.ErrIsRequired)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_UpdateSpotMarket{
+				UpdateSpotMarket: &protoTypes.UpdateSpotMarket{
+					Changes: &protoTypes.UpdateSpotMarketConfiguration{
+						Instrument: &protoTypes.UpdateSpotInstrumentConfiguration{},
+					},
+				},
+			},
+		},
+	})
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.instrument.code"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.instrument.name"), commands.ErrIsRequired)
 }
