@@ -157,7 +157,7 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 		return nil, nil
 	case *types.PayloadEthOracleLastBlock:
 		lastEthBlock := pl.EthOracleLastBlock
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.9") {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.10") {
 			// use a recent time instead here to skip unneeded blocks
 			lastEthBlock = &types.EthBlock{
 				Height: 19384217,
@@ -176,11 +176,6 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 }
 
 func (s *Verifier) OnStateLoaded(ctx context.Context) error {
-	// ensure patch block is set to lastBlock
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.9") {
-		s.patchBlock = s.lastBlock
-	}
-
 	// tell the eth call engine what the last block seen was, so it does not re-trigger calls
 	if s.lastBlock != nil && s.lastBlock.Height > 0 {
 		s.ethEngine.StartAtHeight(s.lastBlock.Height, s.lastBlock.Time)
