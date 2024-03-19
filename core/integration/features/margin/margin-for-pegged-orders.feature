@@ -126,7 +126,7 @@ Feature: Test pegged order amend under isolated margin mode
             | test_party | sell_ice_peg | STATUS_CANCELLED |
         And the parties should have the following margin levels:
             | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-            | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.91          | 0     |
+            | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.5           | 0     |
         And the parties should have the following account balances:
             | party      | asset | market id | margin | general | order margin |
             | test_party | USD   | ETH/FEB23 | 0      | 100000  | 0            |
@@ -197,6 +197,14 @@ Feature: Test pegged order amend under isolated margin mode
             | party      | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
             | test_party | ETH/FEB23 | 2000        | 2200   | 2400    | 2800    | cross margin |               | 0     |
 
+        And the average fill price is:
+            | market     | volume | side | ref price | mark price | equivalent linear slippage factor |
+            | ETH/FEB23  | 20     | sell | 1000      | 1000       | 0.002                             |
+        # update linear slippage factor in line with what book-based slippage used to be
+        And the markets are updated:
+            | id          | linear slippage factor |
+            | ETH/FEB23   | 0.002                  |
+
         Given the parties should have the following account balances:
             | party      | asset | market id | margin | general |
             | test_party | USD   | ETH/FEB23 | 2400   | 97600   |
@@ -208,7 +216,8 @@ Feature: Test pegged order amend under isolated margin mode
             | test_party | sell_peg  | STATUS_CANCELLED |
         And the parties should have the following margin levels:
             | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-            | test_party | ETH/FEB23 | 1050        | 0      | 1260    | 0       | isolated margin | 0.91          | 0     |
+            | test_party | ETH/FEB23 | 1020        | 0      | 1224    | 0       | isolated margin | 0.91          | 0     |
+        
         And the parties should have the following account balances:
             | party      | asset | market id | margin | general | order margin |
             | test_party | USD   | ETH/FEB23 | 9100   | 90900   | 0            |
@@ -240,7 +249,7 @@ Feature: Test pegged order amend under isolated margin mode
             | test_party | sell_ice_peg | STATUS_CANCELLED |
         And the parties should have the following margin levels:
             | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-            | test_party | ETH/FEB23 | 1050        | 0      | 1260    | 0       | isolated margin | 0.91          | 0     |
+            | test_party | ETH/FEB23 | 3500        | 0      | 4200    | 0       | isolated margin | 0.91          | 0     |
         And the parties should have the following account balances:
             | party      | asset | market id | margin | general | order margin |
             | test_party | USD   | ETH/FEB23 | 9100   | 90900   | 0            |

@@ -11,8 +11,8 @@ Feature: Simple Spot Order between two parties match successfully
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the spot markets:
-      | id      | name    | base asset | quote asset | risk model           | auction duration | fees          | price monitoring | sla params    |
-      | BTC/ETH | BTC/ETH | BTC        | ETH         | my-simple-risk-model | 1                | fees-config-1 | default-none     | default-basic |
+      | id      | name    | base asset | quote asset | risk model           | auction duration | fees          | price monitoring | sla params    | tick size |
+      | BTC/ETH | BTC/ETH | BTC        | ETH         | my-simple-risk-model | 1                | fees-config-1 | default-none     | default-basic |     1     |
 
 
     # setup accounts

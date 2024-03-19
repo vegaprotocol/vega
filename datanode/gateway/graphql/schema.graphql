@@ -359,7 +359,7 @@ type MarketData {
   priceMonitoringBounds: [PriceMonitoringBounds!]
   "The market value proxy"
   marketValueProxy: String!
-  "The equity like share of liquidity fee for each liquidity provider"
+  "The equity-like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
   "SLA performance statistics"
   liquidityProviderSla: [LiquidityProviderSLA!]
@@ -431,7 +431,7 @@ type ObservableMarketData {
   priceMonitoringBounds: [PriceMonitoringBounds!]
   "The market value proxy"
   marketValueProxy: String!
-  "The equity like share of liquidity fee for each liquidity provider"
+  "The equity-like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
   "SLA performance statistics"
   liquidityProviderSla: [ObservableLiquidityProviderSLA!]
@@ -461,7 +461,7 @@ type MarketTimestamps {
   close: Timestamp!
 }
 
-"The equity like share of liquidity fee for each liquidity provider"
+"The equity-like share of liquidity fee for each liquidity provider"
 type LiquidityProviderFeeShare {
   "The liquidity provider party ID"
   party: Party!
@@ -475,7 +475,7 @@ type LiquidityProviderFeeShare {
   virtualStake: String!
 }
 
-"The equity like share of liquidity fee for each liquidity provider"
+"The equity-like share of liquidity fee for each liquidity provider"
 type ObservableLiquidityProviderFeeShare {
   "The liquidity provider party ID"
   partyId: ID!
@@ -593,7 +593,15 @@ type Query {
   balanceChanges(
     "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
     filter: AccountFilter
-    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
+    """
+    Date range to retrieve historical balances from/to.
+    Start and end time should be expressed as an integer value of Unix nanoseconds.
+    If a cursor is not provided in the pagination controls,
+    the date range must be provided with a start or end date, or both.
+    The date range is inclusive of the start date and exclusive of the end date.
+    The date range must be no more than 1 year in duration.
+    Dates before 2020-01-01 will not be accepted.
+    """
     dateRange: DateRange
     "Optional pagination information"
     pagination: Pagination
@@ -1184,6 +1192,18 @@ type Query {
     pagination: Pagination
   ): TeamRefereeHistoryConnection
 
+  "Time weighted notional position is a metric used to determine if a reward should be paid to a party"
+  timeWeightedNotionalPosition(
+    "Settlement asset for the position"
+    assetId: ID!
+    "Party holding the position"
+    partyId: ID!
+    "Game to filter for"
+    gameId: ID!
+    "Optional epoch to filter for. If no epoch is specified, the time weighted notional position from the end of the most recently completed epoch is returned."
+    epochSeq: Int
+  ): TimeWeightedNotionalPosition
+
   "Get total transfer fee discount available"
   totalTransferFeeDiscount(
     "ID of party eligible for the discount."
@@ -1221,6 +1241,10 @@ type Query {
     scope: TransferScope
     "Optional game ID to filter for"
     gameId: ID
+    "Optional from account type to filter for"
+    fromAccountType: AccountType
+    "Optional to account type to filter for"
+    toAccountType: AccountType
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -1452,6 +1476,9 @@ type DispatchStrategy {
 
   "Ascending order list of start rank and corresponding share ratio"
   rankTable: [RankTable]
+
+  "Optional multiplier on taker fees used to cap the rewards a party may receive in an epoch"
+  capRewardFeeMultiple: String
 }
 
 type RankTable {
@@ -2618,6 +2645,9 @@ type Market {
 
   "Configuration driving the mark price for the market"
   markPriceConfiguration: CompositePriceConfiguration!
+
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 """
@@ -2908,6 +2938,10 @@ type Party {
     scope: TransferScope
     "Optional game ID to filter for"
     gameId: ID
+    "Optional from account type to filter for"
+    fromAccountType: AccountType
+    "Optional to account type to filter for"
+    toAccountType: AccountType
   ): TransferConnection
 
   "The activity streak"
@@ -3827,10 +3861,12 @@ type Deposit {
 enum DepositStatus {
   "The deposit is open and being processed by the network"
   STATUS_OPEN
-  "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  "The deposit have been cancelled by the network, either because it expired, could not be verified, or something went wrong with the foreign chain"
   STATUS_CANCELLED
   "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
   STATUS_FINALIZED
+  "The deposit was rejected as a duplicate transaction"
+  STATUS_DUPLICATE_REJECTED
 }
 
 "Valid order types, these determine what happens when an order is added to the book"
@@ -4003,7 +4039,7 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
   "The market is invalid"
   PROPOSAL_ERROR_INVALID_MARKET
-  "The proposal is rejected because the party does not have enough equity like share in the market"
+  "The proposal is rejected because the party does not have enough equity-like share in the market"
   PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
   "Unknown proposal type"
   PROPOSAL_ERROR_UNKNOWN_TYPE
@@ -4629,6 +4665,8 @@ type NewMarket {
   liquidationStrategy: LiquidationStrategy
   "Configuration for mark price calculation for the market"
   markPriceConfiguration: CompositePriceConfiguration!
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 type CompositePriceConfiguration {
@@ -4690,6 +4728,8 @@ type UpdateMarketConfiguration {
   liquidationStrategy: LiquidationStrategy
   "Configuration for mark price calculation for the market"
   markPriceConfiguration: CompositePriceConfiguration
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 type UpdateInstrumentConfiguration {
@@ -4917,6 +4957,8 @@ type NewSpotMarket {
   liquiditySLAParams: LiquiditySLAParameters!
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 "Update an existing spot market on Vega"
@@ -4940,6 +4982,8 @@ type UpdateSpotMarketConfiguration {
   liquiditySLAParams: LiquiditySLAParameters!
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 type LiquiditySLAParameters {
@@ -5220,7 +5264,7 @@ type ProposalVoteSide {
   totalWeight: String!
   "Total number of governance tokens from the votes cast for this side"
   totalTokens: String!
-  "Total equity like share weight for this side (only for UpdateMarket Proposals)"
+  "Total equity-like share weight for this side (only for UpdateMarket Proposals)"
   totalEquityLikeShareWeight: String!
 }
 
@@ -5251,7 +5295,17 @@ type Vote {
   "The weight of this vote based on the total of governance token"
   governanceTokenWeight: String!
 
-  "The weight of this vote based on the total equity like share"
+  "The weight of this vote based on the total equity-like share"
+  equityLikeShareWeight: String!
+
+  "The equity-like share weight per market (only for batch proposals)"
+  equityLikeSharePerMarket: [EquityLikeShareWeightPerMarket]
+}
+
+type EquityLikeShareWeightPerMarket {
+  "The market ID"
+  marketId: String!
+  "The equity-like share weight for this market"
   equityLikeShareWeight: String!
 }
 
@@ -5607,6 +5661,8 @@ type AggregatedLedgerEntry {
   fromAccountBalance: String!
   "Receiver account balance after the transfer"
   toAccountBalance: String!
+  "Transfer ID associated with this aggregated ledger entry"
+  transferId: ID!
 }
 
 type AggregatedLedgerEntriesEdge {
@@ -6106,7 +6162,7 @@ type LiquidityProvider {
   partyId: ID!
   "Market ID the liquidity provision is for"
   marketId: ID!
-  "Information used for calculating an LP's fee share, such as the equity like share, average entry valuation and liquidity score, for the given liquidity provider and market"
+  "Information used for calculating an LP's fee share, such as the equity-like share, average entry valuation and liquidity score, for the given liquidity provider and market"
   feeShare: LiquidityProviderFeeShare
   "SLA performance statistics"
   sla: LiquidityProviderSLA
@@ -7224,4 +7280,19 @@ type PartyMarginMode {
   maxTheoreticalLeverage: String
   "Epoch at which the update happened."
   atEpoch: Int!
+}
+
+type TimeWeightedNotionalPosition {
+  "Settlement asset for this position"
+  assetId: ID!
+  "Party holding the position"
+  partyId: ID!
+  "Game the time weighted notional position was calculated for"
+  gameId: ID!
+  "Epoch the time weighted notional position was calculated for"
+  epoch: Int!
+  "Time weighted notional position"
+  timeWeightedNotionalPosition: String!
+  "Time of the last block in which the metric was updated"
+  lastUpdated: Timestamp!
 }

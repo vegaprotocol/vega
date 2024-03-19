@@ -84,6 +84,7 @@ func (ledgerEntries *AggregatedLedgerEntry) ToProto() *v2.AggregatedLedgerEntry 
 	lep.ToAccountType = ledgerEntries.ToAccountType
 	lep.FromAccountBalance = ledgerEntries.FromAccountBalance.String()
 	lep.ToAccountBalance = ledgerEntries.ToAccountBalance.String()
+	lep.TransferId = ledgerEntries.TransferID.String()
 
 	return lep
 }

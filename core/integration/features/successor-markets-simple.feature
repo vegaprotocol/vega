@@ -78,10 +78,10 @@ Feature: Simple example of successor markets
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
-      | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
+      | trader1 | ETH   | ETH/DEC19 | 126362285504 | 9999999999999873637714496 |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search       | initial      | release      |
-      | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
+      | party   | market id | maintenance  |
+      | trader1 | ETH/DEC19 | 105301904587 |
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | submission |
@@ -134,10 +134,10 @@ Feature: Simple example of successor markets
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
-      | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
+      | trader1 | ETH   | ETH/DEC19 | 126362285504 | 9999999999999873637714496 |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search       | initial      | release      |
-      | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
+      | party   | market id | maintenance  |
+      | trader1 | ETH/DEC19 | 105301904587 |
     # LP submissions are being made on both pending markets
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
@@ -218,10 +218,10 @@ Feature: Simple example of successor markets
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
-      | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
+      | trader1 | ETH   | ETH/DEC19 | 126362285504 | 9999999999999873637714496 |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search       | initial      | release      |
-      | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
+      | party   | market id | maintenance  |
+      | trader1 | ETH/DEC19 | 105301904587 |
 
     # Parent market is still active at this point
     When the parties submit the following liquidity provision:
@@ -337,10 +337,10 @@ Feature: Simple example of successor markets
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
-      | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
+      | trader1 | ETH   | ETH/DEC19 | 126362285504 | 9999999999999873637714496 |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search       | initial      | release      |
-      | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
+      | party   | market id | maintenance  |
+      | trader1 | ETH/DEC19 | 105301904587 |
     # LP submissions are being made on both pending markets
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |

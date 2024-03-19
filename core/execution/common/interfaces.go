@@ -49,7 +49,7 @@ type OracleEngine interface {
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
-	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool) bool
+	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool, recordInHistory bool) bool
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -179,6 +179,7 @@ type Collateral interface {
 	ReleaseFromHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
 	ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error)
 	PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error
+	PartyCanCoverFees(asset, mktID, partyID string, amount *num.Uint) error
 	TransferSpot(ctx context.Context, partyID, toPartyID, asset string, quantity *num.Uint) (*types.LedgerMovement, error)
 	GetOrCreatePartyLiquidityFeeAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	GetPartyLiquidityFeeAccount(market, partyID, asset string) (*types.Account, error)
@@ -314,6 +315,7 @@ type CommonMarket interface {
 	BlockEnd(context.Context)
 	BeginBlock(context.Context)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
+	GetFillPrice(volume uint64, side types.Side) (*num.Uint, error)
 
 	IsOpeningAuction() bool
 

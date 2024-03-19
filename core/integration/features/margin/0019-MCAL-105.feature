@@ -58,8 +58,8 @@ Feature:  switch to isolated margin with position during auction
 
     #AC0019-MCAL-104: switch to isolated margin with position and no orders with margin factor such that position margin is < initial should fail in continuous
     And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error                                                                                     |
-      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
+      | party  | market    | margin_mode     | margin_factor | error                                                                                                                   |
+      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) + linearSlippageFactor (0.25) |
 
     #AC0019-MCAL-112:switch to isolated margin with position and no orders with margin factor such that there is insufficient balance in the general account in continuous mode
     And the parties submit update margin mode:
@@ -100,7 +100,7 @@ Feature:  switch to isolated margin with position during auction
     #AC0019-MCAL-105: switch to isolated margin with position and no orders with margin factor such that position margin is < initial should fail in auction
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                                                     |
-      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
+      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) + linearSlippageFactor (0.25) |
 
     When the network moves ahead "1" blocks
     #AC0019-MCAL-113:switch to isolated margin with position and no orders with margin factor such that there is insufficient balance in the general account in continuous mode

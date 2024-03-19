@@ -138,9 +138,9 @@ func (b *OrderBook) GetPeggedOrdersCount() uint64 {
 	return b.peggedOrdersCount
 }
 
-// GetCloseoutPrice returns the exit price which would be achieved for a given
+// GetFillPrice returns the average price which would be achieved for a given
 // volume and give side of the book.
-func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint, error) {
+func (b *OrderBook) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
 	if b.auction {
 		p := b.GetIndicativePrice()
 		return p, nil
@@ -629,6 +629,34 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 	}
 
 	return confs, err
+}
+
+func (b *OrderBook) CheckBook() bool {
+	if len(b.buy.levels) > 0 {
+		allPegged := true
+		for _, o := range b.buy.levels[len(b.buy.levels)-1].orders {
+			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestBid {
+				allPegged = false
+				break
+			}
+		}
+		if allPegged {
+			return false
+		}
+	}
+	if len(b.sell.levels) > 0 {
+		allPegged := true
+		for _, o := range b.sell.levels[len(b.sell.levels)-1].orders {
+			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestAsk {
+				allPegged = false
+				break
+			}
+		}
+		if allPegged {
+			return false
+		}
+	}
+	return true
 }
 
 // CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match

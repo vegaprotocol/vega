@@ -52,8 +52,8 @@ func checkUpdateMarginMode(cmd *commandspb.UpdateMarginMode) Errors {
 	if cmd.Mode == commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN && cmd.MarginFactor != nil && len(*cmd.MarginFactor) > 0 {
 		if factor, err := num.DecimalFromString(*cmd.MarginFactor); err != nil {
 			errs.AddForProperty("update_margin_mode.margin_factor", ErrIsNotValidNumber)
-		} else if factor.LessThanOrEqual(num.DecimalZero()) || factor.GreaterThan(num.DecimalOne()) {
-			errs.AddForProperty("update_margin_mode.margin_factor", ErrMustBeBetween01)
+		} else if factor.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("update_margin_mode.margin_factor", ErrMustBePositive)
 		}
 	}
 	if len(cmd.MarketId) == 0 {

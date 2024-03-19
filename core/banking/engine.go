@@ -110,8 +110,8 @@ type Topology interface {
 }
 
 type MarketActivityTracker interface {
-	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContributionScore
-	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
+	CalculateMetricForIndividuals(ctx context.Context, ds *vega.DispatchStrategy) []*types.PartyContributionScore
+	CalculateMetricForTeams(ctx context.Context, ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
 	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore
 	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
 	MarketTrackedForAsset(market, asset string) bool
@@ -331,6 +331,10 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 					logging.String("asset-class", ref.Asset),
 					logging.String("tx-hash", ref.Hash),
 					logging.String("action", v.String()))
+
+				if err := e.dedupAction(ctx, v); err != nil {
+					e.log.Error("unable to deduplicate action", logging.String("action", v.String()), logging.Error(err))
+				}
 			} else {
 				// first time we seen this transaction, let's add iter
 				e.seen.Add(refKey)
@@ -399,6 +403,22 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	}
 
 	return nil, ErrNotMatchingWithdrawalForReference
+}
+
+func (e *Engine) dedupAction(ctx context.Context, aa *assetAction) error {
+	switch {
+	case aa.IsBuiltinAssetDeposit():
+		dep := e.deposits[aa.id]
+		return e.dedupDeposit(ctx, dep)
+	case aa.IsERC20Deposit():
+		dep := e.deposits[aa.id]
+		return e.dedupDeposit(ctx, dep)
+	}
+	// the bridge stop/resume actions don't send events, and the asset listing/updates share the same
+	// underlying asset ID, so they don't result in duplicates. Only deposits need to be handled.
+	e.log.Warn("unable to deduplicate asset action",
+		logging.String("action", aa.String()))
+	return nil
 }
 
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
@@ -473,6 +493,12 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 	d.Status = types.DepositStatusFinalized
 	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
 	e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
+	return nil
+}
+
+func (e *Engine) dedupDeposit(ctx context.Context, d *types.Deposit) error {
+	d.Status = types.DepositStatusDuplicateRejected
+	e.broker.Send(events.NewDepositEvent(ctx, *d))
 	return nil
 }
 

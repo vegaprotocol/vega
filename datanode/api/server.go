@@ -124,61 +124,62 @@ type GRPCServer struct {
 	srv                   *grpc.Server
 	vegaCoreServiceClient CoreServiceClient
 
-	eventService                  *subscribers.Service
-	coreProxySvc                  *coreProxyService
-	orderService                  *service.Order
-	candleService                 *candlesv2.Svc
-	networkLimitsService          *service.NetworkLimits
-	marketDataService             *service.MarketData
-	tradeService                  *service.Trade
-	AssetService                  AssetService
-	accountService                *service.Account
-	rewardService                 *service.Reward
-	marketsService                *service.Markets
-	delegationService             *service.Delegation
-	epochService                  *service.Epoch
-	depositService                *service.Deposit
-	withdrawalService             *service.Withdrawal
-	governanceService             *service.Governance
-	riskFactorService             *service.RiskFactor
-	riskService                   *service.Risk
-	networkParameterService       *service.NetworkParameter
-	blockService                  BlockService
-	partyService                  *service.Party
-	checkpointService             *service.Checkpoint
-	oracleSpecService             *service.OracleSpec
-	oracleDataService             *service.OracleData
-	liquidityProvisionService     *service.LiquidityProvision
-	positionService               *service.Position
-	transferService               *service.Transfer
-	stakeLinkingService           *service.StakeLinking
-	notaryService                 *service.Notary
-	multiSigService               *service.MultiSig
-	keyRotationService            *service.KeyRotations
-	ethereumKeyRotationService    *service.EthereumKeyRotation
-	nodeService                   *service.Node
-	marketDepthService            *service.MarketDepth
-	ledgerService                 *service.Ledger
-	protocolUpgradeService        *service.ProtocolUpgrade
-	networkHistoryService         NetworkHistoryService
-	coreSnapshotService           *service.SnapshotData
-	stopOrderService              *service.StopOrders
-	fundingPeriodService          *service.FundingPeriods
-	partyActivityStreak           *service.PartyActivityStreak
-	referralProgramService        *service.ReferralPrograms
-	referralSetsService           *service.ReferralSets
-	teamsService                  *service.Teams
-	vestingStatsService           *service.VestingStats
-	FeesStatsService              *service.FeesStats
-	fundingPaymentService         *service.FundingPayment
-	volumeDiscountStatsService    *service.VolumeDiscountStats
-	volumeDiscountProgramService  *service.VolumeDiscountPrograms
-	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
-	partyLockedBalances           *service.PartyLockedBalances
-	partyVestingBalances          *service.PartyVestingBalances
-	transactionResults            *service.TransactionResults
-	gamesService                  *service.Games
-	marginModesService            *service.MarginModes
+	eventService                        *subscribers.Service
+	coreProxySvc                        *coreProxyService
+	orderService                        *service.Order
+	candleService                       *candlesv2.Svc
+	networkLimitsService                *service.NetworkLimits
+	marketDataService                   *service.MarketData
+	tradeService                        *service.Trade
+	AssetService                        AssetService
+	accountService                      *service.Account
+	rewardService                       *service.Reward
+	marketsService                      *service.Markets
+	delegationService                   *service.Delegation
+	epochService                        *service.Epoch
+	depositService                      *service.Deposit
+	withdrawalService                   *service.Withdrawal
+	governanceService                   *service.Governance
+	riskFactorService                   *service.RiskFactor
+	riskService                         *service.Risk
+	networkParameterService             *service.NetworkParameter
+	blockService                        BlockService
+	partyService                        *service.Party
+	checkpointService                   *service.Checkpoint
+	oracleSpecService                   *service.OracleSpec
+	oracleDataService                   *service.OracleData
+	liquidityProvisionService           *service.LiquidityProvision
+	positionService                     *service.Position
+	transferService                     *service.Transfer
+	stakeLinkingService                 *service.StakeLinking
+	notaryService                       *service.Notary
+	multiSigService                     *service.MultiSig
+	keyRotationService                  *service.KeyRotations
+	ethereumKeyRotationService          *service.EthereumKeyRotation
+	nodeService                         *service.Node
+	marketDepthService                  *service.MarketDepth
+	ledgerService                       *service.Ledger
+	protocolUpgradeService              *service.ProtocolUpgrade
+	networkHistoryService               NetworkHistoryService
+	coreSnapshotService                 *service.SnapshotData
+	stopOrderService                    *service.StopOrders
+	fundingPeriodService                *service.FundingPeriods
+	partyActivityStreak                 *service.PartyActivityStreak
+	referralProgramService              *service.ReferralPrograms
+	referralSetsService                 *service.ReferralSets
+	teamsService                        *service.Teams
+	vestingStatsService                 *service.VestingStats
+	FeesStatsService                    *service.FeesStats
+	fundingPaymentService               *service.FundingPayment
+	volumeDiscountStatsService          *service.VolumeDiscountStats
+	volumeDiscountProgramService        *service.VolumeDiscountPrograms
+	paidLiquidityFeesStatsService       *service.PaidLiquidityFeesStats
+	partyLockedBalances                 *service.PartyLockedBalances
+	partyVestingBalances                *service.PartyVestingBalances
+	transactionResults                  *service.TransactionResults
+	gamesService                        *service.Games
+	marginModesService                  *service.MarginModes
+	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition
 
 	eventObserver *eventObserver
 
@@ -248,6 +249,7 @@ func NewGRPCServer(
 	transactionResults *service.TransactionResults,
 	gameService *service.Games,
 	marginModesService *service.MarginModes,
+	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -259,63 +261,64 @@ func NewGRPCServer(
 	}
 
 	return &GRPCServer{
-		log:                           log,
-		Config:                        config,
-		vegaCoreServiceClient:         coreServiceClient,
-		eventService:                  eventService,
-		orderService:                  orderService,
-		networkLimitsService:          networkLimitsService,
-		tradeService:                  tradeService,
-		AssetService:                  assetService,
-		accountService:                accountService,
-		rewardService:                 rewardService,
-		marketsService:                marketsService,
-		delegationService:             delegationService,
-		epochService:                  epochService,
-		depositService:                depositService,
-		withdrawalService:             withdrawalService,
-		multiSigService:               multiSigService,
-		governanceService:             governanceService,
-		riskFactorService:             riskFactorService,
-		networkParameterService:       networkParameterService,
-		blockService:                  blockService,
-		checkpointService:             checkpointService,
-		partyService:                  partyService,
-		candleService:                 candleService,
-		oracleSpecService:             oracleSpecService,
-		oracleDataService:             oracleDataService,
-		liquidityProvisionService:     liquidityProvisionService,
-		positionService:               positionService,
-		transferService:               transferService,
-		stakeLinkingService:           stakeLinkingService,
-		notaryService:                 notaryService,
-		keyRotationService:            keyRotationService,
-		ethereumKeyRotationService:    ethereumKeyRotationService,
-		nodeService:                   nodeService,
-		marketDepthService:            marketDepthService,
-		riskService:                   riskService,
-		marketDataService:             marketDataService,
-		ledgerService:                 ledgerService,
-		protocolUpgradeService:        protocolUpgradeService,
-		networkHistoryService:         networkHistoryService,
-		coreSnapshotService:           coreSnapshotService,
-		stopOrderService:              stopOrderService,
-		fundingPeriodService:          fundingPeriodService,
-		partyActivityStreak:           partyActivityStreak,
-		referralProgramService:        referralProgramService,
-		referralSetsService:           referralSetsService,
-		teamsService:                  teamsService,
-		vestingStatsService:           vestingStatsService,
-		FeesStatsService:              FeesStatsService,
-		fundingPaymentService:         fundingPaymentService,
-		volumeDiscountStatsService:    volumeDiscountStatsService,
-		volumeDiscountProgramService:  volumeDiscountProgramService,
-		paidLiquidityFeesStatsService: paidLiquidityFeesStatsService,
-		partyLockedBalances:           partyLockedBalances,
-		partyVestingBalances:          partyVestingBalances,
-		transactionResults:            transactionResults,
-		gamesService:                  gameService,
-		marginModesService:            marginModesService,
+		log:                                 log,
+		Config:                              config,
+		vegaCoreServiceClient:               coreServiceClient,
+		eventService:                        eventService,
+		orderService:                        orderService,
+		networkLimitsService:                networkLimitsService,
+		tradeService:                        tradeService,
+		AssetService:                        assetService,
+		accountService:                      accountService,
+		rewardService:                       rewardService,
+		marketsService:                      marketsService,
+		delegationService:                   delegationService,
+		epochService:                        epochService,
+		depositService:                      depositService,
+		withdrawalService:                   withdrawalService,
+		multiSigService:                     multiSigService,
+		governanceService:                   governanceService,
+		riskFactorService:                   riskFactorService,
+		networkParameterService:             networkParameterService,
+		blockService:                        blockService,
+		checkpointService:                   checkpointService,
+		partyService:                        partyService,
+		candleService:                       candleService,
+		oracleSpecService:                   oracleSpecService,
+		oracleDataService:                   oracleDataService,
+		liquidityProvisionService:           liquidityProvisionService,
+		positionService:                     positionService,
+		transferService:                     transferService,
+		stakeLinkingService:                 stakeLinkingService,
+		notaryService:                       notaryService,
+		keyRotationService:                  keyRotationService,
+		ethereumKeyRotationService:          ethereumKeyRotationService,
+		nodeService:                         nodeService,
+		marketDepthService:                  marketDepthService,
+		riskService:                         riskService,
+		marketDataService:                   marketDataService,
+		ledgerService:                       ledgerService,
+		protocolUpgradeService:              protocolUpgradeService,
+		networkHistoryService:               networkHistoryService,
+		coreSnapshotService:                 coreSnapshotService,
+		stopOrderService:                    stopOrderService,
+		fundingPeriodService:                fundingPeriodService,
+		partyActivityStreak:                 partyActivityStreak,
+		referralProgramService:              referralProgramService,
+		referralSetsService:                 referralSetsService,
+		teamsService:                        teamsService,
+		vestingStatsService:                 vestingStatsService,
+		FeesStatsService:                    FeesStatsService,
+		fundingPaymentService:               fundingPaymentService,
+		volumeDiscountStatsService:          volumeDiscountStatsService,
+		volumeDiscountProgramService:        volumeDiscountProgramService,
+		paidLiquidityFeesStatsService:       paidLiquidityFeesStatsService,
+		partyLockedBalances:                 partyLockedBalances,
+		partyVestingBalances:                partyVestingBalances,
+		transactionResults:                  transactionResults,
+		gamesService:                        gameService,
+		marginModesService:                  marginModesService,
+		timeWeightedNotionalPositionService: timeWeightedNotionalPositionService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -554,6 +557,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		transactionResults:            g.transactionResults,
 		gamesService:                  g.gamesService,
 		marginModesService:            g.marginModesService,
+		twNotionalPositionService:     g.timeWeightedNotionalPositionService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

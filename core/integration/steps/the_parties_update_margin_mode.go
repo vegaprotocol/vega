@@ -44,13 +44,16 @@ func ThePartiesUpdateMarginMode(
 		if r.HasColumn("margin_factor") && marginMode == types.MarginModeIsolatedMargin {
 			factor = num.MustDecimalFromString(r.MustStr("margin_factor"))
 		}
+		expErr := ""
+		if r.HasColumn("error") && len(r.Str("error")) > 0 {
+			expErr = r.Str("error")
+		}
 		err := execution.UpdateMarginMode(context.Background(), party, market, marginMode, factor)
-		if r.HasColumn("error") && len(r.Str("error")) > 0 && (err == nil || err != nil && r.Str("error") != err.Error()) {
-			gotError := ""
-			if err != nil {
-				gotError = err.Error()
-			}
-			return fmt.Errorf("invalid error expected %v got %v", r.Str("error"), gotError)
+		if err != nil && len(expErr) == 0 {
+			return fmt.Errorf("unexpected error when updating margin mode: %v", err)
+		}
+		if len(expErr) > 0 && (err == nil || err != nil && expErr != err.Error()) {
+			return fmt.Errorf("invalid error expected %v got %v", expErr, err)
 		}
 	}
 

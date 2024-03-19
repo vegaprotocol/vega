@@ -53,6 +53,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | market    | margin_mode     | margin_factor |
       | party1 | ETH/FEB23 | isolated margin | 0.6           |
 
+    #maintenance margin level: 15900*10*(0.1+0.25)=55650
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party1 | ETH/FEB23 | 55650       | 0      | 66780   | 0       | isolated margin | 0.6           | 76320 |
@@ -88,6 +89,11 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | asset | market id | margin | general | order margin |
       | party1 | USD   | ETH/FEB23 | 151920 | 780     | 0            |
 
+    #maintenance margin level: 17000*18*(0.1+0.25)=107100
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 107100      | 0      | 128520  | 0       | isolated margin | 0.6           | 0     |
+
     And the following transfers should happen:
       | from   | to              | from account            | to account              | market id | amount | asset |
       | party1 | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/FEB23 | 19800  | USD   |
@@ -102,6 +108,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | mark price | trading mode            |
       | 17000      | TRADING_MODE_CONTINUOUS |
     And the network moves ahead "1" blocks
+    #maintenance margin level: 20000*18*(0.1+0.25)=126000
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
@@ -190,7 +197,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 71550  | 33946   | 110004       |
+      | party1 | USD   | ETH/FEB23 | 71550  | 53950   | 90000        |
 
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error |

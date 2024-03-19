@@ -33,6 +33,20 @@ func (m *MockEthereumConfirmations) EXPECT() *MockEthereumConfirmationsMockRecor
 	return m.recorder
 }
 
+// Check mocks base method.
+func (m *MockEthereumConfirmations) Check(arg0 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Check", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Check indicates an expected call of Check.
+func (mr *MockEthereumConfirmationsMockRecorder) Check(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Check", reflect.TypeOf((*MockEthereumConfirmations)(nil).Check), arg0)
+}
+
 // CheckRequiredConfirmations mocks base method.
 func (m *MockEthereumConfirmations) CheckRequiredConfirmations(arg0, arg1 uint64) error {
 	m.ctrl.T.Helper()
@@ -45,4 +59,18 @@ func (m *MockEthereumConfirmations) CheckRequiredConfirmations(arg0, arg1 uint64
 func (mr *MockEthereumConfirmationsMockRecorder) CheckRequiredConfirmations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRequiredConfirmations", reflect.TypeOf((*MockEthereumConfirmations)(nil).CheckRequiredConfirmations), arg0, arg1)
+}
+
+// GetConfirmations mocks base method.
+func (m *MockEthereumConfirmations) GetConfirmations() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfirmations")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetConfirmations indicates an expected call of GetConfirmations.
+func (mr *MockEthereumConfirmationsMockRecorder) GetConfirmations() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfirmations", reflect.TypeOf((*MockEthereumConfirmations)(nil).GetConfirmations))
 }

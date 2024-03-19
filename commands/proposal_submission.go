@@ -858,6 +858,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
+	errs.Merge(checkTickSize(changes.TickSize, "new_spot_market.changes"))
 
 	return errs
 }
@@ -918,6 +919,26 @@ func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) 
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "new_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_market.changes.liquidity_fee_settings"))
 	errs.Merge(checkCompositePriceConfiguration(changes.MarkPriceConfiguration, "new_market.changes.mark_price_configuration"))
+	errs.Merge(checkTickSize(changes.TickSize, "new_market.changes"))
+
+	return errs
+}
+
+func checkTickSize(tickSize string, parent string) Errors {
+	errs := NewErrors()
+
+	if len(tickSize) == 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.tick_size", parent), ErrIsRequired)
+		return errs
+	}
+
+	tickSizeU, overflow := num.UintFromString(tickSize, 10)
+	if overflow {
+		errs.AddForProperty(fmt.Sprintf("%s.tick_size", parent), ErrNotAValidInteger)
+	} else if tickSizeU.IsZero() || tickSizeU.IsNegative() {
+		errs.AddForProperty(fmt.Sprintf("%s.tick_size", parent), ErrMustBePositive)
+	}
+
 	return errs
 }
 
@@ -965,6 +986,7 @@ func checkUpdateMarket(updateMarket *vegapb.UpdateMarket) Errors {
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "update_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "update_market.changes.liquidity_fee_settings"))
 	errs.Merge(checkCompositePriceConfiguration(changes.MarkPriceConfiguration, "update_market.changes.mark_price_configuration"))
+	errs.Merge(checkTickSize(changes.TickSize, "update_market.changes"))
 	return errs
 }
 
@@ -995,6 +1017,7 @@ func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "update_spot_market.changes"))
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "update_spot_market.changes.sla_params"))
+	errs.Merge(checkTickSize(changes.TickSize, "update_spot_market.changes"))
 	return errs
 }
 
@@ -1005,8 +1028,8 @@ func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, pare
 		return errs
 	}
 
-	if len(parameters.Triggers) > 5 {
-		errs.AddForProperty(fmt.Sprintf("%s.price_monitoring_parameters.triggers", parentProperty), errors.New("maximum 5 triggers allowed"))
+	if len(parameters.Triggers) > 100 {
+		errs.AddForProperty(fmt.Sprintf("%s.price_monitoring_parameters.triggers", parentProperty), errors.New("maximum 100 triggers allowed"))
 	}
 
 	for i, trigger := range parameters.Triggers {
@@ -1253,8 +1276,8 @@ func checkNewPerps(perps *protoTypes.PerpetualProduct, parentProperty string) Er
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrIsNotValidNumber)
 		}
-		if !sf.IsPositive() {
-			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositive)
+		if sf.IsNegative() {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositiveOrZero)
 		}
 	}
 
@@ -1402,8 +1425,8 @@ func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, parentProperty s
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrIsNotValidNumber)
 		}
-		if !sf.IsPositive() {
-			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositive)
+		if sf.IsNegative() {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositiveOrZero)
 		}
 	}
 

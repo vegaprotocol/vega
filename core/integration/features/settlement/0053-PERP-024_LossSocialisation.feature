@@ -11,7 +11,7 @@ Feature: Test funding payment triggering closeout for Perps market
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 1e6                    | 1e6                       | -3                      | perp        | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.25                   | 0                         | -3                      | perp        | default-futures |
     And the initial insurance pool balance is "200" for all the markets
     And the following network parameters are set:
       | name                           | value |
@@ -29,7 +29,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | party2 | USD   | 10000000  |
       | party3 | USD   | 10000000  |
       | aux    | USD   | 100000000 |
-      | aux2   | USD   | 1515000   |
+      | aux2   | USD   | 1695000   |
       | lpprov | USD   | 100000000 |
 
     When the parties submit the following liquidity provision:
@@ -102,14 +102,14 @@ Feature: Test funding payment triggering closeout for Perps market
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 2001  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # update linear slippage factor more in line with what book-based slippage used to be
+    And the markets are updated:
+        | id          | linear slippage factor |
+        | ETH/DEC19   | 4                      |
     # Allow network close-outs to kick in
     Then the network moves ahead "1" blocks
 
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | initial |
-      | party1 | ETH/DEC19 | 7842000     | 9410400 |
-      | party2 | ETH/DEC19 | 1283000     | 1539600 |
-      | aux2   | ETH/DEC19 | 1415000     | 1698000 |
     And the mark price should be "1200" for the market "ETH/DEC19"
 
     #delta_t = 0.5

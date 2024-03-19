@@ -33,7 +33,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	"github.com/emirpasic/gods/sets/treeset"
 )
+
+const keepHashesDuration = 24 * 2 * time.Hour
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier Witness
 type Witness interface {
@@ -49,6 +53,8 @@ type OracleDataBroadcaster interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier EthereumConfirmations
 type EthereumConfirmations interface {
 	CheckRequiredConfirmations(block uint64, required uint64) error
+	Check(block uint64) error
+	GetConfirmations() uint64
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcallengine_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier EthCallEngine
@@ -98,14 +104,18 @@ type Verifier struct {
 	oracleEngine     OracleDataBroadcaster
 	ethEngine        EthCallEngine
 	ethConfirmations EthereumConfirmations
+	isValidator      bool
 
 	pendingCallEvents    []*pendingCallEvent
 	finalizedCallResults []*ethcall.ContractCallEvent
 
+	// the eth block height of the last seen ethereum TX
 	lastBlock *types.EthBlock
+	// the eth block height when we did the patch upgrade to fix the missing seen map
+	patchBlock *types.EthBlock
 
-	mu     sync.Mutex
-	hashes map[string]struct{}
+	mu        sync.Mutex
+	ackedEvts *ackedEvents
 }
 
 type pendingCallEvent struct {
@@ -129,6 +139,7 @@ func New(
 	oracleBroadcaster OracleDataBroadcaster,
 	ethCallEngine EthCallEngine,
 	ethConfirmations EthereumConfirmations,
+	isValidator bool,
 ) (sv *Verifier) {
 	log = log.Named("ethereum-oracle-verifier")
 	s := &Verifier{
@@ -139,37 +150,67 @@ func New(
 		oracleEngine:     oracleBroadcaster,
 		ethEngine:        ethCallEngine,
 		ethConfirmations: ethConfirmations,
-		hashes:           map[string]struct{}{},
+		isValidator:      isValidator,
+		ackedEvts: &ackedEvents{
+			timeService: ts,
+			events:      treeset.NewWith(ackedEvtBucketComparator),
+		},
 	}
 	return s
 }
 
-func (s *Verifier) ensureNotDuplicate(hash string) bool {
+func (s *Verifier) ensureNotTooOld(callEvent ethcall.ContractCallEvent) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.hashes[hash]; ok {
+	if s.patchBlock != nil && callEvent.BlockHeight < s.patchBlock.Height {
 		return false
 	}
 
-	s.hashes[hash] = struct{}{}
+	tt := time.Unix(int64(callEvent.BlockTime), 0)
+	removeBefore := s.timeService.GetTimeNow().Add(-keepHashesDuration)
 
+	return !tt.Before(removeBefore)
+}
+
+func (s *Verifier) ensureNotDuplicate(callEvent ethcall.ContractCallEvent) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.ackedEvts.Contains(callEvent.Hash()) {
+		return false
+	}
+
+	s.ackedEvts.AddAt(int64(callEvent.BlockTime), callEvent.Hash())
 	return true
+}
+
+func (s *Verifier) getConfirmations(callEvent ethcall.ContractCallEvent) (uint64, error) {
+	if !callEvent.Heartbeat {
+		return s.ethEngine.GetRequiredConfirmations(callEvent.SpecId)
+	}
+
+	if !s.isValidator {
+		// non-validator doesn't know, and doesn't need to know
+		return 0, nil
+	}
+	return s.ethConfirmations.GetConfirmations(), nil
 }
 
 // TODO: non finalized events could cause a memory leak, this needs to be addressed in a way that will prevent processing
 // duplicates but not result in a memory leak, agreed to postpone for now  (other verifiers have the same issue)
 
 func (s *Verifier) ProcessEthereumContractCallResult(callEvent ethcall.ContractCallEvent) error {
-	if ok := s.ensureNotDuplicate(callEvent.Hash()); !ok {
+	if !s.ensureNotTooOld(callEvent) {
+		s.log.Error("historic ethereum event received",
+			logging.String("event", fmt.Sprintf("%+v", callEvent)))
+		return errors.ErrEthereumCallEventTooOld
+	}
+
+	if ok := s.ensureNotDuplicate(callEvent); !ok {
 		s.log.Error("ethereum call event already exists",
 			logging.String("event", fmt.Sprintf("%+v", callEvent)))
 		return errors.ErrDuplicatedEthereumCallEvent
-	}
-
-	s.lastBlock = &types.EthBlock{
-		Height: callEvent.BlockHeight,
-		Time:   callEvent.BlockTime,
 	}
 
 	pending := &pendingCallEvent{
@@ -177,7 +218,7 @@ func (s *Verifier) ProcessEthereumContractCallResult(callEvent ethcall.ContractC
 		check:     func(ctx context.Context) error { return s.checkCallEventResult(ctx, callEvent) },
 	}
 
-	confirmations, err := s.ethEngine.GetRequiredConfirmations(callEvent.SpecId)
+	confirmations, err := s.getConfirmations(callEvent)
 	if err != nil {
 		return err
 	}
@@ -213,6 +254,10 @@ func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.C
 	if checkedTime != callEvent.BlockTime {
 		return fmt.Errorf("call event for block time block %d alleges eth time %d - but found %d",
 			callEvent.BlockHeight, callEvent.BlockTime, checkedTime)
+	}
+
+	if callEvent.Heartbeat {
+		return s.ethConfirmations.Check(callEvent.BlockHeight)
 	}
 
 	metrics.DataSourceEthVerifierCallCounterInc(callEvent.SpecId)
@@ -292,6 +337,13 @@ func (s *Verifier) onCallEventVerified(event interface{}, ok bool) {
 
 func (s *Verifier) OnTick(ctx context.Context, t time.Time) {
 	for _, callResult := range s.finalizedCallResults {
+		if s.lastBlock == nil || callResult.BlockHeight > s.lastBlock.Height {
+			s.lastBlock = &types.EthBlock{
+				Height: callResult.BlockHeight,
+				Time:   callResult.BlockTime,
+			}
+		}
+
 		if callResult.Error == nil {
 			result, err := s.ethEngine.MakeResult(callResult.SpecId, callResult.Result)
 			if err != nil {
@@ -328,6 +380,9 @@ func (s *Verifier) OnTick(ctx context.Context, t time.Time) {
 			s.broker.Send(events.NewOracleDataEvent(ctx, vegapb.OracleData{ExternalData: dataProto.ExternalData}))
 		}
 	}
-
 	s.finalizedCallResults = nil
+
+	// keep hashes for 2 days
+	removeBefore := t.Add(-keepHashesDuration)
+	s.ackedEvts.RemoveBefore(removeBefore.Unix())
 }

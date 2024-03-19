@@ -45,7 +45,7 @@ import (
 )
 
 func TestPeriodicSettlement(t *testing.T) {
-	t.Run("incoming data ignored before leaving opening auction", testIncomingDataIgnoredBeforeLeavingOpeningAuction)
+	t.Run("twap calculations after leaving opening auction", testTWAPAfterOpeningAuction)
 	t.Run("period end with no data point", testPeriodEndWithNoDataPoints)
 	t.Run("equal internal and external prices", testEqualInternalAndExternalPrices)
 	t.Run("constant difference long pays short", testConstantDifferenceLongPaysShort)
@@ -128,20 +128,45 @@ func TestRealData(t *testing.T) {
 	}
 }
 
-func testIncomingDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
+func testTWAPAfterOpeningAuction(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 
 	ctx := context.Background()
 
-	// no error because its really a callback from the oracle engine, but we expect no events
-	perp.perpetual.AddTestExternalPoint(ctx, num.UintOne(), 2000)
+	now := time.Unix(2000, 0).UnixNano()
 
-	err := perp.perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000)
-	assert.ErrorIs(t, err, products.ErrInitialPeriodNotStarted)
+	// no error because its really a callback from the oracle engine, but we expect no events
+	perp.perpetual.AddTestExternalPoint(ctx, num.UintOne(), now)
+	data := perp.perpetual.GetData(2000)
+	require.Nil(t, data)
+
+	// internal data point recevied without error
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err := perp.perpetual.SubmitDataPoint(ctx, num.NewUint(100000), now)
+	data = perp.perpetual.GetData(2000)
+	assert.NoError(t, err)
+	require.Nil(t, data)
 
 	// check that settlement cues are ignored, we expect no events when it is
 	perp.perpetual.PromptSettlementCue(ctx, 4000)
+
+	// now leaving opening auction
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.ts.EXPECT().GetTimeNow().Times(1).Return(time.Unix(2000, 0))
+	perp.perpetual.UpdateAuctionState(ctx, false)
+
+	// send in an external data-point which actually hits before opening auction time because it took a while to wobble through
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.AddTestExternalPoint(ctx, num.NewUint(100000), now-int64(time.Minute))
+	fundingPayment := getFundingPayment(t, perp, now)
+	require.Equal(t, "0", fundingPayment)
+
+	// now another data point but both at the same time
+	dp := &testDataPoint{price: num.NewUint(200000), t: now + int64(time.Second)}
+	submitPointWithDifference(t, perp, dp, 0)
+	fundingPayment = getFundingPayment(t, perp, now+int64(time.Minute))
+	require.Equal(t, "0", fundingPayment)
 }
 
 func testPeriodEndWithNoDataPoints(t *testing.T) {
@@ -948,6 +973,7 @@ func submitPointWithDifference(t *testing.T, perp *tstPerp, p *testDataPoint, di
 	var internalPrice *num.Uint
 	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
 	perp.perpetual.AddTestExternalPoint(ctx, p.price, p.t)
+	internalPrice = p.price.Clone()
 
 	if diff > 0 {
 		internalPrice = num.UintZero().Add(p.price, num.NewUint(uint64(diff)))

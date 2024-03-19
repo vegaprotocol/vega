@@ -105,7 +105,12 @@ func (hat *HoldingAccountTracker) TransferFeeToHoldingAccount(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-	hat.orderIDToFee[orderID] = feeQuantity
+	fee, ok := hat.orderIDToFee[orderID]
+	if ok {
+		hat.orderIDToFee[orderID].Add(feeQuantity, fee)
+	} else {
+		hat.orderIDToFee[orderID] = feeQuantity
+	}
 	return le, nil
 }
 
@@ -144,6 +149,39 @@ func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccount(ctx context.Cont
 	}
 	if !fee.IsZero() {
 		hat.orderIDToFee[orderID] = num.UintZero().Sub(hat.orderIDToFee[orderID], fee)
+	}
+	hat.orderIDToQuantity[orderID] = num.UintZero().Sub(lockedQuantity, quantity)
+	transfer := &types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Asset:  asset,
+			Amount: total,
+		},
+		Type: types.TransferTypeReleaseHoldingAccount,
+	}
+	le, err := hat.collateral.ReleaseFromHoldingAccount(ctx, transfer)
+	if err != nil {
+		return nil, err
+	}
+	return le, err
+}
+
+func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccountAuctionEnd(ctx context.Context, orderID, party, asset string, quantity *num.Uint, fee *num.Uint) (*types.LedgerMovement, error) {
+	effectiveFee := num.UintZero().Div(fee, num.NewUint(2))
+	total := num.Sum(quantity, effectiveFee)
+
+	if !effectiveFee.IsZero() {
+		lockedFee, ok := hat.orderIDToFee[orderID]
+		if !ok || (!lockedFee.IsZero() && lockedFee.LT(effectiveFee)) {
+			return nil, fmt.Errorf("insufficient locked fee to release for order %s", orderID)
+		}
+	}
+	lockedQuantity, ok := hat.orderIDToQuantity[orderID]
+	if !ok || lockedQuantity.LT(quantity) {
+		return nil, fmt.Errorf("insufficient locked quantity to release for order %s", orderID)
+	}
+	if !effectiveFee.IsZero() {
+		hat.orderIDToFee[orderID] = num.UintZero().Sub(hat.orderIDToFee[orderID], effectiveFee)
 	}
 	hat.orderIDToQuantity[orderID] = num.UintZero().Sub(lockedQuantity, quantity)
 	transfer := &types.Transfer{

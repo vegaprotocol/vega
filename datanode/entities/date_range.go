@@ -16,6 +16,7 @@
 package entities
 
 import (
+	"errors"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -26,6 +27,15 @@ type DateRange struct {
 	Start *time.Time
 	End   *time.Time
 }
+
+var (
+	ErrInvalidDateRange   = errors.New("invalid date range, date range is required")
+	ErrMinimumDate        = errors.New("date range start must be after 2020-01-01")
+	ErrEndDateBeforeStart = errors.New("date range start must be before end")
+	ErrDateRangeTooLong   = errors.New("date range is too long")
+	minimumDate           = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	maximumDuration       = time.Hour * 24 * 365 // 1 year maximum duration
+)
 
 func DateRangeFromProto(dateRangeInput *v2.DateRange) (dateRange DateRange) {
 	if dateRangeInput == nil {
@@ -41,4 +51,42 @@ func DateRangeFromProto(dateRangeInput *v2.DateRange) (dateRange DateRange) {
 	}
 
 	return
+}
+
+func (dr DateRange) Validate(required bool) error {
+	if !required && dr.Start == nil && dr.End == nil {
+		return nil
+	}
+
+	if required && dr.Start == nil && dr.End == nil {
+		return ErrInvalidDateRange
+	}
+
+	if dr.Start != nil && dr.Start.Before(minimumDate) {
+		return ErrMinimumDate
+	}
+
+	if dr.End != nil && dr.End.Before(minimumDate) {
+		return ErrMinimumDate
+	}
+
+	if dr.Start != nil && dr.End != nil && dr.Start.After(*dr.End) {
+		return ErrEndDateBeforeStart
+	}
+
+	end := time.Now()
+	if dr.End != nil {
+		end = *dr.End
+	}
+
+	start := minimumDate
+	if dr.Start != nil {
+		start = *dr.Start
+	}
+
+	if end.Sub(start) > maximumDuration {
+		return ErrDateRangeTooLong
+	}
+
+	return nil
 }

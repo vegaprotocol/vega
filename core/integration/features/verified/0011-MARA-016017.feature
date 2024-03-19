@@ -22,7 +22,7 @@ Feature: check pegged GTT and GTC in auction
       | limits.markets.maxPeggedOrders    | 4     |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | lqm-params           | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | lqm-params           | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
 
   Scenario: 001, Pegged GTC (good till time) (parked in auction), Pegged orders will be [parked] if placed during [an auction], with time priority preserved. 0011-MARA-017
     Given the parties deposit on asset's general account the following amount:

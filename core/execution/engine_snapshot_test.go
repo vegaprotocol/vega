@@ -96,7 +96,7 @@ func getMockedEngine(t *testing.T) *engineFake {
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
 
-	mat := common.NewMarketActivityTracker(log, teams, balanceChecker)
+	mat := common.NewMarketActivityTracker(log, teams, balanceChecker, broker)
 	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return &engineFake{
@@ -124,6 +124,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	collateralService := mocks.NewMockCollateral(ctrl)
+	collateralService.EXPECT().GetPartyMargin(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
@@ -158,7 +159,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
-	mat := common.NewMarketActivityTracker(log, teams, balanceChecker)
+	mat := common.NewMarketActivityTracker(log, teams, balanceChecker, broker)
 	banking := mocks.NewMockBanking(ctrl)
 
 	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
@@ -256,6 +257,7 @@ func getSpotMarketConfig() *types.Market {
 			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
 			CompositePriceType:       types.CompositePriceTypeByLastTrade,
 		},
+		TickSize: num.UintOne(),
 	}
 }
 
@@ -387,6 +389,7 @@ func getMarketConfig() *types.Market {
 			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
 			CompositePriceType:       types.CompositePriceTypeByLastTrade,
 		},
+		TickSize: num.UintOne(),
 	}
 }
 

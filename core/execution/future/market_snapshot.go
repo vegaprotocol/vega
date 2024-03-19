@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -38,7 +37,6 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -78,13 +76,6 @@ func NewMarketFromSnapshot(
 
 	assetDecimals := assetDetails.DecimalPlaces()
 
-	// FIXME: this is to ensure the fundingRateFactors for markets are all set to 0
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		if mkt.TradableInstrument.Instrument.GetPerps() != nil {
-			mkt.TradableInstrument.Instrument.GetPerps().FundingRateScalingFactor = ptr.From(num.MustDecimalFromString("0"))
-		}
-	}
-
 	tradableInstrument, err := markets.NewTradableInstrumentFromSnapshot(ctx, log, mkt.TradableInstrument, em.Market.ID,
 		timeService, oracleEngine, broker, em.Product, uint32(assetDecimals))
 	if err != nil {
@@ -92,19 +83,6 @@ func NewMarketFromSnapshot(
 	}
 
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
-
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		// protocol upgrade from v0.73.12, lets populate the new liquidity-fee-settings with a default marginal-cost method
-		log.Info("migrating liquidity fee settings for existing market", logging.String("mid", mkt.ID))
-		mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
-			Method: types.LiquidityFeeMethodMarginalCost,
-		}
-
-		// if the market is in a none opening-auction we need to tell the instrument
-		if as.InAuction() && !as.IsOpeningAuction() {
-			tradableInstrument.Instrument.Product.UpdateAuctionState(ctx, true)
-		}
-	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
@@ -201,7 +179,7 @@ func NewMarketFromSnapshot(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, pMonitor)
 
 	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
 	for _, pmf := range em.PartyMarginFactors {
@@ -300,11 +278,6 @@ func NewMarketFromSnapshot(
 			market.internalCompositePriceCalculator.Close(ctx)
 		}
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
-	}
-
-	// FIXME: We need to send the market update to the datanode to me make sure the change to the fundingRateFactor are propagated
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		broker.Stage(events.NewMarketUpdatedEvent(ctx, *market.Mkt()))
 	}
 
 	return market, nil

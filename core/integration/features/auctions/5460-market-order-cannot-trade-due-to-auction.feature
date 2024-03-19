@@ -25,7 +25,7 @@ Feature: Test for issue 5460
       | 43200   | 0.9999999   | 60                |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 0.25                   | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount            |
       | party0   | ETH   | 100000000000000   |

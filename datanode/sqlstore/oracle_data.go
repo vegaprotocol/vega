@@ -142,15 +142,27 @@ func listOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection
 	)
 
 	query := oracleDataQuery
+	andOrWhere := "WHERE"
 
 	if len(id) > 0 {
 		specID := entities.SpecID(id)
 
-		query = fmt.Sprintf(`%s 
+		query = fmt.Sprintf(`%s
 		WHERE EXISTS (SELECT 1 from  oracle_data_oracle_specs ods
 		  WHERE  od.vega_time = ods.vega_time
 		  AND    od.seq_num = ods.seq_num
 		  AND    ods.spec_id=%s)`, query, nextBindVar(&bindVars, specID))
+
+		andOrWhere = "AND"
+	}
+
+	// if the cursor is empty, we should restrict the query to the last day of data as otherwise, the query will scan the full hypertable
+	// we only do this if we are returning the newest first data because that should be kept in memory by TimescaleDB anyway.
+	// If we have a first N cursor traversing newest first data, without an after cursor, we should also restrict by date.
+	// Traversing from the oldest data to the newest data will result in table scans and take time as we don't know what the oldest data is due to retention policies.
+	// Anything after the first page will have a vega time in the cursor so this will not be needed.
+	if pagination.HasForward() && !pagination.Forward.HasCursor() && pagination.NewestFirst {
+		query = fmt.Sprintf("%s %s vega_time > now() - interval '1 day'", query, andOrWhere)
 	}
 
 	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)

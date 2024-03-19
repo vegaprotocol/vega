@@ -185,40 +185,36 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | last traded price | trading mode            |
       | 100448     | 100292            | TRADING_MODE_CONTINUOUS |
-
-
-    # T + 12s
+    # T1 = T + 12s
     When time is updated to "2020-10-16T00:00:55Z"
 
-    # Both triggers breached with persistent order -> auction with duration of 10s starts
+    # Both triggers breached with persistent order -> auction with duration of 14s starts
     Then the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 100650 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 100650 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger           | auction end | horizon | ref price | min bound | max bound |
+      | 100292     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 6           | 15      | 100448    | 100092    | 100805    |
 
-    And the mark price should be "100292" for the market "ETH/DEC20"
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    # T + 6s
-    # T + 1s (min duration is 5 seconds, this test is broken)
-    When time is updated to "2020-10-16T00:00:56Z"
-
-    Then the mark price should be "100292" for the market "ETH/DEC20"
+    # T1 + 6s 
+    When time is updated to "2020-10-16T00:01:01Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger           | auction end | horizon | ref price | min bound | max bound |
+      | 100292     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 6           | 15      | 100292    | 99937     | 100648    |
+    # T1 + 7s 
+    When time is updated to "2020-10-16T00:01:02Z"
 
-    # T + 1s (2 seconds)
-    When time is updated to "2020-10-16T00:00:57Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger     | auction end |
+      | 100292     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 14          |
 
-    Then the mark price should be "100292" for the market "ETH/DEC20"
-
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    # T + 8s (6s)
-    When time is updated to "2020-10-16T00:01:12Z"
-
+    # T1 + 16s 
+    When time is updated to "2020-10-16T00:01:11Z"
     Then the mark price should be "100650" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"

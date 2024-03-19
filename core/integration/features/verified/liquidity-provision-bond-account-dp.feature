@@ -25,7 +25,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       | 0.7                    | 0                         | default-futures |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       | 0.05                   | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 2700000   |
@@ -64,7 +64,6 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
       | party5 | ETH/MAR22 | sell | 100    | 1200  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-5 |
 
-
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "1000"
     
@@ -91,10 +90,10 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | party2 | USD   | ETH/MAR22 | 51690   | 99948310 |        |
     #check the margin levels
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | initial |
-      | party0 | ETH/MAR22 | 1778452     | 2134142 |
-      | party1 | ETH/MAR22 | 9889        | 11866   |
-      | party2 | ETH/MAR22 | 42963       | 51555   |
+      | party  | market id | maintenance |
+      | party0 | ETH/MAR22 | 1778452     |
+      | party1 | ETH/MAR22 | 10109       |
+      | party2 | ETH/MAR22 | 43183       |
     #check position (party0 has no position)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -119,7 +118,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | party  | asset | market id | margin  | general  | bond   |
       | party0 | USD   | ETH/MAR22 | 2134142 | 65858    | 500000 |
       | party1 | USD   | ETH/MAR22 | 11425   | 99988575 |        |
-      | party2 | USD   | ETH/MAR22 | 264970  | 99734880 |        |
+      | party2 | USD   | ETH/MAR22 | 265234  | 99734616 |        |
 
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
@@ -140,15 +139,12 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general  | bond   |
       | party0 | USD   | ETH/MAR22 | 2603654 | 360      | 55981  |
-      | party1 | USD   | ETH/MAR22 | 117562  | 99881888 |        |
-      | party2 | USD   | ETH/MAR22 | 264970  | 99734960 |        |
+      | party1 | USD   | ETH/MAR22 | 117826  | 99881624 |        |
+      | party2 | USD   | ETH/MAR22 | 265234  | 99734696 |        |
       | party3 | USD   | ETH/MAR22 | 28826   | 99971294 |        |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search  | initial | release |
-      | party0 | ETH/MAR22 | 2169712     | 2386683 | 2603654 | 3037596 |
-      | party1 | ETH/MAR22 | 97969       | 107765  | 117562  | 137156  |
-      | party2 | ETH/MAR22 | 220809      | 242889  | 264970  | 309132  |
-
-    # move to the next epoch to perform liquidity check
-    # We used to check for liquidity auctions here, but those are now removed
+      | party  | market id | maintenance |
+      | party0 | ETH/MAR22 | 2169712     |
+      | party1 | ETH/MAR22 | 98189       |
+      | party2 | ETH/MAR22 | 221029      |

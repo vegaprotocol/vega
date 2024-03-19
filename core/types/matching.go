@@ -182,7 +182,7 @@ func (o Order) String() string {
 		o.MarketID,
 		o.Party,
 		o.Side.String(),
-		o.Price.String(),
+		num.UintToString(o.Price),
 		o.Size,
 		o.Remaining,
 		o.TimeInForce.String(),
@@ -929,6 +929,7 @@ const (
 	OrderErrorReduceOnlyOrderWouldNotReducePosition  OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
 	OrderErrorIsolatedMarginCheckFailed              OrderError = proto.OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
 	OrderErrorPeggedOrdersNotAllowedInIsolatedMargin OrderError = proto.OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
+	OrderErrorPriceNotInTickSize                     OrderError = proto.OrderError_ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE
 )
 
 var (
@@ -957,6 +958,7 @@ var (
 	ErrPostOnlyOrderWouldTrade                     = OrderErrorPostOnlyOrderWouldTrade
 	ErrReduceOnlyOrderWouldNotReducePosition       = OrderErrorReduceOnlyOrderWouldNotReducePosition
 	ErrPeggedOrdersNotAllowedInIsolatedMargin      = OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
+	ErrOrderNotInTickSize                          = OrderErrorPriceNotInTickSize
 )
 
 func IsOrderError(err error) (OrderError, bool) {

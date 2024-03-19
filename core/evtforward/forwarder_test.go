@@ -28,7 +28,6 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
@@ -215,84 +214,6 @@ func getTestChainEvent(txid string) *commandspb.ChainEvent {
 				},
 			},
 		},
-	}
-}
-
-func TestMigrationTo74(t *testing.T) {
-	evtFwd := getTestEvtFwd(t)
-	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.73.14", true)
-	evtFwd.top.EXPECT().AllNodeIDs().AnyTimes().Return(testAllPubKeys)
-
-	hashes := []string{
-		crypto.RandomHash(),
-		crypto.RandomHash(),
-		crypto.RandomHash(),
-		crypto.RandomHash(),
-	}
-	// old payload, with couple of key
-	p := types.Payload{
-		Data: &types.PayloadEventForwarder{
-			Keys: hashes,
-		},
-	}
-	_, err := evtFwd.LoadState(ctx, &p)
-	assert.NoError(t, err)
-
-	// now get state, and make sure it's all fine, we have move time.
-	state, _, err := evtFwd.GetState((&types.PayloadEventForwarder{}).Key())
-	require.Nil(t, err)
-
-	// restore the state
-	var pl snapshot.Payload
-	proto.Unmarshal(state, &pl)
-	newP := types.PayloadFromProto(&pl).Data.(*types.PayloadEventForwarder)
-	assert.Len(t, newP.Buckets, 1)
-	assert.EqualValues(t, newP.Buckets[0].Hashes, hashes)
-
-	// move time forward, should clear the buckets
-	now := time.Now()
-	evtFwd.OnTick(context.Background(), now)
-
-	state, _, err = evtFwd.GetState((&types.PayloadEventForwarder{}).Key())
-	require.Nil(t, err)
-
-	proto.Unmarshal(state, &pl)
-	newP2 := types.PayloadFromProto(&pl).Data.(*types.PayloadEventForwarder)
-	assert.Len(t, newP2.Buckets, 0) // no acks left
-
-	// now create new ones
-
-	newHashes := []string{
-		crypto.RandomHash(),
-		crypto.RandomHash(),
-		crypto.RandomHash(),
-	}
-	evtFwd.time.EXPECT().GetTimeNow().Times(2).Return(now)
-	evtFwd.Ack(getTestChainEvent(newHashes[0]))
-	evtFwd.Ack(getTestChainEvent(newHashes[1]))
-
-	// increase time
-	now2 := now.Add(1 * time.Second)
-	evtFwd.OnTick(context.Background(), now2)
-
-	evtFwd.time.EXPECT().GetTimeNow().Times(1).Return(now2)
-	evtFwd.Ack(getTestChainEvent(newHashes[2]))
-
-	expects := map[int64][]string{
-		now.Unix():  {newHashes[0], newHashes[1]},
-		now2.Unix(): {newHashes[2]},
-	}
-
-	// get the state and we should have 2 buckets
-	state, _, err = evtFwd.GetState((&types.PayloadEventForwarder{}).Key())
-	require.Nil(t, err)
-
-	proto.Unmarshal(state, &pl)
-	newP3 := types.PayloadFromProto(&pl).Data.(*types.PayloadEventForwarder)
-	assert.Len(t, newP3.Buckets, 2) // 2 buckets
-
-	for _, v := range newP3.Buckets {
-		assert.Len(t, v.Hashes, len(expects[v.Ts]))
 	}
 }
 

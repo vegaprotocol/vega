@@ -255,7 +255,7 @@ func newServices(
 	svcs.l2CallEngines = NewL2EthCallEngines(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.l2Clients, svcs.eventForwarder, svcs.oracle.AddSpecActivationListener)
 
 	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
-		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations, svcs.conf.HaveEthClient())
 
 	svcs.l2Verifiers = ethverifier.NewL2Verifiers(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.l2Clients, svcs.l2CallEngines, svcs.conf.IsValidator())
@@ -280,7 +280,7 @@ func newServices(
 	svcs.partiesEngine = parties.NewSnapshottedEngine(svcs.broker)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
-	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts)
+	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts, svcs.broker)
 
 	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
 

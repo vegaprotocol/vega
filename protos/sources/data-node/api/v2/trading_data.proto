@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.74.3";
+    version: "v0.75.0";
   }
   schemes: [
     HTTP,
@@ -927,6 +927,16 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin"};
   }
 
+  // Get time weighted notional position
+  //
+  // Get the time weighted notional position for a given party and asset. The time weighted notional position
+  // is used to check if a party qualifies for a reward.
+  // If no epoch is specified, the final time weighted notional position from the end of the most recently completed epoch is returned.
+  // If an epoch is specified, the final time weighted notional position at that epoch is returned.
+  rpc GetTimeWeightedNotionalPosition(GetTimeWeightedNotionalPositionRequest) returns (GetTimeWeightedNotionalPositionResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -1498,6 +1508,8 @@ message AggregatedLedgerEntry {
   string from_account_balance = 12;
   // Receiver account balance after the transfer.
   string to_account_balance = 13;
+  // Transfer ID associated with the ledger entry.
+  string transfer_id = 14;
 }
 
 // -- LedgerEntries --
@@ -1556,7 +1568,11 @@ message ListBalanceChangesRequest {
   AccountFilter filter = 1;
   // Pagination controls.
   optional Pagination pagination = 5;
-  // Date range over which to query.
+  // Date range over which to query. If a cursor is not provided in the pagination controls,
+  // the date range must be provided with a start or end date, or both.
+  // The date range is inclusive of the start date and exclusive of the end date.
+  // The date range must be no more than 1 year in duration.
+  // Dates before 2020-01-01 will not be accepted.
   optional DateRange date_range = 6;
 }
 
@@ -1794,6 +1810,10 @@ message ListTransfersRequest {
   optional Scope scope = 8;
   // Game ID to filter on
   optional string game_id = 9;
+  // Account type to filter on for transfers from account
+  optional vega.AccountType from_account_type = 10;
+  // Account type to filter on for transfers to account
+  optional vega.AccountType to_account_type = 11;
 
   // Defines the types of a dispatch strategy's scope the API can filter on.
   enum Scope {
@@ -4773,4 +4793,41 @@ message PartyMarginMode {
   optional string max_theoretical_leverage = 6;
   // Epoch at which the update happened.
   uint64 at_epoch = 7;
+}
+
+// Time weighted notional position for a party and asset at a given epoch. It is used as a metric to calculate whether
+// the party is eligible for receiving a reward.
+message TimeWeightedNotionalPosition {
+  // Asset ID for the settlement asset associated with the position.
+  string asset_id = 1;
+  // Party ID for the party associated with the position.
+  string party_id = 2;
+  // Game ID for the game associated with the position.
+  string game_id = 3;
+  // Epoch at which the time weighted notional position is calculated.
+  uint64 at_epoch = 4;
+  // Time weighted notional position for the party and asset.
+  string time_weighted_notional_position = 5;
+  // Vega time of the block in which the last position update occurred.
+  int64 last_updated = 6;
+}
+
+// Request to retrieve the time weighted notional position for a party and asset.
+// If no epoch is given, the time weighted notional position at the end of the most recently completed epoch will be returned.
+// If an epoch is given, the time weighted notional position achieved by the end of the given epoch will be returned.
+message GetTimeWeightedNotionalPositionRequest {
+  // Asset ID to filter for.
+  string asset_id = 1;
+  // Party ID to filter for.
+  string party_id = 2;
+  // Game ID to filter for.
+  string game_id = 3;
+  // Epoch to filter for.
+  optional uint64 at_epoch = 4;
+}
+
+// Response containing the time weighted notional position for a party and asset.
+message GetTimeWeightedNotionalPositionResponse {
+  // Time weighted notional position for the party and asset.
+  TimeWeightedNotionalPosition time_weighted_notional_position = 1;
 }

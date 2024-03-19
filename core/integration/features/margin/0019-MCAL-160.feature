@@ -12,7 +12,7 @@ Feature: amend the order and it isn't matched and it's all good and it just move
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.000125               | 0                         | default-futures |
 
   Scenario: 001 party holds orders only, and party1 holds both orders and positions
     Given the parties deposit on asset's general account the following amount:
@@ -44,9 +44,9 @@ Feature: amend the order and it isn't matched and it's all good and it just move
 
     #maintenance margin: min(3*(15900-15900),15900*3*0.25)+3*0.1*15900=4770
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 4770        | 0      | 5724    | 0       | isolated margin | 0.2           | 9540  |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.2           | 9540  |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 4776        | isolated margin | 0.2           | 9540  |
+      | party1 | ETH/FEB23 | 0           | isolated margin | 0.2           | 9540  |
 
     When the parties amend the following orders:
       | party  | reference   | price | size delta | tif     | error |
@@ -67,9 +67,9 @@ Feature: amend the order and it isn't matched and it's all good and it just move
 
     # margin should be:  min(3*(16900-15900),15900*3*0.25)+3*0.1*15900=7770
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 4770        | 0      | 5724    | 0       | isolated margin | 0.2           | 10140 |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.2           | 10140 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 4776        | isolated margin | 0.2           | 10140 |
+      | party1 | ETH/FEB23 | 0           | isolated margin | 0.2           | 10140 |
 
     #AC: 0019-MCAL-162, 0019-MCAL-163
     When the parties amend the following orders:
@@ -88,10 +88,10 @@ Feature: amend the order and it isn't matched and it's all good and it just move
       | party  | party-sell  | STATUS_ACTIVE |
       | party1 | party1-sell | STATUS_ACTIVE |
 
-    #maintenance margin: min(3*(16900-15900),15900*3*0.25)+3*0.1*15900=7770
+    #maintenance margin: min(3*(16900-15900),15900*3*0.000125)+3*0.1*15900=4776
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 13520 |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.2           | 13520 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 4776        | isolated margin | 0.2           | 13520 |
+      | party1 | ETH/FEB23 | 0           | isolated margin | 0.2           | 13520 |
 
     Then the mark price should be "15900" for the market "ETH/FEB23"

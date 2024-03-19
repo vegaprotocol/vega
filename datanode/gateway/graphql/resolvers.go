@@ -340,6 +340,10 @@ func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
 }
 
+func (r *VegaResolverRoot) EquityLikeShareWeightPerMarket() EquityLikeShareWeightPerMarketResolver {
+	return (*elsWeightPerMarketResolver)(r)
+}
+
 func (r *VegaResolverRoot) NodeData() NodeDataResolver {
 	return (*nodeDataResolver)(r)
 }
@@ -661,6 +665,10 @@ func (r *VegaResolverRoot) PerpetualData() PerpetualDataResolver {
 	return (*perpetualDataResolver)(r)
 }
 
+func (r *VegaResolverRoot) TimeWeightedNotionalPosition() TimeWeightedNotionalPositionResolver {
+	return (*timeWeightedNotionalPositionResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -767,6 +775,26 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, assetID, partyID, gameID string, epoch *int) (*v2.TimeWeightedNotionalPosition, error) {
+	var atEpoch *uint64
+	if epoch != nil {
+		atEpoch = ptr.From(uint64(*epoch))
+	}
+	req := &v2.GetTimeWeightedNotionalPositionRequest{
+		AssetId: assetID,
+		PartyId: partyID,
+		GameId:  gameID,
+		AtEpoch: atEpoch,
+	}
+
+	res, err := r.tradingDataClientV2.GetTimeWeightedNotionalPosition(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.TimeWeightedNotionalPosition, nil
+}
 
 func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []string, pagination *v2.Pagination) (*v2.PartiesProfilesConnection, error) {
 	req := v2.ListPartiesProfilesRequest{
@@ -914,8 +942,9 @@ func (r *myQueryResolver) TransfersConnection(
 	status *eventspb.Transfer_Status,
 	scope *v2.ListTransfersRequest_Scope,
 	gameID *string,
+	fromAccountType, toAccountType *vega.AccountType,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID)
+	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID, fromAccountType, toAccountType)
 }
 
 func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*v2.TransferNode, error) {
@@ -2128,8 +2157,9 @@ func (r *myPartyResolver) TransfersConnection(
 	status *eventspb.Transfer_Status,
 	scope *v2.ListTransfersRequest_Scope,
 	gameID *string,
+	fromAccountType, toAccountType *vega.AccountType,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID)
+	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID, fromAccountType, toAccountType)
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,

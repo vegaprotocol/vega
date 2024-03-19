@@ -87,7 +87,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -158,12 +158,6 @@ Feature: Fees calculations
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 151    | ETH   |
 
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 1503 + 151 + 0 = 1654
-    # Trader3 margin + general account balance = 10000 + 151 ( Maker fees) = 10151
-    # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 1503 (Infra fee) = 8346
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1330   | 8821    |
-      | trader4 | ETH   | ETH/DEC21 | 718    | 7327    |
 
     And the accumulated infrastructure fees should be "1503" for the asset "ETH"
     And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"

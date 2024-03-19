@@ -18,7 +18,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | 0.1  | 0.2   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring      | data source config     | linear slippage factor | quadratic slippage factor | position decimal places | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | 2                       | default-futures |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring-1 | default-eth-for-future | 0.000125               | 0                         | 2                       | default-futures |
 
   @MCAL205
   Scenario: The new order would result in trades does not change the state of the book
@@ -57,15 +57,15 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | lprov1 | ETH/FEB23 | buy  | 200    | BID              | 20     | buy_peg_2 |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | lprov1  | ETH/FEB23 | 9486        | 10434  | 11383   | 13280   | cross margin | 0             | 0     |
-      | trader1 | ETH/FEB23 | 20540       | 22594  | 24648   | 28756   | cross margin | 0             | 0     |
-      | trader4 | ETH/FEB23 | 5241        | 5765   | 6289    | 7337    | cross margin | 0             | 0     |
+      | party   | market id | maintenance | margin mode  | margin factor | order |
+      | lprov1  | ETH/FEB23 | 9486        | cross margin | 0             | 0     |
+      | trader1 | ETH/FEB23 | 20540       | cross margin | 0             | 0     |
+      | trader4 | ETH/FEB23 | 4746        | cross margin | 0             | 0     |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general     | bond |
       | lprov1  | USD   | ETH/FEB23 | 11383  | 99999987617 | 1000 |
       | trader1 | USD   | ETH/FEB23 | 23496  | 99999976504 |      |
-      | trader4 | USD   | ETH/FEB23 | 6289   | 99999993711 |      |
+      | trader4 | USD   | ETH/FEB23 | 5688   | 99999994312 |      |
 
     When the parties submit update margin mode:
       | party   | market    | margin_mode     | margin_factor | error |
@@ -80,7 +80,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-first  |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the order book should have the following volumes for market "ETH/FEB23":
       | volume | price  | side |
       | 1000   | 200100 | sell |
@@ -103,7 +103,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 50     | 15802 | 0                | TYPE_LIMIT | TIF_GTC | t3-second | margin check failed |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 0      | 350     | 4650         |
@@ -171,15 +171,15 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | lprov1 | ETH/FEB23 | buy  | 200    | BID              | 20     | buy_peg_2 |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | lprov1  | ETH/FEB23 | 9486        | 10434  | 11383   | 13280   | cross margin | 0             | 0     |
-      | trader1 | ETH/FEB23 | 20540       | 22594  | 24648   | 28756   | cross margin | 0             | 0     |
-      | trader4 | ETH/FEB23 | 5241        | 5765   | 6289    | 7337    | cross margin | 0             | 0     |
+      | party   | market id | maintenance | margin mode  | margin factor | order |
+      | lprov1  | ETH/FEB23 | 9486        | cross margin | 0             | 0     |
+      | trader1 | ETH/FEB23 | 20540       | cross margin | 0             | 0     |
+      | trader4 | ETH/FEB23 | 4746        | cross margin | 0             | 0     |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general     | bond |
       | lprov1  | USD   | ETH/FEB23 | 11383  | 99999987617 | 1000 |
       | trader1 | USD   | ETH/FEB23 | 23496  | 99999976504 |      |
-      | trader4 | USD   | ETH/FEB23 | 6289   | 99999993711 |      |
+      | trader4 | USD   | ETH/FEB23 | 5688   | 99999994312 |      |
 
     When the parties submit update margin mode:
       | party   | market    | margin_mode     | margin_factor | error |
@@ -194,7 +194,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-first  |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the order book should have the following volumes for market "ETH/FEB23":
       | volume | price  | side |
       | 1000   | 200100 | sell |
@@ -217,7 +217,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 50     | 15801 | 0                | TYPE_LIMIT | TIF_GTC | t3-second | margin check failed |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 0      | 350     | 4650         |
@@ -286,15 +286,13 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | lprov1 | ETH/FEB23 | buy  | 200    | BID              | 20     | buy_peg_2 |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | trader1 | ETH/FEB23 | 20540       | 22594  | 24648   | 28756   | cross margin | 0             | 0     |
-      | trader4 | ETH/FEB23 | 5241        | 5765   | 6289    | 7337    | cross margin | 0             | 0     |
-      #| lprov1  | ETH/FEB23 | 9486        | 10434  | 11383   | 13280   | cross margin | 0             | 0     |
+      | party   | market id | maintenance | margin mode  | margin factor | order |
+      | trader1 | ETH/FEB23 | 20540       | cross margin | 0             | 0     |
+      | trader4 | ETH/FEB23 | 4746        | cross margin | 0             | 0     |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general     | bond |
       | trader1 | USD   | ETH/FEB23 | 23496  | 99999976504 |      |
-      | trader4 | USD   | ETH/FEB23 | 6289   | 99999993711 |      |
-      #| lprov1  | USD   | ETH/FEB23 | 11383  | 99999987617 | 1000 |
+      | trader4 | USD   | ETH/FEB23 | 5688   | 99999994312 |      |
 
     When the parties submit update margin mode:
       | party   | market    | margin_mode     | margin_factor | error |
@@ -309,7 +307,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-first  |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the order book should have the following volumes for market "ETH/FEB23":
       | volume | price  | side |
       | 1000   | 200100 | sell |
@@ -333,7 +331,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 7      | 15802 | 0                | TYPE_LIMIT | TIF_GTC | t3-second | margin check failed |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 0      | 100     | 4650         |

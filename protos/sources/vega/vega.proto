@@ -530,6 +530,8 @@ enum OrderError {
   ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED = 51;
   // In isolated margin pegged orders are rejected
   ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE = 52;
+  // Order price does not respect market's required tick size
+  ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE = 53;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -740,10 +742,12 @@ message Deposit {
     STATUS_UNSPECIFIED = 0;
     // Deposit is being processed by the network
     STATUS_OPEN = 1;
-    // Deposit has been cancelled by the network
+    // Deposit has been cancelled or failed to be verified by the network
     STATUS_CANCELLED = 2;
     // Deposit has been finalised and accounts have been updated
     STATUS_FINALIZED = 3;
+    // Deposit has been rejected as a duplicate transaction.
+    STATUS_DUPLICATE_REJECTED = 4;
   }
 
   // Unique ID for the deposit.
@@ -1126,6 +1130,8 @@ message DispatchStrategy {
   DistributionStrategy distribution_strategy = 12;
   // Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank distribution strategy.
   repeated Rank rank_table = 13;
+  // If set, the actual amount of rewards transferred to each public key during distribution for this transfer will be `min(calculated_reward_in_quantum, cap_reward_fee_multiple × fees_paid_this_epoch_in_quantum).
+  optional string cap_reward_fee_multiple = 14;
 }
 
 message Rank {
@@ -1315,7 +1321,7 @@ message MarketData {
   repeated PriceMonitoringBounds price_monitoring_bounds = 24;
   // Market value proxy.
   string market_value_proxy = 25;
-  // Equity like share of liquidity fee for each liquidity provider.
+  // Equity-like share of liquidity fee for each liquidity provider.
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
   // Current state of the market.
   Market.State market_state = 27;
@@ -1351,7 +1357,7 @@ message CompositePriceState {
   repeated CompositePriceSource price_sources = 1;
 }
 
-// Equity like share of liquidity fee for each liquidity provider
+// Equity-like share of liquidity fee for each liquidity provider
 message LiquidityProviderFeeShare {
   // Liquidity provider party ID.
   string party = 1;

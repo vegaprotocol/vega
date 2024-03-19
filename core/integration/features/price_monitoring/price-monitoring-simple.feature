@@ -362,19 +362,19 @@ Feature: Price monitoring test using simple risk model
 
     And the market data for the market "ETH/DEC20" should be:
       | horizon | min bound | max bound |
-      | 60      | 95        | 114       |
+      | 60      | 104       | 125       |
       | 600     | 99        | 119       |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party1 | ETH/DEC20 | sell | 1      | 98    | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 98    | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end | horizon | min bound | max bound |
-      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 240         | 600     | 99        | 119       |
+      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 431          | 660            | 240         | 600     | 99        | 119       |
 
     And the mark price should be "105" for the market "ETH/DEC20"
 
@@ -382,13 +382,13 @@ Feature: Price monitoring test using simple risk model
     When time is updated to "2020-10-16T00:16:10Z"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end | horizon | min bound | max bound |
-      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 240         | 600     | 99        | 119       |
+      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 431          | 660            | 240         | 600     | 99        | 119       |
 
     #T1 + 04min01s
     When time is updated to "2020-10-16T00:16:11Z"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end |
-      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE       | 660          | 660            | 600         |
+      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE       | 431          | 660            | 600         |
 
     #T1 + 10min00s (last second of the extended auction)
     When time is updated to "2020-10-16T00:22:10Z"
@@ -398,11 +398,7 @@ Feature: Price monitoring test using simple risk model
     Then time is updated to "2020-10-16T00:22:11Z"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake |
-      | 120        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            |
-
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-    And the mark price should be "120" for the market "ETH/DEC20"
+      | 98         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 431          | 660            |
 
   Scenario: Persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
 

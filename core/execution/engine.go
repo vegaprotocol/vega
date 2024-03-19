@@ -428,8 +428,8 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 
 // IsEligibleForProposerBonus checks if the given value is greater than that market quantum * quantum_multiplier.
 func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bool {
-	if _, ok := e.allMarkets[marketID]; ok {
-		quantum, err := e.collateral.GetAssetQuantum(e.futureMarkets[marketID].GetAssetForProposerBonus())
+	if mkt, ok := e.allMarkets[marketID]; ok {
+		quantum, err := e.collateral.GetAssetQuantum(mkt.GetAssetForProposerBonus())
 		if err != nil {
 			return false
 		}
@@ -584,6 +584,9 @@ func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfigu
 		if state == types.MarketStateCancelled || state == types.MarketStateClosed || state == types.MarketStateRejected || state == types.MarketStateSettled || state == types.MarketStateTradingTerminated {
 			return fmt.Errorf("invalid state update request. Market is already in a terminal state")
 		}
+		if changes.UpdateType == types.MarketStateUpdateTypeSuspend && state == types.MarketStateSuspendedViaGovernance {
+			return fmt.Errorf("invalid state update request. Market for suspend is already suspended")
+		}
 		if changes.UpdateType == types.MarketStateUpdateTypeResume && state != types.MarketStateSuspendedViaGovernance {
 			return fmt.Errorf("invalid state update request. Market for resume is not suspended")
 		}
@@ -609,6 +612,9 @@ func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfigu
 
 func (e *Engine) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
 	if market, ok := e.allMarkets[changes.MarketID]; ok {
+		if err := e.VerifyUpdateMarketState(changes); err != nil {
+			return err
+		}
 		return market.UpdateMarketState(ctx, changes)
 	}
 	return ErrMarketDoesNotExist
@@ -1917,11 +1923,18 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 	market := e.futureMarkets[marketID]
 	if marginMode == types.MarginModeIsolatedMargin {
 		riskFactors := market.GetRiskFactors()
-		rf := num.MaxD(riskFactors.Long, riskFactors.Short)
+		rf := num.MaxD(riskFactors.Long, riskFactors.Short).Add(market.Mkt().LinearSlippageFactor)
 		if marginFactor.LessThanOrEqual(rf) {
-			return fmt.Errorf("margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s))", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String())
+			return fmt.Errorf("margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s)) + linearSlippageFactor (%s)", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String(), market.Mkt().LinearSlippageFactor.String())
 		}
 	}
 
 	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
+}
+
+func (e *Engine) GetFillPriceForMarket(marketID string, volume uint64, side types.Side) (*num.Uint, error) {
+	if mkt, ok := e.allMarkets[marketID]; ok {
+		return mkt.GetFillPrice(volume, side)
+	}
+	return nil, types.ErrInvalidMarketID
 }

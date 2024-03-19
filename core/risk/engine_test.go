@@ -121,11 +121,6 @@ func testMarginLevelsTS(t *testing.T) {
 			return now
 		}).Times(1)
 
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
-
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(e []events.Event) {
 		mle, ok := e[0].(MLEvent)
@@ -139,11 +134,9 @@ func testMarginLevelsTS(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
-	// assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
-	// min = 15 so we go back to maintenance level
-	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	// assert.EqualValues(t, 35, trans.MinAmount.Uint64())
+	assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
+	// min = 35 so we go back to maintenance level
+	assert.EqualValues(t, 35, trans.MinAmount.Uint64())
 	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
 }
 
@@ -170,12 +163,6 @@ func TestNegativeMargin(t *testing.T) {
 		func() time.Time {
 			return now
 		}).AnyTimes()
-
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).AnyTimes().
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			// closeout price and mark price is 100, we need more margin
-			return markPrice.Clone(), nil
-		})
 
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
@@ -205,20 +192,14 @@ func testMarginTopup(t *testing.T) {
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
-	// assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
-	// min = 15 so we go back to maintenance level
-	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	// assert.EqualValues(t, 35, trans.MinAmount.Uint64())
+	assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
+	// min = 35 so we go back to maintenance level
+	assert.EqualValues(t, 35, trans.MinAmount.Uint64())
 	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
 }
 
@@ -243,16 +224,12 @@ func TestMarginTopupPerpetual(t *testing.T) {
 	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(2).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, inc)
 	assert.Equal(t, 1, len(resp))
 
 	mm := resp[0].MarginLevels().MaintenanceMargin
-	assert.Equal(t, "30", mm.String())
+	assert.Equal(t, "50", mm.String())
 
 	// now do it again with the funding payment negated, the margin should be as if we were not a perp
 	// and 5 less
@@ -260,7 +237,7 @@ func TestMarginTopupPerpetual(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 
 	mm = resp[0].MarginLevels().MaintenanceMargin
-	assert.Equal(t, "25", mm.String())
+	assert.Equal(t, "45", mm.String())
 }
 
 func testMarginNotReleasedInAuction(t *testing.T) {
@@ -302,10 +279,6 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
 	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
@@ -329,15 +302,10 @@ func testMarginNoop(t *testing.T) {
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
 
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
-	assert.Equal(t, 0, len(resp))
-	// assert.Equal(t, 1, len(resp))
+	assert.Equal(t, 1, len(resp))
 }
 
 func testMarginOverflow(t *testing.T) {
@@ -357,19 +325,13 @@ func testMarginOverflow(t *testing.T) {
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().Times(2).Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
 	assert.Equal(t, 1, len(resp))
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
-	// assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
-	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
+	assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
 	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
 }
 
@@ -394,19 +356,13 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	// but the auction is ending
 	eng.as.EXPECT().CanLeave().Times(2).Return(true)
 	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
 	assert.Equal(t, 1, len(resp))
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
-	// assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
-	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
+	assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
 	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
 }
 
@@ -703,9 +659,9 @@ func testMarginWithOrderInBook(t *testing.T) {
 		side   types.Side
 	}{
 		// asks
-		// {volume: 3, price: num.NewUint(258), tid: "t1", side: types.SideSell},
-		// {volume: 5, price: num.NewUint(240), tid: "t2", side: types.SideSell},
-		// {volume: 3, price: num.NewUint(188), tid: "t3", side: types.SideSell},
+		{volume: 3, price: num.NewUint(258), tid: "t1", side: types.SideSell},
+		{volume: 5, price: num.NewUint(240), tid: "t2", side: types.SideSell},
+		{volume: 3, price: num.NewUint(188), tid: "t3", side: types.SideSell},
 
 		// bids
 		{volume: 1, price: num.NewUint(120), tid: "t4", side: types.SideBuy},
@@ -770,15 +726,17 @@ func testMarginWithOrderInBook(t *testing.T) {
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
 	}
+
+	// maintenance margin = (10*0.1+100*0.1)*144+144*0.1*14=1785.6=1786
 	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
 	searchLevel, _ := mc.ScalingFactors.SearchLevel.Float64()
 	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
-	assert.EqualValues(t, 542, margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(542*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(542*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(542*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.EqualValues(t, 1786, margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(1786*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(1786*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(1786*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 // testcase 1 from: https://drive.google.com/file/d/1B8-rLK2NB6rWvjzZX9sLtqOQzLz8s2ky/view
@@ -882,14 +840,10 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
 
-	assert.Equal(t, uint64(277), margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(277*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(277*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(277*colRelease), margins.CollateralReleaseLevel.Uint64())
-	// assert.Equal(t, uint64(2009), margins.MaintenanceMargin.Uint64())
-	// assert.Equal(t, uint64(2009*searchLevel), margins.SearchLevel.Uint64())
-	// assert.Equal(t, uint64(2009*initialMargin), margins.InitialMargin.Uint64())
-	// assert.Equal(t, uint64(2009*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.Equal(t, uint64(2009), margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(2009*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(2009*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(2009*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
@@ -917,11 +871,11 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 		side   types.Side
 	}{
 		// asks
-		// {volume: 3, price: 258, tid: "t1", side: types.Side_SIDE_SELL},
-		// {volume: 5, price: 240, tid: "t2", side: types.Side_SIDE_SELL},
-		// {volume: 3, price: 188, tid: "t3", side: types.Side_SIDE_SELL},
-		// bids
+		{volume: 3, price: num.NewUint(258), tid: "t1", side: types.SideSell},
+		{volume: 5, price: num.NewUint(240), tid: "t2", side: types.SideSell},
+		{volume: 3, price: num.NewUint(188), tid: "t3", side: types.SideSell},
 
+		// bids
 		{volume: 1, price: num.NewUint(120), tid: "t4", side: types.SideBuy},
 		{volume: 4, price: num.NewUint(110), tid: "t5", side: types.SideBuy},
 		{volume: 5, price: num.NewUint(108), tid: "t6", side: types.SideBuy},
@@ -988,10 +942,10 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	searchLevel, _ := mc.ScalingFactors.SearchLevel.Float64()
 	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
-	assert.EqualValues(t, 542, margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(542*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(542*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(542*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.EqualValues(t, 1786, margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(1786*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(1786*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(1786*colRelease), margins.CollateralReleaseLevel.Uint64())
 
 	updatedRF := &types.RiskFactor{
 		Short: num.DecimalFromFloat(.12),
@@ -1042,7 +996,7 @@ func testInitialMarginRequirement(t *testing.T) {
 	_, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 
-	initialMargin := uint64(96)
+	initialMargin := uint64(336)
 
 	evt := testMargin{
 		party:   "party1",
@@ -1055,10 +1009,6 @@ func testInitialMarginRequirement(t *testing.T) {
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(6)
 	eng.as.EXPECT().InAuction().Times(2).Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(2).
-		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
-			return markPrice.Clone(), nil
-		})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
 	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())

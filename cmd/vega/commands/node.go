@@ -20,9 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vega/commands/node"
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/libs/memory"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -68,7 +70,16 @@ func (cmd *StartCmd) Execute([]string) error {
 		return errors.New("--network-url and --network cannot be set together")
 	}
 
-	confWatcher, err := config.NewWatcher(context.Background(), logCore, vegaPaths, config.Use(parseFlagOpt))
+	// this is to migrate all validators configuration at once
+	// and set the event forwarder to the appropriate value
+	migrateConfig := func(cnf *config.Config) {
+		sevenDays := 24 * 7 * time.Hour
+		if cnf.EvtForward.KeepHashesDurationForTestOnlyDoNotChange.Duration == sevenDays {
+			cnf.EvtForward.KeepHashesDurationForTestOnlyDoNotChange.Duration = evtforward.DefaultKeepHashesDuration
+		}
+	}
+
+	confWatcher, err := config.NewWatcher(context.Background(), logCore, vegaPaths, migrateConfig, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}

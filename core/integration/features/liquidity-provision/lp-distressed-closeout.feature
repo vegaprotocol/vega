@@ -25,7 +25,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 0.01        | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.1                      | 0                         | SLA        |
     And the following network parameters are set:
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 5s    |
@@ -76,7 +76,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # LP margin requirement increased, had to dip in to bond account to top up the margin
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 682    | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 658    | 0       | 0    |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
       | 1001       | TRADING_MODE_CONTINUOUS | 1601         | 1000           | 16            | 900                   | 1000             | 1100                    |
@@ -100,7 +100,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 1000              | STATUS_CANCELLED |
-    And the insurance pool balance should be "1111" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1422" for the market "ETH/DEC21"
 
   @Liquidation
   Scenario: 002, LP gets distressed after auction (0044-LIME-073)
@@ -134,7 +134,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # LP1 margin requirement increased, had to dip in to bond account to top up the margin
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 682    | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 658    | 0       | 0    |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price | horizon | min bound | max bound |
       | 1001       | TRADING_MODE_CONTINUOUS | 1601         | 2000           | 16            | 900                   | 1000             | 1100                    | 1       | 950       | 1060      |
@@ -153,10 +153,10 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1001       | TRADING_MODE_MONITORING_AUCTION | 16            |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 682    | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 658    | 0       | 0    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance |
-      | party0 | ETH/DEC21 | 1195        |
+      | party0 | ETH/DEC21 | 1202        |
 
     When the network moves ahead "7" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -208,7 +208,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # LP1 margin requirement increased, had to dip in to bond account to top up the margin
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 682    | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 658    | 0       | 0    |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
       | 1001       | TRADING_MODE_CONTINUOUS | 1601         | 2000           | 16            | 900                   | 1000             | 1100                    |
@@ -235,4 +235,4 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 1055       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1793         | 1000           | 17            |
-    And the insurance pool balance should be "1111" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1422" for the market "ETH/DEC21"

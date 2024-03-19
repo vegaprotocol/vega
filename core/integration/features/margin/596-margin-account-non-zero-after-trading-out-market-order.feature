@@ -3,7 +3,7 @@ Feature: Regression test for issue 596
   Background:
     Given the markets:
       | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config     | price monitoring | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 0.1                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -67,8 +67,8 @@ Feature: Regression test for issue 596
       | chris | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1413   | 8527    |
-      | chris  | BTC   | ETH/DEC19 | 790    | 8761    |
+      | edd    | BTC   | ETH/DEC19 | 1491   | 8449    |
+      | chris  | BTC   | ETH/DEC19 | 1048   | 8503    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3041000"
     
@@ -82,9 +82,9 @@ Feature: Regression test for issue 596
       | chris | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1763   | 8527    |
+      | edd    | BTC   | ETH/DEC19 | 1390   | 8900    |
       | chris  | BTC   | ETH/DEC19 | 0      | 8808    |
-      | barney | BTC   | ETH/DEC19 | 3810   | 6092    |
+      | barney | BTC   | ETH/DEC19 | 1146   | 8756    |
     And the cumulated balance for all accounts should be worth "3041000"
     # placing new orders to trade out
     When the parties place the following orders with ticks:
@@ -168,8 +168,8 @@ Feature: Regression test for issue 596
       | chris | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1413   | 8527    |
-      | chris  | BTC   | ETH/DEC19 | 790    | 8761    |
+      | edd    | BTC   | ETH/DEC19 | 1491   | 8449    |
+      | chris  | BTC   | ETH/DEC19 | 1048   | 8503    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3041000"
     
@@ -183,9 +183,9 @@ Feature: Regression test for issue 596
       | chris | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1763   | 8527    |
+      | edd    | BTC   | ETH/DEC19 | 1390   | 8900    |
       | chris  | BTC   | ETH/DEC19 | 0      | 8808    |
-      | barney | BTC   | ETH/DEC19 | 3810   | 6092    |
+      | barney | BTC   | ETH/DEC19 | 1146   | 8756    |
     And the cumulated balance for all accounts should be worth "3041000"
     # placing new orders to trade out
     When the parties place the following orders with ticks:

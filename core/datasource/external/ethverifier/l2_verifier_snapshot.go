@@ -58,12 +58,27 @@ func (s *L2Verifiers) GetState(k string) ([]byte, []types.StateProvider, error) 
 
 	for k, v := range s.verifiers {
 		s.log.Debug("serialising state for evm verifier", logging.String("source-chain-id", k))
+
+		slice := make([]*snapshotpb.EthVerifierBucket, 0, v.ackedEvts.Size())
+		iter := v.ackedEvts.events.Iterator()
+		for iter.Next() {
+			v := (iter.Value().(*ackedEvtBucket))
+			slice = append(slice, &snapshotpb.EthVerifierBucket{
+				Ts:     v.ts,
+				Hashes: v.hashes,
+			})
+		}
+
 		ethOracles.L2EthOracles.ChainIdEthOracles = append(
 			ethOracles.L2EthOracles.ChainIdEthOracles,
 			&snapshotpb.ChainIdEthOracles{
 				SourceChainId: k,
-				LastBlock:     v.lastEthBlockPayloadData().IntoProto().EthOracleVerifierLastBlock,
+				LastBlock:     v.ethBlockPayloadData(v.lastBlock).IntoProto().EthOracleVerifierLastBlock,
 				CallResults:   v.pendingContractCallEventsPayloadData().IntoProto().EthContractCallResults,
+				Misc: &snapshotpb.EthOracleVerifierMisc{
+					Buckets:    slice,
+					PatchBlock: v.ethBlockPayloadData(v.patchBlock).IntoProto().EthOracleVerifierLastBlock,
+				},
 			},
 		)
 	}
@@ -111,8 +126,35 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 				Time:   v.LastBlock.BlockTime,
 			}
 		}
-		verifier.restoreLastEthBlock(lastBlock)
 
+		// do it once always
+		verifier.restoreLastEthBlock(ctx, lastBlock)
+
+		// this is the block of the upgrade
+		// we only initialize this the patchBlock and lastBlock
+		if v.Misc == nil {
+			if lastBlock != nil {
+				// no patchBlock, set it to the last Block
+				verifier.restorePatchBlock(ctx, &types.EthBlock{
+					Height: lastBlock.Height,
+					Time:   lastBlock.Time,
+				})
+			}
+		} else if v.Misc != nil {
+			// only run this if the misc exists, which might
+			// not be the case on a new upgrade after it's
+			// introduced
+			var patchBlock *types.EthBlock
+			if v.Misc.PatchBlock != nil {
+				patchBlock = &types.EthBlock{
+					Height: v.Misc.PatchBlock.BlockHeight,
+					Time:   v.Misc.PatchBlock.BlockTime,
+				}
+			}
+
+			verifier.restorePatchBlock(ctx, patchBlock)
+			verifier.restoreSeen(v.Misc.Buckets)
+		}
 		pending := []*ethcall.ContractCallEvent{}
 
 		for _, pr := range v.CallResults.PendingContractCallResult {

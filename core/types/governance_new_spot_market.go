@@ -119,6 +119,7 @@ type NewSpotMarketConfiguration struct {
 	RiskParameters            newRiskParams
 	SLAParams                 *LiquiditySLAParams
 	LiquidityFeeSettings      *LiquidityFeeSettings
+	TickSize                  *num.Uint
 
 	// New market risk model parameters
 	//
@@ -161,6 +162,7 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 		TargetStakeParameters:     targetStakeParameters,
 		SlaParams:                 n.SLAParams.IntoProto(),
 		LiquidityFeeSettings:      n.LiquidityFeeSettings.IntoProto(),
+		TickSize:                  n.TickSize.String(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewSpotMarketConfiguration_Simple:
@@ -177,6 +179,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 		PositionDecimalPlaces: n.PositionDecimalPlaces,
 		Metadata:              make([]string, len(n.Metadata)),
 		SLAParams:             n.SLAParams.DeepClone(),
+		TickSize:              n.TickSize.Clone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -199,7 +202,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 
 func (n NewSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s) tickSize (%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -208,6 +211,7 @@ func (n NewSpotMarketConfiguration) String() string {
 		stringer.PtrToString(n.TargetStakeParameters),
 		stringer.ObjToString(n.RiskParameters),
 		stringer.PtrToString(n.SLAParams),
+		num.UintToString(n.TickSize),
 	)
 }
 
@@ -240,6 +244,8 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		liquidityFeeSettings = LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings)
 	}
 
+	tickSize, _ := num.UintFromString(p.TickSize, 10)
+
 	r := &NewSpotMarketConfiguration{
 		Instrument:                instrument,
 		DecimalPlaces:             p.DecimalPlaces,
@@ -249,6 +255,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		TargetStakeParameters:     targetStakeParams,
 		SLAParams:                 slaParams,
 		LiquidityFeeSettings:      liquidityFeeSettings,
+		TickSize:                  tickSize,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -385,6 +392,7 @@ type SpotProduct struct {
 
 func (f SpotProduct) IntoProto() *vegapb.SpotProduct {
 	return &vegapb.SpotProduct{
+		Name:       f.Name,
 		BaseAsset:  f.BaseAsset,
 		QuoteAsset: f.QuoteAsset,
 	}
@@ -392,6 +400,7 @@ func (f SpotProduct) IntoProto() *vegapb.SpotProduct {
 
 func (f SpotProduct) DeepClone() *SpotProduct {
 	return &SpotProduct{
+		Name:       f.Name,
 		BaseAsset:  f.BaseAsset,
 		QuoteAsset: f.QuoteAsset,
 	}
@@ -399,7 +408,8 @@ func (f SpotProduct) DeepClone() *SpotProduct {
 
 func (f SpotProduct) String() string {
 	return fmt.Sprintf(
-		"baseAsset(%s) quoteAsset(%s)",
+		"name(%s) baseAsset(%s) quoteAsset(%s)",
+		f.Name,
 		f.BaseAsset,
 		f.QuoteAsset,
 	)

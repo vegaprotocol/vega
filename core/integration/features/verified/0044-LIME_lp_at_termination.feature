@@ -51,7 +51,7 @@ Feature: Test LP bond account when market is terminated
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | ethDec19Oracle     | 1e1                    | 1e0                       | SLA        |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | ethDec19Oracle     | 1                      | 0                         | SLA        |
     And the following network parameters are set:
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 2s    |
@@ -135,12 +135,10 @@ Feature: Test LP bond account when market is terminated
       | party  | volume | unrealised pnl | realised pnl |
       | lp1    | -5     | 0              | 0            |
       | lp2    | 0      | 0              | 0            |
-      | party1 | 16     | 320            | 0            |
-      | party2 | 0      | 0              | -100044      |
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 155878 | 145     | 2430 |
+      | lp1   | USD   | ETH/MAR22 | 38278 | 117745   | 2430 |
       | lp2   | USD   | ETH/MAR22 | 2691   | 96309   | 810  |
 
     When the oracles broadcast data signed with "0xCAFECAFE19":
@@ -150,7 +148,7 @@ Feature: Test LP bond account when market is terminated
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1120       | TRADING_MODE_NO_TRADING | 360000  | 831       | 1440      | 63739        | 3240           | 16            |
+      | 1120       | TRADING_MODE_NO_TRADING | 360000  | 786       | 1361      | 63739        | 3240           | 16            |
 
     Then the oracles broadcast data signed with "0xCAFECAFE19":
       | name             | value |
@@ -161,13 +159,11 @@ Feature: Test LP bond account when market is terminated
       | party  | volume | unrealised pnl | realised pnl |
       | lp1    | -5     | 0              | -2400        |
       | lp2    | 0      | 0              | 0            |
-      | party1 | 16     | 0              | 8000         |
-      | party2 | 0      | 0              | -100044      |
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 0      | 155592  | 0    |
       | lp2   | USD   | ETH/MAR22 | 0      | 99657   | 0    |
 
-    And the insurance pool balance should be "95852" for the market "ETH/MAR22"
+    And the insurance pool balance should be "1408" for the market "ETH/MAR22"
 

@@ -195,7 +195,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 3238   | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 22205  | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 46     | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 6821   | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -322,17 +322,15 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 140        | TRADING_MODE_CONTINUOUS | 3600    | 140       | 161       | 199441       | 9000           | 292           | 20                    | 1010             | 2000                    |
+      | 140        | TRADING_MODE_CONTINUOUS | 3600    | 140       | 161       | 199441       | 9000           | 292           | 40                    | 1020             | 2000                    |
 
     And the following trades should be executed:
       | buyer           | price | size | seller           |
       | buySideProvider | 140   | 1    | sellSideProvider |
       | network         | 150   | 290  | designatedLoser  |
       | buySideProvider | 140   | 1    | network          |
-      | lpprov          | 40    | 225  | network          |
-      | aux             | 1     | 10   | network          |
-      | buySideProvider | 20    | 54   | network          |
-    # closeout trade price is 20 which is outside price mornitoring bounds, and does not trigger auction
+
+    # network cannot dispose outside of price monitoring bounds so does not trade with llprov, aux
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     Then the following network trades should be executed:
@@ -340,14 +338,11 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | designatedLoser | buy            | 290    |
       | buySideProvider | buy            | 1      |
       | buySideProvider | sell           | 1      |
-      | buySideProvider | sell           | 54     |
-      | lpprov          | sell           | 225    |
-      | aux             | sell           | 10     |
 
     Then the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -17631       |
-      | buySideProvider | 56     | 6480           | -3242        |
+      | buySideProvider | 2      | 0              | 0        |
     # check margin levels
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
@@ -465,8 +460,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "5" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD | ETH/DEC19 | 0   | 1000165 |
-      | party2 | USD | ETH/DEC19 | 601 | 999459  |
+      | party1 | USD   | ETH/DEC19 | 0      | 1000165 |
+      | party2 | USD   | ETH/DEC19 | 1708   | 998352  |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 0  | 0  | 165 |

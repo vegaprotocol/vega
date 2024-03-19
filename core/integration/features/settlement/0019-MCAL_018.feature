@@ -25,10 +25,10 @@ Feature: check when settlement data precision is different/equal to the settleme
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: 001 oracle data decimal > asset decimal 0070-MKTD-018
+  Scenario: 001 oracle data decimal > asset decimal 0070-MKTD-018, 0019-MCAL-091
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-1      | 1e6                    | 1e6                       | -1                      | perp        | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-1      | 0.25                   | 0                         | -1                      | perp        | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -83,7 +83,7 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party1 | USD   | ETH/DEC19 | 1441200 | 998558800 |
+      | party1 | USD   | ETH/DEC19 | 540000  | 999460000 |
       | party2 | USD   | ETH/DEC19 | 132000  | 99867000  |
       | party3 | USD   | ETH/DEC19 | 132000  | 99866000  |
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
@@ -111,7 +111,7 @@ Feature: check when settlement data precision is different/equal to the settleme
   Scenario: 002 oracle data decimal < asset decimal 0070-MKTD-019
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-3      | 1e6                    | 1e6                       | 1                       | 2              | perp        | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-3      | 0.25                   | 0                         | 1                       | 2              | perp        | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -166,7 +166,7 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party3 | ETH/DEC19 | buy  | 100    | 200000 | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party1 | USD   | ETH/DEC19 | 1441200 | 998558800 |
+      | party1 | USD   | ETH/DEC19 | 540000  | 999460000 |
       | party2 | USD   | ETH/DEC19 | 132000  | 99867000  |
       | party3 | USD   | ETH/DEC19 | 132000  | 99866000  |
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
@@ -193,7 +193,7 @@ Feature: check when settlement data precision is different/equal to the settleme
   Scenario: 003 oracle data decimal = asset decimal, while market decimal is 1,  0070-MKTD-020
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-2      | 1e6                    | 1e6                       | 1              | -1                      | perp        | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-2      | 0.25                   | 0                         | 1              | -1                      | perp        | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -248,7 +248,7 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party3 | ETH/DEC19 | buy  | 1      | 20000 | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party1 | USD   | ETH/DEC19 | 1441200 | 998558800 |
+      | party1 | USD   | ETH/DEC19 | 540000  | 999460000 |
       | party2 | USD   | ETH/DEC19 | 132000  | 99867000  |
       | party3 | USD   | ETH/DEC19 | 132000  | 99866000  |
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |

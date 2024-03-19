@@ -160,22 +160,20 @@ func (ls *Ledger) Query(
 
 	dateRange = ls.validateDateRange(dateRange)
 
-	// If filtering by the transfer id, we skip any other filters.
+	if err := filterLedgerEntriesQuery(filter, &args, &whereClauses); err != nil {
+		return nil, pageInfo, fmt.Errorf("invalid filters: %w", err)
+	}
+
+	if dateRange.Start != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("ledger.ledger_entry_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339))))
+	}
+
+	if dateRange.End != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("ledger.ledger_entry_time < %s", nextBindVar(&args, dateRange.End.Format(time.RFC3339))))
+	}
+
 	if filter.TransferID != "" {
-		transfersDBQuery := transfersFilterToDBQuery(filter.TransferID, &args)
-		whereClauses = []string{transfersDBQuery}
-	} else {
-		if err := filterLedgerEntriesQuery(filter, &args, &whereClauses); err != nil {
-			return nil, pageInfo, fmt.Errorf("invalid filters: %w", err)
-		}
-
-		if dateRange.Start != nil {
-			whereClauses = append(whereClauses, fmt.Sprintf("ledger.ledger_entry_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339))))
-		}
-
-		if dateRange.End != nil {
-			whereClauses = append(whereClauses, fmt.Sprintf("ledger.ledger_entry_time < %s", nextBindVar(&args, dateRange.End.Format(time.RFC3339))))
-		}
+		whereClauses = append(whereClauses, fmt.Sprintf("ledger.transfer_id = %s", nextBindVar(&args, filter.TransferID)))
 	}
 
 	query := fmt.Sprintf(`SELECT

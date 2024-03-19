@@ -192,7 +192,7 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 // NB1: the check for market value metric should be done separately
 // NB2: for validator ranking this will always return true as it is assumed that for the network to resume there must always be
 // a validator with non zero ranking.
-func (e *Engine) dispatchRequired(ds *vegapb.DispatchStrategy) bool {
+func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrategy) bool {
 	switch ds.Metric {
 	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
@@ -201,9 +201,9 @@ func (e *Engine) dispatchRequired(ds *vegapb.DispatchStrategy) bool {
 		vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
 		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
-			return len(e.marketActivityTracker.CalculateMetricForIndividuals(ds)) > 0
+			return len(e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)) > 0
 		} else {
-			tcs, _ := e.marketActivityTracker.CalculateMetricForTeams(ds)
+			tcs, _ := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
 			return len(tcs) > 0
 		}
 	case vegapb.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING:
@@ -299,7 +299,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 					}
 				}
 				// for any other metric, we transfer the funds (full amount) to the reward account of the asset/reward_type/market=hash(dispatch_strategy)
-				if e.dispatchRequired(v.DispatchStrategy) {
+				if e.dispatchRequired(ctx, v.DispatchStrategy) {
 					p, _ := proto.Marshal(v.DispatchStrategy)
 					hash := hex.EncodeToString(crypto.Hash(p))
 					r, err = e.processTransfer(

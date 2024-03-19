@@ -18,7 +18,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | USD | 3              |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC20 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC20 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 0.25                   | 0                         | default-futures |
       | ETH/DEC21 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e0                    | 1e2                       | default-futures |
       | ETH/DEC22 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e1                    | 1e3                       | default-futures |
       | ETH/DEC23 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e2                    | 1e0                       | default-futures |
@@ -82,7 +82,9 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
       | traderB | ETH/DEC20 | 1449759 | 2174638 | 2899518 | 4349277 |
-
+    And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/DEC20   | 1e3                    |
     And the network moves ahead "1" blocks
 
 #margin for traderB: 1*(2000-350)+1*350*3.5569036+2*350*3.5569036=5385
@@ -91,8 +93,6 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderA | 350   | 1    | traderB |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-
-
 
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
@@ -359,9 +359,9 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 # margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       |
-      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 |
-      | traderB | USD | ETH/DEC23 | 2899818 | 18650476 |
+      | party   | asset | market id | margin   | general       |
+      | traderA | USD   | ETH/DEC23 | 2383450  | 9999997616250 |
+      | traderB | USD   | ETH/DEC23 | 2899818  | 18650476      |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
@@ -402,10 +402,10 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 # margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       |
-      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 |
-      | traderB | USD | ETH/DEC23 | 2899818 | 18650476      |
-      | traderC | USD | ETH/DEC23 | 42684   | 9999999957316 |
+      | party   | asset | market id | margin   | general       |
+      | traderA | USD   | ETH/DEC23 | 2383450  | 9999997616250 |
+      | traderB | USD   | ETH/DEC23 | 2899818  | 18650476      |
+      | traderC | USD   | ETH/DEC23 | 42684    | 9999999957316 |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
@@ -429,8 +429,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | traderD | USD   | ETH/DEC23 | 82     | 9918    |
-      | traderE | USD   | ETH/DEC23 | 4256   | 5743    |
+      | traderD | USD   | ETH/DEC23 | 10000  | 0       |
+      | traderE | USD   | ETH/DEC23 | 9999   | 0       |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |

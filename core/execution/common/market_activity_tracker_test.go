@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
@@ -60,7 +61,8 @@ func TestMarketTracker(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -137,7 +139,8 @@ func TestMarketTracker(t *testing.T) {
 	require.NoError(t, err)
 	teams2 := mocks.NewMockTeams(ctrl)
 	balanceChecker2 := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams2, balanceChecker2)
+	broker = bmocks.NewMockBroker(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams2, balanceChecker2, broker)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -156,7 +159,8 @@ func TestRemoveMarket(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -177,11 +181,14 @@ func TestRemoveMarket(t *testing.T) {
 }
 
 func TestGetScores(t *testing.T) {
+	ctx := context.Background()
 	epochService := &TestEpochEngine{}
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -197,7 +204,7 @@ func TestGetScores(t *testing.T) {
 
 	for _, asset := range []string{"asset1", "asset2"} {
 		for _, m := range []vgproto.DispatchMetric{vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED} {
-			scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: asset, Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+			scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: asset, Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 			require.Equal(t, 0, len(scores))
 		}
 	}
@@ -205,14 +212,14 @@ func TestGetScores(t *testing.T) {
 	// asset1 one market in scope
 	for _, market := range []string{"market1", "market2", "market4"} {
 		for _, m := range []vgproto.DispatchMetric{vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED} {
-			scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{market}})
+			scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{market}})
 			require.Equal(t, 0, len(scores))
 		}
 	}
 
 	// asset2 one market in scope
 	for _, m := range []vgproto.DispatchMetric{vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED} {
-		scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market3"}})
+		scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market3"}})
 		require.Equal(t, 0, len(scores))
 	}
 
@@ -256,7 +263,7 @@ func TestGetScores(t *testing.T) {
 	// total = 4000
 	// party1 = 800/4000 = 0.2
 	// party2 = 3200/4000 = 0.8
-	scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 2, len(scores))
 
 	require.Equal(t, "party1", scores[0].Party)
@@ -267,7 +274,7 @@ func TestGetScores(t *testing.T) {
 	// now look only on market 1:
 	// party1 = 800/2500 = 0.32
 	// partt2 = 1700/2500 = 0.68
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
 	require.Equal(t, 2, len(scores))
 
 	require.Equal(t, "party1", scores[0].Party)
@@ -276,14 +283,14 @@ func TestGetScores(t *testing.T) {
 	require.Equal(t, "0.68", scores[1].Score.String())
 
 	// now look only on market 2:
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
 	require.Equal(t, 1, len(scores))
 
 	require.Equal(t, "party2", scores[0].Party)
 	require.Equal(t, "1", scores[0].Score.String())
 
 	// now look at asset2 with no market qualifer
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset2", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset2", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "party1", scores[0].Party)
 	require.Equal(t, "1", scores[0].Score.String())
@@ -305,7 +312,7 @@ func TestGetScores(t *testing.T) {
 	// total = 4000 + 2000 = 6000
 	// party1 = 2000/6000 = 1/3
 	// party2 = 4000/6000 = 2/3
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 2, len(scores))
 
 	require.Equal(t, "party1", scores[0].Party)
@@ -315,11 +322,14 @@ func TestGetScores(t *testing.T) {
 }
 
 func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
+	ctx := context.Background()
 	epochService := &TestEpochEngine{}
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -335,7 +345,7 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 
 	for _, asset := range []string{"asset1", "asset2"} {
 		for _, m := range []vgproto.DispatchMetric{vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED} {
-			scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: asset, Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+			scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: asset, Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 			require.Equal(t, 0, len(scores))
 		}
 	}
@@ -343,14 +353,14 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	// asset1 one market in scope
 	for _, market := range []string{"market1", "market2", "market4"} {
 		for _, m := range []vgproto.DispatchMetric{vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED} {
-			scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{market}})
+			scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{market}})
 			require.Equal(t, 0, len(scores))
 		}
 	}
 
 	// asset2 one market in scope
 	for _, m := range []vgproto.DispatchMetric{vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED} {
-		scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market3"}})
+		scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market3"}})
 		require.Equal(t, 0, len(scores))
 	}
 
@@ -394,7 +404,7 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	// total = 4000
 	// party1 = 800/4000 = 0.2
 	// party2 = 3200/4000 = 0.8
-	scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 2, len(scores))
 
 	require.Equal(t, "party1", scores[0].Party)
@@ -405,7 +415,7 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	// now look only on market 1:
 	// party1 = 800/2500 = 0.32
 	// partt2 = 1700/2500 = 0.68
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
 	require.Equal(t, 2, len(scores))
 
 	require.Equal(t, "party1", scores[0].Party)
@@ -414,14 +424,14 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	require.Equal(t, "0.68", scores[1].Score.String())
 
 	// now look only on market 2:
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
 	require.Equal(t, 1, len(scores))
 
 	require.Equal(t, "party2", scores[0].Party)
 	require.Equal(t, "1", scores[0].Score.String())
 
 	// now look at asset2 with no market qualifer
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset2", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset2", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "party1", scores[0].Party)
 	require.Equal(t, "1", scores[0].Score.String())
@@ -443,7 +453,7 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	// total = 4000 + 2000 = 6000
 	// party1 = 2000/6000 = 1/3
 	// party2 = 4000/6000 = 2/3
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 2, len(scores))
 
 	require.Equal(t, "party1", scores[0].Party)
@@ -458,7 +468,9 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	state1, _, err := tracker.GetState(key)
@@ -482,10 +494,12 @@ func TestMarketTrackerStateChange(t *testing.T) {
 
 func TestFeesTrackerWith0(t *testing.T) {
 	epochEngine := &TestEpochEngine{}
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 
@@ -506,21 +520,86 @@ func TestFeesTrackerWith0(t *testing.T) {
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END})
-	scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
 	require.Equal(t, 0, len(scores))
 }
 
-func TestFeesTracker(t *testing.T) {
+func TestGetLastEpochTakeFees(t *testing.T) {
 	epochEngine := &TestEpochEngine{}
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
-	partyScores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	partyScores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	require.Equal(t, 0, len(partyScores))
+
+	tracker.MarketProposed("asset1", "market1", "me")
+	tracker.MarketProposed("asset1", "market2", "me2")
+
+	// update with a few transfers
+	transfersM1 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
+
+	transfersM2 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
+
+	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END})
+
+	m1 := tracker.GetLastEpochTakeFees("asset1", []string{"market1"})
+	require.Equal(t, 2, len(m1))
+	require.Equal(t, "500", m1["party1"].String())
+	require.Equal(t, "1000", m1["party2"].String())
+	m2 := tracker.GetLastEpochTakeFees("asset1", []string{"market2"})
+	require.Equal(t, 1, len(m2))
+	require.Equal(t, "150", m2["party2"].String())
+
+	mAll := tracker.GetLastEpochTakeFees("asset1", []string{"market1", "market2"})
+	require.Equal(t, "500", mAll["party1"].String())
+	require.Equal(t, "1150", mAll["party2"].String())
+
+	mNoMarkets := tracker.GetLastEpochTakeFees("asset1", []string{})
+	require.Equal(t, "500", mNoMarkets["party1"].String())
+	require.Equal(t, "1150", mNoMarkets["party2"].String())
+
+	require.Equal(t, mAll, mNoMarkets)
+}
+
+func TestFeesTracker(t *testing.T) {
+	epochEngine := &TestEpochEngine{}
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
+	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+
+	partyScores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
 	require.Equal(t, 0, len(partyScores))
 
 	key := (&types.PayloadMarketActivityTracker{}).Key()
@@ -559,7 +638,7 @@ func TestFeesTracker(t *testing.T) {
 	// asset1, types.TransferTypeMakerFeeReceive
 	// party1 received 500
 	// party2 received 1500
-	scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
 	require.Equal(t, 2, len(scores))
 	require.Equal(t, "0.25", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
@@ -569,7 +648,7 @@ func TestFeesTracker(t *testing.T) {
 	// asset1 TransferTypeMakerFeePay
 	// party1 paid 500
 	// party2 paid 1000
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
 	require.Equal(t, 2, len(scores))
 	require.Equal(t, "0.3333333333333333", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
@@ -579,7 +658,7 @@ func TestFeesTracker(t *testing.T) {
 	// asset1 TransferTypeLiquidityFeeNetDistribute
 	// party1 paid 800
 	// party2 paid 1700
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
 	require.Equal(t, 2, len(scores))
 	require.Equal(t, "0.32", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
@@ -587,13 +666,13 @@ func TestFeesTracker(t *testing.T) {
 	require.Equal(t, "party2", scores[1].Party)
 
 	// asset2 TransferTypeMakerFeePay
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
 
 	// asset2 TransferTypeMakerFeePay
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party2", scores[0].Party)
@@ -607,7 +686,7 @@ func TestFeesTracker(t *testing.T) {
 	ctrl = gomock.NewController(t)
 	teams = mocks.NewMockTeams(ctrl)
 	balanceChecker = mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngineLoad.NotifyOnEpoch(trackerLoad.OnEpochEvent, trackerLoad.OnEpochRestore)
 
 	pl := snapshotpb.Payload{}
@@ -622,7 +701,7 @@ func TestFeesTracker(t *testing.T) {
 	require.True(t, bytes.Equal(state2, state3))
 
 	// check a restored party exist in the restored engine
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
@@ -639,9 +718,9 @@ func TestFeesTracker(t *testing.T) {
 
 	metrics := []vgproto.DispatchMetric{vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED}
 	for _, m := range metrics {
-		scores = trackerLoad.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
+		scores = trackerLoad.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
 		require.Equal(t, 0, len(scores))
-		scores = trackerLoad.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
+		scores = trackerLoad.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: m, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market2"}})
 		require.Equal(t, 0, len(scores))
 	}
 }
@@ -674,7 +753,8 @@ func TestSnapshot(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -696,7 +776,8 @@ func TestCheckpoint(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
 	require.NoError(t, trackerLoad.Load(context.Background(), b))
 
@@ -758,7 +839,8 @@ func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	snapshotEngine2, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
 	defer snapshotEngine2.Close()
@@ -795,7 +877,8 @@ func TestMarketProposerBonusScenarios(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
@@ -920,10 +1003,13 @@ func TestMarketProposerBonusScenarios(t *testing.T) {
 
 func TestPositionMetric(t *testing.T) {
 	epochService := &TestEpochEngine{}
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
@@ -942,29 +1028,29 @@ func TestPositionMetric(t *testing.T) {
 	// pBar = (1 - 600/1000) * 75 + 200 * 600/1000 = 150
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime, EndTime: epochStartTime.Add(1000 * time.Second)})
 
-	scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "150", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "75", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "50", scores[0].Score.String())
 
 	// qualifying the market to m1, expect the same result
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "50", scores[0].Score.String())
 
 	// qualifying the market to m2, expect the same result
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime.Add(1000 * time.Second)})
@@ -976,29 +1062,29 @@ func TestPositionMetric(t *testing.T) {
 	// end the epoch
 	// pBar = 0.6 * 200 + 0.4 * 100 = 160
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(1000 * time.Second), EndTime: epochStartTime.Add(2000 * time.Second)})
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "160", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "155", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "62", scores[0].Score.String())
 
 	// qualify to m1
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m1"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "62", scores[0].Score.String())
 
 	// qualify to m2
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	// now lets lets at an epoch with no activity
@@ -1006,29 +1092,32 @@ func TestPositionMetric(t *testing.T) {
 	// end the epoch
 	// pBar = 0 * 160 + 1 * 100 = 100
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(2000 * time.Second), EndTime: epochStartTime.Add(3000 * time.Second)})
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "100", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "130", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "102.5", scores[0].Score.String())
 }
 
 func TestRelativeReturnMetric(t *testing.T) {
+	ctx := context.Background()
 	epochService := &TestEpochEngine{}
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
@@ -1052,35 +1141,35 @@ func TestRelativeReturnMetric(t *testing.T) {
 	// therefore the r = 15/150 = 0.1
 
 	// window size 1
-	scores := tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "0.1", scores[0].Score.String())
 
 	// window size 2
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "0.05", scores[0].Score.String())
 
 	// window size 3
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "0.0333333333333333", scores[0].Score.String())
 
 	// add only this market in scope, expect same result
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "0.0333333333333333", scores[0].Score.String())
 
 	// add market scope with the wrong market:
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	// add a scope with a different market, expect nothing back
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	// lets run another epoch and make some loss
@@ -1095,17 +1184,17 @@ func TestRelativeReturnMetric(t *testing.T) {
 	// the time weighted position for the epoch = 160
 	// therefore r = -0.05
 	// max(-0.05, 0) = 0 => nothing is returned
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 0, len(scores))
 
 	// with window size=2 we get (0.1-0.05)/2 = 0.025
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "0.025", scores[0].Score.String())
 
 	// with window size=4 we get (0.1-0.05)/4 = 0.0125
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
 	require.Equal(t, "0.0125", scores[0].Score.String())
@@ -1115,7 +1204,8 @@ func TestTeamStatsForMarkets(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
 	asset1 := vgrand.RandomStr(5)
 	asset2 := vgrand.RandomStr(5)
@@ -1226,8 +1316,9 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()

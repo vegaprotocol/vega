@@ -290,7 +290,7 @@ func NewMarket(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine, pMonitor)
 
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -581,6 +581,8 @@ func (m *Market) GetSettlementAsset() string {
 }
 
 func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine products.OracleEngine) error {
+	tickSizeChanged := config.TickSize.NEQ(m.mkt.TickSize)
+
 	config.TradingMode = m.mkt.TradingMode
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
@@ -638,7 +640,22 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 		// market is settled, unsubscribe all
 		m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
-
+	if tickSizeChanged {
+		peggedOrders := m.matching.GetActivePeggedOrderIDs()
+		peggedOrders = append(peggedOrders, m.peggedOrders.GetParkedIDs()...)
+		for _, po := range peggedOrders {
+			order, err := m.matching.GetOrderByID(po)
+			if err != nil {
+				order = m.peggedOrders.GetParkedByID(po)
+				if order == nil {
+					continue
+				}
+			}
+			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() {
+				m.cancelOrder(ctx, order.Party, order.ID)
+			}
+		}
+	}
 	m.updateLiquidityFee(ctx)
 	// risk model hasn't changed -> return
 	if !recalcMargins {
@@ -1037,9 +1054,11 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	}()
 
 	t := m.timeService.GetTimeNow()
-	m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
-	if m.internalCompositePriceCalculator != nil {
-		m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+	if !m.as.InAuction() {
+		m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+		}
 	}
 
 	// if we do have a separate configuration for the intenal composite price and we have a new intenal composite price we push it to the perp
@@ -1048,10 +1067,13 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			!m.as.InAuction()) {
 		prevInternalCompositePrice := m.internalCompositePriceCalculator.GetPrice()
 		m.internalCompositePriceCalculator.CalculateMarkPrice(
+			ctx,
+			m.pMonitor,
+			m.as,
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, false)
 		m.nextInternalCompositePriceCalc = t.Add(m.internalCompositePriceFrequency)
 		if (prevInternalCompositePrice == nil || !m.internalCompositePriceCalculator.GetPrice().EQ(prevInternalCompositePrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentInternalCompositePrice().IsZero() {
@@ -1064,21 +1086,35 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		!m.nextMTM.After(t) &&
 			!m.as.InAuction() {
 		prevMarkPrice := m.markPriceCalculator.GetPrice()
-		m.markPriceCalculator.CalculateMarkPrice(
+		if _, err := m.markPriceCalculator.CalculateMarkPrice(
+			ctx,
+			m.pMonitor,
+			m.as,
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
-		// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
-		// on the standard mark price
-		if m.internalCompositePriceCalculator == nil && m.perp &&
-			(prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
-			!m.getCurrentMarkPrice().IsZero() {
-			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
+			m.mkt.LinearSlippageFactor,
+			m.risk.GetRiskFactors().Short,
+			m.risk.GetRiskFactors().Long,
+			true); err != nil {
+			// start the  monitoring auction if required
+			if m.as.AuctionStart() {
+				m.enterAuction(ctx)
+			}
+		} else {
+			// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
+			// on the standard mark price
+			if m.internalCompositePriceCalculator == nil && m.perp &&
+				(prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
+				!m.getCurrentMarkPrice().IsZero() {
+				m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
+			}
 		}
+
 		m.nextMTM = t.Add(m.mtmDelta)
-		// TODO @zohar not sure if the hasTraded is needed
-		if (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
+
+		if !m.as.InAuction() && (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentMarkPrice().IsZero() {
 			m.confirmMTM(ctx, false)
 			closedPositions := m.position.GetClosedPositions()
@@ -1099,6 +1135,10 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		markPriceCopy = m.markPriceCalculator.GetPrice().Clone()
 	}
 	m.liquidity.EndBlock(markPriceCopy, m.midPrice(), m.positionFactor)
+
+	if !m.matching.CheckBook() {
+		m.log.Panic("ontick book has orders pegged to nothing")
+	}
 }
 
 func (m *Market) removeAllStopOrders(
@@ -1321,14 +1361,26 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 
 	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
 	if order.Side == types.SideSell {
-		return price.AddSum(offset), nil
+		price = price.AddSum(offset)
+		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
+		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
+		// whole multiples of tick size.
+		if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
+			price.Sub(price, mod)
+		}
+		return price, nil
 	}
 
 	if price.LTE(offset) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	return num.UintZero().Sub(price, offset), nil
+	price.Sub(price, offset)
+	if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
+		price = num.UintZero().Sub(price.AddSum(m.mkt.TickSize), mod)
+	}
+
+	return price, nil
 }
 
 // Reprice a pegged order. This only updates the price on the order.
@@ -1528,7 +1580,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 			m.mkt.State = types.MarketStateActive
 			m.mkt.TradingMode = types.MarketTradingModeContinuous
-			m.tradableInstrument.Instrument.UpdateAuctionState(ctx, false)
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 			m.updateLiquidityFee(ctx)
@@ -1560,36 +1611,58 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
+	// we tell the perp that we've left auction, we might re-enter just a bit down but thats fine as
+	// we will at least keep the in/out orders in sync
+	m.tradableInstrument.Instrument.UpdateAuctionState(ctx, false)
 
 	for _, uncrossedOrder := range uncrossedOrders {
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
+	t := m.timeService.GetTimeNow().UnixNano()
 
-	m.markPriceCalculator.CalculateMarkPrice(
-		m.timeService.GetTimeNow().UnixNano(),
+	m.markPriceCalculator.SetBookPriceAtTimeT(m.lastTradedPrice, t)
+	if _, err := m.markPriceCalculator.CalculateMarkPrice(
+		ctx,
+		m.pMonitor,
+		m.as,
+		t,
 		m.matching,
 		m.mtmDelta,
 		m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 		m.mkt.LinearSlippageFactor,
 		m.risk.GetRiskFactors().Short,
-		m.risk.GetRiskFactors().Long)
+		m.risk.GetRiskFactors().Long,
+		true); err != nil {
+		if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
+			m.broker.Send(evt)
+		}
 
-	if wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
-		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
+		// start the  monitoring auction if required
+		if m.as.AuctionStart() {
+			m.enterAuction(ctx)
+		}
 	}
 
+	if !m.as.InAuction() && wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
+		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
+	}
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
 			m.internalCompositePriceCalculator.CalculateMarkPrice(
-				m.timeService.GetTimeNow().UnixNano(),
+				ctx,
+				m.pMonitor,
+				m.as,
+				t,
 				m.matching,
 				m.internalCompositePriceFrequency,
 				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
-				m.risk.GetRiskFactors().Long)
+				m.risk.GetRiskFactors().Long,
+				false)
 
 			if wasOpeningAuction && (m.getCurrentInternalCompositePrice().IsZero()) {
 				m.internalCompositePriceCalculator.OverridePrice(m.lastTradedPrice)
@@ -1693,8 +1766,21 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 			}
 			return reason
 		}
+		return m.validateTickSize(order.PeggedOrder.Offset)
 	}
 
+	if order.OriginalPrice != nil {
+		return m.validateTickSize(order.OriginalPrice)
+	}
+
+	return nil
+}
+
+func (m *Market) validateTickSize(price *num.Uint) error {
+	d := num.UintZero().Mod(price, m.mkt.TickSize)
+	if !d.IsZero() {
+		return types.ErrOrderNotInTickSize
+	}
 	return nil
 }
 
@@ -2296,6 +2382,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	order.Status = types.OrderStatusActive
 
+	var aggressorFee *num.Uint
+	if fees != nil {
+		aggressorFee = fees.TotalFeesAmountPerParty()[order.Party]
+	}
+
 	// NB: this is the position with the trades included and the order sizes updated to remaining!!!
 	// NB: this is not touching the actual position from the position engine but is all done on a clone, so that
 	// in handle confirmation this will be done as per normal.
@@ -2310,14 +2401,23 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// If the trade would decrease the party's position, that portion will trade and margin will be released as in the Decreasing Position.
 	// If the order is not persistent this is the end, if it is persistent any portion of the order which
 	// has not traded in step 1 will move to being placed on the order book.
-	if len(trades) > 0 && marginMode == types.MarginModeIsolatedMargin {
-		if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, false); err != nil {
-			if m.log.GetLevel() <= logging.DebugLevel {
-				m.log.Debug("Unable to check/add immediate trade margin for party",
-					logging.Order(*order), logging.Error(err))
+	if len(trades) > 0 {
+		if marginMode == types.MarginModeIsolatedMargin {
+			// check that the party can cover the trade AND the fees
+			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, false, aggressorFee); err != nil {
+				if m.log.GetLevel() <= logging.DebugLevel {
+					m.log.Debug("Unable to check/add immediate trade margin for party",
+						logging.Order(*order), logging.Error(err))
+				}
+				_ = m.position.UnregisterOrder(ctx, order)
+				return nil, nil, common.ErrMarginCheckFailed
 			}
-			_ = m.position.UnregisterOrder(ctx, order)
-			return nil, nil, common.ErrMarginCheckFailed
+		} else if aggressorFee != nil {
+			if err := m.collateral.PartyCanCoverFees(m.settlementAsset, m.mkt.ID, order.Party, aggressorFee); err != nil {
+				m.log.Error("insufficient funds to cover fees", logging.Order(order), logging.Error(err))
+				m.unregisterAndReject(ctx, order, types.OrderErrorInsufficientFundsToPayFees)
+				return nil, nil, err
+			}
 		}
 	}
 
@@ -2348,7 +2448,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// the contains the fees information
 	confirmation.Trades = trades
 
-	if marginMode == types.MarginModeIsolatedMargin {
+	if marginMode == types.MarginModeIsolatedMargin && order.Status == types.OrderStatusActive && order.TrueRemaining() > 0 {
 		// now we need to check if the party has sufficient funds to cover the order margin for the remaining size
 		// if not the remaining order is cancelled.
 		// if successful the required order margin are transferred to the order margin account.
@@ -2360,17 +2460,22 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			_ = m.unregisterAndReject(
 				ctx, order, types.OrderErrorMarginCheckFailed)
 			m.matching.RemoveOrder(order.ID)
+			if len(trades) > 0 {
+				if err = m.applyFees(ctx, order, fees); err != nil {
+					m.log.Panic("failed to apply fees on order", logging.Order(order), logging.String("aggressor total fees", fees.TotalFeesAmountPerParty()[order.ID].String()), logging.Error(err))
+				}
+				// if there were trades we need to return the confirmation so the trades can be handled
+				// otherwise they were just removed from the book for the passive side and gone
+				orderUpdates := m.handleConfirmation(ctx, confirmation, nil)
+				return confirmation, orderUpdates, common.ErrMarginCheckFailed
+			}
 			return nil, nil, common.ErrMarginCheckFailed
 		}
 	}
 
 	if fees != nil {
-		err = m.applyFees(ctx, order, fees)
-		if err != nil {
-			_ = m.unregisterAndReject(
-				ctx, order, types.OrderErrorMarginCheckFailed)
-			m.matching.RemoveOrder(order.ID)
-			return nil, nil, common.ErrMarginCheckFailed
+		if err = m.applyFees(ctx, order, fees); err != nil {
+			m.log.Panic("failed to apply fees on order", logging.Order(order), logging.String("aggressor total fees", fees.TotalFeesAmountPerParty()[order.ID].String()), logging.Error(err))
 		}
 	}
 
@@ -2398,7 +2503,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent) {
+	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent, false) {
 		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
 
@@ -2971,7 +3076,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 // updateIsolatedMarginOnAggressor is called when a new or amended order is matched immediately upon submission.
 // it checks that new margin requirements can be satisfied and if so transfers the margin from the general account to the margin account.
-func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade, isAmend bool) error {
+func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade, isAmend bool, fees *num.Uint) error {
 	marketObservable, mpos, increment, _, marginFactor, orders, err := m.getIsolatedMarginContext(pos, order)
 	if err != nil {
 		return err
@@ -3004,7 +3109,11 @@ func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *posit
 		}
 	}
 
-	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, clonedOrders, trades, marginFactor, order.Side, isAmend)
+	aggressorFee := num.UintZero()
+	if fees != nil {
+		aggressorFee = fees.Clone()
+	}
+	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, clonedOrders, trades, marginFactor, order.Side, isAmend, aggressorFee)
 	if err != nil {
 		return err
 	}
@@ -3012,6 +3121,21 @@ func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *posit
 		return nil
 	}
 	return m.transferMargins(ctx, risk, nil)
+}
+
+func (m *Market) updateIsolatedMarginOnOrderCancel(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) error {
+	marketObservable, pos, increment, auctionPrice, marginFactor, orders, err := m.getIsolatedMarginContext(mpos, order)
+	if err != nil {
+		return err
+	}
+	risk, err := m.risk.UpdateIsolatedMarginOnOrderCancel(ctx, pos, orders, marketObservable, auctionPrice, increment, marginFactor)
+	if err != nil {
+		return err
+	}
+	if risk == nil {
+		return nil
+	}
+	return m.transferMargins(ctx, []events.Risk{risk}, nil)
 }
 
 func (m *Market) updateIsolatedMarginOnOrder(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) error {
@@ -3304,9 +3428,11 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	// order margin
 	if foundOnBook && m.getMarginMode(partyID) == types.MarginModeIsolatedMargin {
 		pos, _ := m.position.GetPositionByPartyID(partyID)
-		if err := m.updateIsolatedMarginOnOrder(ctx, pos, order); err != nil {
-			m.log.Panic("failed to update order margin after order cancellation", logging.Order(order), logging.String("party", pos.Party()))
-		}
+		// it might be that we place orders before an auction, then during an auction we're trying to cancel the order - if we have still other order
+		// they will definitely have insufficient order margin but that's ok, either they will be fine when uncrossing the auction
+		// or will get cancelled then, no need to punish the party and cancel them at this point. Therefore this can either release funds
+		// from the order account or error which we ignore.
+		m.updateIsolatedMarginOnOrderCancel(ctx, pos, order)
 	}
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
@@ -3381,6 +3507,7 @@ func (m *Market) AmendOrderWithIDGenerator(
 
 	conf, updatedOrders, err := m.amendOrder(ctx, orderAmendment, party)
 	if err != nil {
+		m.log.Error("failed to amend order", logging.String("marketID", orderAmendment.MarketID), logging.String("orderID", orderAmendment.OrderID), logging.Error(err))
 		if m.getMarginMode(party) == types.MarginModeIsolatedMargin && err == common.ErrMarginCheckFailed {
 			m.handleIsolatedMarginInsufficientOrderMargin(ctx, party)
 		}
@@ -3470,6 +3597,12 @@ func (m *Market) amendOrder(
 	amendedOrder, err := existingOrder.ApplyOrderAmendment(orderAmendment, m.timeService.GetTimeNow().UnixNano(), m.priceFactor)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if orderAmendment.Price != nil && amendedOrder.OriginalPrice != nil {
+		if err = m.validateTickSize(amendedOrder.OriginalPrice); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	if err := m.position.ValidateAmendOrder(existingOrder, amendedOrder); err != nil {
@@ -3684,7 +3817,10 @@ func (m *Market) amendOrder(
 			pos, _ := m.position.GetPositionByPartyID(amendedOrder.Party)
 			if err := m.updateIsolatedMarginOnOrder(ctx, pos, amendedOrder); err == risk.ErrInsufficientFundsForMarginInGeneralAccount {
 				m.log.Error("party has insufficient margin to cover the order change, going to cancel all orders for the party")
-				_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+				// in this case we're now with the position with the amended order and the order book with the amended
+				// order which is consistent and will lead to the successful cancellation of all orders for the party.
+				// the reason we can't amend back here in place is that while decreasing size etc can be done in place
+				// increasing size (which is the inverse amend) cannot be done in place so we shouldn't attempt it.
 				return nil, nil, common.ErrMarginCheckFailed
 			}
 		}
@@ -3766,8 +3902,7 @@ func (m *Market) orderCancelReplace(
 		}
 		if fees != nil {
 			if feeErr := m.applyFees(ctx, newOrder, fees); feeErr != nil {
-				_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
-				return
+				m.log.Panic("orderCancelReplace failed to apply fees on order", logging.Order(newOrder), logging.String("aggressor total fees", fees.TotalFeesAmountPerParty()[newOrder.ID].String()), logging.Error(feeErr))
 			}
 		}
 		orders = m.handleConfirmation(ctx, conf, nil)
@@ -3797,6 +3932,7 @@ func (m *Market) orderCancelReplace(
 		if m.getMarginMode(newOrder.Party) == types.MarginModeIsolatedMargin {
 			pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
 			if err := m.updateIsolatedMarginOnOrder(ctx, pos, newOrder); err != nil {
+				// existing order have status cancelled so we need to get it back to active so it can be stopped properly
 				existingOrder.Status = newOrder.Status
 				m.matching.ReplaceOrder(newOrder, existingOrder)
 				if m.log.GetLevel() <= logging.DebugLevel {
@@ -3827,18 +3963,29 @@ func (m *Market) orderCancelReplace(
 		return nil, nil, errors.New("could not calculate fees for order")
 	}
 
+	var aggressorFee *num.Uint
+	if fees != nil {
+		aggressorFee = fees.TotalFeesAmountPerParty()[newOrder.Party]
+	}
+
 	marginMode := m.getMarginMode(newOrder.Party)
 	pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
 	posWithTrades := pos
-	if len(trades) > 0 && marginMode == types.MarginModeIsolatedMargin {
-		posWithTrades = pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades, newOrder)
-		// NB: this is the position with the trades included and the order sizes updated to remaining!!!
-		if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, true); err != nil {
-			if m.log.GetLevel() <= logging.DebugLevel {
-				m.log.Debug("Unable to check/add immediate trade margin for party",
-					logging.Order(*newOrder), logging.Error(err))
+	if len(trades) > 0 {
+		if marginMode == types.MarginModeIsolatedMargin {
+			posWithTrades = pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades, newOrder)
+			if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, true, aggressorFee); err != nil {
+				if m.log.GetLevel() <= logging.DebugLevel {
+					m.log.Debug("Unable to check/add immediate trade margin for party",
+						logging.Order(*newOrder), logging.Error(err))
+				}
+				return nil, nil, common.ErrMarginCheckFailed
 			}
-			return nil, nil, common.ErrMarginCheckFailed
+		} else if aggressorFee != nil {
+			if err := m.collateral.PartyCanCoverFees(m.settlementAsset, m.mkt.ID, newOrder.Party, aggressorFee); err != nil {
+				m.log.Error("insufficient funds to cover fees", logging.Order(newOrder), logging.Error(err))
+				return nil, nil, err
+			}
 		}
 	}
 
@@ -4237,7 +4384,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
@@ -4284,23 +4431,31 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
 			m.markPriceCalculator.CalculateMarkPrice(
+				ctx,
+				m.pMonitor,
+				m.as,
 				m.timeService.GetTimeNow().UnixNano(),
 				m.matching,
 				m.mtmDelta,
 				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
-				m.risk.GetRiskFactors().Long)
+				m.risk.GetRiskFactors().Long,
+				false)
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(
+					ctx,
+					m.pMonitor,
+					m.as,
 					m.timeService.GetTimeNow().UnixNano(),
 					m.matching,
 					m.internalCompositePriceFrequency,
 					m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 					m.mkt.LinearSlippageFactor,
 					m.risk.GetRiskFactors().Short,
-					m.risk.GetRiskFactors().Long)
+					m.risk.GetRiskFactors().Long,
+					false)
 			}
 
 			if m.perp {
@@ -4800,4 +4955,8 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 	}
 
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
+}
+
+func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
+	return m.matching.GetFillPrice(volume, side)
 }

@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased 0.75.0
+## Unreleased 0.76.0
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
 
 ### 🗑️ Deprecation
 
@@ -12,11 +12,82 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+
+## 0.75.0
+
+### 🚨 Breaking changes
+
+- [10635](https://github.com/vegaprotocol/vega/issues/10635) - Add support for tick size
+
+### 🛠 Improvements
+
+- [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
+- [10686](https://github.com/vegaprotocol/vega/issues/10764) - Network will now only trade within price monitoring bounds.
+- [10770](https://github.com/vegaprotocol/vega/issues/10770) - Increase price monitoring triggers to 100.
+- [10802](https://github.com/vegaprotocol/vega/issues/10802) - Added tick size support in feature tests.
+- [788](https://github.com/vegaprotocol/core-test-coverage/issues/788) - Add coverage for `0011-MARA-020`
+- [789](https://github.com/vegaprotocol/core-test-coverage/issues/789) - Add coverage for `0011-MARA-021`
+- [790](https://github.com/vegaprotocol/core-test-coverage/issues/790) - Add coverage for `0011-MARA-023`
+- [791](https://github.com/vegaprotocol/core-test-coverage/issues/791) - Add coverage for `0011-MARA-024`
+- [792](https://github.com/vegaprotocol/core-test-coverage/issues/792) - Add coverage for `0011-MARA-025`
+- [793](https://github.com/vegaprotocol/core-test-coverage/issues/793) - Add coverage for `0011-MARA-026`
+- [794](https://github.com/vegaprotocol/core-test-coverage/issues/794) - Add coverage for `0011-MARA-027`
+- [795](https://github.com/vegaprotocol/core-test-coverage/issues/795) - Add coverage for `0011-MARA-028`
+- [796](https://github.com/vegaprotocol/core-test-coverage/issues/796) - Add coverage for `0011-MARA-029`
+- [797](https://github.com/vegaprotocol/core-test-coverage/issues/797) - Add coverage for `0011-MARA-030`
+- [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
+- [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
+- [10841](https://github.com/vegaprotocol/vega/issues/10841) - Send heartbeats from `ethcall` engine to update core of the latest Ethereum block.
+- [10392](https://github.com/vegaprotocol/vega/issues/10392) - Integrate mark price with price monitoring.
+- [10845](https://github.com/vegaprotocol/vega/issues/10845) - Remove price monitoring trigger staleness check.
+- [10810](https://github.com/vegaprotocol/vega/issues/10810) - Do not update mark price from book during auctions.
+- [10846](https://github.com/vegaprotocol/vega/issues/10846) - Change min requirement for margin factor.
+- [10754](https://github.com/vegaprotocol/vega/issues/10754) - Simplify margin calculation (remove order book slippage).
+- [10831](https://github.com/vegaprotocol/vega/issues/10831) - Add API for `notionalTimeWeightedAveragePosition`.
+- [10879](https://github.com/vegaprotocol/vega/issues/10879) - Upgrade to cometbft 0.38.6.
+- [10885](https://github.com/vegaprotocol/vega/issues/10885) - Allow margin factor to be any positive.
+
+### 🐛 Fixes
+
+- [10722](https://github.com/vegaprotocol/vega/issues/10722) - Team API aggregation does not aggregate from the latest epoch.
+- [10743](https://github.com/vegaprotocol/vega/issues/10722) - When SLA hysteresis epochs are updated resize the ring using new value.
+- [10811](https://github.com/vegaprotocol/vega/issues/10811) - Ethereum call events are now properly `deduplicated` when restoring from a snapshot.
+- [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
+- [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended.
+- [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
+- [10750](https://github.com/vegaprotocol/vega/issues/10750) - Handle cancellation of order on entering auction for party in isolated margin mode.
+- [10748](https://github.com/vegaprotocol/vega/issues/10748) - Ensure apply fees cannot fail.
+- [10752](https://github.com/vegaprotocol/vega/issues/10752) - Handle amend in place correctly for failure in isolated margin check.
+- [10753](https://github.com/vegaprotocol/vega/issues/10753) - Handle the case that a submitted order is `FoK` in isolated margin to not double discount it from position.
+- [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
+- [10727](https://github.com/vegaprotocol/vega/issues/10727) - Allow for a 0 funding rate scaling factor.
+- [10785](https://github.com/vegaprotocol/vega/issues/10785) - Oracles data is getting increasingly slow.
+- [10780](https://github.com/vegaprotocol/vega/issues/10780) - REST API does not handle ID arrays correctly.
+- [10778](https://github.com/vegaprotocol/vega/issues/10778) - cancel pegged orders when tick size changes and mismatches the offset.
+- [10792](https://github.com/vegaprotocol/vega/issues/10792) - Use correct market for market proposer bonus for spots.
+- [10795](https://github.com/vegaprotocol/vega/issues/10795) - Increase price monitoring triggers to 100 (missed validation).
+- [10800](https://github.com/vegaprotocol/vega/issues/10800) - Respect market list passed to transfer dispatch strategy when considering paid fees in applying reward cap.
+- [10804](https://github.com/vegaprotocol/vega/issues/10804) - Handle amend in place revert on failure to update order margin such that we do not amend in place which may not be possible.
+- [10837](https://github.com/vegaprotocol/vega/issues/10837) - List transfers API can error when pagination is provided.
+- [10823](https://github.com/vegaprotocol/vega/issues/10823) - Only allowing a single trigger to be breached when checking bounds.
+- [10055](https://github.com/vegaprotocol/vega/issues/10055) - Quitting the wallet service CLI while waiting for a password now restores the terminal capabilities.
+- [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot.
+- [10862](https://github.com/vegaprotocol/vega/issues/10862) - Add witness configuration for node vote resend interval.
+- [10852](https://github.com/vegaprotocol/vega/issues/10852) - Fix order margin account release issue (isolated margin mode).
+- [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot.
+- [10864](https://github.com/vegaprotocol/vega/issues/10864) - Fix snapshot non determinism for pegged orders.
+- [10877](https://github.com/vegaprotocol/vega/issues/10877) - Fix event binding for time weight event.
+- [10882](https://github.com/vegaprotocol/vega/issues/10882) - Fix data-node panic due to event sequence not being set.
+- [10895](https://github.com/vegaprotocol/vega/issues/10895) - Initialise `tw notional` service in data node.
+- [10721](https://github.com/vegaprotocol/vega/issues/10721) - Fix `unregistration` of state variables for spot market when closed.
+- [10904](https://github.com/vegaprotocol/vega/issues/10904) - Balance changes API should validate date range properly.
+- [10911](https://github.com/vegaprotocol/vega/issues/10911) - Fix `unregistration` of spot market state var.
+- [10915](https://github.com/vegaprotocol/vega/issues/10915) - Fix duplicate deposit entries, add new `STATUS_DUPLICATE_REJECTED` status.
 
 ## 0.74.3
 
@@ -149,6 +220,7 @@
 - [10523](https://github.com/vegaprotocol/vega/issues/10523) - Fix repeated games statistics for multiple recurring transfers.
 - [10527](https://github.com/vegaprotocol/vega/issues/10527) - Add support for `byte32` type in market proposal oracle definition.
 - [10563](https://github.com/vegaprotocol/vega/issues/10563) - Spam protection for create/update referral program.
+- [10517](https://github.com/vegaprotocol/vega/issues/10517) - Add optional cap to metric based rewards.
 - [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 - [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
 

@@ -203,6 +203,7 @@ func newSpotMarket(config *market.Config, netparams *netparams.Store, row spotMa
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
+		TickSize:                      row.tickSize(),
 	}
 
 	tip := m.TradableInstrument.IntoProto()
@@ -273,6 +274,7 @@ func spotMarketUpdate(config *market.Config, existing *types.Market, row spotMar
 		// update existing
 		existing.TradableInstrument = current
 	}
+	update.Changes.TickSize = row.tickSize()
 	return update
 }
 
@@ -301,6 +303,7 @@ func parseSpotMarketsTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"decimal places",
 		"position decimal places",
+		"tick size",
 	})
 }
 
@@ -342,6 +345,13 @@ func (r spotMarketRow) riskModel() string {
 	return r.row.MustStr("risk model")
 }
 
+func (r spotMarketRow) tickSize() *num.Uint {
+	if r.row.HasColumn("tick size") {
+		return num.MustUintFromString(r.row.MustStr("tick size"), 10)
+	}
+	return num.UintOne()
+}
+
 func (r spotMarketRow) fees() string {
 	return r.row.MustStr("fees")
 }
@@ -364,6 +374,13 @@ type spotMarketUpdateRow struct {
 
 func (r spotMarketUpdateRow) id() string {
 	return r.row.MustStr("id")
+}
+
+func (r spotMarketUpdateRow) tickSize() *num.Uint {
+	if r.row.HasColumn("tick size") {
+		return num.MustUintFromString(r.row.MustStr("tick size"), 10)
+	}
+	return num.UintOne()
 }
 
 func (r spotMarketUpdateRow) priceMonitoring() (string, bool) {

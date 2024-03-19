@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
@@ -39,11 +40,13 @@ type Transfers struct {
 }
 
 type ListTransfersFilters struct {
-	FromEpoch *uint64
-	ToEpoch   *uint64
-	Scope     *entities.TransferScope
-	Status    *entities.TransferStatus
-	GameID    *entities.GameID
+	FromEpoch       *uint64
+	ToEpoch         *uint64
+	Scope           *entities.TransferScope
+	Status          *entities.TransferStatus
+	GameID          *entities.GameID
+	FromAccountType *vega.AccountType
+	ToAccountType   *vega.AccountType
 }
 
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
@@ -121,7 +124,7 @@ func (t *Transfers) GetTransfersToOrFromParty(ctx context.Context, pagination en
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersToOrFromParty")()
 
 	where := []string{
-		"(transfers_current.from_account_id in (select id from accounts where accounts.party_id=$1) or transfers_current.to_account_id in (select id from accounts where accounts.party_id=$1))",
+		"(from_account_id in (select id from accounts where accounts.party_id=$1) or to_account_id in (select id from accounts where accounts.party_id=$1))",
 	}
 
 	transfers, pageInfo, err := t.getCurrentTransfers(ctx, pagination, filters, where, []any{partyID})
@@ -141,7 +144,7 @@ func (t *Transfers) GetTransfersFromParty(ctx context.Context, pagination entiti
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromParty")()
 
 	where := []string{
-		"transfers_current.from_account_id in (select id from accounts where accounts.party_id=$1)",
+		"from_account_id in (select id from accounts where accounts.party_id=$1)",
 	}
 
 	transfers, pageInfo, err := t.getCurrentTransfers(ctx, pagination, filters, where, []any{partyID})
@@ -160,7 +163,7 @@ func (t *Transfers) GetTransfersToParty(ctx context.Context, pagination entities
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersToParty")()
 
 	where := []string{
-		"transfers_current.to_account_id in (select id from accounts where accounts.party_id=$1)",
+		"to_account_id in (select id from accounts where accounts.party_id=$1)",
 	}
 
 	transfers, pageInfo, err := t.getCurrentTransfers(ctx, pagination, filters, where, []any{partyID})
@@ -295,7 +298,16 @@ func (t *Transfers) GetCurrentTransferFeeDiscount(
 
 func (t *Transfers) getCurrentTransfers(ctx context.Context, pagination entities.CursorPagination, filters ListTransfersFilters, where []string, args []any) ([]entities.Transfer, entities.PageInfo, error) {
 	whereStr, args := t.buildWhereClause(filters, where, args)
-	query := "SELECT * FROM transfers_current " + whereStr
+	query := `WITH current_transfers as (
+	SELECT tc.*, af.type as from_account_type, at.type as to_account_type
+	FROM transfers_current tc
+	JOIN accounts af on tc. from_account_id = af.id
+	JOIN accounts at on tc.to_account_id = at.id
+)
+	SELECT id, tx_hash, vega_time, from_account_id, to_account_id, asset_id, amount, reference, status, transfer_type, deliver_on,
+		start_epoch, end_epoch, factor, dispatch_strategy, reason, game_id
+	FROM current_transfers
+` + whereStr
 
 	return t.selectTransfers(ctx, pagination, query, args)
 }
@@ -304,12 +316,14 @@ func (t *Transfers) getRecurringTransfers(ctx context.Context, pagination entiti
 	whereStr, args := t.buildWhereClause(filters, where, args)
 
 	query := `WITH recurring_transfers AS (
-		SELECT tc.* FROM transfers_current as tc
-		JOIN accounts as a on tc.to_account_id = a.id
+		SELECT tc.*, af.type as from_account_type, at.type as to_account_type FROM transfers_current as tc
+		JOIN accounts as at on tc.to_account_id = at.id
+		JOIN accounts as af on tc.from_account_id = af.id
 		WHERE transfer_type IN ($1, $2)
-		AND a.type = 12 OR (jsonb_typeof(tc.dispatch_strategy) != 'null' AND dispatch_strategy->>'metric' <> '0')
+		AND at.type = 12 OR (jsonb_typeof(tc.dispatch_strategy) != 'null' AND dispatch_strategy->>'metric' <> '0')
 )
-SELECT *
+SELECT id, tx_hash, vega_time, from_account_id, to_account_id, asset_id, amount, reference, status, transfer_type, deliver_on,
+	start_epoch, end_epoch, factor, dispatch_strategy, reason, game_id
 FROM recurring_transfers
 ` + whereStr
 
@@ -349,9 +363,19 @@ func (t *Transfers) buildWhereClause(filters ListTransfersFilters, where []strin
 		where = append(where, fmt.Sprintf("game_id = %s", nextBindVar(&args, *filters.GameID)))
 	}
 
+	if filters.FromAccountType != nil {
+		where = append(where, fmt.Sprintf("from_account_type = %s", nextBindVar(&args, *filters.FromAccountType)))
+	}
+
+	if filters.ToAccountType != nil {
+		where = append(where, fmt.Sprintf("to_account_type = %s", nextBindVar(&args, *filters.ToAccountType)))
+	}
+
 	whereStr := ""
 	if len(where) > 0 {
 		whereStr = "where " + strings.Join(where, " and ")
+	} else {
+		whereStr = "where 1=1" // required because there is a where clause in the subquery and without a where clause in the main query, the pagination will break
 	}
 	return whereStr, args
 }
