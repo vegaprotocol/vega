@@ -11,7 +11,9 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🛠 Improvements
+
 - [10926](https://github.com/vegaprotocol/vega/issues/10926) - Backport governance proposal to change market name for spots
+- [906](https://github.com/vegaprotocol/core-test-coverage/issues/906) - Add coverage for `0068-MATC-060`
 
 ### 🐛 Fixes
 
