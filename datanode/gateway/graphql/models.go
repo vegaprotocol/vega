@@ -934,6 +934,13 @@ type UpdateInstrumentConfiguration struct {
 	Product UpdateProductConfiguration `json:"product"`
 }
 
+type UpdateSpotInstrumentConfiguration struct {
+	// Instrument code, human-readable shortcode used to describe the instrument.
+	Code string `json:"code"`
+	// Instrument name
+	Name string `json:"name"`
+}
+
 // Event types
 type BusEventType string
 

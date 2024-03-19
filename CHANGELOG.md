@@ -11,8 +11,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🛠 Improvements
-
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+- [10926](https://github.com/vegaprotocol/vega/issues/10926) - Backport governance proposal to change market name for spots
 
 ### 🐛 Fixes
 
@@ -51,6 +50,7 @@
 - [10831](https://github.com/vegaprotocol/vega/issues/10831) - Add API for `notionalTimeWeightedAveragePosition`.
 - [10879](https://github.com/vegaprotocol/vega/issues/10879) - Upgrade to cometbft 0.38.6.
 - [10885](https://github.com/vegaprotocol/vega/issues/10885) - Allow margin factor to be any positive.
+
 
 ### 🐛 Fixes
 

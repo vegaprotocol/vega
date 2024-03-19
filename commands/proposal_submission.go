@@ -1013,6 +1013,7 @@ func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
 	}
 
 	changes := updateSpotMarket.Changes
+	errs.Merge(checkUpdateSpotInstrument(changes.Instrument).AddPrefix("proposal_submission.terms.change."))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "update_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "update_spot_market.changes"))
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
@@ -1144,6 +1145,21 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.product", parent), ErrIsNotValid)
 	}
 
+	return errs
+}
+
+func checkUpdateSpotInstrument(instrument *protoTypes.UpdateSpotInstrumentConfiguration) Errors {
+	errs := NewErrors()
+	if instrument == nil {
+		return errs.FinalAddForProperty("update_spot_market.changes.instrument", ErrIsRequired)
+	}
+	if len(instrument.Code) == 0 {
+		errs.AddForProperty("update_spot_market.changes.instrument.code", ErrIsRequired)
+	}
+
+	if len(instrument.Name) == 0 {
+		errs.AddForProperty("update_spot_market.changes.instrument.name", ErrIsRequired)
+	}
 	return errs
 }
 
