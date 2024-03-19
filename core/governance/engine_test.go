@@ -1782,6 +1782,10 @@ func updateSpotMarketTerms() *types.ProposalTermsUpdateSpotMarket {
 		UpdateSpotMarket: &types.UpdateSpotMarket{
 			MarketID: vgrand.RandomStr(5),
 			Changes: &types.UpdateSpotMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "some name",
+					Code: "some code",
+				},
 				RiskParameters: &types.UpdateSpotMarketConfigurationLogNormal{
 					LogNormal: &types.LogNormalRiskModel{
 						RiskAversionParameter: num.DecimalFromFloat(0.02),

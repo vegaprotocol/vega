@@ -4969,7 +4969,16 @@ type UpdateSpotMarket {
   updateSpotMarketConfiguration: UpdateSpotMarketConfiguration!
 }
 
+type UpdateSpotInstrumentConfiguration {
+  "Instrument code, human-readable shortcode used to describe the instrument."
+  code: String!
+ "Instrument name"
+  name: String!
+}
+
 type UpdateSpotMarketConfiguration {
+  "Updated spot market instrument configuration."
+  instrument: UpdateSpotInstrumentConfiguration!
   "Optional spot market metadata tags"
   metadata: [String!]!
   "Price monitoring parameters"

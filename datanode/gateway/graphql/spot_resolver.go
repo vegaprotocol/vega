@@ -51,6 +51,14 @@ func (r updateSpotMarketResolver) UpdateSpotMarketConfiguration(ctx context.Cont
 
 type updateSpotMarketConfigurationResolver VegaResolverRoot
 
+// Instrument implements UpdateSpotMarketConfigurationResolver.
+func (r *updateSpotMarketConfigurationResolver) Instrument(ctx context.Context, obj *types.UpdateSpotMarketConfiguration) (*UpdateSpotInstrumentConfiguration, error) {
+	return &UpdateSpotInstrumentConfiguration{
+		Name: obj.Instrument.Name,
+		Code: obj.Instrument.Code,
+	}, nil
+}
+
 func (r updateSpotMarketConfigurationResolver) PriceMonitoringParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*PriceMonitoringParameters, error) {
 	return PriceMonitoringParametersFromProto(obj.PriceMonitoringParameters)
 }
