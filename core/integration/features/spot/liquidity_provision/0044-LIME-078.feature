@@ -119,6 +119,12 @@ Feature: Spot market
       | lp1   | lp1-b     | STATUS_STOPPED |
       | lp1   | lp1-s     | STATUS_PARKED  |
 
+    # 0068-MATC-091:An update to an order that is not [ACTIVE or PARKED](Stopped, Cancelled, Expired, Filled) will be rejected
+    When the parties amend the following orders:
+      | party | reference | price | size delta | tif     | error                        |
+      | lp1   | lp1-b     | 5     | 3          | TIF_GTC | OrderError: Invalid Order ID |
+      | lp1   | lp1-s     | 25    | 3          | TIF_GTC | invalid OrderError           |
+
     Then "lp1" should have holding account balance of "0" for asset "ETH"
     Then "lp1" should have general account balance of "39000" for asset "ETH"
     Then "lp1" should have holding account balance of "0" for asset "BTC"
