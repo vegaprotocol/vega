@@ -246,6 +246,15 @@ message UpdateSpotMarketConfiguration {
   LiquidityFeeSettings liquidity_fee_settings = 5;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 6;
+  // Specifies the name and code of the spot instrument.
+  UpdateSpotInstrumentConfiguration instrument = 7;
+}
+
+message UpdateSpotInstrumentConfiguration {
+  // Instrument code, human-readable shortcode used to describe the instrument.
+  string code = 1;
+  // Instrument name
+  string name = 2;
 }
 
 // Instrument configuration
