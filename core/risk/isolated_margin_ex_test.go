@@ -91,7 +91,7 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	require.Equal(t, num.NewUint(0), riskEvent[0].MarginLevels().OrderMargin)
 
 	buyOrderInfo, sellOrderInfo := extractOrderInfo(orders)
-	requiredPositionMarginStatic, requiredOrderMarginStatic := risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), evt.Price().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor)
+	requiredPositionMarginStatic, requiredOrderMarginStatic := risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), evt.Price().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, nil)
 	require.True(t, !requiredPositionMarginStatic.IsZero())
 	require.True(t, requiredOrderMarginStatic.IsZero())
 	transferRecalc := requiredPositionMarginStatic.Sub(evt.MarginBalance().ToDecimal())
@@ -119,7 +119,7 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
 
 	buyOrderInfo, sellOrderInfo = extractOrderInfo(orders)
-	requiredPositionMarginStatic, requiredOrderMarginStatic = risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), evt.Price().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor)
+	requiredPositionMarginStatic, requiredOrderMarginStatic = risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), evt.Price().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, nil)
 	require.True(t, !requiredPositionMarginStatic.IsZero())
 	require.True(t, !requiredOrderMarginStatic.IsZero())
 	transferRecalc = requiredPositionMarginStatic.Sub(evt.MarginBalance().ToDecimal())
@@ -147,7 +147,7 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
 
 	buyOrderInfo, sellOrderInfo = extractOrderInfo(orders)
-	requiredPositionMarginStatic, requiredOrderMarginStatic = risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), evt.Price().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor)
+	requiredPositionMarginStatic, requiredOrderMarginStatic = risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), evt.Price().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, nil)
 	require.True(t, !requiredPositionMarginStatic.IsZero())
 	require.True(t, !requiredOrderMarginStatic.IsZero())
 	transferRecalc = evt.MarginBalance().ToDecimal().Sub(requiredPositionMarginStatic)
