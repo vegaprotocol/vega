@@ -19,6 +19,7 @@
 - [909](https://github.com/vegaprotocol/core-test-coverage/issues/909) - Add coverage for `0068-MATC-063`
 - [910](https://github.com/vegaprotocol/core-test-coverage/issues/910) - Add coverage for `0068-MATC-064`
 - [911](https://github.com/vegaprotocol/core-test-coverage/issues/911) - Add coverage for `0068-MATC-065`
+- [742](https://github.com/vegaprotocol/core-test-coverage/issues/742) - Add coverage for `0044-LIME-029`
 
 ### 🐛 Fixes
 
@@ -60,7 +61,6 @@
 - [10831](https://github.com/vegaprotocol/vega/issues/10831) - Add API for `notionalTimeWeightedAveragePosition`.
 - [10879](https://github.com/vegaprotocol/vega/issues/10879) - Upgrade to cometbft 0.38.6.
 - [10885](https://github.com/vegaprotocol/vega/issues/10885) - Allow margin factor to be any positive.
-
 
 ### 🐛 Fixes
 
@@ -131,11 +131,10 @@
 - [10683](https://github.com/vegaprotocol/vega/issues/10683) - Fix GraphQL does not correctly marshal transfers status in filter.
 - [10685](https://github.com/vegaprotocol/vega/issues/10685) - Fix list transfers returns too much data..
 - [10691](https://github.com/vegaprotocol/vega/issues/10691) - Fix team stats include rewards from individual games
-- [10647](https://github.com/vegaprotocol/vega/issues/10647)  Add filter by game ID to transfers API.
+- [10647](https://github.com/vegaprotocol/vega/issues/10647) Add filter by game ID to transfers API.
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
 - [10696](https://github.com/vegaprotocol/vega/issues/10696) - Fix position updates to undo positions changes on isolated margin failure.
 - [10712](https://github.com/vegaprotocol/vega/issues/10712) - Fix the unit of auction extension and leave check auction early if governance auction has been extended.
-
 
 ## 0.74.1
 
