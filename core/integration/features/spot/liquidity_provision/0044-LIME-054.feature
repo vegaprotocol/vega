@@ -100,7 +100,7 @@ Feature: Spot market SLA
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4000         | 3000           | 0             |
+      | 0         | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4000         | 3000           | 0             |
 
 # Then the network moves ahead "4" blocks
 # And the network treasury balance should be "1200" for the asset "ETH"
