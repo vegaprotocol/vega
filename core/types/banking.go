@@ -180,8 +180,9 @@ func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason, gameID *string)
 	} else {
 		out.Kind = &eventspb.Transfer_RecurringGovernance{
 			RecurringGovernance: &eventspb.RecurringGovernanceTransfer{
-				StartEpoch: g.Config.RecurringTransferConfig.StartEpoch,
-				EndEpoch:   g.Config.RecurringTransferConfig.EndEpoch,
+				StartEpoch:       g.Config.RecurringTransferConfig.StartEpoch,
+				EndEpoch:         g.Config.RecurringTransferConfig.EndEpoch,
+				DispatchStrategy: g.Config.RecurringTransferConfig.DispatchStrategy,
 			},
 		}
 	}
