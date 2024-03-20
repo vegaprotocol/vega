@@ -19,6 +19,7 @@
 
 - [10946](https://github.com/vegaprotocol/vega/issues/10945) - Save dispatch strategy for recurring governance transfer in the database.
 - [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
+- [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
 
 ## 0.75.0
 
