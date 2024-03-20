@@ -17,7 +17,8 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+- [10946](https://github.com/vegaprotocol/vega/issues/10945) - Save dispatch strategy for recurring governance transfer in the database.
+- [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
 
 ## 0.75.0
 
