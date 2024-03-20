@@ -671,6 +671,10 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 		return validateLogNormalRiskParams(r.LogNormal)
 	case *types.UpdateMarketConfigurationLogNormal:
 		return validateLogNormalRiskParams(r.LogNormal)
+	case *types.NewSpotMarketConfigurationSimple:
+		return types.ProposalErrorUnspecified, nil
+	case *types.UpdateSpotMarketConfigurationSimple:
+		return types.ProposalErrorUnspecified, nil
 	case *types.NewSpotMarketConfigurationLogNormal:
 		return validateLogNormalRiskParams(r.LogNormal)
 	case *types.UpdateSpotMarketConfigurationLogNormal:

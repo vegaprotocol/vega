@@ -72,7 +72,7 @@ Feature: Spot market
       | limits.markets.maxPeggedOrders | 10    |
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party2 | BTC/ETH   | sell | 5      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
 
     And the parties place the following pegged orders:
@@ -81,14 +81,37 @@ Feature: Spot market
 
     Then "party5" should have holding account balance of "1" for asset "BTC"
 
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | sell | 1000  | 0      |
+      
+    #0068-MATC-072, Incoming limit GTT orders match if possible, any remaining is placed on the book.
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | expires in | reference |
+      | party1 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTT | 2          | buy2      |
+      | party5 | BTC/ETH   | sell | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTT | 2          | sell2     |
+
+    Then the orders should have the following status:
+      | party  | reference | status        |
+      | party1 | buy2      | STATUS_FILLED |
+      | party5 | sell2     | STATUS_ACTIVE |
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | sell | 1000  | 1      |
+
+    When the network moves ahead "2" blocks
+    Then the orders should have the following status:
+      | party  | reference | status         |
+      | party5 | sell2     | STATUS_EXPIRED |
+
   Scenario: In Spot market, holding in holding account is correctly calculated for all order types in continuous trading pegged GTC. (0011-MARA-026)
     Given the following network parameters are set:
       | name                           | value |
       | limits.markets.maxPeggedOrders | 10    |
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party2 | BTC/ETH   | sell | 5      | 1000000 | 0              | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party2 | BTC/ETH   | sell | 5      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
 
     When the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
@@ -102,11 +125,12 @@ Feature: Spot market
       | limits.markets.maxPeggedOrders | 10    |
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party2 | BTC/ETH   | sell | 5      | 1000000 | 0              | TYPE_LIMIT | TIF_GFN | t2-s-1    |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party2 | BTC/ETH   | sell | 5      | 1000000 | 0                | TYPE_LIMIT | TIF_GFN | t2-s-1    |
 
     When the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
       | party5 | BTC/ETH   | sell | 1      | ASK              | 100    |
 
     Then "party5" should have holding account balance of "1" for asset "BTC"
+

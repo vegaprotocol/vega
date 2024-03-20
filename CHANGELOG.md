@@ -14,10 +14,18 @@
 
 - [10926](https://github.com/vegaprotocol/vega/issues/10926) - Backport governance proposal to change market name for spots
 - [906](https://github.com/vegaprotocol/core-test-coverage/issues/906) - Add coverage for `0068-MATC-060`
+- [907](https://github.com/vegaprotocol/core-test-coverage/issues/907) - Add coverage for `0068-MATC-061`
+- [908](https://github.com/vegaprotocol/core-test-coverage/issues/908) - Add coverage for `0068-MATC-062`
+- [909](https://github.com/vegaprotocol/core-test-coverage/issues/909) - Add coverage for `0068-MATC-063`
+- [910](https://github.com/vegaprotocol/core-test-coverage/issues/910) - Add coverage for `0068-MATC-064`
+- [911](https://github.com/vegaprotocol/core-test-coverage/issues/911) - Add coverage for `0068-MATC-065`
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+- [10946](https://github.com/vegaprotocol/vega/issues/10945) - Save dispatch strategy for recurring governance transfer in the database.
+- [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
+- [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
+- [10952](https://github.com/vegaprotocol/vega/issues/10952) - Fix bug that caused spot markets to get stuck in opening auction.
 
 ## 0.75.0
 

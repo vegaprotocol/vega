@@ -150,7 +150,8 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 		proto.Kind = &eventspb.Transfer_OneOffGovernance{OneOffGovernance: &eventspb.OneOffGovernanceTransfer{DeliverOn: t.DeliverOn.UnixNano()}}
 	case GovernanceRecurring:
 		recurringTransfer := &eventspb.RecurringGovernanceTransfer{
-			StartEpoch: *t.StartEpoch,
+			StartEpoch:       *t.StartEpoch,
+			DispatchStrategy: t.DispatchStrategy,
 		}
 
 		if t.EndEpoch != nil {
