@@ -75,7 +75,7 @@ func NewL2Verifiers(
 		clients:           clients,
 		verifiers:         map[string]*Verifier{},
 		ethL2CallEngine:   callEngines,
-		isValidator:       isValidator,
+		isValidator:       false,
 	}
 }
 
@@ -96,7 +96,7 @@ func (v *L2Verifiers) OnEthereumL2ConfigsUpdated(
 
 func (v *L2Verifiers) instantiate(chainID string) *Verifier {
 	var confs *eth.EthereumConfirmations
-	if v.isValidator {
+	if false {
 		var ok bool
 		_, confs, ok = v.clients.Get(chainID)
 		if !ok {
