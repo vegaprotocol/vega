@@ -72,12 +72,12 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 		// if already exists, do nothing
 		if e, ok := v.engines[c.ChainID]; ok {
 			// the blockInterval might have changed, so let just call that.
-			e.EnsureChainID(c.ChainID, c.BlockInterval, v.isValidator)
+			e.EnsureChainID(c.ChainID, c.BlockInterval, false)
 			continue
 		}
 
 		var clt *eth.L2Client
-		if v.isValidator {
+		if false {
 			var ok bool
 			clt, _, ok = v.clients.Get(c.ChainID)
 			if !ok {
@@ -88,8 +88,8 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 			}
 		}
 
-		e := ethcall.NewEngine(v.log, v.cfg, v.isValidator, clt, v.forwarder)
-		e.EnsureChainID(c.ChainID, c.BlockInterval, v.isValidator)
+		e := ethcall.NewEngine(v.log, v.cfg, false, clt, v.forwarder)
+		e.EnsureChainID(c.ChainID, c.BlockInterval, false)
 		v.engines[c.ChainID] = e
 
 		// if we are restoring from a snapshot we want to delay starting the engine
