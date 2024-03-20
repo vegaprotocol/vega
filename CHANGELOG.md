@@ -1,18 +1,6 @@
 # Changelog
 
-## Unreleased 0.76.0
-
-### 🚨 Breaking changes
-
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
-
-### 🗑️ Deprecation
-
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
-
-### 🛠 Improvements
-
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+## 0.75.1
 
 ### 🐛 Fixes
 
