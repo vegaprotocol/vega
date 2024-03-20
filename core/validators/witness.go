@@ -18,6 +18,7 @@ package validators
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -409,7 +410,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			if v.selfVoteReceived(w.top.SelfVegaPubKey()) {
 				continue
 			}
-			w.onCommandSent(v.res.GetID())("", errors.New("no self votes received after 10 seconds"))
+			w.onCommandSent(v.res.GetID())("", fmt.Errorf("no self votes received after %s", w.cfg.NodeVoteResendInterval.Duration.String()))
 		}
 	}
 }
