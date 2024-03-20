@@ -506,7 +506,7 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.stats.ReloadConf(cfg.Stats) },
 	)
 
-	if svcs.conf.HaveEthClient() {
+	if false {
 		svcs.confListenerIDs = svcs.confWatcher.OnConfigUpdateWithID(
 			func(cfg config.Config) { svcs.l2Clients.ReloadConf(cfg.Ethereum) },
 		)
@@ -885,7 +885,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 					return fmt.Errorf("invalid ethereum l2 configuration: %w", err)
 				}
 
-				if svcs.conf.HaveEthClient() {
+				if false {
 					svcs.l2Clients.UpdateConfirmations(ethCfg)
 				}
 
