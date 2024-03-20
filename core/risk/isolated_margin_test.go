@@ -262,7 +262,7 @@ func TestCalcOrderMarginContinous(t *testing.T) {
 	// buy orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
 	// sell orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
 	// order margin = max(95,125) = 125
-	orderSideMargin := calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	orderSideMargin := CalcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
 	require.Equal(t, num.NewUint(125), orderSideMargin)
 	staticResult := CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
 	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
@@ -271,7 +271,7 @@ func TestCalcOrderMarginContinous(t *testing.T) {
 	// buy orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
 	// sell orderMargin = 0.5*(6 * 20 + 20 * 40 + 30 * 50)/10 = 121
 	currentPos = 4
-	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	orderSideMargin = CalcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
 	require.Equal(t, num.NewUint(121), orderSideMargin)
 	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
 	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
@@ -280,7 +280,7 @@ func TestCalcOrderMarginContinous(t *testing.T) {
 	// buy orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
 	// sell orderMargin =  0.5*(0 * 20 + 5 * 40 + 30 * 50)/10 = 85
 	currentPos = 25
-	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	orderSideMargin = CalcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
 	require.Equal(t, num.NewUint(95), orderSideMargin)
 	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
 	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
@@ -289,7 +289,7 @@ func TestCalcOrderMarginContinous(t *testing.T) {
 	// buy orderMargin = 0.5*(6 * 50 + 20 * 40 + 30 * 20)/10 = 85
 	// sell orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
 	currentPos = -4
-	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	orderSideMargin = CalcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
 	require.Equal(t, num.NewUint(125), orderSideMargin)
 	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
 	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
@@ -298,7 +298,7 @@ func TestCalcOrderMarginContinous(t *testing.T) {
 	// buy orderMargin = 0.5*(0 * 50 + 10 * 40 + 30 * 20)/10 = 50
 	// sell orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
 	currentPos = -20
-	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	orderSideMargin = CalcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
 	require.Equal(t, num.NewUint(125), orderSideMargin)
 	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
 	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())

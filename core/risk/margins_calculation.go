@@ -339,28 +339,44 @@ func calcOrderSideMarginIsolatedMode(currentPosition int64, orders []*OrderInfo,
 	return margin.Mul(marginFactor).Div(positionFactor)
 }
 
-func CalculateRequiredMarginInIsolatedMode(sizePosition int64, averageEntryPrice, marketObservable num.Decimal, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor num.Decimal) (num.Decimal, num.Decimal) {
-	totalOrderNotional := num.DecimalZero()
+func CalculateRequiredMarginInIsolatedMode(sizePosition int64, averageEntryPrice, marketObservable num.Decimal, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor num.Decimal, auctionPrice *num.Uint) (num.Decimal, num.Decimal) {
 	marketOrderAdjustedPositionNotional := averageEntryPrice.Copy().Mul(num.DecimalFromInt64(sizePosition))
+	var orders []*types.Order = make([]*types.Order, 0, len(buyOrders)+len(sellOrders))
 
 	// assume market orders fill immediately at marketObservable price
 	for _, o := range buyOrders {
 		if o.IsMarketOrder {
+			sizePosition += int64(o.TrueRemaining)
 			marketOrderAdjustedPositionNotional = marketOrderAdjustedPositionNotional.Add(marketObservable.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
 		} else {
-			totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+			price, _ := num.UintFromDecimal(o.Price)
+			ord := &types.Order{
+				Status:    types.OrderStatusActive,
+				Remaining: o.TrueRemaining,
+				Price:     price,
+				Side:      types.SideBuy,
+			}
+			orders = append(orders, ord)
 		}
 	}
 	for _, o := range sellOrders {
 		if o.IsMarketOrder {
+			sizePosition -= int64(o.TrueRemaining)
 			marketOrderAdjustedPositionNotional = marketOrderAdjustedPositionNotional.Sub(marketObservable.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
 		} else {
-			totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+			price, _ := num.UintFromDecimal(o.Price)
+			ord := &types.Order{
+				Status:    types.OrderStatusActive,
+				Remaining: o.TrueRemaining,
+				Price:     price,
+				Side:      types.SideSell,
+			}
+			orders = append(orders, ord)
 		}
 	}
 
 	requiredPositionMargin := marketOrderAdjustedPositionNotional.Abs().Mul(marginFactor).Div(positionFactor)
-	requiredOrderMargin := totalOrderNotional.Mul(marginFactor).Div(positionFactor)
+	requiredOrderMargin := CalcOrderMargins(sizePosition, orders, positionFactor, marginFactor, auctionPrice)
 
-	return requiredPositionMargin, requiredOrderMargin
+	return requiredPositionMargin, requiredOrderMargin.ToDecimal()
 }
