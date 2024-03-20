@@ -88,20 +88,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 			return
 		}
 
-		// check that from liquidity point of view we can leave the opening auction
-		_, bestStaticBidVolume, _ := m.getBestStaticBidPriceAndVolume()
-		_, bestStaticAskVolume, _ := m.getBestStaticAskPriceAndVolume()
-		if m.getSuppliedStake().GTE(m.getTargetStake()) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-			m.as.SetReadyToLeave()
-		}
-
-		if !m.as.CanLeave() {
-			if e := m.as.AuctionExtended(ctx, now); e != nil {
-				m.broker.Send(e)
-			}
-			return
-		}
-		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
+		// opening auction period has expired, and we have trades, we should be ready to leave
+		// other requirements still need to be checked downstream though
 		m.as.SetReadyToLeave()
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
 		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
