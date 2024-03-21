@@ -661,6 +661,12 @@ func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party st
 			return err
 		}
 	}
+	// remove ELS for the cancelled LP if cancellation was applied immediately (e.g. during opening auction)
+	if applied {
+		m.equityShares.SetPartyStake(party, amendment.CommitmentAmount)
+		// force update for all shares
+		_ = m.equityShares.AllShares()
+	}
 
 	return nil
 }
