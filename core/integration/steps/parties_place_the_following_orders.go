@@ -302,6 +302,17 @@ func PartySubmitsTheirBatchInstruction(party string, exec Execution) error {
 	return exec.ProcessBatch(context.Background(), party)
 }
 
+func PartySubmitsTheirBatchInstructionWithError(party, err string, exec Execution) error {
+	retErr := exec.ProcessBatch(context.Background(), party)
+
+	err = fmt.Sprintf("1 (%s)", err)
+	re := retErr.Error()
+	if re != err {
+		return retErr
+	}
+	return nil
+}
+
 func PartyStartsABatchInstruction(party string, exec Execution) error {
 	return exec.StartBatch(party)
 }
