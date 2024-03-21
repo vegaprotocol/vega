@@ -96,19 +96,19 @@ Feature: Spot market SLA
       | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
       | party2 | BTC/ETH   | sell | 6      | 24    | 0                | TYPE_LIMIT | TIF_GTC | party-order6 |      |
 
-    When the network moves ahead "10" blocks
+    When the network moves ahead "1" blocks
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 0         | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4000         | 3000           | 0             |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4000         | 3000           | 0             |
 
-# Then the network moves ahead "4" blocks
-# And the network treasury balance should be "1200" for the asset "ETH"
-# Then the party "lp1" lp liquidity bond account balance should be "600" for the market "BTC/ETH"
-# Then the party "lp2" lp liquidity bond account balance should be "1200" for the market "BTC/ETH"
-# And the supplied stake should be "1800" for the market "BTC/ETH"
+    Then the network moves ahead "5" blocks
+    And the network treasury balance should be "1200" for the asset "ETH"
+    Then the party "lp1" lp liquidity bond account balance should be "600" for the market "BTC/ETH"
+    Then the party "lp2" lp liquidity bond account balance should be "1200" for the market "BTC/ETH"
+    And the supplied stake should be "1800" for the market "BTC/ETH"
 
-# #0044-LIME-064: When the LP increases its commitment and the increment is higher than its general account balance, the increments are rejected, and the old provision persists.
-# When the parties submit the following liquidity provision:
-#   | id  | party | market id | commitment amount | fee | lp type    | error                                            |
-#   | lp1 | lp1   | BTC/ETH   | 50000             | 0.1 | amendments | commitment submission rejected, not enough stake |
+    #0044-LIME-064: When the LP increases its commitment and the increment is higher than its general account balance, the increments are rejected, and the old provision persists.
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    | error                                            |
+      | lp1 | lp1   | BTC/ETH   | 50000             | 0.1 | amendments | commitment submission rejected, not enough stake |
