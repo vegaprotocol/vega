@@ -34,8 +34,10 @@ import (
 )
 
 var (
-	ErrAssetDoesNotExist  = errors.New("asset does not exist")
-	ErrUnknownAssetSource = errors.New("unknown asset source")
+	ErrAssetDoesNotExist        = errors.New("asset does not exist")
+	ErrUnknownAssetSource       = errors.New("unknown asset source")
+	ErrErc20AddressAlreadyInUse = errors.New("erc20 address already in use")
+	ErrUnknownChainID           = errors.New("erc20 chain-id does not correspond to a bridge")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/assets ERC20BridgeView,Notary
@@ -194,23 +196,39 @@ func (s *Service) EnactPendingAsset(id string) {
 	s.notary.StartAggregate(id, types.NodeSignatureKindAssetNew, signature)
 }
 
-func (s *Service) ExistsForEthereumAddress(address string) bool {
+// ValidateEthereumAddress checks that the given ERC20 address and chainID corresponds to one of Vega's bridges
+// and isn't the address of an asset that already exists.
+func (s *Service) ValidateEthereumAddress(address, chainID string) error {
+	if chainID != s.primaryEthChainID && chainID != s.secondaryEthChainID {
+		return ErrUnknownChainID
+	}
+
 	for _, a := range s.assets {
 		if source, ok := a.ERC20(); ok {
+			if source.ChainID() != chainID {
+				// asset is on a different chain, definitely is not a dupe of it
+				continue
+			}
+
 			if strings.EqualFold(source.Address(), address) {
-				return true
+				return ErrErc20AddressAlreadyInUse
 			}
 		}
 	}
 	for _, a := range s.pendingAssets {
 		if source, ok := a.ERC20(); ok {
+			if source.ChainID() != chainID {
+				// asset is on a different chain, definitely is not a dupe of it
+				continue
+			}
+
 			if strings.EqualFold(source.Address(), address) {
-				return true
+				return ErrErc20AddressAlreadyInUse
 			}
 		}
 	}
 
-	return false
+	return nil
 }
 
 // SetPendingListing update the state of an asset from proposed
@@ -255,6 +273,17 @@ func (s *Service) IsEnabled(assetID string) bool {
 	defer s.amu.RUnlock()
 	_, ok := s.assets[assetID]
 	return ok
+}
+
+// SetBridgeChainID sets the chain-ids for the bridge once we have processed the network parameters
+// this is necessary so that non-validator nodes (which cannot just ask the eth-client) can know what they
+// are.
+func (s *Service) SetBridgeChainID(chainID string, primary bool) {
+	if primary {
+		s.primaryEthChainID = chainID
+		return
+	}
+	s.secondaryEthChainID = chainID
 }
 
 func (s *Service) OnTick(_ context.Context, _ time.Time) {
