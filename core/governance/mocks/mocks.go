@@ -232,20 +232,6 @@ func (m *MockAssets) EXPECT() *MockAssetsMockRecorder {
 	return m.recorder
 }
 
-// ExistsForEthereumAddress mocks base method.
-func (m *MockAssets) ExistsForEthereumAddress(arg0 string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExistsForEthereumAddress", arg0)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// ExistsForEthereumAddress indicates an expected call of ExistsForEthereumAddress.
-func (mr *MockAssetsMockRecorder) ExistsForEthereumAddress(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsForEthereumAddress", reflect.TypeOf((*MockAssets)(nil).ExistsForEthereumAddress), arg0)
-}
-
 // Get mocks base method.
 func (m *MockAssets) Get(arg0 string) (*assets.Asset, error) {
 	m.ctrl.T.Helper()
@@ -330,6 +316,20 @@ func (m *MockAssets) ValidateAsset(arg0 string) error {
 func (mr *MockAssetsMockRecorder) ValidateAsset(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAsset", reflect.TypeOf((*MockAssets)(nil).ValidateAsset), arg0)
+}
+
+// ValidateEthereumAddress mocks base method.
+func (m *MockAssets) ValidateEthereumAddress(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateEthereumAddress", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateEthereumAddress indicates an expected call of ValidateEthereumAddress.
+func (mr *MockAssetsMockRecorder) ValidateEthereumAddress(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateEthereumAddress", reflect.TypeOf((*MockAssets)(nil).ValidateEthereumAddress), arg0, arg1)
 }
 
 // MockTimeService is a mock of TimeService interface.

@@ -51,6 +51,7 @@ type testService struct {
 func TestAssets(t *testing.T) {
 	t.Run("Staging asset update for unknown asset fails", testStagingAssetUpdateForUnknownAssetFails)
 	t.Run("Offers signature on tick success", testOffersSignaturesOnTickSuccess)
+	t.Run("Checking an assets address when chain id is unknown", testValidateUnknownChainID)
 }
 
 func testOffersSignaturesOnTickSuccess(t *testing.T) {
@@ -123,6 +124,14 @@ func testStagingAssetUpdateForUnknownAssetFails(t *testing.T) {
 
 	// then
 	require.ErrorIs(t, err, assets.ErrAssetDoesNotExist)
+}
+
+func testValidateUnknownChainID(t *testing.T) {
+	service := getTestService(t)
+
+	require.NoError(t, service.ValidateEthereumAddress(vgrand.RandomStr(5), "1"))
+	require.NoError(t, service.ValidateEthereumAddress(vgrand.RandomStr(5), "2"))
+	require.ErrorIs(t, service.ValidateEthereumAddress(vgrand.RandomStr(5), "666"), assets.ErrUnknownChainID)
 }
 
 func getTestService(t *testing.T) *testService {

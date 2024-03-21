@@ -738,6 +738,8 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 					return err
 				}
 
+				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), true)
+
 				return svcs.primaryEventForwarderEngine.SetupEthereumEngine(svcs.primaryEthClient, svcs.primaryEventForwarder, svcs.conf.EvtForward.Ethereum, ethCfg, svcs.assets)
 			},
 		},
@@ -752,6 +754,8 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				if err := svcs.secondaryEthClient.UpdateEthereumConfig(ctx, ethCfg); err != nil {
 					return err
 				}
+
+				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), false)
 
 				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.secondaryEventForwarder, svcs.conf.SecondaryEvtForward.Ethereum, ethCfg, svcs.assets)
 			},
