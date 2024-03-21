@@ -55,6 +55,10 @@ var (
 		return fmt.Errorf("party %q is not part of a referral set", party)
 	}
 
+	ErrPartyDoesNotOwnReferralSet = func(party types.PartyID) error {
+		return fmt.Errorf("party %q does not own the referral set", party)
+	}
+
 	ErrUnknownSetID = errors.New("unknown set ID")
 )
 
@@ -145,9 +149,16 @@ func (e *Engine) GetReferrer(referee types.PartyID) (types.PartyID, error) {
 	return e.sets[setID].Referrer.PartyID, nil
 }
 
-func (e *Engine) SetExists(setID types.ReferralSetID) bool {
-	_, ok := e.sets[setID]
-	return ok
+func (e *Engine) PartyOwnsReferralSet(referer types.PartyID, setID types.ReferralSetID) error {
+	rf, ok := e.sets[setID]
+	if !ok {
+		return ErrUnknownSetID
+	}
+
+	if referer != rf.Referrer.PartyID {
+		return ErrPartyDoesNotOwnReferralSet(referer)
+	}
+	return nil
 }
 
 func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, deterministicSetID types.ReferralSetID) error {
