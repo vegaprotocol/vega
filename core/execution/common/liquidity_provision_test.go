@@ -610,6 +610,8 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 		}).
 		AnyTimes()
 
+	testLiquidity.equityShares.EXPECT().SetPartyStake(provider, gomock.Any()).Times(1)
+	testLiquidity.equityShares.EXPECT().AllShares().Times(1).Return(nil)
 	err = testLiquidity.marketLiquidity.CancelLiquidityProvision(ctx, provider)
 	assert.NoError(t, err)
 
