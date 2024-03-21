@@ -152,7 +152,7 @@ type PartiesEngine interface {
 
 type ReferralProgram interface {
 	UpdateProgram(program *types.ReferralProgram)
-	SetExists(types.ReferralSetID) bool
+	PartyOwnsReferralSet(types.PartyID, types.ReferralSetID) error
 	CreateReferralSet(context.Context, types.PartyID, types.ReferralSetID) error
 	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
 	CheckSufficientBalanceForApplyReferralCode(types.PartyID, *num.Uint) error
@@ -2609,8 +2609,8 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
 	}
 
-	if !app.referralProgram.SetExists(types.ReferralSetID(params.Id)) {
-		return fmt.Errorf("no referral set for ID %q", params.Id)
+	if err := app.referralProgram.PartyOwnsReferralSet(types.PartyID(tx.Party()), types.ReferralSetID(params.Id)); err != nil {
+		return fmt.Errorf("cannot update referral set: %w", err)
 	}
 
 	if params.IsTeam {

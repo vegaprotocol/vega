@@ -45,7 +45,7 @@ func TestReferralSet(t *testing.T) {
 	require.NoError(t, te.engine.OnReferralProgramMinStakedVegaTokensUpdate(context.Background(), num.NewUint(100)))
 
 	t.Run("querying for a non existing set return false", func(t *testing.T) {
-		require.False(t, te.engine.SetExists(setID))
+		require.ErrorIs(t, referral.ErrUnknownSetID, te.engine.PartyOwnsReferralSet(referrer, setID))
 	})
 
 	t.Run("cannot join a non-existing set", func(t *testing.T) {
@@ -59,6 +59,10 @@ func TestReferralSet(t *testing.T) {
 		te.timeSvc.EXPECT().GetTimeNow().Times(1)
 
 		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer, setID))
+
+		// check ownership query
+		require.NoError(t, te.engine.PartyOwnsReferralSet(referrer, setID))
+		require.Error(t, referral.ErrPartyDoesNotOwnReferralSet(referrer2), te.engine.PartyOwnsReferralSet(referrer2, setID))
 	})
 
 	t.Run("cannot create a set multiple times", func(t *testing.T) {

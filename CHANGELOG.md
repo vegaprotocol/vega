@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.75.2
+
+### 🐛 Fixes
+
+- [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
+
 ## 0.75.1
 
 ### 🐛 Fixes
