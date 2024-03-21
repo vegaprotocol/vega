@@ -28,6 +28,7 @@
 - [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
 - [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
 - [10952](https://github.com/vegaprotocol/vega/issues/10952) - Fix bug that caused spot markets to get stuck in opening auction.
+- [10950](https://github.com/vegaprotocol/vega/issues/10950) - Fix bug that caused cancelled liquidity provisions to stick around after opening auction.
 
 ## 0.75.0
 
