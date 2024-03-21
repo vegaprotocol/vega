@@ -300,6 +300,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the party "([^"]+)" submits their batch instruction$`, func(party string) error {
 		return steps.PartySubmitsTheirBatchInstruction(party, execsetup.executionEngine)
 	})
+	s.Step(`^the party "([^"]+)" submits their batch instruction with error "([^"]+)"$`, func(party, err string) error {
+		return steps.PartySubmitsTheirBatchInstructionWithError(party, err, execsetup.executionEngine)
+	})
 
 	s.Step(`^the parties place the following orders "([^"]+)" blocks apart:$`, func(blockCount string, table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrdersBlocksApart(execsetup.executionEngine, execsetup.timeService, execsetup.block, execsetup.epochEngine, table, blockCount)
