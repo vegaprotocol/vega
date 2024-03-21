@@ -5,6 +5,7 @@
 ### 🐛 Fixes
 
 - [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
+- [10950](https://github.com/vegaprotocol/vega/issues/10950) - Fix bug that caused cancelled liquidity provisions to stick around after opening auction.
 
 ## 0.75.1
 
