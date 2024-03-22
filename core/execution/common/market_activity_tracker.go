@@ -753,6 +753,10 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 			total = total.Add(getFees(marketTracker.epochMakerFeesReceived, party, windowSize))
 			marketTotal = marketTotal.Add(getTotalFees(marketTracker.epochTotalMakerFeesReceived, windowSize))
 		case vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
+			println("lpFeesCache")
+			for k, v := range marketTracker.epochLpFees[len(marketTracker.epochLpFees)-1] {
+				println(k, v.String())
+			}
 			total = total.Add(getFees(marketTracker.epochLpFees, party, windowSize))
 			marketTotal = marketTotal.Add(getTotalFees(marketTracker.epochTotalLpFees, windowSize))
 		}

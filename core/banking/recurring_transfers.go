@@ -298,6 +298,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 						resps = append(resps, r...)
 					}
 				}
+				println("checking dispatchRequired for epoch", newEpoch)
 				// for any other metric, we transfer the funds (full amount) to the reward account of the asset/reward_type/market=hash(dispatch_strategy)
 				if e.dispatchRequired(ctx, v.DispatchStrategy) {
 					p, _ := proto.Marshal(v.DispatchStrategy)
