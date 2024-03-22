@@ -29,6 +29,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -784,6 +785,8 @@ func testShouldReturnPageOfRefereeHistoryGivenPagination(t *testing.T) {
 func TestListTeamStatistics(t *testing.T) {
 	ctx := tempTransaction(t)
 
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
 	teamsStore := sqlstore.NewTeams(connectionSource)
 	blocksStore := sqlstore.NewBlocks(connectionSource)
 	rewardsStore := sqlstore.NewRewards(ctx, connectionSource)
@@ -819,6 +822,41 @@ func TestListTeamStatistics(t *testing.T) {
 	}
 
 	startTime := time.Now()
+
+	for _, gameID := range gameIDs {
+		fromAccount := &entities.Account{
+			PartyID:  entities.PartyID(GenerateID()),
+			AssetID:  entities.AssetID(GenerateID()),
+			MarketID: entities.MarketID(GenerateID()),
+			Type:     vegapb.AccountType_ACCOUNT_TYPE_GENERAL,
+			TxHash:   generateTxHash(),
+			VegaTime: startTime,
+		}
+		require.NoError(t, accountsStore.Add(ctx, fromAccount))
+
+		toAccount := &entities.Account{
+			PartyID:  entities.PartyID(GenerateID()),
+			AssetID:  entities.AssetID(GenerateID()),
+			MarketID: entities.MarketID(GenerateID()),
+			Type:     vegapb.AccountType_ACCOUNT_TYPE_GENERAL,
+			TxHash:   generateTxHash(),
+			VegaTime: startTime,
+		}
+		require.NoError(t, accountsStore.Add(ctx, toAccount))
+
+		require.NoError(t, transfersStore.Upsert(ctx, &entities.Transfer{
+			ID:            entities.TransferID(GenerateID()),
+			TxHash:        generateTxHash(),
+			VegaTime:      startTime,
+			FromAccountID: sqlstore.DeterministicIDFromAccount(fromAccount),
+			ToAccountID:   sqlstore.DeterministicIDFromAccount(toAccount),
+			TransferType:  2,
+			DispatchStrategy: &vegapb.DispatchStrategy{
+				EntityScope: 2,
+			},
+			GameID: gameID,
+		}))
+	}
 
 	for team, members := range teams {
 		require.NoError(t, teamsStore.AddTeam(ctx, &entities.Team{
