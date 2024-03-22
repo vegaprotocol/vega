@@ -425,7 +425,7 @@ func UnmarshalStopOrderRejectionReason(v interface{}) (vega.StopOrder_RejectionR
 		return vega.StopOrder_REJECTION_REASON_UNSPECIFIED, fmt.Errorf("expected stop order rejection reason to be a string")
 	}
 
-	t, ok := vega.Order_TimeInForce_value[s]
+	t, ok := vega.StopOrder_RejectionReason_value[s]
 	if !ok {
 		return vega.StopOrder_REJECTION_REASON_UNSPECIFIED, fmt.Errorf("failed to convert StopOrderRejectionReason from GraphQL to Proto: %v", s)
 	}
