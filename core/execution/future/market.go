@@ -1043,6 +1043,16 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 // BlockEnd notifies the market of the end of the block.
 func (m *Market) BlockEnd(ctx context.Context) {
 	defer m.onTxProcessed()
+	t := m.timeService.GetTimeNow()
+	if m.mkt.State == types.MarketStateProposed ||
+		m.mkt.State == types.MarketStateCancelled ||
+		m.mkt.State == types.MarketStateRejected ||
+		m.mkt.State == types.MarketStateSettled {
+		if (m.nextMTM.IsZero() || !m.nextMTM.After(t)) && !m.as.InAuction() {
+			m.nextMTM = t.Add(m.mtmDelta)
+		}
+		return
+	}
 
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
@@ -1053,7 +1063,6 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		m.idgen = nil
 	}()
 
-	t := m.timeService.GetTimeNow()
 	if !m.as.InAuction() {
 		m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
 		if m.internalCompositePriceCalculator != nil {
@@ -1082,9 +1091,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	}
 
 	// if it's time for mtm, let's do it
-	if m.nextMTM.IsZero() ||
-		!m.nextMTM.After(t) &&
-			!m.as.InAuction() {
+	if (m.nextMTM.IsZero() || !m.nextMTM.After(t)) && !m.as.InAuction() {
 		prevMarkPrice := m.markPriceCalculator.GetPrice()
 		if _, err := m.markPriceCalculator.CalculateMarkPrice(
 			ctx,
