@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.75.3
+
+### 🐛 Fixes
+
+- [10969](https://github.com/vegaprotocol/vega/issues/10969) - Ensure teams statistics are computed from team rewards.
+
 ## 0.75.2
 
 ### 🐛 Fixes
