@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,7 @@ func TestEngine(t *testing.T) {
 	t.Run("Administrate a team succeeds", testAdministrateTeamSucceeds)
 	t.Run("Joining team succeeds", testJoiningTeamSucceeds)
 	t.Run("unique team names", testUniqueTeamNames)
+	t.Run("must be in a team for the minimum number of epochs", testMinEpochsRequired)
 }
 
 func testUniqueTeamNames(t *testing.T) {
@@ -668,4 +670,41 @@ func testJoiningTeamSucceeds(t *testing.T) {
 			AllowList: []types.PartyID{referee4},
 		},
 	}, te.engine.ListTeams())
+}
+
+func testMinEpochsRequired(t *testing.T) {
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
+
+	te := newEngine(t)
+
+	team1CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
+	teamID1, _, _ := newTeam(t, ctx, te)
+
+	// if we set min epochs to 0 then we see the referrer
+	members := te.engine.GetTeamMembers(string(teamID1), 0)
+	assert.Len(t, members, 1)
+
+	// referrer made a team, but does not get returned as a team member until its been the minimum epochs
+	members = te.engine.GetTeamMembers(string(teamID1), 5)
+	assert.Len(t, members, 0)
+
+	// move to epoch 11 and add a team member
+	te.engine.OnEpoch(ctx, types.Epoch{Seq: 11, Action: vegapb.EpochAction_EPOCH_ACTION_START})
+
+	expectRefereeJoinedTeamEvent(t, te)
+	referee := newPartyID(t)
+	refereeJoiningDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(refereeJoiningDate).Times(1)
+	require.NoError(t, te.engine.JoinTeam(ctx, referee, joinTeamCmd(t, teamID1)))
+
+	// referrer joined at epoch 10, team member at 11 lets move to epoch 15
+	te.engine.OnEpoch(ctx, types.Epoch{Seq: 15, Action: vegapb.EpochAction_EPOCH_ACTION_START})
+	members = te.engine.GetTeamMembers(string(teamID1), 5)
+	assert.Len(t, members, 1)
+
+	// now at epoch 16 both should be there
+	te.engine.OnEpoch(ctx, types.Epoch{Seq: 16, Action: vegapb.EpochAction_EPOCH_ACTION_START})
+	members = te.engine.GetTeamMembers(string(teamID1), 5)
+	assert.Len(t, members, 2)
 }

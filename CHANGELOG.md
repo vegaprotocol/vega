@@ -25,6 +25,7 @@
 
 - [10946](https://github.com/vegaprotocol/vega/issues/10945) - Save dispatch strategy for recurring governance transfer in the database.
 - [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
+- [10970](https://github.com/vegaprotocol/vega/issues/10970) - Logic for whether a team member joined more than `rewards.team.minEpochsInTeam` is fixed.
 - [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
 - [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
 - [10952](https://github.com/vegaprotocol/vega/issues/10952) - Fix bug that caused spot markets to get stuck in opening auction.
