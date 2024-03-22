@@ -420,7 +420,17 @@ func MarshalStopOrderRejectionReason(s vega.StopOrder_RejectionReason) graphql.M
 }
 
 func UnmarshalStopOrderRejectionReason(v interface{}) (vega.StopOrder_RejectionReason, error) {
-	return vega.StopOrder_REJECTION_REASON_UNSPECIFIED, ErrUnimplemented
+	s, ok := v.(string)
+	if !ok {
+		return vega.StopOrder_REJECTION_REASON_UNSPECIFIED, fmt.Errorf("expected stop order rejection reason to be a string")
+	}
+
+	t, ok := vega.Order_TimeInForce_value[s]
+	if !ok {
+		return vega.StopOrder_REJECTION_REASON_UNSPECIFIED, fmt.Errorf("failed to convert StopOrderRejectionReason from GraphQL to Proto: %v", s)
+	}
+
+	return vega.StopOrder_RejectionReason(t), nil
 }
 
 func MarshalOrderType(s vega.Order_Type) graphql.Marshaler {
