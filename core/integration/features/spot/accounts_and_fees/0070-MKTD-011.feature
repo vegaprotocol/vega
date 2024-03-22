@@ -32,6 +32,7 @@ Feature: Spot market SLA
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0     |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.4   |
       | validators.epoch.length                             | 2s    |
+      | limits.markets.maxPeggedOrders                      | 10    |
 
     And the spot markets:
       | id          | name      | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | decimal places | position decimal places | sla params |
@@ -109,6 +110,29 @@ Feature: Spot market SLA
       | party1 | 150   | 10   | party2 |
       | party1 | 150   | 1    | party2 |
       | party1 | 1500  | 10   | party2 |
+
+    #0070-MKTD-014:offsets specified in pegged orders represent the smallest incremental value to tick away from the pegged price of a pegged order according to the market precision
+    When the parties place the following pegged orders:
+      | party  | market id   | side | volume | pegged reference | offset | reference   | error |
+      | party1 | BTC/ETH_D11 | buy  | 1      | BID              | 1      | peggedbuy1  |       |
+      | party2 | BTC/ETH_D11 | sell | 1      | ASK              | 1      | peggedsell1 |       |
+      | party1 | BTC/ETH_D10 | buy  | 1      | BID              | 1      | peggedbuy2  |       |
+      | party2 | BTC/ETH_D10 | sell | 1      | ASK              | 1      | peggedsell2 |       |
+      | party1 | BTC/ETH_D21 | buy  | 1      | BID              | 1      | peggedbuy3  |       |
+      | party2 | BTC/ETH_D21 | sell | 1      | ASK              | 1      | peggedsell3 |       |
+
+    And the order book should have the following volumes for market "BTC/ETH_D11":
+      | side | price | volume |
+      | buy  | 79    | 1      |
+      | sell | 241   | 1      |
+    And the order book should have the following volumes for market "BTC/ETH_D10":
+      | side | price | volume |
+      | buy  | 79    | 1      |
+      | sell | 241   | 1      |
+    And the order book should have the following volumes for market "BTC/ETH_D21":
+      | side | price | volume |
+      | buy  | 799   | 1      |
+      | sell | 2401  | 1      |
 
     Then the market data for the market "BTC/ETH_D11" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
