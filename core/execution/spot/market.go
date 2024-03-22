@@ -643,13 +643,23 @@ func (m *Market) BeginBlock(_ context.Context) {}
 
 // BlockEnd notifies the market of the end of the block.
 func (m *Market) BlockEnd(ctx context.Context) {
+	t := m.timeService.GetTimeNow()
+	if m.mkt.State == types.MarketStateProposed ||
+		m.mkt.State == types.MarketStateCancelled ||
+		m.mkt.State == types.MarketStateRejected ||
+		m.mkt.State == types.MarketStateSettled {
+		if (m.nextMTM.IsZero() || !m.nextMTM.After(t)) && !m.as.InAuction() {
+			m.nextMTM = t.Add(m.mtmDelta)
+		}
+		return
+	}
 	// simplified version of updating mark price every MTM interval
 	mp := m.getLastTradedPrice()
 	if !m.hasTraded && m.markPrice != nil {
 		// no trades happened, make sure we're just using the current mark price
 		mp = m.markPrice.Clone()
 	}
-	t := m.timeService.GetTimeNow()
+
 	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
 		if !m.pMonitor.CheckPrice(ctx, m.as, []*types.Trade{{Price: mp, Size: 1}}, true, true) {
 			m.markPrice = mp
