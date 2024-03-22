@@ -758,6 +758,8 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 		}
 	}
 
+	println("asset=", asset, "party=", party, "marketTotal=", marketTotal.String(), "partyTotal", total.String())
+
 	switch metric {
 	case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
 		// descaling the total tw position metric by dividing by the scaling factor
