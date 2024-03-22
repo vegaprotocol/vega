@@ -98,6 +98,18 @@ func (e *EthereumConfirmations) currentHeight(ctx context.Context) (uint64, erro
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
+	h, lastUpdate, err := e.getHeight(ctx, e.curHeight, e.curHeightLastUpdate, nil)
+	if err != nil {
+		return e.curHeight, err
+	}
+
+	// update cache
+	e.curHeightLastUpdate = lastUpdate
+	e.curHeight = h
+	return e.curHeight, err
+}
+
+func (e *EthereumConfirmations) getHeight(ctx context.Context, lastHeight uint64, lastUpdate time.Time, block *big.Int) (uint64, time.Time, error) {
 	// if last update of the height was more that 15 seconds
 	// ago, we try to update, we assume an eth block takes
 	// ~15 seconds
