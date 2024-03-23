@@ -122,12 +122,6 @@ func (a *AuctionState) EndGovernanceSuspensionAuction() {
 			a.trigger = types.AuctionTriggerUnspecified
 			a.start = false
 			a.stop = true
-			if a.m.State == types.MarketStateProposed {
-				// this is a workaround to the governance auction ending before
-				// market enters opening auction. When https://github.com/vegaprotocol/vega/issues/10976 is fixed
-				// this should probably be removed
-				a.start = true
-			}
 			a.begin = nil
 			a.end = nil
 		} else {
