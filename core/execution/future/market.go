@@ -4896,3 +4896,50 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
 }
+
+func (m *Market) CheckOrderSubmission(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	if !m.collateral.PartyCanSubmitOrderCommand(m.settlementAsset, m.mkt.ID, party) {
+		return ErrSpamPartyHasInsufficientBalance
+	}
+
+	if orderSubmission.PeggedOrder != nil && m.as.IsOpeningAuction() {
+		return types.ErrPeggedOrdersNotAllowedInOpeningAuction
+	}
+
+	rf := num.DecimalOne()
+
+	factor := m.mkt.LinearSlippageFactor
+	if m.risk.IsRiskFactorInitialised() {
+		if orderSubmission.Side == types.SideBuy {
+			rf = m.risk.GetRiskFactors().Long
+		} else {
+			rf = m.risk.GetRiskFactors().Short
+		}
+	}
+
+	price := orderSubmission.Price
+	if price == nil && orderSubmission.PeggedOrder != nil {
+		price = m.getCurrentMarkPrice()
+		if orderSubmission.Side == types.SideBuy {
+			if price.GT(orderSubmission.PeggedOrder.Offset) {
+				price = price.Sub(price, orderSubmission.PeggedOrder.Offset)
+			} else {
+				price = num.UintZero()
+			}
+		} else {
+			price.AddSum(orderSubmission.PeggedOrder.Offset)
+		}
+	}
+
+	price = num.UintZero().Mul(price, m.priceFactor)
+	margins := num.UintZero().Mul(price, num.NewUint(orderSubmission.Size)).ToDecimal().Div(m.positionFactor)
+
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
+	if err != nil {
+		return err
+	}
+	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
+		return risk.ErrInsufficientFundsForMaintenanceMargin
+	}
+	return nil
+}

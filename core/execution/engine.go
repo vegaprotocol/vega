@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -110,6 +111,9 @@ type Engine struct {
 	successorWindow time.Duration
 	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
 	skipRestoreSuccessors map[string]struct{}
+
+	minMaintenanceMarginQuantumMultiplier num.Decimal
+	lock                                  sync.RWMutex
 }
 
 type netParamsValues struct {
@@ -709,11 +713,12 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		return err
 	}
 
+	e.lock.Lock()
 	e.futureMarkets[marketConfig.ID] = mkt
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
-
+	e.lock.Unlock()
 	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt, false)
 }
 
@@ -789,10 +794,12 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		return err
 	}
 
+	e.lock.Lock()
 	e.spotMarkets[marketConfig.ID] = mkt
 	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
+	e.lock.Unlock()
 
 	e.collateral.CreateSpotMarketAccounts(ctx, marketConfig.ID, quoteAsset)
 
@@ -935,6 +942,8 @@ func (e *Engine) propagateSLANetParams(_ context.Context, mkt common.CommonMarke
 
 func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	delete(e.allMarkets, mktID)
 	for i, mkt := range e.allMarketsCpy {
 		if mkt.GetID() == mktID {
@@ -1930,4 +1939,35 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 	}
 
 	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
+}
+
+func (e *Engine) OnMinimalMarginQuantumMultipleUpdate(_ context.Context, multiplier num.Decimal) error {
+	e.minMaintenanceMarginQuantumMultiplier = multiplier
+	return nil
+}
+
+func (e *Engine) CheckOrderSubmission(orderSubmission *types.OrderSubmission, party string) error {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	if mkt := e.allMarkets[orderSubmission.MarketID]; mkt == nil {
+		return types.ErrInvalidMarketID
+	}
+	if ftr := e.futureMarkets[orderSubmission.MarketID]; ftr != nil {
+		return ftr.CheckOrderSubmission(orderSubmission, party, e.minMaintenanceMarginQuantumMultiplier)
+	}
+	return e.spotMarkets[orderSubmission.MarketID].CheckOrderSubmission(orderSubmission, party, e.minMaintenanceMarginQuantumMultiplier)
+}
+
+func (e *Engine) CheckOrderAmendment(orderAmendment *types.OrderAmendment, party string) error {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	if mkt := e.allMarkets[orderAmendment.MarketID]; mkt == nil {
+		return types.ErrInvalidMarketID
+	}
+	if ftr := e.futureMarkets[orderAmendment.MarketID]; ftr != nil {
+		return ftr.CheckOrderAmendment(orderAmendment, party, e.minMaintenanceMarginQuantumMultiplier)
+	}
+	return e.spotMarkets[orderAmendment.MarketID].CheckOrderAmendment(orderAmendment, party, e.minMaintenanceMarginQuantumMultiplier)
 }

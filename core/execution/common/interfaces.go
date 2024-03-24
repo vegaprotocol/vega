@@ -136,6 +136,7 @@ type EligibilityChecker interface {
 
 //nolint:interfacebloat
 type Collateral interface {
+	PartyCanSubmitOrderCommand(asset, market, party string) bool
 	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error

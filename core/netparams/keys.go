@@ -26,6 +26,8 @@ const (
 	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
 
+	MinimalMarginQuantumMultiple = "spam.order.MinimalMarginQuantumMultiple"
+
 	MarketTargetStakeTimeWindow               = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor            = "market.stake.target.scalingFactor"
 	MarketLiquidityTargetStakeTriggeringRatio = "market.liquidity.targetstake.triggering.ratio"
@@ -448,4 +450,5 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionApplyReferralMinFunds:                          {},
 	SpamProtectionReferralSetMinFunds:                            {},
 	BlockchainsEthereumL2Configs:                                 {},
+	MinimalMarginQuantumMultiple:                                 {},
 }

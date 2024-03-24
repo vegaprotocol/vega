@@ -379,7 +379,9 @@ func NewApp(
 		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
 		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode).
 		HandleCheckTx(txn.CreateReferralSetCommand, app.CheckCreateOrUpdateReferralSet).
-		HandleCheckTx(txn.UpdateReferralSetCommand, app.CheckCreateOrUpdateReferralSet)
+		HandleCheckTx(txn.UpdateReferralSetCommand, app.CheckCreateOrUpdateReferralSet).
+		HandleCheckTx(txn.SubmitOrderCommand, app.CheckOrderSubmission).
+		HandleCheckTx(txn.AmendOrderCommand, app.CheckOrderAmendment)
 
 	app.abci.
 		// node commands
@@ -1800,6 +1802,36 @@ func (app *App) DeliverWithdraw(
 		return err
 	}
 	return app.handleCheckpoint(snap)
+}
+
+func (app *App) CheckOrderSubmission(_ context.Context, tx abci.Tx) error {
+	s := &commandspb.OrderSubmission{}
+	if err := tx.Unmarshal(s); err != nil {
+		return err
+	}
+
+	// Convert from proto to domain type
+	os, err := types.NewOrderSubmissionFromProto(s)
+	if err != nil {
+		return err
+	}
+
+	return app.exec.CheckOrderSubmission(os, tx.Party())
+}
+
+func (app *App) CheckOrderAmendment(_ context.Context, tx abci.Tx) error {
+	s := &commandspb.OrderAmendment{}
+	if err := tx.Unmarshal(s); err != nil {
+		return err
+	}
+
+	// Convert from proto to domain type
+	os, err := types.NewOrderAmendmentFromProto(s)
+	if err != nil {
+		return err
+	}
+
+	return app.exec.CheckOrderAmendment(os, tx.Party())
 }
 
 func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {

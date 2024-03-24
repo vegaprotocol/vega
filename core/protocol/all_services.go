@@ -657,6 +657,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: dispatch.RewardAssetUpdate(svcs.log, svcs.assets),
 		},
 		{
+			Param:   netparams.MinimalMarginQuantumMultiple,
+			Watcher: svcs.executionEngine.OnMinimalMarginQuantumMultipleUpdate,
+		},
+		{
 			Param:   netparams.MarketMarginScalingFactors,
 			Watcher: svcs.executionEngine.OnMarketMarginScalingFactorsUpdate,
 		},

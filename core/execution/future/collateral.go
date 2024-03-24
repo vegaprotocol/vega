@@ -27,6 +27,7 @@ import (
 
 // ErrBondSlashing - just indicates that we had to penalize the party due to insufficient funds, and as such, we have to cancel their LP.
 var ErrBondSlashing = errors.New("bond slashing")
+var ErrSpamPartyHasInsufficientBalance = errors.New("insufficient balance to submit/amend order")
 
 func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed []events.MarketPosition) error {
 	if m.as.InAuction() {

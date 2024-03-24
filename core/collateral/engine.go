@@ -30,7 +30,6 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/pkg/errors"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -120,10 +119,7 @@ type Engine struct {
 	nextBalancesSnapshot     time.Time
 	balanceSnapshotFrequency time.Duration
 
-	// set to false when started
-	// we'll use it only once after an upgrade
-	// to make sure asset are being created
-	ensuredAssetAccounts bool
+	balanceCache *balanceCache
 }
 
 // New instantiates a new collateral engine.
@@ -131,7 +127,7 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
-	return &Engine{
+	e := &Engine{
 		log:                     log,
 		Config:                  conf,
 		accs:                    make(map[string]*types.Account, initialAccountSize),
@@ -146,23 +142,12 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		partiesAccsBalanceCache: map[string]*num.Uint{},
 		nextBalancesSnapshot:    time.Time{},
 	}
+	e.balanceCache = NewBalanceCache(e.accountID)
+	return e
 }
 
 func (e *Engine) BeginBlock(ctx context.Context) {
-	// FIXME(jeremy): to be removed after the migration from
-	// 72.x to 73, this will ensure all per assets accounts are being
-	// created after the restart
-	if !e.ensuredAssetAccounts {
-		// we don't want to do that again
-		e.ensuredAssetAccounts = true
-
-		assets := maps.Keys(e.enabledAssets)
-		sort.Strings(assets)
-		for _, assetId := range assets {
-			asset := e.enabledAssets[assetId]
-			e.ensureAllAssetAccounts(ctx, asset)
-		}
-	}
+	e.balanceCache.update(e.hashableAccs)
 	t := e.timeService.GetTimeNow()
 	if e.nextBalancesSnapshot.IsZero() || !e.nextBalancesSnapshot.After(t) {
 		e.updateNextBalanceSnapshot(t.Add(e.balanceSnapshotFrequency))
@@ -4088,6 +4073,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
+	e.balanceCache.accountUpdated(acc.Owner, id, acc.Type)
 	return nil
 }
 
@@ -4103,7 +4089,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
-
+	e.balanceCache.accountUpdated(acc.Owner, id, acc.Type)
 	return nil
 }
 
@@ -4574,4 +4560,8 @@ func (e *Engine) GetVestingAccounts() []*types.Account {
 		return accs[i].ID < accs[j].ID
 	})
 	return accs
+}
+
+func (e *Engine) PartyCanSubmitOrderCommand(asset, market, party string) bool {
+	return !e.balanceCache.getPartyBalance(asset, market, party).IsZero()
 }
