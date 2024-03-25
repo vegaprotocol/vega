@@ -599,6 +599,11 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 	for oid := range orderIDs {
 		orders = append(orders, b.ordersByID[oid])
 	}
+
+	// sort before returning since callers will assume they are in a deterministic order
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].ID < orders[j].ID
+	})
 	return orders
 }
 
