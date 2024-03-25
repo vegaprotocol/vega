@@ -24430,10 +24430,13 @@ type ListGamesRequest struct {
 
 	// Game ID to filter for.
 	GameId *string `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3,oneof" json:"game_id,omitempty"`
-	// First epoch to retrieve game data from. If not provided, defaults to the last epoch minus 30,
-	// or the first epoch available if not enough epochs have passed.
+	// Oldest epoch to retrieve game data from, inclusive. The maximum range of epochs that can be fetched at once is 30.
+	// If not provided, defaults to the 'to' epoch minus 29, or the first epoch available if not enough epochs have passed.
+	// If the 'to' epoch is not specified, it will be set to the chosen 'from' epoch + 29.
 	EpochFrom *uint64 `protobuf:"varint,2,opt,name=epoch_from,json=epochFrom,proto3,oneof" json:"epoch_from,omitempty"`
-	// Last epoch to retrieve game data to (inclusive). If not provided, defaults to the last epoch.
+	// Most recent epoch to retrieve game data to, inclusive. If not provided, defaults to the latest epoch. The maximum range of epochs that can be fetched at once is 30.
+	// If no 'from' epoch is provided, or the 'from' epoch is out of range, i.e., the 'to' epoch - 'from' epoch > 29,
+	// the 'from' epoch will be set to the 'to' epoch - 29.
 	EpochTo *uint64 `protobuf:"varint,3,opt,name=epoch_to,json=epochTo,proto3,oneof" json:"epoch_to,omitempty"`
 	// Entity scope to filter games for, i.e. team games or individual games only
 	EntityScope *vega.EntityScope `protobuf:"varint,4,opt,name=entity_scope,json=entityScope,proto3,enum=vega.EntityScope,oneof" json:"entity_scope,omitempty"`

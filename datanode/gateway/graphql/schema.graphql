@@ -780,9 +780,9 @@ type Query {
     partyId: ID!
     "Optional asset ID to filter for. If omitted, statistics for each asset are returned."
     assetId: ID
-    "Optional epoch to filter from (included). If omitted, `toEpoch` must not be set. If both omitted, the most recent epoch's data is returned."
+    "Optional epoch to filter from (included). If omitted, its value defaults to `toEpoch` minus 29."
     fromEpoch: Int
-    "Optional epoch to filter to (included). If omitted, the range goes from `fromEpoch` to the most recent epoch."
+    "Optional epoch to filter to (included). If omitted, the range goes from `fromEpoch` to `fromEpoch` plus 29. If both `fromEpoch` and `toEpoch` are omitted, `toEpoch` defaults to the last epoch."
     toEpoch: Int
   ): [FeesStatsForParty]
 
