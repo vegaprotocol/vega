@@ -33,7 +33,7 @@ import (
 func (e *Engine) calculateIsolatedMargins(m events.Margin, marketObservable *num.Uint, inc num.Decimal, marginFactor num.Decimal, auctionPrice *num.Uint, orders []*types.Order) *types.MarginLevels {
 	auction := e.as.InAuction() && !e.as.CanLeave()
 	// NB:we don't include orders when calculating margin for isolated margin as they are margined separately!
-	margins := e.calculateMargins(m, marketObservable, *e.factors, false, auction, inc)
+	margins := e.calculateMargins(m, marketObservable, *e.factors, false, auction, inc, auctionPrice)
 	margins.OrderMargin = CalcOrderMargins(m.Size(), orders, e.positionFactor, marginFactor, auctionPrice)
 	margins.CollateralReleaseLevel = num.UintZero()
 	margins.SearchLevel = num.UintZero()
@@ -332,10 +332,10 @@ func (e *Engine) SwitchToIsolatedMargin(ctx context.Context, evt events.Margin, 
 // 1. recalcualtion of the required margin in cross margin mode + margin levels are buffered
 // 2. return a transfer of all the balance from order margin account to margin account
 // NB: cannot fail.
-func (e *Engine) SwitchFromIsolatedMargin(ctx context.Context, evt events.Margin, marketObservable *num.Uint, inc num.Decimal) events.Risk {
+func (e *Engine) SwitchFromIsolatedMargin(ctx context.Context, evt events.Margin, marketObservable *num.Uint, inc num.Decimal, auctionPrice *num.Uint) events.Risk {
 	amt := evt.OrderMarginBalance().Clone()
 	auction := e.as.InAuction() && !e.as.CanLeave()
-	margins := e.calculateMargins(evt, marketObservable, *e.factors, true, auction, inc)
+	margins := e.calculateMargins(evt, marketObservable, *e.factors, true, auction, inc, auctionPrice)
 	margins.Party = evt.Party()
 	margins.Asset = evt.Asset()
 	margins.MarketID = evt.MarketID()

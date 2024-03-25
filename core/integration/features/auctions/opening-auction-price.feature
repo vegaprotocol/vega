@@ -69,13 +69,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
       | party7 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GFA | t7-s-1    |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
-      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 | 14000       |
+      | party2 | ETH/DEC19 | 13000       |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
+      | party1 | BTC   | ETH/DEC19 | 16800  | 99983200 |
+      | party2 | BTC   | ETH/DEC19 | 15600  | 99984400 |
     When the opening auction period ends for market "ETH/DEC19"
     Then the following trades should be executed:
       | buyer  | price | size | seller |
@@ -146,13 +146,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
-      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 | 14000       |
+      | party2 | ETH/DEC19 | 13000       |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
+      | party1 | BTC   | ETH/DEC19 | 16800  | 99983200 |
+      | party2 | BTC   | ETH/DEC19 | 15600  | 99984400 |
     # moves forwards several blocks
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
@@ -227,13 +227,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
-      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 | 14000       |
+      | party2 | ETH/DEC19 | 13000       |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
+      | party1 | BTC   | ETH/DEC19 | 16800  | 99983200 |
+      | party2 | BTC   | ETH/DEC19 | 15600  | 99984400 |
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     Then the following trades should be executed:
@@ -316,12 +316,12 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
+      | party  | market id | maintenance |
+      | party2 | ETH/DEC19 | 13000       |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
+      | party1 | BTC   | ETH/DEC19 | 16800  | 99983200 |
+      | party2 | BTC   | ETH/DEC19 | 15600  | 99984400 |
     # values before uint
     #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the opening auction period ends for market "ETH/DEC19"
