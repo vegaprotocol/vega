@@ -70,7 +70,7 @@ func NetworkHistory(_ context.Context, parser *flags.Parser) error {
 }
 
 func getDatanodeClient(cfg config.Config) (v2.TradingDataServiceClient, *grpc.ClientConn, error) {
-	return networkhistory.GetDatanodeClientFromIPAndPort(cfg.API.IP, cfg.API.Port)
+	return networkhistory.GetDatanodeClientFromIPAndPort(cfg.API.IP, cfg.API.Port, cfg.API.MaxMsgSize)
 }
 
 func getDatanodeAdminClient(log *logging.Logger, cfg config.Config) *admin.Client {
