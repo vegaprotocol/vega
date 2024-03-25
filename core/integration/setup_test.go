@@ -126,6 +126,7 @@ type executionTestSetup struct {
 	activityStreak        *activitystreak.Engine
 	vesting               *vesting.Engine
 	volumeDiscountProgram *volumediscount.Engine
+	marketActivityTracker *common.MarketActivityTracker
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -180,19 +181,19 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount, broker)
+	execsetup.marketActivityTracker = common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount, broker)
 
 	execsetup.notary = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 
 	execsetup.assetsEngine = stubs.NewAssetStub()
 
-	execsetup.referralProgram = referral.NewEngine(execsetup.broker, execsetup.timeService, marketActivityTracker, execsetup.stakingAccount)
+	execsetup.referralProgram = referral.NewEngine(execsetup.broker, execsetup.timeService, execsetup.marketActivityTracker, execsetup.stakingAccount)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.referralProgram.OnEpoch, execsetup.referralProgram.OnEpochRestore)
 
-	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, marketActivityTracker)
+	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, execsetup.marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
 
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
@@ -203,7 +204,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.oracleEngine,
 			execsetup.broker,
 			execsetup.stateVarEngine,
-			marketActivityTracker,
+			execsetup.marketActivityTracker,
 			execsetup.assetsEngine, // assets
 			execsetup.referralProgram,
 			execsetup.volumeDiscountProgram,
@@ -212,7 +213,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		execsetup.broker,
 	)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
-	execsetup.epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.marketActivityTracker.OnEpochEvent, execsetup.marketActivityTracker.OnEpochRestore)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.banking.OnEpoch, execsetup.banking.OnEpochRestore)
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
@@ -221,7 +222,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
 
 	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine)
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.vesting.OnEpochEvent, execsetup.vesting.OnEpochRestore)
@@ -520,6 +521,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.RewardsVestingBenefitTiers,
 			Watcher: execsetup.vesting.OnBenefitTiersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MinEpochsInTeamForMetricRewardEligibility,
+			Watcher: execsetup.marketActivityTracker.OnMinEpochsInTeamForRewardEligibilityUpdated,
 		},
 	)
 }
