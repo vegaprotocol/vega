@@ -1652,7 +1652,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		}
 	}
 
-	if !m.as.InAuction() && wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
+	if wasOpeningAuction && !m.as.IsOpeningAuction() && m.getCurrentMarkPrice().IsZero() {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 	}
 	if m.perp {
