@@ -660,15 +660,14 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		mp = m.markPrice.Clone()
 	}
 
-	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
-		if !m.pMonitor.CheckPrice(ctx, m.as, []*types.Trade{{Price: mp, Size: 1}}, true, true) {
+	if !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
+		m.pMonitor.CheckPrice(ctx, m.as, []*types.Trade{{Price: mp, Size: 1}}, true, true)
+		if !m.as.InAuction() && !m.as.AuctionStart() {
 			m.markPrice = mp
+			m.lastTradedPrice = mp.Clone()
+			m.hasTraded = false
 		}
-		m.nextMTM = t.Add(m.mtmDelta) // add delta here
-
-		// last traded price should not reflect the closeout trades
-		m.lastTradedPrice = mp.Clone()
-		m.hasTraded = false
+		m.nextMTM = t.Add(m.mtmDelta)
 	}
 	m.tsCalc.RecordTotalStake(m.liquidity.CalculateSuppliedStake().Uint64(), m.timeService.GetTimeNow())
 	m.liquidity.EndBlock(m.markPrice, m.midPrice(), m.positionFactor)

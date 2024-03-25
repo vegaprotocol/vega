@@ -503,6 +503,7 @@ message SpotMarket {
   StopOrders stop_orders = 19;
   repeated vega.Order expiring_stop_orders = 20;
   vega.events.v1.FeesStats fees_stats = 21;
+  bool has_traded = 22;
 }
 
 message Market {

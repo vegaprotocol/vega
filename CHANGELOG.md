@@ -36,6 +36,8 @@
 - [10962](https://github.com/vegaprotocol/vega/issues/10962) - Fix `lastFeeDistribution` time in snapshot. 
 - [10974](https://github.com/vegaprotocol/vega/issues/10974) - Target stake for spot should not consider position factor.
 - [10980](https://github.com/vegaprotocol/vega/issues/10980) - Make `gRPC` message size limit configurable, default to 20MB.
+- [10984](https://github.com/vegaprotocol/vega/issues/10984) - Save has traded flag from spot to snapshot. 
+
 
 ## 0.75.0
 
