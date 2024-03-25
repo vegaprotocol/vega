@@ -161,6 +161,28 @@ func (e *exEng) AddSubmitOrderToBatch(order *types.OrderSubmission, party string
 	return nil
 }
 
+func (e *exEng) AddCancelOrderToBatch(order *types.OrderCancellation, party string) error {
+	if e.batch == nil {
+		return ErrBatchInstructionNotStarted
+	}
+	if e.batch.party != party {
+		return ErrBatchInstructionStartedWithDifferentParty
+	}
+	e.batch.bmi.Cancellations = append(e.batch.bmi.Cancellations, order.IntoProto())
+	return nil
+}
+
+func (e *exEng) AddAmendOrderToBatch(order *types.OrderAmendment, party string) error {
+	if e.batch == nil {
+		return ErrBatchInstructionNotStarted
+	}
+	if e.batch.party != party {
+		return ErrBatchInstructionStartedWithDifferentParty
+	}
+	e.batch.bmi.Amendments = append(e.batch.bmi.Amendments, order.IntoProto())
+	return nil
+}
+
 func (e *exEng) ProcessBatch(ctx context.Context, party string) error {
 	if e.batch == nil {
 		return ErrBatchInstructionNotStarted

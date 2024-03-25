@@ -51,6 +51,8 @@ type Execution interface {
 	// it is part of the execution engine
 	StartBatch(party string) error
 	AddSubmitOrderToBatch(submission *types.OrderSubmission, party string) error
+	AddCancelOrderToBatch(cancellation *types.OrderCancellation, party string) error
+	AddAmendOrderToBatch(amend *types.OrderAmendment, party string) error
 	ProcessBatch(ctx context.Context, party string) error
 	OnEpochEvent(ctx context.Context, epoch types.Epoch)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error

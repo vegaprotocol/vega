@@ -289,6 +289,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartyAddsTheFollowingOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
 	})
 
+	s.Step(`^the party "([^"]+)" adds the following cancels to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingCancelsToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the party "([^"]+)" adds the following amends to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingAmendsToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
 	s.Step(`^the party "([^"]+)" adds the following iceberg orders to a batch:$`, func(party string, table *godog.Table) error {
 		return steps.PartyAddsTheFollowingIcebergOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
 	})
