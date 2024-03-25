@@ -151,7 +151,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 
-	if err := e.propagateSpotInitialNetParams(ctx, mkt); err != nil {
+	if err := e.propagateSpotInitialNetParams(ctx, mkt, true); err != nil {
 		return nil, err
 	}
 	// ensure this is set correctly
