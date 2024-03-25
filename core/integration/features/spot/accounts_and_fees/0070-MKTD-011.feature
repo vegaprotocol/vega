@@ -79,13 +79,13 @@ Feature: Spot market SLA
 
     Then the market data for the market "BTC/ETH_D11" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 480          | 6000           | 0             |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4800         | 6000           | 0             |
     Then the market data for the market "BTC/ETH_D10" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4800         | 6000           | 0             |
     Then the market data for the market "BTC/ETH_D21" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 480          | 6000           | 0             |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4800         | 6000           | 0             |
 
     #0070-MKTD-010:As a user all orders placed (either directly or through LP) are shown in events with prices in market precision
     And the parties place the following orders:
@@ -136,7 +136,7 @@ Feature: Spot market SLA
 
     Then the market data for the market "BTC/ETH_D11" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3600    | 144       | 156       | 480          | 6000           | 0             |
+      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3600    | 144       | 156       | 4800         | 6000           | 0             |
     Then the market data for the market "BTC/ETH_D10" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3600    | 144       | 156       | 4800         | 6000           | 0             |
@@ -144,7 +144,7 @@ Feature: Spot market SLA
     #0070-MKTD-013: Price bounds are calculated in asset precision, but enforced rounded to the closest value in market precision in range
     Then the market data for the market "BTC/ETH_D21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1500       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3600    | 1438      | 1564      | 480          | 6000           | 0             |
+      | 1500       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3600    | 1438      | 1564      | 4800         | 6000           | 0             |
     Then "lp1" should have general account balance of "111000" for asset "ETH"
     Then "lp2" should have general account balance of "111000" for asset "ETH"
 
@@ -158,16 +158,21 @@ Feature: Spot market SLA
     When the parties submit the following liquidity provision:
       | id  | party | market id   | commitment amount | fee | lp type   |
       | lp2 | lp2   | BTC/ETH_D11 | 2000              | 0.1 | amendment |
-      | lp4 | lp2   | BTC/ETH_D10 | 2000              | 0.1 | amendment |
-      | lp6 | lp2   | BTC/ETH_D21 | 2000              | 0.1 | amendment |
 
     Then the network moves ahead "4" blocks
 
     #bond penalty for lp2 = 800*0.25 =200
+    #0070-MKTD-011:As a user all transfers (margin top-up, release, MTM settlement) are calculated and communicated (via events) in asset precision
     And the network treasury balance should be "200" for the asset "ETH"
-# Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
-# Then the party "lp2" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
-# Then "lp1" should have general account balance of "2000" for asset "ETH"
-# Then "lp2" should have general account balance of "1800" for asset "ETH"
+    Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH_D11"
+    Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH_D10"
+    Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH_D21"
+    Then the party "lp2" lp liquidity bond account balance should be "2000" for the market "BTC/ETH_D11"
+    Then the party "lp2" lp liquidity bond account balance should be "3000" for the market "BTC/ETH_D10"
+    Then the party "lp2" lp liquidity bond account balance should be "3000" for the market "BTC/ETH_D21"
+
+    Then "lp1" should have general account balance of "114000" for asset "ETH"
+    Then "lp2" should have general account balance of "111800" for asset "ETH"
+
 
 
