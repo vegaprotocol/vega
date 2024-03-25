@@ -37,8 +37,8 @@ Feature: 0037-OPEG-020, 0037-OPEG-021
   Scenario: check invalid order types in spot market
     #while a sell order pegged to the mid price should have it's price rounded down to the nearest market tick size
     And the spot markets:
-      | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | decimal places | position decimal places | sla params    |
-      | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | 2              | 2                       | default-basic |
+      | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | liquidity monitoring | decimal places | position decimal places | sla params    |
+      | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | lqm-params           | 2              | 2                       | default-basic |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party1 | ETH   | 100000000 |
@@ -60,7 +60,7 @@ Feature: 0037-OPEG-020, 0037-OPEG-021
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1100       | TRADING_MODE_CONTINUOUS | 3600    | 1055      | 1147      | 1000         | 10000          | 0             |
+      | 1100       | TRADING_MODE_CONTINUOUS | 3600    | 1055      | 1147      | 10000        | 10000          | 0             |
 
     Then the following trades should be executed:
       | buyer  | price | size | seller |

@@ -105,7 +105,7 @@ func (e *Engine) GetTargetStake(now time.Time) *num.Uint {
 		e.computeMaxTotalStake(minTime)
 	}
 
-	value, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(e.max.TotalStake)).Mul(e.sFactor).Div(e.positionFactor))
+	value, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(e.max.TotalStake)).Mul(e.sFactor))
 	return value
 }
 

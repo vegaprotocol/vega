@@ -32,6 +32,7 @@
 - [10975](https://github.com/vegaprotocol/vega/issues/10975) - Fix marshaller for stop order rejection error. 
 - [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state. 
 - [10969](https://github.com/vegaprotocol/vega/issues/10969) - Ensure teams statistics are computed from team rewards.
+- [10974](https://github.com/vegaprotocol/vega/issues/10974) - Target stake for spot should not consider position factor.
 
 ## 0.75.0
 
