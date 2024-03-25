@@ -5,6 +5,7 @@
 ### 🐛 Fixes
 
 - [11000](https://github.com/vegaprotocol/vega/issues/11000) - Vesting summary events are now sorted properly before sending.
+- [10997](https://github.com/vegaprotocol/vega/issues/10997) - Handle cases where leaving opening auction triggers monitoring auction.
 
 ## 0.75.3
 
