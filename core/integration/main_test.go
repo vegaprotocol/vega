@@ -180,7 +180,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return err
 	})
 	s.Step(`^the spot markets:$`, func(table *godog.Table) error {
-		markets, err := steps.TheSpotMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
+		markets, err := steps.TheSpotMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.timeService.GetTimeNow(), table)
 		execsetup.markets = markets
 		return err
 	})
