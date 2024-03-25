@@ -668,7 +668,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	now := time.Unix(10, 0)
 	ctx := context.Background()
 	openingAuctionDuration := &types.AuctionDuration{Duration: 10}
-	tm := getTestMarket2(t, now, nil, openingAuctionDuration, true, 0.99)
+	tm := getTestMarket2(t, now, nil, openingAuctionDuration, 0.99)
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)

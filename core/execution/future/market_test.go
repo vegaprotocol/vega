@@ -359,10 +359,10 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	tm.now = auctionEnd
 	tm.market.OnTick(ctx, auctionEnd)
 
-	assert.Equal(t,
-		tm.market.GetMarketData().MarketTradingMode,
-		types.MarketTradingModeContinuous,
-	)
+	md := tm.market.GetMarketData()
+
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	require.Equal(t, types.MarketStateActive, md.MarketState)
 }
 
 func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
@@ -474,7 +474,7 @@ func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
 }
 
 func (tm *testMarket) StartOpeningAuction() *testMarket {
-	err := tm.market.StartOpeningAuction(context.Background())
+	err := tm.market.StartOpeningAuction(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()))
 	require.NoError(tm.t, err)
 	return tm
 }
@@ -507,7 +507,7 @@ func getTestMarket(
 	openingAuctionDuration *types.AuctionDuration,
 ) *testMarket {
 	t.Helper()
-	return getTestMarket2(t, now, pMonitorSettings, openingAuctionDuration, true, 0.99)
+	return getTestMarket2(t, now, pMonitorSettings, openingAuctionDuration, 0.99)
 }
 
 func getTestMarketWithDP(
@@ -519,7 +519,7 @@ func getTestMarketWithDP(
 	lpRange float64,
 ) *testMarket {
 	t.Helper()
-	return getTestMarket2WithDP(t, now, pMonitorSettings, openingAuctionDuration, true, decimalPlaces, lpRange)
+	return getTestMarket2WithDP(t, now, pMonitorSettings, openingAuctionDuration, decimalPlaces, lpRange)
 }
 
 func getTestMarket2(
@@ -527,11 +527,10 @@ func getTestMarket2(
 	now time.Time,
 	pMonitorSettings *types.PriceMonitoringSettings,
 	openingAuctionDuration *types.AuctionDuration,
-	startOpeningAuction bool,
 	lpRange float64,
 ) *testMarket {
 	t.Helper()
-	return getTestMarket2WithDP(t, now, pMonitorSettings, openingAuctionDuration, startOpeningAuction, 1, lpRange)
+	return getTestMarket2WithDP(t, now, pMonitorSettings, openingAuctionDuration, 1, lpRange)
 }
 
 func getTestMarket2WithDP(
@@ -539,7 +538,6 @@ func getTestMarket2WithDP(
 	now time.Time,
 	pMonitorSettings *types.PriceMonitoringSettings,
 	openingAuctionDuration *types.AuctionDuration,
-	startOpeningAuction bool,
 	decimalPlaces uint64,
 	lpRange float64,
 ) *testMarket {
@@ -595,7 +593,7 @@ func getTestMarket2WithDP(
 		Details: &types.AssetDetails{
 			Symbol:   "ETH",
 			Decimals: 0, // no decimals
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 		},
 	})
 	require.NoError(t, err)
@@ -663,16 +661,11 @@ func getTestMarket2WithDP(
 	mktEngine.OnMarkPriceUpdateMaximumFrequency(context.Background(), time.Duration(0))
 	mktEngine.UpdateRiskFactorsForTest()
 
-	if startOpeningAuction {
-		d := time.Second
-		if openingAuctionDuration != nil {
-			d = time.Duration(openingAuctionDuration.Duration) * time.Second
-		}
-		mktEngine.OnMarketAuctionMinimumDurationUpdate(context.Background(), d)
-		err := mktEngine.StartOpeningAuction(context.Background())
-		require.NoError(t, err)
+	d := time.Second
+	if openingAuctionDuration != nil {
+		d = time.Duration(openingAuctionDuration.Duration) * time.Second
 	}
-
+	mktEngine.OnMarketAuctionMinimumDurationUpdate(context.Background(), d)
 	settlementAssets, err := mkt.GetAssets()
 	assert.NoError(t, err)
 
@@ -690,7 +683,8 @@ func getTestMarket2WithDP(
 	// Reset event counters
 	tm.eventCount = 0
 	tm.orderEventCount = 0
-
+	tm.t = t
+	tm.StartOpeningAuction()
 	return tm
 }
 
@@ -895,6 +889,8 @@ func TestMarketClosing(t *testing.T) {
 	addAccount(t, tm, lp1)
 	addAccount(t, tm, lp2)
 
+	tm.EndOpeningAuction(t, now.Add(2*time.Second), true)
+
 	// submit liquidity with varying fee levels
 	commitment1 := num.NewUint(30000)
 	fee1 := num.DecimalFromFloat(0.01)
@@ -1025,6 +1021,12 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	// setup
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	// then
 	assert.Equal(t, types.MarketStateActive.String(), tm.market.State().String())
@@ -1138,6 +1140,12 @@ func TestUnsubscribeTradingTerminatedOracle(t *testing.T) {
 	// setup
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	// then
 	assert.Equal(t, types.MarketStateActive.String(), tm.market.State().String())
@@ -1219,7 +1227,7 @@ func TestLiquidityFeeWhenTargetStakeDropsDueToFlowOfTime(t *testing.T) {
 	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 	tm.market.OnMarketTargetStakeTimeWindowUpdate(5 * time.Second)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -1309,7 +1317,7 @@ func TestMarketNotActive(t *testing.T) {
 	closingAt := time.Unix(20, 0)
 
 	// this will create a market in Proposed Mode
-	tm := getTestMarket2(t, now, nil, nil, false, 0.99)
+	tm := getTestMarket2(t, now, nil, nil, 0.99)
 	defer tm.ctrl.Finish()
 
 	require.Equal(t, types.MarketStateProposed, tm.market.State())
@@ -1422,6 +1430,15 @@ func TestPeggingWithTickSize(t *testing.T) {
 	tm := getTestMarket(t, now, nil, nil)
 	tm.mktCfg.TickSize = num.NewUint(50)
 	defer tm.ctrl.Finish()
+
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
@@ -1585,6 +1602,12 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// this will also output the closed accounts
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
+
 	pubKeys := []*dstypes.Signer{
 		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
@@ -1681,6 +1704,11 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	// this will also output the closed accounts
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	// submit orders
 	// party1 buys
@@ -1795,6 +1823,11 @@ func Test6056(t *testing.T) {
 	// this will also output the closed accounts
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	// submit orders
 	// party1 buys
@@ -1931,6 +1964,11 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 	// this will also output the closed accounts
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	// submit orders
 	// party1 buys
@@ -2083,6 +2121,12 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// this will create 2 parties, credit their account
 	// and move some monies to the market
 	addAccount(t, tm, party1)
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	// submit orders
 	// party1 buys
@@ -2124,7 +2168,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 	defer tm.ctrl.Finish()
 	// add 2 parties to the party engine
 	// this will create 2 parties, credit their account
@@ -2242,6 +2286,12 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	defer tm.ctrl.Finish()
 
 	addAccount(t, tm, party1)
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	// submit orders
 	// party1 buys
@@ -2323,7 +2373,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	tm := getTestMarket2(t, now, pMonitorSettings, &types.AuctionDuration{
 		Duration: 1,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -2494,7 +2544,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	tm := getTestMarket2(t, now, pMonitorSettings, &types.AuctionDuration{
 		Duration: auctionExtensionSeconds,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -2745,7 +2795,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	initialPrice := uint64(600)
 	auctionTriggeringPrice := initialPrice + 1 + mmu.Uint64()
 	// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	tm := getTestMarket2(t, now, pMonitorSettings, openingAuctionDuration, true, 1)
+	tm := getTestMarket2(t, now, pMonitorSettings, openingAuctionDuration, 1)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -2976,7 +3026,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	tm := getTestMarket2(t, now, pMonitorSettings, &types.AuctionDuration{
 		Duration: auctionExtensionSeconds,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -3186,7 +3236,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	tm := getTestMarket2(t, now, pMonitorSettings, &types.AuctionDuration{
 		Duration: extension,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 
 	initDec := num.DecimalFromFloat(float64(initialPrice))
 	// add 1 for the ceil
@@ -3517,6 +3567,14 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	tm := getTestMarket(t, now, nil, nil)
 	var matchingPrice uint64 = 111
 
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
+
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -3602,7 +3660,7 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	p1, p2 := "party1", "party2"
 	now := time.Unix(10, 0)
 	var auctionDuration int64 = 5
-	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{Duration: auctionDuration}, true, 0.99)
+	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{Duration: auctionDuration}, 0.99)
 	var midPrice uint64 = 100
 
 	addAccount(t, tm, mainParty)
@@ -4236,6 +4294,14 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
+
 	addAccount(t, tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -4493,6 +4559,14 @@ func TestOrderBook_Bug2747(t *testing.T) {
 	now := time.Unix(10, 0)
 	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	addAccountWithAmount(tm, "party-A", 100000000)
 	addAccountWithAmount(tm, "party-B", 100000000)
@@ -4930,6 +5004,14 @@ func TestOrderBook_CancelAll2771(t *testing.T) {
 	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
+
 	addAccountWithAmount(tm, "party-A", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -4959,6 +5041,14 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 	now := time.Unix(10, 0)
 	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	addAccount(t, tm, "party-A")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -4990,6 +5080,14 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 	now := time.Unix(10, 0)
 	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	addAccount(t, tm, "party-A")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -5027,6 +5125,14 @@ func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 100)
+	require.NotNil(t, sellOrder)
+	tm.market.LeaveAuctionWithIDGen(ctx, now, newTestIDGenerator())
 
 	addAccount(t, tm, "party-A")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -5067,7 +5173,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1.01)
+	}, 1.01)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party-A")
@@ -5334,7 +5440,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKBuy(t *testing.T) {
 	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"

@@ -559,16 +559,10 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 		return common.ErrCannotStartOpeningAuctionForMarketNotInProposedState
 	}
 
-	// now we start the opening auction
-	if m.as.AuctionStart() {
-		// we are now in a pending state
-		m.mkt.State = types.MarketStatePending
-		m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
-		m.enterAuction(ctx)
-	} else {
-		m.mkt.State = types.MarketStateActive
-		m.mkt.TradingMode = types.MarketTradingModeContinuous
-	}
+	// we are now in a pending state
+	m.mkt.State = types.MarketStatePending
+	m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
+	m.enterAuction(ctx)
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil

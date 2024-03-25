@@ -925,21 +925,12 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 
 	defer m.onTxProcessed()
 
-	// now we start the opening auction
-	if m.as.AuctionStart() {
-		// we are now in a pending state
-		m.mkt.State = types.MarketStatePending
-		// this should no longer be needed
-		// m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
-		m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
-		m.enterAuction(ctx)
-	} else {
-		// TODO(): to be removed once we don't have market starting
-		// without an opening auction - this is only used in unit tests
-		// validation on the proposal ensures opening auction duration is always >= 1 (or whatever the min duration is)
-		m.mkt.State = types.MarketStateActive
-		m.mkt.TradingMode = types.MarketTradingModeContinuous
-	}
+	// we are now in a pending state
+	m.mkt.State = types.MarketStatePending
+	// this should no longer be needed
+	// m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
+	m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
+	m.enterAuction(ctx)
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil

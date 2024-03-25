@@ -35,8 +35,10 @@ func TestMarketSubmitCancelIceberg(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(100000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm := getTestMarket(t, now, nil, nil)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{Duration: 1})
 	defer tm.ctrl.Finish()
+	tm.now = tm.now.Add(2 * time.Second)
+	tm.EndOpeningAuction(t, tm.now, true)
 
 	addAccount(t, tm, party1)
 	iceberg := &types.Order{
@@ -88,9 +90,10 @@ func TestMarketAmendIceberg(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(100000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm := getTestMarket(t, now, nil, nil)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{Duration: 1})
 	defer tm.ctrl.Finish()
 
+	tm.EndOpeningAuction(t, now.Add(2*time.Second), true)
 	addAccount(t, tm, party1)
 	iceberg := &types.Order{
 		Type:        types.OrderTypeLimit,
@@ -164,8 +167,10 @@ func TestMarketAmendIcebergToNoReserve(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(100000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm := getTestMarket(t, now, nil, nil)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{Duration: 1})
 	defer tm.ctrl.Finish()
+	now = now.Add(2 * time.Second)
+	tm.EndOpeningAuction(t, now, true)
 
 	addAccount(t, tm, party1)
 	iceberg := &types.Order{

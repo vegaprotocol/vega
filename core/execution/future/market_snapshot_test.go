@@ -168,6 +168,7 @@ func getTerminatedMarket(t *testing.T) *testMarket {
 	tm := getTestMarket(t, now, nil, nil)
 	defer tm.ctrl.Finish()
 
+	tm.EndOpeningAuction(t, now.Add(2*time.Second), true)
 	// terminate the market
 	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,

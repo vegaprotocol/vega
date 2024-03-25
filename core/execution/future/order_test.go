@@ -540,7 +540,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	now := time.Unix(10, 0)
 	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
-	}, true, 0.95)
+	}, 0.95)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -821,7 +821,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1.05)
+	}, 1.05)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, party1)
@@ -2255,6 +2255,7 @@ func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
+	tm.EndOpeningAuction(t, now.Add(2*time.Second), true)
 
 	// Place trades so we have a valid BEST_BID
 	buyOrder1 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)

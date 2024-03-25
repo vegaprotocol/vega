@@ -36,7 +36,7 @@ func TestMargins(t *testing.T) {
 	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
-	}, true, 1)
+	}, 1)
 	price := num.NewUint(100)
 	size := uint64(100)
 
