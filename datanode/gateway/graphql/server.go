@@ -72,13 +72,22 @@ func New(
 
 	serverAddr := fmt.Sprintf("%v:%v", config.Node.IP, config.Node.Port)
 
-	tdconn, err := grpc.Dial(serverAddr, grpc.WithInsecure(), ratelimit.WithSecret())
+	tdconn, err := grpc.Dial(
+		serverAddr,
+		grpc.WithInsecure(),
+		ratelimit.WithSecret(),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(config.Node.MaxMsgSize)),
+	)
 	if err != nil {
 		return nil, err
 	}
 	tradingDataClientV2 := v2.NewTradingDataServiceClient(&clientConn{tdconn})
 
-	tconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	tconn, err := grpc.Dial(
+		serverAddr,
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(config.MaxMsgSize)),
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -28,8 +28,9 @@ import (
 
 // ServerConfig represent the configuration of a server in vega.
 type ServerConfig struct {
-	Port int    `description:"Listen for connection on port <port>" long:"port"`
-	IP   string `description:"Bind to address <ip>"                 long:"ip"`
+	Port       int    `description:"Listen for connection on port <port>" long:"port"`
+	IP         string `description:"Bind to address <ip>"                 long:"ip"`
+	MaxMsgSize int    `description:"Max message size in bytes"            long:"max-msg-size"`
 }
 
 // GraphqlServiceConfig represents the configuration of the gateway.
@@ -69,8 +70,9 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		ServerConfig: ServerConfig{
-			IP:   "0.0.0.0",
-			Port: 3008,
+			IP:         "0.0.0.0",
+			Port:       3008,
+			MaxMsgSize: 20 * 1024 * 1024,
 		},
 		Level:        encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout:      encoding.Duration{Duration: 5 * time.Second},
@@ -84,8 +86,9 @@ func NewDefaultConfig() Config {
 			APMEnabled: true,
 		},
 		Node: ServerConfig{
-			IP:   "0.0.0.0",
-			Port: 3007,
+			IP:         "0.0.0.0",
+			Port:       3007,
+			MaxMsgSize: 20 * 1024 * 1024,
 		},
 		SubscriptionRetries:      3,
 		GraphQLPlaygroundEnabled: true,
