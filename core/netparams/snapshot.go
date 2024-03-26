@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type snapState struct {
@@ -142,17 +143,28 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		}
 	}
 
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.9") {
-		vgChainID, err := vgcontext.ChainIDFromContext(ctx)
-		if err != nil {
-			panic(fmt.Errorf("no vega chain ID found in context: %w", err))
+	// TODO use a UpgradeFrom tag when we know which versions we will upgrade from
+	if vgcontext.InProgressUpgrade(ctx) {
+		haveConfig := false
+		secondaryChainConfig := &vegapb.SecondaryEthereumConfig{}
+		if err := s.GetJSONStruct(BlockchainsSecondaryEthereumConfig, secondaryChainConfig); err == nil {
+			haveConfig = secondaryChainConfig.ChainId != ""
 		}
-		secondaryEthConf, ok := bridgeMapping[vgChainID]
-		if !ok {
-			panic("Missing secondary ethereum configuration")
-		}
-		if err := s.UpdateOptionalValidation(ctx, BlockchainsSecondaryEthereumConfig, secondaryEthConf, false, false); err != nil {
-			return nil, err
+
+		// if the config hasn't been set, then initialise it from the bridge mapping
+		// this is to initially avoid having to know which version we are upgrading from on our test networks
+		if !haveConfig {
+			vgChainID, err := vgcontext.ChainIDFromContext(ctx)
+			if err != nil {
+				panic(fmt.Errorf("no vega chain ID found in context: %w", err))
+			}
+			secondaryEthConf, ok := bridgeMapping[vgChainID]
+			if !ok {
+				panic("Missing secondary ethereum configuration")
+			}
+			if err := s.UpdateOptionalValidation(ctx, BlockchainsSecondaryEthereumConfig, secondaryEthConf, false, false); err != nil {
+				return nil, err
+			}
 		}
 	}
 

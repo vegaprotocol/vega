@@ -201,7 +201,8 @@ func (s *Service) restorePendingUpdates(ctx context.Context, pending *types.Pend
 }
 
 func (s *Service) applyMigrations(ctx context.Context, p *types.Asset) {
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0") {
+	// TODO when we know what versions we are upgrading from we can put in a upgrade from tag
+	if vgcontext.InProgressUpgrade(ctx) {
 		// Prior the introduction of the second bridge, existing assets did not track
 		// the chain ID they originated from. So, when loaded, assets without a chain
 		// ID are automatically considered to originate from Ethereum Mainnet.

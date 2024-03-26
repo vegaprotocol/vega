@@ -7285,19 +7285,19 @@ type SecondaryEthereumConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Network ID of this Ethereum network.
+	// Network ID of this EVM compatible network.
 	NetworkId string `protobuf:"bytes,1,opt,name=network_id,json=networkId,proto3" json:"network_id,omitempty"`
-	// Chain ID of this Ethereum network.
+	// Chain ID of this EVM compatible network.
 	ChainId string `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	// // Contract configuration of the collateral bridge contract for this Ethereum network.
+	// // Contract configuration of the collateral bridge contract for this EVM compatible network.
 	CollateralBridgeContract *EthereumContractConfig `protobuf:"bytes,3,opt,name=collateral_bridge_contract,json=collateralBridgeContract,proto3" json:"collateral_bridge_contract,omitempty"`
-	// Number of block confirmations to wait to consider an Ethereum transaction trusted.
-	// An Ethereum block is trusted when there are at least "n" blocks confirmed by the
+	// Number of block confirmations to wait to consider an EVM compatible chain transaction trusted.
+	// An EVM compatible chain block is trusted when there are at least "n" blocks confirmed by the
 	// network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
-	// and the current block to be forged (or mined) on Ethereum is block 14, block
+	// and the current block to be forged (or mined) on the EVM compatible chain is block 14, block
 	// 10 would be considered as trusted, but not block 11.
 	Confirmations uint32 `protobuf:"varint,4,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
-	// Contract configuration of the multisig control contract for this Ethereum network.
+	// Contract configuration of the multisig control contract for this EVM compatible network.
 	MultisigControlContract *EthereumContractConfig `protobuf:"bytes,5,opt,name=multisig_control_contract,json=multisigControlContract,proto3" json:"multisig_control_contract,omitempty"`
 }
 
@@ -7373,7 +7373,7 @@ type EthereumContractConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Address of the contract for this Ethereum network. The address should start with "0x".
+	// Address of the contract for this EVM compatible network. The address should start with "0x".
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	// Block height at which the stacking contract has been deployed for this Ethereum network.
 	DeploymentBlockHeight uint64 `protobuf:"varint,6,opt,name=deployment_block_height,json=deploymentBlockHeight,proto3" json:"deployment_block_height,omitempty"`
