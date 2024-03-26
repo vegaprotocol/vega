@@ -40,6 +40,7 @@
 - [10980](https://github.com/vegaprotocol/vega/issues/10980) - Make `gRPC` message size limit configurable, default to 20MB.
 - [10984](https://github.com/vegaprotocol/vega/issues/10984) - Save has traded flag from spot to snapshot. 
 - [10997](https://github.com/vegaprotocol/vega/issues/10997) - Handle cases where leaving opening auction triggers monitoring auction.
+- [11010](https://github.com/vegaprotocol/vega/issues/11010) - Release bond in spot market when market is terminated. 
 
 
 ## 0.75.0

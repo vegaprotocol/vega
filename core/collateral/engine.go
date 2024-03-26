@@ -4380,11 +4380,62 @@ func (e *Engine) ReleaseFromHoldingAccount(ctx context.Context, transfer *types.
 }
 
 // ClearSpotMarket moves remaining LP fees to the global reward account and removes market accounts.
-func (e *Engine) ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error) {
+func (e *Engine) ClearSpotMarket(ctx context.Context, mktID, quoteAsset string, parties []string) ([]*types.LedgerMovement, error) {
 	resps := []*types.LedgerMovement{}
 
-	treasury, _ := e.GetNetworkTreasuryAccount(quoteAsset)
 	req := &types.TransferRequest{
+		FromAccount: make([]*types.Account, 1),
+		ToAccount:   make([]*types.Account, 1),
+		Asset:       quoteAsset,
+		Type:        types.TransferTypeClearAccount,
+	}
+
+	for _, v := range parties {
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, v, quoteAsset, types.AccountTypeGeneral))
+		if err != nil {
+			e.log.Debug(
+				"Failed to get the general account",
+				logging.String("party-id", v),
+				logging.String("market-id", mktID),
+				logging.String("asset", quoteAsset),
+				logging.Error(err))
+			// just try to do other parties
+			continue
+		}
+		// Then we do bond account
+		bondAcc, err := e.GetAccountByID(e.accountID(mktID, v, quoteAsset, types.AccountTypeBond))
+		if err != nil {
+			// this not an actual error
+			// a party may not have a bond account if
+			// its not also a liquidity provider
+			continue
+		}
+
+		req.FromAccount[0] = bondAcc
+		req.ToAccount[0] = generalAcc
+		req.Amount = bondAcc.Balance.Clone()
+
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("Clearing party bond account",
+				logging.String("market-id", mktID),
+				logging.String("asset", quoteAsset),
+				logging.String("party", v),
+				logging.BigUint("bond-before", bondAcc.Balance),
+				logging.BigUint("general-before", generalAcc.Balance),
+				logging.BigUint("general-after", num.Sum(generalAcc.Balance, bondAcc.Balance)))
+		}
+
+		ledgerEntries, err := e.clearAccount(ctx, req, v, quoteAsset, mktID)
+		if err != nil {
+			e.log.Panic("unable to clear party account", logging.Error(err))
+		}
+
+		// add entries to the response
+		resps = append(resps, ledgerEntries)
+	}
+
+	treasury, _ := e.GetNetworkTreasuryAccount(quoteAsset)
+	req = &types.TransferRequest{
 		FromAccount: make([]*types.Account, 1),
 		ToAccount:   make([]*types.Account, 1),
 		Asset:       quoteAsset,
