@@ -12,7 +12,7 @@ Feature: replicate the fund releasing bug when market is terminated
 
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 36000   | 0.999       | 3                 |
+      | 36000   | 0.999       | 23                |
 
     And the liquidity sla params named "SLA-1":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -70,12 +70,12 @@ Feature: replicate the fund releasing bug when market is terminated
 
     # place orders and generate trades
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | only |
-      | party1 | BTC/ETH   | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party-order1 |      |
-      | party1 | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | party-order1 |      |
-      | party1 | BTC/ETH   | buy  | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order3 |      |
-      | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
-      | party2 | BTC/ETH   | sell | 1      | 18    | 0                | TYPE_LIMIT | TIF_GTC | party-order2 |      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference         | only |
+      | party1 | BTC/ETH   | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | buy-party-order1  |      |
+      | party1 | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | buy-party-order2  |      |
+      | party1 | BTC/ETH   | buy  | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | buy-party-order3  |      |
+      | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | sell-party-order1 |      |
+    # | party2 | BTC/ETH   | sell | 1      | 18    | 0                | TYPE_LIMIT | TIF_GTC | sell-party-order2 |      |
 
     When the network moves ahead "1" blocks
 
@@ -84,8 +84,8 @@ Feature: replicate the fund releasing bug when market is terminated
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 36000   | 14        | 17        | 0            | 0              |
 
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     | only |
-      | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | party2-order1 |      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference         | only |
+      | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | sell-party-order3 |      |
 
     When the network moves ahead "1" blocks
 
@@ -95,8 +95,9 @@ Feature: replicate the fund releasing bug when market is terminated
 
     #cancel the orders that triggered price mon auction
     Then the parties cancel the following orders:
-      | party  | reference     |
-      | party2 | party2-order1 |
+      | party  | reference         |
+      | party1 | buy-party-order2  |
+      | party2 | sell-party-order3 |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type    |
@@ -105,10 +106,11 @@ Feature: replicate the fund releasing bug when market is terminated
     #lp commits provisions and submits orders
     #other parties enter orders that will cross
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | lp1    | BTC/ETH   | buy  | 1      | 12    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1     |
-      | party1 | BTC/ETH   | buy  | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1     |
-      | party2 | BTC/ETH   | sell | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | party2-order1 |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference         |
+      | lp1    | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1         |
+      | party1 | BTC/ETH   | buy  | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | buy-party-order4  |
+      | party2 | BTC/ETH   | sell | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | sell-party-order4 |
+      | lp1    | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | lp-order2         |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
@@ -118,6 +120,9 @@ Feature: replicate the fund releasing bug when market is terminated
     When the market states are updated through governance:
       | market id | state                              |
       | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger       |
+      | 13         | TRADING_MODE_NO_TRADING | AUCTION_TRIGGER_PRICE |
 
 # When the network moves ahead "4" blocks
 
