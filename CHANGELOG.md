@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.75.4
+
+### 🐛 Fixes
+
+- [11000](https://github.com/vegaprotocol/vega/issues/11000) - Vesting summary events are now sorted properly before sending.
+
 ## 0.75.3
 
 ### 🐛 Fixes

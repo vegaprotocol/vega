@@ -400,7 +400,10 @@ func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
 		}
 
 		sort.Slice(pSummary.PartyLockedBalances, func(i, j int) bool {
-			return pSummary.PartyLockedBalances[i].Asset < pSummary.PartyLockedBalances[j].Asset && pSummary.PartyLockedBalances[i].UntilEpoch < pSummary.PartyLockedBalances[j].UntilEpoch
+			if pSummary.PartyLockedBalances[i].Asset == pSummary.PartyLockedBalances[j].Asset {
+				return pSummary.PartyLockedBalances[i].UntilEpoch < pSummary.PartyLockedBalances[j].UntilEpoch
+			}
+			return pSummary.PartyLockedBalances[i].Asset < pSummary.PartyLockedBalances[j].Asset
 		})
 
 		evt.PartiesVestingSummary = append(evt.PartiesVestingSummary, pSummary)
