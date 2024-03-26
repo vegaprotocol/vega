@@ -2797,7 +2797,8 @@ func (m *Market) processFeesReleaseOnLeaveAuction(ctx context.Context) {
 			if o.Side == types.SideBuy && o.PeggedOrder == nil {
 				transfer, err := m.orderHoldingTracker.ReleaseFeeFromHoldingAccount(ctx, o.ID, party, m.quoteAsset)
 				if err != nil {
-					m.log.Panic("failed to release fee from holding account at the end of an auction", logging.Order(o), logging.Error(err))
+					// it's valid, if fees for the order were zero, we don't update the holding account
+					// cache so it can be legitimately not there.
 					continue
 				}
 				transfers = append(transfers, transfer)
