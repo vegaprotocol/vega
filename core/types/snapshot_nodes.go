@@ -3613,6 +3613,7 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 		Closed:                     em.Closed,
 		StopOrders:                 em.StopOrders,
 		FeesStats:                  em.FeesStats,
+		HasTraded:                  em.HasTraded,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -3644,6 +3645,7 @@ func (e ExecSpotMarket) IntoProto() *snapshot.SpotMarket {
 		Closed:                     e.Closed,
 		StopOrders:                 e.StopOrders,
 		FeesStats:                  e.FeesStats,
+		HasTraded:                  e.HasTraded,
 	}
 	if e.CurrentMarkPrice != nil {
 		ret.CurrentMarkPrice = e.CurrentMarkPrice.String()
