@@ -208,7 +208,7 @@ func (s *Service) applyMigrations(ctx context.Context, p *types.Asset) {
 		if erc20 := p.Details.GetERC20(); erc20 != nil && erc20.ChainID == "" {
 			erc20.ChainID = s.primaryEthChainID
 			// Ensure the assets are updated in the data-node.
-			s.broker.Send(events.NewAssetEvent(ctx, *p))
+			s.broker.Stage(events.NewAssetEvent(ctx, *p))
 		}
 	}
 }
