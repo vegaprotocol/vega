@@ -95,5 +95,5 @@ Feature: Spot market quality of committed liquidity
     # The average score should be updated to be different from the numbers above 
     Then the liquidity provider fee shares for the market "BTC/ETH" should be:
       | party | equity like share | average entry valuation | average score |
-      | lp1   | 0.5               | 10000                   | 0.561840354  |
-      | lp2   | 0.5               | 20000                   | 0.438159646  |      
+      | lp1   | 0.5               | 10000                   | 0.561840354   |
+      | lp2   | 0.5               | 20000                   | 0.438159646   |      
