@@ -10,14 +10,6 @@ Feature: replicate the fund releasing bug when market is terminated
       | risk aversion | tau  | mu | r   | sigma |
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
 
-    And the oracle spec for settlement data filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
-      | property         | type         | binding         | decimals |
-      | prices.ETH.value | TYPE_INTEGER | settlement data | 0        |
-
-    And the oracle spec for trading termination filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
-      | property           | type         | binding             |
-      | trading.terminated | TYPE_BOOLEAN | trading termination |
-
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 3600000 | 0.999       | 300               |
@@ -44,8 +36,8 @@ Feature: replicate the fund releasing bug when market is terminated
       | market.liquidity.probabilityOfTrading.tau.scaling   | 0.1   |
 
     And the spot markets:
-      | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params | data source config |
-      | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | SLA-1      | ethDec19Oracle     |
+      | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params |
+      | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | SLA-1      |
     And the following network parameters are set:
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 2s    |
@@ -123,3 +115,11 @@ Feature: replicate the fund releasing bug when market is terminated
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1000   | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1829   | ETH   |
       | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 3170   | ETH   |
+
+    # When the market states are updated through governance:
+    #   | market id | state                              | settlement price |
+    #   | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE | 15               |
+
+    When the market states are updated through governance:
+      | market id | state                              | 
+      | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE |                  
