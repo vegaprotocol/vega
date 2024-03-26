@@ -267,6 +267,15 @@ func (m *Market) IsOpeningAuction() bool {
 	return m.as.IsOpeningAuction()
 }
 
+func (m *Market) getParties() []string {
+	parties := make([]string, 0, len(m.parties))
+	for k := range m.parties {
+		parties = append(parties, k)
+	}
+	sort.Strings(parties)
+	return parties
+}
+
 func (m *Market) GetPartiesStats() *types.MarketStats {
 	return &types.MarketStats{}
 }
@@ -708,7 +717,7 @@ func (m *Market) removeOrders(ctx context.Context) {
 // cleanMarketWithState clears the collateral state of the market and clears up state vars and sets the terminated state of the market
 // NB: should it actually go to settled?.
 func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.MarketState) error {
-	clearMarketTransfers, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset)
+	clearMarketTransfers, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset, m.getParties())
 	if err != nil {
 		m.log.Error("Clear market error",
 			logging.MarketID(m.GetID()),
@@ -2605,7 +2614,7 @@ func (m *Market) canTrade() bool {
 // at this point no fees would have been collected or anything like this.
 func (m *Market) cleanupOnReject(ctx context.Context) {
 	m.stopAllLiquidityProvisionOnReject(ctx)
-	tresps, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset)
+	tresps, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset, m.getParties())
 	if err != nil {
 		m.log.Panic("unable to cleanup a rejected market",
 			logging.String("market-id", m.GetID()),
