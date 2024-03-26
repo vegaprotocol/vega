@@ -60,7 +60,7 @@ Feature: Team Rewards
 
   @TeamStep
   Scenario: (0083-RFPR-068) Assert that a user joining a team is not eligible for rewards until the number of epochs since joining the team as specified in the rewards.team.minEpochsInTeam network parameter has passed.
-
+  
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | individual_scope | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      | ntop |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS  | TEAMS              | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 | 3 |
@@ -132,3 +132,72 @@ Feature: Team Rewards
       | party     | asset    | balance |
       | ref1-0001 | USD-1-10 | 15000   |
       | referee1 | USD-1-10  | 5000    |
+
+@TeamStep
+  Scenario: (0083-RFPR-068) Setting min epoch to 0 means rewards straight away
+
+    And the following network parameters are set:
+      | name                                    | value |
+      | rewards.team.minEpochsInTeam            | 0     |
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | individual_scope | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      | ntop |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS  | TEAMS              | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 | 3 |
+
+    And the parties place the following orders:
+      | party     | market id    | side | volume | price | resulting trades | type       | tif     |
+      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref1-0001 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    
+    When the network moves ahead "1" epochs
+    Then parties should have the following vesting account balances:
+      | party     | asset    | balance |
+      | ref1-0001 | USD-1-10 | 10000   |
+
+@TeamStep
+  Scenario: (0083-RFPR-068) Setting min epoch to 1 means one *whole* epoch in a team to get rewards
+
+    And the following network parameters are set:
+      | name                                    | value |
+      | rewards.team.minEpochsInTeam            | 1     |
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | individual_scope | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      | ntop |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS  | TEAMS              | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 | 3 |
+
+    And the parties place the following orders:
+      | party     | market id    | side | volume | price | resulting trades | type       | tif     |
+      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref1-0001 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    
+    When the network moves ahead "1" epochs
+    Then parties should have the following vesting account balances:
+      | party     | asset    | balance |
+      | ref1-0001 | USD-1-10 | 0   |
+
+
+    And the parties place the following orders:
+      | party     | market id    | side | volume | price | resulting trades | type       | tif     |
+      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref1-0001 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+
+   When the network moves ahead "1" epochs
+    Then parties should have the following vesting account balances:
+      | party     | asset    | balance |
+      | ref1-0001 | USD-1-10 | 10000   |
