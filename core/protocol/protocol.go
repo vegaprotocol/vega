@@ -168,8 +168,8 @@ func New(
 			Watcher: proto.App.OnBlockchainPrimaryEthereumConfigUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.BlockchainsSecondaryEthereumConfig,
-			Watcher: proto.App.OnBlockchainSecondaryEthereumConfigUpdate,
+			Param:   netparams.BlockchainsEVMChainConfig,
+			Watcher: proto.App.OnBlockchainEVMChainConfigUpdate,
 		},
 	)
 

@@ -33,7 +33,7 @@ import (
 
 type SecondaryClient struct {
 	ETHClient
-	ethConfig *types.SecondaryEthereumConfig
+	ethConfig *types.EVMChainConfig
 
 	// this is all just to prevent spamming the infura just
 	// to get the last height of the blockchain
@@ -60,7 +60,7 @@ func SecondaryDial(ctx context.Context, cfg Config) (*SecondaryClient, error) {
 	}, nil
 }
 
-func (c *SecondaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *types.SecondaryEthereumConfig) error {
+func (c *SecondaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *types.EVMChainConfig) error {
 	if c == nil {
 		return nil
 	}

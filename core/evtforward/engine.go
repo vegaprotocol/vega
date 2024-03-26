@@ -148,7 +148,7 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 	client ethereum.Client,
 	forwarder ethereum.Forwarder,
 	config ethereum.Config,
-	ethCfg *types.SecondaryEthereumConfig,
+	ethCfg *types.EVMChainConfig,
 	assets ethereum.Assets,
 ) error {
 	if e.log.IsDebug() {
@@ -270,7 +270,7 @@ func (e *NoopEngine) SetupSecondaryEthereumEngine(
 	_ ethereum.Client,
 	_ ethereum.Forwarder,
 	_ ethereum.Config,
-	_ *types.SecondaryEthereumConfig,
+	_ *types.EVMChainConfig,
 	_ ethereum.Assets,
 ) error {
 	if e.log.IsDebug() {

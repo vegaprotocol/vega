@@ -146,8 +146,8 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	// TODO use a UpgradeFrom tag when we know which versions we will upgrade from
 	if vgcontext.InProgressUpgrade(ctx) {
 		haveConfig := false
-		secondaryChainConfig := &vegapb.SecondaryEthereumConfig{}
-		if err := s.GetJSONStruct(BlockchainsSecondaryEthereumConfig, secondaryChainConfig); err == nil {
+		secondaryChainConfig := &vegapb.EVMChainConfig{}
+		if err := s.GetJSONStruct(BlockchainsEVMChainConfig, secondaryChainConfig); err == nil {
 			haveConfig = secondaryChainConfig.ChainId != ""
 		}
 
@@ -162,7 +162,7 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 			if !ok {
 				panic("Missing secondary ethereum configuration")
 			}
-			if err := s.UpdateOptionalValidation(ctx, BlockchainsSecondaryEthereumConfig, secondaryEthConf, false, false); err != nil {
+			if err := s.UpdateOptionalValidation(ctx, BlockchainsEVMChainConfig, secondaryEthConf, false, false); err != nil {
 				return nil, err
 			}
 		}

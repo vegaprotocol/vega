@@ -744,9 +744,9 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
-			Param: netparams.BlockchainsSecondaryEthereumConfig,
+			Param: netparams.BlockchainsEVMChainConfig,
 			Watcher: func(ctx context.Context, cfg interface{}) error {
-				ethCfg, err := types.SecondaryEthereumConfigFromUntypedProto(cfg)
+				ethCfg, err := types.EVMChainConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid secondary ethereum configuration: %w", err)
 				}
@@ -931,13 +931,13 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
-			Param: netparams.BlockchainsSecondaryEthereumConfig,
+			Param: netparams.BlockchainsEVMChainConfig,
 			Watcher: func(_ context.Context, cfg interface{}) error {
 				// nothing to do if not a validator
 				if !svcs.conf.HaveEthClient() {
 					return nil
 				}
-				ethCfg, err := types.SecondaryEthereumConfigFromUntypedProto(cfg)
+				ethCfg, err := types.EVMChainConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid secondary ethereum configuration: %w", err)
 				}
@@ -979,9 +979,9 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
-			Param: netparams.BlockchainsSecondaryEthereumConfig,
+			Param: netparams.BlockchainsEVMChainConfig,
 			Watcher: func(_ context.Context, cfg interface{}) error {
-				ethCfg, err := types.SecondaryEthereumConfigFromUntypedProto(cfg)
+				ethCfg, err := types.EVMChainConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid secondary ethereum configuration: %w", err)
 				}

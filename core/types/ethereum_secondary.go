@@ -22,7 +22,7 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
-type SecondaryEthereumConfig struct {
+type EVMChainConfig struct {
 	chainID          string
 	networkID        string
 	confirmations    uint64
@@ -30,26 +30,26 @@ type SecondaryEthereumConfig struct {
 	multiSigControl  EthereumContract
 }
 
-func SecondaryEthereumConfigFromUntypedProto(v interface{}) (*SecondaryEthereumConfig, error) {
-	cfg, err := toSecondaryEthereumConfigProto(v)
+func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfig, error) {
+	cfg, err := toEVMChainConfigProto(v)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't convert untyped proto to SecondaryEthereumConfig proto: %w", err)
+		return nil, fmt.Errorf("couldn't convert untyped proto to EVMChainConfig proto: %w", err)
 	}
 
 	ethConfig, err := SecondaryConfigFromProto(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't build SecondaryEthereumConfig: %w", err)
+		return nil, fmt.Errorf("couldn't build EVMChainConfig: %w", err)
 	}
 
 	return ethConfig, nil
 }
 
-func SecondaryConfigFromProto(cfgProto *proto.SecondaryEthereumConfig) (*SecondaryEthereumConfig, error) {
-	if err := CheckSecondaryEthereumConfig(cfgProto); err != nil {
+func SecondaryConfigFromProto(cfgProto *proto.EVMChainConfig) (*EVMChainConfig, error) {
+	if err := CheckEVMChainConfig(cfgProto); err != nil {
 		return nil, fmt.Errorf("invalid second ethereum configuration: %w", err)
 	}
 
-	cfg := &SecondaryEthereumConfig{
+	cfg := &EVMChainConfig{
 		chainID:       cfgProto.ChainId,
 		networkID:     cfgProto.NetworkId,
 		confirmations: uint64(cfgProto.Confirmations),
@@ -65,39 +65,39 @@ func SecondaryConfigFromProto(cfgProto *proto.SecondaryEthereumConfig) (*Seconda
 	return cfg, nil
 }
 
-func (c *SecondaryEthereumConfig) ChainID() string {
+func (c *EVMChainConfig) ChainID() string {
 	return c.chainID
 }
 
-func (c *SecondaryEthereumConfig) NetworkID() string {
+func (c *EVMChainConfig) NetworkID() string {
 	return c.networkID
 }
 
-func (c *SecondaryEthereumConfig) Confirmations() uint64 {
+func (c *EVMChainConfig) Confirmations() uint64 {
 	return c.confirmations
 }
 
-func (c *SecondaryEthereumConfig) CollateralBridge() EthereumContract {
+func (c *EVMChainConfig) CollateralBridge() EthereumContract {
 	return c.collateralBridge
 }
 
-func (c *SecondaryEthereumConfig) MultiSigControl() EthereumContract {
+func (c *EVMChainConfig) MultiSigControl() EthereumContract {
 	return c.multiSigControl
 }
 
-// CheckUntypedSecondaryEthereumConfig verifies the `v` parameter is a proto.SecondaryEthereumConfig
+// CheckUntypedEVMChainConfig verifies the `v` parameter is a proto.EVMChainConfig
 // struct and check if it's valid.
-func CheckUntypedSecondaryEthereumConfig(v interface{}, _ interface{}) error {
-	cfg, err := toSecondaryEthereumConfigProto(v)
+func CheckUntypedEVMChainConfig(v interface{}, _ interface{}) error {
+	cfg, err := toEVMChainConfigProto(v)
 	if err != nil {
 		return err
 	}
 
-	return CheckSecondaryEthereumConfig(cfg)
+	return CheckEVMChainConfig(cfg)
 }
 
-// CheckSecondaryEthereumConfig verifies the proto.SecondaryEthereumConfig is valid.
-func CheckSecondaryEthereumConfig(cfgProto *proto.SecondaryEthereumConfig) error {
+// CheckEVMChainConfig verifies the proto.EVMChainConfig is valid.
+func CheckEVMChainConfig(cfgProto *proto.EVMChainConfig) error {
 	if len(cfgProto.NetworkId) == 0 {
 		return ErrMissingNetworkID
 	}
@@ -126,10 +126,10 @@ func CheckSecondaryEthereumConfig(cfgProto *proto.SecondaryEthereumConfig) error
 	return nil
 }
 
-func toSecondaryEthereumConfigProto(v interface{}) (*proto.SecondaryEthereumConfig, error) {
-	cfg, ok := v.(*proto.SecondaryEthereumConfig)
+func toEVMChainConfigProto(v interface{}) (*proto.EVMChainConfig, error) {
+	cfg, ok := v.(*proto.EVMChainConfig)
 	if !ok {
-		return nil, fmt.Errorf("type %q is not a SecondaryEthereumConfig proto", vgreflect.TypeName(v))
+		return nil, fmt.Errorf("type %q is not a EVMChainConfig proto", vgreflect.TypeName(v))
 	}
 	return cfg, nil
 }

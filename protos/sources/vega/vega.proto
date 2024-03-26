@@ -1545,7 +1545,7 @@ message EthereumConfig {
   string network_id = 1;
   // Chain ID of this Ethereum network.
   string chain_id = 2;
-  //// Contract configuration of the collateral bridge contract for this Ethereum network.
+  // Contract configuration of the collateral bridge contract for this Ethereum network.
   EthereumContractConfig collateral_bridge_contract = 3;
   // Number of block confirmations to wait to consider an Ethereum transaction trusted.
   // An Ethereum block is trusted when there are at least "n" blocks confirmed by the
@@ -1561,13 +1561,13 @@ message EthereumConfig {
   EthereumContractConfig multisig_control_contract = 7;
 }
 
-// Secondary Ethereum configuration details.
-message SecondaryEthereumConfig {
+// EVM Chain configuration details.
+message EVMChainConfig {
   // Network ID of this EVM compatible network.
   string network_id = 1;
   // Chain ID of this EVM compatible network.
   string chain_id = 2;
-  //// Contract configuration of the collateral bridge contract for this EVM compatible network.
+  // Contract configuration of the collateral bridge contract for this EVM compatible network.
   EthereumContractConfig collateral_bridge_contract = 3;
   // Number of block confirmations to wait to consider an EVM compatible chain transaction trusted.
   // An EVM compatible chain block is trusted when there are at least "n" blocks confirmed by the

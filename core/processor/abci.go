@@ -646,8 +646,8 @@ func (app *App) ensureConfig() {
 	_ = app.gov.OnChainIDUpdate(primaryChainID)
 	_ = app.exec.OnChainIDUpdate(primaryChainID)
 
-	secondaryChainConfig := &proto.SecondaryEthereumConfig{}
-	if err := app.netp.GetJSONStruct(netparams.BlockchainsSecondaryEthereumConfig, secondaryChainConfig); err != nil {
+	secondaryChainConfig := &proto.EVMChainConfig{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsEVMChainConfig, secondaryChainConfig); err != nil {
 		return
 	}
 	secondaryChainID, err := strconv.ParseUint(secondaryChainConfig.ChainId, 10, 64)
@@ -2723,8 +2723,8 @@ func (app *App) OnBlockchainPrimaryEthereumConfigUpdate(_ context.Context, conf 
 	return app.gov.OnChainIDUpdate(cID)
 }
 
-func (app *App) OnBlockchainSecondaryEthereumConfigUpdate(_ context.Context, conf any) error {
-	cfg, err := types.SecondaryEthereumConfigFromUntypedProto(conf)
+func (app *App) OnBlockchainEVMChainConfigUpdate(_ context.Context, conf any) error {
+	cfg, err := types.EVMChainConfigFromUntypedProto(conf)
 	if err != nil {
 		return err
 	}
