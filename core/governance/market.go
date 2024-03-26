@@ -364,7 +364,7 @@ func buildSpotMarketFromProposal(
 	return market, types.ProposalErrorUnspecified, nil
 }
 
-func validateAssetBasic(assetID string, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateAssetBasic(assetID string, assets Assets, positionDecimals int64, deepCheck bool) (types.ProposalError, error) {
 	if len(assetID) <= 0 {
 		return types.ProposalErrorInvalidAsset, errors.New("missing asset ID")
 	}
@@ -373,7 +373,7 @@ func validateAssetBasic(assetID string, assets Assets, deepCheck bool) (types.Pr
 		return types.ProposalErrorUnspecified, nil
 	}
 
-	_, err := assets.Get(assetID)
+	as, err := assets.Get(assetID)
 	if err != nil {
 		return types.ProposalErrorInvalidAsset, err
 	}
@@ -381,10 +381,14 @@ func validateAssetBasic(assetID string, assets Assets, deepCheck bool) (types.Pr
 		return types.ProposalErrorInvalidAsset,
 			fmt.Errorf("asset is not enabled %v", assetID)
 	}
+	if positionDecimals > int64(as.DecimalPlaces()) {
+		return types.ProposalErrorInvalidPositionDecimalPlaces, fmt.Errorf("number of position decimal places must be less than or equal to the number base asset decimal places")
+	}
+
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateAsset(assetID string, decimals uint64, positionDecimals int64, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	if len(assetID) <= 0 {
 		return types.ProposalErrorInvalidAsset, errors.New("missing asset ID")
 	}
@@ -401,24 +405,22 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 		return types.ProposalErrorInvalidAsset,
 			fmt.Errorf("assets is not enabled %v", assetID)
 	}
-	// decimal places asset less than market -> invalid.
-	// @TODO add a specific error for this validation?
-	if asset.DecimalPlaces() < decimals {
-		return types.ProposalErrorTooManyMarketDecimalPlaces, errors.New("market cannot have more decimal places than assets")
+	if int64(decimals)+positionDecimals > int64(asset.DecimalPlaces()) {
+		return types.ProposalErrorTooManyMarketDecimalPlaces, errors.New("market decimal + position decimals must be less than or equal to asset decimals")
 	}
 
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateSpot(spot *types.SpotProduct, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
-	propError, err := validateAsset(spot.QuoteAsset, decimals, assets, deepCheck)
+func validateSpot(spot *types.SpotProduct, decimals uint64, positionDecimals int64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+	propError, err := validateAsset(spot.QuoteAsset, decimals, positionDecimals, assets, deepCheck)
 	if err != nil {
 		return propError, err
 	}
-	return validateAssetBasic(spot.BaseAsset, assets, deepCheck)
+	return validateAssetBasic(spot.BaseAsset, assets, positionDecimals, deepCheck)
 }
 
-func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
+func validateFuture(future *types.FutureProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
 	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
 	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
 
@@ -522,10 +524,10 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		}
 	}
 
-	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
+	return validateAsset(future.SettlementAsset, decimals, positionDecimals, assets, deepCheck)
 }
 
-func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
+func validatePerps(perps *types.PerpsProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
 	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
 	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
 
@@ -628,19 +630,19 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 		}
 	}
 
-	return validateAsset(perps.SettlementAsset, decimals, assets, deepCheck)
+	return validateAsset(perps.SettlementAsset, decimals, positionDecimals, assets, deepCheck)
 }
 
-func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, evmChainIDs []uint64) (types.ProposalError, error) {
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, evmChainIDs []uint64) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
-		return validateFuture(product.Future, decimals, assets, et, deepCheck, evmChainIDs)
+		return validateFuture(product.Future, decimals, positionDecimals, assets, et, deepCheck, evmChainIDs)
 	case *types.InstrumentConfigurationPerps:
-		return validatePerps(product.Perps, decimals, assets, et, *currentTime, deepCheck, evmChainIDs)
+		return validatePerps(product.Perps, decimals, positionDecimals, assets, et, *currentTime, deepCheck, evmChainIDs)
 	case *types.InstrumentConfigurationSpot:
-		return validateSpot(product.Spot, decimals, assets, deepCheck)
+		return validateSpot(product.Spot, decimals, positionDecimals, assets, deepCheck)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
@@ -791,7 +793,7 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, terms.Changes.PositionDecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
@@ -823,7 +825,7 @@ func validateNewMarketChange(
 	restore bool,
 ) (types.ProposalError, error) {
 	// in all cases, the instrument must be specified and validated, successor markets included.
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), getEVMChainIDs(netp)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, terms.Changes.PositionDecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), getEVMChainIDs(netp)); err != nil {
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets

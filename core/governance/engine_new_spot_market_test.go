@@ -40,6 +40,8 @@ func TesSpottProposalForNewMarket(t *testing.T) {
 	t.Run("Voting with a majority of 'yes' makes the new spot market proposal passed", testVotingWithMajorityOfYesMakesNewSpotMarketProposalPassed)
 	t.Run("Voting with a majority of 'no' makes the new spot market proposal declined", testVotingWithMajorityOfNoMakesNewSpotMarketProposalDeclined)
 	t.Run("Voting with insufficient participation makes the new spot market proposal declined", testVotingWithInsufficientParticipationMakesNewSpotMarketProposalDeclined)
+	t.Run("Invalid combination of spot decimals for market", testInvalidSpotDecimalPlace)
+	t.Run("Invalid combination of position decimals for base asset", testInvalidSpotPositionDecimalPlace)
 }
 
 func testSubmittingProposalForNewSpotMarketSucceeds(t *testing.T) {
@@ -474,4 +476,45 @@ func testVotingWithInsufficientParticipationMakesNewSpotMarketProposalDeclined(t
 
 	// then
 	assert.Empty(t, toBeEnacted)
+}
+
+func testInvalidSpotDecimalPlace(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
+
+	proposal.Terms.GetNewSpotMarket().Changes.DecimalPlaces = 12
+	proposal.Terms.GetNewSpotMarket().Changes.PositionDecimalPlaces = 7
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorTooManyMarketDecimalPlaces)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+	require.Equal(t, "market decimal + position decimals must be less than or equal to asset decimals", err.Error())
+}
+
+func testInvalidSpotPositionDecimalPlace(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
+
+	proposal.Terms.GetNewSpotMarket().Changes.DecimalPlaces = 0
+	proposal.Terms.GetNewSpotMarket().Changes.PositionDecimalPlaces = 6
+
+	// setup
+	spot := proposal.Terms.GetNewSpotMarket().Changes.Instrument.IntoProto().GetSpot()
+	eng.ensureAllAssetEnabledWithDP(t, spot.BaseAsset, spot.QuoteAsset, 5, 10)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidPositionDecimalPlaces)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+	require.Equal(t, "number of position decimal places must be less than or equal to the number base asset decimal places", err.Error())
 }
