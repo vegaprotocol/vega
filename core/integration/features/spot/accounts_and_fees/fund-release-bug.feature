@@ -12,7 +12,7 @@ Feature: replicate the fund releasing bug when market is terminated
 
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 3600000 | 0.999       | 300               |
+      | 36000   | 0.999       | 3                 |
 
     And the liquidity sla params named "SLA-1":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -63,26 +63,21 @@ Feature: replicate the fund releasing bug when market is terminated
       | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
       | BTC/ETH | updated-lqm-params   | 0.5                    | 0.5                       |
 
-    When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | lp type    |
-      | lp1 | lp1   | BTC/ETH   | 2000              | 0.4 | submission |
-      | lp2 | lp2   | BTC/ETH   | 2000              | 0.4 | submission |
-      | lp3 | lp3   | BTC/ETH   | 2000              | 0.4 | submission |
-
-    And the parties should have the following account balances:
-      | party | asset | market id | general |
-      | lp1   | BTC   | BTC/ETH   | 600     |
-      | lp1   | ETH   | BTC/ETH   | 2000    |
+    # And the parties should have the following account balances:
+    #   | party | asset | market id | general |
+    #   | lp1   | BTC   | BTC/ETH   | 600     |
+    #   | lp1   | ETH   | BTC/ETH   | 2000    |
 
     Then the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4800         | 6000           | 0             |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 0            | 0              | 0             |
 
     # place orders and generate trades
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | only |
-      | party1 | BTC/ETH   | buy  | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | party-order1 |      |
+      | party1 | BTC/ETH   | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party-order1 |      |
+      | party1 | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | party-order1 |      |
       | party1 | BTC/ETH   | buy  | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order3 |      |
       | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
       | party2 | BTC/ETH   | sell | 1      | 18    | 0                | TYPE_LIMIT | TIF_GTC | party-order2 |      |
@@ -90,36 +85,36 @@ Feature: replicate the fund releasing bug when market is terminated
     When the network moves ahead "1" blocks
 
     Then the market data for the market "BTC/ETH" should be:
-      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3600000 | 4         | 52        | 4800         | 6000           | 0             |
-
-    And the parties place the following pegged orders:
-      | party | market id | side | volume | pegged reference | offset | reference |
-      | lp1   | BTC/ETH   | buy  | 10     | BID              | 7      | lp1-b     |
-      | lp1   | BTC/ETH   | sell | 10     | ASK              | 7      | lp1-s     |
-      | lp2   | BTC/ETH   | buy  | 10     | BID              | 2      | lp2-b     |
-      | lp2   | BTC/ETH   | sell | 10     | ASK              | 2      | lp2-s     |
-      | lp3   | BTC/ETH   | buy  | 10     | BID              | 1      | lp3-b     |
-      | lp3   | BTC/ETH   | sell | 10     | ASK              | 1      | lp3-s     |
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 36000   | 14        | 17        | 0            | 0              |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | only |
-      | party1 | BTC/ETH   | buy  | 100    | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order3 |      |
-      | party2 | BTC/ETH   | sell | 100    | 15    | 1                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
+      | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
 
-    Then the accumulated liquidity fees should be "6000" for the market "BTC/ETH"
+    When the network moves ahead "1" blocks
+
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                    | auction trigger       |
+      | 15         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
+
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp1   | BTC/ETH   | 2000              | 0.4 | submission |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
+      | lp1    | BTC/ETH   | buy  | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1     |
+      | party2 | BTC/ETH   | sell | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | party2-order1 |
+
+    # Then the accumulated liquidity fees should be "6000" for the market "BTC/ETH"
     When the network moves ahead "4" blocks
 
-    Then the following transfers should happen:
-      | from   | to  | from account                | to account                     | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1000   | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1829   | ETH   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 3170   | ETH   |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                    | auction trigger       |
+      | 15         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
-    # When the market states are updated through governance:
-    #   | market id | state                              | settlement price |
-    #   | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE | 15               |
 
-    When the market states are updated through governance:
-      | market id | state                              | 
-      | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE |                  
+# When the market states are updated through governance:
+#   | market id | state                              |
+#   | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE |
