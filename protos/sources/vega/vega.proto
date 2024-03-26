@@ -1563,24 +1563,24 @@ message EthereumConfig {
 
 // Secondary Ethereum configuration details.
 message SecondaryEthereumConfig {
-  // Network ID of this Ethereum network.
+  // Network ID of this EVM compatible network.
   string network_id = 1;
-  // Chain ID of this Ethereum network.
+  // Chain ID of this EVM compatible network.
   string chain_id = 2;
-  //// Contract configuration of the collateral bridge contract for this Ethereum network.
+  //// Contract configuration of the collateral bridge contract for this EVM compatible network.
   EthereumContractConfig collateral_bridge_contract = 3;
-  // Number of block confirmations to wait to consider an Ethereum transaction trusted.
-  // An Ethereum block is trusted when there are at least "n" blocks confirmed by the
+  // Number of block confirmations to wait to consider an EVM compatible chain transaction trusted.
+  // An EVM compatible chain block is trusted when there are at least "n" blocks confirmed by the
   // network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
-  // and the current block to be forged (or mined) on Ethereum is block 14, block
+  // and the current block to be forged (or mined) on the EVM compatible chain is block 14, block
   // 10 would be considered as trusted, but not block 11.
   uint32 confirmations = 4;
-  // Contract configuration of the multisig control contract for this Ethereum network.
+  // Contract configuration of the multisig control contract for this EVM compatible network.
   EthereumContractConfig multisig_control_contract = 5;
 }
 
 message EthereumContractConfig {
-  // Address of the contract for this Ethereum network. The address should start with "0x".
+  // Address of the contract for this EVM compatible network. The address should start with "0x".
   string address = 1;
   // Block height at which the stacking contract has been deployed for this Ethereum network.
   uint64 deployment_block_height = 6;
