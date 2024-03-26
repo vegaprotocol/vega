@@ -2401,6 +2401,28 @@ func (e *tstEngine) ensureAllAssetEnabled(t *testing.T) {
 	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 }
 
+func (e *tstEngine) ensureAllAssetEnabledWithDP(t *testing.T, base, quote string, baseDecimals, quoteDecimals uint64) {
+	t.Helper()
+	baseDetails := newAssetTerms()
+	baseDetails.NewAsset.Changes.Symbol = base
+	baseDetails.NewAsset.Changes.Decimals = baseDecimals
+
+	quoteDetails := newAssetTerms()
+	quoteDetails.NewAsset.Changes.Symbol = quote
+	quoteDetails.NewAsset.Changes.Decimals = quoteDecimals
+
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
+		if id == base {
+			ret := assets.NewAsset(builtin.New(id, baseDetails.NewAsset.Changes))
+			return ret, nil
+		} else {
+			ret := assets.NewAsset(builtin.New(id, quoteDetails.NewAsset.Changes))
+			return ret, nil
+		}
+	})
+	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+}
+
 func (e *tstEngine) ensureEquityLikeShareForMarketAndParty(t *testing.T, market, party string, share float64) {
 	t.Helper()
 	mels, ok := e.els[market]

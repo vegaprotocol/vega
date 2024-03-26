@@ -21,6 +21,7 @@
 - [911](https://github.com/vegaprotocol/core-test-coverage/issues/911) - Add coverage for `0068-MATC-065`
 - [742](https://github.com/vegaprotocol/core-test-coverage/issues/742) - Add coverage for `0044-LIME-029`
 - [10994](https://github.com/vegaprotocol/vega/pull/10994) - `rewards.team.minEpochsInTeam` can now be set to `0`
+- [11009](https://github.com/vegaprotocol/vega/issues/11009) - Relax market decimals validation in governance.
 
 ### 🐛 Fixes
 
