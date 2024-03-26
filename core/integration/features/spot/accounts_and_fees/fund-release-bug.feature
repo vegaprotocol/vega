@@ -63,11 +63,6 @@ Feature: replicate the fund releasing bug when market is terminated
       | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
       | BTC/ETH | updated-lqm-params   | 0.5                    | 0.5                       |
 
-    # And the parties should have the following account balances:
-    #   | party | asset | market id | general |
-    #   | lp1   | BTC   | BTC/ETH   | 600     |
-    #   | lp1   | ETH   | BTC/ETH   | 2000    |
-
     Then the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
@@ -89,8 +84,8 @@ Feature: replicate the fund releasing bug when market is terminated
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 36000   | 14        | 17        | 0            | 0              |
 
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | only |
-      | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     | only |
+      | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | party2-order1 |      |
 
     When the network moves ahead "1" blocks
 
@@ -98,23 +93,60 @@ Feature: replicate the fund releasing bug when market is terminated
       | mark price | trading mode                    | auction trigger       |
       | 15         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
+    #cancel the orders that triggered price mon auction
+    Then the parties cancel the following orders:
+      | party  | reference     |
+      | party2 | party2-order1 |
+
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type    |
       | lp1 | lp1   | BTC/ETH   | 2000              | 0.4 | submission |
 
+    #lp commits provisions and submits orders
+    #other parties enter orders that will cross
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | lp1    | BTC/ETH   | buy  | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1     |
+      | lp1    | BTC/ETH   | buy  | 1      | 12    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1     |
+      | party1 | BTC/ETH   | buy  | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1     |
       | party2 | BTC/ETH   | sell | 1      | 14    | 0                | TYPE_LIMIT | TIF_GTC | party2-order1 |
 
-    # Then the accumulated liquidity fees should be "6000" for the market "BTC/ETH"
-    When the network moves ahead "4" blocks
-
+    When the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                    | auction trigger       |
       | 15         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
+    When the market states are updated through governance:
+      | market id | state                              |
+      | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE |
+
+# When the network moves ahead "4" blocks
+
+# Then the market data for the market "BTC/ETH" should be:
+#   | mark price | trading mode            | auction trigger             |
+#   | 13         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+
+# When the network moves ahead "1" blocks
+
+# And the party "lp1" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
+# Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
+# And the parties should have the following account balances:
+#   | party | asset | market id | general |
+#   | lp1   | BTC   | BTC/ETH   | 610     |
+#   | lp1   | ETH   | BTC/ETH   | 1865    |
 
 # When the market states are updated through governance:
 #   | market id | state                              |
 #   | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE |
+
+# And the parties should have the following account balances:
+#   | party | asset | market id | general |
+#   | lp1   | BTC   | BTC/ETH   | 610     |
+#   | lp1   | ETH   | BTC/ETH   | 3865    |
+
+# Then "lp1" should have holding account balance of "0" for asset "ETH"
+# And the party "lp1" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
+# Then the party "lp1" lp liquidity bond account balance should be "0" for the market "BTC/ETH"
+
+# And the network treasury balance should be "0" for the asset "ETH"
+# And the global insurance pool balance should be "0" for the asset "ETH"
+# And the global insurance pool balance should be "0" for the asset "BTC"
