@@ -166,7 +166,7 @@ const (
 	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
-	SpamProtectionMaxMultisigUpdates               = "spam.protection.max.MultisigUpdates"
+	SpamProtectionMaxMultisigUpdates               = "spam.protection.maxMultisigUpdates"
 	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
 
 	SpamProtectionMaxCreateReferralSet     = "spam.protection.max.createReferralSet"

@@ -163,7 +163,7 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 	}
 
 	if e.log.IsDebug() {
-		e.log.Debug("Setting up secondary the Ethereum Event Forwarder")
+		e.log.Debug("Setting up EVM Event Forwarder")
 	}
 
 	ethLogger := e.log.Named(ethereumLogger)
