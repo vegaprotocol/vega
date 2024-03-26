@@ -25,6 +25,7 @@
 ### 🐛 Fixes
 
 - [10946](https://github.com/vegaprotocol/vega/issues/10945) - Save dispatch strategy for recurring governance transfer in the database.
+- [11000](https://github.com/vegaprotocol/vega/issues/11000) - Vesting summary events are now sorted properly before sending.
 - [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
 - [10970](https://github.com/vegaprotocol/vega/issues/10970) - Logic for whether a team member joined more than `rewards.team.minEpochsInTeam` is fixed.
 - [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
