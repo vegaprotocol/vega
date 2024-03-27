@@ -29,24 +29,43 @@ func NewERC20MultisigTopology(
 	config Config,
 	log *logging.Logger,
 	witness Witness,
+
 	broker broker.Interface,
 	ethClient EthereumClient,
 	ethConfirmation EthConfirmations,
 	netp *netparams.Store,
+	scope string,
 ) *Topology {
 	ocv := NewOnChainVerifier(config, log, ethClient, ethConfirmation)
-	_ = netp.Watch(netparams.WatchParam{
-		Param: netparams.BlockchainsEthereumConfig,
-		Watcher: func(_ context.Context, cfg interface{}) error {
-			ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
-			if err != nil {
-				return fmt.Errorf("staking didn't receive a valid Ethereum configuration: %w", err)
-			}
+	top := NewTopology(config, log, witness, ocv, broker, scope)
 
-			ocv.UpdateMultiSigAddress(ethCfg.MultiSigControl().Address())
-			return nil
-		},
-	})
+	if scope == "primary" {
+		_ = netp.Watch(netparams.WatchParam{
+			Param: netparams.BlockchainsPrimaryEthereumConfig,
+			Watcher: func(_ context.Context, cfg interface{}) error {
+				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("ERC20 multisig didn't receive a valid Ethereum configuration: %w", err)
+				}
+				ocv.UpdateMultiSigAddress(ethCfg.MultiSigControl().Address(), ethCfg.ChainID())
+				top.SetChainID(ethCfg.ChainID())
+				return nil
+			},
+		})
+	} else {
+		_ = netp.Watch(netparams.WatchParam{
+			Param: netparams.BlockchainsEVMChainConfig,
+			Watcher: func(_ context.Context, cfg interface{}) error {
+				ethCfg, err := types.EVMChainConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("ERC20 multisig didn't receive a valid Ethereum configuration: %w", err)
+				}
+				ocv.UpdateMultiSigAddress(ethCfg.MultiSigControl().Address(), ethCfg.ChainID())
+				top.SetChainID(ethCfg.ChainID())
+				return nil
+			},
+		})
+	}
 
-	return NewTopology(config, log, witness, ocv, broker)
+	return top
 }

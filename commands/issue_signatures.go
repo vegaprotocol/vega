@@ -45,5 +45,9 @@ func checkIssueSignatures(cmd *commandspb.IssueSignatures) Errors {
 		errs.AddForProperty("issue_signatures.kind", ErrIsNotValid)
 	}
 
+	if len(cmd.ChainId) == 0 {
+		errs.AddForProperty("issue_signatures.chain_id", ErrIsRequired)
+	}
+
 	return errs
 }

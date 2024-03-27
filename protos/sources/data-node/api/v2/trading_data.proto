@@ -2026,6 +2026,8 @@ message ListERC20MultiSigSignerAddedBundlesRequest {
   string epoch_seq = 3;
   // Pagination controls.
   Pagination pagination = 4;
+  // Filter signature bundles to those related to the contract on the given chain ID.
+  optional string chain_id = 5;
 }
 
 // Response from adding a signature bundle to the signer list of a multisig contract for a particular validator
@@ -2072,6 +2074,8 @@ message ERC20MultiSigSignerAddedBundle {
   string signatures = 6;
   // Epoch in which the validator was added.
   string epoch_seq = 3;
+  // ID of the EVM chain this signature bundle is valid for.
+  string chain_id = 7;
 }
 
 // Request for removing a signature bundle from the signer list of the multisig contract for a particular validator
@@ -2082,9 +2086,10 @@ message ListERC20MultiSigSignerRemovedBundlesRequest {
   string submitter = 2;
   // Epoch in which the bundle was generated, i.e. the epoch in which the node was demoted from a consensus validator.
   string epoch_seq = 3;
-
   // Pagination controls.
   Pagination pagination = 4;
+  // Filter signature bundles to those related to the contract on the given chain ID.
+  optional string chain_id = 5;
 }
 
 // Response when removing a signature bundle from the signer list of the multisig contract for a particular validator
@@ -2131,6 +2136,8 @@ message ERC20MultiSigSignerRemovedBundle {
   string signatures = 6;
   // Epoch in which the validator was removed.
   string epoch_seq = 7;
+  // ID of the EVM chain this signature bundle is valid for.
+  string chain_id = 8;
 }
 
 // Request for listing the signature bundle to an ERC-20 token in the collateral bridge

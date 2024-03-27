@@ -52,6 +52,7 @@ type OnChainVerifier struct {
 
 	mu              sync.RWMutex
 	multiSigAddress ethcmn.Address
+	chainID         string
 }
 
 func NewOnChainVerifier(
@@ -71,14 +72,16 @@ func NewOnChainVerifier(
 	}
 }
 
-func (o *OnChainVerifier) UpdateMultiSigAddress(multiSigAddress ethcmn.Address) {
+func (o *OnChainVerifier) UpdateMultiSigAddress(multiSigAddress ethcmn.Address, chainID string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
 	o.multiSigAddress = multiSigAddress
+	o.chainID = chainID
 
 	if o.log.GetLevel() <= logging.DebugLevel {
 		o.log.Debug("multi sig bridge addresses updated",
+			logging.String("chain-id", chainID),
 			logging.String("addresses", o.multiSigAddress.Hex()))
 	}
 }
@@ -89,6 +92,7 @@ func (o *OnChainVerifier) CheckSignerEvent(event *types.SignerEvent) error {
 
 	if o.log.GetLevel() <= logging.DebugLevel {
 		o.log.Debug("checking signer event on chain",
+			logging.String("chain-id", o.chainID),
 			logging.String("contract-address", o.multiSigAddress.Hex()),
 			logging.String("event", event.String()),
 		)
@@ -100,6 +104,7 @@ func (o *OnChainVerifier) CheckSignerEvent(event *types.SignerEvent) error {
 	)
 	if err != nil {
 		o.log.Error("could not instantiate multisig control filterer",
+			logging.String("chain-id", o.chainID),
 			logging.Error(err))
 		return err
 	}
@@ -125,6 +130,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 
 	if o.log.GetLevel() <= logging.DebugLevel {
 		o.log.Debug("checking threshold set event on chain",
+			logging.String("chain-id", o.chainID),
 			logging.String("contract-address", o.multiSigAddress.Hex()),
 			logging.String("event", event.String()),
 		)
@@ -136,6 +142,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 	)
 	if err != nil {
 		o.log.Error("could not instantiate multisig control filterer",
+			logging.String("chain-id", o.chainID),
 			logging.Error(err))
 		return err
 	}
@@ -152,6 +159,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 	)
 	if err != nil {
 		o.log.Error("Couldn't start filtering on signer added event",
+			logging.String("chain-id", o.chainID),
 			logging.Error(err))
 		return err
 	}
@@ -160,6 +168,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 	for iter.Next() {
 		if o.log.GetLevel() <= logging.DebugLevel {
 			o.log.Debug("found threshold set event on chain",
+				logging.String("chain-id", o.chainID),
 				logging.Uint16("new-threshold", iter.Event.NewThreshold),
 			)
 		}
@@ -194,6 +203,7 @@ func (o *OnChainVerifier) filterSignerAdded(
 	)
 	if err != nil {
 		o.log.Error("Couldn't start filtering on signer added event",
+			logging.String("chain-id", o.chainID),
 			logging.Error(err))
 		return err
 	}
@@ -202,6 +212,7 @@ func (o *OnChainVerifier) filterSignerAdded(
 	for iter.Next() {
 		if o.log.GetLevel() <= logging.DebugLevel {
 			o.log.Debug("found signer added event on chain",
+				logging.String("chain-id", o.chainID),
 				logging.String("new-signer", iter.Event.NewSigner.Hex()),
 			)
 		}
@@ -236,6 +247,7 @@ func (o *OnChainVerifier) filterSignerRemoved(
 	)
 	if err != nil {
 		o.log.Error("Couldn't start filtering on signer removed event",
+			logging.String("chain-id", o.chainID),
 			logging.Error(err))
 		return err
 	}
@@ -244,6 +256,7 @@ func (o *OnChainVerifier) filterSignerRemoved(
 	for iter.Next() {
 		if o.log.GetLevel() <= logging.DebugLevel {
 			o.log.Debug("found signer removed event on chain",
+				logging.String("chain-id", o.chainID),
 				logging.String("old-signer", iter.Event.OldSigner.Hex()),
 			)
 		}

@@ -260,6 +260,8 @@ message ERC20MultiSigSignerAdded {
   string nonce = 6;
   // Epoch that the node was added for
   string epoch_seq = 7;
+  // EVM chain ID that the multisig control contract lives on.
+  string chain_id = 8;
 }
 
 message ERC20MultiSigSignerRemovedSubmitter {
@@ -284,6 +286,8 @@ message ERC20MultiSigSignerRemoved {
   string nonce = 5;
   // Epoch that the node was removed for
   string epoch_seq = 6;
+  // EVM chain ID that the multisig control contract lives on.
+  string chain_id = 8;
 }
 
 message Transfer {
@@ -411,6 +415,7 @@ message ERC20MultiSigSignerEvent {
   string tx_hash = 6;
   uint64 log_index = 7;
   uint64 block_number = 8;
+  string chain_id = 9;
 }
 
 message ERC20MultiSigThresholdSetEvent {
@@ -421,6 +426,7 @@ message ERC20MultiSigThresholdSetEvent {
   string tx_hash = 5;
   uint64 log_index = 6;
   uint64 block_number = 7;
+  string chain_id = 8;
 }
 
 message CheckpointEvent {

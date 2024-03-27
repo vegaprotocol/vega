@@ -40,6 +40,7 @@ func TestProposalForNewAsset(t *testing.T) {
 	t.Run("Submitting a proposal for new asset with closing time before validation time fails", testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails)
 	t.Run("Voting during validation of proposal for new asset succeeds", testVotingDuringValidationOfProposalForNewAssetSucceeds)
 	t.Run("Rejects erc20 proposals for address already used", testRejectsERC20ProposalForAddressAlreadyUsed)
+	t.Run("Rejects erc20 proposals for unknown chain id", testRejectsERC20ProposalForUnknownChainID)
 }
 
 func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
@@ -55,12 +56,13 @@ func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
 			ContractAddress:   "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990",
 			LifetimeLimit:     num.NewUint(1),
 			WithdrawThreshold: num.NewUint(1),
+			ChainID:           "1",
 		},
 	}
 	proposal.Terms.Change = newAssetERC20
 
 	// setup
-	eng.assets.EXPECT().ExistsForEthereumAddress("0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990").Times(1).Return(true)
+	eng.assets.EXPECT().ValidateEthereumAddress("0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990", "1").Times(1).Return(assets.ErrErc20AddressAlreadyInUse)
 
 	// setup
 	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorERC20AddressAlreadyInUse)
@@ -68,7 +70,7 @@ func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
 
-	require.EqualError(t, err, governance.ErrErc20AddressAlreadyInUse.Error())
+	require.EqualError(t, err, assets.ErrErc20AddressAlreadyInUse.Error())
 	require.Nil(t, toSubmit)
 }
 
@@ -299,4 +301,35 @@ func TestNoVotesAnd0RequiredFails(t *testing.T) {
 
 	// then
 	require.Len(t, toBeEnacted, 0)
+}
+
+func testRejectsERC20ProposalForUnknownChainID(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow().Add(48*time.Hour))
+
+	newAssetERC20 := newAssetTerms()
+	newAssetERC20.NewAsset.Changes.Source = &types.AssetDetailsErc20{
+		ERC20: &types.ERC20{
+			ContractAddress:   "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990",
+			LifetimeLimit:     num.NewUint(1),
+			WithdrawThreshold: num.NewUint(1),
+			ChainID:           "666",
+		},
+	}
+	proposal.Terms.Change = newAssetERC20
+
+	// setup
+	eng.assets.EXPECT().ValidateEthereumAddress("0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990", "666").Times(1).Return(assets.ErrUnknownChainID)
+
+	// setup
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidAssetDetails)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	require.EqualError(t, err, assets.ErrUnknownChainID.Error())
+	require.Nil(t, toSubmit)
 }

@@ -44,7 +44,7 @@ var ContractHashes = map[string]string{
 	"multisig":   "5b7070e6159628455b38f5796e8d0dc08185aaaa1fb6073767c88552d396c6c2",
 }
 
-type Client struct {
+type PrimaryClient struct {
 	ETHClient
 	ethConfig *types.EthereumConfig
 
@@ -54,10 +54,10 @@ type Client struct {
 	currentHeightLastUpdate time.Time
 	currentHeight           uint64
 
-	cfg Config
+	retryDelay time.Duration
 }
 
-func Dial(ctx context.Context, cfg Config) (*Client, error) {
+func PrimaryDial(ctx context.Context, cfg Config) (*PrimaryClient, error) {
 	if len(cfg.RPCEndpoint) <= 0 {
 		return nil, errors.New("no ethereum rpc endpoint configured. the configuration have move from the NodeWallet section to the Ethereum section, please make sure your vega configuration is up to date")
 	}
@@ -67,22 +67,25 @@ func Dial(ctx context.Context, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("couldn't instantiate Ethereum client: %w", err)
 	}
 
-	return &Client{ETHClient: newEthClientWrapper(ethClient), cfg: cfg}, nil
+	return &PrimaryClient{
+		ETHClient:  newEthClientWrapper(ethClient),
+		retryDelay: cfg.RetryDelay.Get(),
+	}, nil
 }
 
-func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
+func (c *PrimaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *types.EthereumConfig) error {
 	if c == nil {
 		return nil
 	}
 
-	netID, err := c.NetworkID(context.Background())
+	netID, err := c.NetworkID(ctx)
 	if err != nil {
-		return fmt.Errorf("couldn't retrieve the network ID form the ethereum client: %w", err)
+		return fmt.Errorf("couldn't retrieve the network ID from the ethereum client: %w", err)
 	}
 
-	chainID, err := c.ChainID(context.Background())
+	chainID, err := c.ChainID(ctx)
 	if err != nil {
-		return fmt.Errorf("couldn't retrieve the chain ID form the ethereum client: %w", err)
+		return fmt.Errorf("couldn't retrieve the chain ID from the ethereum client: %w", err)
 	}
 
 	if netID.String() != ethConfig.NetworkID() {
@@ -90,22 +93,14 @@ func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
 	}
 
 	if chainID.String() != ethConfig.ChainID() {
-		return fmt.Errorf("updated chain ID does not matchthe one set during start up, expected %v got %v", ethConfig.ChainID(), chainID)
+		return fmt.Errorf("updated chain ID does not match the one set during start up, expected %v got %v", ethConfig.ChainID(), chainID)
 	}
 
-	// if err := c.verifyStakingContract(context.Background(), ethConfig); err != nil {
-	// 	return fmt.Errorf("failed to verify staking bridge contract: %w", err)
-	// }
-
-	// if err := c.verifyVestingContract(context.Background(), ethConfig); err != nil {
-	// 	return fmt.Errorf("failed to verify vesting bridge contract: %w", err)
-	// }
-
-	if err := c.verifyCollateralContract(context.Background(), ethConfig); err != nil {
+	if err := c.verifyCollateralContract(ctx, ethConfig); err != nil {
 		return fmt.Errorf("failed to verify collateral bridge contract: %w", err)
 	}
 
-	if err := c.verifyMultisigContract(context.Background(), ethConfig); err != nil {
+	if err := c.verifyMultisigContract(ctx, ethConfig); err != nil {
 		return fmt.Errorf("failed to verify multisig control contract: %w", err)
 	}
 
@@ -114,19 +109,19 @@ func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
 	return nil
 }
 
-func (c *Client) CollateralBridgeAddress() ethcommon.Address {
+func (c *PrimaryClient) CollateralBridgeAddress() ethcommon.Address {
 	return c.ethConfig.CollateralBridge().Address()
 }
 
-func (c *Client) CollateralBridgeAddressHex() string {
+func (c *PrimaryClient) CollateralBridgeAddressHex() string {
 	return c.ethConfig.CollateralBridge().HexAddress()
 }
 
-func (c *Client) CurrentHeight(ctx context.Context) (uint64, error) {
+func (c *PrimaryClient) CurrentHeight(ctx context.Context) (uint64, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if now := time.Now(); c.currentHeightLastUpdate.Add(c.cfg.RetryDelay.Get()).Before(now) {
+	if now := time.Now(); c.currentHeightLastUpdate.Add(c.retryDelay).Before(now) {
 		lastBlockHeader, err := c.HeaderByNumber(ctx, nil)
 		if err != nil {
 			return c.currentHeight, err
@@ -138,12 +133,12 @@ func (c *Client) CurrentHeight(ctx context.Context) (uint64, error) {
 	return c.currentHeight, nil
 }
 
-func (c *Client) ConfirmationsRequired() uint64 {
+func (c *PrimaryClient) ConfirmationsRequired() uint64 {
 	return c.ethConfig.Confirmations()
 }
 
 // VerifyContract takes the address of a contract in hex and checks the hash of the byte-code is as expected.
-func (c *Client) VerifyContract(ctx context.Context, address ethcommon.Address, expectedHash string) error {
+func (c *PrimaryClient) VerifyContract(ctx context.Context, address ethcommon.Address, expectedHash string) error {
 	// nil block number means latest block
 	b, err := c.CodeAt(ctx, address, nil)
 	if err != nil {
@@ -172,21 +167,7 @@ func (c *Client) VerifyContract(ctx context.Context, address ethcommon.Address, 
 	return nil
 }
 
-// func (c *Client) verifyStakingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-// 	if address := ethConfig.StakingBridge(); address.HasAddress() {
-// 		return c.VerifyContract(ctx, address.Address(), ContractHashes["staking"])
-// 	}
-// 	return nil
-// }
-
-// func (c *Client) verifyVestingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-// 	if address := ethConfig.VestingBridge(); address.HasAddress() {
-// 		return c.VerifyContract(ctx, address.Address(), ContractHashes["vesting"])
-// 	}
-// 	return nil
-// }
-
-func (c *Client) verifyCollateralContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
+func (c *PrimaryClient) verifyCollateralContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
 	if address := ethConfig.CollateralBridge(); address.HasAddress() {
 		return c.VerifyContract(ctx, address.Address(), ContractHashes["collateral"])
 	}
@@ -194,7 +175,7 @@ func (c *Client) verifyCollateralContract(ctx context.Context, ethConfig *types.
 	return nil
 }
 
-func (c *Client) verifyMultisigContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
+func (c *PrimaryClient) verifyMultisigContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
 	if address := ethConfig.MultiSigControl(); address.HasAddress() {
 		return c.VerifyContract(ctx, address.Address(), ContractHashes["multisig"])
 	}

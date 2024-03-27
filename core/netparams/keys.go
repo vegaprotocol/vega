@@ -166,6 +166,7 @@ const (
 	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
+	SpamProtectionMaxMultisigUpdates               = "spam.protection.maxMultisigUpdates"
 	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
 
 	SpamProtectionMaxCreateReferralSet     = "spam.protection.max.createReferralSet"
@@ -179,8 +180,9 @@ const (
 	SpamProtectionUpdateProfileMinFunds = "spam.protection.updatePartyProfile.min.funds"
 
 	// blockchain specifics?
-	BlockchainsEthereumConfig    = "blockchains.ethereumConfig"
-	BlockchainsEthereumL2Configs = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
+	BlockchainsPrimaryEthereumConfig = "blockchains.ethereumConfig"
+	BlockchainsEVMChainConfig        = "blockchains.evmChainConfig"
+	BlockchainsEthereumL2Configs     = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
 
 	// length of epoch in seconds.
 	ValidatorsEpochLength = "validators.epoch.length"
@@ -373,7 +375,8 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalReferralProgramRequiredMajority:            {},
 	GovernanceProposalReferralProgramMinProposerBalance:          {},
 	GovernanceProposalReferralProgramMinVoterBalance:             {},
-	BlockchainsEthereumConfig:                                    {},
+	BlockchainsPrimaryEthereumConfig:                             {},
+	BlockchainsEVMChainConfig:                                    {},
 	MarketLiquidityProvisionShapesMaxSize:                        {},
 	MarketProbabilityOfTradingTauScaling:                         {},
 	MarketMinProbabilityOfTradingForLPOrders:                     {},
@@ -432,6 +435,7 @@ var AllKeys = map[string]struct{}{
 	ValidatorPerformanceScalingFactor:                            {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:               {},
 	SpamProtectionMinMultisigUpdates:                             {},
+	SpamProtectionMaxMultisigUpdates:                             {},
 	MarketSuccessorLaunchWindow:                                  {},
 	SpamProtectionMaxStopOrdersPerMarket:                         {},
 	ReferralProgramMaxReferralTiers:                              {},

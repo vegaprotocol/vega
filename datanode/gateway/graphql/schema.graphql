@@ -135,9 +135,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-    @deprecated(
-      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-    )
+  @deprecated(
+    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+  )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -650,6 +650,8 @@ type Query {
     submitter: String
     "The epoch that generated the bundle i.e the epoch in which the node was promoted to tendermint validator"
     epochSeq: String
+    "Filter signature bundles to those related to the contract on the given chain ID"
+    chainID: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
@@ -662,6 +664,8 @@ type Query {
     submitter: String
     "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
     epochSeq: String
+    "Filter signature bundles to those related to the contract on the given chain ID"
+    chainID: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerRemovedConnection!
@@ -697,7 +701,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-    @deprecated(reason: "Use estimateFees and estimatePosition instead")
+  @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -1354,7 +1358,7 @@ type Transfer {
 }
 
 union TransferKind =
-    OneOffTransfer
+  OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -1852,6 +1856,8 @@ type ERC20 {
   Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
+  "The chain ID the asset originates from."
+  chainId: String!
 }
 
 "An asset originated from an Ethereum ERC20 Token"
@@ -2564,9 +2570,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Current depth on the order book for this market"
   depth(
@@ -2608,7 +2614,7 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-    @deprecated(reason: "Use liquidityProvisions instead")
+  @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2621,7 +2627,7 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2805,9 +2811,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2823,7 +2829,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-    @deprecated(reason: "Use root positions query instead of sub-query")
+  @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2888,7 +2894,7 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-    @deprecated(reason: "Use liquidityProvisions instead")
+  @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -3233,9 +3239,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "The order type"
   type: OrderType
@@ -3731,6 +3737,8 @@ type ERC20MultiSigSignerAddedBundle {
   signatures: String!
   "The epoch in which the validator was added"
   epochSeq: String!
+  "The ID of the EVM chain this signature bundle is valid for"
+  chainID: String!
 }
 
 "Response for the signature bundle to remove a particular validator from the signer list of the multisig contract"
@@ -3759,6 +3767,8 @@ type ERC20MultiSigSignerRemovedBundle {
   signatures: String!
   "The epoch in which the validator was removed"
   epochSeq: String!
+  "The chain ID of the EVM blockchain this signature bundle is valid for"
+  chainID: String!
 }
 
 "Response for the signature bundle to allowlist an ERC20 token in the collateral bridge"
@@ -4656,7 +4666,7 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4721,7 +4731,7 @@ type UpdateMarketConfiguration {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4775,7 +4785,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-    UpdateMarketSimpleRiskModel
+  UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4856,7 +4866,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-    OneOffGovernanceTransfer
+  OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -5030,7 +5040,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-    NewMarket
+  NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -6513,7 +6523,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-    DataSourceSpecConfigurationTime
+  DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -6535,7 +6545,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-    DataSourceDefinitionInternal
+  DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """

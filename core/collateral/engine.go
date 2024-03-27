@@ -56,7 +56,6 @@ var (
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrNoGeneralAccountWhenCreateBondAccount   = errors.New("party general account missing when trying to create a bond account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
-	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
 	// ErrAssetAlreadyEnabled signals the given asset has already been enabled in this engine.
 	ErrAssetAlreadyEnabled    = errors.New("asset already enabled")

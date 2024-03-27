@@ -193,7 +193,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, execsetup.marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventForwarder, nil)
 
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(

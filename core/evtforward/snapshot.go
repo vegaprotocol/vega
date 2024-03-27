@@ -33,10 +33,11 @@ var (
 	}
 )
 
-type efSnapshotState struct{}
-
 func (f *Forwarder) Namespace() types.SnapshotNamespace {
-	return types.EventForwarderSnapshot
+	if f.scope == "primary" {
+		return types.EventForwarderSnapshot
+	}
+	return types.SnapshotNamespace(string(types.EventForwarderSnapshot) + "." + f.scope)
 }
 
 func (f *Forwarder) Keys() []string {
@@ -51,7 +52,7 @@ func (f *Forwarder) serialise() ([]byte, error) {
 	slice := make([]*snapshotpb.EventForwarderBucket, 0, f.ackedEvts.Size())
 	iter := f.ackedEvts.events.Iterator()
 	for iter.Next() {
-		v := (iter.Value().(*ackedEvtBucket))
+		v := iter.Value().(*ackedEvtBucket)
 		slice = append(slice, &snapshotpb.EventForwarderBucket{
 			Ts:     v.ts,
 			Hashes: v.hashes,
@@ -60,6 +61,7 @@ func (f *Forwarder) serialise() ([]byte, error) {
 
 	payload := types.Payload{
 		Data: &types.PayloadEventForwarder{
+			Scope:   f.scope,
 			Buckets: slice,
 		},
 	}

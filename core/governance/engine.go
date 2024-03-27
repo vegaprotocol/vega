@@ -88,7 +88,7 @@ type Assets interface {
 	SetRejected(ctx context.Context, assetID string) error
 	SetPendingListing(ctx context.Context, assetID string) error
 	ValidateAsset(assetID string) error
-	ExistsForEthereumAddress(address string) bool
+	ValidateEthereumAddress(address, chainID string) error
 }
 
 type Banking interface {
@@ -1115,14 +1115,21 @@ func (e *Engine) validateNewAssetProposal(newAsset *types.NewAsset) (types.Propo
 			continue
 		}
 		if source := p.Changes.GetERC20(); source != nil {
+			if source.ChainID != erc20.ChainID {
+				continue
+			}
+
 			if strings.EqualFold(source.ContractAddress, erc20.ContractAddress) {
 				return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
 			}
 		}
 	}
 
-	if e.assets.ExistsForEthereumAddress(erc20.ContractAddress) {
-		return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
+	if err := e.assets.ValidateEthereumAddress(erc20.ContractAddress, erc20.ChainID); err != nil {
+		if err == assets.ErrErc20AddressAlreadyInUse {
+			return types.ProposalErrorERC20AddressAlreadyInUse, err
+		}
+		return types.ProposalErrorInvalidAssetDetails, err
 	}
 
 	return types.ProposalErrorUnspecified, nil
@@ -1351,6 +1358,7 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 				ContractAddress:   erc20.Address(),
 				LifetimeLimit:     src.ERC20Update.LifetimeLimit.Clone(),
 				WithdrawThreshold: src.ERC20Update.WithdrawThreshold.Clone(),
+				ChainID:           erc20.ChainID(),
 			},
 		}
 	default:
