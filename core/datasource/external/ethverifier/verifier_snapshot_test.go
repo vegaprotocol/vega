@@ -65,15 +65,16 @@ func TestEthereumOracleVerifierSnapshotEmpty(t *testing.T) {
 	restoredVerifier := getTestEthereumOracleVerifier(t)
 	defer restoredVerifier.ctrl.Finish()
 
-	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(snap))
+	ctx := vgcontext.WithBlockHeight(context.Background(), 123)
+	_, err = restoredVerifier.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
-	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(slbsnap))
+	_, err = restoredVerifier.LoadState(ctx, types.PayloadFromProto(slbsnap))
 	require.Nil(t, err)
 
 	restoredVerifier.ethCallEngine.EXPECT().Start()
 
 	// As the verifier has no state, the call engine should not have its last block set.
-	restoredVerifier.OnStateLoaded(context.Background())
+	restoredVerifier.OnStateLoaded(ctx)
 }
 
 func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
@@ -158,16 +159,17 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	restoredVerifier.ts.EXPECT().GetTimeNow().AnyTimes()
 	restoredVerifier.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
-	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(snap))
+	ctx := vgcontext.WithBlockHeight(context.Background(), 123)
+	_, err = restoredVerifier.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
-	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(slbsnap))
+	_, err = restoredVerifier.LoadState(ctx, types.PayloadFromProto(slbsnap))
 	require.Nil(t, err)
-	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(miscState))
+	_, err = restoredVerifier.LoadState(ctx, types.PayloadFromProto(miscState))
 	require.Nil(t, err)
 
 	// After the state of the verifier is loaded it should start the call engine at the restored height
 	restoredVerifier.ethCallEngine.EXPECT().StartAtHeight(uint64(5), uint64(100))
-	restoredVerifier.OnStateLoaded(context.Background())
+	restoredVerifier.OnStateLoaded(ctx)
 
 	// Check its there by adding it again and checking for duplication error
 	require.ErrorIs(t, errors.ErrDuplicatedEthereumCallEvent, restoredVerifier.ProcessEthereumContractCallResult(callEvent))
@@ -192,7 +194,7 @@ func TestEthereumVerifierPatchBlock(t *testing.T) {
 	assert.NoError(t, checkResult)
 
 	// now we want to restore as if we are doing an upgrade
-	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.74.9", true)
+	ctx := vgcontext.WithBlockHeight(context.Background(), 41090047)
 
 	lb, _, err := eov.GetState(lastEthBlockKey)
 	require.Nil(t, err)
@@ -234,7 +236,7 @@ func TestEthereumVerifierPatchBlock(t *testing.T) {
 	assert.NoError(t, checkResult)
 
 	// restore from the snapshot not at upgrade height
-	ctx = context.Background()
+	ctx = vgcontext.WithBlockHeight(context.Background(), 1234)
 	lb, _, err = restoredVerifier.GetState(lastEthBlockKey)
 	require.Nil(t, err)
 	require.NotNil(t, lb)
