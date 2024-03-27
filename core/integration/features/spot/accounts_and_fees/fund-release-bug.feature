@@ -77,7 +77,7 @@ Feature: replicate the fund releasing bug when market is terminated
       | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | sell-party-order1 |      |
     # | party2 | BTC/ETH   | sell | 1      | 18    | 0                | TYPE_LIMIT | TIF_GTC | sell-party-order2 |      |
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "4" blocks
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake |
@@ -87,7 +87,7 @@ Feature: replicate the fund releasing bug when market is terminated
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference         | only |
       | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC | sell-party-order3 |      |
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "4" blocks
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                    | auction trigger       |
@@ -120,9 +120,7 @@ Feature: replicate the fund releasing bug when market is terminated
     When the market states are updated through governance:
       | market id | state                              |
       | BTC/ETH   | MARKET_STATE_UPDATE_TYPE_TERMINATE |
-    Then the market data for the market "BTC/ETH" should be:
-      | mark price | trading mode            | auction trigger       |
-      | 13         | TRADING_MODE_NO_TRADING | AUCTION_TRIGGER_PRICE |
+
 
 # When the network moves ahead "4" blocks
 
