@@ -2786,7 +2786,7 @@ type Candle {
   "Volume price (uint64)"
   volume: String!
 
-  "Total notional value of trades (uint64)"
+  "Total notional value of trades. This value is determined by multiplying price, using market decimal places, by size, using position decimal places. The number of decimal places needed to convert this value to a decimal is market decimal places plus position decimal places. (uint64)"
   notional: String!
 }
 
