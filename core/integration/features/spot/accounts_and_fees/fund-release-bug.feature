@@ -94,10 +94,10 @@ Feature: replicate the fund releasing bug when market is terminated
       | 15         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
     #cancel the orders that triggered price mon auction
-    Then the parties cancel the following orders:
-      | party  | reference         |
-      | party1 | buy-party-order2  |
-      | party2 | sell-party-order3 |
+    Then the parties cancel all their orders for the markets:
+      | party  | market id |
+      | party1 | BTC/ETH   |
+      | party2 | BTC/ETH   |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type    |
