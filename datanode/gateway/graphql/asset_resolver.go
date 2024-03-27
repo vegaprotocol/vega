@@ -81,23 +81,23 @@ func (r *myAssetResolver) GlobalInsuranceAccount(ctx context.Context, asset *typ
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE)
 }
 
-func (r myAssetResolver) Name(ctx context.Context, obj *types.Asset) (string, error) {
+func (r myAssetResolver) Name(_ context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Name, nil
 }
 
-func (r myAssetResolver) Symbol(ctx context.Context, obj *types.Asset) (string, error) {
+func (r myAssetResolver) Symbol(_ context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Symbol, nil
 }
 
-func (r *myAssetResolver) Decimals(ctx context.Context, obj *types.Asset) (int, error) {
+func (r *myAssetResolver) Decimals(_ context.Context, obj *types.Asset) (int, error) {
 	return int(obj.Details.Decimals), nil
 }
 
-func (r *myAssetResolver) Quantum(ctx context.Context, obj *types.Asset) (string, error) {
+func (r *myAssetResolver) Quantum(_ context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Quantum, nil
 }
 
-func (r *myAssetResolver) Source(ctx context.Context, obj *types.Asset) (AssetSource, error) {
+func (r *myAssetResolver) Source(_ context.Context, obj *types.Asset) (AssetSource, error) {
 	return AssetSourceFromProto(obj.Details)
 }
 
@@ -126,5 +126,6 @@ func ERC20FromProto(ea *types.ERC20) *Erc20 {
 		ContractAddress:   ea.ContractAddress,
 		LifetimeLimit:     ea.LifetimeLimit,
 		WithdrawThreshold: ea.WithdrawThreshold,
+		ChainID:           ea.ChainId,
 	}
 }

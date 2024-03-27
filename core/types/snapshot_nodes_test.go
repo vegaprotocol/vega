@@ -683,7 +683,9 @@ func TestPayloadConversion(t *testing.T) {
 			Topology: &types.Topology{},
 		},
 	}, &types.Payload{
-		Data: &types.PayloadEventForwarder{},
+		Data: &types.PayloadEventForwarder{
+			Scope: "primary",
+		},
 	}, &types.Payload{
 		Data: &types.PayloadLiquidityParameters{
 			Parameters: &v1.LiquidityParameters{

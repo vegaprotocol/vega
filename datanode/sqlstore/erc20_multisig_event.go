@@ -44,8 +44,8 @@ func NewERC20MultiSigSignerEvent(connectionSource *ConnectionSource) *ERC20Multi
 
 func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error {
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "Add")()
-	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, tx_hash, vega_time, epoch_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, tx_hash, vega_time, epoch_id, chain_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		ON CONFLICT (id) DO NOTHING`
 
 	if _, err := m.Connection.Exec(ctx, query,
@@ -58,6 +58,7 @@ func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20Mul
 		e.TxHash,
 		e.VegaTime,
 		e.EpochID,
+		e.ChainID,
 	); err != nil {
 		err = fmt.Errorf("could not insert multisig-signer-events into database: %w", err)
 		return err
@@ -66,7 +67,7 @@ func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20Mul
 	return nil
 }
 
-func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, pagination entities.CursorPagination) (
+func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, chainID *string, pagination entities.CursorPagination) (
 	[]entities.ERC20MultiSigSignerEvent, entities.PageInfo, error,
 ) {
 	var pageInfo entities.PageInfo
@@ -85,6 +86,10 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 
 	if epochID != nil {
 		conditions = append(conditions, fmt.Sprintf("epoch_id=%s", nextBindVar(&args, *epochID)))
+	}
+
+	if chainID != nil {
+		conditions = append(conditions, fmt.Sprintf("chain_id=%s", nextBindVar(&args, *chainID)))
 	}
 
 	conditions = append(conditions, fmt.Sprintf("event=%s", nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeAdded)))
@@ -118,12 +123,13 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 			TxHash:       e.TxHash,
 			EpochID:      e.EpochID,
 			Event:        e.Event,
+			ChainID:      e.ChainID,
 		}
 	}
 	return events, pageInfo, nil
 }
 
-func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, pagination entities.CursorPagination) ([]entities.ERC20MultiSigSignerEvent, entities.PageInfo, error) {
+func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, chainID *string, pagination entities.CursorPagination) ([]entities.ERC20MultiSigSignerEvent, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
 	var err error
 	out := []entities.ERC20MultiSigSignerRemovedEvent{}
@@ -140,6 +146,10 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 
 	if epochID != nil {
 		conditions = append(conditions, fmt.Sprintf("epoch_id=%s", nextBindVar(&args, *epochID)))
+	}
+
+	if chainID != nil {
+		conditions = append(conditions, fmt.Sprintf("chain_id=%s", nextBindVar(&args, *chainID)))
 	}
 
 	conditions = append(conditions, fmt.Sprintf("event=%s", nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeRemoved)))
@@ -173,6 +183,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 			VegaTime:     e.VegaTime,
 			EpochID:      e.EpochID,
 			Event:        e.Event,
+			ChainID:      e.ChainID,
 		}
 	}
 	return events, pageInfo, nil

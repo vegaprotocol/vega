@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
-	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var (
@@ -30,31 +30,30 @@ var (
 	ErrMissingBuiltinAssetField        = errors.New("missing builtin asset field")
 	ErrInvalidAssetNameEmpty           = errors.New("invalid asset, name must not be empty")
 	ErrInvalidAssetSymbolEmpty         = errors.New("invalid asset, symbol must not be empty")
-	ErrInvalidAssetDecimalPlacesZero   = errors.New("invalid asset, decimal places must not be zero")
 	ErrInvalidAssetQuantumZero         = errors.New("invalid asset, quantum must not be zero")
 	ErrLifetimeLimitMustBePositive     = errors.New("lifetime limit must be positive")
 	ErrWithdrawThresholdMustBePositive = errors.New("withdraw threshold must be positive")
 )
 
-type AssetStatus = proto.Asset_Status
+type AssetStatus = vegapb.Asset_Status
 
 const (
-	// Default value, always invalid.
-	AssetStatusUnspecified AssetStatus = proto.Asset_STATUS_UNSPECIFIED
-	// Asset is proposed and under vote.
-	AssetStatusProposed AssetStatus = proto.Asset_STATUS_PROPOSED
-	// Asset has been rejected from governance.
-	AssetStatusRejected AssetStatus = proto.Asset_STATUS_REJECTED
-	// Asset is pending listing from the bridge.
-	AssetStatusPendingListing AssetStatus = proto.Asset_STATUS_PENDING_LISTING
-	// Asset is fully usable in the network.
-	AssetStatusEnabled AssetStatus = proto.Asset_STATUS_ENABLED
+	// AssetStatusUnspecified is the default value, always invalid.
+	AssetStatusUnspecified AssetStatus = vegapb.Asset_STATUS_UNSPECIFIED
+	// AssetStatusProposed states the asset is proposed and under vote.
+	AssetStatusProposed AssetStatus = vegapb.Asset_STATUS_PROPOSED
+	// AssetStatusRejected states the asset has been rejected from governance.
+	AssetStatusRejected AssetStatus = vegapb.Asset_STATUS_REJECTED
+	// AssetStatusPendingListing states the asset is pending listing from the bridge.
+	AssetStatusPendingListing AssetStatus = vegapb.Asset_STATUS_PENDING_LISTING
+	// AssetStatusEnabled states the asset is fully usable in the network.
+	AssetStatusEnabled AssetStatus = vegapb.Asset_STATUS_ENABLED
 )
 
 type Asset struct {
 	// Internal identifier of the asset
 	ID string
-	// Name of the asset (e.g: Great British Pound)
+	// Details of the asset (e.g: Great British Pound)
 	Details *AssetDetails
 	// Status of the asset
 	Status AssetStatus
@@ -68,12 +67,12 @@ type isAssetDetails interface {
 	String() string
 }
 
-func (a Asset) IntoProto() *proto.Asset {
-	var details *proto.AssetDetails
+func (a Asset) IntoProto() *vegapb.Asset {
+	var details *vegapb.AssetDetails
 	if a.Details != nil {
 		details = a.Details.IntoProto()
 	}
-	return &proto.Asset{
+	return &vegapb.Asset{
 		Id:      a.ID,
 		Details: details,
 		Status:  a.Status,
@@ -92,7 +91,7 @@ func (a Asset) DeepClone() *Asset {
 	return &cpy
 }
 
-func AssetFromProto(p *proto.Asset) (*Asset, error) {
+func AssetFromProto(p *vegapb.Asset) (*Asset, error) {
 	var (
 		details *AssetDetails
 		err     error
@@ -115,9 +114,7 @@ type AssetDetails struct {
 	Symbol   string
 	Decimals uint64
 	Quantum  num.Decimal
-	//	*AssetDetailsBuiltinAsset
-	//	*AssetDetailsErc20
-	Source isAssetDetails
+	Source   isAssetDetails
 }
 
 func (a AssetDetails) String() string {
@@ -147,8 +144,8 @@ func (a AssetDetails) Validate() (ProposalError, error) {
 	return ProposalErrorUnspecified, nil
 }
 
-func (a AssetDetails) IntoProto() *proto.AssetDetails {
-	r := &proto.AssetDetails{
+func (a AssetDetails) IntoProto() *vegapb.AssetDetails {
+	r := &vegapb.AssetDetails{
 		Name:     a.Name,
 		Symbol:   a.Symbol,
 		Decimals: a.Decimals,
@@ -159,9 +156,9 @@ func (a AssetDetails) IntoProto() *proto.AssetDetails {
 	}
 	src := a.Source.adIntoProto()
 	switch s := src.(type) {
-	case *proto.AssetDetails_Erc20:
+	case *vegapb.AssetDetails_Erc20:
 		r.Source = s
-	case *proto.AssetDetails_BuiltinAsset:
+	case *vegapb.AssetDetails_BuiltinAsset:
 		r.Source = s
 	}
 	return r
@@ -191,24 +188,24 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 	return cpy
 }
 
-func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
+func AssetDetailsFromProto(p *vegapb.AssetDetails) (*AssetDetails, error) {
 	var (
 		src isAssetDetails
 		err error
 	)
 	switch st := p.Source.(type) {
-	case *proto.AssetDetails_Erc20:
+	case *vegapb.AssetDetails_Erc20:
 		src, err = AssetDetailsERC20FromProto(st)
 		if err != nil {
 			return nil, err
 		}
-	case *proto.AssetDetails_BuiltinAsset:
+	case *vegapb.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
-	min := num.DecimalZero()
+	quantum := num.DecimalZero()
 	if len(p.Quantum) > 0 {
 		var err error
-		min, err = num.DecimalFromString(p.Quantum)
+		quantum, err = num.DecimalFromString(p.Quantum)
 		if err != nil {
 			return nil, fmt.Errorf("invalid quantum: %w", err)
 		}
@@ -217,7 +214,7 @@ func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
 		Name:     p.Name,
 		Symbol:   p.Symbol,
 		Decimals: p.Decimals,
-		Quantum:  min,
+		Quantum:  quantum,
 		Source:   src,
 	}, nil
 }
@@ -233,9 +230,9 @@ func (a AssetDetailsBuiltinAsset) String() string {
 	)
 }
 
-func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
-	p := &proto.AssetDetails_BuiltinAsset{
-		BuiltinAsset: &proto.BuiltinAsset{},
+func (a AssetDetailsBuiltinAsset) IntoProto() *vegapb.AssetDetails_BuiltinAsset {
+	p := &vegapb.AssetDetails_BuiltinAsset{
+		BuiltinAsset: &vegapb.BuiltinAsset{},
 	}
 	if a.BuiltinAsset != nil && a.BuiltinAsset.MaxFaucetAmountMint != nil {
 		p.BuiltinAsset.MaxFaucetAmountMint = a.BuiltinAsset.MaxFaucetAmountMint.String()
@@ -267,7 +264,7 @@ func (a AssetDetailsBuiltinAsset) Validate() (ProposalError, error) {
 	return ProposalErrorUnspecified, nil
 }
 
-func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDetailsBuiltinAsset {
+func AssetDetailsBuiltinFromProto(p *vegapb.AssetDetails_BuiltinAsset) *AssetDetailsBuiltinAsset {
 	if p.BuiltinAsset.MaxFaucetAmountMint != "" {
 		max, _ := num.UintFromString(p.BuiltinAsset.MaxFaucetAmountMint, 10)
 		return &AssetDetailsBuiltinAsset{
@@ -302,7 +299,7 @@ func (a AssetDetailsErc20) String() string {
 	)
 }
 
-func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
+func (a AssetDetailsErc20) IntoProto() *vegapb.AssetDetails_Erc20 {
 	lifetimeLimit := "0"
 	if a.ERC20.LifetimeLimit != nil {
 		lifetimeLimit = a.ERC20.LifetimeLimit.String()
@@ -311,9 +308,10 @@ func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
 	if a.ERC20.WithdrawThreshold != nil {
 		withdrawThreshold = a.ERC20.WithdrawThreshold.String()
 	}
-	return &proto.AssetDetails_Erc20{
-		Erc20: &proto.ERC20{
+	return &vegapb.AssetDetails_Erc20{
+		Erc20: &vegapb.ERC20{
 			ContractAddress:   a.ERC20.ContractAddress,
+			ChainId:           a.ERC20.ChainID,
 			LifetimeLimit:     lifetimeLimit,
 			WithdrawThreshold: withdrawThreshold,
 		},
@@ -339,16 +337,11 @@ func (a AssetDetailsErc20) Validate() (ProposalError, error) {
 	if len(a.ERC20.ContractAddress) <= 0 {
 		return ProposalErrorMissingErc20ContractAddress, ErrMissingERC20ContractAddress
 	}
-	// if a.ERC20.LifetimeLimit.EQ(num.Zero()) {
-	// 	return ProposalErrorInvalidAsset, ErrLifetimeLimitMustBePositive
-	// }
-	// if a.ERC20.WithdrawThreshold.EQ(num.Zero()) {
-	// 	return ProposalErrorInvalidAsset, ErrWithdrawThresholdMustBePositive
-	// }
+
 	return ProposalErrorUnspecified, nil
 }
 
-func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20, error) {
+func AssetDetailsERC20FromProto(p *vegapb.AssetDetails_Erc20) (*AssetDetailsErc20, error) {
 	var (
 		lifetimeLimit     = num.UintZero()
 		withdrawThreshold = num.UintZero()
@@ -368,6 +361,7 @@ func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20
 	}
 	return &AssetDetailsErc20{
 		ERC20: &ERC20{
+			ChainID:           p.Erc20.ChainId,
 			ContractAddress:   crypto.EthereumChecksumAddress(p.Erc20.ContractAddress),
 			LifetimeLimit:     lifetimeLimit,
 			WithdrawThreshold: withdrawThreshold,
@@ -377,6 +371,9 @@ func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20
 
 // An ERC20 token based asset, living on the ethereum network.
 type ERC20 struct {
+	// Chain ID from which the asset originated from.
+	ChainID string
+
 	ContractAddress   string
 	LifetimeLimit     *num.Uint
 	WithdrawThreshold *num.Uint
@@ -385,6 +382,7 @@ type ERC20 struct {
 func (e ERC20) DeepClone() *ERC20 {
 	cpy := &ERC20{
 		ContractAddress: e.ContractAddress,
+		ChainID:         e.ChainID,
 	}
 	if e.LifetimeLimit != nil {
 		cpy.LifetimeLimit = e.LifetimeLimit.Clone()
@@ -401,8 +399,9 @@ func (e ERC20) DeepClone() *ERC20 {
 
 func (e ERC20) String() string {
 	return fmt.Sprintf(
-		"contractAddress(%s) lifetimeLimit(%s) withdrawThreshold(%s)",
+		"contractAddress(%s) chainID(%s) lifetimeLimit(%s) withdrawThreshold(%s)",
 		e.ContractAddress,
+		e.ChainID,
 		stringer.PtrToString(e.LifetimeLimit),
 		stringer.PtrToString(e.WithdrawThreshold),
 	)

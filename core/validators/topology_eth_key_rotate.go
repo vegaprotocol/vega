@@ -133,7 +133,8 @@ func (t *Topology) ProcessEthereumKeyRotation(
 	t.signatures.PrepareValidatorSignatures(ctx, toRemove, t.epochSeq, false)
 	if len(kr.SubmitterAddress) != 0 {
 		// we were given an address that will be submitting the multisig changes, we can emit a remove signature for it right now
-		t.signatures.EmitValidatorRemovedSignatures(ctx, kr.SubmitterAddress, node.data.ID, t.timeService.GetTimeNow())
+		t.signatures.EmitValidatorRemovedSignatures(ctx, kr.SubmitterAddress, node.data.ID, t.primaryMultisig.ChainID(), t.timeService.GetTimeNow())
+		t.signatures.EmitValidatorRemovedSignatures(ctx, kr.SubmitterAddress, node.data.ID, t.secondaryMultisig.ChainID(), t.timeService.GetTimeNow())
 	}
 
 	return nil
@@ -164,7 +165,7 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 	// check any unfinalised key rotations
 	remove := []string{}
 	for _, r := range t.unresolvedEthKeyRotations {
-		if !t.multiSigTopology.IsSigner(r.OldAddress) && t.multiSigTopology.IsSigner(r.NewAddress) {
+		if !t.primaryMultisig.IsSigner(r.OldAddress) && t.primaryMultisig.IsSigner(r.NewAddress) {
 			t.log.Info("ethereum key rotations have been resolved on the multisig contract", logging.String("nodeID", r.NodeID), logging.String("old-address", r.OldAddress))
 			remove = append(remove, r.NodeID)
 		}
@@ -222,7 +223,8 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 
 		if len(r.SubmitterAddress) != 0 {
 			// we were given an address that will be submitting the multisig changes, we can emit signatures for it right now
-			t.signatures.EmitValidatorAddedSignatures(ctx, r.SubmitterAddress, r.NodeID, t.timeService.GetTimeNow())
+			t.signatures.EmitValidatorAddedSignatures(ctx, r.SubmitterAddress, r.NodeID, t.primaryMultisig.ChainID(), t.timeService.GetTimeNow())
+			t.signatures.EmitValidatorAddedSignatures(ctx, r.SubmitterAddress, r.NodeID, t.secondaryMultisig.ChainID(), t.timeService.GetTimeNow())
 		}
 
 		// add to unfinalised map so we can wait to see the changes on the contract

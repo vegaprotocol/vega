@@ -54,9 +54,9 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.NoError(t, err)
 
-	// then we call the callback from the fake erc
-	eng.erc.r.Check(context.Background())
-	eng.erc.f(eng.erc.r, true)
+	// then we call the callback from the fake witness
+	eng.witness.r.Check(context.Background())
+	eng.witness.f(eng.witness.r, true)
 
 	// now we take a checkpoint
 	cp, err := eng.Checkpoint()
@@ -203,13 +203,9 @@ func testSimpledScheduledTransfer(t *testing.T) {
 	e2.OnTick(context.Background(), time.Unix(12, 0))
 }
 
-func TestGovernancedScheduledTransfer(t *testing.T) {
+func TestGovernanceScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).AnyTimes()
 
 	// let's do a massive fee, easy to test.
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
@@ -233,6 +229,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 	}
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, 0))
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	checkp, err := e.Checkpoint()
@@ -253,10 +250,6 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 
 	// progress time to when the scheduled gov transfer should be delivered on
 	// then trigger the time update, and see the transfer going
-	e2.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(12, 0)
-		}).Times(2)
 	e2.broker.EXPECT().Send(gomock.Any()).Times(2)
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.col.EXPECT().GetSystemAccountBalance(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.NewUint(1000), nil).AnyTimes()
@@ -276,10 +269,6 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 
 	ctx := context.Background()
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).Times(3)
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
 	e.OnTick(ctx, time.Unix(10, 0))
 	e.OnEpoch(ctx, types.Epoch{Seq: 0, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
@@ -301,6 +290,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	}
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, 0))
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	checkp, err := e.Checkpoint()

@@ -33,7 +33,7 @@ var (
 	ErrInvalidWithdrawalReferenceNonce       = errors.New("invalid withdrawal reference nonce")
 	ErrWithdrawalAmountUnderMinimalRequired  = errors.New("invalid withdrawal, amount under minimum required")
 	ErrAssetAlreadyBeingListed               = errors.New("asset already being listed")
-	ErrWithdrawalDisabledWhenBridgeIsStopped = errors.New("withdrawal issuance is disabled when the erc20 is stopped")
+	ErrWithdrawalDisabledWhenBridgeIsStopped = errors.New("cannot issue withdrawals when the bridge is stopped")
 )
 
 type ERC20BridgeView interface {
@@ -49,12 +49,17 @@ func (e *Engine) EnableERC20(
 	al *types.ERC20AssetList,
 	id string,
 	blockNumber, txIndex uint64,
-	txHash string,
+	txHash, chainID string,
 ) error {
 	asset, _ := e.assets.Get(al.VegaAssetID)
-	if _, ok := e.assetActs[al.VegaAssetID]; ok {
+	if _, ok := e.assetActions[al.VegaAssetID]; ok {
 		e.log.Error("asset already being listed", logging.AssetID(al.VegaAssetID))
 		return ErrAssetAlreadyBeingListed
+	}
+
+	bridgeView, err := e.bridgeViewForChainID(chainID)
+	if err != nil {
+		return err
 	}
 
 	aa := &assetAction{
@@ -65,7 +70,8 @@ func (e *Engine) EnableERC20(
 		blockHeight: blockNumber,
 		logIndex:    txIndex,
 		txHash:      txHash,
-		bridgeView:  e.bridgeView,
+		chainID:     chainID,
+		bridgeView:  bridgeView,
 	}
 	e.addAction(aa)
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
@@ -76,7 +82,7 @@ func (e *Engine) UpdateERC20(
 	event *types.ERC20AssetLimitsUpdated,
 	id string,
 	blockNumber, txIndex uint64,
-	txHash string,
+	txHash, chainID string,
 ) error {
 	asset, err := e.assets.Get(event.VegaAssetID)
 	if err != nil {
@@ -84,6 +90,12 @@ func (e *Engine) UpdateERC20(
 			logging.AssetID(event.VegaAssetID),
 		)
 	}
+
+	bridgeView, err := e.bridgeViewForChainID(chainID)
+	if err != nil {
+		return err
+	}
+
 	aa := &assetAction{
 		id:                      id,
 		state:                   newPendingState(),
@@ -92,7 +104,8 @@ func (e *Engine) UpdateERC20(
 		blockHeight:             blockNumber,
 		logIndex:                txIndex,
 		txHash:                  txHash,
-		bridgeView:              e.bridgeView,
+		chainID:                 chainID,
+		bridgeView:              bridgeView,
 	}
 	e.addAction(aa)
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
@@ -103,7 +116,7 @@ func (e *Engine) DepositERC20(
 	d *types.ERC20Deposit,
 	id string,
 	blockNumber, logIndex uint64,
-	txHash string,
+	txHash, chainID string,
 ) error {
 	dep := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, d.Amount, txHash)
 
@@ -124,6 +137,11 @@ func (e *Engine) DepositERC20(
 		return fmt.Errorf("%v: %w", asset.String(), ErrWrongAssetTypeUsedInERC20ChainEvent)
 	}
 
+	bridgeView, err := e.bridgeViewForChainID(chainID)
+	if err != nil {
+		return err
+	}
+
 	aa := &assetAction{
 		id:          dep.ID,
 		state:       newPendingState(),
@@ -132,7 +150,8 @@ func (e *Engine) DepositERC20(
 		blockHeight: blockNumber,
 		logIndex:    logIndex,
 		txHash:      txHash,
-		bridgeView:  e.bridgeView,
+		chainID:     chainID,
+		bridgeView:  bridgeView,
 	}
 	e.addAction(aa)
 	e.deposits[dep.ID] = dep
@@ -141,11 +160,7 @@ func (e *Engine) DepositERC20(
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
-func (e *Engine) ERC20WithdrawalEvent(
-	ctx context.Context, w *types.ERC20Withdrawal,
-	blockNumber, txIndex uint64,
-	txHash string,
-) error {
+func (e *Engine) ERC20WithdrawalEvent(ctx context.Context, w *types.ERC20Withdrawal, blockNumber uint64, txHash string, chainID string) error {
 	// check straight away if the withdrawal is signed
 	nonce, ok := new(big.Int).SetString(w.ReferenceNonce, 10)
 	if !ok {
@@ -163,8 +178,10 @@ func (e *Engine) ERC20WithdrawalEvent(
 		return ErrWithdrawalNotReady
 	}
 
-	if blockNumber > e.lastSeenEthBlock {
-		e.lastSeenEthBlock = blockNumber
+	if e.primaryEthChainID == chainID && blockNumber > e.lastSeenPrimaryEthBlock {
+		e.lastSeenPrimaryEthBlock = blockNumber
+	} else if e.secondaryEthChainID == chainID && blockNumber > e.lastSeenSecondaryEthBlock {
+		e.lastSeenSecondaryEthBlock = blockNumber
 	}
 	withd.WithdrawalDate = e.timeService.GetTimeNow().UnixNano()
 	withd.TxHash = txHash
@@ -179,7 +196,25 @@ func (e *Engine) WithdrawERC20(
 	amount *num.Uint,
 	ext *types.Erc20WithdrawExt,
 ) error {
-	if e.bridgeState.IsStopped() {
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		e.log.Debug("unable to get asset by id",
+			logging.AssetID(assetID),
+			logging.Error(err))
+		return err
+	}
+
+	if !asset.IsERC20() {
+		return fmt.Errorf("asset %q is not an ERC20 token: %w", assetID, err)
+	}
+
+	erc20Token, _ := asset.ERC20()
+	bridgeState, err := e.bridgeStateForChainID(erc20Token.ChainID())
+	if err != nil {
+		return err
+	}
+
+	if bridgeState.IsStopped() {
 		return ErrWithdrawalDisabledWhenBridgeIsStopped
 	}
 
@@ -190,18 +225,9 @@ func (e *Engine) WithdrawERC20(
 	}
 
 	w, ref := e.newWithdrawal(id, party, assetID, amount, wext)
-	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 
-	asset, err := e.assets.Get(assetID)
-	if err != nil {
-		w.Status = types.WithdrawalStatusRejected
-		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-		e.log.Debug("unable to get asset by id",
-			logging.AssetID(assetID),
-			logging.Error(err))
-		return err
-	}
+	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+	e.withdrawals[w.ID] = withdrawalRef{w: w, ref: ref}
 
 	// check for minimal amount reached
 	quantum := asset.Type().Details.Quantum
@@ -321,8 +347,10 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 }
 
 func (e *Engine) addAction(aa *assetAction) {
-	e.assetActs[aa.id] = aa
-	if aa.blockHeight > e.lastSeenEthBlock {
-		e.lastSeenEthBlock = aa.blockHeight
+	e.assetActions[aa.id] = aa
+	if aa.chainID == e.primaryEthChainID && aa.blockHeight > e.lastSeenPrimaryEthBlock {
+		e.lastSeenPrimaryEthBlock = aa.blockHeight
+	} else if aa.chainID == e.secondaryEthChainID && aa.blockHeight > e.lastSeenSecondaryEthBlock {
+		e.lastSeenSecondaryEthBlock = aa.blockHeight
 	}
 }

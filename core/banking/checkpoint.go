@@ -17,6 +17,7 @@ package banking
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync/atomic"
 
@@ -31,6 +32,7 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
+	"go.uber.org/zap"
 )
 
 func (e *Engine) Name() types.CheckpointName {
@@ -41,19 +43,21 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	msg := &checkpoint.Banking{
 		TransfersAtTime:              e.getScheduledTransfers(),
 		RecurringTransfers:           e.getRecurringTransfers(),
+		PrimaryBridgeState:           e.getPrimaryBridgeState(),
+		LastSeenPrimaryEthBlock:      e.lastSeenPrimaryEthBlock,
 		GovernanceTransfersAtTime:    e.getScheduledGovernanceTransfers(),
 		RecurringGovernanceTransfers: e.getRecurringGovernanceTransfers(),
-		BridgeState:                  e.getBridgeState(),
-		LastSeenEthBlock:             e.lastSeenEthBlock,
+		SecondaryBridgeState:         e.getSecondaryBridgeState(),
+		LastSeenSecondaryEthBlock:    e.lastSeenSecondaryEthBlock,
 	}
 
-	msg.SeenRefs = make([]string, 0, e.seen.Size())
-	iter := e.seen.Iterator()
+	msg.SeenRefs = make([]string, 0, e.seenAssetActions.Size())
+	iter := e.seenAssetActions.Iterator()
 	for iter.Next() {
 		msg.SeenRefs = append(msg.SeenRefs, iter.Value().(string))
 	}
 
-	msg.AssetActions = make([]*checkpoint.AssetAction, 0, len(e.assetActs))
+	msg.AssetActions = make([]*checkpoint.AssetAction, 0, len(e.assetActions))
 	for _, aa := range e.getAssetActions() {
 		msg.AssetActions = append(msg.AssetActions, aa.IntoProto())
 	}
@@ -81,25 +85,34 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	evts = append(evts, e.loadScheduledGovernanceTransfers(ctx, b.GovernanceTransfersAtTime)...)
 	evts = append(evts, e.loadRecurringGovernanceTransfers(ctx, b.RecurringGovernanceTransfers)...)
 
-	e.loadBridgeState(b.BridgeState)
+	e.loadPrimaryBridgeState(b.PrimaryBridgeState)
+	e.loadSecondaryBridgeState(b.SecondaryBridgeState)
 
-	e.seen = treeset.NewWithStringComparator()
+	e.seenAssetActions = treeset.NewWithStringComparator()
 	for _, v := range b.SeenRefs {
-		e.seen.Add(v)
+		e.seenAssetActions.Add(v)
 	}
 
-	e.lastSeenEthBlock = b.LastSeenEthBlock
-	if e.lastSeenEthBlock != 0 {
-		e.log.Info("restoring collateral bridge starting block", logging.Uint64("block", e.lastSeenEthBlock))
-		e.ethEventSource.UpdateCollateralStartingBlock(e.lastSeenEthBlock)
+	e.lastSeenPrimaryEthBlock = b.LastSeenPrimaryEthBlock
+	if e.lastSeenPrimaryEthBlock != 0 {
+		e.log.Info("restoring primary collateral bridge starting block", logging.Uint64("block", e.lastSeenPrimaryEthBlock))
+		e.primaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenPrimaryEthBlock)
+	}
+
+	e.lastSeenSecondaryEthBlock = b.LastSeenSecondaryEthBlock
+	if e.lastSeenSecondaryEthBlock != 0 {
+		e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", e.lastSeenSecondaryEthBlock))
+		e.secondaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenSecondaryEthBlock)
 	}
 
 	aa := make([]*types.AssetAction, 0, len(b.AssetActions))
 	for _, a := range b.AssetActions {
 		aa = append(aa, types.AssetActionFromProto(a))
 	}
-	e.loadAssetActions(aa)
-	for _, aa := range e.assetActs {
+	if err := e.loadAssetActions(aa); err != nil {
+		return fmt.Errorf("could not load asset actions: %w", err)
+	}
+	for _, aa := range e.assetActions {
 		e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 	}
 
@@ -110,7 +123,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
-func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
+func (e *Engine) loadAssetActions(aa []*types.AssetAction) error {
 	for _, v := range aa {
 		var (
 			err           error
@@ -136,6 +149,19 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			bridgeResumed = &types.ERC20EventBridgeResumed{BridgeResumed: true}
 		}
 
+		// This handle old asset actions that are not associated to a chain ID
+		// yet, that are likely asset actions that should be associated to the
+		// primary bridge.
+		var bridgeView ERC20BridgeView
+		if v.ChainID == "" {
+			bridgeView = e.primaryBridgeView
+		} else {
+			bridgeView, err = e.bridgeViewForChainID(v.ChainID)
+			if err != nil {
+				return err
+			}
+		}
+
 		state := &atomic.Uint32{}
 		state.Store(v.State)
 		aa := &assetAction{
@@ -145,6 +171,7 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			asset:                   asset,
 			logIndex:                v.TxIndex,
 			txHash:                  v.Hash,
+			chainID:                 v.ChainID,
 			builtinD:                v.BuiltinD,
 			erc20AL:                 v.Erc20AL,
 			erc20D:                  v.Erc20D,
@@ -152,7 +179,7 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			erc20BridgeStopped:      bridgeStopped,
 			erc20BridgeResumed:      bridgeResumed,
 			// this is needed every time now
-			bridgeView: e.bridgeView,
+			bridgeView: bridgeView,
 		}
 
 		if len(aa.getRef().Hash) == 0 {
@@ -160,7 +187,7 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			e.log.Panic("asset action has not been serialised correct and is empty", logging.String("txHash", aa.txHash))
 		}
 
-		e.assetActs[v.ID] = aa
+		e.assetActions[v.ID] = aa
 		// store the deposit in the deposits
 		if v.BuiltinD != nil {
 			e.deposits[v.ID] = e.newDeposit(v.ID, v.BuiltinD.PartyID, v.BuiltinD.VegaAssetID, v.BuiltinD.Amount, v.Hash)
@@ -168,20 +195,39 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			e.deposits[v.ID] = e.newDeposit(v.ID, v.Erc20D.TargetPartyID, v.Erc20D.VegaAssetID, v.Erc20D.Amount, v.Hash)
 		}
 	}
+	return nil
 }
 
-func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
+func (e *Engine) loadPrimaryBridgeState(state *checkpoint.BridgeState) {
 	// this would eventually be nil if we restore from a checkpoint
 	// which have been produce from an old version of the core.
 	// we set it to active by default in the case
 	if state == nil {
-		e.bridgeState = &bridgeState{
+		e.primaryBridgeState = &bridgeState{
 			active: true,
 		}
 		return
 	}
 
-	e.bridgeState = &bridgeState{
+	e.primaryBridgeState = &bridgeState{
+		active:   state.Active,
+		block:    state.BlockHeight,
+		logIndex: state.LogIndex,
+	}
+}
+
+func (e *Engine) loadSecondaryBridgeState(state *checkpoint.BridgeState) {
+	// this would eventually be nil if we restore from a checkpoint
+	// which have been produce from an old version of the core.
+	// we set it to active by default in the case
+	if state == nil {
+		e.secondaryBridgeState = &bridgeState{
+			active: true,
+		}
+		return
+	}
+
+	e.secondaryBridgeState = &bridgeState{
 		active:   state.Active,
 		block:    state.BlockHeight,
 		logIndex: state.LogIndex,
@@ -264,11 +310,19 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 	return evts
 }
 
-func (e *Engine) getBridgeState() *checkpoint.BridgeState {
+func (e *Engine) getPrimaryBridgeState() *checkpoint.BridgeState {
 	return &checkpoint.BridgeState{
-		Active:      e.bridgeState.active,
-		BlockHeight: e.bridgeState.block,
-		LogIndex:    e.bridgeState.logIndex,
+		Active:      e.primaryBridgeState.active,
+		BlockHeight: e.primaryBridgeState.block,
+		LogIndex:    e.primaryBridgeState.logIndex,
+	}
+}
+
+func (e *Engine) getSecondaryBridgeState() *checkpoint.BridgeState {
+	return &checkpoint.BridgeState{
+		Active:      e.secondaryBridgeState.active,
+		BlockHeight: e.secondaryBridgeState.block,
+		LogIndex:    e.secondaryBridgeState.logIndex,
 	}
 }
 
@@ -323,8 +377,8 @@ func (e *Engine) getScheduledGovernanceTransfers() []*checkpoint.ScheduledGovern
 }
 
 func (e *Engine) getAssetActions() []*types.AssetAction {
-	aa := make([]*types.AssetAction, 0, len(e.assetActs))
-	for _, v := range e.assetActs {
+	aa := make([]*types.AssetAction, 0, len(e.assetActions))
+	for _, v := range e.assetActions {
 		// this is optional as bridge action don't have one
 		var assetID string
 		if v.asset != nil {
@@ -341,20 +395,28 @@ func (e *Engine) getAssetActions() []*types.AssetAction {
 			bridgeResumed = true
 		}
 
-		aa = append(aa, &types.AssetAction{
+		action := types.AssetAction{
 			ID:                      v.id,
 			State:                   v.state.Load(),
 			BlockNumber:             v.blockHeight,
 			Asset:                   assetID,
 			TxIndex:                 v.logIndex,
 			Hash:                    v.txHash,
+			ChainID:                 v.chainID,
 			BuiltinD:                v.builtinD,
 			Erc20AL:                 v.erc20AL,
 			Erc20D:                  v.erc20D,
 			ERC20AssetLimitsUpdated: v.erc20AssetLimitsUpdated,
 			BridgeStopped:           bridgeStopped,
 			BridgeResume:            bridgeResumed,
-		})
+		}
+
+		e.log.Info("getAssetActions",
+			zap.Any("action", fmt.Sprintf("%+v", action)),
+			zap.String("ref", v.getRef().Hash),
+		)
+
+		aa = append(aa, &action)
 	}
 
 	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })

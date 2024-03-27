@@ -96,7 +96,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	valJoinPolicy := NewSimpleSpamPolicy("validatorJoin", netparams.StakingAndDelegationRewardMinimumValidatorStake, "", log, accounting)
 	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log, accounting)
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
-	issuesSignaturesPolicy := NewSimpleSpamPolicy("issueSignature", netparams.SpamProtectionMinMultisigUpdates, "", log, accounting)
+	issuesSignaturesPolicy := NewSimpleSpamPolicy("issueSignature", netparams.SpamProtectionMinMultisigUpdates, netparams.SpamProtectionMaxMultisigUpdates, log, accounting)
 
 	createReferralSetPolicy := NewSimpleSpamPolicy("createReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxCreateReferralSet, log, accounting)
 	updateReferralSetPolicy := NewSimpleSpamPolicy("updateReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxUpdateReferralSet, log, accounting)
@@ -232,9 +232,14 @@ func (e *Engine) OnMinValidatorTokensChanged(_ context.Context, minTokens num.De
 }
 
 // OnMinTokensForProposalChanged is called when the net param for min tokens requirement for submitting a proposal has changed.
-func (e *Engine) OnMinTokensForMultisigUpdatesChanged(ctx context.Context, minTokens num.Decimal) error {
+func (e *Engine) OnMinTokensForMultisigUpdatesChanged(_ context.Context, minTokens num.Decimal) error {
 	minTokensForMultisigUpdates, _ := num.UintFromDecimal(minTokens)
 	return e.transactionTypeToPolicy[txn.IssueSignatures].UpdateUintParam(netparams.SpamProtectionMinMultisigUpdates, minTokensForMultisigUpdates)
+}
+
+// OnMinTokensForProposalChanged is called when the net param for min tokens requirement for submitting a proposal has changed.
+func (e *Engine) OnMaxMultisigUpdatesChanged(_ context.Context, maxUpdates int64) error {
+	return e.transactionTypeToPolicy[txn.IssueSignatures].UpdateIntParam(netparams.SpamProtectionMaxMultisigUpdates, maxUpdates)
 }
 
 // OnEpochEvent is a callback for epoch events.

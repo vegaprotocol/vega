@@ -51,6 +51,7 @@ type ERC20MultiSigSignerEvent struct {
 	VegaTime     time.Time
 	EpochID      int64
 	Event        ERC20MultiSigSignerEventType
+	ChainID      string
 }
 
 func (e ERC20MultiSigSignerEvent) Cursor() *Cursor {
@@ -77,6 +78,7 @@ func ERC20MultiSigSignerEventFromAddedProto(e *eventspb.ERC20MultiSigSignerAdded
 		VegaTime:     time.Unix(0, e.Timestamp),
 		EpochID:      epochID,
 		Event:        ERC20MultiSigSignerEventTypeAdded,
+		ChainID:      e.ChainId,
 	}, nil
 }
 
@@ -98,6 +100,7 @@ func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRem
 			VegaTime:     time.Unix(0, e.Timestamp),
 			EpochID:      epochID,
 			Event:        ERC20MultiSigSignerEventTypeRemoved,
+			ChainID:      e.ChainId,
 		},
 		)
 	}
@@ -149,6 +152,7 @@ func (e ERC20MultiSigSignerAddedEvent) ToProto() *eventspb.ERC20MultiSigSignerAd
 		Submitter:   e.Submitter.String(),
 		Nonce:       e.Nonce,
 		EpochSeq:    strconv.FormatInt(e.EpochID, 10),
+		ChainId:     e.ChainID,
 	}
 }
 
@@ -165,6 +169,7 @@ func (e ERC20MultiSigSignerAddedEvent) ToDataNodeApiV2Proto(ctx context.Context,
 		Timestamp:  e.VegaTime.UnixNano(),
 		Signatures: PackNodeSignatures(signatures),
 		EpochSeq:   strconv.FormatInt(e.EpochID, 10),
+		ChainId:    e.ChainID,
 	}, nil
 }
 
@@ -196,6 +201,7 @@ func (e ERC20MultiSigSignerRemovedEvent) ToProto() *eventspb.ERC20MultiSigSigner
 		OldSigner:           e.SignerChange.String(),
 		Nonce:               e.Nonce,
 		EpochSeq:            strconv.FormatInt(e.EpochID, 10),
+		ChainId:             e.ChainID,
 	}
 }
 
@@ -212,6 +218,7 @@ func (e ERC20MultiSigSignerRemovedEvent) ToDataNodeApiV2Proto(ctx context.Contex
 		Timestamp:  e.VegaTime.UnixNano(),
 		Signatures: PackNodeSignatures(signatures),
 		EpochSeq:   strconv.FormatInt(e.EpochID, 10),
+		ChainId:    e.ChainID,
 	}, nil
 }
 

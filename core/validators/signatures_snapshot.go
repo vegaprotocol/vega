@@ -46,6 +46,7 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 			ResourceId:       resID,
 			EthereumAddress:  data.EthAddress,
 			SubmitterAddress: data.SubmitterAddress,
+			ChainId:          data.ChainID,
 		})
 	}
 	sort.SliceStable(issued, func(i, j int) bool {
@@ -75,9 +76,17 @@ func (s *ERC20Signatures) RestorePendingSignatures(sigs *snapshot.ToplogySignatu
 	}
 
 	for _, data := range sigs.IssuedSignatures {
+		chainID := data.ChainId
+		if chainID == "" {
+			// we're upgrading from a version with only one bridge, set the chainID to the primary bridge chainID
+			// TODO confirm .ChainID is populated, we should have propagated network parameters by now
+			chainID = s.primaryMultisig.ChainID()
+		}
+
 		s.issuedSignatures[data.ResourceId] = issuedSignature{
 			EthAddress:       data.EthereumAddress,
 			SubmitterAddress: data.SubmitterAddress,
+			ChainID:          chainID,
 		}
 	}
 }

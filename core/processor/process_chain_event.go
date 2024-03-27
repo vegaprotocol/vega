@@ -18,6 +18,7 @@ package processor
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
@@ -32,6 +33,7 @@ var (
 	ErrNotABuiltinAssetEvent                          = errors.New("not an builtin asset event")
 	ErrUnsupportedEventAction                         = errors.New("unsupported event action")
 	ErrChainEventAssetListERC20WithoutEnoughSignature = errors.New("chain event for erc20 asset list received with missing node signatures")
+	ErrNotBridgeChainID                               = errors.New("not the chainID of any bridge")
 )
 
 func (app *App) processChainEvent(
@@ -56,8 +58,7 @@ func (app *App) processChainEvent(
 	// let the topology know who was the validator that forwarded the event
 	app.top.AddForwarder(pubkey)
 
-	// ack the new event then
-	if !app.evtfwd.Ack(ce) {
+	if !app.ackOnBridge(ce) {
 		// there was an error, or this was already acked
 		// but that's not a big issue we just going to ignore that.
 		return nil
@@ -108,33 +109,7 @@ func (app *App) processChainEvent(
 		}
 		return app.processChainEventERC20(ctx, ceErc, id, ce.TxId)
 	case *commandspb.ChainEvent_Erc20Multisig:
-		blockNumber := c.Erc20Multisig.Block
-		logIndex := c.Erc20Multisig.Index
-		switch pevt := c.Erc20Multisig.Action.(type) {
-		case *vgproto.ERC20MultiSigEvent_SignerAdded:
-			evt, err := types.SignerEventFromSignerAddedProto(
-				pevt.SignerAdded, blockNumber, logIndex, ce.TxId, id)
-			if err != nil {
-				return err
-			}
-			return app.erc20MultiSigTopology.ProcessSignerEvent(evt)
-		case *vgproto.ERC20MultiSigEvent_SignerRemoved:
-			evt, err := types.SignerEventFromSignerRemovedProto(
-				pevt.SignerRemoved, blockNumber, logIndex, ce.TxId, id)
-			if err != nil {
-				return err
-			}
-			return app.erc20MultiSigTopology.ProcessSignerEvent(evt)
-		case *vgproto.ERC20MultiSigEvent_ThresholdSet:
-			evt, err := types.SignerThresholdSetEventFromProto(
-				pevt.ThresholdSet, blockNumber, logIndex, ce.TxId, id)
-			if err != nil {
-				return err
-			}
-			return app.erc20MultiSigTopology.ProcessThresholdEvent(evt)
-		default:
-			return errors.New("unsupported erc20 multisig event")
-		}
+		return app.processChainEventMultisig(c, id, ce.TxId)
 	case *commandspb.ChainEvent_ContractCall:
 		callResult, err := ethcall.EthereumContractCallResultFromProto(c.ContractCall)
 		if err != nil {
@@ -142,12 +117,12 @@ func (app *App) processChainEvent(
 			return err
 		}
 
-		chainID := app.defaultChainID
+		chainID := app.primaryChainID
 		if callResult.SourceChainID != nil {
 			chainID = *callResult.SourceChainID
 		}
 
-		if chainID == app.defaultChainID {
+		if chainID == app.primaryChainID {
 			return app.oracles.EthereumOraclesVerifier.ProcessEthereumContractCallResult(callResult)
 		}
 
@@ -156,6 +131,25 @@ func (app *App) processChainEvent(
 
 	default:
 		return ErrUnsupportedChainEvent
+	}
+}
+
+func (app *App) ackOnBridge(ce *commandspb.ChainEvent) bool {
+	if erc20Evt := ce.GetErc20(); erc20Evt != nil {
+		return app.evtForwarderByChainID(erc20Evt.ChainId).Ack(ce)
+	} else if multisigEvt := ce.GetErc20Multisig(); multisigEvt != nil {
+		return app.evtForwarderByChainID(multisigEvt.ChainId).Ack(ce)
+	}
+
+	return app.primaryEvtForwarder.Ack(ce)
+}
+
+func (app *App) evtForwarderByChainID(chainID string) EvtForwarder {
+	switch chainID {
+	case strconv.FormatUint(app.primaryChainID, 10):
+		return app.primaryEvtForwarder
+	default:
+		return app.secondaryEvtForwarder
 	}
 }
 
@@ -181,6 +175,58 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 	}
 }
 
+func (app *App) processChainEventMultisig(
+	c *commandspb.ChainEvent_Erc20Multisig, id, txID string,
+) error {
+	if c.Erc20Multisig == nil {
+		return ErrNotAnERC20Event
+	}
+
+	cid, err := strconv.ParseUint(c.Erc20Multisig.ChainId, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	var multisig ERC20MultiSigTopology
+	switch cid {
+	case app.primaryChainID:
+		multisig = app.primaryErc20MultiSigTopology
+	case app.secondaryChainID:
+		multisig = app.secondaryErc20MultiSigTopology
+	default:
+		return ErrNotBridgeChainID
+	}
+
+	blockNumber := c.Erc20Multisig.Block
+	logIndex := c.Erc20Multisig.Index
+	switch pevt := c.Erc20Multisig.Action.(type) {
+	case *vgproto.ERC20MultiSigEvent_SignerAdded:
+		evt, err := types.SignerEventFromSignerAddedProto(
+			pevt.SignerAdded, blockNumber, logIndex, txID, id, c.Erc20Multisig.ChainId)
+		if err != nil {
+			return err
+		}
+
+		return multisig.ProcessSignerEvent(evt)
+	case *vgproto.ERC20MultiSigEvent_SignerRemoved:
+		evt, err := types.SignerEventFromSignerRemovedProto(
+			pevt.SignerRemoved, blockNumber, logIndex, txID, id, c.Erc20Multisig.ChainId)
+		if err != nil {
+			return err
+		}
+		return multisig.ProcessSignerEvent(evt)
+	case *vgproto.ERC20MultiSigEvent_ThresholdSet:
+		evt, err := types.SignerThresholdSetEventFromProto(
+			pevt.ThresholdSet, blockNumber, logIndex, txID, id, c.Erc20Multisig.ChainId)
+		if err != nil {
+			return err
+		}
+		return multisig.ProcessThresholdEvent(evt)
+	default:
+		return errors.New("unsupported erc20 multisig event")
+	}
+}
+
 func (app *App) processChainEventERC20(
 	ctx context.Context, ce *types.ChainEventERC20, id, txID string,
 ) error {
@@ -203,7 +249,7 @@ func (app *App) processChainEventERC20(
 		if !ok {
 			return ErrChainEventAssetListERC20WithoutEnoughSignature
 		}
-		return app.banking.EnableERC20(ctx, act.AssetList, id, evt.Block, evt.Index, txID)
+		return app.banking.EnableERC20(ctx, act.AssetList, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventAssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20EventDeposit:
@@ -211,25 +257,23 @@ func (app *App) processChainEventERC20(
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, txID)
+		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventWithdrawal:
 		act.Withdrawal.VegaAssetID = strings.TrimPrefix(act.Withdrawal.VegaAssetID, "0x")
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
 			return err
 		}
-		return app.banking.ERC20WithdrawalEvent(ctx, act.Withdrawal, evt.Block, evt.Index, txID)
+		return app.banking.ERC20WithdrawalEvent(ctx, act.Withdrawal, evt.Block, txID, evt.ChainID)
 	case *types.ERC20EventAssetLimitsUpdated:
 		act.AssetLimitsUpdated.VegaAssetID = strings.TrimPrefix(act.AssetLimitsUpdated.VegaAssetID, "0x")
 		if err := app.checkVegaAssetID(act.AssetLimitsUpdated, "ERC20.AssetLimitsUpdated"); err != nil {
 			return err
 		}
-		return app.banking.UpdateERC20(ctx, act.AssetLimitsUpdated, id, evt.Block, evt.Index, txID)
+		return app.banking.UpdateERC20(ctx, act.AssetLimitsUpdated, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventBridgeStopped:
-		return app.banking.BridgeStopped(
-			ctx, act.BridgeStopped, id, evt.Block, evt.Index, txID)
+		return app.banking.BridgeStopped(ctx, act.BridgeStopped, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventBridgeResumed:
-		return app.banking.BridgeResumed(
-			ctx, act.BridgeResumed, id, evt.Block, evt.Index, txID)
+		return app.banking.BridgeResumed(ctx, act.BridgeResumed, id, evt.Block, evt.Index, txID, evt.ChainID)
 	default:
 		return ErrUnsupportedEventAction
 	}

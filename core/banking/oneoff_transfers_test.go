@@ -365,12 +365,6 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e := getTestEngine(t)
 
-	// Time given to OnTick call - base time Unix(10, 0)
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).Times(2)
-
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
 	e.OnTick(context.Background(), time.Unix(10, 0))
@@ -398,10 +392,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	}
 
 	// Time given to e.Transferfunds - base time Unix(10,0)
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).Times(2)
+	e.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Unix(10, 0))
 
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
@@ -445,19 +436,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
-	// Run OnTick with time.Unix(11, 0) and expect nothing.
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(11, 0)
-		}).Times(2)
-
 	e.OnTick(context.Background(), time.Unix(11, 0))
-
-	// Give time to trigger transfers.
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(12, 0)
-		}).Times(2)
 
 	// assert the calculation of fees and transfer request are correct
 	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()

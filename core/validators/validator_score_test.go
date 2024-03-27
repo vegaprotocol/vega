@@ -29,10 +29,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 )
 
 type TestMultisigTopology struct {
 	validators map[string]struct{}
+}
+
+func (t *TestMultisigTopology) ChainID() string {
+	return "12"
 }
 
 func (t *TestMultisigTopology) IsSigner(address string) bool {
@@ -475,15 +480,21 @@ func testGetMultisigScore(t *testing.T) {
 		"node10": "node10eth",
 	}
 
-	multisigTopology := &TestMultisigTopology{
+	multisigValidators2 := map[string]struct{}{}
+	maps.Copy(multisigValidators2, multisigValidators)
+
+	mtop1 := &TestMultisigTopology{
 		validators: multisigValidators,
+	}
+	mtop2 := &TestMultisigTopology{
+		validators: multisigValidators2,
 	}
 
 	log := logging.NewTestLogger()
 	multisigScore := getMultisigScore(
 		log,
 		ValidatorStatusTendermint,
-		stakeScore, perfScore, multisigTopology, 5,
+		stakeScore, perfScore, mtop1, mtop2, 5,
 		nodeIDToEthAddress,
 	)
 
@@ -503,10 +514,33 @@ func testGetMultisigScore(t *testing.T) {
 	require.Equal(t, "1", multisigScore["node9"].String())
 	require.Equal(t, "1", multisigScore["node10"].String())
 
+	// node 6 is added to one bridge but not the other
+	multisigValidators["node6"] = struct{}{}
+	multisigScore = getMultisigScore(
+		log,
+		ValidatorStatusTendermint,
+		stakeScore, perfScore, mtop1, mtop2, 5,
+		nodeIDToEthAddress,
+	)
+	require.Equal(t, "0", multisigScore["node6"].String())
+
+	// node6 is added to the second bridge
+	multisigValidators2["node6"] = struct{}{}
+	multisigScore = getMultisigScore(
+		log,
+		ValidatorStatusTendermint,
+		stakeScore, perfScore, mtop1, mtop2, 5,
+		nodeIDToEthAddress,
+	)
+	require.Equal(t, "0", multisigScore["node6"].String())
+
+	// Add a node to *one* bridge that shouldn't be there, even if its not on the other one
+	// all scores should be zero
 	multisigValidators["node100"] = struct{}{}
 	nodeIDToEthAddress["node100"] = "node100eth"
 
-	multisigScore = getMultisigScore(log, ValidatorStatusTendermint, stakeScore, perfScore, multisigTopology, 5, nodeIDToEthAddress)
+	// everyone gets zero scores because there is someone on there who shouldn't be
+	multisigScore = getMultisigScore(log, ValidatorStatusTendermint, stakeScore, perfScore, mtop1, mtop2, 5, nodeIDToEthAddress)
 	require.Equal(t, "0", multisigScore["node1"].String())
 	require.Equal(t, "0", multisigScore["node2"].String())
 	require.Equal(t, "0", multisigScore["node3"].String())
@@ -547,7 +581,10 @@ func TestGetMultisigScoreMoreValidatorsThanSigners(t *testing.T) {
 		"node5": "node5eth",
 	}
 
-	multisigTopology := &TestMultisigTopology{
+	mtop1 := &TestMultisigTopology{
+		validators: map[string]struct{}{},
+	}
+	mtop2 := &TestMultisigTopology{
 		validators: map[string]struct{}{},
 	}
 
@@ -557,7 +594,7 @@ func TestGetMultisigScoreMoreValidatorsThanSigners(t *testing.T) {
 		multisigScore := getMultisigScore(
 			log,
 			ValidatorStatusTendermint,
-			stakeScore, perfScore, multisigTopology, nEthMultisigSigners,
+			stakeScore, perfScore, mtop1, mtop2, nEthMultisigSigners,
 			nodeIDToEthAddress,
 		)
 		require.Equal(t, "0", multisigScore["node1"].String())
@@ -607,8 +644,8 @@ func testCalculateTMScores(t *testing.T) {
 	topology.validatorPerformance = &MockPerformanceScore{}
 	topology.numberEthMultisigSigners = 7
 
-	multisigTopology := &TestMultisigTopology{}
-	multisigTopology.validators = map[string]struct{}{
+	mtop1 := &TestMultisigTopology{}
+	mtop1.validators = map[string]struct{}{
 		"node1eth": {},
 		"node2eth": {},
 		"node3eth": {},
@@ -616,7 +653,17 @@ func testCalculateTMScores(t *testing.T) {
 		"node7eth": {},
 		"node9eth": {},
 	}
-	topology.multiSigTopology = multisigTopology
+	mtop2 := &TestMultisigTopology{}
+	mtop2.validators = map[string]struct{}{
+		"node1eth": {},
+		"node2eth": {},
+		"node3eth": {},
+		"node5eth": {},
+		"node7eth": {},
+		"node9eth": {},
+	}
+	topology.primaryMultisig = mtop1
+	topology.secondaryMultisig = mtop2
 
 	delegation := []*types.ValidatorData{
 		{NodeID: "node1", PubKey: "node1PubKey", StakeByDelegators: num.NewUint(8000), SelfStake: num.NewUint(2000), Delegators: map[string]*num.Uint{}, TmPubKey: "key1"},
@@ -780,7 +827,7 @@ func testCalculateErsatzScores(t *testing.T) {
 	topology.minimumStake = num.NewUint(3000)
 	topology.validatorPerformance = &MockPerformanceScore{}
 	topology.numberEthMultisigSigners = 7
-	topology.multiSigTopology = &TestMultisigTopology{
+	topology.primaryMultisig = &TestMultisigTopology{
 		validators: map[string]struct{}{
 			"node1eth": {},
 			"node2eth": {},
@@ -935,7 +982,17 @@ func testGetRewardsScores(t *testing.T) {
 	topology.minimumStake = num.NewUint(3000)
 	topology.validatorPerformance = &MockPerformanceScore{}
 	topology.numberEthMultisigSigners = 7
-	topology.multiSigTopology = &TestMultisigTopology{
+	topology.primaryMultisig = &TestMultisigTopology{
+		validators: map[string]struct{}{
+			"node1eth": {},
+			"node2eth": {},
+			"node3eth": {},
+			"node5eth": {},
+			"node7eth": {},
+			"node9eth": {},
+		},
+	}
+	topology.secondaryMultisig = &TestMultisigTopology{
 		validators: map[string]struct{}{
 			"node1eth": {},
 			"node2eth": {},

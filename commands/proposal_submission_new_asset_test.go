@@ -42,6 +42,7 @@ func TestCheckProposalSubmissionForNewAsset(t *testing.T) {
 	t.Run("Submitting an built-in asset change with max faucet amount succeeds", testNewBuiltInAssetChangeSubmissionWithMaxFaucetAmountMintSucceeds)
 	t.Run("Submitting an built-in asset change with not-a-number max faucet amount fails", testNewBuiltInAssetChangeSubmissionWithNaNMaxFaucetAmountMintFails)
 	t.Run("Submitting an ERC20 asset change without ERC20 asset fails", testNewERC20AssetChangeSubmissionWithoutErc20AssetFails)
+	t.Run("Submitting an ERC20 asset change without chain id fails", testNewERC20AssetChangeSubmissionWithoutChainIDFails)
 	t.Run("Submitting an ERC20 asset change without contract address fails", testNewERC20AssetChangeSubmissionWithoutContractAddressFails)
 	t.Run("Submitting an ERC20 asset change with contract address succeeds", testNewERC20AssetChangeSubmissionWithContractAddressSucceeds)
 	t.Run("Submitting an ERC20 asset change with invalid lifetime limit fails", testNewERC20AssetChangeSubmissionWithInvalidLifetimeLimitFails)
@@ -356,6 +357,26 @@ func testNewERC20AssetChangeSubmissionWithoutErc20AssetFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.erc20"), commands.ErrIsRequired)
+}
+
+func testNewERC20AssetChangeSubmissionWithoutChainIDFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetails_Erc20{
+							Erc20: &types.ERC20{
+								ChainId: "",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.erc20.chain_id"), commands.ErrIsRequired)
 }
 
 func testNewERC20AssetChangeSubmissionWithoutContractAddressFails(t *testing.T) {

@@ -40,7 +40,8 @@ var (
 	}
 	// a list of network parameter which cannot be updated.
 	updateDisallowed = []string{
-		BlockchainsEthereumConfig,
+		BlockchainsPrimaryEthereumConfig,
+		BlockchainsEVMChainConfig,
 	}
 )
 
@@ -95,7 +96,7 @@ type Store struct {
 
 	state *snapState
 
-	protocolUpgradeNewParameters []string
+	isProtocolUpgradeRunning bool
 }
 
 func New(log *logging.Logger, cfg Config, broker Broker) *Store {
@@ -237,10 +238,10 @@ func (s *Store) OnTick(ctx context.Context, _ time.Time) {
 	// This is useful only when a protocol upgrade
 	// is running. we will dispatch all new parameter
 	// on the first time update here.
-	// we propagate all parameters update to paliate
+	// we propagate all parameters update to compensate
 	// for previous release where parameters didn't
 	// get propagated.
-	if len(s.protocolUpgradeNewParameters) > 0 {
+	if s.isProtocolUpgradeRunning {
 		keys := maps.Keys(s.store)
 		sort.Strings(keys)
 
@@ -248,7 +249,7 @@ func (s *Store) OnTick(ctx context.Context, _ time.Time) {
 			s.broker.Send(events.NewNetworkParameterEvent(ctx, k, s.store[k].String()))
 		}
 
-		s.protocolUpgradeNewParameters = nil
+		s.isProtocolUpgradeRunning = false
 	}
 
 	if len(s.paramUpdates) <= 0 {

@@ -72,7 +72,7 @@ func (a *Asset) addAsset(ctx context.Context, va vega.Asset, txHash string, vega
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
 	}
 
-	var source, erc20Contract string
+	var source, erc20Contract, chainID string
 	lifetimeLimit := decimal.Zero
 	withdrawalThreshold := decimal.Zero
 	switch src := va.Details.Source.(type) {
@@ -94,6 +94,7 @@ func (a *Asset) addAsset(ctx context.Context, va vega.Asset, txHash string, vega
 			}
 			withdrawalThreshold = res
 		}
+		chainID = src.Erc20.ChainId
 	default:
 		return errors.Errorf("unknown asset source: %v", source)
 	}
@@ -106,6 +107,7 @@ func (a *Asset) addAsset(ctx context.Context, va vega.Asset, txHash string, vega
 
 	asset := entities.Asset{
 		ID:                entities.AssetID(va.Id),
+		ChainID:           chainID,
 		Name:              va.Details.Name,
 		Symbol:            va.Details.Symbol,
 		Decimals:          decimals,

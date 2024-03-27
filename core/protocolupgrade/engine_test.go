@@ -81,7 +81,7 @@ func testDowngradeVersionNotAllowed(t *testing.T) {
 		evts = append(evts, event)
 	}).AnyTimes()
 	// validator1 proposed an upgrade to v1 at block height 100
-	require.EqualError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "0.53.0"), "upgrade version is too old")
+	require.EqualError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "0.53.0"), "upgrade version is too old (0.54.0 > 0.53.0)")
 }
 
 func testRevertProposal(t *testing.T) {

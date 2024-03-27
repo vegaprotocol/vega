@@ -84,7 +84,7 @@ func testCurrentBlock(t *testing.T) {
 
 type testClient struct {
 	ctrl          *gomock.Controller
-	client        *eth.Client
+	client        *eth.PrimaryClient
 	mockEthClient *mocks.MockETHClient
 }
 
@@ -92,7 +92,7 @@ func getTestClient(t *testing.T) *testClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	mockEthClient := mocks.NewMockETHClient(ctrl)
-	c := &eth.Client{ETHClient: mockEthClient}
+	c := &eth.PrimaryClient{ETHClient: mockEthClient}
 	mockEthClient.EXPECT().ChainID(gomock.Any()).Return(big.NewInt(1), nil).AnyTimes()
 
 	return &testClient{

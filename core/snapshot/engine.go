@@ -925,7 +925,7 @@ func (e *Engine) addProviders(newProviders ...types.StateProvider) {
 		duplicatedKeys := findDuplicatedKeys(existingKeys, newKeys)
 		if len(duplicatedKeys) > 0 {
 			// This is a programming error that might happen when adding a
-			// provider to the codebase, during an .
+			// provider to the codebase.
 			e.log.Panic("A state provider in the same namespace is already using these keys",
 				zap.String("namespace", namespace.String()),
 				zap.Any("keys", duplicatedKeys),

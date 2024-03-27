@@ -88,7 +88,7 @@ func (e *Engine) DepositBuiltinAsset(
 		asset:    asset,
 		txHash:   hex.EncodeToString(vgcrypto.Hash(b)),
 	}
-	e.assetActs[aa.id] = aa
+	e.assetActions[aa.id] = aa
 	e.deposits[dep.ID] = dep
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }

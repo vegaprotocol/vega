@@ -164,12 +164,14 @@ message ScheduledGovernanceTransferAtTime {
 message Banking {
   repeated ScheduledTransferAtTime transfers_at_time = 1;
   RecurringTransfers recurring_transfers = 2;
-  BridgeState bridge_state = 3;
+  BridgeState primary_bridge_state = 3;
   repeated AssetAction asset_actions = 4;
-  uint64 last_seen_eth_block = 5;
+  uint64 last_seen_primary_eth_block = 5;
   repeated string seen_refs = 6;
   repeated ScheduledGovernanceTransferAtTime governance_transfers_at_time = 7;
   repeated GovernanceTransfer recurring_governance_transfers = 8;
+  BridgeState secondary_bridge_state = 9;
+  uint64 last_seen_secondary_eth_block = 10;
 }
 
 message BridgeState {
@@ -314,6 +316,7 @@ message AssetAction {
   vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
   bool erc20_bridge_stopped = 11;
   bool erc20_bridge_resumed = 12;
+  string chain_id = 13;
 }
 
 message ELSShare {

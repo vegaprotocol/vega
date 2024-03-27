@@ -66,43 +66,44 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	Admin             admin.Config           `group:"Admin"             namespace:"admin"`
-	API               api.Config             `group:"API"               namespace:"api"`
-	Blockchain        blockchain.Config      `group:"Blockchain"        namespace:"blockchain"`
-	Collateral        collateral.Config      `group:"Collateral"        namespace:"collateral"`
-	CoreAPI           coreapi.Config         `group:"CoreAPI"           namespace:"coreapi"`
-	Execution         execution.Config       `group:"Execution"         namespace:"execution"`
-	Ethereum          eth.Config             `group:"Ethereum"          namespace:"ethereum"`
-	Processor         processor.Config       `group:"Processor"         namespace:"processor"`
-	Logging           logging.Config         `group:"Logging"           namespace:"logging"`
-	Oracles           spec.Config            `group:"Oracles"           namespace:"oracles"`
-	Time              vegatime.Config        `group:"Time"              namespace:"time"`
-	Epoch             epochtime.Config       `group:"Epoch"             namespace:"epochtime"`
-	Metrics           metrics.Config         `group:"Metrics"           namespace:"metrics"`
-	Governance        governance.Config      `group:"Governance"        namespace:"governance"`
-	NodeWallet        nodewallets.Config     `group:"NodeWallet"        namespace:"nodewallet"`
-	Assets            assets.Config          `group:"Assets"            namespace:"assets"`
-	Notary            notary.Config          `group:"Notary"            namespace:"notary"`
-	EvtForward        evtforward.Config      `group:"EvtForward"        namespace:"evtForward"`
-	Genesis           genesis.Config         `group:"Genesis"           namespace:"genesis"`
-	Validators        validators.Config      `group:"Validators"        namespace:"validators"`
-	Banking           banking.Config         `group:"Banking"           namespace:"banking"`
-	Stats             stats.Config           `group:"Stats"             namespace:"stats"`
-	NetworkParameters netparams.Config       `group:"NetworkParameters" namespace:"netparams"`
-	Limits            limits.Config          `group:"Limits"            namespace:"limits"`
-	Checkpoint        checkpoint.Config      `group:"Checkpoint"        namespace:"checkpoint"`
-	Staking           staking.Config         `group:"Staking"           namespace:"staking"`
-	Broker            broker.Config          `group:"Broker"            namespace:"broker"`
-	Rewards           rewards.Config         `group:"Rewards"           namespace:"rewards"`
-	Delegation        delegation.Config      `group:"Delegation"        namespace:"delegation"`
-	Spam              spam.Config            `group:"Spam"              namespace:"spam"`
-	PoW               pow.Config             `group:"ProofOfWork"       namespace:"pow"`
-	Snapshot          snapshot.Config        `group:"Snapshot"          namespace:"snapshot"`
-	StateVar          statevar.Config        `group:"StateVar"          namespace:"statevar"`
-	ERC20MultiSig     erc20multisig.Config   `group:"ERC20MultiSig"     namespace:"erc20multisig"`
-	ProtocolUpgrade   protocolupgrade.Config `group:"ProtocolUpgrade"   namespace:"protocolupgrade"`
-	Pprof             pprof.Config           `group:"Pprof"             namespace:"pprof"`
-	Vesting           vesting.Config         `group:"Vesting"           namespace:"vesting"`
+	Admin               admin.Config           `group:"Admin"               namespace:"admin"`
+	API                 api.Config             `group:"API"                 namespace:"api"`
+	Blockchain          blockchain.Config      `group:"Blockchain"          namespace:"blockchain"`
+	Collateral          collateral.Config      `group:"Collateral"          namespace:"collateral"`
+	CoreAPI             coreapi.Config         `group:"CoreAPI"             namespace:"coreapi"`
+	Execution           execution.Config       `group:"Execution"           namespace:"execution"`
+	Ethereum            eth.Config             `group:"Ethereum"            namespace:"ethereum"`
+	Processor           processor.Config       `group:"Processor"           namespace:"processor"`
+	Logging             logging.Config         `group:"Logging"             namespace:"logging"`
+	Oracles             spec.Config            `group:"Oracles"             namespace:"oracles"`
+	Time                vegatime.Config        `group:"Time"                namespace:"time"`
+	Epoch               epochtime.Config       `group:"Epoch"               namespace:"epochtime"`
+	Metrics             metrics.Config         `group:"Metrics"             namespace:"metrics"`
+	Governance          governance.Config      `group:"Governance"          namespace:"governance"`
+	NodeWallet          nodewallets.Config     `group:"NodeWallet"          namespace:"nodewallet"`
+	Assets              assets.Config          `group:"Assets"              namespace:"assets"`
+	Notary              notary.Config          `group:"Notary"              namespace:"notary"`
+	EvtForward          evtforward.Config      `group:"EvtForward"          namespace:"evtForward"`
+	SecondaryEvtForward evtforward.Config      `group:"SecondaryEvtForward" namespace:"secondaryEvtForward"`
+	Genesis             genesis.Config         `group:"Genesis"             namespace:"genesis"`
+	Validators          validators.Config      `group:"Validators"          namespace:"validators"`
+	Banking             banking.Config         `group:"Banking"             namespace:"banking"`
+	Stats               stats.Config           `group:"Stats"               namespace:"stats"`
+	NetworkParameters   netparams.Config       `group:"NetworkParameters"   namespace:"netparams"`
+	Limits              limits.Config          `group:"Limits"              namespace:"limits"`
+	Checkpoint          checkpoint.Config      `group:"Checkpoint"          namespace:"checkpoint"`
+	Staking             staking.Config         `group:"Staking"             namespace:"staking"`
+	Broker              broker.Config          `group:"Broker"              namespace:"broker"`
+	Rewards             rewards.Config         `group:"Rewards"             namespace:"rewards"`
+	Delegation          delegation.Config      `group:"Delegation"          namespace:"delegation"`
+	Spam                spam.Config            `group:"Spam"                namespace:"spam"`
+	PoW                 pow.Config             `group:"ProofOfWork"         namespace:"pow"`
+	Snapshot            snapshot.Config        `group:"Snapshot"            namespace:"snapshot"`
+	StateVar            statevar.Config        `group:"StateVar"            namespace:"statevar"`
+	ERC20MultiSig       erc20multisig.Config   `group:"ERC20MultiSig"       namespace:"erc20multisig"`
+	ProtocolUpgrade     protocolupgrade.Config `group:"ProtocolUpgrade"     namespace:"protocolupgrade"`
+	Pprof               pprof.Config           `group:"Pprof"               namespace:"pprof"`
+	Vesting             vesting.Config         `group:"Vesting"             namespace:"vesting"`
 
 	NodeMode         cfgencoding.NodeMode `description:"The mode of the vega node [validator, full]"                            long:"mode"`
 	MaxMemoryPercent uint8                `description:"The maximum amount of memory reserved for the vega node (default: 33%)" long:"max-memory-percent"`
@@ -112,42 +113,43 @@ type Config struct {
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig() Config {
 	return Config{
-		NodeMode:          cfgencoding.NodeModeValidator,
-		MaxMemoryPercent:  33,
-		Admin:             admin.NewDefaultConfig(),
-		API:               api.NewDefaultConfig(),
-		CoreAPI:           coreapi.NewDefaultConfig(),
-		Blockchain:        blockchain.NewDefaultConfig(),
-		Execution:         execution.NewDefaultConfig(),
-		Ethereum:          eth.NewDefaultConfig(),
-		Processor:         processor.NewDefaultConfig(),
-		Oracles:           spec.NewDefaultConfig(),
-		Time:              vegatime.NewDefaultConfig(),
-		Epoch:             epochtime.NewDefaultConfig(),
-		Pprof:             pprof.NewDefaultConfig(),
-		Logging:           logging.NewDefaultConfig(),
-		Collateral:        collateral.NewDefaultConfig(),
-		Metrics:           metrics.NewDefaultConfig(),
-		Governance:        governance.NewDefaultConfig(),
-		NodeWallet:        nodewallets.NewDefaultConfig(),
-		Assets:            assets.NewDefaultConfig(),
-		Notary:            notary.NewDefaultConfig(),
-		EvtForward:        evtforward.NewDefaultConfig(),
-		Genesis:           genesis.NewDefaultConfig(),
-		Validators:        validators.NewDefaultConfig(),
-		Banking:           banking.NewDefaultConfig(),
-		Stats:             stats.NewDefaultConfig(),
-		NetworkParameters: netparams.NewDefaultConfig(),
-		Limits:            limits.NewDefaultConfig(),
-		Checkpoint:        checkpoint.NewDefaultConfig(),
-		Staking:           staking.NewDefaultConfig(),
-		Broker:            broker.NewDefaultConfig(),
-		Snapshot:          snapshot.DefaultConfig(),
-		StateVar:          statevar.NewDefaultConfig(),
-		ERC20MultiSig:     erc20multisig.NewDefaultConfig(),
-		PoW:               pow.NewDefaultConfig(),
-		ProtocolUpgrade:   protocolupgrade.NewDefaultConfig(),
-		Vesting:           vesting.NewDefaultConfig(),
+		NodeMode:            cfgencoding.NodeModeValidator,
+		MaxMemoryPercent:    33,
+		Admin:               admin.NewDefaultConfig(),
+		API:                 api.NewDefaultConfig(),
+		CoreAPI:             coreapi.NewDefaultConfig(),
+		Blockchain:          blockchain.NewDefaultConfig(),
+		Execution:           execution.NewDefaultConfig(),
+		Ethereum:            eth.NewDefaultConfig(),
+		Processor:           processor.NewDefaultConfig(),
+		Oracles:             spec.NewDefaultConfig(),
+		Time:                vegatime.NewDefaultConfig(),
+		Epoch:               epochtime.NewDefaultConfig(),
+		Pprof:               pprof.NewDefaultConfig(),
+		Logging:             logging.NewDefaultConfig(),
+		Collateral:          collateral.NewDefaultConfig(),
+		Metrics:             metrics.NewDefaultConfig(),
+		Governance:          governance.NewDefaultConfig(),
+		NodeWallet:          nodewallets.NewDefaultConfig(),
+		Assets:              assets.NewDefaultConfig(),
+		Notary:              notary.NewDefaultConfig(),
+		EvtForward:          evtforward.NewDefaultConfig(),
+		SecondaryEvtForward: evtforward.NewDefaultConfig(),
+		Genesis:             genesis.NewDefaultConfig(),
+		Validators:          validators.NewDefaultConfig(),
+		Banking:             banking.NewDefaultConfig(),
+		Stats:               stats.NewDefaultConfig(),
+		NetworkParameters:   netparams.NewDefaultConfig(),
+		Limits:              limits.NewDefaultConfig(),
+		Checkpoint:          checkpoint.NewDefaultConfig(),
+		Staking:             staking.NewDefaultConfig(),
+		Broker:              broker.NewDefaultConfig(),
+		Snapshot:            snapshot.DefaultConfig(),
+		StateVar:            statevar.NewDefaultConfig(),
+		ERC20MultiSig:       erc20multisig.NewDefaultConfig(),
+		PoW:                 pow.NewDefaultConfig(),
+		ProtocolUpgrade:     protocolupgrade.NewDefaultConfig(),
+		Vesting:             vesting.NewDefaultConfig(),
 	}
 }
 
@@ -171,7 +173,11 @@ func (c Config) GetMaxMemoryFactor() (float64, error) {
 }
 
 func (c Config) HaveEthClient() bool {
-	return c.IsValidator() && len(c.Ethereum.RPCEndpoint) > 0
+	return c.IsValidator() && len(c.Ethereum.RPCEndpoint) > 0 && len(c.Ethereum.SecondaryRPCEndpoint) > 0
+}
+
+func (c Config) IsNullChain() bool {
+	return c.Blockchain.ChainProvider == blockchain.ProviderNullChain
 }
 
 type Loader struct {

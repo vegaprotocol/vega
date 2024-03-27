@@ -49,6 +49,7 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 						Source: &types.AssetDetailsErc20{
 							ERC20: &types.ERC20{
 								ContractAddress: "Address",
+								ChainID:         "1",
 							},
 						},
 					},

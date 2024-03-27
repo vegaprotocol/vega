@@ -35,13 +35,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var chainID = "12"
+
 type testSignatures struct {
 	*validators.ERC20Signatures
-	notary           *mocks.MockNotary
-	ctrl             *gomock.Controller
-	broker           *bmocks.MockBroker
-	signer           testSigner
-	multisigTopology *mocks.MockMultiSigTopology
+	notary                    *mocks.MockNotary
+	ctrl                      *gomock.Controller
+	broker                    *bmocks.MockBroker
+	signer                    testSigner
+	multisigTopology          *mocks.MockMultiSigTopology
+	secondaryMultisigTopology *mocks.MockMultiSigTopology
 }
 
 func getTestSignatures(t *testing.T) *testSignatures {
@@ -51,6 +54,7 @@ func getTestSignatures(t *testing.T) *testSignatures {
 	broker := bmocks.NewMockBroker(ctrl)
 	nodewallet := mocks.NewMockNodeWallets(ctrl)
 	multisigTopology := mocks.NewMockMultiSigTopology(ctrl)
+	secondaryMultisigTopology := mocks.NewMockMultiSigTopology(ctrl)
 	tsigner := testSigner{}
 	nodewallet.EXPECT().GetEthereum().AnyTimes().Return(tsigner)
 
@@ -58,16 +62,18 @@ func getTestSignatures(t *testing.T) *testSignatures {
 		ERC20Signatures: validators.NewSignatures(
 			logging.NewTestLogger(),
 			multisigTopology,
+			secondaryMultisigTopology,
 			notary,
 			nodewallet,
 			broker,
 			true,
 		),
-		ctrl:             ctrl,
-		notary:           notary,
-		broker:           broker,
-		signer:           tsigner,
-		multisigTopology: multisigTopology,
+		ctrl:                      ctrl,
+		notary:                    notary,
+		broker:                    broker,
+		signer:                    tsigner,
+		multisigTopology:          multisigTopology,
+		secondaryMultisigTopology: secondaryMultisigTopology,
 	}
 }
 
@@ -126,7 +132,7 @@ func TestPromotionSignatures(t *testing.T) {
 	})
 
 	signatures.notary.EXPECT().StartAggregate(gomock.Any(), gomock.Any(), gomock.Any()).Times(5)
-
+	signatures.multisigTopology.EXPECT().ChainID().Times(5).Return(chainID)
 	// now, there's no assertion to do just now, this only send a sh*t ton of events
 	signatures.PreparePromotionsSignatures(
 		ctx,
@@ -139,7 +145,7 @@ func TestPromotionSignatures(t *testing.T) {
 	assert.Len(t, evts, 0)
 
 	// now request the signature bundle for the adding
-	err := signatures.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", currentTime)
+	err := signatures.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", chainID, currentTime)
 	require.NoError(t, err)
 
 	// now ask for all the removes, each tendermint validator will ask
@@ -149,12 +155,12 @@ func TestPromotionSignatures(t *testing.T) {
 	}
 
 	for _, v := range toAsk {
-		err = signatures.EmitValidatorRemovedSignatures(ctx, v, "927cbf8d5909cc017cf78ea9806fd57c3115d37e481eaf9d866f526b356f3ced", currentTime)
+		err = signatures.EmitValidatorRemovedSignatures(ctx, v, "927cbf8d5909cc017cf78ea9806fd57c3115d37e481eaf9d866f526b356f3ced", chainID, currentTime)
 		require.NoError(t, err)
 	}
 
 	for _, v := range toAsk {
-		err = signatures.EmitValidatorRemovedSignatures(ctx, v, "95893347980299679883f817f118718f949826d1a0a1c2e4f22ba5f0cd6d1f5d", currentTime)
+		err = signatures.EmitValidatorRemovedSignatures(ctx, v, "95893347980299679883f817f118718f949826d1a0a1c2e4f22ba5f0cd6d1f5d", chainID, currentTime)
 		require.NoError(t, err)
 	}
 
@@ -193,26 +199,29 @@ func TestPromotionSignatures(t *testing.T) {
 		snap.RestorePendingSignatures(state)
 
 		snap.broker.EXPECT().SendBatch(gomock.Any()).Times(len(toAsk) + 1)
+		snap.multisigTopology.EXPECT().ChainID().Times(len(toAsk) + 1).Return(chainID)
 
 		// check the pending signatures still exist (we get no error) and that "already issued" is restored (notary mock should not expect anything)
-		require.NoError(t, snap.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", currentTime))
+		require.NoError(t, snap.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", chainID, currentTime))
 		for _, v := range toAsk {
-			require.NoError(t, snap.EmitValidatorRemovedSignatures(ctx, v, "95893347980299679883f817f118718f949826d1a0a1c2e4f22ba5f0cd6d1f5d", currentTime))
+			require.NoError(t, snap.EmitValidatorRemovedSignatures(ctx, v, "95893347980299679883f817f118718f949826d1a0a1c2e4f22ba5f0cd6d1f5d", chainID, currentTime))
 		}
 	})
 
 	t.Run("clear stale remove signatures", func(t *testing.T) {
 		// return that the signers are not on the contract
 		signatures.multisigTopology.EXPECT().IsSigner(gomock.Any()).Return(false).Times(3)
+		signatures.secondaryMultisigTopology.EXPECT().IsSigner(gomock.Any()).Return(false).Times(2)
 		signatures.ClearStaleSignatures()
 
 		// we should get no signatures for the removed nodes
-		require.Error(t, validators.ErrNoPendingSignaturesForNodeID, signatures.EmitValidatorRemovedSignatures(ctx, "submitter", "927cbf8d5909cc017cf78ea9806fd57c3115d37e481eaf9d866f526b356f3ced", currentTime))
+		require.Error(t, validators.ErrNoPendingSignaturesForNodeID, signatures.EmitValidatorRemovedSignatures(ctx, "submitter", "927cbf8d5909cc017cf78ea9806fd57c3115d37e481eaf9d866f526b356f3ced", chainID, currentTime))
 
 		// now for the add signatures
 		signatures.multisigTopology.EXPECT().IsSigner(gomock.Any()).Return(true).Times(1)
+		signatures.secondaryMultisigTopology.EXPECT().IsSigner(gomock.Any()).Return(true).Times(1)
 		signatures.ClearStaleSignatures()
-		require.Error(t, validators.ErrNoPendingSignaturesForNodeID, signatures.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", currentTime))
+		require.Error(t, validators.ErrNoPendingSignaturesForNodeID, signatures.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", chainID, currentTime))
 	})
 }
 
@@ -242,19 +251,21 @@ func TestOfferSignatures(t *testing.T) {
 			removeSig = signature
 		},
 	)
+	signatures.multisigTopology.EXPECT().ChainID().Times(1).Return(chainID)
 
 	submitter := "node_operator"
 	now := time.Now()
 	validator := validators.NodeIDAddress{NodeID: "node_1", EthAddress: "eth_address"}
 
 	signatures.PrepareValidatorSignatures(ctx, []validators.NodeIDAddress{validator}, 1, false)
-	err := signatures.EmitValidatorRemovedSignatures(ctx, submitter, validator.NodeID, now)
+	err := signatures.EmitValidatorRemovedSignatures(ctx, submitter, validator.NodeID, chainID, now)
 	require.NoError(t, err)
 
+	signatures.multisigTopology.EXPECT().ChainID().Times(1).Return(chainID)
 	validator.EthAddress = "updated_eth_address"
 
 	signatures.PrepareValidatorSignatures(ctx, []validators.NodeIDAddress{validator}, 1, true)
-	err = signatures.EmitValidatorAddedSignatures(ctx, submitter, validator.NodeID, now)
+	err = signatures.EmitValidatorAddedSignatures(ctx, submitter, validator.NodeID, chainID, now)
 	require.NoError(t, err)
 
 	signatures.notary.EXPECT().
@@ -270,7 +281,7 @@ func TestOfferSignatures(t *testing.T) {
 			require.Equal(t, removeSig, f(removeSigResID))
 		},
 	)
-
+	signatures.multisigTopology.EXPECT().ChainID().Times(2).Return(chainID)
 	signatures.OfferSignatures()
 }
 

@@ -63,7 +63,7 @@ func New(
 	stakeV := NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv, ethEventSource)
 
 	_ = netp.Watch(netparams.WatchParam{
-		Param: netparams.BlockchainsEthereumConfig,
+		Param: netparams.BlockchainsPrimaryEthereumConfig,
 		Watcher: func(_ context.Context, cfg interface{}) error {
 			ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
 			if err != nil {

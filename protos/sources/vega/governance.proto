@@ -668,6 +668,8 @@ enum ProposalError {
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED = 58;
   // One or more proposals in a batch has been declined
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED = 59;
+  // Spot market decimal places cannot be greater than the base asset’s decimal places
+  PROPOSAL_ERROR_INVALID_POSITION_DECIMAL_PLACES = 60;
 }
 
 // Governance vote

@@ -348,6 +348,8 @@ message IssueSignatures {
   NodeSignatureKind kind = 2;
   // Node ID of the validator node that will be signed in or out of the smart contract.
   string validator_node_id = 3;
+  // Chain ID of the bridge to generate signatures for.
+  string chain_id = 4;
 }
 
 // Command that a party can use to instruct the network to create a new referral set on the network.

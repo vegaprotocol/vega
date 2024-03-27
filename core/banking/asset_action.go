@@ -18,6 +18,7 @@ package banking
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -37,6 +38,7 @@ type assetAction struct {
 	blockHeight uint64
 	logIndex    uint64
 	txHash      string
+	chainID     string
 
 	// all deposit related types
 	builtinD *types.BuiltinAssetDeposit
@@ -117,23 +119,23 @@ func (t *assetAction) ERC20AssetList() *types.ERC20AssetList {
 func (t *assetAction) String() string {
 	switch {
 	case t.IsBuiltinAssetDeposit():
-		return t.builtinD.String()
+		return fmt.Sprintf("builtinAssetDeposit(%s)", t.builtinD.String())
 	case t.IsERC20Deposit():
-		return t.erc20D.String()
+		return fmt.Sprintf("erc20Deposit(%s)", t.erc20D.String())
 	case t.IsERC20AssetList():
-		return t.erc20AL.String()
+		return fmt.Sprintf("erc20AssetList(%s)", t.erc20AL.String())
 	case t.IsERC20AssetLimitsUpdated():
-		return t.erc20AssetLimitsUpdated.String()
+		return fmt.Sprintf("erc20AssetLimitsUpdated(%s)", t.erc20AssetLimitsUpdated.String())
 	case t.IsERC20BridgeStopped():
-		return t.erc20BridgeStopped.String()
+		return fmt.Sprintf("erc20BridgeStopped(%s)", t.erc20BridgeStopped.String())
 	case t.IsERC20BridgeResumed():
-		return t.erc20BridgeResumed.String()
+		return fmt.Sprintf("erc20BridgeResumed(%s)", t.erc20BridgeResumed.String())
 	default:
 		return ""
 	}
 }
 
-func (t *assetAction) Check(ctx context.Context) error {
+func (t *assetAction) Check(_ context.Context) error {
 	switch {
 	case t.IsBuiltinAssetDeposit():
 		return t.checkBuiltinAssetDeposit()
@@ -189,15 +191,15 @@ func (t *assetAction) getRef() snapshot.TxRef {
 	case t.IsBuiltinAssetDeposit():
 		return snapshot.TxRef{Asset: string(common.Builtin), BlockNr: 0, Hash: t.txHash, LogIndex: 0}
 	case t.IsERC20Deposit():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex, ChainId: t.chainID}
 	case t.IsERC20AssetList():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex, ChainId: t.chainID}
 	case t.IsERC20AssetLimitsUpdated():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex, ChainId: t.chainID}
 	case t.IsERC20BridgeStopped():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex, ChainId: t.chainID}
 	case t.IsERC20BridgeResumed():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex, ChainId: t.chainID}
 	default:
 		return snapshot.TxRef{} // this is basically unreachable
 	}

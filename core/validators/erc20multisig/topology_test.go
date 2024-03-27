@@ -56,6 +56,7 @@ func getTestTopology(t *testing.T) *testTopology {
 			witness,
 			ocv,
 			broker,
+			"primary",
 		),
 		ctrl:           ctrl,
 		broker:         broker,

@@ -38,6 +38,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type AnnounceNodeCmd struct {
@@ -203,8 +204,7 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}
 
-	coreClient, err := getCoreClient(
-		net.JoinHostPort(cfg.API.IP, strconv.Itoa(cfg.API.Port)))
+	coreClient, err := getCoreClient(net.JoinHostPort(cfg.API.IP, strconv.Itoa(cfg.API.Port)))
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("couldn't connect to node: %w", err)
 	}
@@ -232,7 +232,7 @@ func (h heightProvider) Height() uint64 {
 }
 
 func getCoreClient(address string) (api.CoreServiceClient, error) {
-	tdconn, err := grpc.Dial(address, grpc.WithInsecure())
+	tdconn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

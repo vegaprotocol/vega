@@ -79,6 +79,7 @@ func TestAssetERCDeepClone(t *testing.T) {
 			Decimals: 5,
 			Source: &types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
+					ChainID:         "1",
 					ContractAddress: "Contact Address",
 				},
 			},

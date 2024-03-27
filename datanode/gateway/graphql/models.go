@@ -257,6 +257,8 @@ type Erc20 struct {
 	// There is no limit on the size of a withdrawal
 	// Note: this is a temporary measure that can be changed by governance
 	WithdrawThreshold string `json:"withdrawThreshold"`
+	// The chain ID the asset originates from.
+	ChainID string `json:"chainId"`
 }
 
 func (Erc20) IsAssetSource() {}

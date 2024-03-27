@@ -105,6 +105,9 @@ message ERC20Event {
   uint64 index = 1;
   // Block in which the transaction was added.
   uint64 block = 2;
+  // ID of the source chain for this event.
+  string chain_id = 3;
+
   // Action undertaken as a result of the event.
   oneof action {
     // List an ERC20 asset.
@@ -166,6 +169,9 @@ message ERC20MultiSigEvent {
   uint64 index = 1;
   // Block in which the transaction was added
   uint64 block = 2;
+  // ID of the source chain for this event.
+  string chain_id = 3;
+
   // Action undertaken as a result of the event.
   oneof action {
     // Add a signer to the erc20 bridge

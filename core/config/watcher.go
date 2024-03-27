@@ -143,7 +143,8 @@ func (w *Watcher) OnConfigUpdate(fns ...func(Config)) {
 	w.mu.Unlock()
 }
 
-// OnConfigUpdate register a function to be called when the configuration is getting updated.
+// OnConfigUpdateWithID register a function to be called when the configuration
+// is getting updated.
 func (w *Watcher) OnConfigUpdateWithID(fns ...func(Config)) []int {
 	w.mu.Lock()
 	// w.cfgUpdateListeners = append(w.cfgUpdateListeners, fns...)

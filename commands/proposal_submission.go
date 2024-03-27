@@ -698,6 +698,10 @@ func checkERC20AssetSource(s *protoTypes.AssetDetails_Erc20) Errors {
 
 	asset := s.Erc20
 
+	if len(asset.ChainId) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.erc20.chain_id", ErrIsRequired)
+	}
+
 	if len(asset.ContractAddress) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.erc20.contract_address", ErrIsRequired)
 	}

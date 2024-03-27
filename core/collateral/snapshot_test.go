@@ -294,6 +294,7 @@ func testSnapshotRestore(t *testing.T) {
 	erc20 := types.AssetDetailsErc20{
 		ERC20: &types.ERC20{
 			ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
+			ChainID:         "1",
 		},
 	}
 	asset := types.Asset{
@@ -415,6 +416,7 @@ func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	erc20 := types.AssetDetailsErc20{
 		ERC20: &types.ERC20{
 			ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
+			ChainID:         "1",
 		},
 	}
 	asset := types.Asset{

@@ -64,6 +64,7 @@ func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Voting with a majority of 'yes' makes the new market proposal passed", testVotingWithMajorityOfYesMakesNewMarketProposalPassed)
 	t.Run("Voting with a majority of 'no' makes the new market proposal declined", testVotingWithMajorityOfNoMakesNewMarketProposalDeclined)
 	t.Run("Voting with insufficient participation makes the new market proposal declined", testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined)
+	t.Run("Invalid combination of decimals for market", testInvalidDecimalPlace)
 }
 
 func TestProposalForSuccessorMarket(t *testing.T) {
@@ -1688,4 +1689,28 @@ func testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails(t *testing.
 	// then
 	require.EqualError(t, err, "time trigger starts in the past")
 	require.Nil(t, toSubmit)
+}
+
+func testInvalidDecimalPlace(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewPerpsMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
+
+	proposal.Terms.GetNewMarket().Changes.DecimalPlaces = 12
+	proposal.Terms.GetNewMarket().Changes.PositionDecimalPlaces = 7
+
+	// set the time differently to start e.g sometimes after the enactment ti
+	enactAt := proposal.Terms.EnactmentTimestamp
+	proposal.Terms.Change.(*types.ProposalTermsNewMarket).NewMarket.Changes.Instrument.Product.(*types.InstrumentConfigurationPerps).Perps.DataSourceSpecForSettlementSchedule.GetInternalTimeTriggerSpecConfiguration().Triggers[0].Initial = ptr.From(time.Unix(enactAt, 0).Add(60 * time.Minute))
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorTooManyMarketDecimalPlaces)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+	require.Equal(t, "market decimal + position decimals must be less than or equal to asset decimals", err.Error())
 }

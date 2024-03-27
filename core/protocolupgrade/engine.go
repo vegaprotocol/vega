@@ -121,7 +121,7 @@ func (e *Engine) OnRequiredMajorityChanged(_ context.Context, requiredMajority n
 	return nil
 }
 
-func (e *Engine) IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
+func (e *Engine) IsValidProposal(_ context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
 	if !e.topology.IsTendermintValidator(pk) {
 		// not a tendermint validator, so we don't care about their intention
 		return errors.New("only tendermint validator can propose a protocol upgrade")
@@ -143,7 +143,7 @@ func (e *Engine) IsValidProposal(ctx context.Context, pk string, upgradeBlockHei
 	}
 
 	if semver.MustParse(TrimReleaseTag(e.currentVersion)).GT(newv) {
-		return errors.New("upgrade version is too old")
+		return fmt.Errorf("upgrade version is too old (%s > %s)", e.currentVersion, newv)
 	}
 
 	return nil

@@ -48,8 +48,8 @@ func NewAssets(connectionSource *ConnectionSource) *Assets {
 func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 	defer metrics.StartSQLQuery("Assets", "Add")()
 	_, err := as.Connection.Exec(ctx,
-		`INSERT INTO assets(id, name, symbol, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, tx_hash, vega_time, status)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		`INSERT INTO assets(id, name, symbol, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, tx_hash, vega_time, status, chain_id)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          ON CONFLICT (id, vega_time) DO UPDATE SET
             name = EXCLUDED.name,
             symbol = EXCLUDED.symbol,
@@ -61,7 +61,8 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
             withdraw_threshold = EXCLUDED.withdraw_threshold,
 			tx_hash = EXCLUDED.tx_hash,
             vega_time = EXCLUDED.vega_time,
-            status = EXCLUDED.status
+            status = EXCLUDED.status,
+            chain_id = EXCLUDED.chain_id
             ;`,
 		a.ID,
 		a.Name,
@@ -75,6 +76,7 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 		a.TxHash,
 		a.VegaTime,
 		a.Status,
+		a.ChainID,
 	)
 	if err != nil {
 		return err
@@ -153,6 +155,6 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 	return assets, pageInfo, nil
 }
 
-func getAssetQuery(ctx context.Context) string {
+func getAssetQuery(_ context.Context) string {
 	return `SELECT * FROM assets_current`
 }

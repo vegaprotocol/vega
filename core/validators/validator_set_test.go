@@ -569,7 +569,7 @@ func testUpdateMinimumRequireSelfStake(t *testing.T) {
 }
 
 func testAddForwarder(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	// add unknown forwarder
 	topology.AddForwarder("node1")
 	require.Equal(t, 0, len(topology.validators))
@@ -606,7 +606,7 @@ func testAddForwarder(t *testing.T) {
 }
 
 func testTendermintValidatorsNumberReduced(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 5
 	topology.rng = rand.New(rand.NewSource(100000))
 	topology.validators["node1"] = &valState{
@@ -704,7 +704,7 @@ func testTendermintValidatorsNumberReduced(t *testing.T) {
 }
 
 func testTendermintFreeSlotsPromotion(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 5
 	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
@@ -815,7 +815,7 @@ func testTendermintFreeSlotsPromotion(t *testing.T) {
 }
 
 func testSwapBestErsatzWithWorstTendermint(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 4
 	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
@@ -921,7 +921,7 @@ func testSwapBestErsatzWithWorstTendermint(t *testing.T) {
 }
 
 func testErsatzFreeSlotsPromotion(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 1
 	topology.numberOfErsatzValidators = 4
 
@@ -1026,7 +1026,7 @@ func testErsatzFreeSlotsPromotion(t *testing.T) {
 }
 
 func testSwapBestPendingWithWorstErsatz(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 1
 	topology.numberOfErsatzValidators = 2
 
@@ -1131,7 +1131,7 @@ func testSwapBestPendingWithWorstErsatz(t *testing.T) {
 }
 
 func testErsatzValidatorsNumberReduced(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 1
 	topology.validators["node1"] = &valState{
 		data: ValidatorData{
@@ -1224,7 +1224,7 @@ func testErsatzValidatorsNumberReduced(t *testing.T) {
 }
 
 func testSwapAndErsatzSlotDecrease(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 4
 	topology.numberOfErsatzValidators = 2
 	topology.validators["node1"] = &valState{
@@ -1328,7 +1328,7 @@ func testSwapAndErsatzSlotDecrease(t *testing.T) {
 }
 
 func testSwapAndTendermintSlotIncrease(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 4
 	topology.numberOfErsatzValidators = 2
 	topology.validators["node1"] = &valState{
@@ -1432,6 +1432,10 @@ func testSwapAndTendermintSlotIncrease(t *testing.T) {
 }
 
 type DummyMultiSigTopology struct{}
+
+func (*DummyMultiSigTopology) ChainID() string {
+	return "12"
+}
 
 func (*DummyMultiSigTopology) IsSigner(address string) bool {
 	return true

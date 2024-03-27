@@ -569,31 +569,31 @@ func (mr *MockSignaturesMockRecorder) ClearStaleSignatures() *gomock.Call {
 }
 
 // EmitValidatorAddedSignatures mocks base method.
-func (m *MockSignatures) EmitValidatorAddedSignatures(arg0 context.Context, arg1, arg2 string, arg3 time.Time) error {
+func (m *MockSignatures) EmitValidatorAddedSignatures(arg0 context.Context, arg1, arg2, arg3 string, arg4 time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EmitValidatorAddedSignatures", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "EmitValidatorAddedSignatures", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EmitValidatorAddedSignatures indicates an expected call of EmitValidatorAddedSignatures.
-func (mr *MockSignaturesMockRecorder) EmitValidatorAddedSignatures(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockSignaturesMockRecorder) EmitValidatorAddedSignatures(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitValidatorAddedSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitValidatorAddedSignatures), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitValidatorAddedSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitValidatorAddedSignatures), arg0, arg1, arg2, arg3, arg4)
 }
 
 // EmitValidatorRemovedSignatures mocks base method.
-func (m *MockSignatures) EmitValidatorRemovedSignatures(arg0 context.Context, arg1, arg2 string, arg3 time.Time) error {
+func (m *MockSignatures) EmitValidatorRemovedSignatures(arg0 context.Context, arg1, arg2, arg3 string, arg4 time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EmitValidatorRemovedSignatures", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "EmitValidatorRemovedSignatures", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EmitValidatorRemovedSignatures indicates an expected call of EmitValidatorRemovedSignatures.
-func (mr *MockSignaturesMockRecorder) EmitValidatorRemovedSignatures(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockSignaturesMockRecorder) EmitValidatorRemovedSignatures(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitValidatorRemovedSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitValidatorRemovedSignatures), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitValidatorRemovedSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitValidatorRemovedSignatures), arg0, arg1, arg2, arg3, arg4)
 }
 
 // OfferSignatures mocks base method.
@@ -691,6 +691,20 @@ func NewMockMultiSigTopology(ctrl *gomock.Controller) *MockMultiSigTopology {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockMultiSigTopology) EXPECT() *MockMultiSigTopologyMockRecorder {
 	return m.recorder
+}
+
+// ChainID mocks base method.
+func (m *MockMultiSigTopology) ChainID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChainID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// ChainID indicates an expected call of ChainID.
+func (mr *MockMultiSigTopologyMockRecorder) ChainID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainID", reflect.TypeOf((*MockMultiSigTopology)(nil).ChainID))
 }
 
 // ExcessSigners mocks base method.

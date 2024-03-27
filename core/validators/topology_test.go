@@ -67,6 +67,10 @@ func (n *NodeWallets) GetEthereum() validators.Signer {
 
 type DummyMultiSigTopology struct{}
 
+func (*DummyMultiSigTopology) ChainID() string {
+	return "12"
+}
+
 func (*DummyMultiSigTopology) IsSigner(address string) bool {
 	return true
 }
@@ -85,11 +89,12 @@ func (*DummyMultiSigTopology) GetSigners() []string {
 
 type testTop struct {
 	*validators.Topology
-	ctrl        *gomock.Controller
-	wallet      *mocks.MockWallet
-	broker      *bmocks.MockBroker
-	timeService *mocks.MockTimeService
-	multisigTop *mocks.MockMultiSigTopology
+	ctrl         *gomock.Controller
+	wallet       *mocks.MockWallet
+	broker       *bmocks.MockBroker
+	timeService  *mocks.MockTimeService
+	multisigTop  *mocks.MockMultiSigTopology
+	multisigTop2 *mocks.MockMultiSigTopology
 }
 
 func getTestTopologyWithNodeWallet(
@@ -100,18 +105,20 @@ func getTestTopologyWithNodeWallet(
 	broker := bmocks.NewMockBroker(ctrl)
 	timeService := mocks.NewMockTimeService(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	multisigTop := mocks.NewMockMultiSigTopology(ctrl)
+	mtop1 := mocks.NewMockMultiSigTopology(ctrl)
+	mtop2 := mocks.NewMockMultiSigTopology(ctrl)
 
 	commander := mocks.NewMockCommander(gomock.NewController(t))
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, multisigTop, timeService)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, mtop1, mtop2, timeService)
 	return &testTop{
-		Topology:    top,
-		ctrl:        ctrl,
-		wallet:      wallet,
-		broker:      broker,
-		timeService: timeService,
-		multisigTop: multisigTop,
+		Topology:     top,
+		ctrl:         ctrl,
+		wallet:       wallet,
+		broker:       broker,
+		timeService:  timeService,
+		multisigTop:  mtop1,
+		multisigTop2: mtop2,
 	}
 }
 
@@ -456,7 +463,7 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	timeService := mocks.NewMockTimeService(ctrl)
 	commander := mocks.NewMockCommander(gomock.NewController(t))
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{}, timeService)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{}, &DummyMultiSigTopology{}, timeService)
 
 	ctx := context.Background()
 	nr := commandspb.AnnounceNode{
