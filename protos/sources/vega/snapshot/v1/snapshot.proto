@@ -419,6 +419,7 @@ message PriceBound {
 message PriceRangeCache {
   PriceBound bound = 1;
   PriceRange range = 2;
+  uint64 bound_index = 3;
 }
 
 message CurrentPrice {

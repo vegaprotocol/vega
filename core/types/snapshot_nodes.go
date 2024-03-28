@@ -525,8 +525,9 @@ type PriceBound struct {
 }
 
 type PriceRangeCache struct {
-	Bound *PriceBound
-	Range *PriceRange
+	BoundIndex int
+	Bound      *PriceBound
+	Range      *PriceRange
 }
 
 type PriceRange struct {
@@ -3430,16 +3431,20 @@ func (p PriceRange) IntoProto() *snapshot.PriceRange {
 }
 
 func PriceRangeCacheFromProto(prc *snapshot.PriceRangeCache) *PriceRangeCache {
+	BoundIndex := int(prc.BoundIndex)
+	if prc.Bound != nil {
+		BoundIndex = -1
+	}
 	return &PriceRangeCache{
-		Bound: PriceBoundFromProto(prc.Bound),
-		Range: PriceRangeFromProto(prc.Range),
+		BoundIndex: BoundIndex,
+		Range:      PriceRangeFromProto(prc.Range),
 	}
 }
 
 func (p PriceRangeCache) IntoProto() *snapshot.PriceRangeCache {
 	return &snapshot.PriceRangeCache{
-		Bound: p.Bound.IntoProto(),
-		Range: p.Range.IntoProto(),
+		BoundIndex: uint64(p.BoundIndex),
+		Range:      p.Range.IntoProto(),
 	}
 }
 

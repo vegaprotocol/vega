@@ -1,11 +1,19 @@
 # Changelog
 
+## 0.75.8
+
+### 🐛 Fixes
+
+- [11038](https://github.com/vegaprotocol/vega/issues/11038) - Simplify price ranges state.
+
+
 ## 0.75.7
 
 ### 🐛 Fixes
 
 - [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
 - [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
+
 
 ## 0.75.4
 
@@ -15,12 +23,14 @@
 - [10997](https://github.com/vegaprotocol/vega/issues/10997) - Handle cases where leaving opening auction triggers monitoring auction.
 - [10958](https://github.com/vegaprotocol/vega/issues/10958) - Fix incorrect documentation.
 
+
 ## 0.75.3
 
 ### 🐛 Fixes
 
 - [10969](https://github.com/vegaprotocol/vega/issues/10969) - Ensure teams statistics are computed from team rewards.
-- [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state. 
+- [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state.
+
 
 ## 0.75.2
 
@@ -28,6 +38,7 @@
 
 - [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
 - [10950](https://github.com/vegaprotocol/vega/issues/10950) - Fix bug that caused cancelled liquidity provisions to stick around after opening auction.
+
 
 ## 0.75.1
 
