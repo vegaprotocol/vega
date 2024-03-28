@@ -18,7 +18,6 @@ package eth
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -90,13 +89,12 @@ func (e *EthereumConfirmations) Check(block uint64) error {
 		return err
 	}
 
-	h, err := e.finalizedHeight(context.Background())
+	finalized, err := e.finalizedHeight(context.Background())
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("FINALZED", h, "CARE FOR", block)
-	if block < h {
+	if finalized < block {
 		return ErrBlockNotFinalized
 	}
 
@@ -154,14 +152,8 @@ func (e *EthereumConfirmations) getHeight(ctx context.Context, lastHeight uint64
 	defer cancel()
 	if now := e.time.Now(); lastUpdate.Add(e.retryDelay).Before(now) {
 		// get the last block header
-
-		fmt.Println("CALLING GET HEIGHT WITH", block)
-		if block != nil {
-			fmt.Println("CALLING FINALZED", block.String())
-		}
 		h, err := e.ethClient.HeaderByNumber(ctx, block)
 		if err != nil {
-			fmt.Println("FAILED", err)
 			return lastHeight, lastUpdate, err
 		}
 		lastUpdate = now
