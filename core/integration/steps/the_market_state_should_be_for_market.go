@@ -72,9 +72,11 @@ func TheMarketStateIsUpdatedTo(exec Execution, data *godog.Table) error {
 			row: r,
 		}
 		changes := &vtypes.MarketStateUpdateConfiguration{
-			MarketID:        mu.MarketID(),
-			SettlementPrice: mu.SettlementPrice(),
-			UpdateType:      mu.MarketStateUpdate(),
+			MarketID:   mu.MarketID(),
+			UpdateType: mu.MarketStateUpdate(),
+		}
+		if r.HasColumn("settlement price") {
+			changes.SettlementPrice = mu.SettlementPrice()
 		}
 		if err := exec.UpdateMarketState(ctx, changes); err != nil {
 			return err
@@ -91,8 +93,7 @@ func parseStateUpdate(data *godog.Table) []RowWrapper {
 	return StrictParseTable(data, []string{
 		"market id",
 		"state",
-		"settlement price",
-	}, nil)
+	}, []string{"settlement price"})
 }
 
 func errMismatchedMarketState(market string, expectedMarketState, marketState types.Market_State) error {
