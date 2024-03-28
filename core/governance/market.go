@@ -403,7 +403,7 @@ func validateAsset(assetID string, decimals uint64, positionDecimals int64, asse
 	}
 	if !assets.IsEnabled(assetID) {
 		return types.ProposalErrorInvalidAsset,
-			fmt.Errorf("assets is not enabled %v", assetID)
+			fmt.Errorf("asset is not enabled %v", assetID)
 	}
 	if int64(decimals)+positionDecimals > int64(asset.DecimalPlaces()) {
 		return types.ProposalErrorTooManyMarketDecimalPlaces, errors.New("market decimal + position decimals must be less than or equal to asset decimals")
