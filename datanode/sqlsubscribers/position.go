@@ -93,6 +93,7 @@ type PositionStore interface {
 
 type MarketSvc interface {
 	GetMarketScalingFactor(ctx context.Context, marketID string) (num.Decimal, bool)
+	IsSpotMarket(ctx context.Context, marketID string) bool
 }
 
 type Position struct {
@@ -202,6 +203,10 @@ func (p *Position) handleDistressedPositions(ctx context.Context, event distress
 func (p *Position) handleOrdersClosedEvent(ctx context.Context, event ordersClosed) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
+	if sm := p.mktSvc.IsSpotMarket(ctx, event.MarketID()); sm {
+		return nil
+	}
+
 	positions, err := p.store.GetByMarketAndParties(ctx, event.MarketID(), event.Parties())
 	if err != nil {
 		return fmt.Errorf("failed to get positions: %w", err)
@@ -219,10 +224,14 @@ func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error
 	trade := event.Trade()
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
+	if sm := p.mktSvc.IsSpotMarket(ctx, trade.MarketId); sm {
+		return nil
+	}
 	sf, ok := p.mktSvc.GetMarketScalingFactor(ctx, trade.MarketId)
 	if !ok {
 		return fmt.Errorf("failed to get market scaling factor for market %s", trade.MarketId)
 	}
+
 	if trade.Type == types.TradeTypeNetworkCloseOutBad {
 		pos := p.getNetworkPosition(ctx, trade.MarketId)
 		seller := trade.Seller == types.NetworkParty
@@ -267,6 +276,9 @@ func (p *Position) handleSettleMarket(ctx context.Context, event settleMarket) e
 	pos, err := p.store.GetByMarket(ctx, event.MarketID())
 	if err != nil {
 		return errors.Wrap(err, "error getting positions")
+	}
+	if sm := p.mktSvc.IsSpotMarket(ctx, event.MarketID()); sm {
+		return nil
 	}
 	for i := range pos {
 		pos[i].UpdateWithSettleMarket(event)
