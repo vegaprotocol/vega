@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -133,7 +134,6 @@ func TestEstimatePosition(t *testing.T) {
 	rfLong := num.DecimalFromFloat(0.1)
 	rfShort := num.DecimalFromFloat(0.2)
 
-	markPrice := 123.456 * math.Pow10(marketDecimals)
 	auctionEnd := int64(0)
 	fundingPayment := 1234.56789
 
@@ -197,7 +197,7 @@ func TestEstimatePosition(t *testing.T) {
 		expectedLiquidationBestVolumeOnly string
 	}{
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
@@ -214,7 +214,7 @@ func TestEstimatePosition(t *testing.T) {
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
@@ -232,7 +232,7 @@ func TestEstimatePosition(t *testing.T) {
 			marginFactor:              0.1,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    int64(10 * math.Pow10(positionDecimalPlaces)),
 			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
@@ -249,7 +249,7 @@ func TestEstimatePosition(t *testing.T) {
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
 			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
@@ -267,7 +267,7 @@ func TestEstimatePosition(t *testing.T) {
 			marginFactor:              0.5,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
 			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
@@ -290,7 +290,7 @@ func TestEstimatePosition(t *testing.T) {
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
 			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
@@ -314,7 +314,7 @@ func TestEstimatePosition(t *testing.T) {
 			marginFactor:              0.3,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    int64(10 * math.Pow10(positionDecimalPlaces)),
 			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
@@ -361,7 +361,7 @@ func TestEstimatePosition(t *testing.T) {
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    -int64(10 * math.Pow10(positionDecimalPlaces)),
 			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
@@ -409,13 +409,13 @@ func TestEstimatePosition(t *testing.T) {
 			marginFactor:              0.1,
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideBuy,
-					Price:         fmt.Sprintf("%f", markPrice),
+					Price:         floatToStringWithDp(123.456, marketDecimals),
 					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
@@ -428,7 +428,7 @@ func TestEstimatePosition(t *testing.T) {
 			expectedCollIncBest:       "3703680000",
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
@@ -447,9 +447,9 @@ func TestEstimatePosition(t *testing.T) {
 			expectedCollIncBest:       "3703680000",
 		},
 		{
-			markPrice:                 markPrice,
+			markPrice:                 123.456 * math.Pow10(marketDecimals),
 			openVolume:                int64(1 * math.Pow10(positionDecimalPlaces)),
-			avgEntryPrice:             markPrice,
+			avgEntryPrice:             123.456 * math.Pow10(marketDecimals),
 			orders:                    []*v2.OrderInfo{},
 			marginAccountBalance:      0,
 			generalAccountBalance:     0,
@@ -459,13 +459,13 @@ func TestEstimatePosition(t *testing.T) {
 			expectedCollIncBest:       "3703680000",
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideSell,
-					Price:         fmt.Sprintf("%f", markPrice),
+					Price:         floatToStringWithDp(123.456, marketDecimals),
 					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
@@ -478,7 +478,7 @@ func TestEstimatePosition(t *testing.T) {
 			expectedCollIncBest:       "3703680000",
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
@@ -497,9 +497,9 @@ func TestEstimatePosition(t *testing.T) {
 			expectedCollIncBest:       "3703680000",
 		},
 		{
-			markPrice:                 markPrice,
+			markPrice:                 123.456 * math.Pow10(marketDecimals),
 			openVolume:                -int64(1 * math.Pow10(positionDecimalPlaces)),
-			avgEntryPrice:             markPrice,
+			avgEntryPrice:             123.456 * math.Pow10(marketDecimals),
 			orders:                    []*v2.OrderInfo{},
 			marginAccountBalance:      0,
 			generalAccountBalance:     0,
@@ -509,9 +509,9 @@ func TestEstimatePosition(t *testing.T) {
 			expectedCollIncBest:       "3703680000",
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    -int64(1 * math.Pow10(positionDecimalPlaces)),
-			avgEntryPrice: markPrice,
+			avgEntryPrice: 123.456 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideBuy,
@@ -528,9 +528,9 @@ func TestEstimatePosition(t *testing.T) {
 			expectedCollIncBest:       "0",
 		},
 		{
-			markPrice:     markPrice,
+			markPrice:     123.456 * math.Pow10(marketDecimals),
 			openVolume:    int64(1 * math.Pow10(positionDecimalPlaces)),
-			avgEntryPrice: markPrice,
+			avgEntryPrice: 123.456 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideSell,
@@ -557,6 +557,50 @@ func TestEstimatePosition(t *testing.T) {
 			marginMode:                        vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
 			marginFactor:                      0.01277,
 			expectedLiquidationBestVolumeOnly: "6781300000",
+		},
+		{
+			markPrice:     3225 * math.Pow10(marketDecimals),
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(5000, marketDecimals),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "50000000000",
+		},
+		{
+			markPrice:     3225 * math.Pow10(marketDecimals),
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(5000, marketDecimals),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(2500, marketDecimals),
+					Remaining:     uint64(2 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 50000000000,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "0",
 		},
 	}
 	for i, tc := range testCases {
@@ -673,11 +717,11 @@ func TestEstimatePosition(t *testing.T) {
 		if isolatedMargin {
 			priceFactor := math.Pow10(assetDecimals - marketDecimals)
 			marketOrderNotional := getMarketOrderNotional(tc.markPrice, tc.orders, priceFactor, positionDecimalPlaces)
-			adjNotional := (tc.avgEntryPrice*priceFactor*float64(tc.openVolume)/math.Pow10(positionDecimalPlaces) + marketOrderNotional)
+			adjNotional := tc.avgEntryPrice*priceFactor*float64(tc.openVolume)/math.Pow10(positionDecimalPlaces) + marketOrderNotional
 
 			requiredPositionMargin := math.Abs(adjNotional) * tc.marginFactor
-			requiredOrderMargin := getLimitOrderNotional(t, tc.orders, priceFactor, positionDecimalPlaces) * tc.marginFactor
-			expectedCollIncBest = requiredPositionMargin + requiredOrderMargin - tc.marginAccountBalance - tc.orderMarginAccountBalance
+			requiredBuyOrderMargin, requireSellOrderMargin := getLimitOrderNotionalScaledByMarginFactorAndNetOfPosition(t, tc.openVolume, tc.orders, priceFactor, positionDecimalPlaces, tc.marginFactor)
+			expectedCollIncBest = requiredPositionMargin + max(requiredBuyOrderMargin, requireSellOrderMargin) - tc.marginAccountBalance - tc.orderMarginAccountBalance
 			expectedCollIncWorst = expectedCollIncBest
 
 			expectedPosMarginIncrease = max(0, requiredPositionMargin-tc.marginAccountBalance)
@@ -804,18 +848,84 @@ func (s *mockStream) Context() context.Context        { return context.Backgroun
 func (s *mockStream) SendMsg(m interface{}) error     { return nil }
 func (s *mockStream) RecvMsg(m interface{}) error     { return nil }
 
-func getLimitOrderNotional(t *testing.T, orders []*v2.OrderInfo, priceFactor float64, positionDecimals int) float64 {
+func getLimitOrderNotionalScaledByMarginFactorAndNetOfPosition(t *testing.T, positionSize int64, orders []*v2.OrderInfo, priceFactor float64, positionDecimals int, marginFactor float64) (float64, float64) {
 	t.Helper()
-	notional := 0.0
+	buyNotional, sellNotional := 0.0, 0.0
+	buyOrders, sellOrders := make([]*v2.OrderInfo, 0), make([]*v2.OrderInfo, 0)
 	for _, o := range orders {
-		if o.IsMarketOrder {
-			continue
+		if o.Side == entities.SideBuy {
+			if o.IsMarketOrder {
+				positionSize += int64(o.Remaining)
+				continue
+			}
+			buyOrders = append(buyOrders, o)
 		}
-		price, err := strconv.ParseFloat(o.Price, 64)
-		require.NoError(t, err)
-		notional += price * priceFactor * float64(o.Remaining) / math.Pow10(positionDecimals)
+		if o.Side == entities.SideSell {
+			if o.IsMarketOrder {
+				positionSize -= int64(o.Remaining)
+				continue
+			}
+			sellOrders = append(sellOrders, o)
+		}
 	}
-	return notional
+
+	// sort orders from best to worst
+	sort.Slice(buyOrders, func(i, j int) bool {
+		price_i, err := strconv.ParseFloat(buyOrders[i].Price, 64)
+		require.NoError(t, err)
+		price_j, err := strconv.ParseFloat(buyOrders[j].Price, 64)
+		require.NoError(t, err)
+
+		return price_i > price_j
+	})
+	sort.Slice(sellOrders, func(i, j int) bool {
+		price_i, err := strconv.ParseFloat(sellOrders[i].Price, 64)
+		require.NoError(t, err)
+		price_j, err := strconv.ParseFloat(sellOrders[j].Price, 64)
+		require.NoError(t, err)
+
+		return price_i < price_j
+	})
+
+	remainingCovered := uint64(math.Abs(float64(positionSize)))
+	for _, o := range buyOrders {
+		size := o.Remaining
+		if remainingCovered != 0 && (positionSize < 0) {
+			if size >= remainingCovered { // part of the order doesn't require margin
+				size = size - remainingCovered
+				remainingCovered = 0
+			} else { // the entire order doesn't require margin
+				remainingCovered -= size
+				size = 0
+			}
+		}
+		if size > 0 {
+			price, err := strconv.ParseFloat(o.Price, 64)
+			require.NoError(t, err)
+			buyNotional += price * priceFactor * float64(size) / math.Pow10(positionDecimals)
+		}
+	}
+
+	remainingCovered = uint64(math.Abs(float64(positionSize)))
+	for _, o := range sellOrders {
+		size := o.Remaining
+		if remainingCovered != 0 && (positionSize > 0) {
+			if size >= remainingCovered { // part of the order doesn't require margin
+				size = size - remainingCovered
+				remainingCovered = 0
+			} else { // the entire order doesn't require margin
+				remainingCovered -= size
+				size = 0
+			}
+		}
+		if size > 0 {
+			price, err := strconv.ParseFloat(o.Price, 64)
+			require.NoError(t, err)
+			sellNotional += price * priceFactor * float64(size) / math.Pow10(positionDecimals)
+		}
+	}
+
+	return buyNotional * marginFactor, sellNotional * marginFactor
 }
 
 func getMarketOrderNotional(marketObservable float64, orders []*v2.OrderInfo, priceFactor float64, positionDecimals int) float64 {

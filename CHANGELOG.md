@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.75.7
+
+### 🐛 Fixes
+
+- [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
+- [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
+
 ## 0.75.4
 
 ### 🐛 Fixes

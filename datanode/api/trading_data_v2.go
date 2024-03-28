@@ -3417,7 +3417,11 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	var wMarginDelta, bMarginDelta, posMarginDelta num.Decimal
 	combinedMargin := marginAccountBalance.Add(orderAccountBalance)
 	if isolatedMarginMode {
-		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
+		var ap *num.Uint = nil
+		if !auctionPrice.IsZero() {
+			ap, _ = num.UintFromDecimal(auctionPrice)
+		}
+		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor, ap)
 		posMarginDelta = requiredPositionMargin.Sub(marginAccountBalance)
 		wMarginDelta = requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin)
 		bMarginDelta = wMarginDelta
