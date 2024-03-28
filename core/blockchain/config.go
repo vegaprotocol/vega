@@ -70,7 +70,7 @@ type ReplayConfig struct {
 	Record     bool   `description:"whether to record block data to a file to allow replaying" long:"record"`
 	Replay     bool   `description:"whether to replay any blockdata found in replay-file"      long:"replay"`
 	ReplayFile string `description:"path to file of which to write/read replay data"           long:"replay-file"`
-	Until      int64  `description:"replay from the chain until the given block height long:"until"`
+	Until      int64  `description:"replay from the chain until the given block height" long:"until"`
 }
 
 type NullChainConfig struct {
