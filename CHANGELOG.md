@@ -43,6 +43,7 @@
 - [10997](https://github.com/vegaprotocol/vega/issues/10997) - Handle cases where leaving opening auction triggers monitoring auction.
 - [11010](https://github.com/vegaprotocol/vega/issues/11010) - Release bond in spot market when market is terminated. 
 - [11038](https://github.com/vegaprotocol/vega/issues/11038) - Simplify price ranges state. 
+- [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
 
 ## 0.75.0
 
