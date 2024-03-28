@@ -11,6 +11,7 @@ Feature: Set up a market with an opening auction manipulate price to low level w
       | manipulator2 | BTC   | 3         |
       | party3       | BTC   | 100000000 |
       | party4       | BTC   | 100000000 |
+      | party5       | BTC   | 100000000 |
     And the following network parameters are set:
       | name                                    | value |
       | limits.markets.maxPeggedOrders          | 2     |
@@ -47,6 +48,14 @@ Feature: Set up a market with an opening auction manipulate price to low level w
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 | open interest | indicative price | indicative volume |
       | TRADING_MODE_OPENING_AUCTION | 0             | 100              | 20                |
+
+    # 0019-MCAL-234
+    When the parties place the following orders with ticks:
+      | party         | market id | side | volume | price | resulting trades | type       | tif     |
+      | party5        | ETH/DEC19 | buy  | 10     | 3     | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following margin levels:
+      | party        | market id | maintenance |
+      | party5       | ETH/DEC19 | 100         |
 
     When the network moves ahead "5" blocks
     Then the parties should have the following margin levels:
