@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.75.7
+
+### 🐛 Fixes
+
+- [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
+
 ## 0.75.4
 
 ### 🐛 Fixes
