@@ -156,7 +156,16 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 		s.restorePendingCallEvents(ctx, pl.EthContractCallEvent)
 		return nil, nil
 	case *types.PayloadEthOracleLastBlock:
-		s.restoreLastEthBlock(ctx, pl.EthOracleLastBlock)
+		lastEthBlock := pl.EthOracleLastBlock
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.11") {
+			// use a recent time instead here to skip unneeded blocks
+			lastEthBlock = &types.EthBlock{
+				Height: 19531719,
+				Time:   1712086487,
+			}
+		}
+
+		s.restoreLastEthBlock(ctx, lastEthBlock)
 		return nil, nil
 	case *types.PayloadEthVerifierMisc:
 		s.restoreMisc(ctx, pl.Misc)
