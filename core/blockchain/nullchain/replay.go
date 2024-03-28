@@ -180,7 +180,8 @@ func (r *Replayer) replayChain(appHeight int64) (int64, time.Time, error) {
 		}
 
 		if r.cfg.Until != 0 && replayedHeight >= r.cfg.Until {
-			r.log.Info("replay stopped as requests", logging.Int64("height", replayedHeight))
+			r.log.Info("replay stopped as requested", logging.Int64("height", replayedHeight))
+			return replayedHeight, replayedTime, nil
 
 		}
 	}
