@@ -41,6 +41,8 @@ func NewMonitorFromSnapshot(
 		return nil, ErrNilPriceMonitoringSettings
 	}
 
+	priceRangesCache, needRecalc := newPriceRangeCacheFromSlice(pm.PriceRangeCache)
+
 	e := &Engine{
 		market:              marketID,
 		log:                 log,
@@ -54,7 +56,7 @@ func NewMonitorFromSnapshot(
 		refPriceCache:       keyDecimalPairToMap(pm.RefPriceCache),
 		refPriceCacheTime:   pm.RefPriceCacheTime,
 		bounds:              priceBoundsToBounds(pm.Bounds),
-		priceRangesCache:    newPriceRangeCacheFromSlice(pm.PriceRangeCache),
+		priceRangesCache:    priceRangesCache,
 		pricesNow:           pricesNowToInternal(pm.PricesNow),
 		pricesPast:          pricesPastToInternal(pm.PricesPast),
 		stateChanged:        true,
@@ -62,6 +64,10 @@ func NewMonitorFromSnapshot(
 	}
 	e.boundFactorsInitialised = pm.PriceBoundsConsensusReached
 	stateVarEngine.RegisterStateVariable(asset, marketID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.EventType{statevar.EventTypeTimeTrigger, statevar.EventTypeAuctionEnded, statevar.EventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
+
+	if needRecalc {
+		e.getCurrentPriceRanges(true)
+	}
 	return e, nil
 }
 
@@ -149,39 +155,29 @@ func (e *Engine) serialiseBounds() []*types.PriceBound {
 	return bounds
 }
 
-func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) map[*bound]priceRange {
-	priceRangesCache := map[*bound]priceRange{}
+func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) (map[int]priceRange, bool) {
+	priceRangesCache := map[int]priceRange{}
+	needsRecalc := false
 	for _, pr := range prs {
-		priceRangesCache[priceBoundTypeToInternal(pr.Bound)] = priceRange{
+		if pr.BoundIndex < 0 {
+			needsRecalc = true
+			break
+		}
+		priceRangesCache[pr.BoundIndex] = priceRange{
 			MinPrice:       wrapPriceRange(pr.Range.Min, true),
 			MaxPrice:       wrapPriceRange(pr.Range.Max, false),
 			ReferencePrice: pr.Range.Ref,
 		}
 	}
-	return priceRangesCache
+
+	return priceRangesCache, needsRecalc
 }
 
-func SortPriceRanges(prc []*types.PriceRangeCache) {
-	sort.SliceStable(prc, func(i, j int) bool {
-		if prc[i].Bound.Active != prc[j].Bound.Active {
-			return prc[i].Bound.Active
-		}
-		if prc[i].Bound.UpFactor.Equal(prc[j].Bound.UpFactor) {
-			if prc[i].Bound.DownFactor.Equal(prc[j].Bound.DownFactor) {
-				return prc[i].Bound.Trigger.Horizon < prc[j].Bound.Trigger.Horizon
-			}
-			return prc[j].Bound.DownFactor.LessThan(prc[i].Bound.DownFactor)
-		}
-		return prc[j].Bound.UpFactor.GreaterThan(prc[i].Bound.UpFactor)
-	})
-}
-
-// SerialisePriceranges expored for testing.
-func (e *Engine) SerialisePriceRanges() []*types.PriceRangeCache {
+func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
 	prc := make([]*types.PriceRangeCache, 0, len(e.priceRangesCache))
-	for bound, priceRange := range e.priceRangesCache {
+	for ind, priceRange := range e.priceRangesCache {
 		prc = append(prc, &types.PriceRangeCache{
-			Bound: internalBoundToPriceBoundType(bound),
+			BoundIndex: ind,
 			Range: &types.PriceRange{
 				Min: priceRange.MinPrice.Original(),
 				Max: priceRange.MaxPrice.Original(),
@@ -189,7 +185,8 @@ func (e *Engine) SerialisePriceRanges() []*types.PriceRangeCache {
 			},
 		})
 	}
-	SortPriceRanges(prc)
+
+	sort.Slice(prc, func(i, j int) bool { return prc[i].BoundIndex < prc[j].BoundIndex })
 	return prc
 }
 
@@ -244,7 +241,7 @@ func (e *Engine) GetState() *types.PriceMonitor {
 		Now:                         e.now,
 		Update:                      e.update,
 		Bounds:                      e.serialiseBounds(),
-		PriceRangeCache:             e.SerialisePriceRanges(),
+		PriceRangeCache:             e.serialisePriceRanges(),
 		PricesNow:                   e.serialisePricesNow(),
 		PricesPast:                  e.serialisePricesPast(),
 		PriceRangeCacheTime:         e.priceRangeCacheTime,

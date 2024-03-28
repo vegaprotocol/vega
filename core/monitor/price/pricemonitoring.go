@@ -133,7 +133,7 @@ type Engine struct {
 	bounds      []*bound
 
 	priceRangeCacheTime time.Time
-	priceRangesCache    map[*bound]priceRange
+	priceRangesCache    map[int]priceRange
 
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
@@ -152,7 +152,7 @@ func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonit
 	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings)
 	e.initialised = false
 	e.boundFactorsInitialised = false
-	e.priceRangesCache = make(map[*bound]priceRange, len(e.bounds)) // clear the cache
+	e.priceRangesCache = make(map[int]priceRange, len(e.bounds)) // clear the cache
 	// reset reference cache
 	e.refPriceCacheTime = time.Time{}
 	e.refPriceCache = map[int64]num.Decimal{}
@@ -232,7 +232,8 @@ func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 	priceRanges := e.getCurrentPriceRanges(false)
 	ret := make([]*types.PriceMonitoringBounds, 0, len(priceRanges))
-	for b, pr := range priceRanges {
+	for ind, pr := range priceRanges {
+		b := e.bounds[ind]
 		if b.Active {
 			ret = append(ret,
 				&types.PriceMonitoringBounds{
@@ -439,12 +440,12 @@ func (e *Engine) checkBounds(trades []*types.Trade) []*types.PriceMonitoringTrig
 		if t.Size == 0 {
 			continue
 		}
-		for _, b := range e.bounds {
+		for i, b := range e.bounds {
 			if !b.Active {
 				continue
 			}
 			p := t.Price
-			priceRange := priceRanges[b]
+			priceRange := priceRanges[i]
 			if p.LT(priceRange.MinPrice.Representation()) || p.GT(priceRange.MaxPrice.Representation()) {
 				ret = append(ret, b.Trigger)
 				// deactivate the bound that just got violated so it doesn't prevent auction from terminating
@@ -458,15 +459,15 @@ func (e *Engine) checkBounds(trades []*types.Trade) []*types.PriceMonitoringTrig
 }
 
 // getCurrentPriceRanges calculates price ranges from current reference prices and bound down/up factors.
-func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
+func (e *Engine) getCurrentPriceRanges(force bool) map[int]priceRange {
 	if !force && e.priceRangeCacheTime == e.now && len(e.priceRangesCache) > 0 {
 		return e.priceRangesCache
 	}
-	ranges := make(map[*bound]priceRange, len(e.priceRangesCache))
+	ranges := make(map[int]priceRange, len(e.priceRangesCache))
 	if e.noHistory() {
 		return ranges
 	}
-	for _, b := range e.bounds {
+	for i, b := range e.bounds {
 		if !b.Active {
 			continue
 		}
@@ -496,7 +497,7 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 			max = ref.Mul(defaultUpFactor)
 		}
 
-		ranges[b] = priceRange{
+		ranges[i] = priceRange{
 			MinPrice:       wrapPriceRange(min, true),
 			MaxPrice:       wrapPriceRange(max, false),
 			ReferencePrice: ref,
