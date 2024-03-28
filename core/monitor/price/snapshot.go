@@ -157,8 +157,10 @@ func (e *Engine) serialiseBounds() []*types.PriceBound {
 
 func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) (map[int]priceRange, bool) {
 	priceRangesCache := map[int]priceRange{}
+	needsRecalc := false
 	for _, pr := range prs {
 		if pr.BoundIndex < 0 {
+			needsRecalc = true
 			break
 		}
 		priceRangesCache[pr.BoundIndex] = priceRange{
@@ -167,7 +169,8 @@ func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) (map[int]priceRan
 			ReferencePrice: pr.Range.Ref,
 		}
 	}
-	return nil, true
+
+	return priceRangesCache, needsRecalc
 }
 
 func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
