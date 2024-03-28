@@ -62,6 +62,13 @@ func (m *Market) getIsolatedMarginContext(mpos *positions.MarketPosition, order 
 		return nil, nil, num.DecimalZero(), nil, num.DecimalZero(), nil, err
 	}
 	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	auctionPrice := m.getAuctionPrice()
+	marginFactor := m.getMarginFactor(mpos.Party())
+	orders := m.matching.GetOrdersPerParty(mpos.Party())
+	return marketObservable, pos, increment, auctionPrice, marginFactor, orders, nil
+}
+
+func (m *Market) getAuctionPrice() *num.Uint {
 	var auctionPrice *num.Uint
 	if m.as.InAuction() {
 		auctionPrice = m.matching.GetIndicativePrice()
@@ -69,7 +76,5 @@ func (m *Market) getIsolatedMarginContext(mpos *positions.MarketPosition, order 
 			auctionPrice = markPrice
 		}
 	}
-	marginFactor := m.getMarginFactor(mpos.Party())
-	orders := m.matching.GetOrdersPerParty(mpos.Party())
-	return marketObservable, pos, increment, auctionPrice, marginFactor, orders, nil
+	return auctionPrice
 }

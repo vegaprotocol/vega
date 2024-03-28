@@ -73,7 +73,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
     # check the requried balances
     And the parties should have the following account balances:
       | party | asset | market id | margin      | general       | bond         |
-      | lp    | USD   | ETH/MAR22 | 24223462159 | 9585276537841 | 390500000000 |
+      | lp    | USD   | ETH/MAR22 | 25107048175 | 9584392951825 | 390500000000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:
@@ -153,7 +153,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
     # check the requried balances
     And the parties should have the following account balances:
       | party | asset | market id | margin      | general       | bond         |
-      | lp    | USD   | ETH/MAR22 | 24223462159 | 9585276537841 | 390500000000 |
+      | lp    | USD   | ETH/MAR22 | 25107048175 | 9584392951825 | 390500000000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:
@@ -235,7 +235,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
     # check the requried balances
     And the parties should have the following account balances:
       | party | asset | market id | margin      | general        | bond         |
-      | lp    | USD   | ETH/MAR22 | 24223781616 | 99585276218384 | 390500000000 |
+      | lp    | USD   | ETH/MAR22 | 25107538095 | 99584392461905 | 390500000000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:

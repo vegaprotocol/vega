@@ -130,7 +130,7 @@ func testMarginLevelsTS(t *testing.T) {
 	})
 
 	evts := []events.Margin{evt}
-	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero(), nil)
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
@@ -169,7 +169,7 @@ func TestNegativeMargin(t *testing.T) {
 
 	// increment is negative
 	inc := num.DecimalFromFloat(-10)
-	riskEvts := eng.UpdateMarginsOnSettlement(ctx, []events.Margin{evt}, mtmPrice, inc)
+	riskEvts := eng.UpdateMarginsOnSettlement(ctx, []events.Margin{evt}, mtmPrice, inc, nil)
 	require.NotEmpty(t, riskEvts)
 	initial := riskEvts[0].Transfer().Amount.Amount
 	require.Equal(t, "5", initial.String())
@@ -193,7 +193,7 @@ func testMarginTopup(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	evts := []events.Margin{evt}
-	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero(), nil)
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
@@ -225,7 +225,7 @@ func TestMarginTopupPerpetual(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	evts := []events.Margin{evt}
-	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, inc)
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, inc, nil)
 	assert.Equal(t, 1, len(resp))
 
 	mm := resp[0].MarginLevels().MaintenanceMargin
@@ -233,7 +233,7 @@ func TestMarginTopupPerpetual(t *testing.T) {
 
 	// now do it again with the funding payment negated, the margin should be as if we were not a perp
 	// and 5 less
-	resp = eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, inc.Neg())
+	resp = eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, inc.Neg(), nil)
 	assert.Equal(t, 1, len(resp))
 
 	mm = resp[0].MarginLevels().MaintenanceMargin
@@ -259,7 +259,7 @@ func testMarginNotReleasedInAuction(t *testing.T) {
 	eng.as.EXPECT().InAuction().AnyTimes().Return(true)
 	eng.as.EXPECT().CanLeave().AnyTimes().Return(false)
 	evts := []events.Margin{evt}
-	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero(), nil)
 	assert.Equal(t, 0, len(resp))
 }
 
@@ -279,7 +279,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
+	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero(), nil)
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
@@ -304,7 +304,7 @@ func testMarginNoop(t *testing.T) {
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 
 	evts := []events.Margin{evt}
-	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero(), nil)
 	assert.Equal(t, 1, len(resp))
 }
 
@@ -326,7 +326,7 @@ func testMarginOverflow(t *testing.T) {
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().Times(2).Return(false)
 	evts := []events.Margin{evt}
-	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero(), nil)
 	assert.Equal(t, 1, len(resp))
 
 	// ensure we get the correct transfer request back, correct amount etc...
@@ -357,7 +357,7 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	eng.as.EXPECT().CanLeave().Times(2).Return(true)
 	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	evts := []events.Margin{evt}
-	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero())
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice, num.DecimalZero(), markPrice)
 	assert.Equal(t, 1, len(resp))
 
 	// ensure we get the correct transfer request back, correct amount etc...
@@ -410,6 +410,7 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 		margin_funding_factor   float64
 		funding_payment_to_date float64
 		auction                 bool
+		auctionPrice            num.Decimal
 	}{
 		{
 			expectedMargin:          "87",
@@ -587,6 +588,29 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			funding_payment_to_date: 10,
 			auction:                 false,
 		},
+		{
+			expectedMargin: "1754",
+			positionSize:   1,
+			buyOrders: []*risk.OrderInfo{
+				{
+					TrueRemaining: 100,
+					Price:         num.DecimalFromInt64(1),
+					IsMarketOrder: false,
+				},
+				{
+					TrueRemaining: 20,
+					Price:         num.DecimalFromInt64(2),
+					IsMarketOrder: false,
+				},
+			},
+			sellOrders:              []*risk.OrderInfo{},
+			linearSlippageFactor:    num.DecimalFromFloat(0.01),
+			quadraticSlippageFactor: num.DecimalZero(),
+			margin_funding_factor:   1,
+			funding_payment_to_date: 10,
+			auction:                 false,
+			auctionPrice:            num.DecimalFromInt64(123),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -623,13 +647,16 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 		as.EXPECT().CanLeave().AnyTimes().Return(!tc.auction).AnyTimes()
 		testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, marketID, "ETH", statevar, num.DecimalFromInt64(1), false, nil, tc.linearSlippageFactor, tc.quadraticSlippageFactor)
 
-		riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, num.UintFromUint64(uint64(markPrice)), constantPerUnitPositionSize)
-		require.NotNil(t, riskevt)
+		apUint, overflow := num.UintFromDecimal(tc.auctionPrice)
+		require.False(t, overflow)
+
+		riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, num.UintFromUint64(uint64(markPrice)), constantPerUnitPositionSize, apUint)
 		require.NoError(t, err)
+		require.NotNil(t, riskevt)
 		margins := riskevt.MarginLevels()
 		require.Equal(t, tc.expectedMargin, margins.MaintenanceMargin.String())
 
-		marginRecalcualted := risk.CalculateMaintenanceMarginWithSlippageFactors(evt.size, tc.buyOrders, tc.sellOrders, num.DecimalFromInt64(markPrice), num.DecimalOne(), tc.linearSlippageFactor, tc.quadraticSlippageFactor, r.Long, r.Short, constantPerUnitPositionSize, tc.auction)
+		marginRecalcualted := risk.CalculateMaintenanceMarginWithSlippageFactors(evt.size, tc.buyOrders, tc.sellOrders, num.DecimalFromInt64(markPrice), num.DecimalOne(), tc.linearSlippageFactor, tc.quadraticSlippageFactor, r.Long, r.Short, constantPerUnitPositionSize, tc.auction, tc.auctionPrice)
 		require.Equal(t, margins.MaintenanceMargin.Float64(), marginRecalcualted.RoundUp(0).InexactFloat64())
 	}
 }
@@ -721,7 +748,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	// insufficient orders on the book
-	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), num.DecimalZero())
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), num.DecimalZero(), nil)
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -829,7 +856,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 
 	previousMarkPrice := num.NewUint(103)
 
-	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, previousMarkPrice, num.DecimalZero())
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, previousMarkPrice, num.DecimalZero(), nil)
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -934,7 +961,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 		general: 100000,
 		market:  marketID,
 	}
-	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), num.DecimalZero())
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), num.DecimalZero(), nil)
 	require.NotNil(t, riskevt)
 	require.Nil(t, err)
 
@@ -976,7 +1003,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 		general: 100000,
 		market:  marketID,
 	}
-	riskevt, _, err = testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), num.DecimalZero())
+	riskevt, _, err = testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), num.DecimalZero(), nil)
 	require.NotNil(t, riskevt)
 	require.Nil(t, err)
 
@@ -1010,12 +1037,12 @@ func testInitialMarginRequirement(t *testing.T) {
 	eng.tsvc.EXPECT().GetTimeNow().Times(6)
 	eng.as.EXPECT().InAuction().Times(2).Return(false)
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
-	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
+	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero(), nil)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
 	assert.Nil(t, riskevt)
 
 	evt.general = initialMargin
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero(), nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, riskevt)
 	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(initialMargin)))
@@ -1030,12 +1057,12 @@ func testInitialMarginRequirement(t *testing.T) {
 	initialMarginAuction := math.Ceil(initialMarginScalingFactor * (size*slippageFactor + size*size*slippageFactor + size*rf.Short.InexactFloat64()) * markPrice.ToDecimal().InexactFloat64())
 
 	evt.general = uint64(initialMarginAuction) - 1
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero(), nil)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
 	assert.Nil(t, riskevt)
 
 	evt.general = uint64(initialMarginAuction)
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero(), nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, riskevt)
 	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(uint64(initialMarginAuction))))
@@ -1047,12 +1074,12 @@ func testInitialMarginRequirement(t *testing.T) {
 	initialMarginAuction = math.Ceil(initialMarginAuction + initialMarginScalingFactor*ordersBit)
 
 	evt.general = uint64(initialMarginAuction) - 1
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero(), nil)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
 	assert.Nil(t, riskevt)
 
 	evt.general = uint64(math.Ceil(initialMarginAuction))
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero())
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, num.DecimalZero(), nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, riskevt)
 	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(uint64(initialMarginAuction))))
@@ -1300,7 +1327,7 @@ func TestMaintenanceMarign(t *testing.T) {
 		}
 		expectedMargin := num.MaxD(expectedMarginShort, expectedMarginLong).Add(num.MaxD(num.DecimalZero(), openVolume.Mul(constantPerUnitPositionSize)))
 
-		actualMargin := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, tc.buyOrders, tc.sellOrders, markPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, tc.auction)
+		actualMargin := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, tc.buyOrders, tc.sellOrders, markPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, tc.auction, num.DecimalZero())
 
 		require.True(t, expectedMargin.Div(actualMargin).Sub(num.DecimalOne()).Abs().LessThan(relativeTolerance), fmt.Sprintf("Test case %v: expectedMargin=%s, actualMargin:=%s", i+1, expectedMargin, actualMargin))
 	}
@@ -1430,7 +1457,7 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 		riskFactorLong := num.DecimalFromFloat(tc.riskFactorLong)
 		riskFactorShort := num.DecimalFromFloat(tc.riskFactorShort)
 		constantPerUnitPositionSize := num.DecimalFromFloat(tc.margin_funding_factor * tc.funding_payment_to_date)
-		maintenanceMargin := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, nil, nil, markPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false)
+		maintenanceMargin := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, nil, nil, markPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false, num.DecimalZero())
 
 		maintenanceMarginFp := maintenanceMargin.InexactFloat64()
 		require.Greater(t, maintenanceMarginFp, 0.0)
@@ -1456,7 +1483,7 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 		liquidationPriceFp = liquidationPrice.InexactFloat64()
 		require.GreaterOrEqual(t, liquidationPriceFp, 0.0)
 
-		marginAtLiquidationPrice := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, nil, nil, liquidationPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false)
+		marginAtLiquidationPrice := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, nil, nil, liquidationPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false, num.DecimalZero())
 		openVolume := num.DecimalFromInt64(tc.positionSize).Div(positionFactor)
 		mtmLoss := liquidationPrice.Sub(markPrice).Mul(openVolume)
 		collateralAfterLoss := collateral.Add(mtmLoss)
@@ -1801,7 +1828,7 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 			require.True(t, withBuy.LessThan(positionOnly), fmt.Sprintf("Test case %v:", i+1))
 		}
 
-		marginAtLiquidationPrice := risk.CalculateMaintenanceMarginWithSlippageFactors(newPositionSize, nil, nil, liquidationPriceForNewPosition, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, num.DecimalZero(), false)
+		marginAtLiquidationPrice := risk.CalculateMaintenanceMarginWithSlippageFactors(newPositionSize, nil, nil, liquidationPriceForNewPosition, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, num.DecimalZero(), false, num.DecimalZero())
 		openVolume := num.DecimalFromInt64(newPositionSize).Div(positionFactor)
 		mtmLoss := liquidationPriceForNewPosition.Sub(lastMarkPrice).Mul(openVolume)
 		fundingLoss := num.MaxD(num.DecimalZero(), openVolume.Mul(constantPerUnitPositionSize)).Mul(num.DecimalFromFloat(-1))
@@ -1834,7 +1861,7 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 		}
 
 		// recalculate without funding loss and compensate for it when getting the expectation
-		marginAtLiquidationPrice = risk.CalculateMaintenanceMarginWithSlippageFactors(newPositionSize, nil, nil, liquidationPriceForNewPosition, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, num.DecimalZero(), false)
+		marginAtLiquidationPrice = risk.CalculateMaintenanceMarginWithSlippageFactors(newPositionSize, nil, nil, liquidationPriceForNewPosition, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, num.DecimalZero(), false, num.DecimalZero())
 		openVolume = num.DecimalFromInt64(newPositionSize).Div(positionFactor)
 		mtmLoss = liquidationPriceForNewPosition.Sub(lastMarkPrice).Mul(openVolume)
 		fundingLoss = num.MaxD(num.DecimalZero(), openVolume.Mul(constantPerUnitPositionSize)).Mul(num.DecimalFromFloat(-1))

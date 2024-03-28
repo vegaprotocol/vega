@@ -37,11 +37,11 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | lp    | ETH/DEC19 | 27        | 1                    | buy  | MID              | 36     | 100    |
       | lp    | ETH/DEC19 | 27        | 1                    | sell | MID              | 27     | 100    |
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 | 14000       |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 13440  |  6560   |
+      | party1 | BTC   | ETH/DEC19 | 16800  |  3200   |
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
