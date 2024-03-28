@@ -2005,7 +2005,7 @@ type ObserveOrdersRequest struct {
 
 	// Restrict orders to those placed on the given markets.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// Restrict orders to those placed on the by the given parties.
+	// Restrict orders to those placed on the market by the given parties.
 	PartyIds []string `protobuf:"bytes,2,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
 	// Whether liquidity orders should be excluded from the stream. If not set, liquidity orders will be included.
 	ExcludeLiquidity *bool `protobuf:"varint,3,opt,name=exclude_liquidity,json=excludeLiquidity,proto3,oneof" json:"exclude_liquidity,omitempty"`
@@ -5879,7 +5879,7 @@ type IntervalToCandleId struct {
 
 	// Interval for the candle.
 	Interval string `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
-	// Unique id of the candle.
+	// Unique ID of the candle.
 	CandleId string `protobuf:"bytes,2,opt,name=candle_id,json=candleId,proto3" json:"candle_id,omitempty"`
 }
 
@@ -5999,7 +5999,8 @@ type Candle struct {
 	Close string `protobuf:"bytes,6,opt,name=close,proto3" json:"close,omitempty"`
 	// Total trading volume during the candle interval.
 	Volume uint64 `protobuf:"varint,7,opt,name=volume,proto3" json:"volume,omitempty"`
-	// Total notional value traded during the candle interval.
+	// Total notional value traded during the candle interval. This value is determined by multiplying price, using market decimal places, by size, using position decimal places.
+	// The number of decimal places needed to convert this value to a decimal is market decimal places plus position decimal places.
 	Notional uint64 `protobuf:"varint,8,opt,name=notional,proto3" json:"notional,omitempty"`
 }
 
@@ -7780,7 +7781,7 @@ type GetERC20SetAssetLimitsBundleResponse struct {
 	Nonce string `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	// Lifetime limit deposit for this asset.
 	LifetimeLimit string `protobuf:"bytes,4,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
-	// Threshold withdraw for this asset.
+	// Withdrawal threshold for this asset.
 	Threshold string `protobuf:"bytes,5,opt,name=threshold,proto3" json:"threshold,omitempty"`
 	// Signatures bundle as hex encoded data, prefixed with `0x`
 	// e.g: `0x + sig1 + sig2 + ... + sixN`.
@@ -16254,7 +16255,7 @@ type StakeLinkingEdge struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Stake linking represent the intent from a party to deposit.
+	// Stake linking representing the intent from a party to deposit.
 	Node *v1.StakeLinking `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -16638,7 +16639,7 @@ type ObserveLedgerMovementsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Ledger movements data with list of ledger entries and and post-transfer balances.
+	// Ledger movements data with list of ledger entries and post-transfer balances.
 	LedgerMovement *vega.LedgerMovement `protobuf:"bytes,1,opt,name=ledger_movement,json=ledgerMovement,proto3" json:"ledger_movement,omitempty"`
 }
 
@@ -18882,7 +18883,7 @@ type FundingPayment struct {
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Funding period sequence this payment was calculated from.
 	FundingPeriodSeq uint64 `protobuf:"varint,3,opt,name=funding_period_seq,json=fundingPeriodSeq,proto3" json:"funding_period_seq,omitempty"`
-	// Timestamp, in Unix nanoseconds, at which this funding payment occured.
+	// Timestamp, in Unix nanoseconds, at which this funding payment occurred.
 	Timestamp int64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Funding payment amount, where a positive value indicates an earned payment received and a negative value a loss.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
@@ -19839,11 +19840,11 @@ type EstimatePositionRequest struct {
 	AverageEntryPrice string `protobuf:"bytes,3,opt,name=average_entry_price,json=averageEntryPrice,proto3" json:"average_entry_price,omitempty"`
 	// Open and/or hypothetical orders.
 	Orders []*OrderInfo `protobuf:"bytes,4,rep,name=orders,proto3" json:"orders,omitempty"`
-	// Margin account balance. Needs to be provided scaled to asset decimal places.
+	// Margin account balance. Needs to scaled by asset decimal places.
 	MarginAccountBalance string `protobuf:"bytes,5,opt,name=margin_account_balance,json=marginAccountBalance,proto3" json:"margin_account_balance,omitempty"`
-	// General account balance. Needs to be provided scaled to asset decimal places.
+	// General account balance. Needs to scaled by asset decimal places.
 	GeneralAccountBalance string `protobuf:"bytes,6,opt,name=general_account_balance,json=generalAccountBalance,proto3" json:"general_account_balance,omitempty"`
-	// Order margin account balance. Needs to be provided scaled to asset decimal places.
+	// Order margin account balance. Needs to be scaled by asset decimal places.
 	OrderMarginAccountBalance string `protobuf:"bytes,7,opt,name=order_margin_account_balance,json=orderMarginAccountBalance,proto3" json:"order_margin_account_balance,omitempty"`
 	// Margin mode for the party, cross margin or isolated margin.
 	MarginMode vega.MarginMode `protobuf:"varint,8,opt,name=margin_mode,json=marginMode,proto3,enum=vega.MarginMode" json:"margin_mode,omitempty"`
@@ -23271,9 +23272,9 @@ type GetFeesStatsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Restrict fee statistics to those related for the given market.
+	// Restrict fee statistics to those related to the given market.
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// Restrict fee statistics to those related for the given asset.
+	// Restrict fee statistics to those related to the given asset.
 	AssetId *string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
 	// Epoch to get referral fee statistics for. If not set, the last complete epoch is used.
 	EpochSeq *uint64 `protobuf:"varint,3,opt,name=epoch_seq,json=epochSeq,proto3,oneof" json:"epoch_seq,omitempty"`
@@ -24359,7 +24360,7 @@ type GetTotalTransferFeeDiscountRequest struct {
 
 	// ID of party eligible for the discount.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// ID of asset to associated with the discount.
+	// ID of asset associated with the discount.
 	AssetId string `protobuf:"bytes,5,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 }
 
