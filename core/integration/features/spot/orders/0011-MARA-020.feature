@@ -36,9 +36,10 @@ Feature: Spot market
     And the average block duration is "1"
     # Place some orders to get out of auction
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
-      | party5 | BTC/ETH   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | BTC/ETH   | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GFA | p1-gfa    |
+      | party1 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA |           |
+      | party5 | BTC/ETH   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
     And the opening auction period ends for market "BTC/ETH"
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
@@ -57,13 +58,15 @@ Feature: Spot market
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | BTC/ETH   | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | buy1      |
 
+    #0039-MKTD-033 GFA order leaving auction should be cancelled
     Then the orders should have the following status:
-      | party  | reference | status        |
-      | party1 | buy1      | STATUS_FILLED |
-      | party5 | sell1     | STATUS_ACTIVE |
+      | party  | reference | status           |
+      | party1 | buy1      | STATUS_FILLED    |
+      | party1 | p1-gfa    | STATUS_CANCELLED |
+      | party5 | sell1     | STATUS_ACTIVE    |
 
     Then the parties cancel the following orders:
-      | party  | reference            |
-      | party5 | sell1                |
+      | party  | reference |
+      | party5 | sell1     |
 
     And "party5" should have general account balance of "98" for asset "BTC"
