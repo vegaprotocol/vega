@@ -22,6 +22,7 @@
 - [742](https://github.com/vegaprotocol/core-test-coverage/issues/742) - Add coverage for `0044-LIME-029`
 - [10994](https://github.com/vegaprotocol/vega/pull/10994) - `rewards.team.minEpochsInTeam` can now be set to `0`
 - [11009](https://github.com/vegaprotocol/vega/issues/11009) - Relax market decimals validation in governance.
+- [11036](https://github.com/vegaprotocol/vega/issues/11036) - Cross-margin mode: use max(order price, auction price) for margin calculation in auction
 
 ### 🐛 Fixes
 
