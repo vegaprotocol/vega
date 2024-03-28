@@ -160,8 +160,8 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.10") {
 			// use a recent time instead here to skip unneeded blocks
 			lastEthBlock = &types.EthBlock{
-				Height: 19531719,
-				Time:   1711618091,
+				Height: 19532520,
+				Time:   1711627811,
 			}
 		}
 
