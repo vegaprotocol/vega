@@ -1,8 +1,8 @@
 Feature: Probability of trading decreases away from the mid-price in Spot market
 
   Scenario: 001 0034-PROB-008, lp1, lp2, lp3 are making the same amount of liuquidity commitment, but with different orders, lp1 places orders the furthest to mid while lp3 places orders closest to the mid
-  #when liquidity fee is distributed, lp1 gets the least liquidity fee while lp3 gets the most liquidity fee
-  #it demonstrates the fact that probability of trading decreases away from the mid-price in Spot market
+    #when liquidity fee is distributed, lp1 gets the least liquidity fee while lp3 gets the most liquidity fee
+    #it demonstrates the fact that probability of trading decreases away from the mid-price in Spot market
 
     Given time is updated to "2023-07-20T00:00:00Z"
 
@@ -34,7 +34,7 @@ Feature: Probability of trading decreases away from the mid-price in Spot market
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.2   |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.4   |
-      | validators.epoch.length                             | 2s    |
+      | validators.epoch.length                             | 4s    |
       | limits.markets.maxPeggedOrders                      | 10    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 0.1   |
 
@@ -43,7 +43,7 @@ Feature: Probability of trading decreases away from the mid-price in Spot market
       | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | SLA-1      |
     And the following network parameters are set:
       | name                                             | value |
-      | market.liquidity.providersFeeCalculationTimeStep | 2s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 1s    |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
@@ -77,7 +77,7 @@ Feature: Probability of trading decreases away from the mid-price in Spot market
       | lp1   | BTC   | BTC/ETH   | 600     |
       | lp1   | ETH   | BTC/ETH   | 2000    |
 
-    Then the network moves ahead "1" blocks 
+    Then the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4800         | 6000           | 0             |
@@ -113,8 +113,16 @@ Feature: Probability of trading decreases away from the mid-price in Spot market
     Then the accumulated liquidity fees should be "6000" for the market "BTC/ETH"
     When the network moves ahead "4" blocks
 
+    #lp fee distribution when market.liquidity.providersFeeCalculationTimeStep = 2s
+    # Then the following transfers should happen:
+    #   | from   | to  | from account                | to account                     | market id | amount | asset |
+    #   | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1000   | ETH   |
+    #   | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1829   | ETH   |
+    #   | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 3170   | ETH   |
+
+    #lp fee distribution when market.liquidity.providersFeeCalculationTimeStep = 1s
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1000   | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1829   | ETH   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 3170   | ETH   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1999   | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1999   | ETH   |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | BTC/ETH   | 1999   | ETH   |
