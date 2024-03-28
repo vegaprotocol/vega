@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
@@ -501,6 +502,50 @@ func getSubscriberAndStore(t *testing.T) (*sqlsubscribers.Position, sqlsubscribe
 
 	p := sqlsubscribers.NewPosition(store, mkt)
 	return p, store
+}
+
+func TestPositionsForSpots(t *testing.T) {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+
+	store := mocks.NewMockPositionStore(ctrl)
+	mkt := mocks.NewMockMarketSvc(ctrl)
+	mkt.EXPECT().IsSpotMarket(gomock.Any(), gomock.Any()).Times(1).Return(true)
+	var lastPos *entities.Position
+
+	getByMarket := func(_ context.Context, _ string) ([]entities.Position, error) {
+		if lastPos == nil {
+			return nil, nil
+		}
+		return []entities.Position{*lastPos}, nil
+	}
+
+	store.EXPECT().GetByMarket(gomock.Any(), gomock.Any()).DoAndReturn(getByMarket).AnyTimes()
+	p := sqlsubscribers.NewPosition(store, mkt)
+	// spot trade, expect no position
+	tradeEvent := events.NewTradeEvent(context.Background(), types.Trade{MarketID: "1", MarketPrice: num.NewUint(100), Price: num.NewUint(1000)})
+	p.Push(context.Background(), tradeEvent)
+	pp, err := store.GetByMarket(context.Background(), "1")
+	assert.NoError(t, err)
+	assert.Zero(t, len(pp))
+
+	// futures trade, expect position
+	recordPos := func(_ context.Context, pos entities.Position) error {
+		lastPos = &pos
+		return nil
+	}
+	getByMarketAndParty := func(_ context.Context, _ string, _ string) (*entities.Position, error) {
+		return lastPos, nil
+	}
+	store.EXPECT().Add(gomock.Any(), gomock.Any()).DoAndReturn(recordPos).AnyTimes()
+	mkt.EXPECT().GetMarketScalingFactor(gomock.Any(), gomock.Any()).AnyTimes().Return(num.DecimalFromInt64(1), true)
+	store.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(getByMarketAndParty).AnyTimes()
+	mkt.EXPECT().IsSpotMarket(gomock.Any(), gomock.Any()).Times(1).Return(false)
+	tradeEvent = events.NewTradeEvent(context.Background(), types.Trade{MarketID: "2", MarketPrice: num.NewUint(100), Price: num.NewUint(1000)})
+	p.Push(context.Background(), tradeEvent)
+	pp, err = store.GetByMarket(context.Background(), "2")
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
 }
 
 type tradeStub struct {

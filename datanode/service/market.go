@@ -32,15 +32,17 @@ type MarketStore interface {
 }
 
 type Markets struct {
-	store     MarketStore
-	cacheLock sync.RWMutex
-	sf        map[entities.MarketID]num.Decimal
+	store       MarketStore
+	cacheLock   sync.RWMutex
+	sf          map[entities.MarketID]num.Decimal
+	isSpotCache map[entities.MarketID]bool
 }
 
 func NewMarkets(store MarketStore) *Markets {
 	return &Markets{
-		store: store,
-		sf:    map[entities.MarketID]num.Decimal{},
+		store:       store,
+		sf:          map[entities.MarketID]num.Decimal{},
+		isSpotCache: map[entities.MarketID]bool{},
 	}
 }
 
@@ -56,9 +58,11 @@ func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 	if market.State == entities.MarketStateSettled || market.State == entities.MarketStateRejected {
 		// a settled or rejected market can be safely removed from this map.
 		delete(m.sf, market.ID)
+		delete(m.isSpotCache, market.ID)
 	} else {
 		// just in case this gets updated, or the market is new.
 		m.sf[market.ID] = num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(market.PositionDecimalPlaces)))
+		m.isSpotCache[market.ID] = market.TradableInstrument.Instrument.GetSpot() != nil
 	}
 	m.cacheLock.Unlock()
 	return nil
@@ -86,6 +90,20 @@ func (m *Markets) GetMarketScalingFactor(ctx context.Context, marketID string) (
 
 	pf := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(market.PositionDecimalPlaces)))
 	return pf, true
+}
+
+func (m *Markets) IsSpotMarket(ctx context.Context, marketID string) bool {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+	if is, ok := m.isSpotCache[entities.MarketID(marketID)]; ok {
+		return is
+	}
+
+	market, err := m.store.GetByID(ctx, marketID)
+	if err != nil {
+		return false
+	}
+	return market.TradableInstrument.Instrument.GetSpot() != nil
 }
 
 func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
