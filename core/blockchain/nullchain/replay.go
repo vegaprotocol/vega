@@ -47,6 +47,7 @@ type blockData struct {
 type Replayer struct {
 	log     *logging.Logger
 	app     ApplicationService
+	cfg     blockchain.ReplayConfig
 	rFile   *os.File
 	current *blockData
 	stop    chan struct{}
@@ -72,6 +73,7 @@ func NewNullChainReplayer(app ApplicationService, cfg blockchain.ReplayConfig, l
 		rFile: f,
 		log:   log,
 		stop:  make(chan struct{}, 1),
+		cfg:   cfg,
 	}, nil
 }
 
@@ -175,6 +177,11 @@ func (r *Replayer) replayChain(appHeight int64) (int64, time.Time, error) {
 
 		if !bytes.Equal(data.AppHash, resp.AppHash) {
 			return replayedHeight, replayedTime, fmt.Errorf("appHash mismatch on replay, expected %s got %s", hex.EncodeToString(data.AppHash), hex.EncodeToString(resp.AppHash))
+		}
+
+		if r.cfg.Until != 0 && replayedHeight >= r.cfg.Until {
+			r.log.Info("replay stopped as requests", logging.Int64("height", replayedHeight))
+
 		}
 	}
 

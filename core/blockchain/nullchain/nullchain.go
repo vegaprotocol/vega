@@ -165,6 +165,12 @@ func (n *NullBlockchain) StartChain() error {
 		if err != nil {
 			return err
 		}
+
+		if n.cfg.Replay.Until != 0 {
+			n.log.Info("nullchain replaying stopped", logging.Int64("until", n.cfg.Replay.Until))
+			// note we're intentionally not switching off the replay flag so the nullchain can never move any further forward
+			return nil
+		}
 		n.replaying.Store(false)
 
 		n.log.Info("nullchain finished replaying chain", logging.Int64("block-height", blockHeight))
