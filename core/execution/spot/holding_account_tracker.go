@@ -172,8 +172,10 @@ func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccountAuctionEnd(ctx co
 
 	if !effectiveFee.IsZero() {
 		lockedFee, ok := hat.orderIDToFee[orderID]
-		if !ok || (!lockedFee.IsZero() && lockedFee.LT(effectiveFee)) {
-			return nil, fmt.Errorf("insufficient locked fee to release for order %s", orderID)
+		if !ok {
+			effectiveFee = num.UintZero()
+		} else {
+			effectiveFee = num.Min(effectiveFee, lockedFee)
 		}
 	}
 	lockedQuantity, ok := hat.orderIDToQuantity[orderID]
