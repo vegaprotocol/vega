@@ -638,6 +638,10 @@ func (e *Engine) transferSpotFees(ctx context.Context, marketID string, assetID 
 			return nil, err
 		}
 
+		if req == nil {
+			continue
+		}
+
 		res, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error("Failed to transfer funds", logging.Error(err))
@@ -699,6 +703,9 @@ func (e *Engine) getSpotFeeTransferRequest(
 
 	switch t.Type {
 	case types.TransferTypeInfrastructureFeePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
 		treq.FromAccount = []*types.Account{general}
 		treq.ToAccount = []*types.Account{infraFee}
 		return treq, nil
@@ -707,6 +714,9 @@ func (e *Engine) getSpotFeeTransferRequest(
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferTypeLiquidityFeePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
 		treq.FromAccount = []*types.Account{general}
 		treq.ToAccount = []*types.Account{liquiFee}
 		return treq, nil
@@ -715,6 +725,9 @@ func (e *Engine) getSpotFeeTransferRequest(
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferTypeMakerFeePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
 		treq.FromAccount = []*types.Account{general}
 		treq.ToAccount = []*types.Account{makerFee}
 		return treq, nil
