@@ -115,6 +115,7 @@
 - [10904](https://github.com/vegaprotocol/vega/issues/10904) - Balance changes API should validate date range properly.
 - [10911](https://github.com/vegaprotocol/vega/issues/10911) - Fix `unregistration` of spot market state var.
 - [10915](https://github.com/vegaprotocol/vega/issues/10915) - Fix duplicate deposit entries, add new `STATUS_DUPLICATE_REJECTED` status.
+- [11011](https://github.com/vegaprotocol/vega/issues/11011) - Make spot fees best effort. 
 
 ## 0.74.3
 
