@@ -2276,6 +2276,7 @@ func (m *Market) StopSnapshots() {
 }
 
 func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, orders []*types.Order, err error) {
+	wasInAuction := m.as.InAuction()
 	defer func() {
 		if err != nil {
 			return
@@ -2283,7 +2284,8 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 
 		orders = m.handleConfirmation(ctx, conf)
 		m.handleConfirmationPassiveOrders(ctx, conf)
-		if !conf.Order.IsFinished() && !m.as.InAuction() {
+		// if we were in auction before we handled the transfer already, if we're finished, there's nothing to do here.
+		if !conf.Order.IsFinished() && !wasInAuction {
 			amt := m.calculateAmountBySide(newOrder.Side, newOrder.Price, newOrder.TrueRemaining())
 			asset := m.quoteAsset
 			if newOrder.Side == types.SideSell {
