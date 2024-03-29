@@ -223,7 +223,7 @@ func StopOrderSetupFromProto(
 		expiry.ExpiryStrategy = psetup.ExpiryStrategy
 	}
 
-	var sizeOverrideValue StopOrderSizeOverrideValue
+	var sizeOverrideValue *StopOrderSizeOverrideValue
 	var sizeOverrideSetting StopOrderSizeOverrideSetting = vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED
 
 	if psetup.SizeOverrideValue != nil {
@@ -231,7 +231,7 @@ func StopOrderSetupFromProto(
 		if err != nil {
 			return nil, err
 		}
-		sizeOverrideValue = StopOrderSizeOverrideValue{PercentageSize: value}
+		sizeOverrideValue = &StopOrderSizeOverrideValue{PercentageSize: value}
 	}
 
 	if psetup.SizeOverrideSetting != nil {
@@ -242,7 +242,7 @@ func StopOrderSetupFromProto(
 		Expiry:              expiry,
 		Trigger:             trigger,
 		SizeOverrideSetting: sizeOverrideSetting,
-		SizeOverrideValue:   &sizeOverrideValue,
+		SizeOverrideValue:   sizeOverrideValue,
 	}, nil
 }
 
@@ -351,8 +351,13 @@ func (s *StopOrder) String() string {
 	if s.RejectionReason != nil {
 		rejectionReason = s.RejectionReason.String()
 	}
+	sizeOverrideValue := "nil"
+	if s.SizeOverrideValue != nil {
+		sizeOverrideValue = s.SizeOverrideValue.PercentageSize.String()
+	}
+
 	return fmt.Sprintf(
-		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v) rejectionReason(%v)",
+		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v) rejectionReason(%v) sizeOverrideSetting(%v) sizeOverrideValue(%v)",
 		s.ID,
 		s.Party,
 		s.Market,
@@ -362,9 +367,11 @@ func (s *StopOrder) String() string {
 		s.Expiry.String(),
 		s.Trigger.String(),
 		s.Status,
-		s.CreatedAt,
-		s.UpdatedAt,
+		s.CreatedAt.UTC(),
+		s.UpdatedAt.UTC(),
 		rejectionReason,
+		s.SizeOverrideSetting,
+		sizeOverrideValue,
 	)
 }
 
@@ -437,19 +444,26 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 		ocoLinkID = ptr.From(s.OCOLinkID)
 	}
 
+	var sizeOverrideValue *vega.StopOrder_SizeOverrideValue
+	if s.SizeOverrideSetting == StopOrderSizeOverrideSettingPosition {
+		sizeOverrideValue = &vega.StopOrder_SizeOverrideValue{Percentage: s.SizeOverrideValue.PercentageSize.String()}
+	}
+
 	ev := &eventspb.StopOrderEvent{
 		Submission: s.OrderSubmission.IntoProto(),
 		StopOrder: &vega.StopOrder{
-			Id:               s.ID,
-			PartyId:          s.Party,
-			MarketId:         s.Market,
-			OrderId:          s.OrderID,
-			OcoLinkId:        ocoLinkID,
-			Status:           s.Status,
-			CreatedAt:        s.CreatedAt.UnixNano(),
-			UpdatedAt:        updatedAt,
-			TriggerDirection: s.Trigger.Direction,
-			RejectionReason:  s.RejectionReason,
+			Id:                  s.ID,
+			PartyId:             s.Party,
+			MarketId:            s.Market,
+			OrderId:             s.OrderID,
+			OcoLinkId:           ocoLinkID,
+			Status:              s.Status,
+			CreatedAt:           s.CreatedAt.UnixNano(),
+			UpdatedAt:           updatedAt,
+			TriggerDirection:    s.Trigger.Direction,
+			RejectionReason:     s.RejectionReason,
+			SizeOverrideSetting: s.SizeOverrideSetting,
+			SizeOverrideValue:   sizeOverrideValue,
 		},
 	}
 
