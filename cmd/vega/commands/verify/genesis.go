@@ -90,8 +90,8 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 	}
 
 	for k, v := range assets {
-		if _, failed := num.UintFromString(v.Quantum, 10); failed {
-			r.Err("app_state.assets[%s].quantum not a valid number: %s", k, v.Quantum)
+		if n, failed := num.UintFromString(v.Quantum, 10); failed || n.IsNegative() || n.IsZero() {
+			r.Err("app_state.assets[%s].quantum not a valid positive number: %s", k, v.Quantum)
 		}
 
 		switch {

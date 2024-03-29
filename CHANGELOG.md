@@ -45,6 +45,7 @@
 - [11016](https://github.com/vegaprotocol/vega/issues/11016) - Update holding account when amending order with cancel/replace on remaining funds.
 - [11038](https://github.com/vegaprotocol/vega/issues/11038) - Simplify price ranges state. 
 - [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
+- []
 
 ## 0.75.0
 
@@ -116,6 +117,7 @@
 - [10904](https://github.com/vegaprotocol/vega/issues/10904) - Balance changes API should validate date range properly.
 - [10911](https://github.com/vegaprotocol/vega/issues/10911) - Fix `unregistration` of spot market state var.
 - [10915](https://github.com/vegaprotocol/vega/issues/10915) - Fix duplicate deposit entries, add new `STATUS_DUPLICATE_REJECTED` status.
+- [11041](https://github.com/vegaprotocol/vega/issues/11041) - Add validation for genesis asset quantum. 
 - [11011](https://github.com/vegaprotocol/vega/issues/11011) - Make spot fees best effort. 
 
 ## 0.74.3

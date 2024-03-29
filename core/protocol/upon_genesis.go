@@ -70,6 +70,10 @@ func (svcs *allServices) loadAsset(ctx context.Context, id string, v *proto.Asse
 		return fmt.Errorf("error instanciating asset %v", err)
 	}
 
+	if !rawAsset.Quantum.IsPositive() {
+		svcs.log.Panic("invalid asset found - asset quantum must be positive", logging.String("quantum", rawAsset.Quantum.String()))
+	}
+
 	asset, err := svcs.assets.Get(aid)
 	if err != nil {
 		return fmt.Errorf("unable to get asset %v", err)
