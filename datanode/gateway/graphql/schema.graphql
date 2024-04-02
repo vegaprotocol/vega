@@ -4045,6 +4045,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
   "Proposal declined because the participation threshold was not reached"
   PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
+  "Proposal declined becuase one of the sub proposals was rejected"
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
   "Asset details are invalid"
   PROPOSAL_ERROR_INVALID_ASSET_DETAILS
   "Too many price monitoring triggers specified in market"
