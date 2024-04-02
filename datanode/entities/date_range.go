@@ -29,12 +29,12 @@ type DateRange struct {
 }
 
 var (
-	ErrInvalidDateRange   = errors.New("invalid date range, date range is required")
-	ErrMinimumDate        = errors.New("date range start must be after 2020-01-01")
-	ErrEndDateBeforeStart = errors.New("date range start must be before end")
-	ErrDateRangeTooLong   = errors.New("date range is too long")
-	minimumDate           = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	maximumDuration       = time.Hour * 24 * 365 // 1 year maximum duration
+	ErrDateRangeIsRequired = errors.New("date range is required")
+	ErrMinimumDate         = errors.New("date range start must be after 2020-01-01")
+	ErrEndDateBeforeStart  = errors.New("date range start must be before end")
+	ErrDateRangeTooLong    = errors.New("date range is too long")
+	minimumDate            = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	maximumDuration        = time.Hour * 24 * 365 // 1 year maximum duration
 )
 
 func DateRangeFromProto(dateRangeInput *v2.DateRange) (dateRange DateRange) {
@@ -59,7 +59,7 @@ func (dr DateRange) Validate(required bool) error {
 	}
 
 	if required && dr.Start == nil && dr.End == nil {
-		return ErrInvalidDateRange
+		return ErrDateRangeIsRequired
 	}
 
 	if dr.Start != nil && dr.Start.Before(minimumDate) {
