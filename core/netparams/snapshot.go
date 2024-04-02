@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -148,7 +149,7 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		haveConfig := false
 		secondaryChainConfig := &vegapb.EVMChainConfig{}
 		if err := s.GetJSONStruct(BlockchainsEVMChainConfig, secondaryChainConfig); err == nil {
-			haveConfig = secondaryChainConfig.ChainId != ""
+			haveConfig = secondaryChainConfig.ChainId != "XXX"
 		}
 
 		// if the config hasn't been set, then initialise it from the bridge mapping
@@ -158,12 +159,12 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 			if err != nil {
 				panic(fmt.Errorf("no vega chain ID found in context: %w", err))
 			}
-			secondaryEthConf, ok := bridgeMapping[vgChainID]
-			if !ok {
-				panic("Missing secondary ethereum configuration")
-			}
-			if err := s.UpdateOptionalValidation(ctx, BlockchainsEVMChainConfig, secondaryEthConf, false, false); err != nil {
-				return nil, err
+
+			if secondaryEthConf, ok := bridgeMapping[vgChainID]; ok {
+				s.log.Info("setting second bridge config during upgrade", logging.String("cfg", secondaryEthConf))
+				if err := s.UpdateOptionalValidation(ctx, BlockchainsEVMChainConfig, secondaryEthConf, false, false); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
