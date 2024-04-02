@@ -2930,7 +2930,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// so it'll separate the positions still in distress from the
 		// which have acceptable margins
 		increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
-		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone(), increment)
+		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone(), increment, m.getAuctionPrice())
 
 		parties := make([]string, 0, len(okPos))
 		for _, v := range okPos {
@@ -3217,7 +3217,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		}
 	}
 
-	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPrice(), increment)
+	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPrice(), increment, m.getAuctionPrice())
 	isolatedMarginPartiesToClose := []events.Risk{}
 	for _, evt := range isolatedEvts {
 		mrgns, err := m.risk.CheckMarginInvariants(ctx, evt, m.getMarketObservable(nil), increment, m.matching.GetOrdersPerParty(evt.Party()), m.getMarginFactor(evt.Party()))
@@ -4616,7 +4616,7 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 
 	// check margin balances
 	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPrice(), increment)
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPrice(), increment, m.getAuctionPrice())
 	isolatedMarginPartiesToClose := []events.Risk{}
 	for _, evt := range isolatedEvts {
 		mrgns, err := m.risk.CheckMarginInvariants(ctx, evt, m.getMarketObservable(nil), increment, m.matching.GetOrdersPerParty(evt.Party()), m.getMarginFactor(evt.Party()))
@@ -4928,7 +4928,7 @@ func (m *Market) switchMarginMode(ctx context.Context, party string, marginMode 
 		// switching from isolated margin to cross margin
 		// 1. Any funds in the order margin account will be moved to the margin account.
 		// 2. At this point trading can continue with the account switched to the cross margining account type. If there are excess funds in the margin account they will be freed at the next margin release cycle.
-		risk := m.risk.SwitchFromIsolatedMargin(ctx, margins, marketObservable, increment)
+		risk := m.risk.SwitchFromIsolatedMargin(ctx, margins, marketObservable, increment, m.getAuctionPrice())
 		err = m.transferMargins(ctx, []events.Risk{risk}, nil)
 		if err != nil {
 			return err

@@ -53,9 +53,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general   |
       | aux1             | USD   | ETH/DEC19 | 1200   | 999998800 |
-      | aux2             | USD   | ETH/DEC19 | 180    | 999999820 |
+      | aux2             | USD   | ETH/DEC19 | 300    | 999999700 |
       | sellSideProvider | USD   | ETH/DEC19 | 450000 | 999550000 |
-      | buySideProvider  | USD   | ETH/DEC19 | 120000 | 999880000 |
+      | buySideProvider  | USD   | ETH/DEC19 | 150000 | 999850000 |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"

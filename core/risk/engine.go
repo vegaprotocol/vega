@@ -248,7 +248,7 @@ func (e *Engine) GetRiskFactors() *types.RiskFactor {
 	return e.factors
 }
 
-func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint, increment num.Decimal) ([]events.Risk, []events.Margin) {
+func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint, increment num.Decimal, auctionPrice *num.Uint) ([]events.Risk, []events.Margin) {
 	if len(evts) == 0 {
 		return nil, nil
 	}
@@ -260,7 +260,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	rFactors := *e.factors
 	nowTS := e.timeSvc.GetTimeNow().UnixNano()
 	for _, evt := range evts {
-		levels := e.calculateMargins(evt, price, rFactors, true, true, increment)
+		levels := e.calculateMargins(evt, price, rFactors, true, true, increment, auctionPrice)
 		if levels == nil {
 			continue
 		}
@@ -307,12 +307,12 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // party margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint, increment num.Decimal) (events.Risk, events.Margin, error) {
+func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint, increment num.Decimal, auctionPrice *num.Uint) (events.Risk, events.Margin, error) {
 	if evt == nil {
 		return nil, nil, nil
 	}
 	auction := e.as.InAuction() && !e.as.CanLeave()
-	margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction, increment)
+	margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction, increment, auctionPrice)
 
 	// no margins updates, nothing to do then
 	if margins == nil {
@@ -387,7 +387,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // In the case where the CurMargin is smaller to the MaintenanceLevel after trying to
 // move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.
-func (e *Engine) UpdateMarginsOnSettlement(ctx context.Context, evts []events.Margin, markPrice *num.Uint, increment num.Decimal) []events.Risk {
+func (e *Engine) UpdateMarginsOnSettlement(ctx context.Context, evts []events.Margin, markPrice *num.Uint, increment num.Decimal, auctionPrice *num.Uint) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
 	now := e.timeSvc.GetTimeNow().UnixNano()
 
@@ -431,7 +431,7 @@ func (e *Engine) UpdateMarginsOnSettlement(ctx context.Context, evts []events.Ma
 		}
 		// channel is closed, and we've got a nil interface
 		auction := e.as.InAuction() && !e.as.CanLeave()
-		margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction, increment)
+		margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction, increment, auctionPrice)
 
 		// no margins updates, nothing to do then
 		if margins == nil {
@@ -514,12 +514,12 @@ func (e *Engine) UpdateMarginsOnSettlement(ctx context.Context, evts []events.Ma
 
 // ExpectMargins is used in the case some parties are in a distressed positions
 // in this situation we will only check if the party margin is > to the maintenance margin.
-func (e *Engine) ExpectMargins(evts []events.Margin, markPrice *num.Uint, increment num.Decimal) (okMargins []events.Margin, distressedPositions []events.Margin) {
+func (e *Engine) ExpectMargins(evts []events.Margin, markPrice *num.Uint, increment num.Decimal, auctionPrice *num.Uint) (okMargins []events.Margin, distressedPositions []events.Margin) {
 	okMargins = make([]events.Margin, 0, len(evts)/2)
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	auction := e.as.InAuction() && !e.as.CanLeave()
 	for _, evt := range evts {
-		margins := e.calculateMargins(evt, markPrice, *e.factors, false, auction, increment)
+		margins := e.calculateMargins(evt, markPrice, *e.factors, false, auction, increment, auctionPrice)
 		// no margins updates, nothing to do then
 		if margins == nil {
 			okMargins = append(okMargins, evt)
