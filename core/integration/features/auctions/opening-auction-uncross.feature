@@ -187,3 +187,19 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | buy  | 900   |      1 |
       | buy  | 899   | 100000 |
       | buy  | 850   |    106 |
+
+Scenario: max volume doesn't come from best bid and ask only
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | buy  | 2      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | sell | 2      |  1    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC19 | buy  | 3      | 90    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC19 | sell | 3      |  7    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/DEC19" should be:
+      | indicative price | indicative volume |
+      | 48               | 5                 |
+    
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | open interest |
+      | 48         | 5             |
