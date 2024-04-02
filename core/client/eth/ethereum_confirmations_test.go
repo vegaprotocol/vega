@@ -76,23 +76,52 @@ func TestEthereumConfirmations(t *testing.T) {
 	assert.ErrorIs(t, ethCfns.Check(50), eth.ErrMissingConfirmations)
 
 	// request again but before buf size
-	// no request to eth
-	tim.EXPECT().Now().Times(1).Return(time.Unix(58, 0))
-	// do block 80 > requested block == confirmations
-	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+	tim.EXPECT().Now().Times(2).Return(time.Unix(58, 0))
+	// do block 80 > requested block == confirmations, and also block is seen as finalized
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(2).
 		Return(&ethtypes.Header{Number: big.NewInt(80)}, nil)
 
-	// block 10, request 50, we are in the past, return err
 	assert.NoError(t, ethCfns.Check(50))
 
 	// request again but before buf size
 	// no request to eth
-	tim.EXPECT().Now().Times(1).Return(time.Unix(1000, 0))
+	tim.EXPECT().Now().Times(2).Return(time.Unix(1000, 0))
 	// do block 80 > requested block == confirmations
-	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(2).
 		Return(&ethtypes.Header{Number: big.NewInt(100)}, nil)
 
 	// block 10, request 50, we are in the past, return err
+	assert.NoError(t, ethCfns.Check(50))
+}
+
+func TestBlockFinalisation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
+	tim := localMocks.NewMockTime(ctrl)
+	cfg := eth.NewDefaultConfig()
+	cfg.RetryDelay.Duration = 15 * time.Second
+	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim)
+	defer ctrl.Finish()
+
+	ethCfns.UpdateConfirmations(10)
+
+	// testing with block 50 where we need 10 confirmations
+	// current Ethereum block is 70 so we have enough confirmations, but finalized block is 49
+	tim.EXPECT().Now().Times(2).Return(time.Unix(10, 0))
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(70)}, nil)
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(49)}, nil)
+
+	// block 10, request 50, we are in the past, return err
+	assert.ErrorIs(t, ethCfns.Check(50), eth.ErrBlockNotFinalized)
+
+	// now we are passed enough confirmations AND the block has been finalized
+	tim.EXPECT().Now().Times(2).Return(time.Unix(60, 0))
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(70)}, nil)
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(50)}, nil)
 	assert.NoError(t, ethCfns.Check(50))
 }
 

@@ -25,7 +25,11 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-var ErrMissingConfirmations = errors.New("not enough confirmations")
+var (
+	ErrMissingConfirmations = errors.New("not enough confirmations")
+	ErrBlockNotFinalized    = errors.New("block not finalized")
+	finalised               = big.NewInt(-3)
+)
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthereumClientConfirmations
 type EthereumClientConfirmations interface {
@@ -52,6 +56,8 @@ type EthereumConfirmations struct {
 	required            uint64
 	curHeight           uint64
 	curHeightLastUpdate time.Time
+	finHeight           uint64
+	finHeightLastUpdate time.Time
 }
 
 func NewEthereumConfirmations(cfg Config, ethClient EthereumClientConfirmations, time Time) *EthereumConfirmations {
@@ -78,7 +84,20 @@ func (e *EthereumConfirmations) UpdateConfirmations(confirmations uint64) {
 }
 
 func (e *EthereumConfirmations) Check(block uint64) error {
-	return e.CheckRequiredConfirmations(block, e.required)
+	if err := e.CheckRequiredConfirmations(block, e.required); err != nil {
+		return err
+	}
+
+	finalized, err := e.finalizedHeight(context.Background())
+	if err != nil {
+		return err
+	}
+
+	if finalized < block {
+		return ErrBlockNotFinalized
+	}
+
+	return nil
 }
 
 func (e *EthereumConfirmations) CheckRequiredConfirmations(block uint64, required uint64) error {
@@ -94,24 +113,51 @@ func (e *EthereumConfirmations) CheckRequiredConfirmations(block uint64, require
 	return nil
 }
 
+func (e *EthereumConfirmations) finalizedHeight(ctx context.Context) (uint64, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	h, lastUpdate, err := e.getHeight(ctx, e.finHeight, e.finHeightLastUpdate, finalised)
+	if err != nil {
+		return e.finHeight, err
+	}
+
+	// update cache
+	e.finHeightLastUpdate = lastUpdate
+	e.finHeight = h
+	return e.finHeight, err
+}
+
 func (e *EthereumConfirmations) currentHeight(ctx context.Context) (uint64, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
+	h, lastUpdate, err := e.getHeight(ctx, e.curHeight, e.curHeightLastUpdate, nil)
+	if err != nil {
+		return e.curHeight, err
+	}
+
+	// update cache
+	e.curHeightLastUpdate = lastUpdate
+	e.curHeight = h
+	return e.curHeight, err
+}
+
+func (e *EthereumConfirmations) getHeight(ctx context.Context, lastHeight uint64, lastUpdate time.Time, block *big.Int) (uint64, time.Time, error) {
 	// if last update of the height was more that 15 seconds
 	// ago, we try to update, we assume an eth block takes
 	// ~15 seconds
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if now := e.time.Now(); e.curHeightLastUpdate.Add(e.retryDelay).Before(now) {
+	if now := e.time.Now(); lastUpdate.Add(e.retryDelay).Before(now) {
 		// get the last block header
-		h, err := e.ethClient.HeaderByNumber(ctx, nil)
+		h, err := e.ethClient.HeaderByNumber(ctx, block)
 		if err != nil {
-			return e.curHeight, err
+			return lastHeight, lastUpdate, err
 		}
-		e.curHeightLastUpdate = now
-		e.curHeight = h.Number.Uint64()
+		lastUpdate = now
+		lastHeight = h.Number.Uint64()
 	}
 
-	return e.curHeight, nil
+	return lastHeight, lastUpdate, nil
 }
