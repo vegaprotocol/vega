@@ -178,11 +178,11 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of votes cast on a given proposal, or by all votes made by a given party
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
-	// List ERC20 multi-sig signer added bundles
+	// List ERC20 multisig signer added bundles
 	//
 	// Get a list of the signature bundles to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(ctx context.Context, in *ListERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
-	// List ERC20 multi-sig signer removed bundles
+	// List ERC20 multisig signer removed bundles
 	//
 	// Get a list of the signature bundles to remove a particular validator from signer list of the multisig contract
 	ListERC20MultiSigSignerRemovedBundles(ctx context.Context, in *ListERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
@@ -252,7 +252,7 @@ type TradingDataServiceClient interface {
 	ListPartiesProfiles(ctx context.Context, in *ListPartiesProfilesRequest, opts ...grpc.CallOption) (*ListPartiesProfilesResponse, error)
 	// List margin levels
 	//
-	// Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
+	// Get a list of margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
 	ListMarginLevels(ctx context.Context, in *ListMarginLevelsRequest, opts ...grpc.CallOption) (*ListMarginLevelsResponse, error)
 	// Observe margin levels
 	//
@@ -272,7 +272,7 @@ type TradingDataServiceClient interface {
 	// List epoch reward summaries
 	//
 	// Get a list of reward summaries by epoch for a given range of epochs.
-	// The result is filtered by list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
+	// The result is filtered by a list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
 	// If no data is provided, all reward summaries will be returned, grouped by epochs, market IDs, asset IDs and reward type.
 	ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
@@ -512,11 +512,11 @@ type TradingDataServiceClient interface {
 	ListTeamRefereeHistory(ctx context.Context, in *ListTeamRefereeHistoryRequest, opts ...grpc.CallOption) (*ListTeamRefereeHistoryResponse, error)
 	// Get fees statistics
 	//
-	// Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as filter.
+	// Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as a filter.
 	GetFeesStats(ctx context.Context, in *GetFeesStatsRequest, opts ...grpc.CallOption) (*GetFeesStatsResponse, error)
 	// Get fees statistics for a party
 	//
-	// Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as filter.
+	// Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as a filter.
 	GetFeesStatsForParty(ctx context.Context, in *GetFeesStatsForPartyRequest, opts ...grpc.CallOption) (*GetFeesStatsForPartyResponse, error)
 	// Get current volume discount program
 	//
@@ -2279,11 +2279,11 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of votes cast on a given proposal, or by all votes made by a given party
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
-	// List ERC20 multi-sig signer added bundles
+	// List ERC20 multisig signer added bundles
 	//
 	// Get a list of the signature bundles to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(context.Context, *ListERC20MultiSigSignerAddedBundlesRequest) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
-	// List ERC20 multi-sig signer removed bundles
+	// List ERC20 multisig signer removed bundles
 	//
 	// Get a list of the signature bundles to remove a particular validator from signer list of the multisig contract
 	ListERC20MultiSigSignerRemovedBundles(context.Context, *ListERC20MultiSigSignerRemovedBundlesRequest) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
@@ -2353,7 +2353,7 @@ type TradingDataServiceServer interface {
 	ListPartiesProfiles(context.Context, *ListPartiesProfilesRequest) (*ListPartiesProfilesResponse, error)
 	// List margin levels
 	//
-	// Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
+	// Get a list of margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
 	ListMarginLevels(context.Context, *ListMarginLevelsRequest) (*ListMarginLevelsResponse, error)
 	// Observe margin levels
 	//
@@ -2373,7 +2373,7 @@ type TradingDataServiceServer interface {
 	// List epoch reward summaries
 	//
 	// Get a list of reward summaries by epoch for a given range of epochs.
-	// The result is filtered by list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
+	// The result is filtered by a list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
 	// If no data is provided, all reward summaries will be returned, grouped by epochs, market IDs, asset IDs and reward type.
 	ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
@@ -2613,11 +2613,11 @@ type TradingDataServiceServer interface {
 	ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error)
 	// Get fees statistics
 	//
-	// Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as filter.
+	// Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as a filter.
 	GetFeesStats(context.Context, *GetFeesStatsRequest) (*GetFeesStatsResponse, error)
 	// Get fees statistics for a party
 	//
-	// Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as filter.
+	// Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as a filter.
 	GetFeesStatsForParty(context.Context, *GetFeesStatsForPartyRequest) (*GetFeesStatsForPartyResponse, error)
 	// Get current volume discount program
 	//
