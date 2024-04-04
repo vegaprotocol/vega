@@ -125,7 +125,7 @@ Feature: Test change of SLA market parameter
       | from | to     | from account      | to account             | market id | amount | asset |
       | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
-    And the insurance pool balance should be "4800" for the market "ETH/MAR22"
+    And the insurance pool balance should be "6720" for the market "ETH/MAR22"
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -135,7 +135,7 @@ Feature: Test change of SLA market parameter
       | ptsell | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest | auction end |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 10350        | 3200           | 1             | 3           |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 10350        | 1280           | 1             | 3           |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type   |
@@ -156,17 +156,17 @@ Feature: Test change of SLA market parameter
 # (1.0-market.liquidity.priceRange) x min(last trade price, indicative uncrossing price) <=  price levels <= (1.0+market.liquidity.priceRange) x max(last trade price, indicative uncrossing price).
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 127281 | 66287   | 4000 |
-      | lp2   | USD   | ETH/MAR22 | 127281 | 66319   | 4000 |
+      | lp1   | USD   | ETH/MAR22 | 127281 | 65327   | 4000 |
+      | lp2   | USD   | ETH/MAR22 | 127281 | 65359   | 4000 |
     When the network moves ahead "11" blocks
-    And the insurance pool balance should be "4860" for the market "ETH/MAR22"
+    And the insurance pool balance should be "6780" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 994        | TRADING_MODE_CONTINUOUS | 14142        | 8000           | 4             |
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 127281 | 66287   | 4000 |
-      | lp2   | USD   | ETH/MAR22 | 127281 | 66319   | 4000 |
+      | lp1   | USD   | ETH/MAR22 | 127281 | 65327   | 4000 |
+      | lp2   | USD   | ETH/MAR22 | 127281 | 65359   | 4000 |
 
 

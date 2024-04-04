@@ -46,6 +46,7 @@ func (e *Engine) ResetSLAEpoch(
 	}
 
 	for party, commitment := range e.slaPerformance {
+		commitment.start = time.Time{}
 		if e.doesLPMeetsCommitment(party, markPrice, midPrice, positionFactor) {
 			commitment.start = now
 		}
@@ -87,8 +88,7 @@ func (e *Engine) calculateCurrentTimeBookFraction(now, start time.Time, s time.D
 	if lNano > 0 {
 		timeBookFraction = num.DecimalFromInt64(s.Nanoseconds()).Div(num.DecimalFromInt64(lNano))
 	}
-
-	return timeBookFraction
+	return num.MinD(num.DecimalOne(), timeBookFraction)
 }
 
 // CalculateSLAPenalties should be called at the and of epoch to calculate SLA penalties based on LP performance in the epoch.
