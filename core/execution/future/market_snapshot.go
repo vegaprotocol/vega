@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -154,9 +155,16 @@ func NewMarketFromSnapshot(
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 
-	marketLiquidity := common.NewMarketLiquidity(
+	// if we're upgrading and the market liquidity state is nil, all we can do is take the old SLA values which will *probably* be the right ones
+	if vgcontext.InProgressUpgrade(ctx) && em.MarketLiquidity == nil {
+		em.MarketLiquidity = &snapshot.MarketLiquidity{
+			PriceRange: mkt.LiquiditySLAParams.PriceRange.String(),
+		}
+	}
+
+	marketLiquidity := common.NewMarketLiquidityFromSnapshot(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity,
 	)
 
 	// backward compatibility check for nil
@@ -339,6 +347,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		FeesStats:                      m.fee.GetState(assetQuantum),
 		PartyMarginFactors:             partyMarginFactors,
 		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
+		MarketLiquidity:                m.liquidity.GetState(),
 	}
 	if m.perp && m.internalCompositePriceCalculator != nil {
 		em.InternalCompositePriceCalculator = m.internalCompositePriceCalculator.IntoProto()

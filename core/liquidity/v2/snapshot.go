@@ -518,6 +518,10 @@ func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *typ
 	// market SLA parameters
 	e.slaParams = types.LiquiditySLAParamsFromProto(ls.MarketSlaParameters)
 
+	one := num.DecimalOne()
+	e.openPlusPriceRange = one.Add(e.slaParams.PriceRange)
+	e.openMinusPriceRange = one.Sub(e.slaParams.PriceRange)
+
 	// now network SLA parameters
 	bondMax, _ := num.DecimalFromString(ls.BondPenaltyMax)
 	bondSlope, _ := num.DecimalFromString(ls.BondPenaltySlope)
@@ -527,7 +531,7 @@ func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *typ
 	e.nonPerformanceBondPenaltySlope = bondSlope
 	e.stakeToCcyVolume = stakeToVolume
 
-	e.serialisedScores, err = proto.Marshal(p.IntoProto())
+	e.serialisedParemeters, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
