@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
@@ -891,4 +892,46 @@ func (m *MarketLiquidity) ProvisionsPerParty() liquidity.ProvisionsPerParty {
 
 func (m *MarketLiquidity) CalculateSuppliedStake() *num.Uint {
 	return m.liquidityEngine.CalculateSuppliedStake()
+}
+
+func NewMarketLiquidityFromSnapshot(
+	log *logging.Logger,
+	liquidityEngine LiquidityEngine,
+	collateral Collateral,
+	broker Broker,
+	orderBook liquidity.OrderBook,
+	equityShares EquityLikeShares,
+	marketActivityTracker *MarketActivityTracker,
+	fee *fee.Engine,
+	marketType marketType,
+	marketID string,
+	asset string,
+	priceFactor *num.Uint,
+	state *snapshot.MarketLiquidity,
+) *MarketLiquidity {
+	priceRange, _ := num.DecimalFromString(state.PriceRange)
+
+	ml := &MarketLiquidity{
+		log:                   log,
+		liquidityEngine:       liquidityEngine,
+		collateral:            collateral,
+		broker:                broker,
+		orderBook:             orderBook,
+		equityShares:          equityShares,
+		marketActivityTracker: marketActivityTracker,
+		fee:                   fee,
+		marketType:            marketType,
+		marketID:              marketID,
+		asset:                 asset,
+		priceFactor:           priceFactor,
+		priceRange:            priceRange,
+	}
+
+	return ml
+}
+
+func (m *MarketLiquidity) GetState() *snapshot.MarketLiquidity {
+	return &snapshot.MarketLiquidity{
+		PriceRange: m.priceRange.String(),
+	}
 }

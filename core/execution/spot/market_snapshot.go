@@ -35,8 +35,10 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"golang.org/x/exp/maps"
 )
@@ -117,7 +119,15 @@ func NewMarketFromSnapshot(
 	}
 	els := common.NewEquitySharesFromSnapshot(em.EquityShare)
 	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
-	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
+
+	// if we're upgrading and the market liquidity state is nil, all we can do is take the old SLA values which will *probably* be the right ones
+	if vgcontext.InProgressUpgrade(ctx) && em.MarketLiquidity == nil {
+		em.MarketLiquidity = &snapshot.MarketLiquidity{
+			PriceRange: mkt.LiquiditySLAParams.PriceRange.String(),
+		}
+	}
+
+	marketLiquidity := common.NewMarketLiquidityFromSnapshot(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, em.MarketLiquidity)
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -216,6 +226,7 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 		Closed:                     m.closed,
 		HasTraded:                  m.hasTraded,
 		FeesStats:                  m.fee.GetState(quoteAssetQuantum),
+		MarketLiquidity:            m.liquidity.GetState(),
 	}
 
 	return em

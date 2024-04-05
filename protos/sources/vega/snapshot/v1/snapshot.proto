@@ -509,6 +509,7 @@ message SpotMarket {
   repeated vega.Order expiring_stop_orders = 20;
   vega.events.v1.FeesStats fees_stats = 21;
   bool has_traded = 22;
+  MarketLiquidity market_liquidity = 23;
 }
 
 message Market {
@@ -543,6 +544,7 @@ message Market {
   CompositePriceCalculator mark_price_calculator = 29;
   optional CompositePriceCalculator internal_composite_price_calculator = 30;
   int64 next_internal_composite_price_calc = 31;
+  MarketLiquidity market_liquidity = 32;
 }
 
 message PartyMarginFactor {
@@ -1351,4 +1353,8 @@ message PartyProfile {
   string party_id = 1;
   string alias = 2;
   repeated vega.Metadata metadata = 3;
+}
+
+message MarketLiquidity {
+  string price_range = 1;
 }

@@ -405,6 +405,7 @@ type ExecMarket struct {
 	PartyMarginFactors               []*snapshot.PartyMarginFactor
 	MarkPriceCalculator              *snapshot.CompositePriceCalculator
 	InternalCompositePriceCalculator *snapshot.CompositePriceCalculator
+	MarketLiquidity                  *snapshot.MarketLiquidity
 }
 
 type ExecSpotMarket struct {
@@ -430,6 +431,7 @@ type ExecSpotMarket struct {
 	StopOrders                 *snapshot.StopOrders
 	ExpiringStopOrders         []*Order
 	FeesStats                  *eventspb.FeesStats
+	MarketLiquidity            *snapshot.MarketLiquidity
 }
 
 type PriceMonitor struct {
@@ -2911,6 +2913,7 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 		StopOrders:                 em.StopOrders,
 		FeesStats:                  em.FeesStats,
 		HasTraded:                  em.HasTraded,
+		MarketLiquidity:            em.MarketLiquidity,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2943,6 +2946,7 @@ func (e ExecSpotMarket) IntoProto() *snapshot.SpotMarket {
 		StopOrders:                 e.StopOrders,
 		FeesStats:                  e.FeesStats,
 		HasTraded:                  e.HasTraded,
+		MarketLiquidity:            e.MarketLiquidity,
 	}
 	if e.CurrentMarkPrice != nil {
 		ret.CurrentMarkPrice = e.CurrentMarkPrice.String()
@@ -3024,6 +3028,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		PartyMarginFactors:               em.PartyMarginFactor,
 		MarkPriceCalculator:              em.MarkPriceCalculator,
 		InternalCompositePriceCalculator: em.InternalCompositePriceCalculator,
+		MarketLiquidity:                  em.MarketLiquidity,
 	}
 
 	for _, o := range em.ExpiringOrders {
@@ -3067,6 +3072,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		PartyMarginFactor:                e.PartyMarginFactors,
 		MarkPriceCalculator:              e.MarkPriceCalculator,
 		InternalCompositePriceCalculator: e.InternalCompositePriceCalculator,
+		MarketLiquidity:                  e.MarketLiquidity,
 	}
 
 	if e.CurrentMarkPrice != nil {
