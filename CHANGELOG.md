@@ -49,7 +49,7 @@
 - [11016](https://github.com/vegaprotocol/vega/issues/11016) - Update holding account when amending order with cancel/replace on remaining funds.
 - [11038](https://github.com/vegaprotocol/vega/issues/11038) - Simplify price ranges state. 
 - [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
-- []
+- [11059](https://github.com/vegaprotocol/vega/issues/11059) - Disambiguate `vega_time` in order clause.
 
 ## 0.75.0
 

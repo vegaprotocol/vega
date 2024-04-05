@@ -198,7 +198,10 @@ func (ls *Ledger) Query(
 			WHERE %s`, strings.Join(whereClauses, " AND "),
 	)
 
-	query, args, err := PaginateQuery[entities.AggregatedLedgerEntriesCursor](query, args, aggregateLedgerEntriesOrdering, pagination)
+	// set prefix to ensure ordering on ledger times, assign to local variable to make it safe for concurrent use
+	ord := aggregateLedgerEntriesOrdering
+	ord.SetPrefixAll("ledger")
+	query, args, err := PaginateQuery[entities.AggregatedLedgerEntriesCursor](query, args, ord, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
