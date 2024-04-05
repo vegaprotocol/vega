@@ -1116,10 +1116,11 @@ func (t *TradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		return nil, formatE(ErrAssetServiceGetAll, err)
 	}
 
-	var address string
+	var address, chainID string
 	for _, v := range assets {
 		if v.ID == w.Asset {
 			address = v.ERC20Contract
+			chainID = v.ChainID
 			break
 		}
 	}
@@ -1134,7 +1135,8 @@ func (t *TradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
 		Signatures:    entities.PackNodeSignatures(signatures),
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
-		Creation: w.CreatedTimestamp.Unix(),
+		Creation:      w.CreatedTimestamp.Unix(),
+		SourceChainId: chainID,
 	}, nil
 }
 

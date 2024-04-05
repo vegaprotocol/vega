@@ -3698,7 +3698,7 @@ type AccountUpdate {
 
 "All the data related to the approval of a withdrawal from the network"
 type Erc20WithdrawalApproval {
-  "The source asset in the ethereum network"
+  "The source asset on the bridged EVM chain"
   assetSource: String!
   "The amount to be withdrawn"
   amount: String!
@@ -3713,6 +3713,8 @@ type Erc20WithdrawalApproval {
   targetAddress: String!
   "RFC3339Nano timestamp at which the withdrawal was created"
   creation: String!
+  "The chain ID of the bridged EVM chain"
+  sourceChainId: String!
 }
 
 "Response for the signature bundle to add a particular validator to the signer list of the multisig contract"

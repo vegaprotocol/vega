@@ -2193,7 +2193,7 @@ message GetERC20WithdrawalApprovalRequest {
 // function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
 message GetERC20WithdrawalApprovalResponse {
   reserved 3;
-  // Address of asset on Ethereum.
+  // Address of asset on the bridged EVM chain.
   string asset_source = 1;
   // Amount to be withdrawn.
   string amount = 2;
@@ -2202,10 +2202,12 @@ message GetERC20WithdrawalApprovalResponse {
   // Signatures bundle as hex encoded data, prefixed with `0x`
   // e.g: 0x + sig1 + sig2 + ... + sixN.
   string signatures = 5;
-  // Ethereum address, prefixed with `0x`, that will receive the withdrawn assets.
+  // Address, prefixed with `0x`, that will receive the withdrawn assets.
   string target_address = 6;
   // Creation timestamps.
   int64 creation = 7;
+  // Chain ID of the bridged EVM chain.
+  string source_chain_id = 8;
 }
 
 // -- Trades --

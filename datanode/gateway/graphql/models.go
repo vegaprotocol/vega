@@ -336,7 +336,7 @@ type Erc20ListAssetBundle struct {
 
 // All the data related to the approval of a withdrawal from the network
 type Erc20WithdrawalApproval struct {
-	// The source asset in the ethereum network
+	// The source asset on the bridged EVM chain
 	AssetSource string `json:"assetSource"`
 	// The amount to be withdrawn
 	Amount string `json:"amount"`
@@ -349,6 +349,8 @@ type Erc20WithdrawalApproval struct {
 	TargetAddress string `json:"targetAddress"`
 	// RFC3339Nano timestamp at which the withdrawal was created
 	Creation string `json:"creation"`
+	// The chain ID of the bridged EVM chain
+	SourceChainID string `json:"sourceChainId"`
 }
 
 // Specific details for an erc20 withdrawal
