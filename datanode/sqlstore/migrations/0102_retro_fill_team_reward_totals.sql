@@ -25,8 +25,10 @@ INSERT INTO game_reward_totals (game_id, party_id, asset_id, market_id, team_id,
     );
 
 -- Create a function to carry over data between 2 given epochs.
-CREATE OR REPLACE FUNCTION carry_over_rewards_on_epoch(IN previous_epoch BIGINT, IN ending_epoch BIGINT)
-    LANGUAGE plpgsql AS
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION carry_over_rewards_on_epoch()
+   RETURNS TRIGGER
+   LANGUAGE PLPGSQL AS
 $$
 BEGIN
     INSERT INTO game_reward_totals (game_id, party_id, asset_id, market_id, team_id, total_rewards, total_rewards_quantum, epoch_id)
@@ -38,9 +40,9 @@ BEGIN
             grto.team_id,
             grto.total_rewards,
             grto.total_rewards_quantum,
-            ending_epoch AS epoch_id
+            (NEW.id - 1) AS epoch_id
         FROM game_reward_totals AS grto
-        WHERE grto.epoch_id = previous_epoch
+        WHERE grto.epoch_id = (NEW.id - 2)
         AND NOT EXISTS (
             SELECT 1
             FROM game_reward_totals AS grtc
@@ -49,20 +51,22 @@ BEGIN
             AND grtc.asset_id = grto.asset_id
             AND grtc.market_id = grto.market_id
             AND grtc.team_id = grto.team_id
-            AND grtc.epoch_id = ending_epoch
+            AND grtc.epoch_id = (NEW.id - 1)
         );
+RETURN NEW;
 END;
 $$;
+-- +goose StatementEnd
 
 -- add trigger to the epochs table
 CREATE OR REPLACE TRIGGER carry_over_epoch_data
     AFTER INSERT
     ON epochs
     FOR EACH STATEMENT
-    EXECUTE FUNCTION carry_over_rewards_on_epoch(NEW.id - 2, NEW.id - 1);
+    EXECUTE FUNCTION carry_over_rewards_on_epoch();
 
 -- +goose Down
 
 DROP TRIGGER IF EXISTS carry_over_epoch_data ON epochs;
 
-DROP FUNCTION IF EXISTS carry_over_rewards_on_epoch(BIGINT, BIGINT);
+DROP FUNCTION IF EXISTS carry_over_rewards_on_epoch();
