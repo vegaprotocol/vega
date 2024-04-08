@@ -36,22 +36,23 @@
 - [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
 - [10952](https://github.com/vegaprotocol/vega/issues/10952) - Fix bug that caused spot markets to get stuck in opening auction.
 - [10950](https://github.com/vegaprotocol/vega/issues/10950) - Fix bug that caused cancelled liquidity provisions to stick around after opening auction.
-- [10975](https://github.com/vegaprotocol/vega/issues/10975) - Fix marshaller for stop order rejection error. 
-- [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state. 
+- [10975](https://github.com/vegaprotocol/vega/issues/10975) - Fix marshaller for stop order rejection error.
+- [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state.
 - [10969](https://github.com/vegaprotocol/vega/issues/10969) - Ensure teams statistics are computed from team rewards.
-- [10962](https://github.com/vegaprotocol/vega/issues/10962) - Fix `lastFeeDistribution` time in snapshot. 
+- [10962](https://github.com/vegaprotocol/vega/issues/10962) - Fix `lastFeeDistribution` time in snapshot.
 - [10974](https://github.com/vegaprotocol/vega/issues/10974) - Target stake for spot should not consider position factor.
 - [10980](https://github.com/vegaprotocol/vega/issues/10980) - Make `gRPC` message size limit configurable, default to 20MB.
-- [10984](https://github.com/vegaprotocol/vega/issues/10984) - Save has traded flag from spot to snapshot. 
+- [10984](https://github.com/vegaprotocol/vega/issues/10984) - Save has traded flag from spot to snapshot.
 - [10997](https://github.com/vegaprotocol/vega/issues/10997) - Handle cases where leaving opening auction triggers monitoring auction.
-- [11010](https://github.com/vegaprotocol/vega/issues/11010) - Release bond in spot market when market is terminated. 
-- [11033](https://github.com/vegaprotocol/vega/issues/11033) - Do not track positions for spots in datanode. 
+- [11010](https://github.com/vegaprotocol/vega/issues/11010) - Release bond in spot market when market is terminated.
+- [11033](https://github.com/vegaprotocol/vega/issues/11033) - Do not track positions for spots in datanode.
 - [11016](https://github.com/vegaprotocol/vega/issues/11016) - Update holding account when amending order with cancel/replace on remaining funds.
-- [11038](https://github.com/vegaprotocol/vega/issues/11038) - Simplify price ranges state. 
+- [11038](https://github.com/vegaprotocol/vega/issues/11038) - Simplify price ranges state.
 - [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
 - [11059](https://github.com/vegaprotocol/vega/issues/11059) - Disambiguate `vega_time` in order clause.
 - [11052](https://github.com/vegaprotocol/vega/pull/11052) - Add missing rejection reason in GraphQL schema for proposals
 - [11073](https://github.com/vegaprotocol/vega/issues/11073) - Handle properly price factor < 1.
+
 
 ## 0.75.0
 
@@ -123,9 +124,9 @@
 - [10904](https://github.com/vegaprotocol/vega/issues/10904) - Balance changes API should validate date range properly.
 - [10911](https://github.com/vegaprotocol/vega/issues/10911) - Fix `unregistration` of spot market state var.
 - [10915](https://github.com/vegaprotocol/vega/issues/10915) - Fix duplicate deposit entries, add new `STATUS_DUPLICATE_REJECTED` status.
-- [11047](https://github.com/vegaprotocol/vega/issues/11047) - Fix proto conversion for stop orders. 
-- [11041](https://github.com/vegaprotocol/vega/issues/11041) - Add validation for genesis asset quantum. 
-- [11011](https://github.com/vegaprotocol/vega/issues/11011) - Make spot fees best effort. 
+- [11047](https://github.com/vegaprotocol/vega/issues/11047) - Fix proto conversion for stop orders.
+- [11041](https://github.com/vegaprotocol/vega/issues/11041) - Add validation for genesis asset quantum.
+- [11011](https://github.com/vegaprotocol/vega/issues/11011) - Make spot fees best effort.
 
 ## 0.74.3
 
