@@ -71,10 +71,9 @@ func NewMarketFromSnapshot(
 		return nil, common.ErrEmptyMarketID
 	}
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
-
-	priceFactor := num.NewUint(1)
-	if exp := quoteAssetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
-		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
+	priceFactor := num.DecimalOne()
+	if exp := int(quoteAssetDetails.DecimalPlaces()) - int(mkt.DecimalPlaces); exp != 0 {
+		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 	baseFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(baseAssetDetails.DecimalPlaces()) - mkt.PositionDecimalPlaces))
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)

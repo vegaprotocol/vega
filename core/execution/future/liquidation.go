@@ -34,7 +34,7 @@ func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
 	}
 	// register the network order on the positions engine
 	_ = m.position.RegisterOrder(ctx, order)
-	order.OriginalPrice = num.UintZero().Div(order.Price, m.priceFactor)
+	order.OriginalPrice, _ = num.UintFromDecimal(order.Price.ToDecimal().Div(m.priceFactor))
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	conf, err := m.matching.SubmitOrder(order)
 	if err != nil {

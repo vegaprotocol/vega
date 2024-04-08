@@ -408,7 +408,7 @@ func (o *Order) amendSizeWithDelta(delta int64) {
 }
 
 // ApplyOrderAmendment assumes the amendment have been validated before.
-func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int64, priceFactor *num.Uint) (order *Order, err error) {
+func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int64, priceFactor num.Decimal) (order *Order, err error) {
 	order = o.Clone()
 	order.UpdatedAt = updatedAtNano
 	order.Version++
@@ -422,8 +422,7 @@ func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int
 
 	var amendPrice *num.Uint
 	if amendment.Price != nil {
-		amendPrice = amendment.Price.Clone()
-		amendPrice.Mul(amendPrice, priceFactor)
+		amendPrice, _ = num.UintFromDecimal(amendment.Price.ToDecimal().Mul(priceFactor))
 	}
 	// apply price changes
 	if amendment.Price != nil && o.Price.NEQ(amendPrice) {

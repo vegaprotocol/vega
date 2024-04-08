@@ -51,6 +51,7 @@
 - [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
 - [11059](https://github.com/vegaprotocol/vega/issues/11059) - Disambiguate `vega_time` in order clause.
 - [11052](https://github.com/vegaprotocol/vega/pull/11052) - Add missing rejection reason in GraphQL schema for proposals
+- [11073](https://github.com/vegaprotocol/vega/issues/11073) - Handle properly price factor < 1.
 
 ## 0.75.0
 

@@ -141,8 +141,8 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	exp := assetDecimals - mkt.DecimalPlaces
-	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
+	exp := int(assetDecimals) - int(mkt.DecimalPlaces)
+	priceFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity

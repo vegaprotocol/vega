@@ -96,7 +96,7 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 		common.SpotMarketType,
 		marketID,
 		settlementAsset,
-		num.NewUint(1),
+		num.DecimalOne(),
 		num.NewDecimalFromFloat(0.5),
 	)
 
