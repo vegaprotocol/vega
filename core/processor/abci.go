@@ -1118,13 +1118,13 @@ func (app *App) Finalize() []byte {
 		if err == nil {
 			app.protocolUpgradeService.SetCoreReadyForUpgrade()
 		}
-	} else if app.cfg.Snapshot.Enabled {
-		if height, _ := vgcontext.BlockHeightFromContext(app.blockCtx); height == app.cfg.Snapshot.Height {
-			hash, err := app.snapshotEngine.SnapshotDump(app.blockCtx, app.cfg.Snapshot.File)
+	} else if app.cfg.SnapshotDebug.DevEnabled {
+		if height, _ := vgcontext.BlockHeightFromContext(app.blockCtx); height == app.cfg.SnapshotDebug.CrashAtHeight {
+			hash, err := app.snapshotEngine.SnapshotDump(app.blockCtx, app.cfg.SnapshotDebug.DebugCrashFile)
 			if err != nil {
 				app.log.Panic("Failed to dump snapshot file", logging.Error(err), logging.String("snapshot-hash", string(hash)))
 			} else {
-				app.log.Panic("Dumped snapshot file successfully", logging.String("snapshot-hash", string(hash)))
+				app.log.Panic("Dumped snapshot file successfully", logging.String("snapshot-hash", string(hash)), logging.String("dump-file", app.cfg.SnapshotDebug.DebugCrashFile))
 			}
 		}
 	} else {
