@@ -514,7 +514,7 @@ func (e *Engine) Snapshot(ctx context.Context) ([]byte, DoneCh, error) {
 
 	e.commitsLeftBeforeSnapshot = e.intervalBetweenSnapshots
 
-	return e.snapshotNow(ctx, true, true)
+	return e.snapshotNow(ctx, true)
 }
 
 // SnapshotDump takes a snapshot on demand, without persisting it to the underlying DB
@@ -527,7 +527,7 @@ func (e *Engine) SnapshotDump(ctx context.Context, path string) ([]byte, error) 
 		return nil, err
 	}
 	defer func() { _ = f.Close() }()
-	hash, ch, err := e.snapshotNow(ctx, true, false) // do not persist
+	hash, ch, err := e.snapshotNow(ctx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -568,12 +568,12 @@ func (e *Engine) SnapshotDump(ctx context.Context, path string) ([]byte, error) 
 func (e *Engine) SnapshotNow(ctx context.Context) ([]byte, error) {
 	e.ensureEngineIsStarted()
 
-	now, _, err := e.snapshotNow(ctx, false, true)
+	now, _, err := e.snapshotNow(ctx, false)
 
 	return now, err
 }
 
-func (e *Engine) snapshotNow(ctx context.Context, saveAsync, persist bool) ([]byte, DoneCh, error) {
+func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneCh, error) {
 	defer metrics.StartSnapshot("all")()
 	e.snapshotTreeLock.Lock()
 
