@@ -39,7 +39,7 @@ type Config struct {
 	LogOrderCancelDebug encoding.Bool     `long:"log-order-cancel-debug"`
 	Ratelimit           ratelimit.Config  `group:"Ratelimit"             namespace:"ratelimit"`
 	KeepCheckpointsMax  uint              `long:"keep-checkpoints-max"`
-	SnapshotDebug       Snapshot          `group:"SnapshotDebug"              namespace:"snapshotdebug"`
+	SnapshotDebug       Snapshot          `group:"SnapshotDebug"         namespace:"snapshotdebug"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
