@@ -752,10 +752,6 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 				e.log.Panic("Panic occurred", zap.Any("reason", r))
 			}
 		}()
-		// we do not need to save the version, just dump the file
-		if !persist {
-			return
-		}
 
 		if err := e.snapshotTree.SaveVersion(); err != nil {
 			// If this fails, we are screwed. The tree version is used to construct
