@@ -85,7 +85,7 @@ message NewSpotMarketConfiguration {
   // New spot market instrument configuration.
   InstrumentConfiguration instrument = 1;
   // Decimal places used for the new spot market, sets the smallest price increment on the book.
-  uint64 decimal_places = 2;
+  uint64 price_decimal_places = 2;
   // Optional new spot market metadata, tags.
   repeated string metadata = 3;
   // Price monitoring parameters.
@@ -100,7 +100,7 @@ message NewSpotMarketConfiguration {
     LogNormalRiskModel log_normal = 101;
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the spot market can be.
-  int64 position_decimal_places = 6;
+  int64 size_decimal_places = 6;
   // Specifies the liquidity provision SLA parameters.
   LiquiditySLAParameters sla_params = 7;
   // Specifies how the liquidity fee for the market will be calculated.
@@ -669,7 +669,7 @@ enum ProposalError {
   // One or more proposals in a batch has been declined
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED = 59;
   // Spot market decimal places cannot be greater than the base asset’s decimal places
-  PROPOSAL_ERROR_INVALID_POSITION_DECIMAL_PLACES = 60;
+  PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES = 60;
 }
 
 // Governance vote

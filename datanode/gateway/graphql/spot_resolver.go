@@ -95,8 +95,8 @@ func (r newSpotMarketResolver) Instrument(ctx context.Context, obj *vega.NewSpot
 	return obj.Changes.Instrument, nil
 }
 
-func (r newSpotMarketResolver) DecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
-	return int(obj.Changes.DecimalPlaces), nil
+func (r newSpotMarketResolver) PriceDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
+	return int(obj.Changes.PriceDecimalPlaces), nil
 }
 
 func (r newSpotMarketResolver) Metadata(ctx context.Context, obj *vega.NewSpotMarket) ([]string, error) {
@@ -125,8 +125,8 @@ func (r newSpotMarketResolver) RiskParameters(ctx context.Context, obj *vega.New
 	}
 }
 
-func (r newSpotMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
-	return int(obj.Changes.PositionDecimalPlaces), nil
+func (r newSpotMarketResolver) SizeDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
+	return int(obj.Changes.SizeDecimalPlaces), nil
 }
 
 func (r newSpotMarketResolver) LiquiditySLAParams(ctx context.Context, obj *vega.NewSpotMarket) (*vega.LiquiditySLAParameters, error) {

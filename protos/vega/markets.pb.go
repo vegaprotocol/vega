@@ -2021,7 +2021,7 @@ type Market struct {
 	TradableInstrument *TradableInstrument `protobuf:"bytes,2,opt,name=tradable_instrument,json=tradableInstrument,proto3" json:"tradable_instrument,omitempty"`
 	// Number of decimal places that a price must be shifted by in order to get a
 	// correct price denominated in the currency of the market, for example:
-	// `realPrice = price / 10^decimalPlaces`.
+	// `realPrice = price / 10^decimalPlaces`. On spot markets, also called 'size decimal places'.
 	DecimalPlaces uint64 `protobuf:"varint,3,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
 	// Fees configuration that apply to the market.
 	Fees *Fees `protobuf:"bytes,4,opt,name=fees,proto3" json:"fees,omitempty"`
@@ -2039,6 +2039,7 @@ type Market struct {
 	// Timestamps for when the market state changes.
 	MarketTimestamps *MarketTimestamps `protobuf:"bytes,10,opt,name=market_timestamps,json=marketTimestamps,proto3" json:"market_timestamps,omitempty"`
 	// The number of decimal places for a position.
+	// On spot markets, used for order size, also known as 'size decimal places'.
 	PositionDecimalPlaces int64 `protobuf:"varint,11,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 	// Percentage move up and down from the mid price which specifies the range of
 	// price levels over which automated liquidity provisions will be deployed.

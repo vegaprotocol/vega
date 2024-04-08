@@ -2500,7 +2500,7 @@ type Market {
 
   """
   The number of decimal places that an integer must be shifted by in order to get a correct
-  number denominated in the currency of the market. (uint64)
+  number denominated in the currency of the market. On spot markets, also called price decimal places. (uint64)
 
   Examples:
   Currency     Balance  decimalPlaces  Real Balance
@@ -2520,7 +2520,8 @@ type Market {
   The number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
   2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
-  This sets how big the smallest order / position on the market can be.
+  This sets how big the smallest order / position on the market can be. On spot markets, used for order size 
+  and also known as size decimal places.
   """
   positionDecimalPlaces: Int!
 
@@ -4085,8 +4086,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_SLA_PARAMS
   "Perpetual market proposal contained invalid product definition"
   PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT
-  "Spot market proposal contains too many position decimal places"
-  PROPOSAL_ERROR_INVALID_POSITION_DECIMAL_PLACES
+  "Spot market proposal contains too many size decimal places"
+  PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES
 }
 
 "Why the order was rejected by the core node"
@@ -4960,7 +4961,7 @@ type NewSpotMarket {
   "New spot market instrument configuration"
   instrument: InstrumentConfiguration!
   "Decimal places used for the new market, sets the smallest price increment on the book"
-  decimal_places: Int!
+  priceDecimalPlaces: Int!
   "Optional spot market metadata tags"
   metadata: [String!]!
   "Price monitoring parameters"
@@ -4970,7 +4971,7 @@ type NewSpotMarket {
   "New spot market risk model parameters"
   riskParameters: RiskModel
   "Decimal places for order sizes, sets what size the smallest order / position on the spot market can be"
-  positionDecimalPlaces: Int!
+  sizeDecimalPlaces: Int!
   "Specifies the liquidity provision SLA parameters"
   liquiditySLAParams: LiquiditySLAParameters!
   "Specifies how the liquidity fee for the market will be calculated"

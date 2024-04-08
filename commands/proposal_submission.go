@@ -850,11 +850,11 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	if !isCorrectProduct {
 		return errs.FinalAddForProperty("new_spot_market.changes.instrument.product", ErrIsMismatching)
 	}
-	if changes.DecimalPlaces >= 150 {
+	if changes.PriceDecimalPlaces >= 150 {
 		errs.AddForProperty("new_spot_market.changes.decimal_places", ErrMustBeLessThan150)
 	}
 
-	if changes.PositionDecimalPlaces >= 7 || changes.PositionDecimalPlaces <= -7 {
+	if changes.SizeDecimalPlaces >= 7 || changes.SizeDecimalPlaces <= -7 {
 		errs.AddForProperty("new_spot_market.changes.position_decimal_places", ErrMustBeWithinRange7)
 	}
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_spot_market.changes"))

@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+- [11079](https://github.com/vegaprotocol/vega/issues/11079) - rename decimal places fields for spots governance. 
 
 ### 🗑️ Deprecation
 

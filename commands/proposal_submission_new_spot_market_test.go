@@ -172,7 +172,7 @@ func testNewSpotMarketChangeSubmissionWithDecimalPlacesEqualTo0Succeeds(t *testi
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
 				NewSpotMarket: &protoTypes.NewSpotMarket{
 					Changes: &protoTypes.NewSpotMarketConfiguration{
-						DecimalPlaces: 0,
+						PriceDecimalPlaces: 0,
 					},
 				},
 			},
@@ -205,7 +205,7 @@ func testNewSpotMarketChangeSubmissionWithDecimalPlacesAboveOrEqualTo150Fails(t 
 								Instrument: &protoTypes.InstrumentConfiguration{
 									Product: &protoTypes.InstrumentConfiguration_Spot{},
 								},
-								DecimalPlaces: tc.value,
+								PriceDecimalPlaces: tc.value,
 							},
 						},
 					},
@@ -223,7 +223,7 @@ func testNewSpotMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds(t *testi
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
 				NewSpotMarket: &protoTypes.NewSpotMarket{
 					Changes: &protoTypes.NewSpotMarketConfiguration{
-						DecimalPlaces: test.RandomPositiveU64Before(150),
+						PriceDecimalPlaces: test.RandomPositiveU64Before(150),
 					},
 				},
 			},
@@ -240,7 +240,7 @@ func testNewSpotMarketChangeSubmissionWithPositionDecimalPlacesEqualTo0Succeeds(
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
 				NewSpotMarket: &protoTypes.NewSpotMarket{
 					Changes: &protoTypes.NewSpotMarketConfiguration{
-						PositionDecimalPlaces: 0,
+						SizeDecimalPlaces: 0,
 					},
 				},
 			},
@@ -282,7 +282,7 @@ func testNewSpotMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fa
 								Instrument: &protoTypes.InstrumentConfiguration{
 									Product: &protoTypes.InstrumentConfiguration_Spot{},
 								},
-								PositionDecimalPlaces: tc.value,
+								SizeDecimalPlaces: tc.value,
 							},
 						},
 					},
@@ -300,7 +300,7 @@ func testNewSpotMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t 
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
 				NewSpotMarket: &protoTypes.NewSpotMarket{
 					Changes: &protoTypes.NewSpotMarketConfiguration{
-						PositionDecimalPlaces: test.RandomPositiveI64Before(7),
+						SizeDecimalPlaces: test.RandomPositiveI64Before(7),
 					},
 				},
 			},
