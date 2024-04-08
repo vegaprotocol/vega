@@ -25,6 +25,12 @@ const (
 	namedLogger = "processor"
 )
 
+type Snapshot struct {
+	Enabled encoding.Bool
+	Height  uint64 `long:"dump-snapshot-at"`
+	File    string `long:"snapshot-dump-path"`
+}
+
 // Config represent the configuration of the processor package.
 type Config struct {
 	Level               encoding.LogLevel `long:"log-level"`
@@ -33,6 +39,7 @@ type Config struct {
 	LogOrderCancelDebug encoding.Bool     `long:"log-order-cancel-debug"`
 	Ratelimit           ratelimit.Config  `group:"Ratelimit"             namespace:"ratelimit"`
 	KeepCheckpointsMax  uint              `long:"keep-checkpoints-max"`
+	Snapshot            Snapshot          `group:"Snapshot"              namespace:"snapshot"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -43,5 +50,10 @@ func NewDefaultConfig() Config {
 		LogOrderSubmitDebug: true,
 		Ratelimit:           ratelimit.NewDefaultConfig(),
 		KeepCheckpointsMax:  20,
+		Snapshot: Snapshot{
+			Enabled: false,
+			Height:  0,
+			File:    "/tmp/snapshot.json",
+		},
 	}
 }
