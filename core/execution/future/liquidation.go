@@ -26,7 +26,9 @@ import (
 )
 
 func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
-	// debug
+	if m.as.InAuction() {
+		return nil
+	}
 	// this only returns an error if we couldn't get the price range, incidating no orders on book
 	order, _ := m.liquidation.OnTick(ctx, now)
 	if order == nil {
