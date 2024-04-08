@@ -24,6 +24,7 @@
 - [11061](https://github.com/vegaprotocol/vega/issues/11061) - `SLA` snapshot now loads current parameters and not pending ones.
 - [11009](https://github.com/vegaprotocol/vega/issues/11009) - Relax market decimals validation in governance.
 - [11036](https://github.com/vegaprotocol/vega/issues/11036) - Cross-margin mode: use max(order price, auction price) for margin calculation in auction
+- [10998](https://github.com/vegaprotocol/vega/issues/10998) - Ensure reward totals are carried over across epochs in database.
 
 ### 🐛 Fixes
 
