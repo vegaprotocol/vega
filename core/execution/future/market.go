@@ -82,7 +82,7 @@ type Market struct {
 	mu sync.Mutex
 
 	lastTradedPrice *num.Uint
-	priceFactor     *num.Uint
+	priceFactor     num.Decimal
 
 	// own engines
 	matching                      *matching.CachedOrderBook
@@ -201,9 +201,9 @@ func NewMarket(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
-	priceFactor := num.NewUint(1)
-	if exp := assetDecimals - mkt.DecimalPlaces; exp != 0 {
-		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
+	priceFactor := num.DecimalOne()
+	if exp := int(assetDecimals) - int(mkt.DecimalPlaces); exp != 0 {
+		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
@@ -694,8 +694,8 @@ func (m *Market) GetMarketState() types.MarketState {
 // priceToMarketPrecision
 // It should never return a nil pointer.
 func (m *Market) priceToMarketPrecision(price *num.Uint) *num.Uint {
-	// we assume the price is cloned correctly already
-	return price.Div(price, m.priceFactor)
+	p, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+	return p
 }
 
 func (m *Market) midPrice() *num.Uint {
@@ -749,14 +749,14 @@ func (m *Market) GetMarketData() types.MarketData {
 	}
 	bounds := m.pMonitor.GetCurrentBounds()
 	for _, b := range bounds {
-		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
-		m.priceToMarketPrecision(b.MinValidPrice)
+		b.MaxValidPrice = m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
+		b.MinValidPrice = m.priceToMarketPrecision(b.MinValidPrice)
 
 		rp, _ := num.UintFromDecimal(b.ReferencePrice)
-		m.priceToMarketPrecision(rp)
+		rp = m.priceToMarketPrecision(rp)
 		b.ReferencePrice = num.DecimalFromUint(rp)
 
-		if m.priceFactor.NEQ(common.One) {
+		if m.priceFactor.GreaterThan(num.DecimalOne()) {
 			b.MinValidPrice.AddSum(common.One) // ceil
 		}
 	}
@@ -1366,7 +1366,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
+	offset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
 	if order.Side == types.SideSell {
 		price = price.AddSum(offset)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
@@ -1397,8 +1397,7 @@ func (m *Market) repricePeggedOrder(order *types.Order) error {
 	if err != nil {
 		return err
 	}
-	original := price.Clone()
-	order.OriginalPrice = original.Div(original, m.priceFactor) // set original price in market precision
+	order.OriginalPrice, _ = num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor)) // set original price in market precision
 	order.Price = price
 	return nil
 }
@@ -1436,7 +1435,8 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		}
 		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
-		m.tradingTerminatedWithFinalState(ctx, final, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
+		settlement, _ := num.UintFromDecimal(changes.SettlementPrice.ToDecimal().Mul(m.priceFactor))
+		m.tradingTerminatedWithFinalState(ctx, final, settlement)
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance
@@ -2222,7 +2222,7 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	order := orderSubmission.IntoOrder(party)
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
-		order.Price.Mul(order.Price, m.priceFactor)
+		order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
 	}
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.ID = orderID
@@ -4323,7 +4323,7 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	mid := num.UintZero()
 	one := num.NewUint(1)
 	two := num.Sum(one, one)
-	one.Mul(one, m.priceFactor)
+	one, _ = num.UintFromDecimal(one.ToDecimal().Mul(m.priceFactor))
 	if side == types.SideBuy {
 		mid = mid.Div(num.Sum(bid, ask, one), two)
 	} else {

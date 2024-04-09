@@ -74,7 +74,7 @@ type Market struct {
 
 	lastTradedPrice *num.Uint
 	markPrice       *num.Uint
-	priceFactor     *num.Uint
+	priceFactor     num.Decimal
 
 	// own engines
 	matching                      *matching.CachedOrderBook
@@ -164,9 +164,9 @@ func NewMarket(
 	}
 
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
-	priceFactor := num.NewUint(1)
-	if exp := quoteAssetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
-		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
+	priceFactor := num.DecimalOne()
+	if exp := int(quoteAssetDetails.DecimalPlaces()) - int(mkt.DecimalPlaces); exp != 0 {
+		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 	baseFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(baseAssetDetails.DecimalPlaces()) - mkt.PositionDecimalPlaces))
 	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, as.InAuction(), peggedOrderNotify)
@@ -360,7 +360,8 @@ func (m *Market) GetMarketState() types.MarketState {
 }
 
 func (m *Market) priceToMarketPrecision(price *num.Uint) *num.Uint {
-	return price.Div(price, m.priceFactor)
+	p, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+	return p
 }
 
 func (m *Market) GetMarketData() types.MarketData {
@@ -398,14 +399,14 @@ func (m *Market) GetMarketData() types.MarketData {
 	targetStake := m.getTargetStake().String()
 	bounds := m.pMonitor.GetCurrentBounds()
 	for _, b := range bounds {
-		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
-		m.priceToMarketPrecision(b.MinValidPrice)
+		b.MaxValidPrice = m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
+		b.MinValidPrice = m.priceToMarketPrecision(b.MinValidPrice)
 
 		rp, _ := num.UintFromDecimal(b.ReferencePrice)
-		m.priceToMarketPrecision(rp)
+		rp = m.priceToMarketPrecision(rp)
 		b.ReferencePrice = num.DecimalFromUint(rp)
 
-		if m.priceFactor.NEQ(common.One) {
+		if m.priceFactor.GreaterThan(num.DecimalOne()) {
 			b.MinValidPrice.AddSum(common.One) // ceil
 		}
 	}
@@ -818,7 +819,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
+	offset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
 	if order.Side == types.SideSell {
 		price = price.AddSum(offset)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
@@ -849,8 +850,7 @@ func (m *Market) repricePeggedOrder(order *types.Order) error {
 	if err != nil {
 		return err
 	}
-	original := price.Clone()
-	order.OriginalPrice = original.Div(original, m.priceFactor) // set original price in market precision
+	order.OriginalPrice, _ = num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor)) // set original price in market precision
 	order.Price = price
 	return nil
 }
@@ -1308,7 +1308,7 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(ctx context.Context, order
 	order := orderSubmission.IntoOrder(party)
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
-		order.Price.Mul(order.Price, m.priceFactor)
+		order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
 	}
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.ID = orderID
@@ -2233,7 +2233,7 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 		}
 		price := order.Price
 		if amendment.Price != nil {
-			price = num.UintZero().Mul(amendment.Price, m.priceFactor)
+			price, _ = num.UintFromDecimal(amendment.Price.ToDecimal().Mul(m.priceFactor))
 		}
 		if order.PeggedOrder != nil {
 			p, err := m.getNewPeggedPrice(order)
@@ -2559,7 +2559,7 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	mid := num.UintZero()
 	one := num.NewUint(1)
 	two := num.Sum(one, one)
-	one.Mul(one, m.priceFactor)
+	one, _ = num.UintFromDecimal(one.ToDecimal().Mul(m.priceFactor))
 	if side == types.SideBuy {
 		mid = mid.Div(num.Sum(bid, ask, one), two)
 	} else {

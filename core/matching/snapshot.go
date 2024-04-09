@@ -139,12 +139,11 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 
 // RestoreWithMarketPriceFactor takes the given market price factor and updates all the OriginalPrices
 // in the orders accordingly.
-func (b *OrderBook) RestoreWithMarketPriceFactor(priceFactor *num.Uint) {
+func (b *OrderBook) RestoreWithMarketPriceFactor(priceFactor num.Decimal) {
 	for _, o := range b.ordersByID {
 		if o.Price.IsZero() {
 			continue
 		}
-		o.OriginalPrice = o.Price.Clone()
-		o.OriginalPrice.Div(o.Price, priceFactor)
+		o.OriginalPrice, _ = num.UintFromDecimal(o.Price.ToDecimal().Div(priceFactor))
 	}
 }
