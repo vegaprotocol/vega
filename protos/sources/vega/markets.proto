@@ -348,7 +348,7 @@ message Market {
   TradableInstrument tradable_instrument = 2;
   // Number of decimal places that a price must be shifted by in order to get a
   // correct price denominated in the currency of the market, for example:
-  // `realPrice = price / 10^decimalPlaces`.
+  // `realPrice = price / 10^decimalPlaces`. On spot markets, also called 'size decimal places'.
   uint64 decimal_places = 3;
   // Fees configuration that apply to the market.
   Fees fees = 4;
@@ -366,6 +366,7 @@ message Market {
   // Timestamps for when the market state changes.
   MarketTimestamps market_timestamps = 10;
   // The number of decimal places for a position.
+  // On spot markets, used for order size, also known as 'size decimal places'.
   int64 position_decimal_places = 11;
   // Percentage move up and down from the mid price which specifies the range of
   // price levels over which automated liquidity provisions will be deployed.

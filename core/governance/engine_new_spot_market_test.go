@@ -486,8 +486,8 @@ func testInvalidSpotDecimalPlace(t *testing.T) {
 	party := eng.newValidParty("a-valid-party", 123456789)
 	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
-	proposal.Terms.GetNewSpotMarket().Changes.DecimalPlaces = 12
-	proposal.Terms.GetNewSpotMarket().Changes.PositionDecimalPlaces = 7
+	proposal.Terms.GetNewSpotMarket().Changes.PriceDecimalPlaces = 12
+	proposal.Terms.GetNewSpotMarket().Changes.SizeDecimalPlaces = 7
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -506,13 +506,13 @@ func testInvalidSpotPositionDecimalPlace(t *testing.T) {
 	party := eng.newValidParty("a-valid-party", 123456789)
 	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
-	proposal.Terms.GetNewSpotMarket().Changes.DecimalPlaces = 0
-	proposal.Terms.GetNewSpotMarket().Changes.PositionDecimalPlaces = 6
+	proposal.Terms.GetNewSpotMarket().Changes.PriceDecimalPlaces = 0
+	proposal.Terms.GetNewSpotMarket().Changes.SizeDecimalPlaces = 6
 
 	// setup
 	spot := proposal.Terms.GetNewSpotMarket().Changes.Instrument.IntoProto().GetSpot()
 	eng.ensureAllAssetEnabledWithDP(t, spot.BaseAsset, spot.QuoteAsset, 5, 10)
-	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidPositionDecimalPlaces)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidSizeDecimalPlaces)
 
 	// when
 	_, err := eng.submitProposal(t, proposal)

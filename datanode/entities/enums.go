@@ -580,6 +580,7 @@ const (
 	ProposalErrorInvalidSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS)
 	ProposalErrorMissingSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS)
 	ProposalInvalidPerpetualProduct               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT)
+	ProposalErrorInvalidSizeDecimalPlaces         = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

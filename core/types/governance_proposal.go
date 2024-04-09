@@ -129,8 +129,8 @@ const (
 	ProposalErrorProposalInBatchRejected ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
 	// ProposalErrorProposalInBatchDeclined is returned when one or more proposals in the batch are rejected.
 	ProposalErrorProposalInBatchDeclined ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
-	// ProposalErrorInvalidPositionDecimalPlaces is returned in spot market when the proposed position decimal places is > base asset decimal places.
-	ProposalErrorInvalidPositionDecimalPlaces = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_POSITION_DECIMAL_PLACES
+	// ProposalErrorInvalidSizeDecimalPlaces is returned in spot market when the proposed position decimal places is > base asset decimal places.
+	ProposalErrorInvalidSizeDecimalPlaces = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES
 )
 
 type ProposalState = vegapb.Proposal_State

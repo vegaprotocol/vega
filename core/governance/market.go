@@ -326,8 +326,8 @@ func buildSpotMarketFromProposal(
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
 		ID:                    marketID,
-		DecimalPlaces:         definition.Changes.DecimalPlaces,
-		PositionDecimalPlaces: definition.Changes.PositionDecimalPlaces,
+		DecimalPlaces:         definition.Changes.PriceDecimalPlaces,
+		PositionDecimalPlaces: definition.Changes.SizeDecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				MakerFee:          makerFeeDec,
@@ -382,7 +382,7 @@ func validateAssetBasic(assetID string, assets Assets, positionDecimals int64, d
 			fmt.Errorf("asset is not enabled %v", assetID)
 	}
 	if positionDecimals > int64(as.DecimalPlaces()) {
-		return types.ProposalErrorInvalidPositionDecimalPlaces, fmt.Errorf("number of position decimal places must be less than or equal to the number base asset decimal places")
+		return types.ProposalErrorInvalidSizeDecimalPlaces, fmt.Errorf("number of position decimal places must be less than or equal to the number base asset decimal places")
 	}
 
 	return types.ProposalErrorUnspecified, nil
@@ -793,7 +793,7 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, terms.Changes.PositionDecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.PriceDecimalPlaces, terms.Changes.SizeDecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {

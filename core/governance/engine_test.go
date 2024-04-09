@@ -1763,8 +1763,8 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 						},
 					},
 				},
-				Metadata:      []string{"asset_class:spot/crypto", "product:spot"},
-				DecimalPlaces: 0,
+				Metadata:           []string{"asset_class:spot/crypto", "product:spot"},
+				PriceDecimalPlaces: 0,
 				SLAParams: &types.LiquiditySLAParams{
 					PriceRange:                  num.DecimalOne(),
 					CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5),
