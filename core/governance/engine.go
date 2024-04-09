@@ -1212,6 +1212,7 @@ func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, type
 			TargetStakeParameters:     terms.Changes.TargetStakeParameters,
 			SLAParams:                 terms.Changes.SLAParams,
 			TickSize:                  terms.Changes.TickSize,
+			LiquidityFeeSettings:      terms.Changes.LiquidityFeeSettings,
 		},
 	}
 
