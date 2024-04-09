@@ -22,7 +22,7 @@ Feature: Network disposing position
       | 0.000001      | 0.00000380258 | 0  | 0 | 1.5   |
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 100000  | 0.99        | 3                 |
+      | 100000  | 0.99        | 60                |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1           | 0.85                         | 1                             | 0.5                    |
@@ -240,9 +240,138 @@ Feature: Network disposing position
       | lp1   | buy            | 4      |
     And clear trade events
 
+Scenario: Network takes over distressed position and attempts to dispose position during price monitoring auction
 
+    Given the parties deposit on asset's general account the following amount:
+      | party       | asset    | amount       |
+      | lp1         | USD.0.10 | 100000000000 |
+      | aux1        | USD.0.10 | 10000000000  |
+      | aux2        | USD.0.10 | 10000000000  |
+      | atRiskParty | USD.0.10 | 180          |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 500000            | 0   | submission |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lp1   | ETH/MAR22 | buy  | 1000   | 999   | 0                | TYPE_LIMIT | TIF_GTC | best-bid  |
+      | lp1   | ETH/MAR22 | sell | 1000   | 1001  | 0                | TYPE_LIMIT | TIF_GTC | best-ask  |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the opening auction period ends for market "ETH/MAR22"
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            |
+      | 1000       | TRADING_MODE_CONTINUOUS |
 
+    Given the parties place the following orders:
+      | party       | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1        | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | atRiskParty | ETH/MAR22 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the network moves ahead "1" blocks
 
+    Then the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | -10    | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party       | market id | maintenance | search | initial | release |
+      | atRiskParty | ETH/MAR22 | 156         | 171    | 187     | 218     |
+    And the parties should have the following account balances:
+      | party       | asset    | market id | margin | general |
+      | atRiskParty | USD.0.10 | ETH/MAR22 | 175    | 5       |
 
+    Given the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp1   | best-ask  | 1240  | 0          | TIF_GTC |
+      | lp1   | best-bid  | 1009  | 0          | TIF_GTC |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 1010  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the network moves ahead "1" blocks
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            |
+      | 1010       | TRADING_MODE_CONTINUOUS |
+    Then debug trades
+
+    Then the parties should have the following profit and loss:
+      | party       | market id | volume | unrealised pnl | realised pnl |
+      | atRiskParty | ETH/MAR22 | 0      | 0              | -180         |
+    And the following network trades should be executed:
+      | party       | aggressor side | volume |
+      | atRiskParty | sell           | 10     |
+    And clear trade events
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound |
+      | 1010       | TRADING_MODE_CONTINUOUS | 100000  | 802       | 1238      |
+    Then debug detailed orderbook volumes for market "ETH/MAR22"
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 1239  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 1239  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION |
+   
+    When the network moves ahead "30" blocks
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION |
     
+    When the network moves ahead "31" blocks
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            |
+      | 1239       | TRADING_MODE_CONTINUOUS |
     
+    # Position size is 10, next disposal should be ceil(10*0.2)=ceil(2)=2
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | lp1   | buy            | 2      |
+    Then debug trades
+    And clear trade events
+
+    # Position size is 8, next disposal should be ceil(8*0.2)=ceil(1.6)=2
+    Then the network moves ahead "5" blocks
+    Then debug trades
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | lp1   | buy            | 2      |
+    And clear trade events
+
+    # Position size is 6, next disposal should be ceil(6*0.2)=ceil(1.4)=2
+    Then the network moves ahead "5" blocks
+    Then debug trades
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | lp1   | buy            | 2      |
+    And clear trade events
+
+    # Position size is 4, next disposal should be ceil(10*0.2)=ceil(2)=2
+    Then the network moves ahead "5" blocks
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | lp1   | buy            | 1      |
+    And clear trade events
+
+    # Position size is 3, next disposal should be ceil(10*0.2)=ceil(2)=2
+    Then the network moves ahead "5" blocks
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | lp1   | buy            | 1      |
+    And clear trade events
+
+    # Position size is 2, next disposal should be ceil(10*0.2)=ceil(2)=2
+    Then the network moves ahead "5" blocks
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | lp1   | buy            | 1      |
+    And clear trade events
+
+    # Position size is 1, next disposal should be ceil(10*0.2)=ceil(2)=2
+    Then the network moves ahead "5" blocks
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | lp1   | buy            | 1      |
+    And clear trade events
