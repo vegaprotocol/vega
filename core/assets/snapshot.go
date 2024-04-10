@@ -18,12 +18,10 @@ package assets
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var (
@@ -148,12 +146,8 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 		}
 
 		pa, _ := s.Get(p.ID)
-		if s.isValidator {
-			if err = s.validateAsset(pa); err != nil {
-				return err
-			}
-		}
-		// at this point asset is always valid
+
+		// at this point asset is always valid because we've loaded from a snapshot and have validated it when it was proposed
 		pa.SetValid()
 
 		if err = s.Enable(ctx, p.ID); err != nil {
@@ -208,66 +202,42 @@ func (s *Service) OnStateLoaded(ctx context.Context) error {
 	// restore assets before the network parameters. So for the non-validator nodes only, we have to do the migration to include the chain-id here, after everything
 	// else is restored.
 	s.log.Info("migrating chain-id in existing active assets for non-validator nodes")
-	var snap snapshot.Payload
-	if err := proto.Unmarshal(s.ass.serialisedActive, &snap); err != nil {
-		return err
-	}
-	pl := types.PayloadFromProto(&snap)
-	active := pl.Data.(*types.PayloadActiveAssets)
-	for _, p := range active.ActiveAssets.Assets {
-		a := s.assets[p.ID]
+	for k, a := range s.assets {
 		eth, ok := a.ERC20()
 		if !ok || eth.ChainID() != "" {
 			continue
 		}
 		s.log.Info("setting chain-id for active asset",
-			logging.String("asset-id", p.ID),
+			logging.String("asset-id", k),
 			logging.String("chain-id", s.primaryEthChainID),
 		)
 		eth.SetChainID(s.primaryEthChainID)
-		s.broker.Stage(events.NewAssetEvent(ctx, *p))
 	}
 
 	s.log.Info("migrating chain-id in existing pending assets for non-validator nodes")
-	if err := proto.Unmarshal(s.ass.serialisedPending, &snap); err != nil {
-		return err
-	}
-
-	pl = types.PayloadFromProto(&snap)
-	pending := pl.Data.(*types.PayloadPendingAssets)
-	for _, p := range pending.PendingAssets.Assets {
-		pp := s.pendingAssets[p.ID]
-		eth, ok := pp.ERC20()
+	for k, p := range s.pendingAssets {
+		eth, ok := p.ERC20()
 		if !ok || eth.ChainID() != "" {
 			continue
 		}
 		s.log.Info("setting chain-id for pending asset",
-			logging.String("asset-id", p.ID),
+			logging.String("asset-id", k),
 			logging.String("chain-id", s.primaryEthChainID),
 		)
 		eth.SetChainID(s.primaryEthChainID)
-		s.broker.Stage(events.NewAssetEvent(ctx, *p))
 	}
 
 	s.log.Info("migrating chain-id in existing update-pending assets for non-validator nodes")
-	if err := proto.Unmarshal(s.ass.serialisedPendingUpdates, &snap); err != nil {
-		return err
-	}
-
-	pl = types.PayloadFromProto(&snap)
-	updates := pl.Data.(*types.PayloadPendingAssetUpdates)
-	for _, p := range updates.PendingAssetUpdates.Assets {
-		pp := s.pendingAssetUpdates[p.ID]
-		eth, ok := pp.ERC20()
+	for k, pu := range s.pendingAssetUpdates {
+		eth, ok := pu.ERC20()
 		if !ok || eth.ChainID() != "" {
 			continue
 		}
 		s.log.Info("setting chain-id for pending update asset",
-			logging.String("asset-id", p.ID),
+			logging.String("asset-id", k),
 			logging.String("chain-id", s.primaryEthChainID),
 		)
 		eth.SetChainID(s.primaryEthChainID)
-		s.broker.Stage(events.NewAssetEvent(ctx, *p))
 	}
 
 	return nil
@@ -285,8 +255,6 @@ func (s *Service) applyMigrations(ctx context.Context, p *types.Asset) {
 				logging.String("chain-id", s.primaryEthChainID),
 			)
 			erc20.ChainID = s.primaryEthChainID
-			// Ensure the assets are updated in the data-node.
-			s.broker.Stage(events.NewAssetEvent(ctx, *p))
 		}
 	}
 }
