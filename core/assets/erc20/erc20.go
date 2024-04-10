@@ -92,6 +92,13 @@ func (e *ERC20) SetEnabled() {
 	e.asset.Status = types.AssetStatusEnabled
 }
 
+// SetChainID sets the chain-id on the ERC20. This should only be used during the migration from 0.75.
+func (e *ERC20) SetChainID(chainID string) {
+	e.chainID = chainID
+	source := e.asset.Details.Source.(*types.AssetDetailsErc20)
+	source.ERC20.ChainID = chainID
+}
+
 func (e *ERC20) Update(updatedAsset *types.Asset) {
 	e.asset = updatedAsset
 }

@@ -22,6 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var (
@@ -141,7 +143,6 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 	s.assets = map[string]*Asset{}
 	for _, p := range active.Assets {
 		s.applyMigrations(ctx, p)
-
 		if _, err = s.NewAsset(ctx, p.ID, p.Details); err != nil {
 			return err
 		}
@@ -169,7 +170,6 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 	s.pendingAssets = map[string]*Asset{}
 	for _, p := range pending.Assets {
 		s.applyMigrations(ctx, p)
-
 		assetID, err := s.NewAsset(ctx, p.ID, p.Details)
 		if err != nil {
 			return err
@@ -190,7 +190,6 @@ func (s *Service) restorePendingUpdates(ctx context.Context, pending *types.Pend
 	s.pendingAssetUpdates = map[string]*Asset{}
 	for _, p := range pending.Assets {
 		s.applyMigrations(ctx, p)
-
 		if err = s.StageAssetUpdate(p); err != nil {
 			return err
 		}
@@ -200,13 +199,91 @@ func (s *Service) restorePendingUpdates(ctx context.Context, pending *types.Pend
 	return err
 }
 
+func (s *Service) OnStateLoaded(ctx context.Context) error {
+	if !vgcontext.InProgressUpgrade(ctx) || s.isValidator {
+		return nil
+	}
+
+	// note that non-validator nodes do not know the chain-id for the bridges until the network parameters are propagated, but also *validator* nodes need to
+	// restore assets before the network parameters. So for the non-validator nodes only, we have to do the migration to include the chain-id here, after everything
+	// else is restored.
+	s.log.Info("migrating chain-id in existing active assets for non-validator nodes")
+	var snap snapshot.Payload
+	if err := proto.Unmarshal(s.ass.serialisedActive, &snap); err != nil {
+		return err
+	}
+	pl := types.PayloadFromProto(&snap)
+	active := pl.Data.(*types.PayloadActiveAssets)
+	for _, p := range active.ActiveAssets.Assets {
+		a := s.assets[p.ID]
+		eth, ok := a.ERC20()
+		if !ok || eth.ChainID() != "" {
+			continue
+		}
+		s.log.Info("setting chain-id for active asset",
+			logging.String("asset-id", p.ID),
+			logging.String("chain-id", s.primaryEthChainID),
+		)
+		eth.SetChainID(s.primaryEthChainID)
+		s.broker.Stage(events.NewAssetEvent(ctx, *p))
+	}
+
+	s.log.Info("migrating chain-id in existing pending assets for non-validator nodes")
+	if err := proto.Unmarshal(s.ass.serialisedPending, &snap); err != nil {
+		return err
+	}
+
+	pl = types.PayloadFromProto(&snap)
+	pending := pl.Data.(*types.PayloadPendingAssets)
+	for _, p := range pending.PendingAssets.Assets {
+		pp := s.pendingAssets[p.ID]
+		eth, ok := pp.ERC20()
+		if !ok || eth.ChainID() != "" {
+			continue
+		}
+		s.log.Info("setting chain-id for pending asset",
+			logging.String("asset-id", p.ID),
+			logging.String("chain-id", s.primaryEthChainID),
+		)
+		eth.SetChainID(s.primaryEthChainID)
+		s.broker.Stage(events.NewAssetEvent(ctx, *p))
+	}
+
+	s.log.Info("migrating chain-id in existing update-pending assets for non-validator nodes")
+	if err := proto.Unmarshal(s.ass.serialisedPendingUpdates, &snap); err != nil {
+		return err
+	}
+
+	pl = types.PayloadFromProto(&snap)
+	updates := pl.Data.(*types.PayloadPendingAssetUpdates)
+	for _, p := range updates.PendingAssetUpdates.Assets {
+		pp := s.pendingAssetUpdates[p.ID]
+		eth, ok := pp.ERC20()
+		if !ok || eth.ChainID() != "" {
+			continue
+		}
+		s.log.Info("setting chain-id for pending update asset",
+			logging.String("asset-id", p.ID),
+			logging.String("chain-id", s.primaryEthChainID),
+		)
+		eth.SetChainID(s.primaryEthChainID)
+		s.broker.Stage(events.NewAssetEvent(ctx, *p))
+	}
+
+	return nil
+}
+
 func (s *Service) applyMigrations(ctx context.Context, p *types.Asset) {
 	// TODO when we know what versions we are upgrading from we can put in a upgrade from tag
-	if vgcontext.InProgressUpgrade(ctx) {
+	if vgcontext.InProgressUpgrade(ctx) && s.isValidator {
 		// Prior the introduction of the second bridge, existing assets did not track
 		// the chain ID they originated from. So, when loaded, assets without a chain
 		// ID are automatically considered to originate from Ethereum Mainnet.
 		if erc20 := p.Details.GetERC20(); erc20 != nil && erc20.ChainID == "" {
+			s.log.Info("migrating chain-id in existin asset for validator nodes",
+				logging.String("asset-id", p.ID),
+				logging.String("chain-id", s.primaryEthChainID),
+			)
 			erc20.ChainID = s.primaryEthChainID
 			// Ensure the assets are updated in the data-node.
 			s.broker.Stage(events.NewAssetEvent(ctx, *p))
