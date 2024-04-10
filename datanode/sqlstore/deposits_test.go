@@ -918,3 +918,30 @@ func testDepositsPaginationBetweenDatesLastBeforeNewestFirst(t *testing.T) {
 		EndCursor:       want[2].Cursor().Encode(),
 	}, pageInfo)
 }
+
+func TestDeposits_DepositStatusEnum(t *testing.T) {
+	var depositStatus vega.Deposit_Status
+
+	states := getEnums(t, depositStatus)
+	assert.Len(t, states, 5)
+	for e, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+			bs, ds, _ := setupDepositStoreTests(t)
+			block := addTestBlock(t, ctx, bs)
+			amount := int64(1000)
+
+			depositProto := getTestDeposit(fmt.Sprintf("deadbeef%02d", e), testID, testID,
+				strconv.FormatInt(amount, 10), GenerateID(), block.VegaTime.UnixNano())
+			depositProto.Status = vega.Deposit_Status(e)
+
+			deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err, "Converting deposit proto to database entity")
+			err = ds.Upsert(ctx, deposit)
+
+			got, err := ds.GetByID(ctx, depositProto.Id)
+			require.NoError(t, err)
+			assert.Equal(t, deposit.Status, got.Status)
+		})
+	}
+}

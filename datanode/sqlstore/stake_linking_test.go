@@ -18,6 +18,7 @@ package sqlstore_test
 import (
 	"context"
 	"fmt"
+	"github.com/georgysavva/scany/pgxscan"
 	"testing"
 	"time"
 
@@ -449,4 +450,64 @@ func setupStakeLinkingPaginationTest(t *testing.T, ctx context.Context) (*sqlsto
 		linkings[10+i] = addStakeLinking(t, ctx, ls, linkingID, partyID, id+10, block)
 	}
 	return ls, linkings
+}
+
+func TestStakeLinkingEnums(t *testing.T) {
+	t.Run("should be able to store and retrieve all stake linking statuses", testStakeLinkingStatusEnum)
+	t.Run("should be able to store and retrieve all stake linking types", testStakeLinkingTypeEnum)
+}
+
+func testStakeLinkingStatusEnum(t *testing.T) {
+	var stakeLinkingStatus eventspb.StakeLinking_Status
+	states := getEnums(t, stakeLinkingStatus)
+	assert.Len(t, states, 4)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+
+			ctx := tempTransaction(t)
+
+			bs, sl := setupStakeLinkingTest(t)
+
+			block := addTestBlock(t, ctx, bs)
+			stakingProtos := getStakingProtos()
+
+			proto := stakingProtos[0]
+			proto.Status = eventspb.StakeLinking_Status(s)
+			data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err)
+			assert.NoError(t, sl.Upsert(ctx, data))
+
+			_, got, _, err := sl.GetStake(ctx, data.PartyID, entities.CursorPagination{})
+			assert.Len(t, got, 1)
+			assert.Equal(t, data.StakeLinkingStatus, got[0].StakeLinkingStatus)
+		})
+	}
+}
+
+func testStakeLinkingTypeEnum(t *testing.T) {
+	var stakeLinkingType eventspb.StakeLinking_Type
+	types := getEnums(t, stakeLinkingType)
+	assert.Len(t, types, 3)
+	for ty, typ := range types {
+		t.Run(typ, func(t *testing.T) {
+
+			ctx := tempTransaction(t)
+
+			bs, sl := setupStakeLinkingTest(t)
+
+			block := addTestBlock(t, ctx, bs)
+			stakingProtos := getStakingProtos()
+
+			proto := stakingProtos[0]
+			proto.Type = eventspb.StakeLinking_Type(ty)
+			data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err)
+			assert.NoError(t, sl.Upsert(ctx, data))
+
+			var got entities.StakeLinking
+
+			require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM stake_linking where tx_hash = $1", data.TxHash))
+			assert.Equal(t, data.StakeLinkingType, got.StakeLinkingType)
+		})
+	}
 }

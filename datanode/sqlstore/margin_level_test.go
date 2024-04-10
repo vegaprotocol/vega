@@ -1299,3 +1299,33 @@ func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursorNewestFirst(t
 		EndCursor:       entities.NewCursor(wantEndCursor.String()).Encode(),
 	}, pageInfo)
 }
+
+func TestMarginLevels_MarginMode(t *testing.T) {
+	var marginMode vega.MarginMode
+	modes := getEnums(t, marginMode)
+	assert.Len(t, modes, 3)
+
+	for m, mode := range modes {
+		t.Run(mode, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			blockSource, ml, accountStore, _ := setupMarginLevelTests(t, ctx)
+			block := blockSource.getNextBlock(t, ctx)
+
+			marginLevelProto := getMarginLevelProto()
+			marginLevelProto.MarginMode = vega.MarginMode(m)
+			want, err := entities.MarginLevelsFromProto(ctx, marginLevelProto, accountStore, generateTxHash(), block.VegaTime)
+			require.NoError(t, err, "Converting margin levels proto to database entity")
+
+			require.NoError(t, ml.Add(want))
+
+			_, err = ml.Flush(ctx)
+			require.NoError(t, err)
+
+			got, err := ml.GetByTxHash(ctx, want.TxHash)
+			require.NoError(t, err)
+			assert.Len(t, got, 1)
+			assert.Equal(t, want, got[0])
+		})
+	}
+}

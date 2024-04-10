@@ -1780,3 +1780,58 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 
 	return md, entries, props
 }
+
+func TestMarketsEnums(t *testing.T) {
+	t.Run("All proto market states should be supported", testMarketState)
+	t.Run("All proto market trading modes should be supported", testMarketTradingMode)
+}
+
+func testMarketState(t *testing.T) {
+	var marketState vega.Market_State
+	states := getEnums(t, marketState)
+	assert.Len(t, states, 11)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			bs, md := setupMarketsTest(t)
+
+			ctx := tempTransaction(t)
+
+			block := addTestBlock(t, ctx, bs)
+
+			marketProto := getTestFutureMarket(true)
+			marketProto.State = vega.Market_State(s)
+
+			market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err, "Converting market proto to database entity")
+			require.NoError(t, md.Upsert(ctx, market))
+			got, err := md.GetByID(ctx, market.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, market.State, got.State)
+		})
+	}
+}
+
+func testMarketTradingMode(t *testing.T) {
+	var marketTradingMode vega.Market_TradingMode
+	modes := getEnums(t, marketTradingMode)
+	assert.Len(t, modes, 7)
+	for m, mode := range modes {
+		t.Run(mode, func(t *testing.T) {
+			bs, md := setupMarketsTest(t)
+
+			ctx := tempTransaction(t)
+
+			block := addTestBlock(t, ctx, bs)
+
+			marketProto := getTestFutureMarket(true)
+			marketProto.TradingMode = vega.Market_TradingMode(m)
+
+			market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err, "Converting market proto to database entity")
+			require.NoError(t, md.Upsert(ctx, market))
+			got, err := md.GetByID(ctx, market.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, market.TradingMode, got.TradingMode)
+		})
+	}
+}

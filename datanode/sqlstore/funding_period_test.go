@@ -16,6 +16,7 @@
 package sqlstore_test
 
 import (
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"context"
 	"sort"
 	"testing"
@@ -775,4 +776,34 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
 			nil, nil, pagination, want, wantPageInfo)
 	})
+}
+
+func TestFundingPeriodDataPointSource(t *testing.T) {
+	var fundingPeriodDataPointSource eventspb.FundingPeriodDataPoint_Source
+	sources := getEnums(t, fundingPeriodDataPointSource)
+	assert.Equal(t, 3, len(sources))
+	for s, source := range sources {
+		t.Run(source, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			stores := setupFundingPeriodTests(ctx, t)
+			dp := entities.FundingPeriodDataPoint{
+				MarketID:         stores.markets[0].ID,
+				FundingPeriodSeq: 1,
+				DataPointType:    entities.FundingPeriodDataPointSource(s),
+				Price:            num.DecimalFromFloat(1.0),
+				Twap:             num.DecimalFromFloat(1.0),
+				Timestamp:        stores.blocks[2].VegaTime,
+				VegaTime:         stores.blocks[2].VegaTime,
+				TxHash:           generateTxHash(),
+			}
+			require.NoError(t, stores.fp.AddDataPoint(ctx, &dp))
+			got := entities.FundingPeriodDataPoint{}
+			require.NoError(t, pgxscan.Get(ctx, stores.fp.Connection, &got,
+				`select * from funding_period_data_points where market_id = $1 and funding_period_seq = $2 and data_point_type = $3`,
+				dp.MarketID, dp.FundingPeriodSeq, dp.DataPointType),
+			)
+			assert.Equal(t, dp, got)
+		})
+	}
 }

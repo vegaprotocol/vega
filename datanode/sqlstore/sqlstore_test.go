@@ -17,6 +17,7 @@ package sqlstore_test
 
 import (
 	"bytes"
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -79,4 +80,9 @@ func tempTransaction(t *testing.T) context.Context {
 	})
 
 	return ctx
+}
+
+func getEnums[T entities.ProtoEnum](t *testing.T, enumsT T) map[int32]string {
+	t.Helper()
+	return enumsT.GetEnums()
 }

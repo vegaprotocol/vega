@@ -34,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -80,6 +81,85 @@ func Test_MarketData(t *testing.T) {
 	t.Run("GetHistoricMarketData should return all market data for a given market with date greater than or equal to the given date", getForMarketFromDate)
 	t.Run("GetHistoricMarketData should return all market data for a given market with date less than or equal to the given date", getForMarketToDate)
 	t.Run("GetHistoricMarketData should return all market data when no start or end is provided", TestGetAllMarketData)
+	t.Run("Add should work for all valid enumerations values of auction trigger", shouldWorkForAllValuesOfAuctionTrigger)
+	t.Run("Add should work for all valid enumerations values of composite price type", shouldWorkForAllValuesOfCompositePriceType)
+}
+
+func shouldWorkForAllValuesOfCompositePriceType(t *testing.T) {
+	var priceType vegapb.CompositePriceType
+	enums := getEnums(t, priceType)
+	assert.Len(t, enums, 4)
+
+	for e, pt := range enums {
+		t.Run(pt, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			addMarketData(t, ctx, "AUCTION_TRIGGER_LIQUIDITY", pt)
+			var got entities.MarketData
+
+			err := connectionSource.Connection.QueryRow(ctx, `select mark_price_type from market_data`).Scan(&got.MarkPriceType)
+			require.NoError(t, err)
+
+			mdProto := got.ToProto()
+
+			assert.Equal(t, vegapb.CompositePriceType(e), mdProto.MarkPriceType)
+		})
+	}
+
+}
+
+func addMarketData(t *testing.T, ctx context.Context, trigger, priceType string) {
+	bs := sqlstore.NewBlocks(connectionSource)
+	block := addTestBlock(t, ctx, bs)
+
+	md := sqlstore.NewMarketData(connectionSource)
+	err := md.Add(&entities.MarketData{
+		Market:            entities.MarketID("deadbeef"),
+		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
+		MarketState:       "STATE_ACTIVE",
+		AuctionTrigger:    trigger,
+		ExtensionTrigger:  trigger,
+		MarkPriceType:     priceType,
+		PriceMonitoringBounds: []*vega.PriceMonitoringBounds{
+			{
+				MinValidPrice: "1",
+				MaxValidPrice: "2",
+				Trigger: &vega.PriceMonitoringTrigger{
+					Horizon:          100,
+					Probability:      "0.5",
+					AuctionExtension: 200,
+				},
+				ReferencePrice: "3",
+			},
+		},
+		VegaTime: block.VegaTime,
+	})
+	require.NoError(t, err)
+
+	_, err = md.Flush(ctx)
+	require.NoError(t, err)
+}
+
+func shouldWorkForAllValuesOfAuctionTrigger(t *testing.T) {
+	var auctionTrigger vegapb.AuctionTrigger
+	enums := getEnums(t, auctionTrigger)
+	assert.Len(t, enums, 8)
+
+	for e, trigger := range enums {
+		t.Run(trigger, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			addMarketData(t, ctx, trigger, "COMPOSITE_PRICE_TYPE_LAST_TRADE")
+			var got entities.MarketData
+
+			err := connectionSource.Connection.QueryRow(ctx, `select auction_trigger from market_data`).Scan(&got.AuctionTrigger)
+			require.NoError(t, err)
+
+			mdProto := got.ToProto()
+
+			assert.Equal(t, vegapb.AuctionTrigger(e), mdProto.Trigger)
+		})
+	}
 }
 
 func shouldInsertAValidMarketDataRecord(t *testing.T) {

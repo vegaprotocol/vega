@@ -130,3 +130,34 @@ func TestProtocolUpgradeProposal(t *testing.T) {
 
 	_, _ = pup1a, pup2a
 }
+
+func TestProtocolUpdateProposalStatusEnum(t *testing.T) {
+	var protocolUpgradeProposalStatus eventspb.ProtocolUpgradeProposalStatus
+	states := getEnums(t, protocolUpgradeProposalStatus)
+	assert.Len(t, states, 4)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+			height := uint64(1)
+			tag := "1.1"
+			approvers := []string{"phil"}
+			blockStore := sqlstore.NewBlocks(connectionSource)
+			block := addTestBlock(t, ctx, blockStore)
+			store := sqlstore.NewProtocolUpgradeProposals(connectionSource)
+
+			pup := entities.ProtocolUpgradeProposal{
+				UpgradeBlockHeight: height,
+				VegaReleaseTag:     tag,
+				Approvers:          approvers,
+				Status:             entities.ProtocolUpgradeProposalStatus(s),
+				VegaTime:           block.VegaTime,
+				TxHash:             generateTxHash(),
+			}
+			require.NoError(t, store.Add(ctx, pup))
+			got, err := store.GetByTxHash(ctx, pup.TxHash)
+			require.NoError(t, err)
+			assert.Len(t, got, 1)
+			assert.Equal(t, pup.Status, got[0].Status)
+		})
+	}
+}

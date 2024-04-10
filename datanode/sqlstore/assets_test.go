@@ -16,6 +16,7 @@
 package sqlstore_test
 
 import (
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"context"
 	"fmt"
 	"testing"
@@ -31,6 +32,15 @@ import (
 var testAssetCount int
 
 func addTestAsset(t *testing.T, ctx context.Context, as *sqlstore.Assets, block entities.Block, idPrefix ...string) entities.Asset {
+	asset := getTestAsst(t, block, idPrefix...)
+
+	// Add it to the database
+	err := as.Add(ctx, asset)
+	require.NoError(t, err)
+	return asset
+}
+
+func getTestAsst(t *testing.T, block entities.Block, idPrefix ...string) entities.Asset {
 	t.Helper()
 	// Make an asset
 	testAssetCount++
@@ -41,7 +51,7 @@ func addTestAsset(t *testing.T, ctx context.Context, as *sqlstore.Assets, block 
 		assetID = fmt.Sprintf("%s%02d", idPrefix[0], testAssetCount)
 	}
 
-	asset := entities.Asset{
+	return entities.Asset{
 		ID:                entities.AssetID(assetID),
 		Name:              fmt.Sprint("my test asset", testAssetCount),
 		Symbol:            fmt.Sprint("TEST", testAssetCount),
@@ -55,11 +65,6 @@ func addTestAsset(t *testing.T, ctx context.Context, as *sqlstore.Assets, block 
 		Status:            entities.AssetStatusEnabled,
 		TxHash:            generateTxHash(),
 	}
-
-	// Add it to the database
-	err := as.Add(ctx, asset)
-	require.NoError(t, err)
-	return asset
 }
 
 func assetsEqual(t *testing.T, expected, actual entities.Asset) {
@@ -399,4 +404,31 @@ func testAssetPaginationLastAndBeforeNewestFirst(t *testing.T) {
 		StartCursor:     assets[4].Cursor().Encode(),
 		EndCursor:       assets[6].Cursor().Encode(),
 	}, pageInfo)
+}
+
+func TestAssets_AssetStatusEnum(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs := sqlstore.NewBlocks(connectionSource)
+	var assetStatus vegapb.Asset_Status
+
+	states := getEnums(t, assetStatus)
+	assert.Len(t, states, 5)
+
+	for e, state := range states {
+		t.Run(state, func(tt *testing.T) {
+			block := addTestBlock(t, ctx, bs)
+
+			as := sqlstore.NewAssets(connectionSource)
+
+			asset := getTestAsst(t, block)
+			asset.Status = entities.AssetStatus(e)
+			err := as.Add(ctx, asset)
+			require.NoError(tt, err, "failed to add asset with state %s", state)
+
+			fetchedAsset, err := as.GetByID(ctx, asset.ID.String())
+			assert.NoError(tt, err)
+			assert.Equal(tt, entities.AssetStatus(e), fetchedAsset.Status)
+		})
+	}
 }

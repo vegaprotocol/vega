@@ -405,3 +405,41 @@ func testVotesCursorPaginationLastWithBeforeNewestFirst(t *testing.T) {
 		EndCursor:       votes[6].Cursor().Encode(),
 	}, pageInfo)
 }
+
+func TestVoteValueEnum(t *testing.T) {
+	var voteValue vega.Vote_Value
+	values := getEnums(t, voteValue)
+	assert.Len(t, values, 3)
+	for v, value := range values {
+		t.Run(value, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			partyStore := sqlstore.NewParties(connectionSource)
+			propStore := sqlstore.NewProposals(connectionSource)
+			voteStore := sqlstore.NewVotes(connectionSource)
+			blockStore := sqlstore.NewBlocks(connectionSource)
+			block := addTestBlock(t, ctx, blockStore)
+
+			party := addTestParty(t, ctx, partyStore, block)
+			proposal := addTestProposal(t, ctx, propStore, GenerateID(), party, GenerateID(), block, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}}, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+
+			txHash := txHashFromString("tx_vote_1")
+			want := entities.Vote{
+				PartyID:                     party.ID,
+				ProposalID:                  proposal.ID,
+				Value:                       entities.VoteValue(v),
+				TotalGovernanceTokenBalance: decimal.NewFromInt(100),
+				TotalGovernanceTokenWeight:  decimal.NewFromFloat(0.1),
+				TotalEquityLikeShareWeight:  decimal.NewFromFloat(0.3),
+				VegaTime:                    block.VegaTime,
+				InitialTime:                 block.VegaTime,
+				TxHash:                      txHash,
+			}
+			require.NoError(t, voteStore.Add(ctx, want))
+			got, err := voteStore.GetByTxHash(ctx, txHash)
+			require.NoError(t, err)
+			assert.Len(t, got, 1)
+			assert.Equal(t, want.Value, got[0].Value)
+		})
+	}
+}

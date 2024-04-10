@@ -996,3 +996,28 @@ func testWithdrawalsPaginationBetweenDatesLastBeforeNewestFirst(t *testing.T) {
 		}.String()).Encode(),
 	}, pageInfo)
 }
+
+func TestWithdrawalStatusEnum(t *testing.T) {
+	var withdrawalStatus vega.Withdrawal_Status
+	states := getEnums(t, withdrawalStatus)
+	assert.Len(t, states, 4)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			bs, ws, _ := setupWithdrawalStoreTests(t)
+
+			block := addTestBlock(t, ctx, bs)
+			withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
+			withdrawalProto.Status = vega.Withdrawal_Status(s)
+
+			withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err, "Converting withdrawal proto to database entity")
+			err = ws.Upsert(ctx, withdrawal)
+			got, err := ws.GetByTxHash(ctx, withdrawal.TxHash)
+			require.NoError(t, err)
+			assert.Len(t, got, 1)
+			assert.Equal(t, withdrawal.Status, got[0].Status)
+		})
+	}
+}

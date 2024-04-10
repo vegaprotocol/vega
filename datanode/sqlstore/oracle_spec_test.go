@@ -692,3 +692,29 @@ func testOracleSpecPaginationLastBeforeNewestFirst(t *testing.T) {
 		EndCursor:       specs[6].Cursor().Encode(),
 	}, pageInfo)
 }
+
+func TestOracleSpecStatusEnum(t *testing.T) {
+	var oracleSpecStatus vegapb.DataSourceSpec_Status
+	states := getEnums(t, oracleSpecStatus)
+	assert.Len(t, states, 3)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			bs, os, _ := setupOracleSpecTest(t)
+
+			block := addTestBlock(t, ctx, bs)
+			specProtos := getTestSpecs()
+
+			proto := specProtos[0]
+			proto.ExternalDataSourceSpec.Spec.Status = vegapb.DataSourceSpec_Status(s)
+			data := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
+			assert.NoError(t, os.Upsert(ctx, data))
+
+			got, err := os.GetByTxHash(ctx, data.ExternalDataSourceSpec.Spec.TxHash)
+			require.NoError(t, err)
+			assert.Len(t, got, 1)
+			assert.Equal(t, data.ExternalDataSourceSpec.Spec.Status, got[0].ExternalDataSourceSpec.Spec.Status)
+		})
+	}
+}
