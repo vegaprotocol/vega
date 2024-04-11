@@ -128,7 +128,12 @@ func (r transferRow) ToAccount() vegapb.AccountType {
 }
 
 func (r transferRow) ToAccountID() string {
-	return AccountID(r.MarketID(), r.To(), r.Asset(), r.ToAccount())
+	mID := r.MarketID()
+	ta := r.ToAccount()
+	if ta == vegapb.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
+		mID = ""
+	}
+	return AccountID(mID, r.To(), r.Asset(), ta)
 }
 
 func (r transferRow) MarketID() string {

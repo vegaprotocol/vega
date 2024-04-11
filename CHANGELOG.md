@@ -25,6 +25,7 @@
 - [11009](https://github.com/vegaprotocol/vega/issues/11009) - Relax market decimals validation in governance.
 - [11036](https://github.com/vegaprotocol/vega/issues/11036) - Cross-margin mode: use max(order price, auction price) for margin calculation in auction
 - [10998](https://github.com/vegaprotocol/vega/issues/10998) - Ensure reward totals are carried over across epochs in database.
+- [1102](https://github.com/vegaprotocol/core-test-coverage/issues/1102) - Add coverage for `0042-LIQF-084`
 
 ### 🐛 Fixes
 
