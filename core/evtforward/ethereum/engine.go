@@ -17,6 +17,7 @@ package ethereum
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -177,11 +178,15 @@ func (e *Engine) gatherEvents(ctx context.Context) {
 	currentHeight := e.filterer.CurrentHeight(ctx)
 
 	// Ensure we are not issuing a filtering request for non-existing block.
+	fmt.Printf("EXPECTED NEXT: %v\n", e.nextCollateralBlockNumber)
 	if ok, nextHeight := issueFilteringRequest(e.nextCollateralBlockNumber, currentHeight, nBlocks); ok {
+		fmt.Printf("GATHER EVENT: %v - %v\n", ok, nextHeight)
 		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
 		e.nextCollateralBlockNumber = nextHeight + 1
+	} else {
+		fmt.Printf("GATHER EVENT: %v - %v\n", ok, nextHeight)
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.

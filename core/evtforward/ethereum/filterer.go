@@ -111,6 +111,7 @@ func NewLogFilterer(
 	l := log.Named(logFiltererLogger)
 
 	collateralBridgeFilterer, err := bridge.NewErc20BridgeLogicRestrictedFilterer(collateralBridge.Address(), ethClient)
+	fmt.Printf("DEBUGEVTFWD: %v\n", collateralBridge.Address().String())
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create log filterer for ERC20 bridge: %w", err)
 	}

@@ -475,9 +475,9 @@ func (e *Engine) OnStateLoaded(_ context.Context) error {
 		e.primaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenPrimaryEthBlock)
 	}
 
-	if e.lastSeenSecondaryEthBlock != 0 {
-		e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", e.lastSeenSecondaryEthBlock))
-		e.secondaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenSecondaryEthBlock)
-	}
+	// if e.lastSeenSecondaryEthBlock != 0 {
+	e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", 32545751))
+	e.secondaryEthEventSource.UpdateCollateralStartingBlock(32545751)
+	//}
 	return nil
 }
