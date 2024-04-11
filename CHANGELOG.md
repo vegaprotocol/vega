@@ -53,7 +53,7 @@
 - [11059](https://github.com/vegaprotocol/vega/issues/11059) - Disambiguate `vega_time` in order clause.
 - [11052](https://github.com/vegaprotocol/vega/pull/11052) - Add missing rejection reason in GraphQL schema for proposals
 - [11073](https://github.com/vegaprotocol/vega/issues/11073) - Handle properly price factor < 1.
-
+- [11047](https://github.com/vegaprotocol/vega/issues/11047) - Add missing migration for recreating stop order views after the new fields were added.
 
 ## 0.75.0
 
