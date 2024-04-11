@@ -60,3 +60,23 @@ func NewDefaultConfig() Config {
 		EthCall:                  ethcall.NewDefaultConfig(),
 	}
 }
+
+// NewDefaultSecondaryConfig creates an instance of the package specific configuration.
+func NewDefaultSecondaryConfig() Config {
+	const maxEthereumBlocks = 499
+
+	cfg := Config{
+		Level:     encoding.LogLevel{Level: logging.InfoLevel},
+		RetryRate: encoding.Duration{Duration: defaultRetryRate},
+		KeepHashesDurationForTestOnlyDoNotChange: encoding.Duration{
+			Duration: DefaultKeepHashesDuration,
+		},
+		BlockchainQueueAllowlist: []string{},
+		Ethereum:                 ethereum.NewDefaultConfig(),
+		EthCall:                  ethcall.NewDefaultConfig(),
+	}
+
+	cfg.Ethereum.MaxEthereumBlocks = maxEthereumBlocks
+
+	return cfg
+}

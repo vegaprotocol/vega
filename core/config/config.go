@@ -134,7 +134,7 @@ func NewDefaultConfig() Config {
 		Assets:              assets.NewDefaultConfig(),
 		Notary:              notary.NewDefaultConfig(),
 		EvtForward:          evtforward.NewDefaultConfig(),
-		SecondaryEvtForward: evtforward.NewDefaultConfig(),
+		SecondaryEvtForward: evtforward.NewDefaultSecondaryConfig(),
 		Genesis:             genesis.NewDefaultConfig(),
 		Validators:          validators.NewDefaultConfig(),
 		Banking:             banking.NewDefaultConfig(),
