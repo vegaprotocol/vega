@@ -245,6 +245,7 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		MakerFeesReceived:               marketFeesToProto(mt.makerFeesReceived),
 		MakerFeesPaid:                   marketFeesToProto(mt.makerFeesPaid),
 		LpFees:                          marketFeesToProto(mt.lpFees),
+		InfraFees:                       marketFeesToProto(mt.infraFees),
 		Proposer:                        mt.proposer,
 		BonusPaid:                       paid,
 		ValueTraded:                     mt.valueTraded.String(),
@@ -340,6 +341,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		makerFeesReceived:      map[string]*num.Uint{},
 		makerFeesPaid:          map[string]*num.Uint{},
 		lpFees:                 map[string]*num.Uint{},
+		infraFees:              map[string]*num.Uint{},
 		totalMakerFeesReceived: num.UintZero(),
 		totalMakerFeesPaid:     num.UintZero(),
 		totalLpFees:            num.UintZero(),
@@ -394,6 +396,16 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 			mft.allPartiesCache[mf.Party] = struct{}{}
 		}
 		mft.totalLpFees = total
+	}
+
+	if len(tracker.InfraFees) > 0 {
+		total := num.UintZero()
+		for _, mf := range tracker.InfraFees {
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			total.AddSum(fee)
+			mft.infraFees[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
+		}
 	}
 
 	if len(tracker.TimeWeightedPosition) > 0 {

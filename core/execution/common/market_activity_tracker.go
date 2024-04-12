@@ -64,6 +64,7 @@ type marketTracker struct {
 	makerFeesReceived map[string]*num.Uint
 	makerFeesPaid     map[string]*num.Uint
 	lpFees            map[string]*num.Uint
+	infraFees         map[string]*num.Uint
 
 	totalMakerFeesReceived *num.Uint
 	totalMakerFeesPaid     *num.Uint
@@ -179,6 +180,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		makerFeesReceived:           map[string]*num.Uint{},
 		makerFeesPaid:               map[string]*num.Uint{},
 		lpFees:                      map[string]*num.Uint{},
+		infraFees:                   map[string]*num.Uint{},
 		totalMakerFeesReceived:      num.UintZero(),
 		totalMakerFeesPaid:          num.UintZero(),
 		totalLpFees:                 num.UintZero(),
@@ -382,6 +384,20 @@ func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
 	}
 }
 
+func (mt *marketTracker) aggregatedFees() map[string]*num.Uint {
+	totalFees := map[string]*num.Uint{}
+	fees := []map[string]*num.Uint{mt.infraFees, mt.lpFees, mt.makerFeesPaid}
+	for _, fee := range fees {
+		for party, paid := range fee {
+			if _, ok := totalFees[party]; !ok {
+				totalFees[party] = num.UintZero()
+			}
+			totalFees[party].AddSum(paid)
+		}
+	}
+	return totalFees
+}
+
 // OnEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
 func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
@@ -394,7 +410,7 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 		for asset, market := range mat.assetToMarketTrackers {
 			mat.takerFeesPaidInEpoch[asset] = map[string]map[string]*num.Uint{}
 			for mkt, mt := range market {
-				mat.takerFeesPaidInEpoch[asset][mkt] = mt.makerFeesPaid
+				mat.takerFeesPaidInEpoch[asset][mkt] = mt.aggregatedFees()
 				mt.processNotionalEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processPositionEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processM2MEndOfEpoch()
@@ -431,6 +447,7 @@ func (mt *marketTracker) clearFeeActivity() {
 	mt.makerFeesReceived = map[string]*num.Uint{}
 	mt.makerFeesPaid = map[string]*num.Uint{}
 	mt.lpFees = map[string]*num.Uint{}
+	mt.infraFees = map[string]*num.Uint{}
 
 	mt.epochTotalMakerFeesReceived = append(mt.epochTotalMakerFeesReceived, mt.totalMakerFeesReceived)
 	mt.epochTotalMakerFeesPaid = append(mt.epochTotalMakerFeesPaid, mt.totalMakerFeesPaid)
@@ -456,6 +473,8 @@ func (mat *MarketActivityTracker) UpdateFeesFromTransfers(asset, market string, 
 			mat.addFees(mt.makerFeesReceived, t.Owner, t.Amount.Amount, mt.totalMakerFeesReceived)
 		case types.TransferTypeLiquidityFeeNetDistribute, types.TransferTypeSlaPerformanceBonusDistribute:
 			mat.addFees(mt.lpFees, t.Owner, t.Amount.Amount, mt.totalLpFees)
+		case types.TransferTypeInfrastructureFeePay:
+			mat.addFees(mt.infraFees, t.Owner, t.Amount.Amount, num.UintZero())
 		default:
 		}
 	}
