@@ -16,7 +16,6 @@
 package sqlstore_test
 
 import (
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"context"
 	"sort"
 	"testing"
@@ -27,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"

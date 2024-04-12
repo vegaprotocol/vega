@@ -105,10 +105,10 @@ func shouldWorkForAllValuesOfCompositePriceType(t *testing.T) {
 			assert.Equal(t, vegapb.CompositePriceType(e), mdProto.MarkPriceType)
 		})
 	}
-
 }
 
 func addMarketData(t *testing.T, ctx context.Context, trigger, priceType string) {
+	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 

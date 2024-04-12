@@ -16,7 +16,6 @@
 package sqlstore_test
 
 import (
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"context"
 	"fmt"
 	"testing"
@@ -24,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"

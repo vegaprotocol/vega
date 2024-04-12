@@ -17,7 +17,6 @@ package sqlstore_test
 
 import (
 	"bytes"
-	"code.vegaprotocol.io/vega/datanode/entities"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -28,6 +27,7 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 

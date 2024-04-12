@@ -16,15 +16,15 @@
 package sqlstore_test
 
 import (
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"context"
-	"github.com/georgysavva/scany/pgxscan"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -598,16 +598,15 @@ func TestNodeValidatorStatusEnum(t *testing.T) {
 
 			block := addTestBlock(t, ctx, bs)
 			node1 := addTestNode(t, ctx, ns, block, GenerateID())
-			score :=
-				entities.RankingScore{
-					StakeScore:       decimal.NewFromFloat(0.5),
-					PerformanceScore: decimal.NewFromFloat(0.25),
-					PreviousStatus:   entities.ValidatorNodeStatusUnspecified,
-					Status:           entities.ValidatorNodeStatus(s),
-					EpochSeq:         1,
-					VegaTime:         block.VegaTime,
-					TxHash:           generateTxHash(),
-				}
+			score := entities.RankingScore{
+				StakeScore:       decimal.NewFromFloat(0.5),
+				PerformanceScore: decimal.NewFromFloat(0.25),
+				PreviousStatus:   entities.ValidatorNodeStatusUnspecified,
+				Status:           entities.ValidatorNodeStatus(s),
+				EpochSeq:         1,
+				VegaTime:         block.VegaTime,
+				TxHash:           generateTxHash(),
+			}
 			addRankingScore(t, ctx, ns, node1, score)
 			var got entities.RankingScore
 			require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, `

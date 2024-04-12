@@ -937,7 +937,7 @@ func TestDeposits_DepositStatusEnum(t *testing.T) {
 
 			deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 			require.NoError(t, err, "Converting deposit proto to database entity")
-			err = ds.Upsert(ctx, deposit)
+			require.NoError(t, ds.Upsert(ctx, deposit))
 
 			got, err := ds.GetByID(ctx, depositProto.Id)
 			require.NoError(t, err)

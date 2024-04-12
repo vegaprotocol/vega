@@ -16,7 +16,6 @@
 package sqlstore_test
 
 import (
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"fmt"
 	"sort"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/georgysavva/scany/pgxscan"

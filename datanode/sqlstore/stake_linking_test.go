@@ -18,7 +18,6 @@ package sqlstore_test
 import (
 	"context"
 	"fmt"
-	"github.com/georgysavva/scany/pgxscan"
 	"testing"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -463,7 +463,6 @@ func testStakeLinkingStatusEnum(t *testing.T) {
 	assert.Len(t, states, 4)
 	for s, state := range states {
 		t.Run(state, func(t *testing.T) {
-
 			ctx := tempTransaction(t)
 
 			bs, sl := setupStakeLinkingTest(t)
@@ -478,6 +477,7 @@ func testStakeLinkingStatusEnum(t *testing.T) {
 			assert.NoError(t, sl.Upsert(ctx, data))
 
 			_, got, _, err := sl.GetStake(ctx, data.PartyID, entities.CursorPagination{})
+			require.NoError(t, err)
 			assert.Len(t, got, 1)
 			assert.Equal(t, data.StakeLinkingStatus, got[0].StakeLinkingStatus)
 		})
@@ -490,7 +490,6 @@ func testStakeLinkingTypeEnum(t *testing.T) {
 	assert.Len(t, types, 3)
 	for ty, typ := range types {
 		t.Run(typ, func(t *testing.T) {
-
 			ctx := tempTransaction(t)
 
 			bs, sl := setupStakeLinkingTest(t)

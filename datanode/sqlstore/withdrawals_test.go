@@ -1013,7 +1013,7 @@ func TestWithdrawalStatusEnum(t *testing.T) {
 
 			withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 			require.NoError(t, err, "Converting withdrawal proto to database entity")
-			err = ws.Upsert(ctx, withdrawal)
+			require.NoError(t, ws.Upsert(ctx, withdrawal))
 			got, err := ws.GetByTxHash(ctx, withdrawal.TxHash)
 			require.NoError(t, err)
 			assert.Len(t, got, 1)

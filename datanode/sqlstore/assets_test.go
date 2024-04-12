@@ -16,13 +16,13 @@
 package sqlstore_test
 
 import (
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"context"
 	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +32,7 @@ import (
 var testAssetCount int
 
 func addTestAsset(t *testing.T, ctx context.Context, as *sqlstore.Assets, block entities.Block, idPrefix ...string) entities.Asset {
+	t.Helper()
 	asset := getTestAsst(t, block, idPrefix...)
 
 	// Add it to the database
