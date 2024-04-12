@@ -274,8 +274,10 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 			NTopPerformers:       ntop,
 			StakingRequirement:   stakingRequirement,
 			NotionalTimeWeightedAveragePositionRequirement: notionalRequirement,
-			RankTable:            ranks,
-			CapRewardFeeMultiple: &capRewardFeeMultiple,
+			RankTable: ranks,
+		}
+		if capRewardFeeMultiple != "" {
+			dispatchStrategy.CapRewardFeeMultiple = &capRewardFeeMultiple
 		}
 	}
 
