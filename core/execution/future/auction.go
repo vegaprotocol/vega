@@ -58,7 +58,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 		if len(trades) > 0 {
 			// pass the first uncrossing trades to price engine so state variables depending on it can be initialised
-			m.pMonitor.CheckPrice(ctx, m.as, trades, true, true)
+			m.pMonitor.ResetPriceHistory(trades)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
 	}
