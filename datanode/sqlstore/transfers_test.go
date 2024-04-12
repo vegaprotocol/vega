@@ -957,3 +957,51 @@ func TestGetAllRewardTransfers(t *testing.T) {
 		}
 	})
 }
+
+func TestTransferTypeEnums(t *testing.T) {
+	t.Run("Should be able to save and retrieve transfers with all states", testTransferStateEnum)
+}
+
+func testTransferStateEnum(t *testing.T) {
+	var transferStatus eventspb.Transfer_Status
+	states := getEnums(t, transferStatus)
+	assert.Len(t, states, 6)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			blocksStore := sqlstore.NewBlocks(connectionSource)
+			assetsStore := sqlstore.NewAssets(connectionSource)
+			accountsStore := sqlstore.NewAccounts(connectionSource)
+			transfersStore := sqlstore.NewTransfers(connectionSource)
+
+			block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
+
+			asset := CreateAsset(t, ctx, assetsStore, block)
+
+			account1 := CreateAccount(t, ctx, accountsStore, block,
+				AccountForAsset(asset),
+			)
+			account2 := CreateAccount(t, ctx, accountsStore, block,
+				AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+				AccountForAsset(asset),
+			)
+
+			transfer := NewTransfer(t, ctx, accountsStore, block,
+				TransferWithAsset(asset),
+				TransferFromToAccounts(account1, account2),
+				TransferAsRecurring(&eventspb.RecurringTransfer{
+					StartEpoch: 10,
+					EndEpoch:   nil,
+					Factor:     "0.1",
+				}),
+				TransferWithStatus(entities.TransferStatus(s)),
+			)
+
+			require.NoError(t, transfersStore.Upsert(ctx, transfer))
+			retrieved, err := transfersStore.GetByID(ctx, transfer.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, transfer.Status, retrieved.Status)
+		})
+	}
+}

@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -996,4 +997,223 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			}, pageInfo)
 		})
 	})
+}
+
+func TestStopOrderEnums(t *testing.T) {
+	t.Run("Should write and retrieve all values of expiry strategy", testStopOrderExpiryStrategyEnum)
+	t.Run("Should write and retrieve all values of rejection reason", testStopOrderExpiryRejectionReason)
+	t.Run("Should write and retrieve all values of status", testStopOrderExpiryStatus)
+	t.Run("Should write and retrieve all values of trigger direction", testStopOrderTriggerDirection)
+}
+
+func testStopOrderTriggerDirection(t *testing.T) {
+	var stopOrderTriggerDirection vegapb.StopOrder_TriggerDirection
+	directions := getEnums(t, stopOrderTriggerDirection)
+	assert.Len(t, directions, 3)
+	for d, direction := range directions {
+		t.Run(direction, func(t *testing.T) {
+			ctx := tempTransaction(t)
+			so := sqlstore.NewStopOrders(connectionSource)
+			bs := sqlstore.NewBlocks(connectionSource)
+			ps := sqlstore.NewParties(connectionSource)
+			ms := sqlstore.NewMarkets(connectionSource)
+
+			block := addTestBlock(t, ctx, bs)
+			party := addTestParty(t, ctx, ps, block)
+			markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
+
+			o := entities.StopOrder{
+				ID:               entities.StopOrderID(GenerateID()),
+				ExpiryStrategy:   entities.StopOrderExpiryStrategySubmit,
+				TriggerDirection: entities.StopOrderTriggerDirection(d),
+				Status:           entities.StopOrderStatusPending,
+				CreatedAt:        block.VegaTime,
+				UpdatedAt:        nil,
+				OrderID:          "",
+				TriggerPrice:     ptr.From("100"),
+				PartyID:          party.ID,
+				MarketID:         markets[0].ID,
+				VegaTime:         block.VegaTime,
+				SeqNum:           1,
+				TxHash:           generateTxHash(),
+				Submission: &commandspb.OrderSubmission{
+					MarketId:    markets[0].ID.String(),
+					Price:       "100",
+					Size:        uint64(100),
+					Side:        entities.SideBuy,
+					TimeInForce: entities.OrderTimeInForceUnspecified,
+					ExpiresAt:   0,
+					Type:        entities.OrderTypeMarket,
+					Reference:   GenerateID(),
+				},
+				RejectionReason: entities.StopOrderRejectionReasonUnspecified,
+			}
+
+			require.NoError(t, so.Add(o))
+			_, err := so.Flush(ctx)
+			require.NoError(t, err)
+			got, err := so.GetStopOrder(ctx, o.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, o.TriggerDirection, got.TriggerDirection)
+		})
+	}
+}
+
+func testStopOrderExpiryStatus(t *testing.T) {
+	var stopOrderStatus vegapb.StopOrder_Status
+	states := getEnums(t, stopOrderStatus)
+	assert.Len(t, states, 7)
+	for e, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+			so := sqlstore.NewStopOrders(connectionSource)
+			bs := sqlstore.NewBlocks(connectionSource)
+			ps := sqlstore.NewParties(connectionSource)
+			ms := sqlstore.NewMarkets(connectionSource)
+
+			block := addTestBlock(t, ctx, bs)
+			party := addTestParty(t, ctx, ps, block)
+			markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
+
+			o := entities.StopOrder{
+				ID:               entities.StopOrderID(GenerateID()),
+				ExpiryStrategy:   entities.StopOrderExpiryStrategySubmit,
+				TriggerDirection: entities.StopOrderTriggerDirectionRisesAbove,
+				Status:           entities.StopOrderStatus(e),
+				CreatedAt:        block.VegaTime,
+				UpdatedAt:        nil,
+				OrderID:          "",
+				TriggerPrice:     ptr.From("100"),
+				PartyID:          party.ID,
+				MarketID:         markets[0].ID,
+				VegaTime:         block.VegaTime,
+				SeqNum:           1,
+				TxHash:           generateTxHash(),
+				Submission: &commandspb.OrderSubmission{
+					MarketId:    markets[0].ID.String(),
+					Price:       "100",
+					Size:        uint64(100),
+					Side:        entities.SideBuy,
+					TimeInForce: entities.OrderTimeInForceUnspecified,
+					ExpiresAt:   0,
+					Type:        entities.OrderTypeMarket,
+					Reference:   GenerateID(),
+				},
+				RejectionReason: entities.StopOrderRejectionReasonUnspecified,
+			}
+
+			require.NoError(t, so.Add(o))
+			_, err := so.Flush(ctx)
+			require.NoError(t, err)
+			got, err := so.GetStopOrder(ctx, o.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, o.Status, got.Status)
+		})
+	}
+}
+
+func testStopOrderExpiryRejectionReason(t *testing.T) {
+	var stopOrderRejectionReason vegapb.StopOrder_RejectionReason
+	reasons := getEnums(t, stopOrderRejectionReason)
+	assert.Len(t, reasons, 10)
+	for r, reason := range reasons {
+		t.Run(reason, func(t *testing.T) {
+			ctx := tempTransaction(t)
+			so := sqlstore.NewStopOrders(connectionSource)
+			bs := sqlstore.NewBlocks(connectionSource)
+			ps := sqlstore.NewParties(connectionSource)
+			ms := sqlstore.NewMarkets(connectionSource)
+
+			block := addTestBlock(t, ctx, bs)
+			party := addTestParty(t, ctx, ps, block)
+			markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
+
+			o := entities.StopOrder{
+				ID:               entities.StopOrderID(GenerateID()),
+				ExpiryStrategy:   entities.StopOrderExpiryStrategySubmit,
+				TriggerDirection: entities.StopOrderTriggerDirectionRisesAbove,
+				Status:           entities.StopOrderStatusPending,
+				CreatedAt:        block.VegaTime,
+				UpdatedAt:        nil,
+				OrderID:          "",
+				TriggerPrice:     ptr.From("100"),
+				PartyID:          party.ID,
+				MarketID:         markets[0].ID,
+				VegaTime:         block.VegaTime,
+				SeqNum:           1,
+				TxHash:           generateTxHash(),
+				Submission: &commandspb.OrderSubmission{
+					MarketId:    markets[0].ID.String(),
+					Price:       "100",
+					Size:        uint64(100),
+					Side:        entities.SideBuy,
+					TimeInForce: entities.OrderTimeInForceUnspecified,
+					ExpiresAt:   0,
+					Type:        entities.OrderTypeMarket,
+					Reference:   GenerateID(),
+				},
+				RejectionReason: entities.StopOrderRejectionReason(r),
+			}
+
+			require.NoError(t, so.Add(o))
+			_, err := so.Flush(ctx)
+			require.NoError(t, err)
+			got, err := so.GetStopOrder(ctx, o.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, o.RejectionReason, got.RejectionReason)
+		})
+	}
+}
+
+func testStopOrderExpiryStrategyEnum(t *testing.T) {
+	var stopOrderExpiryStrategy vegapb.StopOrder_ExpiryStrategy
+	strategies := getEnums(t, stopOrderExpiryStrategy)
+	assert.Len(t, strategies, 3)
+	for s, strategy := range strategies {
+		t.Run(strategy, func(t *testing.T) {
+			ctx := tempTransaction(t)
+			so := sqlstore.NewStopOrders(connectionSource)
+			bs := sqlstore.NewBlocks(connectionSource)
+			ps := sqlstore.NewParties(connectionSource)
+			ms := sqlstore.NewMarkets(connectionSource)
+
+			block := addTestBlock(t, ctx, bs)
+			party := addTestParty(t, ctx, ps, block)
+			markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
+
+			o := entities.StopOrder{
+				ID:               entities.StopOrderID(GenerateID()),
+				ExpiryStrategy:   entities.StopOrderExpiryStrategy(s),
+				TriggerDirection: entities.StopOrderTriggerDirectionRisesAbove,
+				Status:           entities.StopOrderStatusPending,
+				CreatedAt:        block.VegaTime,
+				UpdatedAt:        nil,
+				OrderID:          "",
+				TriggerPrice:     ptr.From("100"),
+				PartyID:          party.ID,
+				MarketID:         markets[0].ID,
+				VegaTime:         block.VegaTime,
+				SeqNum:           1,
+				TxHash:           generateTxHash(),
+				Submission: &commandspb.OrderSubmission{
+					MarketId:    markets[0].ID.String(),
+					Price:       "100",
+					Size:        uint64(100),
+					Side:        entities.SideBuy,
+					TimeInForce: entities.OrderTimeInForceUnspecified,
+					ExpiresAt:   0,
+					Type:        entities.OrderTypeMarket,
+					Reference:   GenerateID(),
+				},
+				RejectionReason: entities.StopOrderRejectionReasonUnspecified,
+			}
+
+			require.NoError(t, so.Add(o))
+			_, err := so.Flush(ctx)
+			require.NoError(t, err)
+			got, err := so.GetStopOrder(ctx, o.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, o.ExpiryStrategy, got.ExpiryStrategy)
+		})
+	}
 }

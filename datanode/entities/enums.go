@@ -1061,3 +1061,7 @@ func (m *MarginMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	*m = MarginMode(val)
 	return nil
 }
+
+type ProtoEnum interface {
+	GetEnums() map[int32]string
+}

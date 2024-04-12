@@ -2520,7 +2520,7 @@ type Market {
   The number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
   2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
-  This sets how big the smallest order / position on the market can be. On spot markets, used for order size 
+  This sets how big the smallest order / position on the market can be. On spot markets, used for order size
   and also known as size decimal places.
   """
   positionDecimalPlaces: Int!
@@ -4088,6 +4088,22 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT
   "Spot market proposal contains too many size decimal places"
   PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES
+  "LP price range must be larger than 0"
+  PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE
+  "LP price range must not be larger than 100"
+  PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE
+  "Linear slippage factor is out of range, either negative or too large"
+  PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE
+  "Quadratic slippage factor is out of range, either negative or too large"
+  PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE
+  "Referral program proposal is invalid"
+  PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM
+  "Volume discount program proposal is invalid"
+  PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM
+  "One or more proposals in a batch has been rejected"
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
+  "One or more proposals in a batch has been declined"
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
 }
 
 "Why the order was rejected by the core node"

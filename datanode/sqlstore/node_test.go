@@ -22,7 +22,9 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -549,4 +551,76 @@ func TestNode_AddRankingScoreInSameEpoch(t *testing.T) {
 			EpochSeq:         2,
 			VegaTime:         block.VegaTime,
 		})
+}
+
+func TestNodeStatusEnum(t *testing.T) {
+	var nodeStatus vegapb.NodeStatus
+	states := getEnums(t, nodeStatus)
+	assert.Len(t, states, 3)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			bs := sqlstore.NewBlocks(connectionSource)
+			ns := sqlstore.NewNode(connectionSource)
+			block := addTestBlock(t, ctx, bs)
+
+			node := entities.Node{
+				ID:              entities.NodeID(GenerateID()),
+				PubKey:          entities.VegaPublicKey(GenerateID()),
+				TmPubKey:        entities.TendermintPublicKey(generateTendermintPublicKey()),
+				EthereumAddress: entities.EthereumAddress(generateEthereumAddress()),
+				VegaTime:        block.VegaTime,
+				Status:          entities.NodeStatus(s),
+				TxHash:          generateTxHash(),
+			}
+
+			require.NoError(t, ns.UpsertNode(ctx, &node))
+			fetched, err := ns.GetByTxHash(ctx, node.TxHash)
+			assert.NoError(t, err)
+			assert.Len(t, fetched, 1)
+			assert.Equal(t, node.Status, fetched[0].Status)
+		})
+	}
+}
+
+func TestNodeValidatorStatusEnum(t *testing.T) {
+	var validatorNodeStatus vegapb.ValidatorNodeStatus
+	states := getEnums(t, validatorNodeStatus)
+	assert.Len(t, states, 4)
+
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			bs := sqlstore.NewBlocks(connectionSource)
+			ns := sqlstore.NewNode(connectionSource)
+
+			block := addTestBlock(t, ctx, bs)
+			node1 := addTestNode(t, ctx, ns, block, GenerateID())
+			score := entities.RankingScore{
+				StakeScore:       decimal.NewFromFloat(0.5),
+				PerformanceScore: decimal.NewFromFloat(0.25),
+				PreviousStatus:   entities.ValidatorNodeStatusUnspecified,
+				Status:           entities.ValidatorNodeStatus(s),
+				EpochSeq:         1,
+				VegaTime:         block.VegaTime,
+				TxHash:           generateTxHash(),
+			}
+			addRankingScore(t, ctx, ns, node1, score)
+			var got entities.RankingScore
+			require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, `
+			SELECT
+				stake_score,
+				performance_score,
+				previous_status,
+				status,
+				voting_power,
+				ranking_score,
+				tx_hash,
+				vega_time
+			FROM ranking_scores WHERE tx_hash = $1`, score.TxHash))
+			assert.Equal(t, score.Status, got.Status)
+		})
+	}
 }

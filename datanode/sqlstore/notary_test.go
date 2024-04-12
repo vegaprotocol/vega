@@ -375,3 +375,24 @@ func setupNodeSignaturePaginationTest(t *testing.T, ctx context.Context) (*sqlst
 
 	return ns, signatures
 }
+
+func TestNodeSignatureKindEnum(t *testing.T) {
+	var nodeSignatureKind v1.NodeSignatureKind
+	sigKinds := getEnums(t, nodeSignatureKind)
+	assert.Len(t, sigKinds, 6)
+	for k, kind := range sigKinds {
+		t.Run(kind, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			ws, bs, _ := setupNotaryStoreTests(t)
+
+			ns := getTestNodeSignature(t, ctx, bs, "deadbeef", "iamsig")
+			ns.Kind = entities.NodeSignatureKind(k)
+			require.NoError(t, ws.Add(ctx, ns))
+			got, err := ws.GetByTxHash(ctx, ns.TxHash)
+			require.NoError(t, err)
+			assert.Len(t, got, 1)
+			assert.Equal(t, ns.Kind, got[0].Kind)
+		})
+	}
+}

@@ -46,3 +46,30 @@ $$;
 
 drop trigger if exists stop_orders_live_insert_trigger on stop_orders;
 create trigger stop_orders_live_insert_trigger before insert on stop_orders for each row execute function stop_orders_live_insert_trigger();
+
+-- +goose Down
+
+-- restore the views to how they were befpre the migration or network history may fail due to migrations failing
+drop view if exists stop_orders_current_desc;
+create view stop_orders_current_desc
+as
+select distinct on (so.created_at, so.id) id, oco_link_id, expires_at, expiry_strategy, trigger_direction, status, created_at,
+        updated_at, order_id, trigger_price, trigger_percent_offset, party_id, market_id, vega_time, seq_num, tx_hash, submission
+        from stop_orders so
+        order by so.created_at desc, so.id, so.vega_time desc, so.seq_num desc;
+
+drop view if exists stop_orders_current_desc_by_market;
+create view stop_orders_current_desc_by_market
+as
+select distinct on (so.created_at, so.market_id, so.id)id, oco_link_id, expires_at, expiry_strategy, trigger_direction, status, created_at,
+        updated_at, order_id, trigger_price, trigger_percent_offset, party_id, market_id, vega_time, seq_num, tx_hash, submission
+        from stop_orders so
+        order by so.created_at desc, so.market_id, so.id, so.vega_time desc, so.seq_num desc;
+
+drop view if exists stop_orders_current_desc_by_party;
+create view stop_orders_current_desc_by_party
+as
+select distinct on (so.created_at, so.party_id, so.id)id, oco_link_id, expires_at, expiry_strategy, trigger_direction, status, created_at,
+        updated_at, order_id, trigger_price, trigger_percent_offset, party_id, market_id, vega_time, seq_num, tx_hash, submission
+        from stop_orders so
+        order by so.created_at desc, so.party_id, so.id, so.vega_time desc, so.seq_num desc;
