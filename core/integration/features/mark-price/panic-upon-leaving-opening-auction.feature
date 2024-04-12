@@ -58,8 +58,7 @@ Feature: Test setting of first mark price with bound violation
     When the network moves ahead "5" blocks
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    | auction trigger             | horizon | min bound | max bound |
-    # | 16000      | TRADING_MODE_CONTINUOUS         | AUCTION_TRIGGER_UNSPECIFIED | 5       | 15900     | 16100     |
-      | 0          | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE       |         |           |           |
+      | 16000      | TRADING_MODE_CONTINUOUS         | AUCTION_TRIGGER_UNSPECIFIED | 5       | 15900     | 16100     |
     And the parties place the following orders with ticks:
       | party             | market id | side | volume | price  | resulting trades | type       | tif     | reference    |
       | buySideProvider   | ETH/FEB23 | buy  | 1      | 14000  | 0                | TYPE_LIMIT | TIF_GTC |              |

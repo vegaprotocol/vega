@@ -50,6 +50,7 @@ type OracleEngine interface {
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
 	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool, recordInHistory bool) bool
+	ResetPriceHistory(trades []*types.Trade)
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)

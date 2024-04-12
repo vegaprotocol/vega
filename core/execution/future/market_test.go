@@ -5191,7 +5191,17 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	require.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideSell, "party-A", 1, 1000)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order04", types.SideBuy, "party-A", 1, 1000)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	require.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),
