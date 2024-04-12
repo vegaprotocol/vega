@@ -547,6 +547,7 @@ func TestGetLastEpochTakeFees(t *testing.T) {
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 		{Owner: "party1", Type: types.TransferTypeInfrastructureFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(110)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(10)}},
 		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
@@ -570,19 +571,19 @@ func TestGetLastEpochTakeFees(t *testing.T) {
 
 	m1 := tracker.GetLastEpochTakeFees("asset1", []string{"market1"})
 	require.Equal(t, 2, len(m1))
-	require.Equal(t, "1410", m1["party1"].String())
-	require.Equal(t, "2700", m1["party2"].String())
+	require.Equal(t, "620", m1["party1"].String())
+	require.Equal(t, "1000", m1["party2"].String())
 	m2 := tracker.GetLastEpochTakeFees("asset1", []string{"market2"})
 	require.Equal(t, 1, len(m2))
 	require.Equal(t, "150", m2["party2"].String())
 
 	mAll := tracker.GetLastEpochTakeFees("asset1", []string{"market1", "market2"})
-	require.Equal(t, "1410", mAll["party1"].String())
-	require.Equal(t, "2850", mAll["party2"].String())
+	require.Equal(t, "620", mAll["party1"].String())
+	require.Equal(t, "1150", mAll["party2"].String())
 
 	mNoMarkets := tracker.GetLastEpochTakeFees("asset1", []string{})
-	require.Equal(t, "1410", mNoMarkets["party1"].String())
-	require.Equal(t, "2850", mNoMarkets["party2"].String())
+	require.Equal(t, "620", mNoMarkets["party1"].String())
+	require.Equal(t, "1150", mNoMarkets["party2"].String())
 
 	require.Equal(t, mAll, mNoMarkets)
 }

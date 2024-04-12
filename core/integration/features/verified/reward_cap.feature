@@ -59,7 +59,7 @@ Feature: Capping distributed rewards at a multiple of fees paid
       | party1 | 1000  | 10   | aux1   | 1000      | 0          | 50              | 0                | 150                      | 0                         | 800                 | 0                    |
       | aux1   | 1000  | 20   | party2 | 0         | 2000       | 0               | 100              | 0                        | 300                       | 0                   | 1600                 |
 
-    
+
     # Setup a recurring transfer funding a reward pool
     Given the current epoch is "1"
     And the parties submit the following recurring transfers:
@@ -68,5 +68,5 @@ Feature: Capping distributed rewards at a multiple of fees paid
     When the network moves ahead "1" epochs
     Then parties should have the following vesting account balances:
       | party  | asset    | balance |
-      | party1 | USD-1-10 | 200     |
-      | party2 | USD-1-10 | 400     |
+      | party1 | USD-1-10 | 1000    |
+      | party2 | USD-1-10 | 2000    |

@@ -65,6 +65,7 @@ type marketTracker struct {
 	makerFeesPaid     map[string]*num.Uint
 	lpFees            map[string]*num.Uint
 	infraFees         map[string]*num.Uint
+	lpPaidFees        map[string]*num.Uint
 
 	totalMakerFeesReceived *num.Uint
 	totalMakerFeesPaid     *num.Uint
@@ -181,6 +182,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		makerFeesPaid:               map[string]*num.Uint{},
 		lpFees:                      map[string]*num.Uint{},
 		infraFees:                   map[string]*num.Uint{},
+		lpPaidFees:                  map[string]*num.Uint{},
 		totalMakerFeesReceived:      num.UintZero(),
 		totalMakerFeesPaid:          num.UintZero(),
 		totalLpFees:                 num.UintZero(),
@@ -386,7 +388,7 @@ func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
 
 func (mt *marketTracker) aggregatedFees() map[string]*num.Uint {
 	totalFees := map[string]*num.Uint{}
-	fees := []map[string]*num.Uint{mt.infraFees, mt.lpFees, mt.makerFeesPaid}
+	fees := []map[string]*num.Uint{mt.infraFees, mt.lpPaidFees, mt.makerFeesPaid}
 	for _, fee := range fees {
 		for party, paid := range fee {
 			if _, ok := totalFees[party]; !ok {
@@ -448,6 +450,7 @@ func (mt *marketTracker) clearFeeActivity() {
 	mt.makerFeesPaid = map[string]*num.Uint{}
 	mt.lpFees = map[string]*num.Uint{}
 	mt.infraFees = map[string]*num.Uint{}
+	mt.lpPaidFees = map[string]*num.Uint{}
 
 	mt.epochTotalMakerFeesReceived = append(mt.epochTotalMakerFeesReceived, mt.totalMakerFeesReceived)
 	mt.epochTotalMakerFeesPaid = append(mt.epochTotalMakerFeesPaid, mt.totalMakerFeesPaid)
@@ -475,6 +478,8 @@ func (mat *MarketActivityTracker) UpdateFeesFromTransfers(asset, market string, 
 			mat.addFees(mt.lpFees, t.Owner, t.Amount.Amount, mt.totalLpFees)
 		case types.TransferTypeInfrastructureFeePay:
 			mat.addFees(mt.infraFees, t.Owner, t.Amount.Amount, num.UintZero())
+		case types.TransferTypeLiquidityFeePay:
+			mat.addFees(mt.lpPaidFees, t.Owner, t.Amount.Amount, num.UintZero())
 		default:
 		}
 	}
