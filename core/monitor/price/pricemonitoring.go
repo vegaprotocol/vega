@@ -274,7 +274,6 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 		if (recordPriceHistory && e.noHistory()) || as.IsOpeningAuction() {
 			e.ResetPriceHistory(trades)
 		}
-		e.initialised = true
 	}
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
@@ -377,6 +376,7 @@ func (e *Engine) ResetPriceHistory(trades []*types.Trade) {
 	// we're not reseetting the down/up factors - they will be updated as triggered by auction end/time
 	e.reactivateBounds()
 	e.stateChanged = true
+	e.initialised = true
 }
 
 // reactivateBounds reactivates all bounds.
