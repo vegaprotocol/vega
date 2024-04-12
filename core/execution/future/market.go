@@ -1685,7 +1685,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 
 	m.checkBondBalance(ctx)
-	m.commandLiquidityAuction(ctx)
 
 	if !m.as.InAuction() {
 		// only send the auction-left event if we actually *left* the auction.
@@ -4379,28 +4378,6 @@ func (m *Market) getTargetStake() *num.Uint {
 
 func (m *Market) getSuppliedStake() *num.Uint {
 	return m.liquidityEngine.CalculateSuppliedStake()
-}
-
-// command liquidity auction checks if liquidity auction should be entered and if it can end.
-func (m *Market) commandLiquidityAuction(ctx context.Context) {
-	// start the liquidity monitoring auction if required
-	if !m.as.InAuction() && m.as.AuctionStart() {
-		m.enterAuction(ctx)
-	}
-	// end the liquidity monitoring auction if possible
-	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
-		trades, err := m.matching.GetIndicativeTrades()
-		if err != nil {
-			m.log.Panic("Can't get indicative trades")
-		}
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
-		// TODO: Need to also get indicative trades and check how they'd impact target stake,
-		// see  https://github.com/vegaprotocol/vega/issues/3047
-		// If price monitoring doesn't trigger auction than leave it
-		if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
-			m.broker.Send(evt)
-		}
-	}
 }
 
 func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
