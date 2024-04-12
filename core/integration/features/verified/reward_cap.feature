@@ -10,9 +10,9 @@ Feature: Capping distributed rewards at a multiple of fees paid
     Given time is updated to "2023-01-01T00:00:00Z"
     And the average block duration is "1"
     And the following network parameters are set:
-      | name                                 | value |
-      | market.fee.factors.makerFee          | 0.001 |
-      | market.fee.factors.infrastructureFee | 0.001 |
+      | name                                 | value  |
+      | market.fee.factors.makerFee          | 0.0005 |
+      | market.fee.factors.infrastructureFee | 0.0015 |
     And the following assets are registered:
       | id       | decimal places | quantum |
       | USD-1-10 | 1              | 10      |
@@ -55,9 +55,10 @@ Feature: Capping distributed rewards at a multiple of fees paid
       | party2 | ETH/USD-1-10 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" blocks
     Then the following trades should be executed:
-      | buyer  | price | size | seller | buyer fee | seller fee | buyer maker fee | seller maker fee |
-      | party1 | 1000  | 10   | aux1   | 1000      | 0          | 100             | 0                |
-      | aux1   | 1000  | 20   | party2 | 0         | 2000       | 0               | 200              |
+      | buyer  | price | size | seller | buyer fee | seller fee | buyer maker fee | seller maker fee | buyer infrastructure fee | seller infrastructure fee | buyer liquidity fee | seller liquidity fee |
+      | party1 | 1000  | 10   | aux1   | 1000      | 0          | 50              | 0                | 150                      | 0                         | 800                 | 0                    |
+      | aux1   | 1000  | 20   | party2 | 0         | 2000       | 0               | 100              | 0                        | 300                       | 0                   | 1600                 |
+
     
     # Setup a recurring transfer funding a reward pool
     Given the current epoch is "1"
@@ -65,8 +66,7 @@ Feature: Capping distributed rewards at a multiple of fees paid
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | individual_scope | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      | cap_reward_fee_multiple | lock_period |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | INDIVIDUALS  | ALL              | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 | 1                       | 100         |
     When the network moves ahead "1" epochs
-    # ERROR: THE REWARDS ARE CAPPED BASED ON MAKER FEES RATHER THAN TOTAL FEES
     Then parties should have the following vesting account balances:
       | party  | asset    | balance |
-      | party1 | USD-1-10 | 1000    |
-      | party2 | USD-1-10 | 2000    |
+      | party1 | USD-1-10 | 200     |
+      | party2 | USD-1-10 | 400     |
