@@ -1352,7 +1352,7 @@ enum BusEventType {
   // Event indicating time weighted notional position has been updated.
   BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED = 88;
 
-  // Event indicating a party cancelled all their orders in a market.
+  // Event containing the IDs of orders cancelled by a party on a market.
   BUS_EVENT_TYPE_CANCELLED_ORDERS = 89;
 
   // Event indicating a market related event, for example when a market opens

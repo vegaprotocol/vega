@@ -262,7 +262,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED BusEventType = 87
 	// Event indicating time weighted notional position has been updated.
 	BusEventType_BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED BusEventType = 88
-	// Event indicating a party cancelled all their orders in a market.
+	// Event containing the IDs of orders cancelled by a party on a market.
 	BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS BusEventType = 89
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
