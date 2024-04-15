@@ -288,6 +288,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 	if len(batch) == 0 {
 		return nil, nil
 	}
+	cancelled := b.GetImmBatch(events.CancelledOrdersEvent)
 	expForMarket := map[string]struct{}{}
 	for _, e := range exp {
 		switch et := e.(type) {
@@ -299,6 +300,26 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 				expForMarket[oid] = struct{}{}
 			}
 		case events.ExpiredOrders:
+			if !et.IsMarket(market) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				expForMarket[oid] = struct{}{}
+			}
+		}
+	}
+	// add cancelled orders to expired for market, we skip them for market depth,
+	// so no need to differentiate between cancelled/expired.
+	for _, c := range cancelled {
+		switch et := c.(type) {
+		case *events.CancelledOrders:
+			if !et.IsMarket(market) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				expForMarket[oid] = struct{}{}
+			}
+		case events.CancelledOrders:
 			if !et.IsMarket(market) {
 				continue
 			}
@@ -527,6 +548,40 @@ func (b *BrokerStub) GetOrderEvents() []events.Order {
 				ret = append(ret, *fe)
 			}
 		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetCancelledOrderEvents() []events.CancelledOrders {
+	batch := b.GetBatch(events.CancelledOrdersEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.CancelledOrders, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.CancelledOrders:
+			ret = append(ret, et)
+		case *events.CancelledOrders:
+			ret = append(ret, *et)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetCancelledOrdersPerMarket() map[string]map[string]struct{} {
+	evts := b.GetCancelledOrderEvents()
+	ret := map[string]map[string]struct{}{}
+	for _, e := range evts {
+		mID := e.MarketID()
+		oIDs := map[string]struct{}{}
+		if data, ok := ret[mID]; ok {
+			oIDs = data
+		}
+		for _, oid := range e.OrderIDs() {
+			oIDs[oid] = struct{}{}
+		}
+		ret[mID] = oIDs
 	}
 	return ret
 }
@@ -1147,9 +1202,42 @@ func (b *BrokerStub) GetByReference(party, ref string) (vegapb.Order, error) {
 		}
 	}
 	if matched {
+		if b.IsCancelledOrder(last.MarketId, party, last.Id) {
+			last.Status = vegapb.Order_STATUS_CANCELLED
+		}
 		return last, nil
 	}
 	return vegapb.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
+}
+
+func (b *BrokerStub) IsCancelledOrder(mkt, party, id string) bool {
+	batch := b.GetImmBatch(events.CancelledOrdersEvent)
+	if len(batch) == 0 {
+		return false
+	}
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.CancelledOrders:
+			if !et.IsMarket(mkt) || !et.IsParty(party) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				if oid == id {
+					return true
+				}
+			}
+		case events.CancelledOrders:
+			if !et.IsMarket(mkt) || !et.IsParty(party) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				if oid == id {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (b *BrokerStub) GetStopByReference(party, ref string) (eventspb.StopOrderEvent, error) {
