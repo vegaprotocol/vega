@@ -18,7 +18,7 @@ begin
     for epoch in first_epoch..last_epoch-1 loop
 
         INSERT INTO game_reward_totals(game_id, party_id, asset_id, market_id, team_id, total_rewards, total_rewards_quantum, epoch_id)
-        SELECT
+        SELECT DISTINCT -- we need distinct because the game ID is a hash of the dispatch metric on the transfer and these can be duplicated across multiple transfers when they are cancelled and replaced, or have been rejected at some point.
             grto.game_id,
             grto.party_id,
             grto.asset_id,
@@ -29,7 +29,7 @@ begin
             (grto.epoch_id + 1) AS epoch_id
         FROM game_reward_totals AS grto
             -- get the game end date from the transfer table and do not carry over rewards for games that have ended
-        JOIN transfers t on grto.game_id = t.game_id and t.end_epoch > grto.epoch_id
+        JOIN transfers_current t on grto.game_id = t.game_id and t.transfer_type = 'Recurring' and t.end_epoch > grto.epoch_id
         WHERE grto.epoch_id = epoch
         AND NOT EXISTS (
             SELECT 1
