@@ -237,6 +237,17 @@ func spotMarketUpdate(config *market.Config, existing *types.Market, row spotMar
 		update.Changes.SLAParams = types.LiquiditySLAParamsFromProto(slaParams)
 	}
 
+	update.Changes.LiquidityFeeSettings = existing.Fees.LiquidityFeeSettings
+	if liquidityFeeSettings, ok := row.tryLiquidityFeeSettings(); ok {
+		settings, err := config.FeesConfig.Get(liquidityFeeSettings)
+		if err != nil {
+			panic(err)
+		}
+		s := types.LiquidityFeeSettingsFromProto(settings.LiquidityFeeSettings)
+		existing.Fees.LiquidityFeeSettings = s
+		update.Changes.LiquidityFeeSettings = s
+	}
+
 	// risk model
 	if rm, ok := row.riskModel(); ok {
 		tip := existing.TradableInstrument.IntoProto()
@@ -390,6 +401,14 @@ func (r spotMarketUpdateRow) liquidityMonitoring() (string, bool) {
 	if r.row.HasColumn("liquidity monitoring") {
 		lm := r.row.MustStr("liquidity monitoring")
 		return lm, true
+	}
+	return "", false
+}
+
+func (r spotMarketUpdateRow) tryLiquidityFeeSettings() (string, bool) {
+	if r.row.HasColumn("liquidity fee settings") {
+		s := r.row.MustStr("liquidity fee settings")
+		return s, true
 	}
 	return "", false
 }
