@@ -426,14 +426,9 @@ message PriceRangeCache {
   uint64 bound_index = 3;
 }
 
-message CurrentPrice {
-  string price = 1;
-  uint64 volume = 2;
-}
-
 message PastPrice {
   int64 time = 1;
-  string volume_weighted_price = 2;
+  string average_price = 2;
 }
 
 message PriceMonitor {
@@ -446,7 +441,7 @@ message PriceMonitor {
   repeated PriceRangeCache price_range_cache = 9;
   int64 ref_price_cache_time = 10;
   repeated DecimalMap ref_price_cache = 11;
-  repeated CurrentPrice prices_now = 12;
+  repeated string prices_now = 12;
   repeated PastPrice prices_past = 13;
   bool consensus_reached = 14;
 }

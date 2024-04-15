@@ -71,13 +71,10 @@ func NewMonitorFromSnapshot(
 	return e, nil
 }
 
-func pricesNowToInternal(cps []*types.CurrentPrice) []currentPrice {
-	cpsi := make([]currentPrice, 0, len(cps))
+func pricesNowToInternal(cps []*num.Uint) []*num.Uint {
+	cpsi := make([]*num.Uint, 0, len(cps))
 	for _, cp := range cps {
-		cpsi = append(cpsi, currentPrice{
-			Price:  cp.Price.Clone(),
-			Volume: cp.Volume,
-		})
+		cpsi = append(cpsi, cp.Clone())
 	}
 	return cpsi
 }
@@ -86,8 +83,8 @@ func pricesPastToInternal(pps []*types.PastPrice) []pastPrice {
 	ppsi := make([]pastPrice, 0, len(pps))
 	for _, pp := range pps {
 		ppsi = append(ppsi, pastPrice{
-			Time:                pp.Time,
-			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+			Time:         pp.Time,
+			AveragePrice: pp.AveragePrice,
 		})
 	}
 	return ppsi
@@ -194,21 +191,14 @@ func (e *Engine) Changed() bool {
 	return e.stateChanged
 }
 
-func (e *Engine) serialisePricesNow() []*types.CurrentPrice {
-	psn := make([]*types.CurrentPrice, 0, len(e.pricesNow))
+func (e *Engine) serialisePricesNow() []*num.Uint {
+	psn := make([]*num.Uint, 0, len(e.pricesNow))
 	for _, pn := range e.pricesNow {
-		psn = append(psn, &types.CurrentPrice{
-			Price:  pn.Price.Clone(),
-			Volume: pn.Volume,
-		})
+		psn = append(psn, pn.Clone())
 	}
 
 	sort.Slice(psn, func(i, j int) bool {
-		if psn[i].Price.EQ(psn[j].Price) {
-			return psn[i].Volume < psn[j].Volume
-		}
-
-		return psn[i].Price.LT(psn[j].Price)
+		return psn[i].LT(psn[j])
 	})
 
 	return psn
@@ -218,14 +208,14 @@ func (e *Engine) serialisePricesPast() []*types.PastPrice {
 	pps := make([]*types.PastPrice, 0, len(e.pricesPast))
 	for _, pp := range e.pricesPast {
 		pps = append(pps, &types.PastPrice{
-			Time:                pp.Time,
-			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+			Time:         pp.Time,
+			AveragePrice: pp.AveragePrice,
 		})
 	}
 
 	sort.Slice(pps, func(i, j int) bool {
 		if pps[i].Time.Equal(pps[j].Time) {
-			return pps[j].VolumeWeightedPrice.GreaterThan(pps[i].VolumeWeightedPrice)
+			return pps[j].AveragePrice.GreaterThan(pps[i].AveragePrice)
 		}
 
 		return pps[i].Time.Before(pps[j].Time)
