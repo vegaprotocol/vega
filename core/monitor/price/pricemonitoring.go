@@ -272,9 +272,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 		}
 		// only reset history if there isn't any (we need to initialise the engine) or we're still in opening auction as in that case it's based on previous indicative prices which are no longer relevant
 		if (recordPriceHistory && e.noHistory()) || as.IsOpeningAuction() {
-			e.resetPriceHistory(trades)
+			e.ResetPriceHistory(trades)
 		}
-		e.initialised = true
 	}
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
@@ -312,7 +311,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 	// opening auction -> ignore
 	if as.IsOpeningAuction() {
 		if recordPriceHistory {
-			e.resetPriceHistory(trades)
+			e.ResetPriceHistory(trades)
 		}
 		return false
 	}
@@ -329,7 +328,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 			// auction can be terminated
 			as.SetReadyToLeave()
 			// reset the engine
-			e.resetPriceHistory(trades)
+			e.ResetPriceHistory(trades)
 			return false
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
@@ -352,8 +351,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 	return false
 }
 
-// resetPriceHistory deletes existing price history and starts it afresh with the supplied value.
-func (e *Engine) resetPriceHistory(trades []*types.Trade) {
+// ResetPriceHistory deletes existing price history and starts it afresh with the supplied value.
+func (e *Engine) ResetPriceHistory(trades []*types.Trade) {
 	e.update = e.now
 	if len(trades) > 0 {
 		pricesNow := make([]currentPrice, 0, len(trades))
@@ -377,6 +376,7 @@ func (e *Engine) resetPriceHistory(trades []*types.Trade) {
 	// we're not reseetting the down/up factors - they will be updated as triggered by auction end/time
 	e.reactivateBounds()
 	e.stateChanged = true
+	e.initialised = true
 }
 
 // reactivateBounds reactivates all bounds.
