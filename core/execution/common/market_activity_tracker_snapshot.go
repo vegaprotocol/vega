@@ -246,6 +246,7 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		MakerFeesPaid:                   marketFeesToProto(mt.makerFeesPaid),
 		LpFees:                          marketFeesToProto(mt.lpFees),
 		InfraFees:                       marketFeesToProto(mt.infraFees),
+		LpPaidFees:                      marketFeesToProto(mt.lpPaidFees),
 		Proposer:                        mt.proposer,
 		BonusPaid:                       paid,
 		ValueTraded:                     mt.valueTraded.String(),
@@ -342,6 +343,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		makerFeesPaid:          map[string]*num.Uint{},
 		lpFees:                 map[string]*num.Uint{},
 		infraFees:              map[string]*num.Uint{},
+		lpPaidFees:             map[string]*num.Uint{},
 		totalMakerFeesReceived: num.UintZero(),
 		totalMakerFeesPaid:     num.UintZero(),
 		totalLpFees:            num.UintZero(),
@@ -399,11 +401,17 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 	}
 
 	if len(tracker.InfraFees) > 0 {
-		total := num.UintZero()
 		for _, mf := range tracker.InfraFees {
 			fee, _ := num.UintFromString(mf.Fee, 10)
-			total.AddSum(fee)
 			mft.infraFees[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
+		}
+	}
+
+	if len(tracker.LpPaidFees) > 0 {
+		for _, mf := range tracker.LpPaidFees {
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			mft.lpPaidFees[mf.Party] = fee
 			mft.allPartiesCache[mf.Party] = struct{}{}
 		}
 	}

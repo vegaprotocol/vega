@@ -236,6 +236,7 @@ message MarketActivityTracker {
   repeated EpochTimeWeightedNotionalData time_weighted_notional_data_history = 17;
   repeated EpochReturnsData returns_data_history = 18;
   repeated PartyFees infra_fees = 19;
+  repeated PartyFees lp_paid_fees = 20;
 }
 
 message EpochTimeWeightPositionData {

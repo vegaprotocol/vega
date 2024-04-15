@@ -154,7 +154,7 @@ func PartiesSubmitRecurringTransfers(
 func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "start_epoch", "end_epoch", "factor",
-	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "ranks", "error"})
+	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "ranks", "cap_reward_fee_multiple", "error"})
 }
 
 func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
@@ -250,11 +250,15 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 
 		stakingRequirement := ""
 		notionalRequirement := ""
+		capRewardFeeMultiple := ""
 		if r.HasColumn("staking_requirement") {
 			stakingRequirement = r.MustStr("staking_requirement")
 		}
 		if r.HasColumn("notional_requirement") {
 			notionalRequirement = r.mustColumn("notional_requirement")
+		}
+		if r.HasColumn("cap_reward_fee_multiple") {
+			capRewardFeeMultiple = r.MustStr("cap_reward_fee_multiple")
 		}
 
 		dispatchStrategy = &proto.DispatchStrategy{
@@ -271,6 +275,9 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 			StakingRequirement:   stakingRequirement,
 			NotionalTimeWeightedAveragePositionRequirement: notionalRequirement,
 			RankTable: ranks,
+		}
+		if capRewardFeeMultiple != "" {
+			dispatchStrategy.CapRewardFeeMultiple = &capRewardFeeMultiple
 		}
 	}
 
