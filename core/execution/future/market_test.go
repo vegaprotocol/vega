@@ -461,6 +461,7 @@ func mustOrderFromProto(o *vegapb.Order) *types.Order {
 
 func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
 	var order *types.Order
+	cancel := false
 	for _, e := range tm.events {
 		switch evt := e.(type) {
 		case *events.Order:
@@ -468,7 +469,12 @@ func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
 			if ord.Id == id {
 				order = mustOrderFromProto(ord)
 			}
+		case *events.CancelledOrders:
+			cancel = true
 		}
+	}
+	if cancel {
+		order.Status = types.OrderStatusCancelled
 	}
 	return order
 }

@@ -34,6 +34,12 @@ type OE interface {
 	Order() *ptypes.Order
 }
 
+type CO interface {
+	events.Event
+	OrderIDs() []string
+	MarketID() string
+}
+
 type priceLevel struct {
 	// Price of the price level
 	price *num.Uint
@@ -114,17 +120,42 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 		case OE:
 			order, _ := types.OrderFromProto(et.Order())
 			mdb.updateMarketDepth(order)
+		case CO:
+			for _, o := range mdb.applyOrderCancellations(et) {
+				mdb.updateMarketDepth(o)
+			}
 		default:
 			mdb.log.Panic("Unknown event type in market depth builder", logging.String("Type", et.Type().String()))
 		}
 	}
 }
 
+func (mdb *MarketDepthBuilder) applyOrderCancellations(evt CO) []*types.Order {
+	mdb.mu.Lock()
+	defer mdb.mu.Unlock()
+
+	mktOrders, ok := mdb.marketDepths[evt.MarketID()]
+	if !ok {
+		return nil
+	}
+	orders := []*types.Order{}
+	for _, oid := range evt.OrderIDs() {
+		if o := mktOrders.orderExists(oid); o != nil {
+			cpy := o.Clone()
+			cpy.Status = types.OrderStatusCancelled
+			orders = append(orders, cpy)
+		}
+	}
+	return orders
+}
+
 // Types returns all the message types this subscriber wants to receive.
 func (mdb *MarketDepthBuilder) Types() []events.Type {
-	return []events.Type{
+	ret := []events.Type{
 		events.OrderEvent,
+		events.CancelledOrdersEvent,
 	}
+	return ret
 }
 
 func (md *MarketDepth) orderExists(orderID string) *types.Order {
