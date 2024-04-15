@@ -119,8 +119,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if isPrice || m.as.CanLeave() {
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
-		if m.as.CanLeave() && len(trades) > 0 {
-			m.pMonitor.ResetPriceHistory([]*types.Trade{{Price: trades[0].Price, Size: 1}})
+		if m.as.CanLeave() {
+			var t []*types.Trade = nil
+			if len(trades) > 0 {
+				t = []*types.Trade{{Price: trades[0].Price, Size: 1}}
+			}
+			m.pMonitor.ResetPriceHistory(t)
 		}
 	}
 	end := m.as.CanLeave()

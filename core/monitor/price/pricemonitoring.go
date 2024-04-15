@@ -263,24 +263,12 @@ func (e *Engine) OnTimeUpdate(now time.Time) {
 // CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction,
 // "true" gets returned if non-persistent order should be rejected.
 func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*types.Trade, persistent bool, recordPriceHistory bool) bool {
-	// initialise with the first price & time provided, otherwise there won't be any bounds
-	wasInitialised := e.initialised
-	if !wasInitialised {
-		// Volume of 0, do nothing
-		if len(trades) == 0 {
-			return false
-		}
-		// only reset history if there isn't any (we need to initialise the engine) or we're still in opening auction as in that case it's based on previous indicative prices which are no longer relevant
-		if (recordPriceHistory && e.noHistory()) || as.IsOpeningAuction() {
-			e.ResetPriceHistory(trades)
-		}
-	}
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
 		bounds := e.checkBounds(trades)
 		// no bounds violations - update price, and we're done (unless we initialised as part of this call, then price has alrady been updated)
 		if len(bounds) == 0 {
-			if wasInitialised && recordPriceHistory {
+			if recordPriceHistory {
 				e.recordPriceChanges(trades)
 			}
 			return false
@@ -307,14 +295,6 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 		as.StartPriceAuction(e.now, &duration)
 		return false
 	}
-	// market is in auction
-	// opening auction -> ignore
-	if as.IsOpeningAuction() {
-		if recordPriceHistory {
-			e.ResetPriceHistory(trades)
-		}
-		return false
-	}
 
 	bounds := e.checkBounds(trades)
 	if len(bounds) == 0 {
@@ -327,12 +307,6 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 			}
 			// auction can be terminated
 			as.SetReadyToLeave()
-			// reset the engine
-			if recordPriceHistory {
-				e.ResetPriceHistory(trades)
-			} else {
-				e.ResetPriceHistory(nil)
-			}
 			return false
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
