@@ -74,7 +74,7 @@ Feature: Test price monitoring engine with oracle based mark price
     And the network moves ahead "5" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    | auction trigger             | ref price | horizon | min bound | max bound |
-      | 14050      | TRADING_MODE_CONTINUOUS         | AUCTION_TRIGGER_UNSPECIFIED | 14004     | 5       | 13905     | 14104     |
+      | 14050      | TRADING_MODE_CONTINUOUS         | AUCTION_TRIGGER_UNSPECIFIED | 14025     | 5       | 13925     | 14125     |
 
 Scenario: when previous mark price is outside the bounds implied by the auction uncrossing trade the market will only return to continuous trading once the last oracle feed became stale
     Given the parties deposit on asset's general account the following amount:

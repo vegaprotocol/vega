@@ -328,7 +328,11 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 			// auction can be terminated
 			as.SetReadyToLeave()
 			// reset the engine
-			e.ResetPriceHistory(trades)
+			if recordPriceHistory {
+				e.ResetPriceHistory(trades)
+			} else {
+				e.ResetPriceHistory(nil)
+			}
 			return false
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
