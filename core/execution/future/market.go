@@ -3291,17 +3291,23 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	})
 
 	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
+	orderIDs := make([]string, 0, len(orders))
 
 	// now iterate over all orders and cancel one by one.
 	cancelledOrders := make([]*types.Order, 0, len(orders))
 	for _, order := range orders {
-		cancellation, err := m.cancelOrder(ctx, partyID, order.ID)
+		cancellation, err := m.cancelOrderInBatch(ctx, partyID, order.ID)
 		if err != nil {
 			return nil, err
 		}
+		orderIDs = append(orderIDs, order.ID)
 		cancellations = append(cancellations, cancellation)
 		cancelledOrders = append(cancelledOrders, cancellation.Order)
 	}
+	cancelEvt := events.NewCancelledOrdersEvent(ctx, m.GetID(), partyID, orderIDs...)
+	m.broker.Send(cancelEvt)
+	// we have just cancelled all orders, release excess margin
+	m.releaseMarginExcess(ctx, partyID)
 
 	m.checkForReferenceMoves(ctx, cancelledOrders, false)
 
@@ -3377,8 +3383,16 @@ func (m *Market) removeCancelledExpiringStopOrders(
 	}
 }
 
+func (m *Market) cancelOrderInBatch(ctx context.Context, partyID string, orderID string) (*types.OrderCancellationConfirmation, error) {
+	return m.cancelSingleOrder(ctx, partyID, orderID, true)
+}
+
 // CancelOrder cancels the given order.
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+	return m.cancelSingleOrder(ctx, partyID, orderID, false)
+}
+
+func (m *Market) cancelSingleOrder(ctx context.Context, partyID, orderID string, isBatch bool) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -3402,7 +3416,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		return nil, types.ErrInvalidPartyID
 	}
 
-	defer m.releaseMarginExcess(ctx, partyID)
+	if !isBatch {
+		defer m.releaseMarginExcess(ctx, partyID)
+	}
 
 	if foundOnBook {
 		cancellation, err := m.matching.CancelOrder(order)
@@ -3431,7 +3447,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	// Publish the changed order details
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-	m.broker.Send(events.NewOrderEvent(ctx, order))
+	if !isBatch {
+		m.broker.Send(events.NewCancelledOrdersEvent(ctx, order.MarketID, order.Party, order.ID))
+	}
 
 	// if the order was found in the book and we're in isolated margin we need to update the
 	// order margin

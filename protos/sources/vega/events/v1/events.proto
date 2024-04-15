@@ -898,6 +898,15 @@ message ExpiredOrders {
   repeated string order_ids = 2;
 }
 
+message CancelledOrders {
+  // Market ID for the event.
+  string market_id = 1;
+  // The ID of the party which cancelled the orders.
+  string party_id = 2;
+  // The order IDs that were cancelled.
+  repeated string order_ids = 3;
+}
+
 message TeamCreated {
   // The unique identifier of the created team.
   string team_id = 1;
@@ -1343,6 +1352,9 @@ enum BusEventType {
   // Event indicating time weighted notional position has been updated.
   BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED = 88;
 
+  // Event indicating a party cancelled all their orders in a market.
+  BUS_EVENT_TYPE_CANCELLED_ORDERS = 89;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1528,6 +1540,8 @@ message BusEvent {
     TeamsStatsUpdated teams_stats_updated = 185;
     // Event notifying an update of the time weighted notional position for a party in an asset
     TimeWeightedNotionalPositionUpdated time_weighted_notional_position_updated = 186;
+    // Event notifying of multiple orders being cancelled for a given party, on a given market.
+    CancelledOrders cancelled_orders = 187;
 
     // Market tick events
     MarketEvent market = 1001;
