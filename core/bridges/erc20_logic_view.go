@@ -144,6 +144,7 @@ func (e *ERC20LogicView) FindAssetList(
 	iter, err := bf.FilterAssetListed(
 		&bind.FilterOpts{
 			Start:   blockNumber - 1,
+			End:     &blockNumber,
 			Context: ctx,
 		},
 		[]ethcommon.Address{ethcommon.HexToAddress(al.AssetSource)},
@@ -206,6 +207,7 @@ func (e *ERC20LogicView) FindBridgeStopped(
 	iter, err := bf.FilterBridgeStopped(
 		&bind.FilterOpts{
 			Start:   blockNumber - 1,
+			End:     &blockNumber,
 			Context: ctx,
 		},
 	)
@@ -264,6 +266,7 @@ func (e *ERC20LogicView) FindBridgeResumed(
 	iter, err := bf.FilterBridgeResumed(
 		&bind.FilterOpts{
 			Start:   blockNumber - 1,
+			End:     &blockNumber,
 			Context: ctx,
 		},
 	)
@@ -320,6 +323,7 @@ func (e *ERC20LogicView) FindDeposit(
 	iter, err := bf.FilterAssetDeposited(
 		&bind.FilterOpts{
 			Start:   blockNumber - 1,
+			End:     &blockNumber,
 			Context: ctx,
 		},
 		// user_address
@@ -382,6 +386,7 @@ func (e *ERC20LogicView) FindWithdrawal(
 	iter, err := bf.FilterAssetWithdrawn(
 		&bind.FilterOpts{
 			Start:   blockNumber - 1,
+			End:     &blockNumber,
 			Context: ctx,
 		},
 		// user_address
@@ -447,6 +452,7 @@ func (e *ERC20LogicView) FindAssetLimitsUpdated(
 	iter, err := bf.FilterAssetLimitsUpdated(
 		&bind.FilterOpts{
 			Start:   blockNumber - 1,
+			End:     &blockNumber,
 			Context: ctx,
 		},
 		[]ethcommon.Address{ethcommon.HexToAddress(ethAssetAddress)},
