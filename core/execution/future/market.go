@@ -1082,7 +1082,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, false)
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, false, false)
 		m.nextInternalCompositePriceCalc = t.Add(m.internalCompositePriceFrequency)
 		if (prevInternalCompositePrice == nil || !m.internalCompositePriceCalculator.GetPrice().EQ(prevInternalCompositePrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentInternalCompositePrice().IsZero() {
@@ -1104,7 +1104,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.mkt.LinearSlippageFactor,
 			m.risk.GetRiskFactors().Short,
 			m.risk.GetRiskFactors().Long,
-			true); err != nil {
+			true, false); err != nil {
 			// start the  monitoring auction if required
 			if m.as.AuctionStart() {
 				m.enterAuction(ctx)
@@ -1641,7 +1641,8 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.mkt.LinearSlippageFactor,
 		m.risk.GetRiskFactors().Short,
 		m.risk.GetRiskFactors().Long,
-		true); err != nil {
+		true,
+		wasOpeningAuction); err != nil {
 		if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 			m.broker.Send(evt)
 		}
@@ -1654,6 +1655,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 	if wasOpeningAuction && !m.as.IsOpeningAuction() && m.getCurrentMarkPrice().IsZero() {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
+		m.pMonitor.ResetPriceHistory([]*types.Trade{{Price: m.lastTradedPrice, Size: 1}})
 	}
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
@@ -1669,7 +1671,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
 				m.risk.GetRiskFactors().Long,
-				false)
+				false, false)
 
 			if wasOpeningAuction && (m.getCurrentInternalCompositePrice().IsZero()) {
 				m.internalCompositePriceCalculator.OverridePrice(m.lastTradedPrice)
@@ -4448,6 +4450,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
 				m.risk.GetRiskFactors().Long,
+				false,
 				false)
 
 			if m.internalCompositePriceCalculator != nil {
@@ -4462,6 +4465,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 					m.mkt.LinearSlippageFactor,
 					m.risk.GetRiskFactors().Short,
 					m.risk.GetRiskFactors().Long,
+					false,
 					false)
 			}
 
