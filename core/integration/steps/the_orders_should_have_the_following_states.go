@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	types "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 )
@@ -36,15 +37,21 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godo
 		status := row.MustOrderStatus("status")
 		ref, hasRef := row.StrB("reference")
 
+		checkCancel := status == types.Order_STATUS_CANCELLED
+
 		match := false
 		for i := len(orderEvents) - 1; i >= 0; i-- {
 			e := orderEvents[i]
 			o := e.Order()
+			cancelled := false
+			if checkCancel {
+				cancelled = broker.IsCancelledOrder(marketID, party, o.Id)
+			}
 			if hasRef {
 				if ref != o.Reference {
 					continue
 				}
-				if o.PartyId == party && o.Status == status && o.MarketId == marketID && o.Side == side {
+				if o.PartyId == party && (o.Status == status || cancelled) && o.MarketId == marketID && o.Side == side {
 					if o.Size != size || stringToU64(o.Price) != price || o.Remaining != remaining {
 						return formatDiff(fmt.Sprintf("the order didn't match the expectation for reference %q", ref),
 							map[string]string{
@@ -61,7 +68,7 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godo
 					}
 				}
 			}
-			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || stringToU64(o.Price) != price || o.Remaining != remaining {
+			if o.PartyId != party || (o.Status != status && !cancelled) || o.MarketId != marketID || o.Side != side || o.Size != size || stringToU64(o.Price) != price || o.Remaining != remaining {
 				continue
 			}
 			match = true
