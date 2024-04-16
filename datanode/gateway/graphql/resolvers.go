@@ -3429,10 +3429,11 @@ func (r *mySubscriptionResolver) TradesStream(ctx context.Context, filter Trades
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan []*vegapb.Position, error) {
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string, includeDerivedParties *bool) (<-chan []*vegapb.Position, error) {
 	req := &v2.ObservePositionsRequest{
-		PartyId:  party,
-		MarketId: market,
+		PartyId:               party,
+		MarketId:              market,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	stream, err := r.tradingDataClientV2.ObservePositions(ctx, req)
 	if err != nil {

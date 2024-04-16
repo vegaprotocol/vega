@@ -1436,6 +1436,9 @@ message ObservePositionsRequest {
   optional string party_id = 1;
   // Restrict position updates to those related to the given markets.
   optional string market_id = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 3;
 }
 
 // Response received from a positions subscription request
