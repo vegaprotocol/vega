@@ -305,7 +305,7 @@ Feature: Calculating SLA Performance
       | lp1  |     | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | BTC/ETH   | 25     | ETH   |
       |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL                           | BTC/ETH   | 25     | ETH   |
 
-  Scenario: LPs average penalty over the last N epochs is worse then their current performance when performance hysteresis epochs is > 1. (0042-LIQF-090)(0042-LIQF-101)(0042-LIQF-104)
+  Scenario: LPs average penalty over the last N epochs is worse then their current performance when performance hysteresis epochs is > 1. (0042-LIQF-090)(0042-LIQF-101)(0042-LIQF-104)(0042-LIQF-091)
     # Initialise the market with the required parameters
     Given the liquidity sla params named "scenario-sla-params":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -563,4 +563,3 @@ Feature: Calculating SLA Performance
       |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | BTC/ETH   | 24673  | ETH   |
       |      | lp2 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | BTC/ETH   | 2344   | ETH   |
       |      | lp3 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | BTC/ETH   | 69087  | ETH   |
-
