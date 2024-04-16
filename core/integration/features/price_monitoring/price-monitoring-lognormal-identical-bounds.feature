@@ -52,11 +52,17 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     #T1 + 03min00s (last second of the auction)
     When time is updated to "2020-10-16T00:06:10Z"
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger       | extension trigger           | mark price | indicative price | indicative volume | auction end |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 110000     | 111000           | 1                 | 180         |
+      | trading mode                    | auction trigger       | extension trigger           | mark price | indicative price | indicative volume | auction end | horizon | ref price | min bound | max bound |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 110000     | 111000           | 1                 | 180         | 10      | 110000    | 109758    | 110242    |
 
-    #T1 + 03min01s (auction doesn't get extended as the other trigger expired: last reference price was before auction start - trigger horizon)
+    #T2 = T1 + 03min01s (auction gets extended as the other trigger gets activated)
     When time is updated to "2020-10-16T00:06:11Z"
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode                    | auction trigger       | extension trigger     | mark price | indicative price | indicative volume | auction end |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 110000     | 111000           | 1                 | 360         |
+
+    #T2 + 03min00s (market returns to continuous trading mode)
+    When time is updated to "2020-10-16T00:09:11Z"
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | extension trigger           | mark price | indicative price | indicative volume | auction end | horizon | ref price | min bound | max bound |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 111000     | 0                | 0                 | 0           | 10      | 111000    | 110756    | 111245    |

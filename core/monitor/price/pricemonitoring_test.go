@@ -137,7 +137,6 @@ func TestRecordPriceChange(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -192,10 +191,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	downFactors := []num.Decimal{pMin1.Div(cpDec), pMin2.Div(cpDec)}
 	upFactors := []num.Decimal{pMax1.Div(cpDec), pMax2.Div(cpDec)}
 
-	auctionStateMock.EXPECT().IsFBA().Return(false).Times(19)
+	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(14)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(10)
-	auctionStateMock.EXPECT().Start().Return(now).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -306,7 +303,6 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	// recheck with same price, 2nd trigger should get breached now
 	end2 := types.AuctionDuration{Duration: t2.AuctionExtension}
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().ExtendAuctionPrice(end2).Times(1)
 
@@ -330,7 +326,6 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 
 	// Check with same price again after exiting, should not start auction now
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(3)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(4)
 	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp8, true, true)
 	require.False(t, b)
 
@@ -345,230 +340,6 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	cPrice = cPrice.Sub(currentPrice, delta)
 	cp9 := []*types.Trade{{Price: cPrice, Size: 1}}
 	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp9, true, true)
-	require.False(t, b)
-}
-
-func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T) {
-	ctx := context.Background()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	riskModel := mocks.NewMockRangeProvider(ctrl)
-	auctionStateMock := mocks.NewMockAuctionState(ctrl)
-	statevar := mocks.NewMockStateVarEngine(ctrl)
-	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	price1 := num.NewUint(123)
-	initialTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	now := initialTime
-	t1Time := int64(60)
-	t1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: num.DecimalFromFloat(0.99), AuctionExtension: t1Time}
-	boundUpdateFrequency := int64(120)
-	settings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1},
-		},
-	}
-	maxDown1, maxUp1 := num.NewUint(1), num.NewUint(2)
-	p1Dec := num.DecimalFromUint(price1)
-	h1 := horizonToYearFraction(t1.Horizon)
-	min1 := p1Dec.Sub(num.DecimalFromUint(maxDown1))
-	max1 := p1Dec.Add(num.DecimalFromUint(maxUp1))
-
-	riskModel.EXPECT().PriceRange(p1Dec, h1, t1.Probability).Return(min1, max1).Times(0)
-	// auctionStateMock.EXPECT().IsFBA().Return(false).Times(25)
-	// auctionStateMock.EXPECT().InAuction().Return(false).Times(25)
-	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
-	auctionStateMock.EXPECT().Start().Return(now).Times(1)
-
-	pm, err := price.NewMonitor("asset", "market", riskModel, auctionStateMock, settings, statevar, logging.NewTestLogger())
-	require.NoError(t, err)
-	require.NotNil(t, pm)
-	refPrice := p1Dec
-	cPrice, _ := num.UintFromDecimal(refPrice)
-	priceHistorySum := num.Sum(cPrice)
-	n := 1
-	b := pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	cPrice = cPrice.Add(cPrice, maxUp1)
-	priceHistorySum = num.Sum(priceHistorySum, cPrice)
-	n++
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	cPrice, _ = num.UintFromDecimal(refPrice) // this is silly, but the original test did this...
-	cPrice = cPrice.Sub(cPrice, maxDown1)
-	priceHistorySum = num.Sum(priceHistorySum, cPrice)
-	n++
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	end := types.AuctionDuration{Duration: t1.AuctionExtension}
-	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
-	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(0)
-	cPrice, _ = num.UintFromDecimal(refPrice)
-	cPrice = num.Sum(cPrice, maxUp1, maxUp1)
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	// Still before update (no price change)
-	updateTime := now.Add(time.Duration(boundUpdateFrequency) * time.Second)
-	now = updateTime.Add(-time.Second)
-	pm.OnTimeUpdate(now)
-	avgPrice1 := priceHistorySum.ToDecimal().Div(num.DecimalFromFloat(float64(n)))
-	refPrice = avgPrice1
-	cPrice, _ = num.UintFromDecimal(refPrice)
-	priceHistorySum = priceHistorySum.Set(cPrice)
-	n = 1
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	// Execting same behaviour as above (per reference price)
-	cPrice, _ = num.UintFromDecimal(refPrice.Floor())
-	cPrice.Add(cPrice, maxUp1)
-	priceHistorySum.Add(priceHistorySum, cPrice)
-	n++
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	cPrice, _ = num.UintFromDecimal(refPrice.Ceil())
-	cPrice.Sub(cPrice, maxDown1)
-	priceHistorySum.Add(priceHistorySum, cPrice)
-	n++
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	end = types.AuctionDuration{Duration: t1.AuctionExtension}
-	cPrice, _ = num.UintFromDecimal(refPrice)
-	cPrice.Sub(cPrice, num.Sum(maxDown1, maxDown1))
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	// Right at update time (after the auction has concluded)
-	now = initialTime.Add(time.Duration(2*boundUpdateFrequency) * time.Second)
-	pm.OnTimeUpdate(now)
-	// multiply by 4
-	maxDown2 := num.Sum(maxDown1, maxDown1, maxDown1, maxDown1)
-	maxUp2 := num.Sum(maxUp1, maxUp1, maxUp1, maxUp1)
-	avgPrice2 := priceHistorySum.ToDecimal().Div(num.DecimalFromFloat(float64(n)))
-	refPrice = avgPrice2
-	cPrice, _ = num.UintFromDecimal(refPrice)
-	priceHistorySum = priceHistorySum.Set(cPrice)
-	n = 1
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	cPrice, _ = num.UintFromDecimal(refPrice.Floor())
-	cPrice.Add(cPrice, maxUp2)
-	priceHistorySum.Add(priceHistorySum, cPrice)
-	n++
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	cPrice, _ = num.UintFromDecimal(refPrice.Ceil())
-	cPrice.Sub(cPrice, maxDown2)
-	volume := uint64(2)
-	priceHistorySum = num.Sum(priceHistorySum, cPrice, cPrice) // multiplied by volume of 2
-	n += int(volume)
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: volume}}, true, true)
-	require.False(t, b)
-
-	end = types.AuctionDuration{Duration: t1.AuctionExtension}
-	cPrice, _ = num.UintFromDecimal(refPrice)
-	cPrice = num.Sum(cPrice, maxUp2, maxUp2)
-	b = pm.CheckPrice(ctx, auctionStateMock, []*types.Trade{{Price: cPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	// Right before update time (horizon away from averagePrice3)
-	updateTime = now.Add(time.Duration(t1.Horizon) * time.Second)
-	now = updateTime.Add(-time.Second)
-	pm.OnTimeUpdate(now)
-	averagePrice3 := num.DecimalFromFloat(priceHistorySum.Float64() / float64(n))
-	referencePrice := avgPrice2
-	maxDown3 := num.UintZero().Mul(maxDown1, num.NewUint(6))
-	maxUp3 := num.UintZero().Mul(maxUp1, num.NewUint(6))
-
-	validPrice, _ := num.UintFromDecimal(referencePrice)
-	priceHistorySum = validPrice
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	validPrice, _ = num.UintFromDecimal(referencePrice.Floor())
-	validPrice.Add(validPrice, maxUp3)
-	priceHistorySum.Add(priceHistorySum, validPrice)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	validPrice, _ = num.UintFromDecimal(referencePrice.Ceil())
-	validPrice.Sub(validPrice, maxDown3)
-	priceHistorySum.Add(priceHistorySum, validPrice)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	end = types.AuctionDuration{Duration: t1.AuctionExtension}
-
-	invalidPrice, _ := num.UintFromDecimal(referencePrice.Floor())
-	invalidPrice.Add(invalidPrice, num.UintZero().Mul(maxUp3, num.NewUint(2)))
-
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: invalidPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	invalidPrice, _ = num.UintFromDecimal(referencePrice.Ceil())
-	invalidPrice.Sub(invalidPrice, num.UintZero().Mul(maxDown3, num.NewUint(2)))
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: invalidPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	// Right at update time (horizon away from price3Average)
-	now = updateTime
-	referencePrice = averagePrice3
-
-	validPrice, _ = num.UintFromDecimal(referencePrice)
-	priceHistorySum = validPrice
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	validPrice, _ = num.UintFromDecimal(referencePrice.Floor())
-	validPrice.Add(validPrice, maxUp3)
-	priceHistorySum.Add(priceHistorySum, validPrice)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	validPrice, _ = num.UintFromDecimal(referencePrice.Ceil())
-	validPrice.Sub(validPrice, maxDown3)
-	priceHistorySum.Add(priceHistorySum, validPrice)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	end = types.AuctionDuration{Duration: t1.AuctionExtension}
-	invalidPrice, _ = num.UintFromDecimal(referencePrice.Ceil())
-	invalidPrice.Sub(invalidPrice, num.UintZero().Mul(maxDown3, num.NewUint(2)))
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: invalidPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	// Reset price, the resetting value should become the new reference
-	now = now.Add(time.Hour)
-	pm.OnTimeUpdate(now)
-	var resetPrice uint64 = 20
-	var maxMoveDown4 uint64 = 5
-	var maxMoveUp4 uint64 = 120
-	validPrice = num.NewUint(resetPrice)
-
-	// Assume in auction now
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	validPrice = num.NewUint(resetPrice + maxMoveUp4)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	validPrice = num.NewUint(resetPrice - maxMoveDown4)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: validPrice, Size: 1}}, true, true)
-	require.False(t, b)
-
-	end = types.AuctionDuration{Duration: t1.AuctionExtension}
-	invalidPrice = num.NewUint(resetPrice + 2*maxMoveUp4)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, []*types.Trade{{Price: invalidPrice, Size: 1}}, true, true)
 	require.False(t, b)
 }
 
@@ -601,9 +372,8 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	downFactorsP1 := []num.Decimal{p1Min1.Div(decPrice), p1Min2.Div(decPrice)}
 	upFactorsP1 := []num.Decimal{p1Max1.Div(decPrice), p1Max2.Div(decPrice)}
 
-	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
+	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(3)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -628,11 +398,9 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 
 	initialAuctionEnd := now.Add(time.Duration(t1.AuctionExtension) * time.Second)
 
-	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
-	// auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
 	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 
@@ -664,7 +432,6 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(4)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -735,8 +502,6 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().Start().Return(now).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -860,7 +625,6 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -902,8 +666,6 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
-	auctionStateMock.EXPECT().Start().Return(now).Times(1)
 
 	bounds = pm.GetCurrentBounds()
 	require.Len(t, bounds, 1)
@@ -1086,7 +848,6 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	currentPriceD := currentPrice.ToDecimal()
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(12)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(12)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(11)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
