@@ -46,8 +46,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lqm-params | 0.5              | 20s         | 1.0            |
 
     And the spot markets:
-      | id      | name    | base asset | quote asset | liquidity monitoring | risk model            | auction duration | fees          | price monitoring | sla params    | sla params |
-      | BTC/ETH | BTC/ETH | BTC        | ETH         | lqm-params           | log-normal-risk-model | 2                | fees-config-1 | price-monitoring | default-basic | SLA        |
+      | id      | name    | base asset | quote asset | liquidity monitoring | risk model            | auction duration | fees          | price monitoring | sla params |
+      | BTC/ETH | BTC/ETH | BTC        | ETH         | lqm-params           | log-normal-risk-model | 2                | fees-config-1 | price-monitoring | SLA        |
 
     Given the average block duration is "2"
 
