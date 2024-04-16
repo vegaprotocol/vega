@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/rand"
@@ -1542,19 +1543,72 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 	}, nil
 }
 
+const ammVersion = "AMMv1"
+
+func deriveSubAccount(
+	party, market, version string,
+	index uint64,
+) string {
+	hash := crypto.Hash([]byte(fmt.Sprintf("%v%v%v%v", version, market, party, index)))
+	return hex.EncodeToString(hash)
+}
+
+func (t *TradingDataServiceV2) getSubaccounts(ctx context.Context, party string, market *string) ([]string, error) {
+	if market != nil && len(*market) > 0 {
+		return []string{deriveSubAccount(party, *market, ammVersion, 0)}, nil
+	}
+
+	// get a list of all markets to generate all potential
+	// sub accounts for the party
+	markets, _, err := t.MarketsService.GetAllPaged(ctx, "", entities.DefaultCursorPagination(true), false)
+	if err != nil {
+		return nil, err
+	}
+
+	subs := make([]string, 0, len(markets))
+	for _, v := range markets {
+		subs = append(subs, deriveSubAccount(party, v.ID.String(), ammVersion, 0))
+	}
+
+	return subs, nil
+}
+
 // ObservePositions subscribes to a stream of Positions.
 func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	if err := t.sendPositionsSnapshot(ctx, req, srv); err != nil {
+	// handle subaccounts
+	includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties)
+	if includeDerivedParties && (req.PartyId == nil || len(*req.PartyId) <= 0) {
+		return formatE(newInvalidArgumentError("includeSubaccount requires a partyId"))
+	}
+
+	subaccounts := []string{}
+	if req.PartyId != nil && len(*req.PartyId) > 0 {
+		if includeDerivedParties {
+			subs, err := t.getSubaccounts(ctx, *req.PartyId, req.MarketId)
+			if err != nil {
+				return formatE(err)
+			}
+
+			subaccounts = append(subaccounts, subs...)
+		}
+	}
+
+	if err := t.sendPositionsSnapshot(ctx, req, srv, subaccounts); err != nil {
 		if !errors.Is(err, entities.ErrNotFound) {
 			return formatE(ErrPositionServiceSendSnapshot, err)
 		}
 	}
 
-	positionsChan, ref := t.positionService.Observe(ctx, t.config.StreamRetries, ptr.UnBox(req.PartyId), ptr.UnBox(req.MarketId))
+	// add the party to the subaccounts
+	if len(subaccounts) > 0 {
+		subaccounts = append(subaccounts, *req.PartyId)
+	}
+
+	positionsChan, ref := t.positionService.ObserveMany(ctx, t.config.StreamRetries, ptr.UnBox(req.MarketId), subaccounts...)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -1579,7 +1633,7 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	})
 }
 
-func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
+func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer, subaccounts []string) error {
 	var (
 		positions []entities.Position
 		err       error
@@ -1616,6 +1670,24 @@ func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		if err != nil {
 			return errors.Wrap(err, "getting initial positions by party")
 		}
+	}
+
+	// finally handle subaccount
+	for _, v := range subaccounts {
+		if req.MarketId != nil {
+			position, err := t.positionService.GetByMarketAndParty(ctx, *req.MarketId, v)
+			if err != nil {
+				return errors.Wrap(err, "getting initial positions by market+party")
+			}
+			positions = append(positions, position)
+			continue
+		}
+
+		subaccountPositions, err := t.positionService.GetByParty(ctx, entities.PartyID(v))
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by party")
+		}
+		positions = append(positions, subaccountPositions...)
 	}
 
 	protos := make([]*vega.Position, len(positions))
