@@ -27,6 +27,7 @@
 - [10998](https://github.com/vegaprotocol/vega/issues/10998) - Ensure reward totals are carried over across epochs in database.
 - [1102](https://github.com/vegaprotocol/core-test-coverage/issues/1102) - Add coverage for `0042-LIQF-084`
 - [11121](https://github.com/vegaprotocol/vega/issues/11121) - Remove auction trigger staleness functionality
+- [11127](https://github.com/vegaprotocol/vega/issues/11127) - Price monitoring engine should record all observations with the same weight
 
 ### 🐛 Fixes
 
