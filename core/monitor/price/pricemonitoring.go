@@ -293,20 +293,16 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, price *num.Uin
 
 	bounds := e.checkBounds(price)
 	if len(bounds) == 0 {
-		// current auction is price monitoring
-		// check for end of auction, reset monitoring, and end auction
-		if as.IsPriceAuction() || as.IsPriceExtension() {
-			end := as.ExpiresAt()
-			if !e.now.After(*end) {
-				return false
-			}
-			// auction can be terminated
-			as.SetReadyToLeave()
+		end := as.ExpiresAt()
+		if !e.now.After(*end) {
 			return false
 		}
-		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
-		if as.CanLeave() {
-			e.reactivateBounds()
+		// auction can be terminated
+		as.SetReadyToLeave()
+		if recordPriceHistory {
+			e.ResetPriceHistory(price)
+		} else {
+			e.ResetPriceHistory(nil)
 		}
 		return false
 	}
@@ -402,6 +398,9 @@ func (e *Engine) checkBounds(price *num.Uint) []*types.PriceMonitoringTrigger {
 		return ret
 	}
 	priceRanges := e.getCurrentPriceRanges(false)
+	if len(priceRanges) == 0 {
+		return ret
+	}
 	for i, b := range e.bounds {
 		if !b.Active {
 			continue

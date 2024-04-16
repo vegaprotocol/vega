@@ -113,10 +113,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if isPrice || m.as.CanLeave() {
-		m.pMonitor.CheckPrice(ctx, m.as, indicativeUncrossingPrice, true, false)
-		if m.as.CanLeave() {
-			m.pMonitor.ResetPriceHistory(indicativeUncrossingPrice)
-		}
+		m.pMonitor.CheckPrice(ctx, m.as, indicativeUncrossingPrice, true, true)
 	}
 	end := m.as.CanLeave()
 	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
