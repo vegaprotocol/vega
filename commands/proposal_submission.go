@@ -863,6 +863,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
 	errs.Merge(checkTickSize(changes.TickSize, "new_spot_market.changes"))
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_spot_market.changes.liquidity_fee_settings"))
 
 	return errs
 }
@@ -1023,6 +1024,7 @@ func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "update_spot_market.changes.sla_params"))
 	errs.Merge(checkTickSize(changes.TickSize, "update_spot_market.changes"))
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "update_spot_market.changes.liquidity_fee_settings"))
 	return errs
 }
 
