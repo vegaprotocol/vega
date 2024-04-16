@@ -1581,6 +1581,12 @@ message EVMChainConfig {
   string block_time = 6;
 }
 
+// A list of EVM chain configurations
+message EVMChainConfigs {
+  // The EVM configurations
+  repeated EVMChainConfig configs = 1;
+}
+
 message EthereumContractConfig {
   // Address of the contract for this EVM compatible network. The address should start with "0x".
   string address = 1;

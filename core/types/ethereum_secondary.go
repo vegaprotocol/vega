@@ -16,6 +16,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -32,7 +33,11 @@ type EVMChainConfig struct {
 	blockTime        time.Duration
 }
 
-func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfig, error) {
+type EVMChainConfigs struct {
+	Configs []*EVMChainConfig
+}
+
+func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfigs, error) {
 	cfg, err := toEVMChainConfigProto(v)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't convert untyped proto to EVMChainConfig proto: %w", err)
@@ -46,33 +51,38 @@ func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfig, error) {
 	return ethConfig, nil
 }
 
-func SecondaryConfigFromProto(cfgProto *proto.EVMChainConfig) (*EVMChainConfig, error) {
-	if err := CheckEVMChainConfig(cfgProto); err != nil {
-		return nil, fmt.Errorf("invalid EVM chain configuration: %w", err)
+func SecondaryConfigFromProto(cfgsProto *proto.EVMChainConfigs) (*EVMChainConfigs, error) {
+	if err := CheckEVMChainConfig(cfgsProto); err != nil {
+		return nil, fmt.Errorf("invalid EVM chain configurations: %w", err)
 	}
 
-	cfg := &EVMChainConfig{
-		chainID:       cfgProto.ChainId,
-		networkID:     cfgProto.NetworkId,
-		confirmations: uint64(cfgProto.Confirmations),
-		collateralBridge: EthereumContract{
-			address: cfgProto.CollateralBridgeContract.Address,
-		},
-		multiSigControl: EthereumContract{
-			address:               cfgProto.MultisigControlContract.Address,
-			deploymentBlockHeight: cfgProto.MultisigControlContract.DeploymentBlockHeight,
-		},
-	}
+	cfgs := &EVMChainConfigs{}
+	for _, cfgProto := range cfgsProto.Configs {
 
-	if len(cfgProto.BlockTime) != 0 {
-		bl, err := time.ParseDuration(cfgProto.BlockTime)
-		if err != nil {
-			return nil, fmt.Errorf("invalid EVM chain configuration, block_length: %w", err)
+		cfg := &EVMChainConfig{
+			chainID:       cfgProto.ChainId,
+			networkID:     cfgProto.NetworkId,
+			confirmations: uint64(cfgProto.Confirmations),
+			collateralBridge: EthereumContract{
+				address: cfgProto.CollateralBridgeContract.Address,
+			},
+			multiSigControl: EthereumContract{
+				address:               cfgProto.MultisigControlContract.Address,
+				deploymentBlockHeight: cfgProto.MultisigControlContract.DeploymentBlockHeight,
+			},
 		}
-		cfg.blockTime = bl
+		if len(cfgProto.BlockTime) != 0 {
+			bl, err := time.ParseDuration(cfgProto.BlockTime)
+			if err != nil {
+				return nil, fmt.Errorf("invalid EVM chain configuration, block_length: %w", err)
+			}
+			cfg.blockTime = bl
+		}
+
+		cfgs.Configs = append(cfgs.Configs, cfg)
 	}
 
-	return cfg, nil
+	return cfgs, nil
 }
 
 func (c *EVMChainConfig) BlockTime() time.Duration {
@@ -111,44 +121,50 @@ func CheckUntypedEVMChainConfig(v interface{}, _ interface{}) error {
 }
 
 // CheckEVMChainConfig verifies the proto.EVMChainConfig is valid.
-func CheckEVMChainConfig(cfgProto *proto.EVMChainConfig) error {
-	if len(cfgProto.NetworkId) == 0 {
-		return ErrMissingNetworkID
+func CheckEVMChainConfig(cfgs *proto.EVMChainConfigs) error {
+	if len(cfgs.Configs) <= 0 {
+		return errors.New("missing EVM configurations")
 	}
 
-	if len(cfgProto.ChainId) == 0 {
-		return ErrMissingChainID
-	}
+	for _, cfgProto := range cfgs.Configs {
+		if len(cfgProto.NetworkId) == 0 {
+			return ErrMissingNetworkID
+		}
 
-	if cfgProto.Confirmations == 0 {
-		return ErrConfirmationsMustBeHigherThan0
-	}
+		if len(cfgProto.ChainId) == 0 {
+			return ErrMissingChainID
+		}
 
-	noMultiSigControlSetUp := cfgProto.MultisigControlContract == nil || len(cfgProto.MultisigControlContract.Address) == 0
-	if noMultiSigControlSetUp {
-		return ErrMissingMultiSigControlAddress
-	}
+		if cfgProto.Confirmations == 0 {
+			return ErrConfirmationsMustBeHigherThan0
+		}
 
-	noCollateralBridgeSetUp := cfgProto.CollateralBridgeContract == nil || len(cfgProto.CollateralBridgeContract.Address) == 0
-	if noCollateralBridgeSetUp {
-		return ErrMissingCollateralBridgeAddress
-	}
-	if cfgProto.CollateralBridgeContract.DeploymentBlockHeight != 0 {
-		return ErrUnsupportedCollateralBridgeDeploymentBlockHeight
-	}
+		noMultiSigControlSetUp := cfgProto.MultisigControlContract == nil || len(cfgProto.MultisigControlContract.Address) == 0
+		if noMultiSigControlSetUp {
+			return ErrMissingMultiSigControlAddress
+		}
 
-	if len(cfgProto.BlockTime) != 0 {
-		_, err := time.ParseDuration(cfgProto.BlockTime)
-		if err != nil {
-			return ErrInvalidBlockLengthDuration
+		noCollateralBridgeSetUp := cfgProto.CollateralBridgeContract == nil || len(cfgProto.CollateralBridgeContract.Address) == 0
+		if noCollateralBridgeSetUp {
+			return ErrMissingCollateralBridgeAddress
+		}
+		if cfgProto.CollateralBridgeContract.DeploymentBlockHeight != 0 {
+			return ErrUnsupportedCollateralBridgeDeploymentBlockHeight
+		}
+
+		if len(cfgProto.BlockTime) != 0 {
+			_, err := time.ParseDuration(cfgProto.BlockTime)
+			if err != nil {
+				return ErrInvalidBlockLengthDuration
+			}
 		}
 	}
 
 	return nil
 }
 
-func toEVMChainConfigProto(v interface{}) (*proto.EVMChainConfig, error) {
-	cfg, ok := v.(*proto.EVMChainConfig)
+func toEVMChainConfigProto(v interface{}) (*proto.EVMChainConfigs, error) {
+	cfg, ok := v.(*proto.EVMChainConfigs)
 	if !ok {
 		return nil, fmt.Errorf("type %q is not a EVMChainConfig proto", vgreflect.TypeName(v))
 	}
