@@ -121,8 +121,6 @@ Feature: Spot market fees distribution
       | party1 | BTC/ETH   | buy  | 100    | 1745  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | party2 | BTC/ETH   | sell | 100    | 1745  | 0                | TYPE_LIMIT | TIF_GTC |           |
 
-    # Then the network moves ahead "1" blocks
-
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                    | auction trigger       |
       | 1800       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
@@ -132,10 +130,12 @@ Feature: Spot market fees distribution
       | mark price | trading mode            | auction trigger             |
       | 1745       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
+    #The LP fees and infrastructure fees are split between the two parties for the trade during monitoring auction
     And the following transfers should happen:
       | from   | to     | from account                | to account                       | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | 27     | ETH   |
       | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | 27     | ETH   |
+      | party1 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | 22     | ETH   |
       | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | 22     | ETH   |
       | market | lp     | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES   | BTC/ETH   | 44     | ETH   |
 
