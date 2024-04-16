@@ -849,6 +849,8 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
 
+	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
+
 	e.propagateSLANetParams(ctx, mkt, isRestore)
 	return nil
 }

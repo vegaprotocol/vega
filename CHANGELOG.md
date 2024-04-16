@@ -60,6 +60,7 @@
 - [11089](https://github.com/vegaprotocol/vega/issues/11089) - Add tests for proto `enums` persisted to database.
 - [11105](https://github.com/vegaprotocol/vega/issues/11105) - Include all paid fees in reward cap.
 - [1109](https://github.com/vegaprotocol/core-test-coverage/issues/1109) - Correctly label acceptance coverage for `0042-LIQF-091`.
+- [11130](https://github.com/vegaprotocol/vega/issues/11130) - Add missing initialisation for max stop orders in spots. 
 
 ## 0.75.0
 
