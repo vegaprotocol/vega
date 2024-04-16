@@ -86,7 +86,7 @@ Feature: Spot market fees distribution
       | party2 | BTC/ETH   | sell | 100    | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell-party2 |
 
     Then the network moves ahead "1" blocks
-
+    #lp fee: 2000*100*0.025=50
     And the following transfers should happen:
       | from   | to     | from account                | to account                       | market id | amount | asset |
       | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_MAKER          | BTC/ETH   | 20     | ETH   |
@@ -131,6 +131,7 @@ Feature: Spot market fees distribution
       | 1745       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
     #The LP fees and infrastructure fees are split between the two parties for the trade during monitoring auction
+    #lp fee: 1745*1*0.025 = 44
     And the following transfers should happen:
       | from   | to     | from account                | to account                       | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | 27     | ETH   |
@@ -138,6 +139,35 @@ Feature: Spot market fees distribution
       | party1 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | 22     | ETH   |
       | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | 22     | ETH   |
       | market | lp     | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES   | BTC/ETH   | 44     | ETH   |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | party1 | BTC/ETH   | buy  | 100    | 1780  | 0                | TYPE_LIMIT  | TIF_GTC |           |
+      | party1 | BTC/ETH   | buy  | 23     | 1780  | 0                | TYPE_LIMIT  | TIF_GTC |           |
+      | party2 | BTC/ETH   | sell | 123    | 1780  | 2                | TYPE_MARKET | TIF_IOC |           |
+
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1780  | 100  | party2 |
+      | party1 | 1780  | 23   | party2 |
+
+    Then the network moves ahead "2" blocks
+
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger             |
+      | 1780       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+
+    #0029-FEES-021: market order fee distribution in spot market
+    #liquidity fee: 1780*1.23*0.025=55
+    And the following transfers should happen:
+      | from   | to     | from account                | to account                       | market id | amount | asset |
+      | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_MAKER          | BTC/ETH   | 5      | ETH   |
+      | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | 13     | ETH   |
+      | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | 11     | ETH   |
+      | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | 45     | ETH   |
+      | market | party1 | ACCOUNT_TYPE_FEES_MAKER     | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | 5      | ETH   |
+      | market | lp     | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES   | BTC/ETH   | 56     | ETH   |
+
 
 
 
