@@ -158,7 +158,7 @@ Feature: Spot market fees distribution
       | 1780       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
     #0029-FEES-021: market order fee distribution in spot market
-    #liquidity fee: 1780*1.23*0.025=55
+    #liquidity fee: 1780*0.23*0.025=11; 1780*1*0.025=45
     And the following transfers should happen:
       | from   | to     | from account                | to account                       | market id | amount | asset |
       | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_MAKER          | BTC/ETH   | 5      | ETH   |
