@@ -25,6 +25,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -47,17 +48,52 @@ const (
 )
 
 type NodeValidation struct {
-	log              *logging.Logger
-	assets           Assets
-	currentTimestamp time.Time
-	nodeProposals    []*nodeProposal
-	witness          Witness
+	log                *logging.Logger
+	assets             Assets
+	currentTimestamp   time.Time
+	nodeProposals      []*nodeProposal
+	nodeBatchProposals []*nodeBatchProposal
+	witness            Witness
 }
 
 type nodeProposal struct {
 	*proposal
 	state   atomic.Uint32
 	checker func() error
+}
+
+type nodeBatchProposal struct {
+	*batchProposal
+	nodeProposals []*nodeProposal
+	state         atomic.Uint32
+}
+
+func (n *nodeBatchProposal) UpdateState() {
+	pending, failed := 0, 0
+
+	for _, v := range n.nodeProposals {
+		switch v.state.Load() {
+		case okProposal:
+			continue
+		case pendingValidationProposal:
+			pending++
+		case rejectedProposal:
+			failed++
+		}
+	}
+
+	// nothing to do
+	if pending > 0 {
+		return
+	}
+
+	// if at least 1 failure and no pending, then the whole batch is failed.
+	if failed > 0 {
+		n.state.Store(rejectedProposal)
+		return
+	}
+
+	n.state.Store(okProposal)
 }
 
 func (n *nodeProposal) GetID() string {
@@ -93,11 +129,12 @@ func NewNodeValidation(
 	witness Witness,
 ) *NodeValidation {
 	return &NodeValidation{
-		log:              log,
-		nodeProposals:    []*nodeProposal{},
-		assets:           assets,
-		currentTimestamp: now,
-		witness:          witness,
+		log:                log,
+		nodeProposals:      []*nodeProposal{},
+		nodeBatchProposals: []*nodeBatchProposal{},
+		assets:             assets,
+		currentTimestamp:   now,
+		witness:            witness,
 	}
 }
 
@@ -144,6 +181,15 @@ func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
 	return nil, false
 }
 
+func (n *NodeValidation) getBatchProposal(id string) (*nodeBatchProposal, bool) {
+	for _, v := range n.nodeBatchProposals {
+		if v.ID == id {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
 func (n *NodeValidation) getProposals() []*nodeProposal {
 	return n.nodeProposals
 }
@@ -154,6 +200,17 @@ func (n *NodeValidation) removeProposal(id string) {
 			copy(n.nodeProposals[i:], n.nodeProposals[i+1:])
 			n.nodeProposals[len(n.nodeProposals)-1] = nil
 			n.nodeProposals = n.nodeProposals[:len(n.nodeProposals)-1]
+			return
+		}
+	}
+}
+
+func (n *NodeValidation) removeBatchProposal(id string) {
+	for i, p := range n.nodeBatchProposals {
+		if p.ID == id {
+			copy(n.nodeBatchProposals[i:], n.nodeBatchProposals[i+1:])
+			n.nodeBatchProposals[len(n.nodeBatchProposals)-1] = nil
+			n.nodeBatchProposals = n.nodeBatchProposals[:len(n.nodeBatchProposals)-1]
 			return
 		}
 	}
@@ -188,6 +245,37 @@ func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*
 	return accepted, rejected
 }
 
+// OnTickBatch returns validated proposal by all nodes.
+func (n *NodeValidation) OnTickBatch(t time.Time) (accepted []*batchProposal, rejected []*batchProposal) { //revive:disable:unexported-return
+	n.currentTimestamp = t
+
+	toRemove := []string{} // id of proposals to remove
+
+	// check that any proposal is ready
+	for _, prop := range n.nodeBatchProposals {
+		// update the top level batch proposal
+		prop.UpdateState()
+		// this proposal has passed the node-voting period, or all nodes have voted/approved
+		// time expired, or all vote aggregated, and own vote sent
+		switch prop.state.Load() {
+		case pendingValidationProposal:
+			continue
+		case okProposal:
+			accepted = append(accepted, prop.batchProposal)
+		case rejectedProposal:
+			rejected = append(rejected, prop.batchProposal)
+		}
+		toRemove = append(toRemove, prop.ID)
+	}
+
+	// now we iterate over all proposal ids to remove them from the list
+	for _, id := range toRemove {
+		n.removeBatchProposal(id)
+	}
+
+	return accepted, rejected
+}
+
 // IsNodeValidationRequired returns true if the given proposal require validation from a node.
 func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	switch p.Terms.Change.(type) {
@@ -196,6 +284,83 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	default:
 		return false
 	}
+}
+
+func (n *NodeValidation) IsNodeValidationRequiredBatch(p *types.BatchProposal) (is bool) {
+	for _, v := range p.Proposals {
+		is = is || n.IsNodeValidationRequired(v)
+	}
+
+	return is
+}
+
+// Start the node validation of a proposal.
+func (n *NodeValidation) StartBatch(ctx context.Context, p *types.BatchProposal) error {
+	if !n.IsNodeValidationRequiredBatch(p) {
+		n.log.Error("no node validation required", logging.String("ref", p.ID))
+		return ErrNoNodeValidationRequired
+	}
+
+	if _, ok := n.getBatchProposal(p.ID); ok {
+		return ErrProposalReferenceDuplicate
+	}
+
+	if err := n.checkBatchProposal(p); err != nil {
+		return err
+	}
+
+	nodeProposals := []*nodeProposal{}
+	for _, v := range p.Proposals {
+		if !n.IsNodeValidationRequired(v) {
+			// nothing to do here
+			continue
+		}
+		checker, err := n.getChecker(ctx, v)
+		if err != nil {
+			return err
+		}
+
+		np := &nodeProposal{
+			proposal: &proposal{
+				Proposal:     v,
+				yes:          map[string]*types.Vote{},
+				no:           map[string]*types.Vote{},
+				invalidVotes: map[string]*types.Vote{},
+			},
+			state:   atomic.Uint32{},
+			checker: checker,
+		}
+
+		np.state.Store(pendingValidationProposal)
+		nodeProposals = append(nodeProposals, np)
+	}
+
+	nbp := &nodeBatchProposal{
+		batchProposal: &batchProposal{
+			BatchProposal: p,
+			yes:           map[string]*types.Vote{},
+			no:            map[string]*types.Vote{},
+			invalidVotes:  map[string]*types.Vote{},
+		},
+		nodeProposals: nodeProposals,
+		state:         atomic.Uint32{},
+	}
+	nbp.state.Store(pendingValidationProposal)
+	n.nodeBatchProposals = append(n.nodeBatchProposals, nbp)
+
+	errs := vgerrors.NewCumulatedErrors()
+	for _, v := range nbp.nodeProposals {
+		err := n.witness.StartCheck(v, n.onResChecked, time.Unix(v.Terms.ValidationTimestamp, 0))
+		if err != nil {
+			errs.Add(err)
+		}
+	}
+
+	if errs.HasAny() {
+		return errs
+	}
+
+	return nil
 }
 
 // Start the node validation of a proposal.
@@ -294,5 +459,15 @@ func (n *NodeValidation) checkProposal(prop *types.Proposal) error {
 	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
 		return ErrProposalValidationTimestampOutsideRange
 	}
+	return nil
+}
+
+func (n *NodeValidation) checkBatchProposal(prop *types.BatchProposal) error {
+	for _, v := range prop.Proposals {
+		if err := n.checkProposal(v); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

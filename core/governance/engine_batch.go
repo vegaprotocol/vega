@@ -72,9 +72,10 @@ func (e *Engine) SubmitBatchProposal(
 			Reference: bp.Reference,
 			Rationale: bp.Rationale,
 			Terms: &types.ProposalTerms{
-				ClosingTimestamp:   bp.ClosingTimestamp,
-				EnactmentTimestamp: change.EnactmentTime,
-				Change:             change.Change,
+				ClosingTimestamp:    bp.ClosingTimestamp,
+				EnactmentTimestamp:  change.EnactmentTime,
+				ValidationTimestamp: change.ValidationTime,
+				Change:              change.Change,
 			},
 		}
 
@@ -121,9 +122,36 @@ func (e *Engine) SubmitBatchProposal(
 		return nil, errs
 	}
 
-	e.startBatchProposal(bp)
+	if e.isTwoStepsBatchProposal(bp) {
+		// set all proposals as WaitForNodeVote then
+		bp.WaitForNodeVote()
+		// reset events here as we will need to send another updated one instead
+		proposalsEvents = []events.Event{}
+		for _, p := range bp.Proposals {
+			proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *p))
+		}
+
+		if err := e.startTwoStepsBatchProposal(ctx, bp); err != nil {
+			bp.RejectWithErr(types.ProposalErrorNodeValidationFailed, err)
+			proposalsEvents = []events.Event{}
+			for _, p := range bp.Proposals {
+				proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *p))
+			}
+			if e.log.IsDebug() {
+				e.log.Debug("Proposal rejected",
+					logging.String("batch-proposal-id", bp.ID))
+			}
+			return nil, err
+		}
+	} else {
+		e.startBatchProposal(bp)
+	}
 
 	return toSubmits, nil
+}
+
+func (e *Engine) isTwoStepsBatchProposal(p *types.BatchProposal) bool {
+	return e.nodeProposalValidation.IsNodeValidationRequiredBatch(p)
 }
 
 func (e *Engine) RejectBatchProposal(
@@ -262,7 +290,16 @@ func (e *Engine) evaluateBatchProposals(
 
 func (e *Engine) getBatchProposal(id string) (*batchProposal, bool) {
 	bp, ok := e.activeBatchProposals[id]
-	return bp, ok
+	if ok {
+		return bp, ok
+	}
+
+	nbp, ok := e.nodeProposalValidation.getBatchProposal(id)
+	if !ok {
+		return nil, false
+	}
+
+	return nbp.batchProposal, ok
 }
 
 func (e *Engine) validateProposalFromBatch(

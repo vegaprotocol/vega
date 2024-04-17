@@ -406,6 +406,44 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		}
 	}
 
+	// then do the same thing for batches
+	acceptedBatches, rejectedBatches := e.nodeProposalValidation.OnTickBatch(t)
+	for _, p := range acceptedBatches {
+		e.log.Info("proposal has been validated by nodes, starting now",
+			logging.String("proposal-id", p.ID))
+		p.Open()
+
+		e.broker.Send(events.NewProposalEventFromProto(ctx, p.ToProto()))
+		proposalsEvents := []events.Event{}
+		for _, v := range p.Proposals {
+			proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *v))
+		}
+		e.broker.SendBatch(proposalsEvents)
+
+		e.startValidatedBatchProposal(p) // can't fail, and proposal has been validated at an ulterior time
+	}
+
+	for _, p := range rejectedBatches {
+		e.log.Info("proposal has not been validated by nodes",
+			logging.String("proposal-id", p.ID))
+		p.Reject(types.ProposalErrorNodeValidationFailed)
+		e.broker.Send(events.NewProposalEventFromProto(ctx, p.ToProto()))
+		proposalsEvents := []events.Event{}
+		for _, v := range p.Proposals {
+			proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *v))
+		}
+		e.broker.SendBatch(proposalsEvents)
+
+		for _, v := range p.Proposals {
+			// if it's an asset proposal we need to update it's
+			// state in the asset engine
+			switch v.Terms.Change.GetTermType() {
+			case types.ProposalTermsTypeNewAsset:
+				e.assets.SetRejected(ctx, p.ID)
+			}
+		}
+	}
+
 	toBeEnacted := []*ToEnact{}
 	for i, ep := range preparedToEnact {
 		// this is the new market proposal, and should already be in the slice
@@ -645,8 +683,16 @@ func (e *Engine) startValidatedProposal(p *proposal) {
 	e.activeProposals = append(e.activeProposals, p)
 }
 
+func (e *Engine) startValidatedBatchProposal(p *batchProposal) {
+	e.activeBatchProposals[p.ID] = p
+}
+
 func (e *Engine) startTwoStepsProposal(ctx context.Context, p *types.Proposal) error {
 	return e.nodeProposalValidation.Start(ctx, p)
+}
+
+func (e *Engine) startTwoStepsBatchProposal(ctx context.Context, p *types.BatchProposal) error {
+	return e.nodeProposalValidation.StartBatch(ctx, p)
 }
 
 func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {

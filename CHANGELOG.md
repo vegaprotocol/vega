@@ -29,8 +29,10 @@
 - [11121](https://github.com/vegaprotocol/vega/issues/11121) - Remove auction trigger staleness functionality
 - [11127](https://github.com/vegaprotocol/vega/issues/11127) - Price monitoring engine should record all observations with the same weight
 - [10995](https://github.com/vegaprotocol/vega/issues/10995) - Liquidation range defined by its own parameter.
-- [11167](https://github.com/vegaprotocol/vega/issues/11167) - Add realised return reward metric. 
+- [11167](https://github.com/vegaprotocol/vega/issues/11167) - Add realised return reward metric.
+- [11165] (https://github.com/vegaprotocol/vega/issues/11165) - Include negative returns in relative returns reward metric.
 - [11151](https://github.com/vegaprotocol/vega/issues/11151) - Remove name field from the spot markets.
+- [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
 
 ### 🐛 Fixes
 
