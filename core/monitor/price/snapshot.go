@@ -71,10 +71,10 @@ func NewMonitorFromSnapshot(
 	return e, nil
 }
 
-func pricesNowToInternal(cps []*num.Uint) []*num.Uint {
+func pricesNowToInternal(cps []*types.CurrentPrice) []*num.Uint {
 	cpsi := make([]*num.Uint, 0, len(cps))
 	for _, cp := range cps {
-		cpsi = append(cpsi, cp.Clone())
+		cpsi = append(cpsi, cp.Price.Clone())
 	}
 	return cpsi
 }
@@ -84,7 +84,7 @@ func pricesPastToInternal(pps []*types.PastPrice) []pastPrice {
 	for _, pp := range pps {
 		ppsi = append(ppsi, pastPrice{
 			Time:         pp.Time,
-			AveragePrice: pp.AveragePrice,
+			AveragePrice: pp.VolumeWeightedPrice,
 		})
 	}
 	return ppsi
@@ -191,14 +191,21 @@ func (e *Engine) Changed() bool {
 	return e.stateChanged
 }
 
-func (e *Engine) serialisePricesNow() []*num.Uint {
-	psn := make([]*num.Uint, 0, len(e.pricesNow))
+func (e *Engine) serialisePricesNow() []*types.CurrentPrice {
+	psn := make([]*types.CurrentPrice, 0, len(e.pricesNow))
 	for _, pn := range e.pricesNow {
-		psn = append(psn, pn.Clone())
+		psn = append(psn, &types.CurrentPrice{
+			Price:  pn.Clone(),
+			Volume: 1,
+		})
 	}
 
 	sort.Slice(psn, func(i, j int) bool {
-		return psn[i].LT(psn[j])
+		if psn[i].Price.EQ(psn[j].Price) {
+			return psn[i].Volume < psn[j].Volume
+		}
+
+		return psn[i].Price.LT(psn[j].Price)
 	})
 
 	return psn
@@ -208,14 +215,14 @@ func (e *Engine) serialisePricesPast() []*types.PastPrice {
 	pps := make([]*types.PastPrice, 0, len(e.pricesPast))
 	for _, pp := range e.pricesPast {
 		pps = append(pps, &types.PastPrice{
-			Time:         pp.Time,
-			AveragePrice: pp.AveragePrice,
+			Time:                pp.Time,
+			VolumeWeightedPrice: pp.AveragePrice,
 		})
 	}
 
 	sort.Slice(pps, func(i, j int) bool {
 		if pps[i].Time.Equal(pps[j].Time) {
-			return pps[j].AveragePrice.GreaterThan(pps[i].AveragePrice)
+			return pps[j].VolumeWeightedPrice.GreaterThan(pps[i].VolumeWeightedPrice)
 		}
 
 		return pps[i].Time.Before(pps[j].Time)

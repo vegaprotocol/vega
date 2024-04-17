@@ -442,16 +442,21 @@ type PriceMonitor struct {
 	Bounds                      []*PriceBound
 	PriceRangeCache             []*PriceRangeCache
 	PriceRangeCacheTime         time.Time
-	PricesNow                   []*num.Uint
+	PricesNow                   []*CurrentPrice
 	PricesPast                  []*PastPrice
 	RefPriceCache               []*KeyDecimalPair
 	RefPriceCacheTime           time.Time
 	PriceBoundsConsensusReached bool
 }
 
+type CurrentPrice struct {
+	Price  *num.Uint
+	Volume uint64
+}
+
 type PastPrice struct {
-	Time         time.Time
-	AveragePrice num.Decimal
+	Time                time.Time
+	VolumeWeightedPrice num.Decimal
 }
 
 type PriceBound struct {
@@ -2737,23 +2742,33 @@ func (p PriceRangeCache) IntoProto() *snapshot.PriceRangeCache {
 	}
 }
 
-func CurrentPriceFromProto(scp string) *num.Uint {
-	price, _ := num.UintFromString(scp, 10)
-	return price
+func CurrentPriceFromProto(scp *snapshot.CurrentPrice) *CurrentPrice {
+	price, _ := num.UintFromString(scp.Price, 10)
+	return &CurrentPrice{
+		Price:  price,
+		Volume: scp.Volume,
+	}
+}
+
+func (cp CurrentPrice) IntoProto() *snapshot.CurrentPrice {
+	return &snapshot.CurrentPrice{
+		Price:  cp.Price.String(),
+		Volume: cp.Volume,
+	}
 }
 
 func PastPriceFromProto(spp *snapshot.PastPrice) *PastPrice {
-	vwp, _ := num.DecimalFromString(spp.AveragePrice)
+	vwp, _ := num.DecimalFromString(spp.VolumeWeightedPrice)
 	return &PastPrice{
-		Time:         time.Unix(0, spp.Time).UTC(),
-		AveragePrice: vwp,
+		Time:                time.Unix(0, spp.Time).UTC(),
+		VolumeWeightedPrice: vwp,
 	}
 }
 
 func (pp PastPrice) IntoProto() *snapshot.PastPrice {
 	return &snapshot.PastPrice{
-		Time:         pp.Time.UnixNano(),
-		AveragePrice: pp.AveragePrice.String(),
+		Time:                pp.Time.UnixNano(),
+		VolumeWeightedPrice: pp.VolumeWeightedPrice.String(),
 	}
 }
 
@@ -2766,7 +2781,7 @@ func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 		Bounds:                      make([]*PriceBound, 0, len(pm.Bounds)),
 		PriceRangeCacheTime:         time.Unix(0, pm.PriceRangeCacheTime).UTC(),
 		PriceRangeCache:             make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
-		PricesNow:                   make([]*num.Uint, 0, len(pm.PricesNow)),
+		PricesNow:                   make([]*CurrentPrice, 0, len(pm.PricesNow)),
 		PricesPast:                  make([]*PastPrice, 0, len(pm.PricesPast)),
 		RefPriceCacheTime:           time.Unix(0, pm.RefPriceCacheTime).UTC(),
 		RefPriceCache:               make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
@@ -2802,7 +2817,7 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 		Bounds:              make([]*snapshot.PriceBound, 0, len(p.Bounds)),
 		PriceRangeCacheTime: p.PriceRangeCacheTime.UnixNano(),
 		PriceRangeCache:     make([]*snapshot.PriceRangeCache, 0, len(p.PriceRangeCache)),
-		PricesNow:           make([]string, 0, len(p.PricesNow)),
+		PricesNow:           make([]*snapshot.CurrentPrice, 0, len(p.PricesNow)),
 		PricesPast:          make([]*snapshot.PastPrice, 0, len(p.PricesPast)),
 		RefPriceCacheTime:   p.RefPriceCacheTime.UnixNano(),
 		RefPriceCache:       make([]*snapshot.DecimalMap, 0, len(p.RefPriceCache)),
@@ -2821,7 +2836,7 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 		ret.PriceRangeCache = append(ret.PriceRangeCache, r.IntoProto())
 	}
 	for _, r := range p.PricesNow {
-		ret.PricesNow = append(ret.PricesNow, r.String())
+		ret.PricesNow = append(ret.PricesNow, r.IntoProto())
 	}
 	for _, r := range p.PricesPast {
 		ret.PricesPast = append(ret.PricesPast, r.IntoProto())
