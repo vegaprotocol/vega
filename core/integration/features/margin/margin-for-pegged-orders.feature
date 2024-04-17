@@ -44,9 +44,9 @@ Feature: Test pegged order amend under isolated margin mode
             | party      | market    | margin_mode     | margin_factor | error |
             | test_party | ETH/FEB23 | isolated margin | 0.91          |       |
         When the parties place the following pegged orders:
-            | party      | market id | side | volume | pegged reference | offset | reference | error              |
-            | test_party | ETH/FEB23 | sell | 10     | ASK              | 9      | sell_peg  | invalid OrderError |
-            | test_party | ETH/FEB23 | buy  | 5      | BID              | 9      | buy_peg   | invalid OrderError |
+            | party      | market id | side | volume | pegged reference | offset | reference | error                                                         |
+            | test_party | ETH/FEB23 | sell | 10     | ASK              | 9      | sell_peg  | OrderError: pegged orders not allowed in isolated margin mode |
+            | test_party | ETH/FEB23 | buy  | 5      | BID              | 9      | buy_peg   | OrderError: pegged orders not allowed in isolated margin mode |
         Then the parties should have the following margin levels:
             | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
             | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.91          | 0     |
@@ -60,9 +60,9 @@ Feature: Test pegged order amend under isolated margin mode
             | party      | market    | margin_mode     | margin_factor | error |
             | test_party | ETH/FEB23 | isolated margin | 0.91          |       |
         When the parties place the following pegged iceberg orders:
-            | party      | market id | peak size | minimum visible size | side | reference    | pegged reference | volume | offset | error              |
-            | test_party | ETH/FEB23 | 100       | 10                   | buy  | buy_ice_peg  | BID              | 100    | 9      | invalid OrderError |
-            | test_party | ETH/FEB23 | 100       | 10                   | sell | sell_ice_peg | ASK              | 100    | 9      | invalid OrderError |
+            | party      | market id | peak size | minimum visible size | side | reference    | pegged reference | volume | offset | error                                                         |
+            | test_party | ETH/FEB23 | 100       | 10                   | buy  | buy_ice_peg  | BID              | 100    | 9      | OrderError: pegged orders not allowed in isolated margin mode |
+            | test_party | ETH/FEB23 | 100       | 10                   | sell | sell_ice_peg | ASK              | 100    | 9      | OrderError: pegged orders not allowed in isolated margin mode |
         Then the parties should have the following margin levels:
             | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
             | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.91          | 0     |

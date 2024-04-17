@@ -108,8 +108,8 @@ Feature: Iceberg orders in isolated margin mode
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference        |
       | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 3         | 1                    | ordinary-iceberg |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset | reference      | error              |
-      | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | BID              | 1      | pegged-iceberg | invalid OrderError |
+      | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset | reference      | error                                                         |
+      | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | BID              | 1      | pegged-iceberg | OrderError: pegged orders not allowed in isolated margin mode |
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | buy  | 5     | 3      |
@@ -1169,11 +1169,11 @@ Feature: Iceberg orders in isolated margin mode
       | party2 | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC19 | sell | 10     | 25    | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset | error              |
-      | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | BID              | 1      | invalid OrderError |
+      | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset | error                                                         |
+      | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | BID              | 1      | OrderError: pegged orders not allowed in isolated margin mode |
     And the parties place the following pegged orders:
-      | party  | market id | side | volume | pegged reference | offset | error              |
-      | party1 | ETH/DEC19 | buy  | 1      | BID              | 2      | invalid OrderError |
+      | party  | market id | side | volume | pegged reference | offset | error                                                         |
+      | party1 | ETH/DEC19 | buy  | 1      | BID              | 2      | OrderError: pegged orders not allowed in isolated margin mode |
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | sell | 12     | 8     | 1                | TYPE_LIMIT | TIF_GTC |

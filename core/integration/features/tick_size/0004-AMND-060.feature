@@ -66,10 +66,10 @@ Feature: Price change amends specifying a new price which is not an integer mult
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
 
     When the parties amend the following orders:
-      | party   | reference | price | size delta | tif     | error              |
-      | trader1 | t1-b-1    | 903  | 0           | TIF_GTC | invalid OrderError |
+      | party   | reference | price | size delta | tif     | error                              |
+      | trader1 | t1-b-1    | 903  | 0           | TIF_GTC | OrderError: price not in tick size |
     And the network moves ahead "1" blocks
 
     Then the orders should have the following states:
       | party | market id   | reference   | side | volume | remaining | price | status        |
-      | trader1 | ETH/DEC19 | t1-b-1      | buy  | 5       | 5         | 902   | STATUS_ACTIVE |
+      | trader1 | ETH/DEC19 | t1-b-1      | buy  | 5      | 5         | 902   | STATUS_ACTIVE |
