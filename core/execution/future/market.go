@@ -1655,7 +1655,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 	if wasOpeningAuction && !m.as.IsOpeningAuction() && m.getCurrentMarkPrice().IsZero() {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
-		m.pMonitor.ResetPriceHistory([]*types.Trade{{Price: m.lastTradedPrice, Size: 1}})
+		m.pMonitor.ResetPriceHistory(m.lastTradedPrice)
 	}
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
@@ -2511,18 +2511,18 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent, false) {
-		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
-	}
-
-	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
-		m.broker.Send(evt)
-	}
-
-	// start the  monitoring auction if required?
-	if m.as.AuctionStart() {
-		m.enterAuction(ctx)
-		return nil, nil
+	for _, t := range trades {
+		if m.pMonitor.CheckPrice(ctx, m.as, t.Price, persistent, false) {
+			return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
+		}
+		if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
+			m.broker.Send(evt)
+		}
+		// start the  monitoring auction if required?
+		if m.as.AuctionStart() {
+			m.enterAuction(ctx)
+			return nil, nil
+		}
 	}
 
 	return trades, nil

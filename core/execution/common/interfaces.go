@@ -49,8 +49,8 @@ type OracleEngine interface {
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
-	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool, recordInHistory bool) bool
-	ResetPriceHistory(trades []*types.Trade)
+	CheckPrice(ctx context.Context, as price.AuctionState, price *num.Uint, persistent bool, recordInHistory bool) bool
+	ResetPriceHistory(price *num.Uint)
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)

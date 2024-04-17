@@ -36,7 +36,7 @@ func TestEmptyParametersList(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
-	currentPrice := []*types.Trade{{Price: num.NewUint(123), Size: 1}}
+	currentPrice := num.NewUint(123)
 
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
@@ -122,8 +122,7 @@ func TestRecordPriceChange(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
-	currentPrice := num.NewUint(123)
-	cp := []*types.Trade{{Price: currentPrice, Size: 1}}
+	cp := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: "0.99", AuctionExtension: 60}
@@ -148,8 +147,8 @@ func TestRecordPriceChange(t *testing.T) {
 	b := pm.CheckPrice(context.TODO(), auctionStateMock, cp, true, true)
 	require.False(t, b)
 	one := num.NewUint(1)
-	cp1 := []*types.Trade{{Price: num.Sum(currentPrice, one), Size: 1}}      // plus 1
-	cp2 := []*types.Trade{{Price: num.Sum(currentPrice, one, one), Size: 1}} // plus 2
+	cp1 := num.Sum(cp, one)      // plus 1
+	cp2 := num.Sum(cp, one, one) // plus 2
 	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp2, true, true)
 	require.False(t, b)
 	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp1, true, true)
@@ -163,8 +162,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
-	currentPrice := num.NewUint(123)
-	cp := []*types.Trade{{Price: currentPrice, Size: 1}}
+	cp := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1Time, t2Time := int64(60), int64(300)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: "0.99", AuctionExtension: t1Time}
@@ -178,7 +176,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 
 	maxDown1, maxUp1, maxDown2, maxUp2 := num.NewUint(1), num.NewUint(2), num.NewUint(3), num.NewUint(4)
 
-	cpDec := num.DecimalFromUint(currentPrice)
+	cpDec := num.DecimalFromUint(cp)
 	// get the price bounds
 	pMin1 := cpDec.Sub(num.DecimalFromUint(maxDown1))
 	pMin2 := cpDec.Sub(num.DecimalFromUint(maxDown2))
@@ -205,24 +203,21 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	b := pm.CheckPrice(context.TODO(), auctionStateMock, cp, true, true)
 	require.False(t, b)
 
-	cPrice := num.Sum(currentPrice, maxUp1)
+	cPrice := num.Sum(cp, maxUp1)
 	cPrice = cPrice.Sub(cPrice, one)
-	cp1 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp1, true, true)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
-	cPrice = num.Sum(currentPrice, one)
+	cPrice = num.Sum(cp, one)
 	cPrice = cPrice.Sub(cPrice, maxDown1)
-	cp2 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp2, true, true)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp2, true, true)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
-	cPrice = num.Sum(one, cPrice.Sub(currentPrice, maxDown1)) // add one bc price bounds are now using Ceil for min price
-	cp3 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp3, true, true)
+	cPrice = num.Sum(one, cPrice.Sub(cp, maxDown1)) // add one bc price bounds are now using Ceil for min price
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// set the min duration to equal auction extension 1
@@ -231,9 +226,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 
 	delta := num.Sum(maxUp1, maxUp2)
-	cPrice = num.Sum(currentPrice, delta.Div(delta, num.Sum(one, one)))
-	cp4 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp4, true, true)
+	cPrice = num.Sum(cp, delta.Div(delta, num.Sum(one, one)))
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// Reinstantiate price monitoring after auction to reset internal state
@@ -248,9 +242,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 	delta = num.Sum(maxDown1, maxDown2)
-	cPrice = cPrice.Sub(currentPrice, delta.Div(delta, num.Sum(one, one)))
-	cp5 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp5, true, true)
+	cPrice = cPrice.Sub(cp, delta.Div(delta, num.Sum(one, one)))
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// Reinstantiate price monitoring after auction to reset internal state
@@ -264,9 +257,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.False(t, b)
 
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
-	cPrice = num.Sum(currentPrice, num.UintZero().Sub(maxUp2, one)) // max price bound is now floored, so sub 1 to stay below second price bound
-	cp6 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp6, true, true)
+	cPrice = num.Sum(cp, num.UintZero().Sub(maxUp2, one)) // max price bound is now floored, so sub 1 to stay below second price bound
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// Reinstantiate price monitoring after auction to reset internal state
@@ -280,9 +272,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.False(t, b)
 
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
-	cPrice = num.Sum(cPrice.Sub(currentPrice, maxDown2), one) // add 1 back, avoid breaching both down limits
-	cp7 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp7, true, true)
+	cPrice = num.Sum(cPrice.Sub(cp, maxDown2), one) // add 1 back, avoid breaching both down limits
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// Reinstantiate price monitoring after auction to reset internal state
@@ -296,50 +287,45 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 
 	end = types.AuctionDuration{Duration: t1.AuctionExtension}
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
-	cPrice = num.Sum(currentPrice, maxUp2, maxUp2)
-	cp8 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp8, true, true)
+	cPrice = num.Sum(cp, maxUp2, maxUp2)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 	// recheck with same price, 2nd trigger should get breached now
 	end2 := types.AuctionDuration{Duration: t2.AuctionExtension}
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().ExtendAuctionPrice(end2).Times(1)
 
 	auctionEnd := now.Add(time.Duration(end.Duration) * time.Second)
 	now = auctionEnd.Add(time.Second)
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp8, true, true)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// recheck with same price, auction should end now
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 	auctionEnd = auctionEnd.Add(time.Duration(end2.Duration) * time.Second)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&auctionEnd)
 	now = auctionEnd.Add(time.Second)
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp8, true, true)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// Check with same price again after exiting, should not start auction now
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(3)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp8, true, true)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	// Update factors and check again, should still be fine
 	pm.UpdateTestFactors(downFactors, upFactors)
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp8, true, true)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 	delta = num.Sum(maxDown2, maxDown2)
-	cPrice = cPrice.Sub(currentPrice, delta)
-	cp9 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp9, true, true)
+	cPrice = cPrice.Sub(cp, delta)
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 }
 
@@ -349,7 +335,6 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	price1 := num.NewUint(123)
-	cp := []*types.Trade{{Price: price1, Size: 1}}
 	ctx := context.Background()
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
@@ -382,7 +367,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactorsP1, upFactorsP1)
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, price1, true, true)
 	require.False(t, b)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
@@ -391,22 +376,19 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 
 	delta := num.Sum().Sub(maxUp2, maxUp1)
 	cPrice := num.Sum(price1, delta)
-	cp1 := []*types.Trade{{Price: cPrice, Size: 1}}
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp1, true, true) // t1 violated only
+	b = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, true, true) // t1 violated only
 	require.False(t, b)
 
 	initialAuctionEnd := now.Add(time.Duration(t1.AuctionExtension) * time.Second)
 
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
 	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
 	pm.OnTimeUpdate(afterInitialAuction)
-	b = pm.CheckPrice(ctx, auctionStateMock, cp1, true, true) // price should be accepted now
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true) // price should be accepted now
 	require.False(t, b)
 }
 
@@ -415,7 +397,6 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	price1 := num.NewUint(123)
-	cp1 := []*types.Trade{{Price: price1, Size: 1}}
 	ctx := context.Background()
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
@@ -440,7 +421,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	require.NotNil(t, pm)
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp1, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, price1, true, true)
 	require.False(t, b)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension + t2.AuctionExtension}
@@ -448,25 +429,19 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	// auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 
 	cPrice := num.Sum(price1, maxUp2, maxUp1)
-	cp2 := []*types.Trade{{Price: cPrice, Size: 1}}
-	// decPrice, pMin1, pMax1, _, _ := getPriceBounds(cPrice, 1, 2)
-	// _, pMin2, pMax2, _, _ = getPriceBounds(cPrice, 1*4, 2*4)
-
-	b = pm.CheckPrice(ctx, auctionStateMock, cp2, true, true) // t1 violated only
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true) // t1 violated only
 	require.False(t, b)
 
 	initialAuctionEnd := now.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
 	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
 	pm.OnTimeUpdate(afterInitialAuction)
-	b = pm.CheckPrice(ctx, auctionStateMock, cp2, true, true) // price should be accepted now
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true) // price should be accepted now
 	require.False(t, b)
 }
 
@@ -477,7 +452,6 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	price1 := num.NewUint(123)
-	cp1 := []*types.Trade{{Price: price1, Size: 1}}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.99", AuctionExtension: 120}
@@ -514,7 +488,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	require.NotNil(t, pm)
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp1, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, price1, true, true)
 	require.False(t, b)
 
 	bounds := pm.GetCurrentBounds()
@@ -534,7 +508,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	cPrice := num.Sum(price1, maxUp2)
 	cPrice.Sub(cPrice, maxUp1)
-	cp2 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp2 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp2, true, true) // t1 violated only
 	require.False(t, b)
 
@@ -542,8 +516,6 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
 
 	bounds = pm.GetCurrentBounds()
@@ -560,7 +532,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	end2 := types.AuctionDuration{Duration: t2.AuctionExtension}
 	auctionStateMock.EXPECT().ExtendAuctionPrice(end2).Times(1)
 	pm.OnTimeUpdate(afterInitialAuction)
-	cp3 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp3 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp3, true, true) // price should violated 2nd trigger and result in auction extension
 	require.False(t, b)
 
@@ -584,7 +556,6 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 
 	afterExtendedAuction := extendedAuctionEnd.Add(time.Nanosecond)
@@ -600,7 +571,6 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	price1 := num.NewUint(123)
-	cp1 := []*types.Trade{{Price: price1, Size: 1}}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 6, Probability: "0.95", AuctionExtension: 60}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 6, Probability: "0.99", AuctionExtension: 120}
@@ -637,7 +607,7 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 	require.NotNil(t, pm)
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp1, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, price1, true, true)
 	require.False(t, b)
 
 	bounds := pm.GetCurrentBounds()
@@ -657,7 +627,7 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 
 	cPrice := num.Sum(price1, maxUp2)
 	cPrice.Sub(cPrice, maxUp1)
-	cp2 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp2 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp2, true, true) // t1 violated only
 	require.False(t, b)
 
@@ -665,7 +635,6 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 
 	bounds = pm.GetCurrentBounds()
 	require.Len(t, bounds, 1)
@@ -681,7 +650,7 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 
 	cPrice = num.Sum(price1, maxUp2, maxUp1)
 	pm.OnTimeUpdate(afterInitialAuction)
-	cp3 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp3 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp3, true, true) // price should violated 2nd trigger and result in auction extension
 	require.False(t, b)
 }
@@ -692,7 +661,6 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	cp := []*types.Trade{{Price: currentPrice, Size: 1}}
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	pSet := &proto.PriceMonitoringSettings{
@@ -706,7 +674,8 @@ func TestMarketInOpeningAuction(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(true).Times(1)
+	end := now.Add(time.Second)
+	auctionStateMock.EXPECT().ExpiresAt().Return(&end).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -715,7 +684,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	require.NotNil(t, pm)
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, currentPrice, true, true)
 	require.False(t, b)
 }
 
@@ -725,7 +694,6 @@ func TestMarketInGenericAuction(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	cp1 := []*types.Trade{{Price: currentPrice, Size: 1}}
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
@@ -741,44 +709,40 @@ func TestMarketInGenericAuction(t *testing.T) {
 	ctx := context.Background()
 
 	// price monitoring starts with auction, not initialised, so there's no fixed price level it'll check
-	auctionStateMock.EXPECT().IsFBA().Return(false).Times(5)
-	auctionStateMock.EXPECT().InAuction().Return(true).Times(5)
-	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(5)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().IsPriceExtension().Return(false).AnyTimes()
+	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
+	auctionStateMock.EXPECT().InAuction().Return(true).Times(4)
 	auctionStateMock.EXPECT().CanLeave().Return(false).AnyTimes()
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
-
+	end := now.Add(time.Second)
+	auctionStateMock.EXPECT().ExpiresAt().Return(&end).AnyTimes()
 	pm, err := price.NewMonitor("asset", "market", riskModel, auctionStateMock, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp1, true, true)
-	require.False(t, b)
+	pm.ResetPriceHistory(currentPrice)
+
 	cPrice := num.Sum(currentPrice, maxUp)
 	cPrice.Sub(cPrice, one)
-	cp2 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(ctx, auctionStateMock, cp2, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	cPrice.Sub(num.Sum(currentPrice, one), maxDown)
-	cp3 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp3 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp3, true, true)
 	require.False(t, b)
 
 	extension := types.AuctionDuration{Duration: t1.AuctionExtension}
-	auctionStateMock.EXPECT().ExtendAuctionPrice(extension).MinTimes(1).MaxTimes(1)
-
+	auctionStateMock.EXPECT().ExtendAuctionPrice(extension).Times(1)
 	cPrice = num.Sum(currentPrice, maxUp, maxUp)
-	cp4 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp4 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp4, true, true)
 	require.False(t, b)
 
 	cPrice = num.Sum(maxDown, maxDown)
 	cPrice.Sub(currentPrice, cPrice)
-	cp5 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp5 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp5, true, true)
 	require.False(t, b)
 }
@@ -789,7 +753,6 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	cp := []*types.Trade{{Price: currentPrice, Size: 1}}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	ctx := context.Background()
 
@@ -814,7 +777,7 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 	require.Equal(t, expMax.String(), max.Representation().String())
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, currentPrice, true, true)
 	require.False(t, b)
 
 	min, max = pm.GetValidPriceRange()
@@ -828,7 +791,6 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	cp := []*types.Trade{{Price: currentPrice, Size: 1}}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	var t1Time int64 = 60
 	var t2Time int64 = 300
@@ -860,81 +822,72 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	pm.UpdateTestFactors(downFactors, upFactors)
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(ctx, auctionStateMock, cp, true, true)
+	b := pm.CheckPrice(ctx, auctionStateMock, currentPrice, true, true)
 	require.False(t, b)
 
 	_, _ = pm.GetValidPriceRange()
 	now = now.Add(time.Second)
 	cPrice := num.Sum(currentPrice, maxUp1)
 	cPrice.Sub(cPrice, one)
-	cp2 := []*types.Trade{{Price: cPrice, Size: 1}}
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(ctx, auctionStateMock, cp2, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	_, _ = pm.GetValidPriceRange()
 	now = now.Add(time.Minute)
 	cPrice = num.Sum(currentPrice, one)
 	cPrice.Sub(cPrice, maxDown1)
-	cp3 := []*types.Trade{{Price: cPrice, Size: 1}}
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(ctx, auctionStateMock, cp3, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	_, _ = pm.GetValidPriceRange()
 	now = now.Add(time.Hour)
 	cPrice = num.Sum(currentPrice, maxUp1)
 	cPrice.Sub(cPrice, one)
-	cp4 := []*types.Trade{{Price: cPrice, Size: 1}}
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(ctx, auctionStateMock, cp4, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	_, _ = pm.GetValidPriceRange()
 	now = now.Add(time.Minute)
 	cPrice.Sub(currentPrice, maxDown1)
 	cPrice.AddSum(one)
-	cp5 := []*types.Trade{{Price: cPrice, Size: 1}}
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(ctx, auctionStateMock, cp5, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	min, max := pm.GetValidPriceRange()
-	cp6 := []*types.Trade{{Price: min.Representation(), Size: 1}}
-	b = pm.CheckPrice(ctx, auctionStateMock, cp6, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, min.Representation(), true, true)
 	require.False(t, b)
 
-	cp7 := []*types.Trade{{Price: max.Representation(), Size: 1}}
-	b = pm.CheckPrice(ctx, auctionStateMock, cp7, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, max.Representation(), true, true)
 	require.False(t, b)
 
 	// Should trigger an auction
 	auctionStateMock.EXPECT().StartPriceAuction(now, gomock.Any()).Times(1)
 
 	cPrice.Sub(min.Representation(), one)
-	cp8 := []*types.Trade{{Price: cPrice, Size: 1}}
-	b = pm.CheckPrice(ctx, auctionStateMock, cp8, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, cPrice, true, true)
 	require.False(t, b)
 
 	now = now.Add(time.Second)
 	pm.OnTimeUpdate(now)
-	b = pm.CheckPrice(ctx, auctionStateMock, cp, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, currentPrice, true, true)
 	require.False(t, b)
 
 	min, max = pm.GetValidPriceRange()
 
-	cp9 := []*types.Trade{{Price: min.Representation(), Size: 1}}
-	b = pm.CheckPrice(ctx, auctionStateMock, cp9, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, min.Representation(), true, true)
 	require.False(t, b)
 
-	cp10 := []*types.Trade{{Price: max.Representation(), Size: 1}}
-	b = pm.CheckPrice(ctx, auctionStateMock, cp10, true, true)
+	b = pm.CheckPrice(ctx, auctionStateMock, max.Representation(), true, true)
 	require.False(t, b)
 
 	// Should trigger an auction
 	auctionStateMock.EXPECT().StartPriceAuction(now, gomock.Any()).Times(1)
 	cPrice.Add(max.Representation(), one)
-	cp11 := []*types.Trade{{Price: cPrice, Size: 1}}
+	cp11 := cPrice
 	b = pm.CheckPrice(ctx, auctionStateMock, cp11, true, true)
 	require.False(t, b)
 }

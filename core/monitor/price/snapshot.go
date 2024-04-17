@@ -71,13 +71,10 @@ func NewMonitorFromSnapshot(
 	return e, nil
 }
 
-func pricesNowToInternal(cps []*types.CurrentPrice) []currentPrice {
-	cpsi := make([]currentPrice, 0, len(cps))
+func pricesNowToInternal(cps []*types.CurrentPrice) []*num.Uint {
+	cpsi := make([]*num.Uint, 0, len(cps))
 	for _, cp := range cps {
-		cpsi = append(cpsi, currentPrice{
-			Price:  cp.Price.Clone(),
-			Volume: cp.Volume,
-		})
+		cpsi = append(cpsi, cp.Price.Clone())
 	}
 	return cpsi
 }
@@ -86,8 +83,8 @@ func pricesPastToInternal(pps []*types.PastPrice) []pastPrice {
 	ppsi := make([]pastPrice, 0, len(pps))
 	for _, pp := range pps {
 		ppsi = append(ppsi, pastPrice{
-			Time:                pp.Time,
-			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+			Time:         pp.Time,
+			AveragePrice: pp.VolumeWeightedPrice,
 		})
 	}
 	return ppsi
@@ -198,8 +195,8 @@ func (e *Engine) serialisePricesNow() []*types.CurrentPrice {
 	psn := make([]*types.CurrentPrice, 0, len(e.pricesNow))
 	for _, pn := range e.pricesNow {
 		psn = append(psn, &types.CurrentPrice{
-			Price:  pn.Price.Clone(),
-			Volume: pn.Volume,
+			Price:  pn.Clone(),
+			Volume: 1,
 		})
 	}
 
@@ -219,7 +216,7 @@ func (e *Engine) serialisePricesPast() []*types.PastPrice {
 	for _, pp := range e.pricesPast {
 		pps = append(pps, &types.PastPrice{
 			Time:                pp.Time,
-			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+			VolumeWeightedPrice: pp.AveragePrice,
 		})
 	}
 
