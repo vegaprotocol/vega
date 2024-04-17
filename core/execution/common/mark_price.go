@@ -280,11 +280,10 @@ func (mpc *CompositePriceCalculator) updateMarkPriceIfNotInAuction(ctx context.C
 		mpc.price = mpcCandidate
 		return nil
 	}
-	t := []*types.Trade{{Price: mpcCandidate, Size: 1}}
 	if resetPriceMonitoringEngine {
-		priceMonitor.ResetPriceHistory(t)
+		priceMonitor.ResetPriceHistory(mpcCandidate)
 	} else {
-		priceMonitor.CheckPrice(ctx, as, t, true, true)
+		priceMonitor.CheckPrice(ctx, as, mpcCandidate, true, true)
 	}
 	if as.InAuction() || as.AuctionStart() {
 		return fmt.Errorf("price monitoring failed for the new mark price")
