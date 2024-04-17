@@ -40,7 +40,7 @@ func (r spotProductResolver) BaseAsset(ctx context.Context, obj *vega.SpotProduc
 }
 
 func (r spotProductResolver) QuoteAsset(ctx context.Context, obj *vega.SpotProduct) (*vega.Asset, error) {
-	return r.r.getAssetByID(ctx, obj.BaseAsset)
+	return r.r.getAssetByID(ctx, obj.QuoteAsset)
 }
 
 type updateSpotMarketResolver VegaResolverRoot
