@@ -28,7 +28,14 @@ import (
 var (
 	ErrMissingConfirmations = errors.New("not enough confirmations")
 	ErrBlockNotFinalized    = errors.New("block not finalized")
-	finalised               = big.NewInt(-3)
+)
+
+type FinalityState int
+
+const (
+	FinalityStateSafe FinalityState = iota
+	FinalityStateFinalized
+	FinalityStateLatest
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthereumClientConfirmations
@@ -58,17 +65,31 @@ type EthereumConfirmations struct {
 	curHeightLastUpdate time.Time
 	finHeight           uint64
 	finHeightLastUpdate time.Time
+	finState            *big.Int
 }
 
-func NewEthereumConfirmations(cfg Config, ethClient EthereumClientConfirmations, time Time) *EthereumConfirmations {
+func NewEthereumConfirmations(cfg Config, ethClient EthereumClientConfirmations, time Time, cs FinalityState) *EthereumConfirmations {
 	if time == nil {
 		time = StdTime{}
 	}
-	return &EthereumConfirmations{
+
+	conf := &EthereumConfirmations{
 		retryDelay: cfg.RetryDelay.Get(),
 		ethClient:  ethClient,
 		time:       time,
 	}
+
+	switch cs {
+	case FinalityStateSafe:
+		conf.finState = big.NewInt(-4)
+	case FinalityStateFinalized:
+		conf.finState = big.NewInt(-3)
+	case FinalityStateLatest:
+		conf.finState = nil
+	default:
+		panic("unexpected confirmation state")
+	}
+	return conf
 }
 
 func (e *EthereumConfirmations) GetConfirmations() uint64 {
@@ -117,7 +138,7 @@ func (e *EthereumConfirmations) finalizedHeight(ctx context.Context) (uint64, er
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	h, lastUpdate, err := e.getHeight(ctx, e.finHeight, e.finHeightLastUpdate, finalised)
+	h, lastUpdate, err := e.getHeight(ctx, e.finHeight, e.finHeightLastUpdate, e.finState)
 	if err != nil {
 		return e.finHeight, err
 	}

@@ -41,6 +41,7 @@ var (
 	ErrDuplicateChainID                                   = errors.New("duplicate chain ID name")
 	ErrCannotRemoveL2Config                               = errors.New("L2 config cannot be removed")
 	ErrCanOnlyAmendedConfirmationsAndBlockInterval        = errors.New("can only amended L2 config confirmations and block interval")
+	ErrInvalidBlockLengthDuration                         = errors.New("block-length duration is invalid")
 )
 
 type EthereumConfig struct {

@@ -405,7 +405,8 @@ type testRes struct {
 	check func() error
 }
 
-func (t testRes) GetID() string { return t.id }
+func (t testRes) GetChainID() string { return "" }
+func (t testRes) GetID() string      { return t.id }
 func (t testRes) GetType() commandspb.NodeVote_Type {
 	return commandspb.NodeVote_TYPE_FUNDS_DEPOSITED
 }

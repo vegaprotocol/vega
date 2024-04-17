@@ -73,7 +73,7 @@ func New(
 			ocv.UpdateStakingBridgeAddresses(ethCfg.StakingBridgeAddresses())
 
 			// We just need one of the staking bridges.
-			if err := accs.UpdateStakingBridgeAddress(ethCfg.StakingBridgeAddresses()[0]); err != nil {
+			if err := accs.UpdateStakingBridgeAddress(ethCfg); err != nil {
 				return fmt.Errorf("couldn't update Ethereum configuration in accounting: %w", err)
 			}
 

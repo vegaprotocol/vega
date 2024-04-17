@@ -172,7 +172,8 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 	if pendingSupply != nil {
 		expectedSupply := pendingSupply.TotalSupply.Clone()
 		a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
-			sts: pendingSupply,
+			sts:     pendingSupply,
+			chainID: a.chainID,
 			check: func() error {
 				totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
 				if err != nil {

@@ -67,6 +67,7 @@ type Resource interface {
 	GetID() string
 	GetType() commandspb.NodeVote_Type
 	Check(ctx context.Context) error
+	GetChainID() string
 }
 
 const (
@@ -155,7 +156,9 @@ type Witness struct {
 
 	validatorVotesRequired num.Decimal
 	wss                    *witnessSnapshotState
-	defaultConfirmations   int64
+
+	defaultConfirmations map[string]int64
+	approxBlockTime      map[string]time.Duration
 }
 
 func NewWitness(ctx context.Context, log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
@@ -172,14 +175,22 @@ func NewWitness(ctx context.Context, log *logging.Logger, cfg Config, top Valida
 		resources:              map[string]*res{},
 		needResendRes:          map[string]struct{}{},
 		validatorVotesRequired: defaultValidatorsVoteRequired,
+		defaultConfirmations:   map[string]int64{},
+		approxBlockTime:        map[string]time.Duration{},
 		wss: &witnessSnapshotState{
 			serialised: []byte{},
 		},
 	}
 }
 
-func (w *Witness) SetDefaultConfirmations(c uint64) {
-	w.defaultConfirmations = int64(c)
+func (w *Witness) SetPrimaryDefaultConfirmations(chainID string, c uint64) {
+	w.defaultConfirmations[chainID] = int64(c)
+	w.approxBlockTime[chainID] = w.cfg.ApproxEthereumBlockTime.Duration
+}
+
+func (w *Witness) SetSecondaryDefaultConfirmations(chainID string, c uint64, bt time.Duration) {
+	w.defaultConfirmations[chainID] = int64(c)
+	w.approxBlockTime[chainID] = bt
 }
 
 func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, d num.Decimal) error {
@@ -235,7 +246,7 @@ func (w *Witness) StartCheck(
 	cb func(interface{}, bool),
 	checkUntil time.Time,
 ) error {
-	return w.startCheck(r, cb, checkUntil, w.defaultConfirmations)
+	return w.startCheck(r, cb, checkUntil, w.defaultConfirmations[r.GetChainID()])
 }
 
 func (w *Witness) StartCheckWithDelay(
@@ -313,7 +324,7 @@ func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackO
 
 func (w *Witness) start(ctx context.Context, r *res, initialDelay *int64) {
 	if initialDelay != nil {
-		t := time.NewTimer(time.Duration(*initialDelay) * w.cfg.ApproxEthereumBlockTime.Duration)
+		t := time.NewTimer(time.Duration(*initialDelay) * w.approxBlockTime[r.res.GetChainID()])
 		<-t.C
 		t.Stop()
 	}

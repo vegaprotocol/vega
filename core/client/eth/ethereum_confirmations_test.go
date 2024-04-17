@@ -35,7 +35,7 @@ func TestEthereumConfirmations(t *testing.T) {
 	tim := localMocks.NewMockTime(ctrl)
 	cfg := eth.NewDefaultConfig()
 	cfg.RetryDelay.Duration = 15 * time.Second
-	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim)
+	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim, eth.FinalityStateFinalized)
 	defer ctrl.Finish()
 
 	ethCfns.UpdateConfirmations(30)
@@ -100,7 +100,7 @@ func TestBlockFinalisation(t *testing.T) {
 	tim := localMocks.NewMockTime(ctrl)
 	cfg := eth.NewDefaultConfig()
 	cfg.RetryDelay.Duration = 15 * time.Second
-	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim)
+	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim, eth.FinalityStateFinalized)
 	defer ctrl.Finish()
 
 	ethCfns.UpdateConfirmations(10)
@@ -131,7 +131,7 @@ func TestCheckRequiredConfirmations(t *testing.T) {
 	tim := localMocks.NewMockTime(ctrl)
 	cfg := eth.NewDefaultConfig()
 	cfg.RetryDelay.Duration = 15 * time.Second
-	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim)
+	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim, eth.FinalityStateFinalized)
 	defer ctrl.Finish()
 
 	tim.EXPECT().Now().Times(1).Return(time.Unix(10, 0))

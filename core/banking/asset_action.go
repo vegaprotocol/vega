@@ -76,6 +76,10 @@ func (t *assetAction) GetType() types.NodeVoteType {
 	}
 }
 
+func (t *assetAction) GetChainID() string {
+	return t.chainID
+}
+
 func (t *assetAction) IsBuiltinAssetDeposit() bool {
 	return t.builtinD != nil
 }

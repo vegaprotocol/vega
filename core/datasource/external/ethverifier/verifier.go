@@ -124,6 +124,12 @@ type pendingCallEvent struct {
 }
 
 func (p pendingCallEvent) GetID() string { return p.callEvent.Hash() }
+func (p pendingCallEvent) GetChainID() string {
+	if p.callEvent.SourceChainID == nil {
+		return ""
+	}
+	return strconv.Itoa(int(*p.callEvent.SourceChainID))
+}
 
 func (p pendingCallEvent) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeEthereumContractCallResult
