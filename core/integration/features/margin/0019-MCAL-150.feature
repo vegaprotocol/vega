@@ -94,9 +94,9 @@ Feature:  pegged order in isoalted margin is not supported
 
         #0019-MCAL-049:When the party submit a pegged order, it should be rejected
         When the parties place the following pegged orders:
-            | party  | market id | side | volume | pegged reference | offset | reference | error              |
-            | party1 | ETH/FEB23 | buy  | 100    | BID              | 10     | buy_peg_3 | invalid OrderError |
-            | party1 | ETH/FEB23 | buy  | 200    | BID              | 20     | buy_peg_4 | invalid OrderError |
+            | party  | market id | side | volume | pegged reference | offset | reference | error                                                         |
+            | party1 | ETH/FEB23 | buy  | 100    | BID              | 10     | buy_peg_3 | OrderError: pegged orders not allowed in isolated margin mode |
+            | party1 | ETH/FEB23 | buy  | 200    | BID              | 20     | buy_peg_4 | OrderError: pegged orders not allowed in isolated margin mode |
 
         Then the orders should have the following status:
             | party  | reference | status          |

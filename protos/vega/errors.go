@@ -120,6 +120,12 @@ func (err OrderError) Error() string {
 		return "OrderError: post only order would trade"
 	case OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION:
 		return "OrderError: reduce only order would not reduce position"
+	case OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED:
+		return "OrderError: isolated margin check failed"
+	case OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE:
+		return "OrderError: pegged orders not allowed in isolated margin mode"
+	case OrderError_ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE:
+		return "OrderError: price not in tick size"
 	default:
 		return "invalid OrderError"
 	}
