@@ -36,16 +36,8 @@ var (
 	}
 )
 
-type topologySnapshotState struct {
-	serialisedVerifiedState []byte
-	serialisedPendingState  []byte
-}
-
 func (t *Topology) Namespace() types.SnapshotNamespace {
-	if t.scope == "primary" {
-		return types.ERC20MultiSigTopologySnapshot
-	}
-	return types.SecondaryERC20MultiSigTopologySnapshot
+	return types.ERC20MultiSigTopologySnapshot
 }
 
 func (t *Topology) Keys() []string {
@@ -68,16 +60,16 @@ func (t *Topology) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadERC20MultiSigTopologyVerified:
-		return nil, t.restoreVerifiedState(ctx, pl.Verified, payload)
+		return nil, t.restoreVerifiedState(ctx, pl.Verified)
 	case *types.PayloadERC20MultiSigTopologyPending:
-		return nil, t.restorePendingState(ctx, pl.Pending, payload)
+		return nil, t.restorePendingState(ctx, pl.Pending)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
 func (t *Topology) restoreVerifiedState(
-	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified, p *types.Payload,
+	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified,
 ) error {
 	t.log.Debug("restoring snapshot verified state")
 	if s.Threshold != nil {
@@ -104,15 +96,13 @@ func (t *Topology) restoreVerifiedState(
 		t.eventsPerAddress[v.Address] = events
 	}
 
-	var err error
-	t.tss.serialisedVerifiedState, err = proto.Marshal(p.IntoProto())
-	return err
+	return nil
 }
 
 func (t *Topology) restorePendingState(
-	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyPending, p *types.Payload,
+	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyPending,
 ) error {
-	t.log.Debug("restoring snapshot pending state")
+	t.log.Debug("restoring snapshot pending state", logging.String("chain-id", t.chainID))
 	t.log.Debug("restoring witness signers", logging.Int("n", len(s.WitnessedSigners)))
 	for _, v := range s.WitnessedSigners {
 		t.witnessedSigners[v] = struct{}{}
@@ -157,15 +147,11 @@ func (t *Topology) restorePendingState(
 		}
 	}
 
-	var err error
-	t.tss.serialisedPendingState, err = proto.Marshal(p.IntoProto())
-	return err
+	return nil
 }
 
-func (t *Topology) serialiseVerifiedState() ([]byte, error) {
-	out := &snapshotpb.ERC20MultiSigTopologyVerified{
-		Scope: t.scope,
-	}
+func (t *Topology) constructVerifiedState() *snapshotpb.ERC20MultiSigTopologyVerified {
+	out := &snapshotpb.ERC20MultiSigTopologyVerified{}
 	t.log.Debug("serialising snapshot verified state")
 	// first serialise seen events
 	t.log.Debug("serialising seen", logging.Int("n", len(t.seen)))
@@ -211,18 +197,20 @@ func (t *Topology) serialiseVerifiedState() ([]byte, error) {
 		out.Threshold = t.threshold.IntoProto()
 	}
 
+	return out
+}
+
+func (t *Topology) serialiseVerifiedState() ([]byte, error) {
 	return proto.Marshal(types.Payload{
 		Data: &types.PayloadERC20MultiSigTopologyVerified{
-			Verified: out,
+			Verified: t.constructVerifiedState(),
 		},
 	}.IntoProto())
 }
 
-func (t *Topology) serialisePendingState() ([]byte, error) {
+func (t *Topology) constructPendingState() *snapshotpb.ERC20MultiSigTopologyPending {
 	t.log.Debug("serialising pending state")
-	out := &snapshotpb.ERC20MultiSigTopologyPending{
-		Scope: t.scope,
-	}
+	out := &snapshotpb.ERC20MultiSigTopologyPending{}
 
 	t.log.Debug("serialising witness signers", logging.Int("n", len(t.witnessedSigners)))
 	out.WitnessedSigners = make([]string, 0, len(t.witnessedSigners))
@@ -256,29 +244,24 @@ func (t *Topology) serialisePendingState() ([]byte, error) {
 		return out.PendingThresholdSet[i].Id < out.PendingThresholdSet[j].Id
 	})
 
-	return proto.Marshal(types.Payload{
-		Data: &types.PayloadERC20MultiSigTopologyPending{
-			Pending: out,
-		},
-	}.IntoProto())
+	return out
 }
 
-func (t *Topology) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
-	data, err := serialFunc()
-	if err != nil {
-		return nil, err
-	}
-	*dataField = data
-	return data, nil
+func (t *Topology) serialisePendingState() ([]byte, error) {
+	return proto.Marshal(types.Payload{
+		Data: &types.PayloadERC20MultiSigTopologyPending{
+			Pending: t.constructPendingState(),
+		},
+	}.IntoProto())
 }
 
 // get the serialised form of the given key.
 func (t *Topology) serialise(k string) ([]byte, error) {
 	switch k {
 	case verifiedStateKey:
-		return t.serialiseK(t.serialiseVerifiedState, &t.tss.serialisedVerifiedState)
+		return t.serialiseVerifiedState()
 	case pendingStateKey:
-		return t.serialiseK(t.serialisePendingState, &t.tss.serialisedPendingState)
+		return t.serialisePendingState()
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

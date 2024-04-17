@@ -287,6 +287,9 @@ type PayloadERC20MultiSigTopologyVerified struct {
 type PayloadERC20MultiSigTopologyPending struct {
 	Pending *snapshot.ERC20MultiSigTopologyPending
 }
+type PayloadEVMMultisigTopologies struct {
+	Topologies []*snapshot.EVMMultisigTopology
+}
 
 type PayloadLiquidityParameters struct {
 	Parameters *snapshot.LiquidityParameters
@@ -741,8 +744,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadPendingAssetUpdatesFromProto(dt)
 	case *snapshot.Payload_BankingPrimaryBridgeState:
 		ret.Data = PayloadBankingPrimaryBridgeStateFromProto(dt)
-	case *snapshot.Payload_BankingSecondaryBridgeState:
-		ret.Data = PayloadBankingSecondaryBridgeStateFromProto(dt)
+	case *snapshot.Payload_BankingEvmBridgeStates:
+		ret.Data = PayloadBankingEVMBridgeStatesFromProto(dt)
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = PayloadBankingWithdrawalsFromProto(dt)
 	case *snapshot.Payload_BankingDeposits:
@@ -883,6 +886,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadL2EthOraclesFromProto(dt)
 	case *snapshot.Payload_EthOracleVerifierMisc:
 		ret.Data = PayloadEthOracleVerifierMisc(dt)
+	case *snapshot.Payload_EvmEventForwarders:
+		ret.Data = PayloadEVMEventForwardersFromProto(dt)
+	case *snapshot.Payload_EvmMultisigTopologies:
+		ret.Data = PayloadEVMMultisigTopologiesFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -932,7 +939,7 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_BankingPrimaryBridgeState:
 		ret.Data = dt
-	case *snapshot.Payload_BankingSecondaryBridgeState:
+	case *snapshot.Payload_BankingEvmBridgeStates:
 		ret.Data = dt
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = dt
@@ -1074,6 +1081,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_EthOracleVerifierMisc:
 		ret.Data = dt
+	case *snapshot.Payload_EvmEventForwarders:
+		ret.Data = dt
+	case *snapshot.Payload_EvmMultisigTopologies:
+		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1105,9 +1116,6 @@ func (p *PayloadERC20MultiSigTopologyVerified) plToProto() interface{} {
 }
 
 func (p *PayloadERC20MultiSigTopologyVerified) Namespace() SnapshotNamespace {
-	if p.Verified.Scope == "secondary" {
-		return SecondaryERC20MultiSigTopologySnapshot
-	}
 	return ERC20MultiSigTopologySnapshot
 }
 
@@ -1132,9 +1140,6 @@ func (p *PayloadERC20MultiSigTopologyPending) plToProto() interface{} {
 }
 
 func (p *PayloadERC20MultiSigTopologyPending) Namespace() SnapshotNamespace {
-	if p.Pending.Scope == "secondary" {
-		return SecondaryERC20MultiSigTopologySnapshot
-	}
 	return ERC20MultiSigTopologySnapshot
 }
 
@@ -4246,4 +4251,30 @@ func GetNodeKey(ns SnapshotNamespace, k string) string {
 		ns.String(),
 		k,
 	}, ".")
+}
+
+func PayloadEVMMultisigTopologiesFromProto(
+	s *snapshot.Payload_EvmMultisigTopologies,
+) *PayloadEVMMultisigTopologies {
+	return &PayloadEVMMultisigTopologies{
+		Topologies: s.EvmMultisigTopologies.EvmMultisigTopology,
+	}
+}
+
+func (*PayloadEVMMultisigTopologies) isPayload() {}
+
+func (p *PayloadEVMMultisigTopologies) plToProto() interface{} {
+	return &snapshot.Payload_EvmMultisigTopologies{
+		EvmMultisigTopologies: &snapshot.EVMMultisigTopologies{
+			EvmMultisigTopology: p.Topologies,
+		},
+	}
+}
+
+func (p *PayloadEVMMultisigTopologies) Namespace() SnapshotNamespace {
+	return EVMMultiSigTopologiesSnapshot
+}
+
+func (p *PayloadEVMMultisigTopologies) Key() string {
+	return "all"
 }

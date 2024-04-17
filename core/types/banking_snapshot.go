@@ -31,6 +31,7 @@ func (p PayloadBankingPrimaryBridgeState) IntoProto() *snapshot.Payload_BankingP
 				Active:      p.BankingBridgeState.Active,
 				BlockHeight: p.BankingBridgeState.BlockHeight,
 				LogIndex:    p.BankingBridgeState.LogIndex,
+				ChainId:     p.BankingBridgeState.ChainID,
 			},
 		},
 	}
@@ -56,47 +57,40 @@ func PayloadBankingPrimaryBridgeStateFromProto(pbbs *snapshot.Payload_BankingPri
 			Active:      pbbs.BankingPrimaryBridgeState.BridgeState.Active,
 			BlockHeight: pbbs.BankingPrimaryBridgeState.BridgeState.BlockHeight,
 			LogIndex:    pbbs.BankingPrimaryBridgeState.BridgeState.LogIndex,
+			ChainID:     pbbs.BankingPrimaryBridgeState.BridgeState.ChainId,
 		},
 	}
 }
 
-type PayloadBankingSecondaryBridgeState struct {
-	BankingBridgeState *BankingBridgeState
+type PayloadBankingEVMBridgeStates struct {
+	BankingBridgeStates []*checkpointpb.BridgeState
 }
 
-func (p PayloadBankingSecondaryBridgeState) IntoProto() *snapshot.Payload_BankingSecondaryBridgeState {
-	return &snapshot.Payload_BankingSecondaryBridgeState{
-		BankingSecondaryBridgeState: &snapshot.BankingBridgeState{
-			BridgeState: &checkpointpb.BridgeState{
-				Active:      p.BankingBridgeState.Active,
-				BlockHeight: p.BankingBridgeState.BlockHeight,
-				LogIndex:    p.BankingBridgeState.LogIndex,
-			},
+func (p PayloadBankingEVMBridgeStates) IntoProto() *snapshot.Payload_BankingEvmBridgeStates {
+	return &snapshot.Payload_BankingEvmBridgeStates{
+		BankingEvmBridgeStates: &snapshot.BankingEVMBridgeStates{
+			BridgeStates: p.BankingBridgeStates,
 		},
 	}
 }
 
-func (*PayloadBankingSecondaryBridgeState) isPayload() {}
+func (*PayloadBankingEVMBridgeStates) isPayload() {}
 
-func (p *PayloadBankingSecondaryBridgeState) plToProto() interface{} {
+func (p *PayloadBankingEVMBridgeStates) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadBankingSecondaryBridgeState) Key() string {
-	return "secondaryBridgeState"
+func (*PayloadBankingEVMBridgeStates) Key() string {
+	return "evmBridgeStates"
 }
 
-func (*PayloadBankingSecondaryBridgeState) Namespace() SnapshotNamespace {
+func (*PayloadBankingEVMBridgeStates) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
-func PayloadBankingSecondaryBridgeStateFromProto(pbbs *snapshot.Payload_BankingSecondaryBridgeState) *PayloadBankingSecondaryBridgeState {
-	return &PayloadBankingSecondaryBridgeState{
-		BankingBridgeState: &BankingBridgeState{
-			Active:      pbbs.BankingSecondaryBridgeState.BridgeState.Active,
-			BlockHeight: pbbs.BankingSecondaryBridgeState.BridgeState.BlockHeight,
-			LogIndex:    pbbs.BankingSecondaryBridgeState.BridgeState.LogIndex,
-		},
+func PayloadBankingEVMBridgeStatesFromProto(pbbs *snapshot.Payload_BankingEvmBridgeStates) *PayloadBankingEVMBridgeStates {
+	return &PayloadBankingEVMBridgeStates{
+		BankingBridgeStates: pbbs.BankingEvmBridgeStates.BridgeStates,
 	}
 }
 
@@ -104,6 +98,7 @@ type BankingBridgeState struct {
 	Active      bool
 	BlockHeight uint64
 	LogIndex    uint64
+	ChainID     string
 }
 
 type PayloadBankingWithdrawals struct {
