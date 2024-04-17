@@ -51,6 +51,7 @@ Feature: Testing batch orders in spot markets
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 959       | 1042      | 0            | 0              | 0             |
 
+  @OrdCan
   Scenario: Funds released by cancellations or amendments within the batch should be immediately available
             for later instructions (0074-BTCH-019)
 

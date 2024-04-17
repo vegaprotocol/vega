@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 )
@@ -49,9 +50,17 @@ func TheIcebergOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, tabl
 		ref, hasRef := row.StrB("reference")
 		reservedRemaining := row.MustU64("reserved volume")
 
+		checkCancel := status == proto.Order_STATUS_CANCELLED
+
 		match := false
 		for _, e := range data {
 			o := e.Order()
+			// just set to cancelled, we may be applying the status change too soon, but that doesn't matter.
+			// if we're applying this too soon, then the size/remaining/visible fields won't match. Subsequent events
+			// cancellation only applies to the last order event anyway.
+			if checkCancel && broker.IsCancelledOrder(o.MarketId, o.PartyId, o.Id) {
+				o.Status = proto.Order_STATUS_CANCELLED
+			}
 			if hasRef {
 				if ref != o.Reference {
 					continue

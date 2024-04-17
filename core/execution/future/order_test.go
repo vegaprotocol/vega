@@ -338,9 +338,16 @@ func TestAmendMarginCheckFails(t *testing.T) {
 
 	found := false
 	for _, v := range tm.events {
-		if o, ok := v.(*events.Order); ok && o.Order().Id == orderID {
-			assert.Equal(t, o.Order().Status, types.OrderStatusCancelled)
-			found = true
+		if co, ok := v.(*events.CancelledOrders); ok {
+			for _, oid := range co.OrderIDs() {
+				if oid == orderID {
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
 		}
 	}
 	assert.True(t, found)

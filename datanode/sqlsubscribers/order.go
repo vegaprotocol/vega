@@ -43,6 +43,11 @@ type ExpiredOrdersEvent interface {
 	OrderIDs() []string
 }
 
+type CancelledOrdersEvent interface {
+	ExpiredOrdersEvent
+	PartyID() string
+}
+
 type OrderStore interface {
 	Add(entities.Order) error
 	Flush(ctx context.Context) error
@@ -67,6 +72,7 @@ func (os *Order) Types() []events.Type {
 		events.OrderEvent,
 		events.ExpiredOrdersEvent,
 		events.EndBlockEvent,
+		events.CancelledOrdersEvent,
 	}
 }
 
@@ -78,6 +84,8 @@ func (os *Order) Push(ctx context.Context, evt events.Event) error {
 		return os.expired(ctx, evt.(ExpiredOrdersEvent), evt.Sequence())
 	case events.EndBlockEvent:
 		os.consumeEndBlock()
+	case events.CancelledOrdersEvent:
+		return os.cancelled(ctx, evt.(CancelledOrdersEvent), evt.Sequence())
 	}
 	return nil
 }
@@ -110,6 +118,33 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 			return errors.Wrap(os.store.Add(o), "adding order to database")
 		}
 		// the next order will be insterted as though it was the next event on the bus, with a new sequence number:
+		seqNum++
+	}
+	return nil
+}
+
+func (os *Order) cancelled(ctx context.Context, co CancelledOrdersEvent, seqNum uint64) error {
+	orders, err := os.store.GetByMarketAndID(ctx, co.MarketID(), co.OrderIDs())
+	if err != nil {
+		return err
+	}
+	txHash := entities.TxHash(co.TxHash())
+	for _, o := range orders {
+		o.Status = entities.OrderStatusCancelled
+		o.SeqNum = seqNum
+		o.UpdatedAt = os.vegaTime
+		o.VegaTime = os.vegaTime
+		o.TxHash = txHash
+
+		torder, err := types.OrderFromProto(o.ToProto())
+		if err != nil {
+			panic(err)
+		}
+		os.depthService.AddOrder(torder, os.vegaTime, seqNum)
+
+		if err := os.store.Add(o); err != nil {
+			return errors.Wrap(err, "adding order to database")
+		}
 		seqNum++
 	}
 	return nil
