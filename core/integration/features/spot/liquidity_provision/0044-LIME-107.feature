@@ -9,16 +9,6 @@ Feature: Spot market SLA
     Given the log normal risk model named "lognormal-risk-model-1":
       | risk aversion | tau  | mu | r   | sigma |
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
-
-    And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee method | liquidity fee constant |
-      | 0.0004    | 0.001              | METHOD_CONSTANT      | 0.08                   |
-    And the fees configuration named "fees-config-2":
-      | maker fee | infrastructure fee | liquidity fee method | liquidity fee constant |
-      | 0.0004    | 0.001              | METHOD_CONSTANT      | 0.01                   |
-    And the fees configuration named "fees-config-3":
-      | maker fee | infrastructure fee | liquidity fee method    | liquidity fee constant |
-      | 0.0004    | 0.001              | METHOD_WEIGHTED_AVERAGE | 0.01                   |
     And the fees configuration named "fees-config-4":
       | maker fee | infrastructure fee | liquidity fee method | liquidity fee constant |
       | 0.0004    | 0.001              | METHOD_MARGINAL_COST | 0.01                   |
@@ -41,8 +31,8 @@ Feature: Spot market SLA
       | network.markPriceUpdateMaximumFrequency             | 2s    |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
-      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0     |
-      | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0     |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.15  |
+      | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.3   |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.4   |
       | validators.epoch.length                             | 4s    |
 
@@ -62,6 +52,8 @@ Feature: Spot market SLA
       | lp1    | BTC   | 60     |
       | lp2    | ETH   | 4000   |
       | lp2    | BTC   | 60     |
+      | lp3    | ETH   | 4000   |
+      | lp3    | BTC   | 60     |
 
     And the average block duration is "1"
 
@@ -110,6 +102,13 @@ Feature: Spot market SLA
     Then "lp1" should have general account balance of "1000" for asset "ETH"
     Then "lp2" should have general account balance of "1000" for asset "ETH"
 
+    #0044-LIME-108:If a liquidity provider with an active liquidity provision at the start of an epoch amends the fee level associated to this commitment during the epoch, this change will only take effect at the end of the epoch.
+    #0044-LIME-109:If a liquidity provider with an active liquidity provision at the start of an epoch increases their liquidity provision staked commitment during the epoch
+    #0044-LIME-110:the protocol will increase the bond to the new level if they have sufficient collateral in the settlement asset of the market to meet new commitment amount
+
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type   | error                                            |
+      | lp1 | lp1   | BTC/ETH   | 20000             | 0.2 | amendment | commitment submission rejected, not enough stake |
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type   |
       | lp1 | lp1   | BTC/ETH   | 2000              | 0.2 | amendment |
@@ -118,19 +117,36 @@ Feature: Spot market SLA
     Then the party "lp1" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
     Then the party "lp2" lp liquidity bond account balance should be "4000" for the market "BTC/ETH"
     And the liquidity fee factor should be "0.1" for the market "BTC/ETH"
-    Then the network moves ahead "5" blocks
 
-    Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
-    Then the party "lp2" lp liquidity bond account balance should be "4000" for the market "BTC/ETH"
+    Then the network moves ahead "5" blocks
+    #0044-LIME-107:Lp reduces LP commitment and got slashed during the epoch, and the lower (slashed) LP bond stake will be retained
+    Then the party "lp1" lp liquidity bond account balance should be "1550" for the market "BTC/ETH"
+    #0044-LIME-111:at the end of the current epoch rewards / penalties are evaluated based on the balance of the bond account at start of epoch
+    Then the party "lp2" lp liquidity bond account balance should be "3550" for the market "BTC/ETH"
     And the liquidity fee factor should be "0.4" for the market "BTC/ETH"
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5600         | 6000           | 0             |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5600         | 5100           | 0             |
 
-    When the markets are updated:
-      | id      | liquidity fee settings |
-      | BTC/ETH | fees-config-2          |
-# Then the network moves ahead "1" blocks
-# And the liquidity fee factor should be "0.08" for the market "BTC/ETH"
+    Then the following transfers should happen:
+      | from | to     | from account      | to account                    | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_NETWORK_TREASURY | BTC/ETH   | 450    | ETH   |
+      | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_NETWORK_TREASURY | BTC/ETH   | 450    | ETH   |
+    Then the network moves ahead "1" blocks
+
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp3 | lp3   | BTC/ETH   | 3000              | 0.1 | submission |
+    Then the party "lp3" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
+    Then "lp3" should have general account balance of "1000" for asset "ETH"
+    #Then the network moves ahead "1" blocks
+
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type   |
+      | lp3 | lp3   | BTC/ETH   | 2000              | 0.1 | amendment |
+      
+    #0044-LIME-112:A liquidity provider who reduces their liquidity provision such that the total stake on the market is still above the target stake
+    Then the party "lp3" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
+    Then "lp3" should have general account balance of "2000" for asset "ETH"
 
