@@ -17,6 +17,7 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	vgreflect "code.vegaprotocol.io/vega/libs/reflect"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -28,6 +29,7 @@ type EVMChainConfig struct {
 	confirmations    uint64
 	collateralBridge EthereumContract
 	multiSigControl  EthereumContract
+	blockTime        time.Duration
 }
 
 func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfig, error) {
@@ -46,7 +48,7 @@ func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfig, error) {
 
 func SecondaryConfigFromProto(cfgProto *proto.EVMChainConfig) (*EVMChainConfig, error) {
 	if err := CheckEVMChainConfig(cfgProto); err != nil {
-		return nil, fmt.Errorf("invalid second ethereum configuration: %w", err)
+		return nil, fmt.Errorf("invalid EVM chain configuration: %w", err)
 	}
 
 	cfg := &EVMChainConfig{
@@ -62,7 +64,19 @@ func SecondaryConfigFromProto(cfgProto *proto.EVMChainConfig) (*EVMChainConfig, 
 		},
 	}
 
+	if len(cfgProto.BlockTime) != 0 {
+		bl, err := time.ParseDuration(cfgProto.BlockTime)
+		if err != nil {
+			return nil, fmt.Errorf("invalid EVM chain configuration, block_length: %w", err)
+		}
+		cfg.blockTime = bl
+	}
+
 	return cfg, nil
+}
+
+func (c *EVMChainConfig) BlockTime() time.Duration {
+	return c.blockTime
 }
 
 func (c *EVMChainConfig) ChainID() string {
@@ -121,6 +135,13 @@ func CheckEVMChainConfig(cfgProto *proto.EVMChainConfig) error {
 	}
 	if cfgProto.CollateralBridgeContract.DeploymentBlockHeight != 0 {
 		return ErrUnsupportedCollateralBridgeDeploymentBlockHeight
+	}
+
+	if len(cfgProto.BlockTime) != 0 {
+		_, err := time.ParseDuration(cfgProto.BlockTime)
+		if err != nil {
+			return ErrInvalidBlockLengthDuration
+		}
 	}
 
 	return nil

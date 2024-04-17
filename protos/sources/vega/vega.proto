@@ -1577,6 +1577,8 @@ message EVMChainConfig {
   uint32 confirmations = 4;
   // Contract configuration of the multisig control contract for this EVM compatible network.
   EthereumContractConfig multisig_control_contract = 5;
+  // Approximate block time of the EVM chain as a duration e.g. 12s, 250ms.
+  string block_time = 6;
 }
 
 message EthereumContractConfig {

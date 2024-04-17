@@ -962,7 +962,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 					return nil
 				}
 
-				svcs.witness.SetDefaultConfirmations(ethCfg.Confirmations())
+				svcs.witness.SetPrimaryDefaultConfirmations(ethCfg.ChainID(), ethCfg.Confirmations())
 				return nil
 			},
 		},
@@ -987,6 +987,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.banking.OnSecondaryEthChainIDUpdated(ethCfg.ChainID())
+				svcs.witness.SetSecondaryDefaultConfirmations(ethCfg.ChainID(), ethCfg.Confirmations(), ethCfg.BlockTime())
 				return nil
 			},
 		},

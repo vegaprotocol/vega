@@ -64,6 +64,16 @@ func (n *nodeProposal) GetID() string {
 	return n.ID
 }
 
+func (n *nodeProposal) GetChainID() string {
+	switch na := n.Terms.Change.(type) {
+	case *types.ProposalTermsNewAsset:
+		if erc20 := na.NewAsset.Changes.GetERC20(); erc20 != nil {
+			return erc20.ChainID
+		}
+	}
+	return ""
+}
+
 func (n *nodeProposal) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeGovernanceValidateAsset
 }

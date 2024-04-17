@@ -68,6 +68,7 @@ type Accounting struct {
 
 	stakingAssetTotalSupply *num.Uint
 	stakingBridgeAddress    ethcmn.Address
+	chainID                 string
 
 	// snapshot bits
 	accState accountingSnapshotState
@@ -80,13 +81,16 @@ type Accounting struct {
 }
 
 type pendingStakeTotalSupply struct {
-	sts   *types.StakeTotalSupply
-	check func() error
+	sts     *types.StakeTotalSupply
+	chainID string
+	check   func() error
 }
 
 func (p pendingStakeTotalSupply) GetID() string {
 	return hex.EncodeToString(vgcrypto.Hash([]byte(p.sts.String())))
 }
+
+func (p pendingStakeTotalSupply) GetChainID() string { return p.chainID }
 
 func (p pendingStakeTotalSupply) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeStakeTotalSupply
@@ -171,8 +175,9 @@ func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
 	return balances
 }
 
-func (a *Accounting) UpdateStakingBridgeAddress(stakingBridgeAddress ethcmn.Address) error {
-	a.stakingBridgeAddress = stakingBridgeAddress
+func (a *Accounting) UpdateStakingBridgeAddress(ethCfg *types.EthereumConfig) error {
+	a.stakingBridgeAddress = ethCfg.StakingBridgeAddresses()[0]
+	a.chainID = ethCfg.ChainID()
 
 	if !a.accState.isRestoring {
 		if err := a.updateStakingAssetTotalSupply(); err != nil {
@@ -195,7 +200,8 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 	expectedSupply := evt.TotalSupply.Clone()
 
 	a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
-		sts: evt,
+		sts:     evt,
+		chainID: a.chainID,
 		check: func() error {
 			totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
 			if err != nil {

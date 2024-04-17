@@ -137,6 +137,7 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 
 		pending := &pendingSD{
 			StakeDeposited: d,
+			chainID:        s.accs.chainID,
 			check:          func() error { return s.ocv.CheckStakeDeposited(d) },
 		}
 
@@ -189,6 +190,7 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 
 		pending := &pendingSR{
 			StakeRemoved: r,
+			chainID:      s.accs.chainID,
 			check:        func() error { return s.ocv.CheckStakeRemoved(r) },
 		}
 

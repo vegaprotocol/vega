@@ -476,9 +476,13 @@ func (n *Command) startBlockchainClients() error {
 		return fmt.Errorf("could not instantiate secondary ethereum client: %w", err)
 	}
 
-	n.primaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.primaryEthClient, nil)
+	n.primaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.primaryEthClient, nil, ethclient.FinalityStateFinalized)
 
-	n.secondaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.secondaryEthClient, nil)
+	// for arbitrum we can use the weaker check for finality and only require that the block is marked as "safe".
+	// This is because "safe" means that the batch has been send to L1 Ethereum and from then on its "final" on
+	// Arbitrum. If the batched-transaction is part of a re-org on Ethereum, it doesn't matter to Vega because core
+	// is only looking at the Arbitrum blocks we don't track the batch, so we don't need to wait for full finality.
+	n.secondaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.secondaryEthClient, nil, ethclient.FinalityStateSafe)
 
 	return nil
 }

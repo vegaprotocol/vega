@@ -105,7 +105,8 @@ type pendingSigner struct {
 	check func() error
 }
 
-func (p pendingSigner) GetID() string { return p.ID }
+func (p pendingSigner) GetID() string      { return p.ID }
+func (p pendingSigner) GetChainID() string { return p.ChainID }
 func (p pendingSigner) GetType() types.NodeVoteType {
 	var ty types.NodeVoteType
 	switch p.Kind {
@@ -125,10 +126,12 @@ type pendingThresholdSet struct {
 	check func() error
 }
 
-func (p pendingThresholdSet) GetID() string { return p.ID }
+func (p pendingThresholdSet) GetID() string      { return p.ID }
+func (p pendingThresholdSet) GetChainID() string { return p.ChainID }
 func (p pendingThresholdSet) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeSignerThresholdSet
 }
+
 func (p *pendingThresholdSet) Check(ctx context.Context) error { return p.check() }
 
 func NewTopology(
