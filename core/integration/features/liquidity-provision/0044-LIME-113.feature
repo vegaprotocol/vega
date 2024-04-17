@@ -37,9 +37,7 @@ Feature: Test change of SLA market parameter
     And the liquidity sla params named "SLA-22":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0.5         | 0.6                          | 1                             | 1.0                    |
-    And the liquidity sla params named "SLA-23":
-      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
-      | 0           | 0.6                          | 1                             | 1.0                    |
+    
     And the spot markets:
       | id      | name    | base asset | quote asset | liquidity monitoring | risk model            | auction duration | fees          | price monitoring | sla params |
       | BTC/ETH | BTC/ETH | BTC        | ETH         | lqm-params           | log-normal-risk-model | 2                | fees-config-1 | price-monitoring | SLA-22     |
@@ -58,7 +56,7 @@ Feature: Test change of SLA market parameter
 
     Given the average block duration is "1"
   @Now @NoPerp
-  Scenario: 001: lp1 and lp2 on the market BTC/ETH, 0044-LIME-091, 0044-LIME-113, 0044-LIME-029
+  Scenario: 001: lp1 and lp2 on the market BTC/ETH, 0044-LIME-091, 0044-LIME-113, 0044-LIME-029, 0044-LIME-115
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | lp1    | ETH   | 200000 |
@@ -143,7 +141,7 @@ Feature: Test change of SLA market parameter
       | lp_1 | lp1   | BTC/ETH   | 4000              | 0.02  | amendment |
       | lp_2 | lp2   | BTC/ETH   | 4000              | 0.015 | amendment |
 
-    #0044-LIME-095:during auction the parties place orders within the price range: 0.1 which should count as SLA
+    #0044-LIME-115:during auction the parties place orders within the price range: 0.1 which should count as SLA
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | lp1   | BTC/ETH   | buy  | 12     | 998   | 0                | TYPE_LIMIT | TIF_GTC |
