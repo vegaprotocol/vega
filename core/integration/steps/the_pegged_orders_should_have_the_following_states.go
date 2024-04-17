@@ -37,10 +37,12 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 		price := row.price()
 		status := row.status()
 
+		checkCancel := status == proto.Order_STATUS_CANCELLED
+
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != volume || stringToU64(o.Price) != price {
+			if o.PartyId != party || (o.Status != status && !checkCancel) || o.MarketId != marketID || o.Side != side || o.Size != volume || stringToU64(o.Price) != price {
 				continue
 			}
 			if o.PeggedOrder == nil {
@@ -48,6 +50,12 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 			}
 			if o.PeggedOrder.Offset != offset.String() || o.PeggedOrder.Reference != reference {
 				continue
+			}
+			// all but status matches, check if the order is cancelled as expected
+			if checkCancel && o.Status != status {
+				if !broker.IsCancelledOrder(o.MarketId, o.PartyId, o.Id) {
+					continue
+				}
 			}
 			match = true
 			break
