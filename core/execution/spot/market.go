@@ -1735,15 +1735,19 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	})
 
 	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
+	orderIDs := make([]string, 0, len(orders))
 
 	// now iterate over all orders and cancel one by one.
 	for _, order := range orders {
-		cancellation, err := m.cancelOrder(ctx, partyID, order.ID)
+		cancellation, err := m.cancelOrderInBatch(ctx, partyID, order.ID)
 		if err != nil {
 			return nil, err
 		}
 		cancellations = append(cancellations, cancellation)
+		orderIDs = append(orderIDs, order.ID)
 	}
+
+	m.broker.Send(events.NewCancelledOrdersEvent(ctx, m.GetID(), partyID, orderIDs...))
 
 	m.checkForReferenceMoves(ctx, false)
 
@@ -1812,8 +1816,17 @@ func (m *Market) CancelOrderWithIDGenerator(ctx context.Context, partyID, orderI
 	return conf, nil
 }
 
-// CancelOrder cancels the given order. If the order is found on the book, we release locked funds from holding account to the general account of the party.
+func (m *Market) cancelOrderInBatch(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+	return m.cancelSingleOrder(ctx, partyID, orderID, true)
+}
+
+// cancelOrder cancels the given order. If the order is found on the book, we release locked funds from holding account to the general account of the party.
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+	return m.cancelSingleOrder(ctx, partyID, orderID, false)
+}
+
+// cancelSingleOrder cancels the given order. If the order is found on the book, we release locked funds from holding account to the general account of the party.
+func (m *Market) cancelSingleOrder(ctx context.Context, partyID, orderID string, inBatch bool) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1864,7 +1877,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	// Publish the changed order details
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-	m.broker.Send(events.NewOrderEvent(ctx, order))
+	if !inBatch {
+		m.broker.Send(events.NewCancelledOrdersEvent(ctx, m.GetID(), partyID, orderID))
+	}
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
