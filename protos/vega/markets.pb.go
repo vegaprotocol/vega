@@ -2333,8 +2333,8 @@ type LiquidationStrategy struct {
 	FullDisposalSize uint64 `protobuf:"varint,3,opt,name=full_disposal_size,json=fullDisposalSize,proto3" json:"full_disposal_size,omitempty"`
 	// Max fraction of the total volume of the orderbook, within liquidity bounds, that the network can use to close its position; range 0 through 1.
 	MaxFractionConsumed string `protobuf:"bytes,4,opt,name=max_fraction_consumed,json=maxFractionConsumed,proto3" json:"max_fraction_consumed,omitempty"`
-	// Decimal > 0 defining the price range within which the network will trade to dispose of its position. Retroactively defaults to 0.1 (10%).
-	// The value can be > 1, if set to 1.5, the minimum price will be 0 (max(0, mid_price * (1 - 1.5))), the maximum price will be mid_price * (1 + 1.5).
+	// Decimal > 0 specifying the range range above and below the mid price within which the network will trade to dispose of its position.
+	// The value can be > 1. For example, if set to 1.5, the minimum price will be 0, ie max(0, mid_price * (1 - 1.5)), and the maximum price will be mid_price * (1 + 1.5).
 	DisposalSlippageRange string `protobuf:"bytes,5,opt,name=disposal_slippage_range,json=disposalSlippageRange,proto3" json:"disposal_slippage_range,omitempty"`
 }
 
