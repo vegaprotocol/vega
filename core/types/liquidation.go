@@ -28,6 +28,7 @@ type LiquidationStrategy struct {
 	DisposalFraction    num.Decimal
 	FullDisposalSize    uint64
 	MaxFractionConsumed num.Decimal
+	DisposalSlippage    num.Decimal // this has to be a pointer for the time being, with the need to default to 0.1
 }
 
 type LiquidationNode struct {
@@ -109,11 +110,16 @@ func LiquidationStrategyFromProto(p *vegapb.LiquidationStrategy) (*LiquidationSt
 	if err != nil {
 		return nil, err
 	}
+	slippage, err := num.DecimalFromString(p.DisposalSlippageRange)
+	if err != nil {
+		return nil, err
+	}
 	return &LiquidationStrategy{
 		DisposalTimeStep:    time.Second * time.Duration(p.DisposalTimeStep),
 		DisposalFraction:    df,
 		FullDisposalSize:    p.FullDisposalSize,
 		MaxFractionConsumed: mfc,
+		DisposalSlippage:    slippage,
 	}, nil
 }
 

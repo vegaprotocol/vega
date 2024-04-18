@@ -290,7 +290,7 @@ func NewMarket(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine, pMonitor)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, positionEngine, pMonitor)
 
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -707,6 +707,21 @@ func (m *Market) midPrice() *num.Uint {
 		midPrice = midPrice.Div(num.Sum(bestBidPrice, bestOfferPrice), two)
 	}
 	return midPrice
+}
+
+func (m *Market) getMarketMidPrice() *num.Uint {
+	mp := num.UintZero()
+	if m.as.InAuction() {
+		return mp
+	}
+	bb, _, _ := m.matching.BestBidPriceAndVolume()
+	if bb.IsZero() {
+		return mp
+	}
+	if bo, _, _ := m.matching.BestOfferPriceAndVolume(); !bo.IsZero() {
+		return mp.Div(num.Sum(bb, bo), num.NewUint(2))
+	}
+	return mp
 }
 
 func (m *Market) GetMarketData() types.MarketData {

@@ -17,7 +17,6 @@ package liquidation_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -41,7 +40,6 @@ type tstEngine struct {
 	*liquidation.Engine
 	ctrl   *gomock.Controller
 	book   *mocks.MockBook
-	ml     *mocks.MockMarketLiquidity
 	idgen  *mocks.MockIDGen
 	as     *cmocks.MockAuctionState
 	broker *bmocks.MockBroker
@@ -107,23 +105,22 @@ func TestNetworkReducesOverTime(t *testing.T) {
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
+	midPrice := num.NewUint(100)
 
 	t.Run("call to ontick within the time step does nothing", func(t *testing.T) {
 		now = now.Add(2 * time.Second)
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.Nil(t, order)
 		require.NoError(t, err)
 	})
 
 	t.Run("after the time step passes, the first batch is disposed of", func(t *testing.T) {
 		now = now.Add(3 * time.Second)
-		minP, maxP := num.UintZero(), num.UintOne()
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 		// return a large volume so the full step is disposed
 		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.NoError(t, err)
 		require.NotNil(t, order)
 		require.Equal(t, uint64(5), order.Size)
@@ -132,7 +129,7 @@ func TestNetworkReducesOverTime(t *testing.T) {
 	t.Run("ensure the next time step is set", func(t *testing.T) {
 		now = now.Add(2 * time.Second)
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.Nil(t, order)
 		require.NoError(t, err)
 	})
@@ -142,28 +139,16 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		// pass another step
 		now = now.Add(3 * time.Second)
 		eng.as.EXPECT().InAuction().Times(1).Return(true)
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.Nil(t, order)
 		require.NoError(t, err)
 	})
 
-	t.Run("when not in auction, if there is no price range, there is no trade", func(t *testing.T) {
-		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		mlErr := errors.New("some error")
-		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(nil, nil, mlErr)
-		order, err := eng.OnTick(ctx, now)
-		require.Nil(t, order)
-		require.Error(t, err)
-		require.Equal(t, mlErr, err)
-	})
-
 	t.Run("No longer in auction and we have a price range finally generates the order", func(t *testing.T) {
-		minP, maxP := num.UintZero(), num.UintOne()
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 		// return a large volume so the full step is disposed
 		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.NoError(t, err)
 		require.NotNil(t, order)
 		require.Equal(t, uint64(5), order.Size)
@@ -191,12 +176,10 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		totalSize++
 		// now increase time by 4 seconds should dispose 5.1 -> 5
 		now = now.Add(4 * time.Second)
-		minP, maxP := num.UintZero(), num.UintOne()
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 		// return a large volume so the full step is disposed
 		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.NoError(t, err)
 		require.NotNil(t, order)
 		require.Equal(t, uint64(num.DecimalFromFloat(float64(totalSize)).Div(num.DecimalFromFloat(float64(10))).Ceil().IntPart()), order.Size)
@@ -205,7 +188,7 @@ func TestNetworkReducesOverTime(t *testing.T) {
 	t.Run("Updating the config changes the time left until the next step", func(t *testing.T) {
 		now = now.Add(time.Second)
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.Nil(t, order)
 		require.NoError(t, err)
 		// 4s to go, but...
@@ -213,12 +196,10 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		eng.Update(config.DeepClone())
 		now = now.Add(2 * time.Second)
 		// only 3 seconds later and we dispose of the next batch
-		minP, maxP := num.UintZero(), num.UintOne()
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 		// return a large volume so the full step is disposed
 		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
-		order, err = eng.OnTick(ctx, now)
+		order, err = eng.OnTick(ctx, now, midPrice)
 		require.NoError(t, err)
 		require.NotNil(t, order)
 		require.Equal(t, uint64(num.DecimalFromFloat(float64(totalSize)).Div(num.DecimalFromFloat(float64(10))).Ceil().IntPart()), order.Size)
@@ -237,12 +218,10 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		require.True(t, uint64(eng.GetNetworkPosition().Size()) <= config.FullDisposalSize)
 		now = now.Add(3 * time.Second)
 		// only 3 seconds later and we dispose of the next batch
-		minP, maxP := num.UintZero(), num.UintOne()
 		eng.as.EXPECT().InAuction().Times(1).Return(false)
-		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 		// return a large volume so the full step is disposed
 		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
-		order, err := eng.OnTick(ctx, now)
+		order, err := eng.OnTick(ctx, now, midPrice)
 		require.NoError(t, err)
 		require.NotNil(t, order)
 		require.Equal(t, config.FullDisposalSize, order.Size)
@@ -255,8 +234,10 @@ func testOrderbookHasNoVolume(t *testing.T) {
 	eng := getTestEngine(t, mID, nil)
 	defer eng.Finish()
 
+	minP, midPrice := num.NewUint(90), num.NewUint(100)
+	// make sure the lower bound does not override the price range
 	eng.pmon.EXPECT().GetValidPriceRange().AnyTimes().Return(
-		num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()),
+		num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromFloat(90.0)),
 		num.NewWrappedDecimal(num.MaxUint(), num.MaxDecimal()),
 	)
 
@@ -280,11 +261,9 @@ func testOrderbookHasNoVolume(t *testing.T) {
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
 	// now when we close out, the book returns a volume of 0 is available
-	minP, maxP := num.UintZero(), num.UintOne()
 	eng.as.EXPECT().InAuction().Times(1).Return(false)
-	eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 	eng.book.EXPECT().GetVolumeAtPrice(minP, types.SideBuy).Times(1).Return(uint64(0))
-	order, err := eng.OnTick(ctx, now)
+	order, err := eng.OnTick(ctx, now, midPrice)
 	require.NoError(t, err)
 	require.Nil(t, order)
 }
@@ -297,6 +276,7 @@ func testOrderbookFractionRounding(t *testing.T) {
 		DisposalFraction:    num.DecimalOne(),
 		FullDisposalSize:    1000000, // plenty
 		MaxFractionConsumed: num.DecimalFromFloat(0.5),
+		DisposalSlippage:    num.DecimalFromFloat(10),
 	}
 	eng := getTestEngine(t, mID, &config)
 	defer eng.Finish()
@@ -330,11 +310,10 @@ func testOrderbookFractionRounding(t *testing.T) {
 	require.Equal(t, closed[0].Party(), parties[0])
 	// now the available volume on the book is 1, with the fraction that gets rounded to 0.5
 	// which should be rounded UP to 1.
-	minP, maxP := num.UintZero(), num.UintOne()
+	minP, midPrice := num.UintZero(), num.NewUint(100)
 	eng.as.EXPECT().InAuction().Times(1).Return(false)
-	eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 	eng.book.EXPECT().GetVolumeAtPrice(minP, types.SideBuy).Times(1).Return(uint64(1))
-	order, err := eng.OnTick(ctx, now)
+	order, err := eng.OnTick(ctx, now, midPrice)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), order.Size)
 }
@@ -347,6 +326,7 @@ func testOrderbookExceedsVolume(t *testing.T) {
 		DisposalFraction:    num.DecimalOne(),
 		FullDisposalSize:    1000000, // plenty
 		MaxFractionConsumed: num.DecimalFromFloat(0.5),
+		DisposalSlippage:    num.DecimalFromFloat(10),
 	}
 	eng := getTestEngine(t, mID, &config)
 	defer eng.Finish()
@@ -378,12 +358,11 @@ func testOrderbookExceedsVolume(t *testing.T) {
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
-	minP, maxP := num.UintZero(), num.UintOne()
+	minP, midPrice := num.UintZero(), num.NewUint(100)
 	eng.as.EXPECT().InAuction().Times(1).Return(false)
-	eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 	// orderbook has 100x the available volume, with a factor of 0.5, that's still 50x
 	eng.book.EXPECT().GetVolumeAtPrice(minP, types.SideBuy).Times(1).Return(uint64(netVol * 10))
-	order, err := eng.OnTick(ctx, now)
+	order, err := eng.OnTick(ctx, now, midPrice)
 	require.NoError(t, err)
 	require.Equal(t, uint64(netVol), order.Size)
 }
@@ -396,12 +375,13 @@ func testOrderCappedByPriceMonitor(t *testing.T) {
 		DisposalFraction:    num.DecimalOne(),
 		FullDisposalSize:    1000000, // plenty
 		MaxFractionConsumed: num.DecimalFromFloat(0.5),
+		DisposalSlippage:    num.DecimalFromFloat(10),
 	}
 	eng := getTestEngine(t, mID, &config)
 	defer eng.Finish()
 
 	// these are the bounds given by the order book
-	minP, maxP := num.NewUint(100), num.NewUint(200)
+	midPrice := num.NewUint(150)
 
 	// these are the price monitoring bounds
 	minB := num.NewUint(150)
@@ -434,11 +414,10 @@ func testOrderCappedByPriceMonitor(t *testing.T) {
 	require.Equal(t, closed[0].Party(), parties[0])
 
 	eng.as.EXPECT().InAuction().Times(1).Return(false)
-	eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 
 	// we will check for volume at the price monitoring minimum
 	eng.book.EXPECT().GetVolumeAtPrice(minB, types.SideBuy).Times(1).Return(uint64(netVol * 10))
-	order, err := eng.OnTick(ctx, now)
+	order, err := eng.OnTick(ctx, now, midPrice)
 	require.NoError(t, err)
 	require.Equal(t, uint64(netVol), order.Size)
 }
@@ -501,11 +480,10 @@ func TestLegacySupport(t *testing.T) {
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
 	// now we should see an order for size 15 returned
-	minP, maxP := num.UintZero(), num.UintOne()
+	minP, midPrice := num.UintZero(), num.NewUint(100)
 	eng.as.EXPECT().InAuction().Times(1).Return(false)
-	eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
 	eng.book.EXPECT().GetVolumeAtPrice(minP, types.SideBuy).Times(1).Return(uint64(netVol))
-	order, err := eng.OnTick(ctx, now)
+	order, err := eng.OnTick(ctx, now, midPrice)
 	require.NoError(t, err)
 	require.Equal(t, uint64(netVol), order.Size)
 	// now reduce the network size through distressed short position
@@ -533,7 +511,7 @@ func TestLegacySupport(t *testing.T) {
 	require.Equal(t, closed[0].Party(), parties[0])
 	require.Equal(t, netVol, eng.GetNetworkPosition().Size())
 	// now we should see no error, and no order returned
-	order, err = eng.OnTick(ctx, now)
+	order, err = eng.OnTick(ctx, now, midPrice)
 	require.NoError(t, err)
 	require.Nil(t, order)
 	// now just make sure stopping for snapshots works as expected
@@ -625,19 +603,17 @@ func getTestEngine(t *testing.T, marketID string, config *types.LiquidationStrat
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	book := mocks.NewMockBook(ctrl)
-	ml := mocks.NewMockMarketLiquidity(ctrl)
 	idgen := mocks.NewMockIDGen(ctrl)
 	as := cmocks.NewMockAuctionState(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	tSvc := cmocks.NewMockTimeService(ctrl)
 	pe := mocks.NewMockPositions(ctrl)
 	pmon := mocks.NewMockPriceMonitor(ctrl)
-	engine := liquidation.New(logging.NewDevLogger(), config, marketID, broker, book, as, tSvc, ml, pe, pmon)
+	engine := liquidation.New(logging.NewDevLogger(), config, marketID, broker, book, as, tSvc, pe, pmon)
 	return &tstEngine{
 		Engine: engine,
 		ctrl:   ctrl,
 		book:   book,
-		ml:     ml,
 		idgen:  idgen,
 		as:     as,
 		broker: broker,

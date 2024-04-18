@@ -32,7 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions,PriceMonitor
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,IDGen,Positions,PriceMonitor
 
 type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -40,10 +40,6 @@ type PriceMonitor interface {
 
 type Book interface {
 	GetVolumeAtPrice(price *num.Uint, side types.Side) uint64
-}
-
-type MarketLiquidity interface {
-	ValidOrdersPriceRange() (*num.Uint, *num.Uint, error)
 }
 
 type IDGen interface {
@@ -66,7 +62,6 @@ type Engine struct {
 	as       common.AuctionState
 	nextStep time.Time
 	tSvc     common.TimeService
-	ml       MarketLiquidity
 	position Positions
 	stopped  bool
 	pmon     PriceMonitor
@@ -79,6 +74,7 @@ var (
 		DisposalFraction:    num.DecimalFromFloat(0.1),
 		FullDisposalSize:    20,
 		MaxFractionConsumed: num.DecimalFromFloat(0.05),
+		DisposalSlippage:    num.DecimalFromFloat(0.1),
 	}
 
 	// this comes closest to the existing behaviour (trying to close the network position in full in one go).
@@ -87,7 +83,11 @@ var (
 		DisposalFraction:    num.DecimalOne(),
 		FullDisposalSize:    math.MaxUint64,
 		MaxFractionConsumed: num.DecimalOne(),
+		DisposalSlippage:    num.DecimalFromFloat(10.0),
 	}
+
+	// just because we use it for min-max
+	dOne = num.DecimalFromFloat(1.0)
 )
 
 // GetDefaultStrat is exporeted, expected to be used to update existing proposals on protocol upgrade
@@ -103,7 +103,7 @@ func GetLegacyStrat() *types.LiquidationStrategy {
 	return legacyStrat.DeepClone()
 }
 
-func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions, pmon PriceMonitor) *Engine {
+func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, pe Positions, pmon PriceMonitor) *Engine {
 	// NOTE: This can be removed after protocol upgrade
 	if cfg == nil {
 		cfg = legacyStrat.DeepClone()
@@ -116,7 +116,6 @@ func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, brok
 		book:     book,
 		as:       as,
 		tSvc:     tSvc,
-		ml:       ml,
 		position: pe,
 		pos:      &Pos{},
 		pmon:     pmon,
@@ -132,14 +131,20 @@ func (e *Engine) Update(cfg *types.LiquidationStrategy) {
 	e.cfg = cfg
 }
 
-func (e *Engine) OnTick(ctx context.Context, now time.Time) (*types.Order, error) {
+func (e *Engine) OnTick(ctx context.Context, now time.Time, midPrice *num.Uint) (*types.Order, error) {
 	if e.pos.open == 0 || e.as.InAuction() || e.nextStep.After(now) {
 		return nil, nil
 	}
-	minP, maxP, err := e.ml.ValidOrdersPriceRange()
-	if err != nil {
-		return nil, err
+
+	// get the min/max price from the range based on slippage paramter
+	mpDec := num.DecimalFromUint(midPrice)
+	minP := num.UintZero()
+	if e.cfg.DisposalSlippage.LessThan(dOne) {
+		minD := mpDec.Mul(dOne.Sub(e.cfg.DisposalSlippage))
+		minP, _ = num.UintFromDecimal(minD)
 	}
+	maxD := mpDec.Mul(dOne.Add(e.cfg.DisposalSlippage))
+	maxP, _ := num.UintFromDecimal(maxD)
 
 	minB, maxB := e.pmon.GetValidPriceRange()
 
