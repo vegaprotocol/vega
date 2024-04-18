@@ -709,21 +709,6 @@ func (m *Market) midPrice() *num.Uint {
 	return midPrice
 }
 
-func (m *Market) getMarketMidPrice() *num.Uint {
-	mp := num.UintZero()
-	if m.as.InAuction() {
-		return mp
-	}
-	bb, _, _ := m.matching.BestBidPriceAndVolume()
-	if bb.IsZero() {
-		return mp
-	}
-	if bo, _, _ := m.matching.BestOfferPriceAndVolume(); !bo.IsZero() {
-		return mp.Div(num.Sum(bb, bo), num.NewUint(2))
-	}
-	return mp
-}
-
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
