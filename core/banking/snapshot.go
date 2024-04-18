@@ -39,7 +39,7 @@ var (
 	recurringTransfersKey    = (&types.PayloadBankingRecurringTransfers{}).Key()
 	scheduledTransfersKey    = (&types.PayloadBankingScheduledTransfers{}).Key()
 	primaryBridgeStateKey    = (&types.PayloadBankingPrimaryBridgeState{}).Key()
-	secondaryBridgeStateKey  = (&types.PayloadBankingSecondaryBridgeState{}).Key()
+	secondaryBridgeStateKey  = (&types.PayloadBankingEVMBridgeStates{}).Key()
 	recurringGovTransfersKey = (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
 	scheduledGovTransfersKey = (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
 	transferFeeDiscountsKey  = (&types.PayloadBankingTransferFeeDiscounts{}).Key()
@@ -92,6 +92,7 @@ func (e *Engine) serialisePrimaryBridgeState() ([]byte, error) {
 				Active:      e.primaryBridgeState.active,
 				BlockHeight: e.primaryBridgeState.block,
 				LogIndex:    e.primaryBridgeState.logIndex,
+				ChainID:     e.primaryEthChainID,
 			},
 		},
 	}
@@ -100,11 +101,15 @@ func (e *Engine) serialisePrimaryBridgeState() ([]byte, error) {
 
 func (e *Engine) serialiseSecondaryBridgeState() ([]byte, error) {
 	payload := types.Payload{
-		Data: &types.PayloadBankingSecondaryBridgeState{
-			BankingBridgeState: &types.BankingBridgeState{
-				Active:      e.secondaryBridgeState.active,
-				BlockHeight: e.secondaryBridgeState.block,
-				LogIndex:    e.secondaryBridgeState.logIndex,
+		Data: &types.PayloadBankingEVMBridgeStates{
+			// we only have one bridge state atm, its easy
+			BankingBridgeStates: []*checkpoint.BridgeState{
+				{
+					Active:      e.secondaryBridgeState.active,
+					BlockHeight: e.secondaryBridgeState.block,
+					LogIndex:    e.secondaryBridgeState.logIndex,
+					ChainId:     e.secondaryEthChainID,
+				},
 			},
 		},
 	}
@@ -318,8 +323,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreScheduledGovernanceTransfers(ctx, pl.BankingScheduledGovernanceTransfers, p)
 	case *types.PayloadBankingPrimaryBridgeState:
 		return nil, e.restorePrimaryBridgeState(pl.BankingBridgeState, p)
-	case *types.PayloadBankingSecondaryBridgeState:
-		return nil, e.restoreSecondaryBridgeState(pl.BankingBridgeState, p)
+	case *types.PayloadBankingEVMBridgeStates:
+		return nil, e.restoreSecondaryBridgeState(pl.BankingBridgeStates, p)
 	case *types.PayloadBankingTransferFeeDiscounts:
 		return nil, e.restoreTransferFeeDiscounts(pl.BankingTransferFeeDiscounts, p)
 	default:
@@ -375,12 +380,12 @@ func (e *Engine) restorePrimaryBridgeState(state *types.BankingBridgeState, p *t
 	return
 }
 
-func (e *Engine) restoreSecondaryBridgeState(state *types.BankingBridgeState, p *types.Payload) (err error) {
+func (e *Engine) restoreSecondaryBridgeState(state []*checkpoint.BridgeState, p *types.Payload) (err error) {
 	if state != nil {
 		e.secondaryBridgeState = &bridgeState{
-			active:   state.Active,
-			block:    state.BlockHeight,
-			logIndex: state.LogIndex,
+			active:   state[0].Active,
+			block:    state[0].BlockHeight,
+			logIndex: state[0].LogIndex,
 		}
 	}
 

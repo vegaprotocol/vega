@@ -246,8 +246,8 @@ func newServices(
 	// this is done to go around circular deps...
 	svcs.primaryMultisig.SetWitness(svcs.witness)
 	svcs.secondaryMultisig.SetWitness(svcs.witness)
-	svcs.primaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology, "primary")
-	svcs.secondaryEventForwarder = evtforward.New(svcs.log, svcs.conf.SecondaryEvtForward, svcs.commander, svcs.timeService, svcs.topology, "secondary")
+	svcs.primaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
+	svcs.secondaryEventForwarder = evtforward.New(svcs.log, svcs.conf.SecondaryEvtForward, svcs.commander, svcs.timeService, svcs.topology)
 
 	if svcs.conf.HaveEthClient() {
 		svcs.primaryBridgeView = bridges.NewERC20LogicView(primaryEthClient, primaryEthConfirmations)
@@ -440,12 +440,12 @@ func newServices(
 		svcs.limits,
 		svcs.topology,
 		svcs.primaryEventForwarder,
-		svcs.secondaryEventForwarder,
+		evtforward.NewEVMForwarders(svcs.secondaryEventForwarder),
 		svcs.executionEngine,
 		svcs.marketActivityTracker,
 		svcs.statevar,
 		svcs.primaryMultisig,
-		svcs.secondaryMultisig,
+		erc20multisig.NewEVMTopologies(svcs.secondaryMultisig),
 		svcs.protocolUpgradeEngine,
 		svcs.ethereumOraclesVerifier,
 		svcs.vesting,
@@ -739,6 +739,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), true)
+				svcs.primaryEventForwarder.SetChainID(ethCfg.ChainID())
 
 				return svcs.primaryEventForwarderEngine.SetupEthereumEngine(svcs.primaryEthClient, svcs.primaryEventForwarder, svcs.conf.EvtForward.Ethereum, ethCfg, svcs.assets)
 			},
@@ -756,6 +757,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), false)
+				svcs.secondaryEventForwarder.SetChainID(ethCfg.ChainID())
 
 				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.secondaryEventForwarder, svcs.conf.SecondaryEvtForward.Ethereum, ethCfg, svcs.assets)
 			},

@@ -178,6 +178,7 @@ message BridgeState {
   bool active = 1;
   uint64 block_height = 2;
   uint64 log_index = 3;
+  string chain_id = 4;
 }
 
 message Validators {

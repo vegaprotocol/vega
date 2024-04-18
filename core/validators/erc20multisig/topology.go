@@ -91,12 +91,7 @@ type Topology struct {
 	witnessedThresholds map[string]struct{}
 	witnessedSigners    map[string]struct{}
 
-	// snapshot state
-	tss            *topologySnapshotState
 	ethEventSource EthereumEventSource
-
-	// whether it is multisig top for the first or second bridge
-	scope string
 }
 
 type pendingSigner struct {
@@ -157,8 +152,6 @@ func NewTopology(
 		seen:                map[string]struct{}{},
 		witnessedThresholds: map[string]struct{}{},
 		witnessedSigners:    map[string]struct{}{},
-		tss:                 &topologySnapshotState{},
-		scope:               scope,
 	}
 	return t
 }

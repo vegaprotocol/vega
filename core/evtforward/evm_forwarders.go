@@ -21,33 +21,38 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-
-	"github.com/emirpasic/gods/sets/treeset"
 )
 
-var (
-	key = (&types.PayloadEventForwarder{}).Key()
+// EVMForwarders a little wrapper around the second bridge forwarder as a first step to generalising to
+// multiple EVM bridges.
+type EVMForwarders struct {
+	forwarders []*Forwarder
+}
 
-	hashKeys = []string{
-		key,
+// New creates a new instance of the event forwarder.
+func NewEVMForwarders(
+	secondBridge *Forwarder,
+) *EVMForwarders {
+	return &EVMForwarders{
+		forwarders: []*Forwarder{secondBridge},
 	}
-)
-
-func (f *Forwarder) Namespace() types.SnapshotNamespace {
-	return types.EventForwarderSnapshot
 }
 
-func (f *Forwarder) Keys() []string {
-	return hashKeys
+func (f *EVMForwarders) Namespace() types.SnapshotNamespace {
+	return types.EVMEventForwardersSnapshot
 }
 
-func (f *Forwarder) Stopped() bool {
+func (f *EVMForwarders) Keys() []string {
+	return []string{(&types.PayloadEventForwarder{}).Key()}
+}
+
+func (f *EVMForwarders) Stopped() bool {
 	return false
 }
 
-func (f *Forwarder) serialise() ([]byte, error) {
-	slice := make([]*snapshotpb.EventForwarderBucket, 0, f.ackedEvts.Size())
-	iter := f.ackedEvts.events.Iterator()
+func (f *EVMForwarders) serialise() ([]byte, error) {
+	slice := make([]*snapshotpb.EventForwarderBucket, 0, f.forwarders[0].ackedEvts.Size())
+	iter := f.forwarders[0].ackedEvts.events.Iterator()
 	for iter.Next() {
 		v := iter.Value().(*ackedEvtBucket)
 		slice = append(slice, &snapshotpb.EventForwarderBucket{
@@ -57,15 +62,20 @@ func (f *Forwarder) serialise() ([]byte, error) {
 	}
 
 	payload := types.Payload{
-		Data: &types.PayloadEventForwarder{
-			Buckets: slice,
+		Data: &types.PayloadEVMEventForwarders{
+			EVMEventForwarders: []*snapshotpb.EventForwarder{
+				{
+					Buckets: slice,
+					ChainId: f.forwarders[0].chainID,
+				},
+			},
 		},
 	}
 	return proto.Marshal(payload.IntoProto())
 }
 
 // get the serialised form of the given key.
-func (f *Forwarder) getSerialised(k string) (data []byte, err error) {
+func (f *EVMForwarders) getSerialised(k string) (data []byte, err error) {
 	if k != key {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -73,17 +83,17 @@ func (f *Forwarder) getSerialised(k string) (data []byte, err error) {
 	return f.serialise()
 }
 
-func (f *Forwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
+func (f *EVMForwarders) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, err := f.getSerialised(k)
 	return state, nil, err
 }
 
-func (f *Forwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (f *EVMForwarders) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if f.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
-	if pl, ok := p.Data.(*types.PayloadEventForwarder); ok {
+	if pl, ok := p.Data.(*types.PayloadEVMEventForwarders); ok {
 		f.restore(ctx, pl)
 		return nil, nil
 	}
@@ -91,13 +101,8 @@ func (f *Forwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.St
 	return nil, types.ErrUnknownSnapshotType
 }
 
-func (f *Forwarder) restore(_ context.Context, p *types.PayloadEventForwarder) {
-	f.ackedEvts = &ackedEvents{
-		timeService: f.timeService,
-		events:      treeset.NewWith(ackedEvtBucketComparator),
-	}
-
-	for _, v := range p.Buckets {
-		f.ackedEvts.AddAt(v.Ts, v.Hashes...)
-	}
+func (f *EVMForwarders) restore(ctx context.Context, p *types.PayloadEVMEventForwarders) {
+	f.forwarders[0].restore(ctx, &types.PayloadEventForwarder{
+		Buckets: p.EVMEventForwarders[0].Buckets,
+	})
 }

@@ -146,7 +146,9 @@ message Payload {
     Parties parties = 83;
     L2EthOracles l2_eth_oracles = 84;
     EthOracleVerifierMisc eth_oracle_verifier_misc = 85;
-    BankingBridgeState banking_secondary_bridge_state = 86;
+    BankingEVMBridgeStates banking_evm_bridge_states = 86;
+    EVMEventForwarders evm_event_forwarders = 87;
+    EVMMultisigTopologies evm_multisig_topologies = 88;
   }
 }
 
@@ -236,7 +238,11 @@ message EventForwarder {
   // this is deprecated, use the other one now
   repeated string acked_events = 1;
   repeated EventForwarderBucket buckets = 2;
-  string scope = 3;
+  string chain_id = 3;
+}
+
+message EVMEventForwarders {
+  repeated EventForwarder evm_event_forwarders = 1;
 }
 
 message CollateralAccounts {
@@ -314,6 +320,10 @@ message BankingScheduledGovernanceTransfers {
 
 message BankingBridgeState {
   vega.checkpoint.v1.BridgeState bridge_state = 1;
+}
+
+message BankingEVMBridgeStates {
+  repeated vega.checkpoint.v1.BridgeState bridge_states = 1;
 }
 
 message Checkpoint {
@@ -1112,7 +1122,6 @@ message ERC20MultiSigTopologyVerified {
   repeated SignerEventsPerAddress events_per_address = 2;
   vega.events.v1.ERC20MultiSigThresholdSetEvent threshold = 3;
   repeated string seen_events = 4;
-  string scope = 5;
 }
 
 message ERC20MultiSigTopologyPending {
@@ -1120,7 +1129,16 @@ message ERC20MultiSigTopologyPending {
   repeated vega.events.v1.ERC20MultiSigThresholdSetEvent pending_threshold_set = 2;
   repeated string witnessed_signers = 3;
   repeated string witnessed_threshold_sets = 4;
-  string scope = 5;
+}
+
+message EVMMultisigTopology {
+  string chain_id = 1;
+  ERC20MultiSigTopologyVerified verified = 2;
+  ERC20MultiSigTopologyPending pending = 3;
+}
+
+message EVMMultisigTopologies {
+  repeated EVMMultisigTopology evm_multisig_topology = 1;
 }
 
 message ProofOfWork {

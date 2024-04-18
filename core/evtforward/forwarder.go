@@ -82,9 +82,7 @@ type Forwarder struct {
 
 	top ValidatorTopology
 
-	// scope allows us to hack the snapshot system, so we can have multiple
-	// instances of this engine being snapshotted.
-	scope string
+	chainID string
 }
 
 type tsEvt struct {
@@ -98,7 +96,6 @@ func New(log *logging.Logger,
 	cmd Commander,
 	timeService TimeService,
 	top ValidatorTopology,
-	scope string,
 ) *Forwarder {
 	log = log.Named(forwarderLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -118,7 +115,6 @@ func New(log *logging.Logger,
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
-		scope:            scope,
 	}
 	forwarder.updateValidatorsList()
 	return forwarder
@@ -148,6 +144,10 @@ func (f *Forwarder) ReloadConf(cfg Config) {
 	f.log.Info("evtforward allowlist updated",
 		logging.Reflect("list", cfg.BlockchainQueueAllowlist))
 	f.bcQueueAllowlist.Store(buildAllowlist(cfg))
+}
+
+func (f *Forwarder) SetChainID(chainID string) {
+	f.chainID = chainID
 }
 
 // Ack will return true if the event is newly acknowledged.

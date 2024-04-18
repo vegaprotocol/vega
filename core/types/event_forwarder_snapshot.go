@@ -18,7 +18,6 @@ package types
 import snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 type PayloadEventForwarder struct {
-	Scope string
 	// keys are deprecated, to be removed after 74
 	Keys []string
 	// Buckets are used with the new upgrade
@@ -26,13 +25,8 @@ type PayloadEventForwarder struct {
 }
 
 func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
-	scope := p.Scope
-	if len(scope) == 0 {
-		scope = "primary"
-	}
 	return &snapshot.Payload_EventForwarder{
 		EventForwarder: &snapshot.EventForwarder{
-			Scope:       scope,
 			AckedEvents: p.Keys,
 			Buckets:     p.Buckets,
 		},
@@ -50,20 +44,44 @@ func (*PayloadEventForwarder) Key() string {
 }
 
 func (p *PayloadEventForwarder) Namespace() SnapshotNamespace {
-	if p.Scope == "primary" {
-		return EventForwarderSnapshot
-	}
-	return SnapshotNamespace(string(EventForwarderSnapshot) + "." + p.Scope)
+	return EventForwarderSnapshot
 }
 
 func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
-	scope := ef.EventForwarder.Scope
-	if len(scope) == 0 {
-		scope = "primary"
-	}
 	return &PayloadEventForwarder{
-		Scope:   scope,
 		Keys:    ef.EventForwarder.AckedEvents,
 		Buckets: ef.EventForwarder.Buckets,
+	}
+}
+
+type PayloadEVMEventForwarders struct {
+	EVMEventForwarders []*snapshot.EventForwarder
+}
+
+func (p *PayloadEVMEventForwarders) IntoProto() *snapshot.Payload_EvmEventForwarders {
+	return &snapshot.Payload_EvmEventForwarders{
+		EvmEventForwarders: &snapshot.EVMEventForwarders{
+			EvmEventForwarders: p.EVMEventForwarders,
+		},
+	}
+}
+
+func (*PayloadEVMEventForwarders) isPayload() {}
+
+func (p *PayloadEVMEventForwarders) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadEVMEventForwarders) Key() string {
+	return "all"
+}
+
+func (p *PayloadEVMEventForwarders) Namespace() SnapshotNamespace {
+	return EVMEventForwardersSnapshot
+}
+
+func PayloadEVMEventForwardersFromProto(ef *snapshot.Payload_EvmEventForwarders) *PayloadEVMEventForwarders {
+	return &PayloadEVMEventForwarders{
+		EVMEventForwarders: ef.EvmEventForwarders.EvmEventForwarders,
 	}
 }
