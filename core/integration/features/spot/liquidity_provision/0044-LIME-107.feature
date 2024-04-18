@@ -52,8 +52,8 @@ Feature: Spot market SLA
       | lp1    | BTC   | 60     |
       | lp2    | ETH   | 4000   |
       | lp2    | BTC   | 60     |
-      | lp3    | ETH   | 4000   |
-      | lp3    | BTC   | 60     |
+      | lp3    | ETH   | 70000  |
+      | lp3    | BTC   | 2500   |
 
     And the average block duration is "1"
 
@@ -113,12 +113,19 @@ Feature: Spot market SLA
       | id  | party | market id | commitment amount | fee | lp type   |
       | lp1 | lp1   | BTC/ETH   | 2000              | 0.2 | amendment |
       | lp2 | lp2   | BTC/ETH   | 4000              | 0.4 | amendment |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4800         | 7000           | 0             |
 
     Then the party "lp1" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
     Then the party "lp2" lp liquidity bond account balance should be "4000" for the market "BTC/ETH"
     And the liquidity fee factor should be "0.1" for the market "BTC/ETH"
 
     Then the network moves ahead "5" blocks
+    #supplied stake has been reduced after SLA bond penalty, target stake went up temperarily since lp2 increased commitment and its reflected in bond account immediately
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5600         | 5100           | 0             |
     #0044-LIME-107:Lp reduces LP commitment and got slashed during the epoch, and the lower (slashed) LP bond stake will be retained
     Then the party "lp1" lp liquidity bond account balance should be "1550" for the market "BTC/ETH"
     #0044-LIME-111:at the end of the current epoch rewards / penalties are evaluated based on the balance of the bond account at start of epoch
@@ -138,15 +145,39 @@ Feature: Spot market SLA
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type    |
       | lp3 | lp3   | BTC/ETH   | 3000              | 0.1 | submission |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5600         | 8100           | 0             |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | lp3   | BTC/ETH   | buy  | 500    | 7     | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp3   | BTC/ETH   | sell | 200    | 25    | 0                | TYPE_LIMIT | TIF_GTC |
     Then the party "lp3" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
-    Then "lp3" should have general account balance of "1000" for asset "ETH"
-    #Then the network moves ahead "1" blocks
+
+    Then the network moves ahead "5" blocks
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 6480         | 7336           | 0             |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type   |
-      | lp3 | lp3   | BTC/ETH   | 2000              | 0.1 | amendment |
-      
+      | lp3 | lp3   | BTC/ETH   | 2500              | 0.1 | amendment |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 6480         | 7336           | 0             |
+
     #0044-LIME-112:A liquidity provider who reduces their liquidity provision such that the total stake on the market is still above the target stake
-    Then the party "lp3" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
-    Then "lp3" should have general account balance of "2000" for asset "ETH"
+    Then the party "lp3" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
+
+    #0044-LIME-105:A liquidity provider with an active liquidity provision at the start of an epoch reduces their liquidity provision staked commitment during the epoch
+    Then the network moves ahead "2" blocks
+    Then the party "lp3" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
+    Then the network moves ahead "2" blocks
+    Then the party "lp3" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
+
+    Then the network moves ahead "2" blocks
+    Then the party "lp3" lp liquidity bond account balance should be "2500" for the market "BTC/ETH"
+    Then "lp3" should have general account balance of "32500" for asset "ETH"
+    Then "lp3" should have holding account balance of "35000" for asset "ETH"
+
 
