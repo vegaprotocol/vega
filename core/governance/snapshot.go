@@ -76,7 +76,7 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 	}
 
 	// update market events may require updating to set the liquidation strategy slippage
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.75.8") {
+	if vgcontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
 		evts := make([]events.Event, 0, len(e.activeProposals)/2)
 		for _, p := range e.activeProposals {
 			if !p.Proposal.IsMarketUpdate() {
@@ -277,7 +277,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	vevts := []events.Event{}
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.75.8") {
+		if vgcontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
 			if p.Proposal.IsNewMarket() || p.Proposal.IsMarketUpdate() {
 				setLiquidationSlippage(p.Proposal)
 			}
@@ -350,7 +350,7 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 
 		evts = append(evts, events.NewProposalEventFromProto(ctx, bp.BatchProposal.ToProto()))
 		for _, p := range bp.BatchProposal.Proposals {
-			if vgcontext.InProgressUpgradeFrom(ctx, "v0.75.8") {
+			if vgcontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
 				if p.IsMarketUpdate() || p.IsNewMarket() {
 					setLiquidationSlippage(p)
 				}

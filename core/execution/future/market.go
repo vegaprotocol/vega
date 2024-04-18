@@ -964,7 +964,7 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	}
 
 	// Disposal slippage was set as part of this upgrade, send event to ensure datanode is updated.
-	if vegacontext.InProgressUpgradeFrom(ctx, "v0.75.8") {
+	if vegacontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	}
 
