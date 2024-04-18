@@ -129,18 +129,19 @@ func (e *Engine) Update(cfg *types.LiquidationStrategy) {
 }
 
 func (e *Engine) OnTick(ctx context.Context, now time.Time, midPrice *num.Uint) (*types.Order, error) {
-	if e.pos.open == 0 || e.as.InAuction() || e.nextStep.After(now) {
+	if e.pos.open == 0 || e.as.InAuction() || e.nextStep.After(now) || midPrice.IsZero() {
 		return nil, nil
 	}
 
+	one := num.DecimalOne()
 	// get the min/max price from the range based on slippage parameter
 	mpDec := num.DecimalFromUint(midPrice)
 	minP := num.UintZero()
-	if e.cfg.DisposalSlippage.LessThan(num.DecimalZero()) {
-		minD := mpDec.Mul(num.DecimalZero().Sub(e.cfg.DisposalSlippage))
+	if e.cfg.DisposalSlippage.LessThan(one) {
+		minD := mpDec.Mul(one.Sub(e.cfg.DisposalSlippage))
 		minP, _ = num.UintFromDecimal(minD)
 	}
-	maxD := mpDec.Mul(num.DecimalZero().Add(e.cfg.DisposalSlippage))
+	maxD := mpDec.Mul(one.Add(e.cfg.DisposalSlippage))
 	maxP, _ := num.UintFromDecimal(maxD)
 
 	minB, maxB := e.pmon.GetValidPriceRange()
