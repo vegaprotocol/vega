@@ -5126,6 +5126,10 @@ type BatchProposalTermsChange {
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   """
   enactmentDatetime: Timestamp
+  """
+  RFC3339Nano time and date allocated to the validator to validate the proposal.
+  """
+  validationDatetime: Timestamp
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
