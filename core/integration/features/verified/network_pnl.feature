@@ -13,9 +13,9 @@ Feature: Profit and loss for network a running liquidation strategy
 
     # Configure the markets
     Given the liquidation strategies:
-      | name                | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | liquidation-strat-1 | 3600          | 0.5               | 0                  | 1                     |
-      | liquidation-strat-2 | 5             | 0.5               | 0                  | 1                     |
+      | name                | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | liquidation-strat-1 | 3600          | 0.5               | 0                  | 1                     | 0.1                     |
+      | liquidation-strat-2 | 5             | 0.5               | 0                  | 1                     | 0.1                     |
 
     And the markets:
       | id        | quote name | asset    | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | liquidation strategy | sla params    |

@@ -2,8 +2,8 @@ Feature: When a party is distressed and gets closed out the network's position g
 
   Background:
     Given the liquidation strategies:
-      | name           | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | disposal-strat | 10            | 1.0               | 1000               | 1.0                   |
+      | name           | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | disposal-strat | 10            | 1.0               | 1000               | 1.0                   | 0.1                     |
 
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy |

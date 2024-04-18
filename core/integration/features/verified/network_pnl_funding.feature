@@ -15,8 +15,8 @@ Feature: Network profit and loss consideres funding
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
       | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.9                   | 0.1           | 0                 | 0                 | ETH        | 0                   |
     Given the liquidation strategies:
-      | name                | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | liquidation-strat-1 | 3600          | 0.5               | 0                  | 1                     |
+      | name                | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | liquidation-strat-1 | 3600          | 0.5               | 0                  | 1                     | 0.1                     |
     And the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | liquidation strategy | sla params    | market type |
       | ETH/MAR22 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.001                  | 0                         | liquidation-strat-1  | default-basic | perp        |

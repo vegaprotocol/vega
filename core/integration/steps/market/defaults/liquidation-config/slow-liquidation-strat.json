@@ -2,6 +2,7 @@
     "disposal_time_step": 100,
     "disposal_fraction": "0.2",
     "full_disposal_size": 1,
-    "max_fraction_consumed": "0.2"
+    "max_fraction_consumed": "0.2",
+    "disposal_slippage_range": "0.1"
 }
 

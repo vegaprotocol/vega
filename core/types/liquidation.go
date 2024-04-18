@@ -124,11 +124,16 @@ func LiquidationStrategyFromProto(p *vegapb.LiquidationStrategy) (*LiquidationSt
 }
 
 func (l *LiquidationStrategy) IntoProto() *vegapb.LiquidationStrategy {
+	slip := ""
+	if !l.DisposalSlippage.IsZero() {
+		slip = l.DisposalSlippage.String()
+	}
 	return &vegapb.LiquidationStrategy{
-		DisposalTimeStep:    int64(l.DisposalTimeStep / time.Second),
-		DisposalFraction:    l.DisposalFraction.String(),
-		FullDisposalSize:    l.FullDisposalSize,
-		MaxFractionConsumed: l.MaxFractionConsumed.String(),
+		DisposalTimeStep:      int64(l.DisposalTimeStep / time.Second),
+		DisposalFraction:      l.DisposalFraction.String(),
+		FullDisposalSize:      l.FullDisposalSize,
+		MaxFractionConsumed:   l.MaxFractionConsumed.String(),
+		DisposalSlippageRange: slip,
 	}
 }
 
