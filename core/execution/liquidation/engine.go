@@ -85,9 +85,6 @@ var (
 		MaxFractionConsumed: num.DecimalOne(),
 		DisposalSlippage:    num.DecimalFromFloat(10.0),
 	}
-
-	// just because we use it for min-max
-	dOne = num.DecimalFromFloat(1.0)
 )
 
 // GetDefaultStrat is exporeted, expected to be used to update existing proposals on protocol upgrade
@@ -136,14 +133,14 @@ func (e *Engine) OnTick(ctx context.Context, now time.Time, midPrice *num.Uint) 
 		return nil, nil
 	}
 
-	// get the min/max price from the range based on slippage paramter
+	// get the min/max price from the range based on slippage parameter
 	mpDec := num.DecimalFromUint(midPrice)
 	minP := num.UintZero()
-	if e.cfg.DisposalSlippage.LessThan(dOne) {
-		minD := mpDec.Mul(dOne.Sub(e.cfg.DisposalSlippage))
+	if e.cfg.DisposalSlippage.LessThan(num.DecimalZero()) {
+		minD := mpDec.Mul(num.DecimalZero().Sub(e.cfg.DisposalSlippage))
 		minP, _ = num.UintFromDecimal(minD)
 	}
-	maxD := mpDec.Mul(dOne.Add(e.cfg.DisposalSlippage))
+	maxD := mpDec.Mul(num.DecimalZero().Add(e.cfg.DisposalSlippage))
 	maxP, _ := num.UintFromDecimal(maxD)
 
 	minB, maxB := e.pmon.GetValidPriceRange()

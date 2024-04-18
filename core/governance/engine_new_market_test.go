@@ -1242,7 +1242,7 @@ func testSubmittingProposalWithoutDisposalSlippageFails(t *testing.T) {
 
 	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 	proposal.Terms.GetNewMarket().Changes.LiquidationStrategy = &types.LiquidationStrategy{
-		DisposalTimeStep:    10,
+		DisposalTimeStep:    time.Second * 10,
 		DisposalFraction:    num.DecimalFromFloat(0.2),
 		FullDisposalSize:    10,
 		MaxFractionConsumed: num.DecimalFromFloat(0.5),
@@ -1256,7 +1256,7 @@ func testSubmittingProposalWithoutDisposalSlippageFails(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "liquidation strategy time step has to be 1s or more")
+	assert.Contains(t, err.Error(), "liquidation strategy must specify a disposal slippage range > 0")
 }
 
 func testOutOfRangeRiskParamFail(t *testing.T, lnm *types.LogNormalRiskModel) {
