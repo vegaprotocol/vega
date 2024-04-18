@@ -57,6 +57,7 @@ func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a duplicated proposal with internal time termination for new market fails", testSubmittingDuplicatedProposalWithInternalTimeTerminationForNewMarketFails)
 	t.Run("Submitting a proposal for new market with bad risk parameter fails", testSubmittingProposalForNewMarketWithBadRiskParameterFails)
 	t.Run("Submitting a proposal for new market with internal time termination with bad risk parameter fails", testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskParameterFails)
+	t.Run("Submitting a proposal for a ne market without disposal slippage range fails", testSubmittingProposalWithoutDisposalSlippageFails)
 
 	t.Run("Rejecting a proposal for new market succeeds", testRejectingProposalForNewMarketSucceeds)
 
@@ -1231,6 +1232,31 @@ func testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskPar
 	// then
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid risk parameter")
+}
+
+func testSubmittingProposalWithoutDisposalSlippageFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	// given
+	party := eng.newValidParty("a-valid-party", 1)
+	eng.ensureAllAssetEnabled(t)
+
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
+	proposal.Terms.GetNewMarket().Changes.LiquidationStrategy = &types.LiquidationStrategy{
+		DisposalTimeStep:    10,
+		DisposalFraction:    num.DecimalFromFloat(0.2),
+		FullDisposalSize:    10,
+		MaxFractionConsumed: num.DecimalFromFloat(0.5),
+	}
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "liquidation strategy time step has to be 1s or more")
 }
 
 func testOutOfRangeRiskParamFail(t *testing.T, lnm *types.LogNormalRiskModel) {
