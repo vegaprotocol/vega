@@ -54,6 +54,8 @@ Feature: Spot market SLA
       | lp2    | BTC   | 60     |
       | lp3    | ETH   | 70000  |
       | lp3    | BTC   | 2500   |
+      | lp4    | ETH   | 70000  |
+      | lp4    | BTC   | 2500   |
 
     And the average block duration is "1"
 
@@ -161,7 +163,7 @@ Feature: Spot market SLA
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type   |
-      | lp3 | lp3   | BTC/ETH   | 2500              | 0.1 | amendment |
+      | lp3 | lp3   | BTC/ETH   | 2900              | 0.1 | amendment |
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 6480         | 7336           | 0             |
@@ -176,8 +178,31 @@ Feature: Spot market SLA
     Then the party "lp3" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
 
     Then the network moves ahead "2" blocks
-    Then the party "lp3" lp liquidity bond account balance should be "2500" for the market "BTC/ETH"
-    Then "lp3" should have general account balance of "32500" for asset "ETH"
+    Then the party "lp3" lp liquidity bond account balance should be "2900" for the market "BTC/ETH"
+    Then "lp3" should have general account balance of "32100" for asset "ETH"
     Then "lp3" should have holding account balance of "35000" for asset "ETH"
 
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp4 | lp4   | BTC/ETH   | 3000              | 0.1 | submission |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | lp4   | BTC/ETH   | buy  | 500    | 7     | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp4   | BTC/ETH   | sell | 200    | 25    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the party "lp4" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
 
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type   |
+      | lp4 | lp4   | BTC/ETH   | 2900              | 0.1 | amendment |
+    Then the network moves ahead "1" blocks
+    #0044-LIME-106:Lp reduces commitment a few times during the epoch
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type   |
+      | lp4 | lp4   | BTC/ETH   | 2800              | 0.1 | amendment |
+    Then the network moves ahead "1" blocks
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type   |
+      | lp4 | lp4   | BTC/ETH   | 2700              | 0.1 | amendment |
+
+    Then the network moves ahead "3" blocks
+    Then the party "lp4" lp liquidity bond account balance should be "2700" for the market "BTC/ETH"
