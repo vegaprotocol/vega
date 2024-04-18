@@ -6152,10 +6152,11 @@ func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T
 							},
 						},
 						LiquidationStrategy: &vegapb.LiquidationStrategy{
-							DisposalTimeStep:    20,
-							DisposalFraction:    "0.05",
-							FullDisposalSize:    20,
-							MaxFractionConsumed: "0.01",
+							DisposalTimeStep:      20,
+							DisposalFraction:      "0.05",
+							FullDisposalSize:      20,
+							MaxFractionConsumed:   "0.01",
+							DisposalSlippageRange: "0.1",
 						},
 					},
 				},
@@ -6166,6 +6167,7 @@ func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction"))
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed"))
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step"))
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range"))
 }
 
 type compositePriceConfigCase struct {
@@ -6587,10 +6589,11 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 							},
 						},
 						LiquidationStrategy: &vegapb.LiquidationStrategy{
-							DisposalTimeStep:    20,
-							DisposalFraction:    "0.05",
-							FullDisposalSize:    20,
-							MaxFractionConsumed: "0.01",
+							DisposalTimeStep:      20,
+							DisposalFraction:      "0.05",
+							FullDisposalSize:      20,
+							MaxFractionConsumed:   "0.01",
+							DisposalSlippageRange: "0.1",
 						},
 					},
 				},
@@ -6604,28 +6607,41 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 	}{
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "123",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.01",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "123",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.01",
+				DisposalSlippageRange: "0.1",
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "-0.1",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "-0.1",
+				DisposalSlippageRange: "100", // large values are fine
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    0,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.1",
+				DisposalTimeStep:      0,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "0.5",
+			},
+			err: commands.ErrMustBePositive,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:      5,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "-0.5",
 			},
 			err: commands.ErrMustBePositive,
 		},
@@ -6634,6 +6650,7 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction",
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed",
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step",
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range",
 	}
 	for ec, exp := range data {
 		nm := submission.Terms.GetNewMarket()
@@ -6659,30 +6676,43 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 	}{
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "-2",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.01",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "-2",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.01",
+				DisposalSlippageRange: "0.5",
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "2",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "2",
+				DisposalSlippageRange: "0.5",
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    3601,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.1",
+				DisposalTimeStep:      3601,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "0.5",
 			},
 			err: commands.ErrMustBeAtMost3600,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:      5,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "0", // zero or missing values fail, too
+			},
+			err: commands.ErrMustBePositive,
 		},
 	}
 	for ec, exp := range data {
