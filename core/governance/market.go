@@ -705,6 +705,9 @@ func validateLiquidationStrategy(ls *types.LiquidationStrategy) (types.ProposalE
 	} else if ls.DisposalTimeStep > time.Hour {
 		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy time step can't be more than 1h")
 	}
+	if ls.DisposalSlippage.IsZero() || ls.DisposalSlippage.IsNegative() {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy must specify a disposal slippage range > 0")
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 

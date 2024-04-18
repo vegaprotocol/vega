@@ -363,6 +363,7 @@ type LiquidationStrategy struct {
 	DisposalFraction    num.Decimal   `json:"disposalFraction"`
 	FullDisposalSize    uint64        `json:"fullDisposalSize"`
 	MaxFractionConsumed num.Decimal   `json:"maxFractionConsumed"`
+	DisposalSlippage    num.Decimal   `json:"disposalSlippageRange"`
 }
 
 func LiquidationStrategyFromProto(ls *vega.LiquidationStrategy) LiquidationStrategy {
@@ -371,20 +372,26 @@ func LiquidationStrategyFromProto(ls *vega.LiquidationStrategy) LiquidationStrat
 	}
 	df, _ := num.DecimalFromString(ls.DisposalFraction)
 	mfc, _ := num.DecimalFromString(ls.MaxFractionConsumed)
+	slip := num.DecimalZero()
+	if len(ls.DisposalSlippageRange) > 0 {
+		slip, _ = num.DecimalFromString(ls.DisposalSlippageRange)
+	}
 	return LiquidationStrategy{
 		DisposalTimeStep:    time.Duration(ls.DisposalTimeStep) * time.Second,
 		FullDisposalSize:    ls.FullDisposalSize,
 		DisposalFraction:    df,
 		MaxFractionConsumed: mfc,
+		DisposalSlippage:    slip,
 	}
 }
 
 func (l LiquidationStrategy) IntoProto() *vega.LiquidationStrategy {
 	return &vega.LiquidationStrategy{
-		DisposalTimeStep:    int64(l.DisposalTimeStep / time.Second),
-		DisposalFraction:    l.DisposalFraction.String(),
-		FullDisposalSize:    l.FullDisposalSize,
-		MaxFractionConsumed: l.MaxFractionConsumed.String(),
+		DisposalTimeStep:      int64(l.DisposalTimeStep / time.Second),
+		DisposalFraction:      l.DisposalFraction.String(),
+		FullDisposalSize:      l.FullDisposalSize,
+		MaxFractionConsumed:   l.MaxFractionConsumed.String(),
+		DisposalSlippageRange: l.DisposalSlippage.String(),
 	}
 }
 

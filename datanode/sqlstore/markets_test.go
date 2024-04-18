@@ -552,10 +552,11 @@ func getTestMarket() *vega.Market {
 func getTestFutureMarketWithLiquidationStrategy(termInt bool) *vega.Market {
 	mkt := getTestFutureMarket(termInt)
 	mkt.LiquidationStrategy = &vega.LiquidationStrategy{
-		DisposalTimeStep:    10,
-		DisposalFraction:    "0.1",
-		FullDisposalSize:    20,
-		MaxFractionConsumed: "0.01",
+		DisposalTimeStep:      10,
+		DisposalFraction:      "0.1",
+		FullDisposalSize:      20,
+		MaxFractionConsumed:   "0.01",
+		DisposalSlippageRange: "0.1",
 	}
 	return mkt
 }
@@ -1519,10 +1520,11 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	ts := sqlstore.NewParties(connectionSource)
 
 	emptyLS := &vega.LiquidationStrategy{
-		DisposalTimeStep:    0,
-		DisposalFraction:    "0",
-		FullDisposalSize:    0,
-		MaxFractionConsumed: "0",
+		DisposalTimeStep:      0,
+		DisposalFraction:      "0",
+		FullDisposalSize:      0,
+		MaxFractionConsumed:   "0",
+		DisposalSlippageRange: "0",
 	}
 	liquidationStrat := entities.LiquidationStrategyFromProto(emptyLS)
 	parentMarket := entities.Market{

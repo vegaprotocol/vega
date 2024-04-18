@@ -1258,7 +1258,7 @@ Feature: stop orders
       | party1 | USDT/ETH  | STATUS_PENDING   | stop3     |
       | party1 | USDT/ETH  | STATUS_PENDING   | stop4     |
 
-  Scenario: An OCO stop order with expiration time T with both sides set to execute at that time will be rejected on submission (0014-ORDT-176)
+  #Scenario: An OCO stop order with expiration time T with both sides set to execute at that time will be rejected on submission (0014-ORDT-176)
   #   # setup accounts
   #   Given time is updated to "2019-11-30T00:00:00Z"
   #   Given the parties deposit on asset's general account the following amount:

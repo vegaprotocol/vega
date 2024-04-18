@@ -1084,6 +1084,10 @@ func checkLiquidationStrategy(params *protoTypes.LiquidationStrategy, parent str
 	} else if params.DisposalTimeStep > 3600 {
 		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_time_step", parent), ErrMustBeAtMost3600)
 	}
+	slippage, err := num.DecimalFromString(params.DisposalSlippageRange)
+	if err != nil || slippage.IsNegative() || slippage.IsZero() {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_slippage_range", parent), ErrMustBePositive)
+	}
 	return errs
 }
 

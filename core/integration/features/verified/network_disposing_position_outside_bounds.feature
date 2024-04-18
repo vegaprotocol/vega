@@ -16,9 +16,9 @@ Feature: Disposing position outside bounds
 
     # Configure the markets
     Given the liquidation strategies:
-      | name                | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | liquidation-strat-1 | 1             | 0.5               | 0                  | 1                     |
-      | liquidation-strat-2 | 1             | 1                 | 0                  | 0.5                   |
+      | name                | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | liquidation-strat-1 | 1             | 0.5               | 0                  | 1                     | 0.1                     |
+      | liquidation-strat-2 | 1             | 1                 | 0                  | 0.5                   | 0.1                     |
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 6200    | 0.99        | 5                 |
