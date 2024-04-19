@@ -45,11 +45,16 @@ type SecondaryClient struct {
 }
 
 func SecondaryDial(ctx context.Context, cfg Config) (*SecondaryClient, error) {
-	if len(cfg.SecondaryRPCEndpoint) <= 0 {
-		return nil, errors.New("no secondary ethereum rpc endpoint configured")
+	if len(cfg.EVMBridgeConfigs) != 1 {
+		return nil, errors.New("require exactly one EVM bridge configuration")
 	}
 
-	ethClient, err := ethclient.DialContext(ctx, cfg.SecondaryRPCEndpoint)
+	evmCfg := cfg.EVMBridgeConfigs[0]
+	if len(evmCfg.RPCEndpoint) <= 0 {
+		return nil, fmt.Errorf("no rpc endpoint configured for chain-id: %s", evmCfg.ChainID)
+	}
+
+	ethClient, err := ethclient.DialContext(ctx, evmCfg.RPCEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't instantiate secondary Ethereum client: %w", err)
 	}

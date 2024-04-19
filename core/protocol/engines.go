@@ -16,13 +16,13 @@
 package protocol
 
 import (
-	"code.vegaprotocol.io/vega/core/evtforward"
+	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	evtfwdeth "code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	"code.vegaprotocol.io/vega/core/types"
 )
 
 type EventForwarderEngine interface {
-	ReloadConf(evtforward.Config)
+	ReloadConf(ethereum.Config)
 	SetupEthereumEngine(evtfwdeth.Client, evtfwdeth.Forwarder, evtfwdeth.Config, *types.EthereumConfig, evtfwdeth.Assets) error
 	SetupSecondaryEthereumEngine(evtfwdeth.Client, evtfwdeth.Forwarder, evtfwdeth.Config, *types.EVMChainConfig, evtfwdeth.Assets) error
 	Start()

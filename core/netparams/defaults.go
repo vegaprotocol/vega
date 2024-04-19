@@ -239,8 +239,8 @@ func defaultNetParams() map[string]value {
 			MustUpdate(`{"configs":[{"network_id":"100","chain_id":"100","confirmations":3,"name":"Gnosis Chain", "block_interval": 3}, {"network_id":"42161","chain_id":"42161","confirmations":3,"name":"Arbitrum One", "block_interval": 50}]}`),
 		BlockchainsPrimaryEthereumConfig: NewJSON(&proto.EthereumConfig{}, types.CheckUntypedEthereumConfig).Mutable(true).
 			MustUpdate(`{"network_id": "XXX", "chain_id": "XXX", "collateral_bridge_contract": { "address": "0xXXX" }, "confirmations": 3, "staking_bridge_contract": { "address": "0xXXX", "deployment_block_height": 0}, "token_vesting_contract": { "address": "0xXXX", "deployment_block_height": 0 }, "multisig_control_contract": { "address": "0xXXX", "deployment_block_height": 0 }}`),
-		BlockchainsEVMChainConfig: NewJSON(&proto.EVMChainConfig{}, types.CheckUntypedEVMChainConfig).Mutable(true).
-			MustUpdate(`{"network_id": "XXX", "chain_id": "XXX", "collateral_bridge_contract": { "address": "0xXXX" }, "confirmations": 3, "multisig_control_contract": {"address": "0xXXX", "deployment_block_height": 0}}`),
+		BlockchainsEVMBridgeConfigs: NewJSON(&proto.EVMBridgeConfigs{}, types.CheckUntypedEVMChainConfig).Mutable(true).
+			MustUpdate(`{"configs": [{"network_id": "XXX", "chain_id": "XXX", "collateral_bridge_contract": { "address": "0xXXX" }, "confirmations": 3, "multisig_control_contract": {"address": "0xXXX", "deployment_block_height": 0}}]}`),
 
 		ValidatorsEpochLength: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("24h0m0s"),
 

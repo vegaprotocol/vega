@@ -43,8 +43,9 @@ type Config struct {
 	BlockchainQueueAllowlist []string `description:" " long:"blockchain-queue-allowlist"`
 	// Ethereum groups the configuration related to Ethereum implementation of
 	// the Event Forwarder.
-	Ethereum ethereum.Config `group:"Ethereum" namespace:"ethereum"`
-	EthCall  ethcall.Config  `group:"EthCall"  namespace:"ethcall"`
+	Ethereum   ethereum.Config   `group:"Ethereum"   namespace:"ethereum"`
+	EVMBridges []ethereum.Config `group:"EVMBridges" namespace:"evmbridges"`
+	EthCall    ethcall.Config    `group:"EthCall"    namespace:"ethcall"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.

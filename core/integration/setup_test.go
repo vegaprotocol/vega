@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
+	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/integration/helpers"
@@ -167,7 +168,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.witness = validators.NewWitness(ctx, execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
 
-	eventForwarder := evtforward.NewNoopEngine(execsetup.log, evtforward.NewDefaultConfig())
+	eventForwarder := evtforward.NewNoopEngine(execsetup.log, ethereum.Config{})
 
 	execsetup.oracleEngine = spec.NewEngine(execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	execsetup.builtinOracle = spec.NewBuiltin(execsetup.oracleEngine, execsetup.timeService)

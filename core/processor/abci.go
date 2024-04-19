@@ -214,9 +214,8 @@ type App struct {
 	banking                        Banking
 	broker                         Broker
 	witness                        Witness
-	primaryEvtForwarder            EvtForwarder
+	evtForwarder                   EvtForwarder
 	primaryChainID                 uint64
-	secondaryEvtForwarder          EvtForwarder
 	secondaryChainID               uint64
 	exec                           ExecutionEngine
 	ghandler                       *genesis.Handler
@@ -263,8 +262,7 @@ func NewApp(log *logging.Logger,
 	banking Banking,
 	broker Broker,
 	witness Witness,
-	primaryEvtForwarder,
-	secondaryEvtForwarder EvtForwarder,
+	evtForwarder EvtForwarder,
 	exec ExecutionEngine,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
@@ -317,8 +315,7 @@ func NewApp(log *logging.Logger,
 		banking:                        banking,
 		broker:                         broker,
 		witness:                        witness,
-		primaryEvtForwarder:            primaryEvtForwarder,
-		secondaryEvtForwarder:          secondaryEvtForwarder,
+		evtForwarder:                   evtForwarder,
 		exec:                           exec,
 		ghandler:                       ghandler,
 		gov:                            gov,
@@ -646,11 +643,12 @@ func (app *App) ensureConfig() {
 	_ = app.gov.OnChainIDUpdate(primaryChainID)
 	_ = app.exec.OnChainIDUpdate(primaryChainID)
 
-	secondaryChainConfig := &proto.EVMChainConfig{}
-	if err := app.netp.GetJSONStruct(netparams.BlockchainsEVMChainConfig, secondaryChainConfig); err != nil {
+	bridgeConfigs := &proto.EVMBridgeConfigs{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsEVMBridgeConfigs, bridgeConfigs); err != nil {
 		return
 	}
-	secondaryChainID, err := strconv.ParseUint(secondaryChainConfig.ChainId, 10, 64)
+
+	secondaryChainID, err := strconv.ParseUint(bridgeConfigs.Configs[0].ChainId, 10, 64)
 	if err != nil {
 		return
 	}
@@ -2728,7 +2726,7 @@ func (app *App) OnBlockchainEVMChainConfigUpdate(_ context.Context, conf any) er
 	if err != nil {
 		return err
 	}
-	cID, err := strconv.ParseUint(cfg.ChainID(), 10, 64)
+	cID, err := strconv.ParseUint(cfg.Configs[0].ChainID(), 10, 64)
 	if err != nil {
 		return err
 	}

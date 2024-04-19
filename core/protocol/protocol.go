@@ -114,7 +114,6 @@ func New(
 			svcs.broker,
 			svcs.witness,
 			svcs.primaryEventForwarder,
-			svcs.secondaryEventForwarder,
 			svcs.executionEngine,
 			svcs.genesisHandler,
 			svcs.governance,
@@ -168,7 +167,7 @@ func New(
 			Watcher: proto.App.OnBlockchainPrimaryEthereumConfigUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.BlockchainsEVMChainConfig,
+			Param:   netparams.BlockchainsEVMBridgeConfigs,
 			Watcher: proto.App.OnBlockchainEVMChainConfigUpdate,
 		},
 	)

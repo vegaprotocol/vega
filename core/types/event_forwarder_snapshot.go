@@ -53,35 +53,3 @@ func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *Payloa
 		Buckets: ef.EventForwarder.Buckets,
 	}
 }
-
-type PayloadEVMEventForwarders struct {
-	EVMEventForwarders []*snapshot.EventForwarder
-}
-
-func (p *PayloadEVMEventForwarders) IntoProto() *snapshot.Payload_EvmEventForwarders {
-	return &snapshot.Payload_EvmEventForwarders{
-		EvmEventForwarders: &snapshot.EVMEventForwarders{
-			EvmEventForwarders: p.EVMEventForwarders,
-		},
-	}
-}
-
-func (*PayloadEVMEventForwarders) isPayload() {}
-
-func (p *PayloadEVMEventForwarders) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadEVMEventForwarders) Key() string {
-	return "all"
-}
-
-func (p *PayloadEVMEventForwarders) Namespace() SnapshotNamespace {
-	return EVMEventForwardersSnapshot
-}
-
-func PayloadEVMEventForwardersFromProto(ef *snapshot.Payload_EvmEventForwarders) *PayloadEVMEventForwarders {
-	return &PayloadEVMEventForwarders{
-		EVMEventForwarders: ef.EvmEventForwarders.EvmEventForwarders,
-	}
-}

@@ -54,12 +54,13 @@ func NewERC20MultisigTopology(
 		})
 	} else {
 		_ = netp.Watch(netparams.WatchParam{
-			Param: netparams.BlockchainsEVMChainConfig,
+			Param: netparams.BlockchainsEVMBridgeConfigs,
 			Watcher: func(_ context.Context, cfg interface{}) error {
-				ethCfg, err := types.EVMChainConfigFromUntypedProto(cfg)
+				cfgs, err := types.EVMChainConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("ERC20 multisig didn't receive a valid Ethereum configuration: %w", err)
 				}
+				ethCfg := cfgs.Configs[0]
 				ocv.UpdateMultiSigAddress(ethCfg.MultiSigControl().Address(), ethCfg.ChainID())
 				top.SetChainID(ethCfg.ChainID())
 				return nil
