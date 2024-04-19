@@ -1258,141 +1258,438 @@ Feature: stop orders
       | party1 | USDT/ETH  | STATUS_PENDING   | stop3     |
       | party1 | USDT/ETH  | STATUS_PENDING   | stop4     |
 
-  #Scenario: An OCO stop order with expiration time T with both sides set to execute at that time will be rejected on submission (0014-ORDT-176)
-  #   # setup accounts
-  #   Given time is updated to "2019-11-30T00:00:00Z"
-  #   Given the parties deposit on asset's general account the following amount:
-  #     | party  | asset | amount   |
-  #     | party1 | BTC   | 10000    |
-  #     | party2 | BTC   | 10000    |
-  #     | party3 | BTC   | 10000    |
-  #     | aux    | BTC   | 100000   |
-  #     | aux2   | BTC   | 100000   |
-  #     | aux3   | BTC   | 100000   |
-  #     | lpprov | BTC   | 90000000 |
+  Scenario: An OCO stop order with expiration time T with both sides set to execute at that time will be rejected on submission (0014-ORDT-176)
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+      | party1 | ETH   | 10000    |
+      | party2 | ETH   | 10000    |
+      | party3 | ETH   | 10000    |
+      | aux    | ETH   | 100000   |
+      | aux2   | ETH   | 100000   |
+      | aux3   | ETH   | 100000   |
+      | lpprov | ETH   | 90000000 |
 
-  #   When the parties submit the following liquidity provision:
-  #     | id  | party  | market id | commitment amount | fee | lp type    |
-  #     | lp1 | lpprov | BTC/ETH| 90000000          | 0.1 | submission |
-  #     | lp1 | lpprov | BTC/ETH| 90000000          | 0.1 | submission |
-  #   And the parties place the following pegged iceberg orders:
-  #     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-  #     | lpprov | BTC/ETH| 2         | 1                    | buy  | BID              | 50     | 100    |
-  #     | lpprov | BTC/ETH| 2         | 1                    | sell | ASK              | 50     | 100    |
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
 
-  #   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-  #   When the parties place the following orders:
-  #     | party | market id | side | volume | price | resulting trades | type       | tif     |
-  #     | aux   | BTC/ETH| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | aux   | BTC/ETH| sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | aux2  | BTC/ETH| buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | aux3  | BTC/ETH| sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | BTC/ETH   | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/ETH   | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | BTC/ETH   | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
-  #   Then the opening auction period ends for market "BTC/ETH"
-  #   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+    Then the opening auction period ends for market "BTC/ETH"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
 
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     |
-  #     | party1 | BTC/ETH| sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | party2 | BTC/ETH| buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | BTC/ETH   | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
-  #   # volume for the stop trade
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     |
-  #     | party3 | BTC/ETH| sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-
-
-  #   When time is updated to "2019-11-30T00:00:10Z"
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     | error                                              |
-  #     | party1 | BTC/ETH| buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT | 10            | EXPIRY_STRATEGY_SUBMIT | stop order OCOs must not have the same expiry time |
+    # volume for the stop trade
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | BTC/ETH   | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
 
-  # Scenario: An OCO stop order with expiration time T with one side set to execute at that time will execute at time T
-  #   if reached without being triggered, with the specified side triggering and the other side cancelling. (0014-ORDT-131)
-  #   Given time is updated to "2019-11-30T00:00:00Z"
-  #   Given the parties deposit on asset's general account the following amount:
-  #     | party  | asset | amount   |
-  #     | party1 | BTC   | 10000000 |
-  #     | party2 | BTC   | 10000000 |
-  #     | party3 | BTC   | 10000000 |
-  #     | aux    | BTC   | 10000000 |
-  #     | aux2   | BTC   | 10000000 |
-  #     | aux3   | BTC   | 100000   |
-  #     | lpprov | BTC   | 90000000 |
-  #     | party1 | ETH   | 10000000 |
-  #     | party2 | ETH   | 10000000 |
-  #     | party3 | ETH   | 10000000 |
-  #     | aux    | ETH   | 10000000 |
-  #     | aux2   | ETH   | 10000000 |
-  #     | aux3   | ETH   | 100000   |
-  #     | lpprov | ETH   | 90000000 |
+    When time is updated to "2019-11-30T00:00:10Z"
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     | error                                              |
+      | party1 | BTC/ETH   | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT | 10            | EXPIRY_STRATEGY_SUBMIT | stop order OCOs must not have the same expiry time |
 
-  #   When the parties submit the following liquidity provision:
-  #     | id  | party  | market id | commitment amount | fee | lp type    |
-  #     | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
-  #     | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
-  #   And the parties place the following pegged iceberg orders:
-  #     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-  #     | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
-  #     | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
 
-  #   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-  #   When the parties place the following orders:
-  #     | party | market id | side | volume | price | resulting trades | type       | tif     |
-  #     | aux   | BTC/ETH   | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | aux   | BTC/ETH   | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | aux2  | BTC/ETH   | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | aux3  | BTC/ETH   | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+  Scenario: An OCO stop order with expiration time T with one side set to execute at that time will execute at time T if reached without being triggered, with the specified side triggering and the other side cancelling. (0014-ORDT-131)
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000000 |
+      | party2 | BTC   | 10000000 |
+      | party3 | BTC   | 10000000 |
+      | aux    | BTC   | 10000000 |
+      | aux2   | BTC   | 10000000 |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+      | party1 | ETH   | 10000000 |
+      | party2 | ETH   | 10000000 |
+      | party3 | ETH   | 10000000 |
+      | aux    | ETH   | 10000000 |
+      | aux2   | ETH   | 10000000 |
+      | aux3   | ETH   | 100000   |
+      | lpprov | ETH   | 90000000 |
 
-  #   Then the opening auction period ends for market "BTC/ETH"
-  #   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
 
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     |
-  #     | party1 | BTC/ETH   | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | party2 | BTC/ETH   | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | BTC/ETH   | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/ETH   | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | BTC/ETH   | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
-  #   # volume for the stop trade
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     |
-  #     | party3 | BTC/ETH   | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | party3 | BTC/ETH   | buy  | 10     | 51    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "BTC/ETH"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
 
-  #   When time is updated to "2019-11-30T00:00:10Z"
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     |
-  #     | party1 | BTC/ETH   | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | 10            | EXPIRY_STRATEGY_SUBMIT | 15            | EXPIRY_STRATEGY_SUBMIT |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | BTC/ETH   | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
-  #   Then the stop orders should have the following states
-  #     | party  | market id | status         | reference |
-  #     | party1 | BTC/ETH   | STATUS_PENDING | stop-1    |
-  #     | party1 | BTC/ETH   | STATUS_PENDING | stop-2    |
+    # volume for the stop trade
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | BTC/ETH   | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | BTC/ETH   | buy  | 10     | 51    | 0                | TYPE_LIMIT | TIF_GTC |
 
-  #   Then clear all events
-  #   When time is updated to "2019-11-30T00:00:20Z"
+    When time is updated to "2019-11-30T00:00:10Z"
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     |
+      | party1 | BTC/ETH   | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | 10            | EXPIRY_STRATEGY_SUBMIT | 15            | EXPIRY_STRATEGY_SUBMIT |
 
-  #   Then the stop orders should have the following states
-  #     | party  | market id | status         | reference |
-  #     | party1 | BTC/ETH   | STATUS_STOPPED | stop-1    |
-  #     | party1 | BTC/ETH   | STATUS_EXPIRED | stop-2    |
+    Then the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party1 | BTC/ETH   | STATUS_PENDING | stop-1    |
+      | party1 | BTC/ETH   | STATUS_PENDING | stop-2    |
 
-  #   # Now perform the same test but from the other side
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     |
-  #     | party2 | BTC/ETH   | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop2     | 15            | EXPIRY_STRATEGY_SUBMIT | 10            | EXPIRY_STRATEGY_SUBMIT |
+    Then clear all events
+    When time is updated to "2019-11-30T00:00:20Z"
 
-  #   Then the stop orders should have the following states
-  #     | party  | market id | status         | reference |
-  #     | party2 | BTC/ETH   | STATUS_PENDING | stop2-1   |
-  #     | party2 | BTC/ETH   | STATUS_PENDING | stop2-2   |
+    Then the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party1 | BTC/ETH   | STATUS_STOPPED | stop-1    |
+      | party1 | BTC/ETH   | STATUS_EXPIRED | stop-2    |
 
-  #   Then clear all events
-  #   When time is updated to "2019-11-30T00:00:30Z"
+    # Now perform the same test but from the other side
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     |
+      | party2 | BTC/ETH   | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop2     | 15            | EXPIRY_STRATEGY_SUBMIT | 10            | EXPIRY_STRATEGY_SUBMIT |
 
-  #   Then the stop orders should have the following states
-  #     | party  | market id | status         | reference |
-  #     | party2 | BTC/ETH   | STATUS_STOPPED | stop2-2   |
-  #     | party2 | BTC/ETH   | STATUS_EXPIRED | stop2-1   |
+    Then the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party2 | BTC/ETH   | STATUS_PENDING | stop2-1   |
+      | party2 | BTC/ETH   | STATUS_PENDING | stop2-2   |
 
-  
+    Then clear all events
+    When time is updated to "2019-11-30T00:00:30Z"
+
+    Then the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party2 | BTC/ETH   | STATUS_STOPPED | stop2-2   |
+      | party2 | BTC/ETH   | STATUS_EXPIRED | stop2-1   |
+
+
+  Scenario: A stop order placed by a key with a zero position but open orders will be accepted. (0014-ORDT-125)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+      | party1 | ETH   | 10000    |
+      | party2 | ETH   | 10000    |
+      | aux    | ETH   | 100000   |
+      | aux2   | ETH   | 100000   |
+      | lpprov | ETH   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | BTC/ETH   | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/ETH   | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "BTC/ETH"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | error |
+      | party1 | BTC/ETH   | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 47               |       |
+
+  Scenario: Given a spot market, a stop order with a position size override will be rejected (0014-ORDT-162)
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000000 |
+      | party2 | BTC   | 10000000 |
+      | party3 | BTC   | 10000000 |
+      | aux    | BTC   | 10000000 |
+      | aux2   | BTC   | 10000000 |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+      | party1 | ETH   | 10000000 |
+      | party2 | ETH   | 10000000 |
+      | party3 | ETH   | 10000000 |
+      | aux    | ETH   | 10000000 |
+      | aux2   | ETH   | 10000000 |
+      | aux3   | ETH   | 100000   |
+      | lpprov | ETH   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | BTC/ETH   | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/ETH   | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | BTC/ETH   | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "BTC/ETH"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | BTC/ETH   | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | buy  | 5      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    When time is updated to "2019-11-30T00:00:10Z"
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     | ra size override setting | ra size override percentage | error                                                      |
+      | party1 | BTC/ETH   | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | 10            | EXPIRY_STRATEGY_SUBMIT | 15            | EXPIRY_STRATEGY_SUBMIT | POSITION                 | 0.5                         | stop order size override is not supported for spot product |
+
+
+  @SLABug
+  Scenario: All stop orders for a specific party for a specific market can be cancelled by a single stop order cancellation. (0014-ORDT-156)
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount    |
+      | party1 | BTC   | 1000000   |
+      | party2 | BTC   | 1000000   |
+      | aux    | BTC   | 1000000   |
+      | aux2   | BTC   | 1000000   |
+      | lpprov | BTC   | 900000000 |
+      | party1 | ETH   | 1000000   |
+      | party2 | ETH   | 1000000   |
+      | aux    | ETH   | 1000000   |
+      | aux2   | ETH   | 1000000   |
+      | lpprov | ETH   | 900000000 |
+      | party1 | USDT  | 1000000   |
+      | party2 | USDT  | 1000000   |
+      | aux    | USDT  | 1000000   |
+      | aux2   | USDT  | 1000000   |
+      | lpprov | USDT  | 900000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | BTC/ETH   | 900000            | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 900000            | 0.1 | submission |
+      | lp2 | lpprov | USDT/ETH  | 900000            | 0.1 | submission |
+      | lp2 | lpprov | USDT/ETH  | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
+      | lpprov | USDT/ETH  | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | USDT/ETH  | 2         | 1                    | sell | ASK              | 50     | 100    |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | BTC/ETH   | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/ETH   | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | USDT/ETH  | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | USDT/ETH  | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | USDT/ETH  | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | USDT/ETH  | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "2" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USDT/ETH"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | error | reference |
+      | party1 | BTC/ETH   | sell | 10     | 60    | 0                | TYPE_LIMIT  | TIF_GTC |        |                  |       |           |
+      | party1 | BTC/ETH   | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 47               |       | stop1     |
+      | party1 | BTC/ETH   | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 48               |       | stop2     |
+      | party1 | USDT/ETH  | sell | 10     | 60    | 0                | TYPE_LIMIT  | TIF_GTC |        |                  |       |           |
+      | party1 | USDT/ETH  | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 49               |       | stop3     |
+      | party1 | USDT/ETH  | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 49               |       | stop4     |
+
+    Then the party "party1" cancels all their stop orders for the market "BTC/ETH"
+
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | BTC/ETH   | STATUS_CANCELLED | stop1     |
+      | party1 | BTC/ETH   | STATUS_CANCELLED | stop2     |
+      | party1 | USDT/ETH  | STATUS_PENDING   | stop3     |
+      | party1 | USDT/ETH  | STATUS_PENDING   | stop4     |
+
+  Scenario: Stop orders once triggered can not be cancelled. For spot products (0014-ORDT-161)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 1000000  |
+      | party2 | BTC   | 1000000  |
+      | party3 | BTC   | 1000000  |
+      | aux    | BTC   | 1000000  |
+      | aux2   | BTC   | 1000000  |
+      | lpprov | BTC   | 90000000 |
+      | party1 | ETH   | 1000000  |
+      | party2 | ETH   | 1000000  |
+      | party3 | ETH   | 1000000  |
+      | aux    | ETH   | 1000000  |
+      | aux2   | ETH   | 1000000  |
+      | lpprov | ETH   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | BTC/ETH   | 900000            | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | BTC/ETH   | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/ETH   | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "BTC/ETH"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+
+    # setup party1 position, open a 10 short position
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | BTC/ETH   | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+    # place an order to match with the limit order then check the stop is filled
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | BTC/ETH   | sell | 10     | 80    | 0                | TYPE_LIMIT | TIF_GTC |
+    # create party1 stop order
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error      | reference |
+      | party1 | BTC/ETH   | buy  | 5      | 80    | 0                | TYPE_LIMIT | TIF_IOC | reduce | 75               |            | stop1     |
+
+    # now we trade at 75, this will breach the trigger
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | BTC/ETH   | buy  | 10     | 75    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | sell | 10     | 75    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # check that the order was triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | BTC/ETH   | STATUS_TRIGGERED | stop1     |
+    And the orders should have the following states:
+      | party  | market id | side | volume | remaining | price | status        | reference |
+      | party1 | BTC/ETH   | buy  | 5      | 0         | 80    | STATUS_FILLED | stop1     |
+
+    Then the parties cancel the following stop orders:
+      | party  | reference | error                |
+      | party1 | stop1     | stop order not found |
+
+  @SLABug
+  Scenario: All stop orders for a specific party can be cancelled by a single stop order cancellation. (0014-ORDT-155)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount    |
+      | party1 | BTC   | 1000000   |
+      | party2 | BTC   | 1000000   |
+      | aux    | BTC   | 1000000   |
+      | aux2   | BTC   | 1000000   |
+      | lpprov | BTC   | 900000000 |
+      | party1 | ETH   | 1000000   |
+      | party2 | ETH   | 1000000   |
+      | aux    | ETH   | 1000000   |
+      | aux2   | ETH   | 1000000   |
+      | lpprov | ETH   | 900000000 |
+      | party1 | USDT  | 1000000   |
+      | party2 | USDT  | 1000000   |
+      | aux    | USDT  | 1000000   |
+      | aux2   | USDT  | 1000000   |
+      | lpprov | USDT  | 900000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | BTC/ETH   | 900000            | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 900000            | 0.1 | submission |
+      | lp2 | lpprov | USDT/ETH  | 900000            | 0.1 | submission |
+      | lp2 | lpprov | USDT/ETH  | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | BTC/ETH   | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | BTC/ETH   | 2         | 1                    | sell | ASK              | 50     | 100    |
+      | lpprov | USDT/ETH  | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | USDT/ETH  | 2         | 1                    | sell | ASK              | 50     | 100    |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | BTC/ETH   | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/ETH   | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/ETH   | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | USDT/ETH  | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | USDT/ETH  | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | USDT/ETH  | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | USDT/ETH  | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "2" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USDT/ETH"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | error | reference |
+      | party1 | BTC/ETH   | sell | 10     | 60    | 0                | TYPE_LIMIT  | TIF_GTC |        |                  |       |           |
+      | party1 | BTC/ETH   | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 47               |       | stop1     |
+      | party1 | BTC/ETH   | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 48               |       | stop2     |
+      | party1 | USDT/ETH  | sell | 10     | 60    | 0                | TYPE_LIMIT  | TIF_GTC |        |                  |       |           |
+      | party1 | USDT/ETH  | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 49               |       | stop3     |
+      | party1 | USDT/ETH  | buy  | 2      | 0     | 0                | TYPE_MARKET | TIF_GTC | reduce | 49               |       | stop4     |
+
+    Then the party "party1" cancels all their stop orders
+
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | BTC/ETH   | STATUS_CANCELLED | stop1     |
+      | party1 | BTC/ETH   | STATUS_CANCELLED | stop2     |
+      | party1 | USDT/ETH  | STATUS_CANCELLED | stop3     |
+      | party1 | USDT/ETH  | STATUS_CANCELLED | stop4     |

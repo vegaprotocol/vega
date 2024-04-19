@@ -1145,6 +1145,10 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	now := m.timeService.GetTimeNow()
 	orderCnt := 0
 	if fallsBelow != nil {
+		if fallsBelow.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+			rejectStopOrders(types.StopOrderRejectionSizeOverrideUnsupportedForSpot, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSizeOverrideNotSupportedForSpots
+		}
 		if fallsBelow.Expiry.Expires() && fallsBelow.Expiry.ExpiresAt.Before(now) {
 			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
@@ -1160,6 +1164,10 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		orderCnt++
 	}
 	if risesAbove != nil {
+		if risesAbove.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+			rejectStopOrders(types.StopOrderRejectionSizeOverrideUnsupportedForSpot, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSizeOverrideNotSupportedForSpots
+		}
 		if risesAbove.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Before(now) {
 			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
