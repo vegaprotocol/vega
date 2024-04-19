@@ -12,10 +12,11 @@ Feature: Network disposing position
       | id       | decimal places | quantum |
       | USD.0.10 | 0              | 10      |
 
+    # disposal strat 1 set to 0.5 for scenario at line 244
     Given the liquidation strategies:
-      | name             | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | disposal-strat-1 | 5             | 0.2               | 0                  | 0.1                   |
-      | disposal-strat-2 | 5             | 0.2               | 5                  | 0.1                   |
+      | name             | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | disposal-strat-1 | 5             | 0.2               | 0                  | 0.1                   | 0.5                     |
+      | disposal-strat-2 | 5             | 0.2               | 5                  | 0.1                   | 0.1                     |
 
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau           | mu | r | sigma |

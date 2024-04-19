@@ -290,7 +290,7 @@ func NewMarket(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine, pMonitor)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, positionEngine, pMonitor)
 
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -961,6 +961,11 @@ func (m *Market) PostRestore(ctx context.Context) error {
 				m.marketActivityTracker.RestorePosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), mp.Price(), m.positionFactor)
 			}
 		}
+	}
+
+	// Disposal slippage was set as part of this upgrade, send event to ensure datanode is updated.
+	if vegacontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	}
 
 	return nil

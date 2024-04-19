@@ -5052,6 +5052,8 @@ type LiquidationStrategy {
   fullDisposalSize: Int!
   "Specifies the maximum size by which the network can reduce its position as a fraction of the volume on the book."
   maxFractionConsumed: String!
+  "Specifies the slippage relative to the mid prige within which the network will place orders to dispose of its position."
+  disposalSlippageRange: String!
 }
 
 "Representation of a network parameter"

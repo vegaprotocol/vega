@@ -1,10 +1,10 @@
 Feature: Same as 1847-closeout-long test, but with a custom liquidation strategy in place
 
   Background:
-    # disposal strategy every 5 seconds, 20% until 10 or less, max 10% of the book used
+    # disposal strategy every 5 seconds, 20% until 10 or less, max 10% of the book used, slippage is set to 10 so price range is always wide enough
     Given the liquidation strategies:
-      | name             | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | disposal-strat-1 | 5             | 0.2               | 10                 | 0.1                   |
+      | name             | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | disposal-strat-1 | 5             | 0.2               | 10                 | 0.1                   | 10                      |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | disposal-strat-1     |

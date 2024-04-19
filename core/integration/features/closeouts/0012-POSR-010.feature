@@ -3,8 +3,8 @@ Feature: When the network party holds a non-zero position and there are not enou
 
   Background:
     Given the liquidation strategies:
-      | name           | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | disposal-strat | 1000          | 1.0               | 1000               | 1.0                   |
+      | name           | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | disposal-strat | 1000          | 1.0               | 1000               | 1.0                   | 0.1                     |
 
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy |

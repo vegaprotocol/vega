@@ -186,8 +186,11 @@ func NewMarketFromSnapshot(
 	// this can be removed once this parameter is no longer optional
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
+	} else if mkt.LiquidationStrategy.DisposalSlippage.IsZero() {
+		// @TODO check for migration from v0.75.8, strictly speaking, not doing so should have the same effect, though...
+		mkt.LiquidationStrategy.DisposalSlippage = mkt.LiquiditySLAParams.PriceRange
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, pMonitor)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor)
 
 	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
 	for _, pmf := range em.PartyMarginFactors {
