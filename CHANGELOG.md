@@ -63,7 +63,7 @@
 - [1109](https://github.com/vegaprotocol/core-test-coverage/issues/1109) - Correctly label acceptance coverage for `0042-LIQF-091`.
 - [11130](https://github.com/vegaprotocol/vega/issues/11130) - Add missing initialisation for max stop orders in spots. 
 - [11133](https://github.com/vegaprotocol/vega/issues/11133) - Fix spot product resolver
-
+- [11154](https://github.com/vegaprotocol/vega/issues/11154) - Fix spot risk model resolver. 
 ## 0.75.0
 
 ### 🚨 Breaking changes

@@ -73,9 +73,9 @@ func (r updateSpotMarketConfigurationResolver) TargetStakeParameters(ctx context
 func (r updateSpotMarketConfigurationResolver) RiskParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (RiskModel, error) {
 	switch model := obj.RiskParameters.(type) {
 	case *vega.UpdateSpotMarketConfiguration_Simple:
-		return model, nil
+		return model.Simple, nil
 	case *vega.UpdateSpotMarketConfiguration_LogNormal:
-		return model, nil
+		return model.LogNormal, nil
 	default:
 		return nil, errors.New("unknown risk model")
 	}
@@ -117,9 +117,9 @@ func (r newSpotMarketResolver) TargetStakeParameters(ctx context.Context, obj *v
 func (r newSpotMarketResolver) RiskParameters(ctx context.Context, obj *vega.NewSpotMarket) (RiskModel, error) {
 	switch model := obj.Changes.RiskParameters.(type) {
 	case *vega.NewSpotMarketConfiguration_Simple:
-		return model, nil
+		return model.Simple, nil
 	case *vega.NewSpotMarketConfiguration_LogNormal:
-		return model, nil
+		return model.LogNormal, nil
 	default:
 		return nil, errors.New("unknown risk model")
 	}
