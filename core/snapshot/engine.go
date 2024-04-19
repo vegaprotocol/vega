@@ -44,7 +44,6 @@ import (
 const (
 	namedLogger = "snapshot"
 	numWorkers  = 1000
-	chanSize    = numWorkers * 10
 
 	// This is a limitation by Tendermint. It must be strictly positive, and
 	// non-zero.
@@ -544,8 +543,11 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	treeKeysCounter := atomic.Int64{}
 	treeKeysCounter.Store(int64(len(treeKeysToSnapshot)))
 
-	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, chanSize)
-	serializedStateChan := make(chan snapshotResult, chanSize)
+	// we push the tree keys into this channel so it can only have at most len(treeKeysToSnapshot) things in it
+	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, len(treeKeysToSnapshot))
+
+	// this is the channel where the workers send their result back to the main thread here, so one slot per worker is enough
+	serializedStateChan := make(chan snapshotResult, numWorkers)
 
 	snapMetricsRecord := newSnapMetricsState()
 	defer func() {
@@ -563,9 +565,13 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 		}()
 	}
 
-	for _, treeKeyToSnapshot := range treeKeysToSnapshot {
-		treeKeysToSnapshotChan <- treeKeyToSnapshot
-	}
+	// the above loop sets the worker threads ready to read keys from treeKeysToSnapshotChan
+	// so we can push the keys in async while the loop below over serializedStateChan starts reading the results
+	go func() {
+		for _, treeKeyToSnapshot := range treeKeysToSnapshot {
+			treeKeysToSnapshotChan <- treeKeyToSnapshot
+		}
+	}()
 
 	if len(treeKeysToSnapshot) == 0 {
 		close(treeKeysToSnapshotChan)
@@ -573,7 +579,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	}
 
 	// analyse the results
-	results := make([]snapshotResult, 0, chanSize)
+	results := make([]snapshotResult, 0, len(treeKeysToSnapshot))
 	for res := range serializedStateChan {
 		if res.err != nil {
 			e.log.Panic("Failed to update snapshot namespace",
