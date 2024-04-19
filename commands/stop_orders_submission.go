@@ -113,6 +113,10 @@ func checkStopOrderSetup(
 		}
 	}
 
+	if setup.OrderSubmission != nil && setup.OrderSubmission.TimeInForce == types.Order_TIME_IN_FORCE_GFA {
+		errs.AddForProperty(fmt.Sprintf("%s.order_submission.time_in_force", fieldName), ErrIsNotValid)
+	}
+
 	if setup.ExpiresAt != nil {
 		if *setup.ExpiresAt < 0 {
 			errs.AddForProperty(fmt.Sprintf("%s.expires_at", fieldName), ErrMustBePositive)

@@ -81,4 +81,6 @@ var (
 	ErrStopOrderNotAllowedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
 	// ErrStopOrderNotAllowedSameExpiryTimeForOCO is returned if both sides of an OCO have the same expiry time.
 	ErrStopOrderNotAllowedSameExpiry = errors.New("stop order OCOs must not have the same expiry time")
+	// ErrStopOrderSizeOverrideNotSupportedForSpots is returned when a stop order is received with size override for a spot product.
+	ErrStopOrderSizeOverrideNotSupportedForSpots = errors.New("stop order size override is not supported for spot product")
 )

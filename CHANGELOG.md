@@ -65,6 +65,9 @@
 - [11130](https://github.com/vegaprotocol/vega/issues/11130) - Add missing initialisation for max stop orders in spots. 
 - [11133](https://github.com/vegaprotocol/vega/issues/11133) - Fix spot product resolver
 - [11154](https://github.com/vegaprotocol/vega/issues/11154) - Fix spot risk model resolver. 
+- [11159](https://github.com/vegaprotocol/vega/issues/11159) - Reject stop orders with size override position for spot product. 
+- [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission. 
+
 ## 0.75.0
 
 ### 🚨 Breaking changes

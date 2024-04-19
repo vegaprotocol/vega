@@ -967,6 +967,8 @@ const (
 	StopOrderRejectionReasonNotClosingThePosition        = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION)
 	StopOrderRejectionReasonNotAllowedDuringAuction      = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION)
 	StopOrderRejectionReasonOCONotAllowedSameExpiryTime  = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES)
+	StopOrderRejectionSizeOverrideUnSupportedForSpot     = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT)
+	StopOrderRejectionLinkedPercentageInvalid            = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID)
 )
 
 func (s StopOrderRejectionReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
