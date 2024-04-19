@@ -214,9 +214,8 @@ type App struct {
 	banking                        Banking
 	broker                         Broker
 	witness                        Witness
-	primaryEvtForwarder            EvtForwarder
+	evtForwarder                   EvtForwarder
 	primaryChainID                 uint64
-	secondaryEvtForwarder          EvtForwarder
 	secondaryChainID               uint64
 	exec                           ExecutionEngine
 	ghandler                       *genesis.Handler
@@ -263,8 +262,7 @@ func NewApp(log *logging.Logger,
 	banking Banking,
 	broker Broker,
 	witness Witness,
-	primaryEvtForwarder,
-	secondaryEvtForwarder EvtForwarder,
+	evtForwarder EvtForwarder,
 	exec ExecutionEngine,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
@@ -317,8 +315,7 @@ func NewApp(log *logging.Logger,
 		banking:                        banking,
 		broker:                         broker,
 		witness:                        witness,
-		primaryEvtForwarder:            primaryEvtForwarder,
-		secondaryEvtForwarder:          secondaryEvtForwarder,
+		evtForwarder:                   evtForwarder,
 		exec:                           exec,
 		ghandler:                       ghandler,
 		gov:                            gov,

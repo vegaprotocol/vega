@@ -148,7 +148,6 @@ type allServices struct {
 	primaryBridgeView           *bridges.ERC20LogicView
 	primaryMultisig             *erc20multisig.Topology
 
-	secondaryEventForwarder       *evtforward.Forwarder
 	secondaryEventForwarderEngine EventForwarderEngine
 	secondaryEthConfirmations     *ethclient.EthereumConfirmations
 	secondaryEthClient            *ethclient.SecondaryClient
@@ -248,7 +247,6 @@ func newServices(
 	svcs.primaryMultisig.SetWitness(svcs.witness)
 	svcs.secondaryMultisig.SetWitness(svcs.witness)
 	svcs.primaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
-	svcs.secondaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
 
 	if svcs.conf.HaveEthClient() {
 		svcs.primaryBridgeView = bridges.NewERC20LogicView(primaryEthClient, primaryEthConfirmations)
@@ -441,7 +439,6 @@ func newServices(
 		svcs.limits,
 		svcs.topology,
 		svcs.primaryEventForwarder,
-		evtforward.NewEVMForwarders(svcs.secondaryEventForwarder),
 		svcs.executionEngine,
 		svcs.marketActivityTracker,
 		svcs.statevar,
@@ -518,7 +515,6 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.witness.OnTick,
 
 		svcs.primaryEventForwarder.OnTick,
-		svcs.secondaryEventForwarder.OnTick,
 		svcs.stakeVerifier.OnTick,
 		svcs.statevar.OnTick,
 		svcs.executionEngine.OnTick,
@@ -548,7 +544,6 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.primaryEventForwarderEngine.ReloadConf(cfg.EvtForward.Ethereum) },
 		func(cfg config.Config) { svcs.primaryEventForwarder.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { svcs.secondaryEventForwarderEngine.ReloadConf(cfg.EvtForward.EVMBridges[0]) },
-		func(cfg config.Config) { svcs.secondaryEventForwarder.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { svcs.topology.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { svcs.witness.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { svcs.assets.ReloadConf(cfg.Assets) },
@@ -740,8 +735,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), true)
-				svcs.primaryEventForwarder.SetChainID(ethCfg.ChainID())
-
 				return svcs.primaryEventForwarderEngine.SetupEthereumEngine(svcs.primaryEthClient, svcs.primaryEventForwarder, svcs.conf.EvtForward.Ethereum, ethCfg, svcs.assets)
 			},
 		},
@@ -760,13 +753,12 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), false)
-				svcs.secondaryEventForwarder.SetChainID(ethCfg.ChainID())
 
 				var bridgeCfg ethereum.Config
 				if svcs.conf.HaveEthClient() {
 					bridgeCfg = svcs.conf.EvtForward.EVMBridges[0]
 				}
-				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.secondaryEventForwarder, bridgeCfg, ethCfg, svcs.assets)
+				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.primaryEventForwarder, bridgeCfg, ethCfg, svcs.assets)
 			},
 		},
 		{

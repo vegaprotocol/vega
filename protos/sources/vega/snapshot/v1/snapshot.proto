@@ -147,8 +147,7 @@ message Payload {
     L2EthOracles l2_eth_oracles = 84;
     EthOracleVerifierMisc eth_oracle_verifier_misc = 85;
     BankingEVMBridgeStates banking_evm_bridge_states = 86;
-    EVMEventForwarders evm_event_forwarders = 87;
-    EVMMultisigTopologies evm_multisig_topologies = 88;
+    EVMMultisigTopologies evm_multisig_topologies = 87;
   }
 }
 
@@ -239,10 +238,6 @@ message EventForwarder {
   repeated string acked_events = 1;
   repeated EventForwarderBucket buckets = 2;
   string chain_id = 3;
-}
-
-message EVMEventForwarders {
-  repeated EventForwarder evm_event_forwarders = 1;
 }
 
 message CollateralAccounts {

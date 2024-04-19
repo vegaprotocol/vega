@@ -81,8 +81,6 @@ type Forwarder struct {
 	nodes            []string
 
 	top ValidatorTopology
-
-	chainID string
 }
 
 type tsEvt struct {
@@ -144,10 +142,6 @@ func (f *Forwarder) ReloadConf(cfg Config) {
 	f.log.Info("evtforward allowlist updated",
 		logging.Reflect("list", cfg.BlockchainQueueAllowlist))
 	f.bcQueueAllowlist.Store(buildAllowlist(cfg))
-}
-
-func (f *Forwarder) SetChainID(chainID string) {
-	f.chainID = chainID
 }
 
 // Ack will return true if the event is newly acknowledged.

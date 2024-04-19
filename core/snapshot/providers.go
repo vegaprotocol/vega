@@ -51,8 +51,6 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.LimitSnapshot,
 	types.RewardSnapshot,
 	types.EventForwarderSnapshot,
-	types.EVMEventForwardersSnapshot,
-	types.SecondaryEventForwarderSnapshot,
 	types.MarketActivityTrackerSnapshot,
 	types.ERC20MultiSigTopologySnapshot,
 	types.EVMMultiSigTopologiesSnapshot,

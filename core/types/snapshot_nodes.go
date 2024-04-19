@@ -886,8 +886,6 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadL2EthOraclesFromProto(dt)
 	case *snapshot.Payload_EthOracleVerifierMisc:
 		ret.Data = PayloadEthOracleVerifierMisc(dt)
-	case *snapshot.Payload_EvmEventForwarders:
-		ret.Data = PayloadEVMEventForwardersFromProto(dt)
 	case *snapshot.Payload_EvmMultisigTopologies:
 		ret.Data = PayloadEVMMultisigTopologiesFromProto(dt)
 	default:
@@ -1080,8 +1078,6 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_L2EthOracles:
 		ret.Data = dt
 	case *snapshot.Payload_EthOracleVerifierMisc:
-		ret.Data = dt
-	case *snapshot.Payload_EvmEventForwarders:
 		ret.Data = dt
 	case *snapshot.Payload_EvmMultisigTopologies:
 		ret.Data = dt

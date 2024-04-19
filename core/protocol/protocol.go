@@ -114,7 +114,6 @@ func New(
 			svcs.broker,
 			svcs.witness,
 			svcs.primaryEventForwarder,
-			svcs.secondaryEventForwarder,
 			svcs.executionEngine,
 			svcs.genesisHandler,
 			svcs.governance,
