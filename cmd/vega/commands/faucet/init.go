@@ -67,9 +67,6 @@ func (opts *faucetInit) Execute(_ []string) error {
 		nodeCfg.EvtForward.BlockchainQueueAllowlist = append(
 			nodeCfg.EvtForward.BlockchainQueueAllowlist, initResult.Wallet.PublicKey)
 
-		nodeCfg.SecondaryEvtForward.BlockchainQueueAllowlist = append(
-			nodeCfg.SecondaryEvtForward.BlockchainQueueAllowlist, initResult.Wallet.PublicKey)
-
 		if err := nodeCfgLoader.Save(nodeCfg); err != nil {
 			return fmt.Errorf("couldn't update node configuration: %w", err)
 		}

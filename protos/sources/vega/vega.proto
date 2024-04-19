@@ -1562,7 +1562,7 @@ message EthereumConfig {
 }
 
 // EVM Chain configuration details.
-message EVMChainConfig {
+message EVMBridgeConfig {
   // Network ID of this EVM compatible network.
   string network_id = 1;
   // Chain ID of this EVM compatible network.
@@ -1579,12 +1579,14 @@ message EVMChainConfig {
   EthereumContractConfig multisig_control_contract = 5;
   // Approximate block time of the EVM chain as a duration e.g. 12s, 250ms.
   string block_time = 6;
+  // Display name of this network.
+  string name = 7;
 }
 
-// A list of EVM chain configurations
-message EVMChainConfigs {
+// A list of EVM bridge configurations
+message EVMBridgeConfigs {
   // The EVM configurations
-  repeated EVMChainConfig configs = 1;
+  repeated EVMBridgeConfig configs = 1;
 }
 
 message EthereumContractConfig {

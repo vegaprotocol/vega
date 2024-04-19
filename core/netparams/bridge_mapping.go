@@ -28,7 +28,8 @@ var stagnet1 = `{
         "address": "0x764c51de728f09407f7f073f63fc0a8a6adf110e",
         "deployment_block_height": 27160717
       },
-      "block_time": "250ms"
+      "block_time": "250ms",
+      "name": "Arbitrum (Sepolia)"
     }
   ]
 }`
@@ -46,7 +47,8 @@ var testnet = `{
         "address": "0x0A3f3E72FCe9862c750B0682aA75bb7261b3eb15",
         "deployment_block_height": 31628794
       },
-      "block_time": "250ms"
+      "block_time": "250ms",
+      "name": "Arbitrum (Sepolia)"
     }
   ]
 }`

@@ -646,11 +646,12 @@ func (app *App) ensureConfig() {
 	_ = app.gov.OnChainIDUpdate(primaryChainID)
 	_ = app.exec.OnChainIDUpdate(primaryChainID)
 
-	secondaryChainConfig := &proto.EVMChainConfig{}
-	if err := app.netp.GetJSONStruct(netparams.BlockchainsEVMChainConfig, secondaryChainConfig); err != nil {
+	bridgeConfigs := &proto.EVMBridgeConfigs{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsEVMBridgeConfigs, bridgeConfigs); err != nil {
 		return
 	}
-	secondaryChainID, err := strconv.ParseUint(secondaryChainConfig.ChainId, 10, 64)
+
+	secondaryChainID, err := strconv.ParseUint(bridgeConfigs.Configs[0].ChainId, 10, 64)
 	if err != nil {
 		return
 	}

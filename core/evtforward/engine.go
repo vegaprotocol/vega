@@ -30,7 +30,7 @@ const (
 )
 
 type Engine struct {
-	cfg Config
+	cfg ethereum.Config
 	log *logging.Logger
 
 	ethEngine *ethereum.Engine
@@ -39,7 +39,7 @@ type Engine struct {
 	multisigControlStartingBlock uint64
 }
 
-func NewEngine(log *logging.Logger, config Config) *Engine {
+func NewEngine(log *logging.Logger, config ethereum.Config) *Engine {
 	topEngineLogger := log.Named(topEngineLogger)
 	topEngineLogger.SetLevel(config.Level.Get())
 
@@ -50,7 +50,7 @@ func NewEngine(log *logging.Logger, config Config) *Engine {
 }
 
 // ReloadConf updates the internal configuration of the Event Forwarder engine.
-func (e *Engine) ReloadConf(config Config) {
+func (e *Engine) ReloadConf(config ethereum.Config) {
 	e.log.Info("Reloading configuration")
 
 	if e.log.GetLevel() != config.Level.Get() {
@@ -61,7 +61,7 @@ func (e *Engine) ReloadConf(config Config) {
 		e.log.SetLevel(config.Level.Get())
 	}
 	if e.ethEngine != nil {
-		e.ethEngine.ReloadConf(config.Ethereum)
+		e.ethEngine.ReloadConf(config)
 	}
 }
 
@@ -105,7 +105,7 @@ func (e *Engine) SetupEthereumEngine(
 	ethLogger.SetLevel(config.Level.Get())
 
 	filterer, err := ethereum.NewLogFilterer(
-		e.cfg.Ethereum,
+		e.cfg,
 		ethLogger,
 		client,
 		ethCfg.CollateralBridge(),
@@ -120,7 +120,7 @@ func (e *Engine) SetupEthereumEngine(
 	}
 
 	e.ethEngine = ethereum.NewEngine(
-		e.cfg.Ethereum,
+		e.cfg,
 		ethLogger,
 		filterer,
 		forwarder,
@@ -170,7 +170,7 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 	ethLogger.SetLevel(config.Level.Get())
 
 	filterer, err := ethereum.NewLogFilterer(
-		e.cfg.Ethereum,
+		e.cfg,
 		ethLogger,
 		client,
 		ethCfg.CollateralBridge(),
@@ -185,7 +185,7 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 	}
 
 	e.ethEngine = ethereum.NewEngine(
-		e.cfg.Ethereum,
+		e.cfg,
 		ethLogger,
 		filterer,
 		forwarder,
@@ -231,7 +231,7 @@ type NoopEngine struct {
 	log *logging.Logger
 }
 
-func NewNoopEngine(log *logging.Logger, config Config) *NoopEngine {
+func NewNoopEngine(log *logging.Logger, config ethereum.Config) *NoopEngine {
 	topEngineLogger := log.Named(topEngineLogger)
 	topEngineLogger.SetLevel(config.Level.Get())
 
@@ -240,7 +240,7 @@ func NewNoopEngine(log *logging.Logger, config Config) *NoopEngine {
 	}
 }
 
-func (e *NoopEngine) ReloadConf(_ Config) {
+func (e *NoopEngine) ReloadConf(_ ethereum.Config) {
 	if e.log.IsDebug() {
 		e.log.Debug("Reloading Ethereum configuration is a no-op")
 	}

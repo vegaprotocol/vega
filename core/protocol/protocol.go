@@ -168,7 +168,7 @@ func New(
 			Watcher: proto.App.OnBlockchainPrimaryEthereumConfigUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.BlockchainsEVMChainConfig,
+			Param:   netparams.BlockchainsEVMBridgeConfigs,
 			Watcher: proto.App.OnBlockchainEVMChainConfigUpdate,
 		},
 	)

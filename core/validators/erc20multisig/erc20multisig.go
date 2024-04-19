@@ -54,7 +54,7 @@ func NewERC20MultisigTopology(
 		})
 	} else {
 		_ = netp.Watch(netparams.WatchParam{
-			Param: netparams.BlockchainsEVMChainConfig,
+			Param: netparams.BlockchainsEVMBridgeConfigs,
 			Watcher: func(_ context.Context, cfg interface{}) error {
 				cfgs, err := types.EVMChainConfigFromUntypedProto(cfg)
 				if err != nil {

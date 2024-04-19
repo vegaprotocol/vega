@@ -33,6 +33,7 @@ type Config struct {
 	Level                  encoding.LogLevel `long:"log-level"`
 	MaxEthereumBlocks      uint64            `long:"max-ethereum-blocks"`
 	PollEventRetryDuration encoding.Duration
+	ChainID                string
 }
 
 func NewDefaultConfig() Config {

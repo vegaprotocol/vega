@@ -51,14 +51,13 @@ func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfigs, error) {
 	return ethConfig, nil
 }
 
-func SecondaryConfigFromProto(cfgsProto *proto.EVMChainConfigs) (*EVMChainConfigs, error) {
+func SecondaryConfigFromProto(cfgsProto *proto.EVMBridgeConfigs) (*EVMChainConfigs, error) {
 	if err := CheckEVMChainConfig(cfgsProto); err != nil {
 		return nil, fmt.Errorf("invalid EVM chain configurations: %w", err)
 	}
 
 	cfgs := &EVMChainConfigs{}
 	for _, cfgProto := range cfgsProto.Configs {
-
 		cfg := &EVMChainConfig{
 			chainID:       cfgProto.ChainId,
 			networkID:     cfgProto.NetworkId,
@@ -121,7 +120,7 @@ func CheckUntypedEVMChainConfig(v interface{}, _ interface{}) error {
 }
 
 // CheckEVMChainConfig verifies the proto.EVMChainConfig is valid.
-func CheckEVMChainConfig(cfgs *proto.EVMChainConfigs) error {
+func CheckEVMChainConfig(cfgs *proto.EVMBridgeConfigs) error {
 	if len(cfgs.Configs) <= 0 {
 		return errors.New("missing EVM configurations")
 	}
@@ -163,8 +162,8 @@ func CheckEVMChainConfig(cfgs *proto.EVMChainConfigs) error {
 	return nil
 }
 
-func toEVMChainConfigProto(v interface{}) (*proto.EVMChainConfigs, error) {
-	cfg, ok := v.(*proto.EVMChainConfigs)
+func toEVMChainConfigProto(v interface{}) (*proto.EVMBridgeConfigs, error) {
+	cfg, ok := v.(*proto.EVMBridgeConfigs)
 	if !ok {
 		return nil, fmt.Errorf("type %q is not a EVMChainConfig proto", vgreflect.TypeName(v))
 	}

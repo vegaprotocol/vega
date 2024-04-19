@@ -40,6 +40,7 @@ import (
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
+	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/genesis"
@@ -247,16 +248,16 @@ func newServices(
 	svcs.primaryMultisig.SetWitness(svcs.witness)
 	svcs.secondaryMultisig.SetWitness(svcs.witness)
 	svcs.primaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
-	svcs.secondaryEventForwarder = evtforward.New(svcs.log, svcs.conf.SecondaryEvtForward, svcs.commander, svcs.timeService, svcs.topology)
+	svcs.secondaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
 
 	if svcs.conf.HaveEthClient() {
 		svcs.primaryBridgeView = bridges.NewERC20LogicView(primaryEthClient, primaryEthConfirmations)
 		svcs.secondaryBridgeView = bridges.NewERC20LogicView(secondaryEthClient, secondaryEthConfirmations)
-		svcs.primaryEventForwarderEngine = evtforward.NewEngine(svcs.log, svcs.conf.EvtForward)
-		svcs.secondaryEventForwarderEngine = evtforward.NewEngine(svcs.log, svcs.conf.SecondaryEvtForward)
+		svcs.primaryEventForwarderEngine = evtforward.NewEngine(svcs.log, svcs.conf.EvtForward.Ethereum)
+		svcs.secondaryEventForwarderEngine = evtforward.NewEngine(svcs.log, svcs.conf.EvtForward.EVMBridges[0])
 	} else {
-		svcs.primaryEventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
-		svcs.secondaryEventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.SecondaryEvtForward)
+		svcs.primaryEventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward.Ethereum)
+		svcs.secondaryEventForwarderEngine = evtforward.NewNoopEngine(svcs.log, ethereum.NewDefaultConfig())
 	}
 
 	svcs.oracle = spec.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
@@ -544,10 +545,10 @@ func (svcs *allServices) registerConfigWatchers() {
 	svcs.confListenerIDs = svcs.confWatcher.OnConfigUpdateWithID(
 		func(cfg config.Config) { svcs.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { svcs.notary.ReloadConf(cfg.Notary) },
-		func(cfg config.Config) { svcs.primaryEventForwarderEngine.ReloadConf(cfg.EvtForward) },
+		func(cfg config.Config) { svcs.primaryEventForwarderEngine.ReloadConf(cfg.EvtForward.Ethereum) },
 		func(cfg config.Config) { svcs.primaryEventForwarder.ReloadConf(cfg.EvtForward) },
-		func(cfg config.Config) { svcs.secondaryEventForwarderEngine.ReloadConf(cfg.SecondaryEvtForward) },
-		func(cfg config.Config) { svcs.secondaryEventForwarder.ReloadConf(cfg.SecondaryEvtForward) },
+		func(cfg config.Config) { svcs.secondaryEventForwarderEngine.ReloadConf(cfg.EvtForward.EVMBridges[0]) },
+		func(cfg config.Config) { svcs.secondaryEventForwarder.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { svcs.topology.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { svcs.witness.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { svcs.assets.ReloadConf(cfg.Assets) },
@@ -745,7 +746,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
-			Param: netparams.BlockchainsEVMChainConfig,
+			Param: netparams.BlockchainsEVMBridgeConfigs,
 			Watcher: func(ctx context.Context, cfg interface{}) error {
 				cfgs, err := types.EVMChainConfigFromUntypedProto(cfg)
 				if err != nil {
@@ -761,7 +762,11 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), false)
 				svcs.secondaryEventForwarder.SetChainID(ethCfg.ChainID())
 
-				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.secondaryEventForwarder, svcs.conf.SecondaryEvtForward.Ethereum, ethCfg, svcs.assets)
+				var bridgeCfg ethereum.Config
+				if svcs.conf.HaveEthClient() {
+					bridgeCfg = svcs.conf.EvtForward.EVMBridges[0]
+				}
+				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.secondaryEventForwarder, bridgeCfg, ethCfg, svcs.assets)
 			},
 		},
 		{
@@ -935,7 +940,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
-			Param: netparams.BlockchainsEVMChainConfig,
+			Param: netparams.BlockchainsEVMBridgeConfigs,
 			Watcher: func(_ context.Context, cfg interface{}) error {
 				// nothing to do if not a validator
 				if !svcs.conf.HaveEthClient() {
@@ -983,7 +988,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
-			Param: netparams.BlockchainsEVMChainConfig,
+			Param: netparams.BlockchainsEVMBridgeConfigs,
 			Watcher: func(_ context.Context, cfgs interface{}) error {
 				ethCfgs, err := types.EVMChainConfigFromUntypedProto(cfgs)
 				if err != nil {

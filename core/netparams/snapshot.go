@@ -147,9 +147,9 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	// TODO use a UpgradeFrom tag when we know which versions we will upgrade from
 	if vgcontext.InProgressUpgrade(ctx) {
 		haveConfig := false
-		secondaryChainConfig := &vegapb.EVMChainConfig{}
-		if err := s.GetJSONStruct(BlockchainsEVMChainConfig, secondaryChainConfig); err == nil {
-			haveConfig = secondaryChainConfig.ChainId != "XXX"
+		bridgeConfigs := &vegapb.EVMBridgeConfigs{}
+		if err := s.GetJSONStruct(BlockchainsEVMBridgeConfigs, bridgeConfigs); err == nil {
+			haveConfig = bridgeConfigs.Configs[0].ChainId != "XXX"
 		}
 
 		// if the config hasn't been set, then initialise it from the bridge mapping
@@ -162,7 +162,7 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 
 			if secondaryEthConf, ok := bridgeMapping[vgChainID]; ok {
 				s.log.Info("setting second bridge config during upgrade", logging.String("cfg", secondaryEthConf))
-				if err := s.UpdateOptionalValidation(ctx, BlockchainsEVMChainConfig, secondaryEthConf, false, false); err != nil {
+				if err := s.UpdateOptionalValidation(ctx, BlockchainsEVMBridgeConfigs, secondaryEthConf, false, false); err != nil {
 					return nil, err
 				}
 			}
