@@ -321,6 +321,9 @@ Feature: stop orders
       | party  | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error | reference |
       | party1 | BTC/ETH   | buy  | 5      | 80    | 0                | TYPE_LIMIT | TIF_IOC | reduce | 75               |       | stop1     |
 
+    #AC 0014-ORDT-163: A trader submitting a stop order wrapping a buy limit order will have the funds required to execute that order locked in the relevant holding account for the quote asset.
+    Then "party1" should have holding account balance of "400" for asset "BTC"
+    
     # now we trade at 75, this will breach the trigger
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1606,8 +1609,8 @@ Feature: stop orders
       | party3 | BTC/ETH   | sell | 10     | 80    | 0                | TYPE_LIMIT | TIF_GTC |
     # create party1 stop order
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error      | reference |
-      | party1 | BTC/ETH   | buy  | 5      | 80    | 0                | TYPE_LIMIT | TIF_IOC | reduce | 75               |            | stop1     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error | reference |
+      | party1 | BTC/ETH   | buy  | 5      | 80    | 0                | TYPE_LIMIT | TIF_IOC | reduce | 75               |       | stop1     |
 
     # now we trade at 75, this will breach the trigger
     When the parties place the following orders:
