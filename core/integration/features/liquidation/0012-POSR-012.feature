@@ -14,7 +14,7 @@ Feature: 0012-POSR-012 Update the liquidation strategy through market update
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @NoPerp @LiquidationUpdate
+  @LiquidationUpdate
   Scenario: Update liquidation strategy through market update
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

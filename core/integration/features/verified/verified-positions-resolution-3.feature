@@ -9,7 +9,7 @@ Feature: Position resolution case 3
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario: close out when there is enough orders on the orderbook to cover the position (0008-TRAD-002,0008-TRAD-003, 0008-TRAD-006)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

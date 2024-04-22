@@ -598,7 +598,6 @@ Feature: stop orders
       | party  | market id | side | volume | remaining | price | status        | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 0         | 0     | STATUS_FILLED | stop1     |
 
-  @NoPerp
   Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054) (0014-ORDT-041)
 
     # setup accounts
@@ -1625,7 +1624,6 @@ Feature: stop orders
       | party1 | 1      | 10             | 0            |
 
 
-  @NoPerp
   Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054) (0014-ORDT-041)
 
     # setup accounts

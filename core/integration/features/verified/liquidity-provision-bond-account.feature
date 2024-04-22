@@ -34,7 +34,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0    |
     
 
-  @Now @NoPerp
+  @Now
   Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)
 
     Given the liquidity monitoring parameters:

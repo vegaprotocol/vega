@@ -51,7 +51,7 @@ Feature: Calculation of average position during closeout trades
         When the network moves ahead "1" blocks
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD-1-10"
 
-    @Liquidation @NoPerp
+    @Liquidation
     Scenario: Bug time-weighted average position not updated correctly during closeout trades
         # Setup such that distributed rewards are all vested the following epoch, i,e. the balance in the vested account is equal to the rewards distributed that epocha
 

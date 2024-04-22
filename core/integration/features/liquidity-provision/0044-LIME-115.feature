@@ -59,7 +59,7 @@ Feature: Test change of SLA market parameter
 
     Given the average block duration is "1"
 
-  @Now @NoPerp
+  @Now
   Scenario: 001: lp1 and lp2 on the market BTC/ETH, 0044-LIME-091, 0044-LIME-115
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |

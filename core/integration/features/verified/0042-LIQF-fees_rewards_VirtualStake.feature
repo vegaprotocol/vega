@@ -477,7 +477,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
-  @FeeRound @Liquidation @NoPerp
+  @FeeRound @Liquidation
   Scenario: 004 2 LPs joining at start, 1 LP forcibly closed out (0042-LIQF-008)
 
     Given the average block duration is "601"
