@@ -718,16 +718,16 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
-	// variance(3, 9.8181825322314569)
-	require.Equal(t, "11.6219032607065405", metrics[0].Score.String())
+	// variance(3, 9.8181825322314569) => 11.6219032607065405 => 1/11.6219032607065405 = 0.08604442642
+	require.Equal(t, "0.086044426422046", metrics[0].Score.String())
 
 	// get metrics for market m2 with window size=2
 	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
-	require.Equal(t, "4.5156257968751148", metrics[0].Score.String())
+	require.Equal(t, "0.2214532481172412", metrics[0].Score.String())
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "0.0117473286864043", metrics[1].Score.String())
+	require.Equal(t, "85.1257359604949139", metrics[1].Score.String())
 
 	// get metrics for market m3 with window size=2
 	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
@@ -737,20 +737,20 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
-	// variance(2.5, 13.5681829072314944)
-	require.Equal(t, "30.6261682169828538", metrics[0].Score.String())
-	// variance(0.1739130434782609,0.0904761880272107)
-	require.Equal(t, "0.0017404272118899", metrics[1].Score.String())
+	// variance(2.5, 13.5681829072314944) = 30.6261682169828538 => 0.03265181569
+	require.Equal(t, "0.0326518156928779", metrics[0].Score.String())
+	// variance(0.1739130434782609,0.0904761880272107) = 0.0017404272118899 => 574.5715725245
+	require.Equal(t, "574.5715725244936759", metrics[1].Score.String())
 
 	// get metrics for all market window size=2
 	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	// variance(2.5, 11.2348495738981611)
-	require.Equal(t, "19.0743992696572216", metrics[0].Score.String())
-	// variance(0.1739130434782609,0.5571428546938774)
-	require.Equal(t, "0.0367162720510893", metrics[1].Score.String())
+	// variance(2.5, 11.2348495738981611) = 19.0743992696572216 => 0.05242629065
+	require.Equal(t, "0.0524262906455334", metrics[0].Score.String())
+	// variance(0.1739130434782609,0.5571428546938774) = 0.0367162720510893 => 27.2358805548
+	require.Equal(t, "27.2358805547724978", metrics[1].Score.String())
 
 	// now make p2 not eligible via not having sufficient governance token
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
