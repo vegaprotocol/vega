@@ -543,7 +543,11 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { svcs.primaryEventForwarderEngine.ReloadConf(cfg.EvtForward.Ethereum) },
 		func(cfg config.Config) { svcs.primaryEventForwarder.ReloadConf(cfg.EvtForward) },
-		func(cfg config.Config) { svcs.secondaryEventForwarderEngine.ReloadConf(cfg.EvtForward.EVMBridges[0]) },
+		func(cfg config.Config) {
+			if len(cfg.EvtForward.EVMBridges) > 0 {
+				svcs.secondaryEventForwarderEngine.ReloadConf(cfg.EvtForward.EVMBridges[0])
+			}
+		},
 		func(cfg config.Config) { svcs.topology.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { svcs.witness.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { svcs.assets.ReloadConf(cfg.Assets) },
