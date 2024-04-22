@@ -382,6 +382,9 @@ message BatchProposalTermsChange {
   // Timestamp as Unix time in seconds when proposal terms gets enacted if proposal passed the vote,
   // constrained by `minEnact` and `maxEnact` network parameters.
   int64 enactment_timestamp = 1;
+  // Validation timestamp as Unix time in seconds.
+  int64 validation_timestamp = 2;
+
   // Changes being proposed.
   oneof change {
     // Proposal change for modifying an existing futures market.
@@ -409,6 +412,8 @@ message BatchProposalTermsChange {
     UpdateReferralProgram update_referral_program = 111;
     // Proposal change for updating the volume discount program.
     UpdateVolumeDiscountProgram update_volume_discount_program = 112;
+    // Proposal change for adding a new asset.
+    NewAsset new_asset = 113;
   }
 }
 

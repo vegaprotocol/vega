@@ -287,6 +287,48 @@ func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	return errs
 }
 
+func checkBatchNewAssetChanges(change *protoTypes.BatchProposalTermsChange_NewAsset) Errors {
+	errs := NewErrors()
+
+	if change.NewAsset == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset", ErrIsRequired)
+	}
+
+	if change.NewAsset.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes", ErrIsRequired)
+	}
+
+	if len(change.NewAsset.Changes.Name) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.name", ErrIsRequired)
+	}
+	if len(change.NewAsset.Changes.Symbol) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.symbol", ErrIsRequired)
+	}
+
+	if len(change.NewAsset.Changes.Quantum) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsRequired)
+	} else if quantum, err := num.DecimalFromString(change.NewAsset.Changes.Quantum); err != nil {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsNotValidNumber)
+	} else if quantum.LessThanOrEqual(num.DecimalZero()) {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrMustBePositive)
+	}
+
+	if change.NewAsset.Changes.Source == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsRequired)
+	}
+
+	switch s := change.NewAsset.Changes.Source.(type) {
+	case *protoTypes.AssetDetails_BuiltinAsset:
+		errs.Merge(checkBuiltinAssetSource(s))
+	case *protoTypes.AssetDetails_Erc20:
+		errs.Merge(checkERC20AssetSource(s))
+	default:
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsNotValid)
+	}
+
+	return errs
+}
+
 func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Errors {
 	errs := NewErrors()
 

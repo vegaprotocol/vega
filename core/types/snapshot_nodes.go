@@ -598,8 +598,9 @@ type GovernanceEnacted struct {
 }
 
 type GovernanceNode struct {
-	Proposals    []*Proposal
-	ProposalData []*ProposalData
+	Proposals         []*Proposal
+	ProposalData      []*ProposalData
+	BatchProposalData []*snapshot.BatchProposalData
 }
 
 type ProposalData struct {
@@ -2285,8 +2286,9 @@ func (g GovernanceEnacted) IntoProto() *snapshot.GovernanceEnacted {
 
 func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
 	ret := GovernanceNode{
-		Proposals:    make([]*Proposal, 0, len(ge.Proposals)),
-		ProposalData: make([]*ProposalData, 0, len(ge.ProposalData)),
+		Proposals:         make([]*Proposal, 0, len(ge.Proposals)),
+		ProposalData:      make([]*ProposalData, 0, len(ge.ProposalData)),
+		BatchProposalData: ge.BatchProposalData,
 	}
 	for _, p := range ge.Proposals {
 		gn, _ := ProposalFromProto(p)
@@ -2303,8 +2305,9 @@ func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
 
 func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
 	ret := snapshot.GovernanceNode{
-		Proposals:    make([]*vega.Proposal, 0, len(g.Proposals)),
-		ProposalData: make([]*snapshot.ProposalData, 0, len(g.ProposalData)),
+		Proposals:         make([]*vega.Proposal, 0, len(g.Proposals)),
+		ProposalData:      make([]*snapshot.ProposalData, 0, len(g.ProposalData)),
+		BatchProposalData: g.BatchProposalData,
 	}
 	for _, p := range g.Proposals {
 		ret.Proposals = append(ret.Proposals, p.IntoProto())

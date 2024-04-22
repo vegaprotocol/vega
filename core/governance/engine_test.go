@@ -1994,9 +1994,10 @@ func (e *tstEngine) newBatchSubmission(
 
 	for _, proposal := range proposals {
 		sub.Terms.Changes = append(sub.Terms.Changes, types.BatchProposalChange{
-			ID:            proposal.ID,
-			Change:        proposal.Terms.Change,
-			EnactmentTime: proposal.Terms.EnactmentTimestamp,
+			ID:             proposal.ID,
+			Change:         proposal.Terms.Change,
+			EnactmentTime:  proposal.Terms.EnactmentTimestamp,
+			ValidationTime: proposal.Terms.ValidationTimestamp,
 		})
 	}
 

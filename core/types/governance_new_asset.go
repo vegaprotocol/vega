@@ -66,14 +66,14 @@ func (a ProposalTermsNewAsset) DeepClone() ProposalTerm {
 	}
 }
 
-func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) (*ProposalTermsNewAsset, error) {
+func NewNewAssetFromProto(p *vegapb.NewAsset) (*ProposalTermsNewAsset, error) {
 	var newAsset *NewAsset
-	if p.NewAsset != nil {
+	if p != nil {
 		newAsset = &NewAsset{}
 
-		if p.NewAsset.Changes != nil {
+		if p.Changes != nil {
 			var err error
-			newAsset.Changes, err = AssetDetailsFromProto(p.NewAsset.Changes)
+			newAsset.Changes, err = AssetDetailsFromProto(p.Changes)
 			if err != nil {
 				return nil, err
 			}

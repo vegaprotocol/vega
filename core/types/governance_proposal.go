@@ -386,6 +386,28 @@ func (bp *BatchProposal) SetProposalParams(params ProposalParameters) {
 	}
 }
 
+func (p *BatchProposal) WaitForNodeVote() {
+	p.State = ProposalStateWaitingForNodeVote
+	for _, v := range p.Proposals {
+		v.WaitForNodeVote()
+	}
+}
+
+func (p *BatchProposal) Open() {
+	p.State = ProposalStateOpen
+	for _, v := range p.Proposals {
+		v.Open()
+	}
+}
+
+func (p *BatchProposal) Reject(reason ProposalError) {
+	p.State = ProposalStateRejected
+	p.Reason = reason
+	for _, v := range p.Proposals {
+		v.Reject(reason)
+	}
+}
+
 func (bp *BatchProposal) RejectWithErr(reason ProposalError, details error) {
 	bp.ErrorDetails = details.Error()
 	bp.State = ProposalStateRejected
@@ -492,6 +514,10 @@ func (p *Proposal) IsSuccessorMarket() bool {
 
 func (p *Proposal) WaitForNodeVote() {
 	p.State = ProposalStateWaitingForNodeVote
+}
+
+func (p *Proposal) Open() {
+	p.State = ProposalStateOpen
 }
 
 func (p *Proposal) Reject(reason ProposalError) {

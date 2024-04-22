@@ -47,6 +47,16 @@ func (r *batchProposalTermsChangeResolver) EnactmentDatetime(ctx context.Context
 	return dt, nil
 }
 
+func (r *batchProposalTermsChangeResolver) ValidationDatetime(ctx context.Context, obj *vega.BatchProposalTermsChange) (*int64, error) {
+	var dt *int64
+	if obj.ValidationTimestamp != 0 {
+		// this is a unix timestamp (specified by users)
+		// needs to convert to time then UnixNano for the Timestamp resolver to work
+		dt = ptr.From(time.Unix(obj.ValidationTimestamp, 0).UnixNano())
+	}
+	return dt, nil
+}
+
 func (r *batchProposalTermsChangeResolver) Change(ctx context.Context, obj *vega.BatchProposalTermsChange) (ProposalChange, error) {
 	switch obj.Change.(type) {
 	case *types.BatchProposalTermsChange_UpdateMarket:
@@ -57,6 +67,8 @@ func (r *batchProposalTermsChangeResolver) Change(ctx context.Context, obj *vega
 		return obj.GetNewMarket(), nil
 	case *types.BatchProposalTermsChange_NewFreeform:
 		return obj.GetNewFreeform(), nil
+	case *types.BatchProposalTermsChange_NewAsset:
+		return obj.GetNewAsset(), nil
 	case *types.BatchProposalTermsChange_UpdateAsset:
 		return obj.GetUpdateAsset(), nil
 	case *types.BatchProposalTermsChange_CancelTransfer:

@@ -222,6 +222,112 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	assert.EqualError(t, err, governance.ErrProposalDoesNotExist.Error())
 }
 
+func TestVotingDuringValidationOfProposalForNewAssetInBatchSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+
+	// when
+	proposer := vgrand.RandomStr(5)
+	batchID := eng.newProposalID()
+
+	newAssetProposal := eng.newProposalForNewAsset(proposer, now)
+
+	// setup
+	var bAsset *assets.Asset
+	var fcheck func(interface{}, bool)
+	var rescheck validators.Resource
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, ref string, assetDetails *types.AssetDetails) (string, error) {
+		bAsset = assets.NewAsset(builtin.New(ref, assetDetails))
+		return ref, nil
+	})
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(id string) (*assets.Asset, error) {
+		return bAsset, nil
+	})
+	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Do(func(r validators.Resource, f func(interface{}, bool), _ time.Time) error {
+		fcheck = f
+		rescheck = r
+		return nil
+	})
+	eng.ensureStakingAssetTotalSupply(t, 9)
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, proposer, 1)
+
+	// expect
+	eng.expectProposalWaitingForNodeVoteEvent(t, proposer, batchID)
+
+	// eng.expectOpenProposalEvent(t, proposer, batchID)
+	eng.expectProposalEvents(t, []expectedProposal{
+		{
+			partyID:    proposer,
+			proposalID: newAssetProposal.ID,
+			state:      types.ProposalStateWaitingForNodeVote,
+			reason:     types.ProposalErrorUnspecified,
+		},
+	})
+
+	batchClosingTime := now.Add(48 * time.Hour)
+
+	// when
+	_, err := eng.submitBatchProposal(t, eng.newBatchSubmission(
+		batchClosingTime.Unix(),
+		newAssetProposal,
+	), batchID, proposer)
+
+	assert.NoError(t, err)
+
+	// given
+	voter1 := vgrand.RandomStr(5)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+
+	// expect
+	eng.expectVoteEvent(t, voter1, batchID)
+
+	// then
+	err = eng.addYesVote(t, voter1, batchID)
+	require.NoError(t, err)
+
+	_ = fcheck
+	_ = rescheck
+	// call success on the validation
+	fcheck(rescheck, true)
+
+	// then
+	afterValidation := time.Unix(newAssetProposal.Terms.ValidationTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, batchID)
+	// and the inner proposals
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	// eng.expectGetMarketState(t, ID)
+
+	// when
+	eng.OnTick(context.Background(), afterValidation)
+
+	// given
+	afterClosing := time.Unix(newAssetProposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// // expect
+	eng.expectPassedProposalEvent(t, batchID)
+	// and the inner proposals
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+
+	// // when
+	eng.OnTick(context.Background(), afterClosing)
+
+	eng.assets.EXPECT().SetPendingListing(gomock.Any(), newAssetProposal.ID).Times(1)
+	eng.OnTick(context.Background(), afterClosing.Add(1*time.Minute))
+
+	// when
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterClosing.Add(48*time.Hour))
+	require.Len(t, toBeEnacted, 1)
+}
+
 func TestNoVotesAnd0RequiredFails(t *testing.T) {
 	eng := getTestEngine(t, time.Now())
 

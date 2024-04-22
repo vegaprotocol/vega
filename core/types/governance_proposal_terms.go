@@ -322,7 +322,7 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 	case *vegapb.ProposalTerms_UpdateNetworkParameter:
 		change = NewUpdateNetworkParameterFromProto(ch.UpdateNetworkParameter)
 	case *vegapb.ProposalTerms_NewAsset:
-		change, err = NewNewAssetFromProto(ch)
+		change, err = NewNewAssetFromProto(ch.NewAsset)
 	case *vegapb.ProposalTerms_UpdateAsset:
 		change, err = NewUpdateAssetFromProto(ch.UpdateAsset)
 	case *vegapb.ProposalTerms_NewFreeform:
@@ -355,9 +355,10 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 }
 
 type BatchProposalChange struct {
-	ID            string
-	Change        ProposalTerm
-	EnactmentTime int64
+	ID             string
+	Change         ProposalTerm
+	EnactmentTime  int64
+	ValidationTime int64
 }
 
 type BatchProposalTerms struct {
@@ -467,6 +468,8 @@ func BatchProposalTermsSubmissionFromProto(p *commandspb.BatchProposalSubmission
 		}
 
 		switch ch := term.Change.(type) {
+		case *vegapb.BatchProposalTermsChange_NewAsset:
+			change, err = NewNewAssetFromProto(ch.NewAsset)
 		case *vegapb.BatchProposalTermsChange_NewMarket:
 			change, err = NewNewMarketFromProto(ch.NewMarket)
 		case *vegapb.BatchProposalTermsChange_UpdateMarket:
@@ -497,9 +500,10 @@ func BatchProposalTermsSubmissionFromProto(p *commandspb.BatchProposalSubmission
 		}
 
 		changes = append(changes, BatchProposalChange{
-			ID:            ids[i],
-			EnactmentTime: term.EnactmentTimestamp,
-			Change:        change,
+			ID:             ids[i],
+			EnactmentTime:  term.EnactmentTimestamp,
+			ValidationTime: term.ValidationTimestamp,
+			Change:         change,
 		})
 	}
 
