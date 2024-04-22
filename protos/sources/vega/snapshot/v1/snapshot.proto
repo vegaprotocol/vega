@@ -364,7 +364,6 @@ message BatchProposalData {
 
 message GovernanceBatchActive {
   repeated BatchProposalData batch_proposals = 1;
-
 }
 
 message GovernanceNode {

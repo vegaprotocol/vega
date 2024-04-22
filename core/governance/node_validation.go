@@ -520,6 +520,10 @@ func (n *NodeValidation) checkProposal(prop *types.Proposal) error {
 
 func (n *NodeValidation) checkBatchProposal(prop *types.BatchProposal) error {
 	for _, v := range prop.Proposals {
+		if !n.IsNodeValidationRequired(v) {
+			continue
+		}
+
 		if err := n.checkProposal(v); err != nil {
 			return err
 		}
