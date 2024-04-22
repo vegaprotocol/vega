@@ -1110,6 +1110,104 @@ func TestPositionMetric(t *testing.T) {
 	require.Equal(t, "102.5", scores[0].Score.String())
 }
 
+func TestRealisedReturnMetric(t *testing.T) {
+	epochService := &TestEpochEngine{}
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
+
+	epochStartTime := time.Now()
+	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime})
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+	tracker.MarketProposed("a1", "m1", "p1")
+
+	tracker.RecordFundingPayment("a1", "p1", "m1", num.NewDecimalFromFloat(100))
+	tracker.RecordFundingPayment("a1", "p1", "m1", num.NewDecimalFromFloat(-200))
+	tracker.RecordRealisedPosition("a1", "p1", "m1", num.DecimalFromFloat(130))
+
+	// now end the epoch after 600 seconds
+	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime, EndTime: epochStartTime.Add(1000 * time.Second)})
+
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "30", scores[0].Score.String())
+
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "15", scores[0].Score.String())
+
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "10", scores[0].Score.String())
+
+	// qualifying the market to m1, expect the same result
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "10", scores[0].Score.String())
+
+	// qualifying the market to m2, expect the same result
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
+	require.Equal(t, 0, len(scores))
+
+	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime.Add(1000 * time.Second)})
+
+	tracker.RecordRealisedPosition("a1", "p1", "m1", num.DecimalFromFloat(-45))
+
+	// end the epoch
+	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(1000 * time.Second), EndTime: epochStartTime.Add(2000 * time.Second)})
+
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "-45", scores[0].Score.String())
+
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "-7.5", scores[0].Score.String())
+
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "-3", scores[0].Score.String())
+
+	// qualify to m1
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m1"}})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "-3", scores[0].Score.String())
+
+	// qualify to m2
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m2"}})
+	require.Equal(t, 0, len(scores))
+
+	// now lets lets at an epoch with no activity
+	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime.Add(2000 * time.Second)})
+	// end the epoch
+	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(2000 * time.Second), EndTime: epochStartTime.Add(3000 * time.Second)})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	require.Equal(t, 0, len(scores))
+
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "-22.5", scores[0].Score.String())
+
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "-3.75", scores[0].Score.String())
+}
+
 func TestRelativeReturnMetric(t *testing.T) {
 	ctx := context.Background()
 	epochService := &TestEpochEngine{}

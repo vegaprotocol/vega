@@ -199,7 +199,8 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 		vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
-		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
+		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
 		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
 			return len(e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)) > 0
 		} else {

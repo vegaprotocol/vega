@@ -29,6 +29,7 @@
 - [11121](https://github.com/vegaprotocol/vega/issues/11121) - Remove auction trigger staleness functionality
 - [11127](https://github.com/vegaprotocol/vega/issues/11127) - Price monitoring engine should record all observations with the same weight
 - [10995](https://github.com/vegaprotocol/vega/issues/10995) - Liquidation range defined by its own parameter.
+- [11167](https://github.com/vegaprotocol/vega/issues/11167) - Add realised return reward metric. 
 
 ### 🐛 Fixes
 

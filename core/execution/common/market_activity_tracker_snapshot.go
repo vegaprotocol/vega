@@ -52,16 +52,16 @@ func (mat *MarketActivityTracker) Stopped() bool {
 	return false
 }
 
-func returnsDataToProto(partyM2MData map[string]num.Decimal) []*checkpoint.ReturnsData {
-	parties := make([]string, 0, len(partyM2MData))
-	for k := range partyM2MData {
+func returnsDataToProto(returnsData map[string]num.Decimal) []*checkpoint.ReturnsData {
+	parties := make([]string, 0, len(returnsData))
+	for k := range returnsData {
 		parties = append(parties, k)
 	}
 	sort.Strings(parties)
 	data := make([]*checkpoint.ReturnsData, 0, len(parties))
 	for _, party := range parties {
 		rd := &checkpoint.ReturnsData{Party: party}
-		rd.Return, _ = partyM2MData[party].MarshalBinary()
+		rd.Return, _ = returnsData[party].MarshalBinary()
 		data = append(data, rd)
 	}
 	return data
@@ -260,6 +260,8 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		TimeWeightedPositionDataHistory: timeWeightedPositionHistoryToProto(mt.epochTimeWeightedPosition),
 		TimeWeightedNotionalDataHistory: timeWeightedNotionalHistoryToProto(mt.epochTimeWeightedNotional),
 		ReturnsDataHistory:              epochReturnDataToProto(mt.epochPartyM2M),
+		RealisedReturns:                 returnsDataToProto(mt.partyRealisedReturn),
+		RealisedReturnsHistory:          epochReturnDataToProto(mt.epochPartyRealisedReturn),
 	}
 }
 
@@ -349,6 +351,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		totalLpFees:            num.UintZero(),
 		twPosition:             map[string]*twPosition{},
 		partyM2M:               map[string]num.Decimal{},
+		partyRealisedReturn:    map[string]num.Decimal{},
 		twNotional:             map[string]*twNotional{},
 
 		epochTotalMakerFeesReceived: []*num.Uint{},
@@ -358,6 +361,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		epochMakerFeesPaid:          []map[string]*num.Uint{},
 		epochLpFees:                 []map[string]*num.Uint{},
 		epochPartyM2M:               []map[string]num.Decimal{},
+		epochPartyRealisedReturn:    []map[string]num.Decimal{},
 		epochTimeWeightedPosition:   []map[string]uint64{},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
@@ -446,6 +450,14 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		}
 	}
 
+	if len(tracker.RealisedReturns) > 0 {
+		for _, rd := range tracker.RealisedReturns {
+			ret, _ := num.UnmarshalBinaryDecimal(rd.Return)
+			mft.partyRealisedReturn[rd.Party] = ret
+			mft.allPartiesCache[rd.Party] = struct{}{}
+		}
+	}
+
 	mft.epochMakerFeesPaid = loadFeesHistory(tracker.MakerFeesPaidHistory, mft.allPartiesCache)
 	mft.epochMakerFeesReceived = loadFeesHistory(tracker.MakerFeesReceivedHistory, mft.allPartiesCache)
 	mft.epochLpFees = loadFeesHistory(tracker.LpFeesHistory, mft.allPartiesCache)
@@ -485,6 +497,18 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 				mft.allPartiesCache[rd.Party] = struct{}{}
 			}
 			mft.epochPartyM2M = append(mft.epochPartyM2M, returns)
+		}
+	}
+
+	if len(tracker.RealisedReturnsHistory) > 0 {
+		for _, erd := range tracker.RealisedReturnsHistory {
+			returns := make(map[string]num.Decimal, len(erd.Returns))
+			for _, rd := range erd.Returns {
+				ret, _ := num.UnmarshalBinaryDecimal(rd.Return)
+				returns[rd.Party] = ret
+				mft.allPartiesCache[rd.Party] = struct{}{}
+			}
+			mft.epochPartyRealisedReturn = append(mft.epochPartyRealisedReturn, returns)
 		}
 	}
 
