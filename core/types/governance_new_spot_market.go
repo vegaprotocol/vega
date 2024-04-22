@@ -392,7 +392,6 @@ type SpotProduct struct {
 
 func (f SpotProduct) IntoProto() *vegapb.SpotProduct {
 	return &vegapb.SpotProduct{
-		Name:       f.Name,
 		BaseAsset:  f.BaseAsset,
 		QuoteAsset: f.QuoteAsset,
 	}

@@ -1357,9 +1357,7 @@ func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	if spot.BaseAsset == spot.QuoteAsset {
 		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsNotValid)
 	}
-	if len(spot.Name) == 0 {
-		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.name", ErrIsRequired)
-	}
+
 	return errs
 }
 

@@ -2088,8 +2088,6 @@ type Spot {
   baseAsset: Asset!
   "Underlying quote asset for the spot product"
   quoteAsset: Asset!
-  "Name of the instrument"
-  name: String!
 }
 
 "Perpetual future product"
@@ -4546,8 +4544,6 @@ type SpotProduct {
   baseAsset: Asset!
   "Underlying quote asset for the spot product"
   quoteAsset: Asset!
-  "Name of the instrument"
-  name: String!
 }
 
 type PerpetualProduct {
