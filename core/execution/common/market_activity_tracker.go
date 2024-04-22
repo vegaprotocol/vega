@@ -799,6 +799,9 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 			return num.DecimalZero()
 		}
 		variance, _ := num.Variance(filteredReturns)
+		if !variance.IsZero() {
+			return num.DecimalOne().Div(variance)
+		}
 		return variance
 	case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		if marketTotal.IsZero() {

@@ -246,13 +246,13 @@ Feature: Return volatility rewards
     Then the network moves ahead "1" epochs
 
     # looking at the returns of all parties for a window of 2:
-    # aux1 = [4,1] => variance = 4.5
+    # aux1 = [4,1] => variance = 1/4.5 = 0.2222222222
     # aux2 = [0,0] => N/A
-    # party1 = [2,1] => variance = 0.5 => has sufficient average therefore is eligible
+    # party1 = [2,1] => variance = 1/0.5 => 2 has sufficient average therefore is eligible
     # party2 = [0] => N/A
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "9000" for asset "VEGA"
-    And "party1" should have vesting account balance of "1000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "1000" for asset "VEGA"
+    And "party1" should have vesting account balance of "9000" for asset "VEGA"
 
   Scenario: multiple multiple markets - only one in scope
     # setup recurring transfer to the reward account - this will start at the end of this epoch
@@ -308,13 +308,13 @@ Feature: Return volatility rewards
     Then the network moves ahead "1" epochs
 
     # looking at the returns of all parties for a window of 2 for only market ETH/DEC21
-    # aux1 = [4,1] => variance = 4.5
+    # aux1 = [4,1] => variance = 4.5 => 1/4.5 = 0.2222222222
     # aux2 = [0,0] => N/A
-    # party1 = [2,1] => variance = 0.5
+    # party1 = [2,1] => variance = 0.5 => 1/0.5 = 2
     # party2 = [0] => N/A
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "9000" for asset "VEGA"
-    And "party1" should have vesting account balance of "1000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "1000" for asset "VEGA"
+    And "party1" should have vesting account balance of "9000" for asset "VEGA"
 
   Scenario: multiple multiple (0056-REWA-090,0056-REWA-093,0056-REWA-094)
     # not that this test is also demonstrating multiple transfers to the same reward account but with different dispatch strategies, though same metric and same metric asset, 
@@ -396,28 +396,28 @@ Feature: Return volatility rewards
     # party2 return = -4
 
     # total:
-    # aux1 = [6.2857142857142857, 2] => variance = 4.5918367346938775
-    # aux2 = [-9.75, 1] => 28.890625
+    # aux1 = [6.2857142857142857, 2] => variance = 1/4.5918367346938775 = 0.2177777778
+    # aux2 = [-9.75, 1] => 1/28.890625 = 0.03461330449
     # party1 = [4, 2] => variance = 1
     # party2 = [,-5.4285714285714286] => 0
 
     # pro rata rewards from transfer1:
-    # aux1 = 10000 * 4.5918367346938775/34.4824617347 = 1331
-    # aux2 = 10000 * 28.890625/34.4824617347 = 8378
-    # party1 = 10000 * 1/34.4824617347 = 290
+    # aux1 = 10000 * 0.2177777778/1.2523910823 = 1738
+    # aux2 = 10000 * 0.03461330449/1.2523910823 = 276
+    # party1 = 10000 * 1/1.2523910823 = 7984
 
     # rank rewards from transfer2:
     # aux1 = 2500
-    # aux2 = 5000 
-    # party1 = 2500
+    # aux2 = 2500 
+    # party1 = 5000
 
     # total
-    # aux1 = 1331 + 2500 = 3831
-    # aux2 = 8378 + 5000 = 13378
-    # party1 = 1788 + 3333 = 5121
+    # aux1 = 1738 + 2500 = 4238
+    # aux2 = 276 + 2500 = 5276
+    # party1 = 7984 + 5000 = 12984
 
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca4ffffffffff" should have general account balance of "90000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "3831" for asset "VEGA"
-    And "aux2" should have vesting account balance of "13378" for asset "VEGA"
-    And "party1" should have vesting account balance of "2790" for asset "VEGA"
+    And "aux1" should have vesting account balance of "4238" for asset "VEGA"
+    And "aux2" should have vesting account balance of "2776" for asset "VEGA"
+    And "party1" should have vesting account balance of "12984" for asset "VEGA"
