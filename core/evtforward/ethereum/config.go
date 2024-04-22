@@ -43,3 +43,13 @@ func NewDefaultConfig() Config {
 		MaxEthereumBlocks:      maxEthereumBlocks,
 	}
 }
+
+func (c *Config) setDefaults() {
+	if c.MaxEthereumBlocks == 0 {
+		c.MaxEthereumBlocks = maxEthereumBlocks
+	}
+
+	if c.PollEventRetryDuration.Duration == 0 {
+		c.PollEventRetryDuration.Duration = defaultDurationBetweenTwoRetry
+	}
+}
