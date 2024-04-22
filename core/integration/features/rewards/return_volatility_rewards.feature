@@ -397,23 +397,27 @@ Feature: Return volatility rewards
 
     # total:
     # aux1 = [6.2857142857142857, 2] => variance = 4.5918367346938775
-    # aux2 = [-9.75, 1] => N/A
+    # aux2 = [-9.75, 1] => 28.890625
     # party1 = [4, 2] => variance = 1
-    # party2 = [,-5.4285714285714286] => N/A
+    # party2 = [,-5.4285714285714286] => 0
 
     # pro rata rewards from transfer1:
-    # aux1 = 10000 * 4.5918367346938775/5.5918367346938775 = 8211
-    # party1 = 10000 * 1/5.5918367346938775 = 1788
+    # aux1 = 10000 * 4.5918367346938775/34.4824617347 = 1331
+    # aux2 = 10000 * 28.890625/34.4824617347 = 8378
+    # party1 = 10000 * 1/34.4824617347 = 290
 
     # rank rewards from transfer2:
-    # aux1 = 10/15 * 10000 = 6666
-    # party1 = 5/15 * 10000 = 3333
+    # aux1 = 2500
+    # aux2 = 5000 
+    # party1 = 2500
 
     # total
-    # aux1 = 8211 + 6666 = 14877
+    # aux1 = 1331 + 2500 = 3831
+    # aux2 = 8378 + 5000 = 13378
     # party1 = 1788 + 3333 = 5121
 
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca4ffffffffff" should have general account balance of "90000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "14877" for asset "VEGA"
-    And "party1" should have vesting account balance of "5121" for asset "VEGA"
+    And "aux1" should have vesting account balance of "3831" for asset "VEGA"
+    And "aux2" should have vesting account balance of "13378" for asset "VEGA"
+    And "party1" should have vesting account balance of "2790" for asset "VEGA"
