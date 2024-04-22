@@ -112,7 +112,8 @@ func LiquidationStrategyFromProto(p *vegapb.LiquidationStrategy) (*LiquidationSt
 	}
 	slippage, err := num.DecimalFromString(p.DisposalSlippageRange)
 	if err != nil {
-		return nil, err
+		slippage = num.DecimalZero()
+		// return nil, err
 	}
 	return &LiquidationStrategy{
 		DisposalTimeStep:    time.Second * time.Duration(p.DisposalTimeStep),
