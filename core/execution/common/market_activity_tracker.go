@@ -810,14 +810,12 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
 		// descaling the total tw position metric by dividing by the scaling factor
 		return num.DecimalFromInt64(int64(uTotal)).Div(num.DecimalFromInt64(int64(windowSize) * scalingFactor))
-	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN:
-		return num.MaxD(num.DecimalZero(), total.Div(num.DecimalFromInt64(int64(windowSize))))
-	case vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
+	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
 		return total.Div(num.DecimalFromInt64(int64(windowSize)))
 	case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
 		filteredReturns := []num.Decimal{}
 		for _, d := range returns {
-			if d.IsPositive() {
+			if !d.IsZero() {
 				filteredReturns = append(filteredReturns, d)
 			}
 		}
@@ -825,6 +823,9 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 			return num.DecimalZero()
 		}
 		variance, _ := num.Variance(filteredReturns)
+		if !variance.IsZero() {
+			return num.DecimalOne().Div(variance)
+		}
 		return variance
 	case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		if marketTotal.IsZero() {

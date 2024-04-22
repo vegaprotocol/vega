@@ -142,7 +142,7 @@ type AuctionDuration struct {
 
 type BatchProposal struct {
 	// Proposal ID that is provided by Vega once proposal reaches the network
-	ID *string `json:"id"`
+	ID *string `json:"id,omitempty"`
 	// A UUID reference to aid tracking proposals on Vega
 	Reference string `json:"reference"`
 	// Party that prepared the proposal
@@ -152,25 +152,25 @@ type BatchProposal struct {
 	// RFC3339Nano time and date when the proposal reached the network
 	Datetime int64 `json:"datetime"`
 	// Terms of all the proposals in the batch
-	BatchTerms *vega.BatchProposalTerms `json:"batchTerms"`
+	BatchTerms *vega.BatchProposalTerms `json:"batchTerms,omitempty"`
 	// Rationale behind the proposal
 	Rationale *vega.ProposalRationale `json:"rationale"`
 	// Votes cast for this proposal
 	Votes *ProposalVotes `json:"votes"`
 	// Reason the proposal was rejected
-	RejectionReason *vega.ProposalError `json:"rejectionReason"`
+	RejectionReason *vega.ProposalError `json:"rejectionReason,omitempty"`
 	// Details of the rejection reason
-	ErrorDetails *string `json:"errorDetails"`
+	ErrorDetails *string `json:"errorDetails,omitempty"`
 	// Required majority for this proposal to succeed
 	RequiredMajority string `json:"requiredMajority"`
 	// Required participation for this proposal to succeed
 	RequiredParticipation string `json:"requiredParticipation"`
 	// Equity-like share required for a market amendment proposal to be enacted, represented as a fraction that can be converted to a percentage. If not met, the proposal will not be enacted
-	RequiredLpMajority *string `json:"requiredLpMajority"`
+	RequiredLpMajority *string `json:"requiredLpMajority,omitempty"`
 	// The market share of LPs' equity-like share that must take part in a market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the full batch of proposals receives all YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass
-	RequiredLpParticipation *string `json:"requiredLpParticipation"`
+	RequiredLpParticipation *string `json:"requiredLpParticipation,omitempty"`
 	// Proposals that are part of the batch
-	SubProposals []*vega.Proposal `json:"subProposals"`
+	SubProposals []*vega.Proposal `json:"subProposals,omitempty"`
 }
 
 func (BatchProposal) IsProposalNode() {}
@@ -199,7 +199,7 @@ type Condition struct {
 	// The type of comparison to make on the value.
 	Operator v1.Condition_Operator `json:"operator"`
 	// The value to compare against.
-	Value *string `json:"value"`
+	Value *string `json:"value,omitempty"`
 }
 
 // A mode where Vega tries to execute orders as soon as they are received
@@ -211,13 +211,13 @@ type ContinuousTrading struct {
 // A data source contains the data sent by a data source
 type Data struct {
 	// signers is the list of public keys/ETH addresses that signed the data
-	Signers []*Signer `json:"signers"`
+	Signers []*Signer `json:"signers,omitempty"`
 	// properties contains all the properties sent by a data source
-	Data     []*v1.Property `json:"data"`
-	MetaData []*v1.Property `json:"metaData"`
+	Data     []*v1.Property `json:"data,omitempty"`
+	MetaData []*v1.Property `json:"metaData,omitempty"`
 	// List of all the data specs that matched this source data.
 	// When the array is empty, it means no data spec matched this source data.
-	MatchedSpecIds []string `json:"matchedSpecIds"`
+	MatchedSpecIds []string `json:"matchedSpecIds,omitempty"`
 	// RFC3339Nano formatted date and time for when the data was broadcast to the markets
 	// with a matching data spec.
 	// It has no value when the source data does not match any data spec.
@@ -232,7 +232,7 @@ type DataSourceSpec struct {
 	// RFC3339Nano creation date time
 	CreatedAt int64 `json:"createdAt"`
 	// RFC3339Nano last updated timestamp
-	UpdatedAt *int64                     `json:"updatedAt"`
+	UpdatedAt *int64                     `json:"updatedAt,omitempty"`
 	Data      *vega.DataSourceDefinition `json:"data"`
 	// Status describes the status of the data source spec
 	Status DataSourceSpecStatus `json:"status"`
@@ -270,8 +270,8 @@ type ERC20MultiSigSignerAddedBundleEdge struct {
 
 // Response for the signature bundle to add a particular validator to the signer list of the multisig contract
 type ERC20MultiSigSignerAddedConnection struct {
-	Edges    []*ERC20MultiSigSignerAddedBundleEdge `json:"edges"`
-	PageInfo *v2.PageInfo                          `json:"pageInfo"`
+	Edges    []*ERC20MultiSigSignerAddedBundleEdge `json:"edges,omitempty"`
+	PageInfo *v2.PageInfo                          `json:"pageInfo,omitempty"`
 }
 
 type ERC20MultiSigSignerRemovedBundleEdge struct {
@@ -282,9 +282,9 @@ type ERC20MultiSigSignerRemovedBundleEdge struct {
 // Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
 type ERC20MultiSigSignerRemovedConnection struct {
 	// The list of signer bundles for that validator
-	Edges []*ERC20MultiSigSignerRemovedBundleEdge `json:"edges"`
+	Edges []*ERC20MultiSigSignerRemovedBundleEdge `json:"edges,omitempty"`
 	// The pagination information
-	PageInfo *v2.PageInfo `json:"pageInfo"`
+	PageInfo *v2.PageInfo `json:"pageInfo,omitempty"`
 }
 
 // Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
@@ -305,20 +305,20 @@ type ERC20SetAssetLimitsBundle struct {
 }
 
 type ETHAddress struct {
-	Address *string `json:"address"`
+	Address *string `json:"address,omitempty"`
 }
 
 func (ETHAddress) IsSignerKind() {}
 
 // Summary of a node's rewards for a given epoch
 type EpochParticipation struct {
-	Epoch *vega.Epoch `json:"epoch"`
+	Epoch *vega.Epoch `json:"epoch,omitempty"`
 	// RFC3339 timestamp
-	Offline *int64 `json:"offline"`
+	Offline *int64 `json:"offline,omitempty"`
 	// RFC3339 timestamp
-	Online *int64 `json:"online"`
+	Online *int64 `json:"online,omitempty"`
 	// Total amount rewarded for participation in the given epoch
-	TotalRewards *float64 `json:"totalRewards"`
+	TotalRewards *float64 `json:"totalRewards,omitempty"`
 }
 
 // Response for the signature bundle to allowlist an ERC20 token in the collateral bridge
@@ -370,13 +370,13 @@ type EthCallTrigger struct {
 // one-off or repeating.
 type EthTimeTrigger struct {
 	// Trigger when the Ethereum time is greater or equal to this time, in Unix seconds.
-	Initial *int64 `json:"initial"`
+	Initial *int64 `json:"initial,omitempty"`
 	// Repeat the call every n seconds after the initial call. If no time for
 	// initial call was specified, begin repeating immediately.
-	Every *int `json:"every"`
+	Every *int `json:"every,omitempty"`
 	// If repeating, stop once Ethereum time is greater than this time, in Unix
 	// seconds. If not set, then repeat indefinitely.
-	Until *int64 `json:"until"`
+	Until *int64 `json:"until,omitempty"`
 }
 
 func (EthTimeTrigger) IsTriggerKind() {}
@@ -416,7 +416,7 @@ type Filter struct {
 	Key *PropertyKey `json:"key"`
 	// The conditions that should be matched by the data to be
 	// considered of interest.
-	Conditions []*Condition `json:"conditions"`
+	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
 // Individual party participating in a game and their metrics
@@ -474,7 +474,7 @@ type LiquidityProviderSLA struct {
 	// Indicates the bond penalty amount applied in the previous epoch.
 	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
 	// Determines how the fee penalties from past epochs affect future fee revenue.
-	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
+	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties,omitempty"`
 	// Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range.
 	RequiredLiquidity string `json:"requiredLiquidity"`
 	// Notional volume of orders within the range provided on the buy side of the book.
@@ -495,9 +495,9 @@ type LossSocialization struct {
 // The liquidity commitments for this market
 type MarketDataCommitments struct {
 	// A set of liquidity sell orders to meet the liquidity provision obligation.
-	Sells []*vega.LiquidityOrderReference `json:"sells"`
+	Sells []*vega.LiquidityOrderReference `json:"sells,omitempty"`
 	// A set of liquidity buy orders to meet the liquidity provision obligation.
-	Buys []*vega.LiquidityOrderReference `json:"buys"`
+	Buys []*vega.LiquidityOrderReference `json:"buys,omitempty"`
 }
 
 type MarketDepthTrade struct {
@@ -530,11 +530,11 @@ type NodeSet struct {
 	// Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
 	Inactive int `json:"inactive"`
 	// IDs of the nodes that were promoted into this node set at the start of the epoch
-	Promoted []string `json:"promoted"`
+	Promoted []string `json:"promoted,omitempty"`
 	// IDs of the nodes that were demoted into this node set at the start of the epoch
-	Demoted []string `json:"demoted"`
+	Demoted []string `json:"demoted,omitempty"`
 	// Total number of nodes allowed in the node set
-	Maximum *int `json:"maximum"`
+	Maximum *int `json:"maximum,omitempty"`
 }
 
 // Normaliser to convert the data returned from the contract method
@@ -569,7 +569,7 @@ type ObservableLiquidityProviderSLA struct {
 	// Indicates the bond penalty amount applied in the previous epoch.
 	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
 	// Determines how the fee penalties from past epochs affect future fee revenue.
-	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
+	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties,omitempty"`
 	// Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range.
 	RequiredLiquidity string `json:"requiredLiquidity"`
 	// Notional volume of orders within the range provided on the buy side of the book.
@@ -579,19 +579,19 @@ type ObservableLiquidityProviderSLA struct {
 }
 
 type OrderByMarketAndPartyIdsFilter struct {
-	Order     *v2.OrderFilter `json:"order"`
-	MarketIds []string        `json:"marketIds"`
-	PartyIds  []string        `json:"partyIds"`
+	Order     *v2.OrderFilter `json:"order,omitempty"`
+	MarketIds []string        `json:"marketIds,omitempty"`
+	PartyIds  []string        `json:"partyIds,omitempty"`
 }
 
 type OrderByMarketIdsFilter struct {
-	Order     *v2.OrderFilter `json:"order"`
-	MarketIds []string        `json:"marketIds"`
+	Order     *v2.OrderFilter `json:"order,omitempty"`
+	MarketIds []string        `json:"marketIds,omitempty"`
 }
 
 type OrderByPartyIdsFilter struct {
-	Order    *v2.OrderFilter `json:"order"`
-	PartyIds []string        `json:"partyIds"`
+	Order    *v2.OrderFilter `json:"order,omitempty"`
+	PartyIds []string        `json:"partyIds,omitempty"`
 }
 
 // An estimate of the fee to be paid by the order
@@ -611,7 +611,7 @@ type PositionEstimate struct {
 	// Estimated margin account balance increase
 	CollateralIncreaseEstimate *v2.CollateralIncreaseEstimate `json:"collateralIncreaseEstimate"`
 	// Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request
-	Liquidation *v2.LiquidationEstimate `json:"liquidation"`
+	Liquidation *v2.LiquidationEstimate `json:"liquidation,omitempty"`
 }
 
 type PositionResolution struct {
@@ -640,13 +640,13 @@ type PriceMonitoringBounds struct {
 // PriceMonitoringParameters holds a list of triggers
 type PriceMonitoringParameters struct {
 	// The list of triggers for this price monitoring
-	Triggers []*PriceMonitoringTrigger `json:"triggers"`
+	Triggers []*PriceMonitoringTrigger `json:"triggers,omitempty"`
 }
 
 // Configuration of a market price monitoring auctions triggers
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
-	Parameters *PriceMonitoringParameters `json:"parameters"`
+	Parameters *PriceMonitoringParameters `json:"parameters,omitempty"`
 }
 
 // PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
@@ -664,12 +664,12 @@ type PriceMonitoringTrigger struct {
 // PropertyKey describes the property key contained in a source data.
 type PropertyKey struct {
 	// The name of the property.
-	Name *string `json:"name"`
+	Name *string `json:"name,omitempty"`
 	// The type of the property.
 	Type v1.PropertyKey_Type `json:"type"`
 	// An optional decimal place to be applied on the provided value.
 	// Valid only for PropertyType of type DECIMAL, INTEGER.
-	NumberDecimalPlaces *int `json:"numberDecimalPlaces"`
+	NumberDecimalPlaces *int `json:"numberDecimalPlaces,omitempty"`
 }
 
 type ProposalVote struct {
@@ -682,9 +682,9 @@ type ProposalVote struct {
 // Connection type for retrieving cursor-based paginated proposal vote information
 type ProposalVoteConnection struct {
 	// The proposal votes in this connection
-	Edges []*ProposalVoteEdge `json:"edges"`
+	Edges []*ProposalVoteEdge `json:"edges,omitempty"`
 	// The pagination information
-	PageInfo *v2.PageInfo `json:"pageInfo"`
+	PageInfo *v2.PageInfo `json:"pageInfo,omitempty"`
 }
 
 // Edge type containing the proposal vote and cursor information returned by a ProposalVoteConnection
@@ -692,12 +692,12 @@ type ProposalVoteEdge struct {
 	// The proposal vote
 	Node *ProposalVote `json:"node"`
 	// The cursor for this proposal vote
-	Cursor *string `json:"cursor"`
+	Cursor *string `json:"cursor,omitempty"`
 }
 
 type ProposalVoteSide struct {
 	// All votes cast for this side
-	Votes []*vega.Vote `json:"votes"`
+	Votes []*vega.Vote `json:"votes,omitempty"`
 	// Total number of votes cast for this side
 	TotalNumber string `json:"totalNumber"`
 	// Total weight of governance token from the votes cast for this side
@@ -721,15 +721,19 @@ type ProtocolUpgradeStatus struct {
 }
 
 type PubKey struct {
-	Key *string `json:"key"`
+	Key *string `json:"key,omitempty"`
 }
 
 func (PubKey) IsSignerKind() {}
 
+// Queries allow a caller to read data and filter data via GraphQL.
+type Query struct {
+}
+
 // Connection type for retrieving cursor-based paginated reward summary information
 type RewardSummaryConnection struct {
 	// List of reward summaries available for the connection
-	Edges []*RewardSummaryEdge `json:"edges"`
+	Edges []*RewardSummaryEdge `json:"edges,omitempty"`
 	// Page information for the connection
 	PageInfo *v2.PageInfo `json:"pageInfo"`
 }
@@ -761,7 +765,7 @@ type SettlePosition struct {
 	// The settle price
 	Price string `json:"price"`
 	// The trades that were settled to close the overall position
-	TradeSettlements []*TradeSettlement `json:"tradeSettlements"`
+	TradeSettlements []*TradeSettlement `json:"tradeSettlements,omitempty"`
 }
 
 // Signer is the authorized signature used for the data.
@@ -798,6 +802,10 @@ type StopOrderTrailingPercentOffset struct {
 }
 
 func (StopOrderTrailingPercentOffset) IsStopOrderTrigger() {}
+
+// Subscriptions allow a caller to receive new information as it is available from the Vega network.
+type Subscription struct {
+}
 
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {
@@ -853,17 +861,17 @@ type TradeFee struct {
 	// The fee paid to the liquidity providers that committed liquidity to the market
 	LiquidityFee string `json:"liquidityFee"`
 	// Referral discount on maker fees for the trade
-	MakerFeeReferralDiscount *string `json:"makerFeeReferralDiscount"`
+	MakerFeeReferralDiscount *string `json:"makerFeeReferralDiscount,omitempty"`
 	// Volume discount on maker fees for the trade
-	MakerFeeVolumeDiscount *string `json:"makerFeeVolumeDiscount"`
+	MakerFeeVolumeDiscount *string `json:"makerFeeVolumeDiscount,omitempty"`
 	// Referral discount on infrastructure fees for the trade
-	InfrastructureFeeReferralDiscount *string `json:"infrastructureFeeReferralDiscount"`
+	InfrastructureFeeReferralDiscount *string `json:"infrastructureFeeReferralDiscount,omitempty"`
 	// Volume discount on infrastructure fees for the trade
-	InfrastructureFeeVolumeDiscount *string `json:"infrastructureFeeVolumeDiscount"`
+	InfrastructureFeeVolumeDiscount *string `json:"infrastructureFeeVolumeDiscount,omitempty"`
 	// Referral discount on liquidity fees for the trade
-	LiquidityFeeReferralDiscount *string `json:"liquidityFeeReferralDiscount"`
+	LiquidityFeeReferralDiscount *string `json:"liquidityFeeReferralDiscount,omitempty"`
 	// Volume discount on liquidity fees for the trade
-	LiquidityFeeVolumeDiscount *string `json:"liquidityFeeVolumeDiscount"`
+	LiquidityFeeVolumeDiscount *string `json:"liquidityFeeVolumeDiscount,omitempty"`
 }
 
 type TradeSettlement struct {
@@ -875,15 +883,15 @@ type TradeSettlement struct {
 
 // Filter to apply to the trade connection query
 type TradesFilter struct {
-	PartyIds  []string `json:"partyIds"`
-	MarketIds []string `json:"marketIds"`
-	OrderIds  []string `json:"orderIds"`
+	PartyIds  []string `json:"partyIds,omitempty"`
+	MarketIds []string `json:"marketIds,omitempty"`
+	OrderIds  []string `json:"orderIds,omitempty"`
 }
 
 // Filter to apply to the trade subscription request
 type TradesSubscriptionFilter struct {
-	PartyIds  []string `json:"partyIds"`
-	MarketIds []string `json:"marketIds"`
+	PartyIds  []string `json:"partyIds,omitempty"`
+	MarketIds []string `json:"marketIds,omitempty"`
 }
 
 type TransactionSubmitted struct {
@@ -909,14 +917,14 @@ type TransferFee struct {
 
 type TransferResponse struct {
 	// The ledger entries and balances resulting from a transfer request
-	Transfers []*vega.LedgerEntry `json:"transfers"`
+	Transfers []*vega.LedgerEntry `json:"transfers,omitempty"`
 	// The balances of accounts involved in the transfer
-	Balances []*TransferBalance `json:"balances"`
+	Balances []*TransferBalance `json:"balances,omitempty"`
 }
 
 type TransferResponses struct {
 	// A group of transfer responses - events from core
-	Responses []*TransferResponse `json:"responses"`
+	Responses []*TransferResponse `json:"responses,omitempty"`
 }
 
 // An asset originated from an Ethereum ERC20 Token

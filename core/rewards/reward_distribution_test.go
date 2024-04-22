@@ -25,6 +25,69 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestAdjustForNegatives(t *testing.T) {
+	adjustedNoNegatives := adjustScoreForNegative([]*types.PartyContributionScore{
+		{Party: "p1", Score: num.DecimalFromFloat(1)},
+		{Party: "p2", Score: num.DecimalFromFloat(2)},
+		{Party: "p3", Score: num.DecimalFromFloat(3)},
+		{Party: "p4", Score: num.DecimalFromFloat(4)},
+	})
+	require.Equal(t, 4, len(adjustedNoNegatives))
+	require.Equal(t, "1", adjustedNoNegatives[0].Score.String())
+	require.Equal(t, "2", adjustedNoNegatives[1].Score.String())
+	require.Equal(t, "3", adjustedNoNegatives[2].Score.String())
+	require.Equal(t, "4", adjustedNoNegatives[3].Score.String())
+
+	adjustedMinEqMax := adjustScoreForNegative([]*types.PartyContributionScore{
+		{Party: "p1", Score: num.DecimalFromFloat(4)},
+		{Party: "p2", Score: num.DecimalFromFloat(4)},
+		{Party: "p3", Score: num.DecimalFromFloat(4)},
+		{Party: "p4", Score: num.DecimalFromFloat(4)},
+	})
+	require.Equal(t, 4, len(adjustedMinEqMax))
+	require.Equal(t, "4", adjustedMinEqMax[0].Score.String())
+	require.Equal(t, "4", adjustedMinEqMax[1].Score.String())
+	require.Equal(t, "4", adjustedMinEqMax[2].Score.String())
+	require.Equal(t, "4", adjustedMinEqMax[3].Score.String())
+
+	adjustedAllNeg := adjustScoreForNegative([]*types.PartyContributionScore{
+		{Party: "p1", Score: num.DecimalFromFloat(-4)},
+		{Party: "p2", Score: num.DecimalFromFloat(-3)},
+		{Party: "p3", Score: num.DecimalFromFloat(-2)},
+		{Party: "p4", Score: num.DecimalFromFloat(-1)},
+	})
+	require.Equal(t, 3, len(adjustedAllNeg))
+	require.Equal(t, "1", adjustedAllNeg[0].Score.String())
+	require.Equal(t, "2", adjustedAllNeg[1].Score.String())
+	require.Equal(t, "3", adjustedAllNeg[2].Score.String())
+
+	adjustedSomeNeg := adjustScoreForNegative([]*types.PartyContributionScore{
+		{Party: "p1", Score: num.DecimalFromFloat(1)},
+		{Party: "p2", Score: num.DecimalFromFloat(-1)},
+		{Party: "p3", Score: num.DecimalFromFloat(2)},
+		{Party: "p4", Score: num.DecimalFromFloat(-2)},
+		{Party: "p5", Score: num.DecimalFromFloat(3)},
+		{Party: "p6", Score: num.DecimalFromFloat(-3)},
+		{Party: "p7", Score: num.DecimalFromFloat(4)},
+		{Party: "p8", Score: num.DecimalFromFloat(-4)},
+	})
+	require.Equal(t, 7, len(adjustedSomeNeg))
+	require.Equal(t, "5", adjustedSomeNeg[0].Score.String())
+	require.Equal(t, "p1", adjustedSomeNeg[0].Party)
+	require.Equal(t, "3", adjustedSomeNeg[1].Score.String())
+	require.Equal(t, "p2", adjustedSomeNeg[1].Party)
+	require.Equal(t, "6", adjustedSomeNeg[2].Score.String())
+	require.Equal(t, "p3", adjustedSomeNeg[2].Party)
+	require.Equal(t, "2", adjustedSomeNeg[3].Score.String())
+	require.Equal(t, "p4", adjustedSomeNeg[3].Party)
+	require.Equal(t, "7", adjustedSomeNeg[4].Score.String())
+	require.Equal(t, "p5", adjustedSomeNeg[4].Party)
+	require.Equal(t, "1", adjustedSomeNeg[5].Score.String())
+	require.Equal(t, "p6", adjustedSomeNeg[5].Party)
+	require.Equal(t, "8", adjustedSomeNeg[6].Score.String())
+	require.Equal(t, "p7", adjustedSomeNeg[6].Party)
+}
+
 func TestFindRank(t *testing.T) {
 	rankingTable := []*vega.Rank{
 		{StartRank: 1, ShareRatio: 10},
