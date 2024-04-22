@@ -27,6 +27,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/logging"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 const (
@@ -192,6 +193,10 @@ func (n *NodeValidation) getBatchProposal(id string) (*nodeBatchProposal, bool) 
 
 func (n *NodeValidation) getProposals() []*nodeProposal {
 	return n.nodeProposals
+}
+
+func (n *NodeValidation) getBatchProposals() []*nodeBatchProposal {
+	return n.nodeBatchProposals
 }
 
 func (n *NodeValidation) removeProposal(id string) {
@@ -397,6 +402,57 @@ func (n *NodeValidation) Start(ctx context.Context, p *types.Proposal) error {
 	n.nodeProposals = append(n.nodeProposals, np)
 
 	return n.witness.StartCheck(np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
+}
+
+func (n *NodeValidation) restoreBatch(ctx context.Context, pProto *snapshotpb.BatchProposalData) (*types.BatchProposal, error) {
+	p := types.BatchProposalFromSnapshotProto(pProto.BatchProposal.Proposal, pProto.Proposals)
+	nodeProposals := []*nodeProposal{}
+	for _, v := range p.Proposals {
+		if !n.IsNodeValidationRequired(v) {
+			// nothing to do here
+			continue
+		}
+		checker, err := n.getChecker(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+
+		np := &nodeProposal{
+			proposal: &proposal{
+				Proposal:     v,
+				yes:          map[string]*types.Vote{},
+				no:           map[string]*types.Vote{},
+				invalidVotes: map[string]*types.Vote{},
+			},
+			state:   atomic.Uint32{},
+			checker: checker,
+		}
+
+		np.state.Store(pendingValidationProposal)
+		nodeProposals = append(nodeProposals, np)
+	}
+
+	nbp := &nodeBatchProposal{
+		batchProposal: &batchProposal{
+			BatchProposal: p,
+			yes:           map[string]*types.Vote{},
+			no:            map[string]*types.Vote{},
+			invalidVotes:  map[string]*types.Vote{},
+		},
+		nodeProposals: nodeProposals,
+		state:         atomic.Uint32{},
+	}
+
+	nbp.state.Store(pendingValidationProposal)
+	n.nodeBatchProposals = append(n.nodeBatchProposals, nbp)
+
+	for _, v := range nbp.nodeProposals {
+		if err := n.witness.RestoreResource(v, n.onResChecked); err != nil {
+			n.log.Panic("unable to restore witness resource", logging.String("id", v.ID), logging.Error(err))
+		}
+	}
+
+	return p, nil
 }
 
 func (n *NodeValidation) restore(ctx context.Context, p *types.ProposalData) error {

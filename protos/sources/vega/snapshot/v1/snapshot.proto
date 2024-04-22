@@ -364,11 +364,13 @@ message BatchProposalData {
 
 message GovernanceBatchActive {
   repeated BatchProposalData batch_proposals = 1;
+
 }
 
 message GovernanceNode {
   repeated vega.Proposal proposals = 1;
   repeated ProposalData proposal_data = 2; // includes votes
+  repeated BatchProposalData batch_proposal_data = 3;
 }
 
 message StakingAccount {

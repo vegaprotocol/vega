@@ -189,7 +189,9 @@ func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 // serialiseNodeProposals returns the engine's proposals waiting for node validation.
 func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	nodeProposals := e.nodeProposalValidation.getProposals()
+	nodeBatchProposals := e.nodeProposalValidation.getBatchProposals()
 	proposals := make([]*types.ProposalData, 0, len(nodeProposals))
+	batchProposals := make([]*snapshotpb.BatchProposalData, 0, len(nodeBatchProposals))
 
 	for _, np := range nodeProposals {
 		proposals = append(proposals, &types.ProposalData{
@@ -200,10 +202,29 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 		})
 	}
 
+	for _, proposal := range nodeBatchProposals {
+		bp := &snapshotpb.BatchProposalData{
+			BatchProposal: &snapshotpb.ProposalData{
+				Proposal: proposal.ToProto(),
+				Yes:      votesAsProtoSlice(proposal.yes),
+				No:       votesAsProtoSlice(proposal.no),
+				Invalid:  votesAsProtoSlice(proposal.invalidVotes),
+			},
+			Proposals: make([]*vegapb.Proposal, 0, len(proposal.Proposals)),
+		}
+
+		for _, proposal := range proposal.Proposals {
+			bp.Proposals = append(bp.Proposals, proposal.IntoProto())
+		}
+
+		batchProposals = append(batchProposals, bp)
+	}
+
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceNode{
 			GovernanceNode: &types.GovernanceNode{
-				ProposalData: proposals,
+				ProposalData:      proposals,
+				BatchProposalData: batchProposals,
 			},
 		},
 	}
@@ -432,6 +453,11 @@ func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.Governanc
 	for _, p := range node.ProposalData {
 		e.nodeProposalValidation.restore(ctx, p)
 		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+	}
+
+	for _, p := range node.BatchProposalData {
+		prop, _ := e.nodeProposalValidation.restoreBatch(ctx, p)
+		e.broker.Send(events.NewProposalEventFromProto(ctx, prop.ToProto()))
 	}
 
 	var err error
