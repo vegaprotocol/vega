@@ -1185,9 +1185,10 @@ func TestRelativeReturnMetric(t *testing.T) {
 	// total m2m = -8
 	// the time weighted position for the epoch = 160
 	// therefore r = -0.05
-	// max(-0.05, 0) = 0 => nothing is returned
 	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
-	require.Equal(t, 0, len(scores))
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "p1", scores[0].Party)
+	require.Equal(t, "-0.05", scores[0].Score.String())
 
 	// with window size=2 we get (0.1-0.05)/2 = 0.025
 	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
