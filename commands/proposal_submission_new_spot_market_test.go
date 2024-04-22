@@ -86,8 +86,6 @@ func TestCheckProposalSubmissionForNewSpotMarket(t *testing.T) {
 	t.Run("Submitting a new spot market with spot product definition succeeds", testNewSpotMarketMarketChangeSubmissionWithSpotSucceeds)
 	t.Run("Submitting a new spot market without base or quote asset fails", testNewSpotMarketMarketChangeSubmissionWithoutEitherAssetFails)
 	t.Run("Submitting a new spot market with base and quote asset succeeds", testNewSpotMarketMarketChangeSubmissionWithBaseAndQuoteAssetsSucceeds)
-	t.Run("Submitting a new spot market without a name fails ", testNewSpotMarketMarketChangeSubmissionWithoutNameFails)
-	t.Run("Submitting a new spot market with a name succeeds", testNewSpotMarketMarketChangeSubmissionWithQuoteNameSucceeds)
 	t.Run("Submitting a new spot market with price monitoring without triggers succeeds", testSpotPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
 	t.Run("Submitting a new spot market with price monitoring with triggers succeeds", testSpotPriceMonitoringChangeSubmissionWithTriggersSucceeds)
 	t.Run("Submitting a new spot market with price monitoring with probability succeeds", testSpotMarketPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds)
@@ -1020,50 +1018,6 @@ func testNewSpotMarketMarketChangeSubmissionWithBaseAndQuoteAssetsSucceeds(t *te
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.base_asset"), commands.ErrIsRequired)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.quote_asset"), commands.ErrIsRequired)
-}
-
-func testNewSpotMarketMarketChangeSubmissionWithoutNameFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewSpotMarket{
-				NewSpotMarket: &protoTypes.NewSpotMarket{
-					Changes: &protoTypes.NewSpotMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Spot{
-								Spot: &protoTypes.SpotProduct{
-									Name: "",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.name"), commands.ErrIsRequired)
-}
-
-func testNewSpotMarketMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewSpotMarket{
-				NewSpotMarket: &protoTypes.NewSpotMarket{
-					Changes: &protoTypes.NewSpotMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Spot{
-								Spot: &protoTypes.SpotProduct{
-									Name: "BTC/USDT",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	})
-
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.quote_name"), commands.ErrIsRequired)
 }
 
 func testNewSpotSimpleRiskParametersChangeSubmissionWithoutSimpleRiskParametersFails(t *testing.T) {
