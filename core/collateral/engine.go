@@ -2542,7 +2542,8 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 			// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
 			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
-			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeRealisedReturnReward,
+			types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -2647,7 +2648,8 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 		// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeNetworkTreasury,
 			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
-			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeRealisedReturnReward,
+			types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market

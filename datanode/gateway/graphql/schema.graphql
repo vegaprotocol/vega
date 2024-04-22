@@ -1415,6 +1415,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_RETURN_VOLATILITY
   "Dispatch metric that uses the validator ranking of the validator as metric"
   DISPATCH_METRIC_VALIDATOR_RANKING
+  "Dispatch metric that uses the realised return of the party in the market"
+  DISPATCH_METRIC_REALISED_RETURN
 }
 
 enum EntityScope {
@@ -4427,6 +4429,8 @@ enum AccountType {
   ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
   "Per asset market account for party in isolated margin mode"
   ACCOUNT_TYPE_ORDER_MARGIN
+  "Realised return reward account is per asset per reward scheme"
+  ACCOUNT_TYPE_REWARD_REALISED_RETURN
 }
 
 "Types that describe why a transfer has been made"

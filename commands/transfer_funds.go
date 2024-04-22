@@ -108,6 +108,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
 				errs.AddForProperty("transfer.account.to", errors.New("transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric"))
 			}
@@ -137,6 +138,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
 				if k.Recurring.DispatchStrategy == nil {
@@ -168,6 +170,7 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN &&
+		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
 		errs.AddForProperty(destinationPrefixErr, ErrIsNotValid)
@@ -199,6 +202,9 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
 	}
 	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN {
+		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
+	}
+	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN {
 		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
 	}
 	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY {

@@ -922,6 +922,9 @@ enum AccountType {
   // Per asset market account for party in isolated margin mode
   ACCOUNT_TYPE_ORDER_MARGIN = 29;
 
+  // Per asset market reward account for realised return
+  ACCOUNT_TYPE_REWARD_REALISED_RETURN = 30;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -1077,6 +1080,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_RETURN_VOLATILITY = 7;
   // Dispatch metric that uses the validator ranking of the validator as metric
   DISPATCH_METRIC_VALIDATOR_RANKING = 8;
+  // Dispatch metric that uses the realised return of the party in a market
+  DISPATCH_METRIC_REALISED_RETURN = 9;
 }
 
 enum EntityScope {

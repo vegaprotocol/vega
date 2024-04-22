@@ -1320,6 +1320,7 @@ func TestTransferFunds(t *testing.T) {
 		vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN,
 		vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY,
 		vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING,
+		vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN,
 	}
 
 	for _, at := range invalidAccountTypesForOneOff {

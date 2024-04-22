@@ -238,6 +238,9 @@ message MarketActivityTracker {
   repeated EpochReturnsData returns_data_history = 18;
   repeated PartyFees infra_fees = 19;
   repeated PartyFees lp_paid_fees = 20;
+
+  repeated ReturnsData realised_returns = 21;
+  repeated EpochReturnsData realised_returns_history = 22;
 }
 
 message EpochTimeWeightPositionData {

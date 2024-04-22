@@ -106,21 +106,23 @@ func TestGetFees(t *testing.T) {
 func getDefaultTracker(t *testing.T) *marketTracker {
 	t.Helper()
 	return &marketTracker{
-		asset:                  "asset",
-		proposer:               "proposer",
-		proposersPaid:          map[string]struct{}{},
-		readyToDelete:          false,
-		valueTraded:            num.UintZero(),
-		makerFeesReceived:      map[string]*num.Uint{},
-		makerFeesPaid:          map[string]*num.Uint{},
-		lpFees:                 map[string]*num.Uint{},
-		totalMakerFeesReceived: num.UintZero(),
-		totalMakerFeesPaid:     num.UintZero(),
-		totalLpFees:            num.UintZero(),
-		twPosition:             map[string]*twPosition{},
-		partyM2M:               map[string]num.Decimal{},
-		twNotional:             map[string]*twNotional{},
-		epochPartyM2M:          []map[string]num.Decimal{},
+		asset:                    "asset",
+		proposer:                 "proposer",
+		proposersPaid:            map[string]struct{}{},
+		readyToDelete:            false,
+		valueTraded:              num.UintZero(),
+		makerFeesReceived:        map[string]*num.Uint{},
+		makerFeesPaid:            map[string]*num.Uint{},
+		lpFees:                   map[string]*num.Uint{},
+		totalMakerFeesReceived:   num.UintZero(),
+		totalMakerFeesPaid:       num.UintZero(),
+		totalLpFees:              num.UintZero(),
+		twPosition:               map[string]*twPosition{},
+		partyM2M:                 map[string]num.Decimal{},
+		partyRealisedReturn:      map[string]num.Decimal{},
+		twNotional:               map[string]*twNotional{},
+		epochPartyM2M:            []map[string]num.Decimal{},
+		epochPartyRealisedReturn: []map[string]num.Decimal{},
 	}
 }
 
@@ -190,6 +192,48 @@ func TestReturns(t *testing.T) {
 	require.Equal(t, "20", ret3[0].String())
 	_, ok = tracker.getReturns("p4", 1)
 	require.False(t, ok)
+}
+
+func TestRealisedReturns(t *testing.T) {
+	tracker := getDefaultTracker(t)
+
+	tracker.recordFundingPayment("p1", num.DecimalFromInt64(100))
+	tracker.recordRealisedPosition("p1", num.DecimalFromInt64(-50))
+	tracker.recordFundingPayment("p1", num.DecimalFromInt64(-200))
+	tracker.recordRealisedPosition("p1", num.DecimalFromInt64(20))
+	tracker.recordFundingPayment("p2", num.DecimalFromInt64(-100))
+	tracker.recordRealisedPosition("p2", num.DecimalFromInt64(-10))
+	tracker.recordRealisedPosition("p2", num.DecimalFromInt64(20))
+	tracker.recordFundingPayment("p3", num.DecimalFromInt64(200))
+
+	tracker.processPartyRealisedReturnOfEpoch()
+
+	ret1 := tracker.getRealisedReturnMetricTotal("p1", 1)
+	require.Equal(t, "-130", ret1.String())
+	ret2 := tracker.getRealisedReturnMetricTotal("p2", 1)
+	require.Equal(t, "-90", ret2.String())
+	ret3 := tracker.getRealisedReturnMetricTotal("p3", 1)
+	require.Equal(t, "200", ret3.String())
+
+	tracker.recordFundingPayment("p1", num.DecimalFromInt64(-30))
+	tracker.recordRealisedPosition("p2", num.DecimalFromInt64(70))
+	tracker.recordRealisedPosition("p2", num.DecimalFromInt64(80))
+	tracker.recordRealisedPosition("p3", num.DecimalFromInt64(-50))
+
+	tracker.processPartyRealisedReturnOfEpoch()
+	ret1 = tracker.getRealisedReturnMetricTotal("p1", 1)
+	require.Equal(t, "-30", ret1.String())
+	ret2 = tracker.getRealisedReturnMetricTotal("p2", 1)
+	require.Equal(t, "150", ret2.String())
+	ret3 = tracker.getRealisedReturnMetricTotal("p3", 1)
+	require.Equal(t, "-50", ret3.String())
+
+	ret1 = tracker.getRealisedReturnMetricTotal("p1", 2)
+	require.Equal(t, "-160", ret1.String())
+	ret2 = tracker.getRealisedReturnMetricTotal("p2", 2)
+	require.Equal(t, "60", ret2.String())
+	ret3 = tracker.getRealisedReturnMetricTotal("p3", 2)
+	require.Equal(t, "150", ret3.String())
 }
 
 func TestPositions(t *testing.T) {

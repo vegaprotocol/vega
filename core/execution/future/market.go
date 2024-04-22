@@ -1270,6 +1270,9 @@ func (m *Market) recordPositionActivity(t *types.Transfer) {
 		t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
 		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, m.mkt.ID, amt)
 	}
+	if t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
+		m.marketActivityTracker.RecordFundingPayment(m.settlementAsset, t.Owner, m.mkt.ID, amt)
+	}
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.MarketState, settlementPriceInAsset *num.Uint) error {
@@ -2633,6 +2636,13 @@ func (m *Market) handleConfirmationPassiveOrders(
 	}
 }
 
+func hasPositionDecreased(p1, p2 events.MarketPosition) bool {
+	return (p1.Size() > 0 && p2.Size() >= 0 && p2.Size() < p1.Size()) ||
+		(p1.Size() < 0 && p2.Size() <= 0 && p2.Size() > p1.Size()) ||
+		(p1.Size() > 0 && p2.Size() < 0 && -p2.Size() < p1.Size()) ||
+		(p1.Size() < 0 && p2.Size() >= 0 && p2.Size() < -p1.Size())
+}
+
 func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation, tradeT *types.TradeType) []*types.Order {
 	// When re-submitting liquidity order, it happen that the pricing is putting
 	// the order at a price which makes it uncross straight away.
@@ -2675,8 +2685,14 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		}
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
-		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
+
+		preTradePositions := m.position.GetPositionsByParty(trade.Buyer, trade.Seller)
+		for i, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
 			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
+			if hasPositionDecreased(preTradePositions[i], mp) {
+				reaslisedPosition := trade.Price.ToDecimal().Sub(preTradePositions[i].AverageEntryPrice().ToDecimal()).Mul(num.DecimalFromInt64(int64(trade.Size))).Div(m.positionFactor)
+				m.marketActivityTracker.RecordRealisedPosition(m.GetSettlementAsset(), mp.Party(), m.mkt.ID, reaslisedPosition)
+			}
 		}
 		// if the passive party is in isolated margin we need to update the margin on the position change
 		if m.getMarginMode(conf.PassiveOrdersAffected[idx].Party) == types.MarginModeIsolatedMargin {
@@ -2986,6 +3002,8 @@ func (m *Market) finalizePartiesCloseOut(
 		if m.getMarginMode(mp.Party()) == types.MarginModeCrossMargin || (mp.Buy() == 0 && mp.Sell() == 0) {
 			toRemoveFromPosition = append(toRemoveFromPosition, mp)
 		}
+		realisedReturn := mp.Price().ToDecimal().Sub(mp.AverageEntryPrice().ToDecimal()).Mul(mp.Price().ToDecimal()).Div(m.positionFactor)
+		m.marketActivityTracker.RecordRealisedPosition(m.settlementAsset, mp.Party(), m.mkt.ID, realisedReturn)
 	}
 	m.position.RemoveDistressed(toRemoveFromPosition)
 	// but we want to update the market activity tracker on their 0 position for all of the closed parties

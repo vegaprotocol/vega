@@ -319,4 +319,6 @@ const (
 	AccountTypeValidatorRankingReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
 	// Account for pending fee referral rewards.
 	AccountTypePendingFeeReferralReward AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
+	// Account for realised return rewards.
+	AccountTypeRealisedReturnReward = proto.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN
 )

@@ -30,7 +30,8 @@ import (
 	lproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	proto "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -71,9 +72,10 @@ type marketTracker struct {
 	totalMakerFeesPaid     *num.Uint
 	totalLpFees            *num.Uint
 
-	twPosition map[string]*twPosition
-	partyM2M   map[string]num.Decimal
-	twNotional map[string]*twNotional
+	twPosition          map[string]*twPosition
+	partyM2M            map[string]num.Decimal
+	partyRealisedReturn map[string]num.Decimal
+	twNotional          map[string]*twNotional
 
 	// historical data.
 	epochMakerFeesReceived      []map[string]*num.Uint
@@ -85,6 +87,7 @@ type marketTracker struct {
 	epochTimeWeightedPosition   []map[string]uint64
 	epochTimeWeightedNotional   []map[string]*num.Uint
 	epochPartyM2M               []map[string]num.Decimal
+	epochPartyRealisedReturn    []map[string]num.Decimal
 
 	valueTraded     *num.Uint
 	proposersPaid   map[string]struct{} // identifier of payout_asset : funder : markets_in_scope
@@ -188,6 +191,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		totalLpFees:                 num.UintZero(),
 		twPosition:                  map[string]*twPosition{},
 		partyM2M:                    map[string]num.Decimal{},
+		partyRealisedReturn:         map[string]num.Decimal{},
 		twNotional:                  map[string]*twNotional{},
 		epochTotalMakerFeesReceived: []*num.Uint{},
 		epochTotalMakerFeesPaid:     []*num.Uint{},
@@ -196,6 +200,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		epochMakerFeesPaid:          []map[string]*num.Uint{},
 		epochLpFees:                 []map[string]*num.Uint{},
 		epochPartyM2M:               []map[string]num.Decimal{},
+		epochPartyRealisedReturn:    []map[string]decimal.Decimal{},
 		epochTimeWeightedPosition:   []map[string]uint64{},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
@@ -269,7 +274,7 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 			Asset:  asset,
 			Market: v,
 			Score:  score,
-			Metric: proto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			Metric: vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
 		})
 		totalScore = totalScore.Add(score)
 	}
@@ -280,7 +285,7 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 	for _, mcs := range scores {
 		scoresString += mcs.Market + ":" + mcs.Score.String() + ","
 	}
-	mat.log.Info("markets contributions:", logging.String("asset", asset), logging.String("metric", proto.DispatchMetric_name[int32(proto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)]), logging.String("market-scores", scoresString[:len(scoresString)-1]))
+	mat.log.Info("markets contributions:", logging.String("asset", asset), logging.String("metric", vega.DispatchMetric_name[int32(vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)]), logging.String("market-scores", scoresString[:len(scoresString)-1]))
 
 	return scores
 }
@@ -402,13 +407,13 @@ func (mt *marketTracker) aggregatedFees() map[string]*num.Uint {
 
 // OnEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
 func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
-	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
+	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
 		mat.epochStartTime = epoch.StartTime
 		mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
 		mat.clearDeletedMarkets()
 		mat.clearNotionalTakerVolume()
 		mat.takerFeesPaidInEpoch = map[string]map[string]map[string]*num.Uint{}
-	} else if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
+	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
 		for asset, market := range mat.assetToMarketTrackers {
 			mat.takerFeesPaidInEpoch[asset] = map[string]map[string]*num.Uint{}
 			for mkt, mt := range market {
@@ -416,6 +421,7 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 				mt.processNotionalEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processPositionEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processM2MEndOfEpoch()
+				mt.processPartyRealisedReturnOfEpoch()
 				mt.clearFeeActivity()
 			}
 		}
@@ -529,11 +535,27 @@ func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, po
 	}
 }
 
+// RecordRealisedPosition updates the market tracker on decreased position.
+func (mat *MarketActivityTracker) RecordRealisedPosition(asset, party, market string, positionDecrease num.Decimal) {
+	if tracker, ok := mat.getMarketTracker(asset, market); ok {
+		tracker.allPartiesCache[party] = struct{}{}
+		tracker.recordRealisedPosition(party, positionDecrease)
+	}
+}
+
 // RecordM2M passes the mark to market win/loss transfer amount to the asset/market tracker to be recorded.
 func (mat *MarketActivityTracker) RecordM2M(asset, party, market string, amount num.Decimal) {
 	if tracker, ok := mat.getMarketTracker(asset, market); ok {
 		tracker.allPartiesCache[party] = struct{}{}
 		tracker.recordM2M(party, amount)
+	}
+}
+
+// RecordM2M passes the mark to market win/loss transfer amount to the asset/market tracker to be recorded.
+func (mat *MarketActivityTracker) RecordFundingPayment(asset, party, market string, amount num.Decimal) {
+	if tracker, ok := mat.getMarketTracker(asset, market); ok {
+		tracker.allPartiesCache[party] = struct{}{}
+		tracker.recordFundingPayment(party, amount)
 	}
 }
 
@@ -762,6 +784,8 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 			uTotal += marketTracker.getPositionMetricTotal(party, windowSize)
 		case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN:
 			total = total.Add(marketTracker.getRelativeReturnMetricTotal(party, windowSize))
+		case vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
+			total = total.Add(marketTracker.getRealisedReturnMetricTotal(party, windowSize))
 		case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
 			r, ok := marketTracker.getReturns(party, windowSize)
 			if !ok {
@@ -786,7 +810,7 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
 		// descaling the total tw position metric by dividing by the scaling factor
 		return num.DecimalFromInt64(int64(uTotal)).Div(num.DecimalFromInt64(int64(windowSize) * scalingFactor))
-	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN:
+	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
 		return total.Div(num.DecimalFromInt64(int64(windowSize)))
 	case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
 		filteredReturns := []num.Decimal{}
@@ -1027,9 +1051,33 @@ func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
 	}
 	if _, ok := mt.partyM2M[party]; !ok {
 		mt.partyM2M[party] = amount
+		mt.partyRealisedReturn[party] = amount
 		return
 	}
 	mt.partyM2M[party] = mt.partyM2M[party].Add(amount)
+	mt.partyRealisedReturn[party] = mt.partyRealisedReturn[party].Add(amount)
+}
+
+func (mt *marketTracker) recordFundingPayment(party string, amount num.Decimal) {
+	if party == "network" || amount.IsZero() {
+		return
+	}
+	if _, ok := mt.partyRealisedReturn[party]; !ok {
+		mt.partyRealisedReturn[party] = amount
+		return
+	}
+	mt.partyRealisedReturn[party] = mt.partyRealisedReturn[party].Add(amount)
+}
+
+func (mt *marketTracker) recordRealisedPosition(party string, realisedPosition num.Decimal) {
+	if party == "network" || realisedPosition.IsZero() {
+		return
+	}
+	if _, ok := mt.partyRealisedReturn[party]; !ok {
+		mt.partyRealisedReturn[party] = realisedPosition
+		return
+	}
+	mt.partyRealisedReturn[party] = mt.partyRealisedReturn[party].Add(realisedPosition)
 }
 
 // processM2MEndOfEpoch is called at the end of the epoch to reset the running total for the next epoch and record the total m2m in the ended epoch.
@@ -1053,6 +1101,19 @@ func (mt *marketTracker) processM2MEndOfEpoch() {
 		mt.epochPartyM2M = mt.epochPartyM2M[1:]
 	}
 	mt.epochPartyM2M = append(mt.epochPartyM2M, m)
+}
+
+// processPartyRealisedReturnOfEpoch is called at the end of the epoch to reset the running total for the next epoch and record the total m2m in the ended epoch.
+func (mt *marketTracker) processPartyRealisedReturnOfEpoch() {
+	m := map[string]num.Decimal{}
+	for party, realised := range mt.partyRealisedReturn {
+		m[party] = realised
+		mt.partyRealisedReturn[party] = num.DecimalZero()
+	}
+	if len(mt.epochPartyRealisedReturn) == maxWindowSize {
+		mt.epochPartyRealisedReturn = mt.epochPartyRealisedReturn[1:]
+	}
+	mt.epochPartyRealisedReturn = append(mt.epochPartyRealisedReturn, m)
 }
 
 // getReturns returns a slice of the total of the party's return by epoch in the given window.
@@ -1084,6 +1145,11 @@ func (mt *marketTracker) getPositionMetricTotal(party string, windowSize int) ui
 // getRelativeReturnMetricTotal returns the sum of the relative returns over the given window.
 func (mt *marketTracker) getRelativeReturnMetricTotal(party string, windowSize int) num.Decimal {
 	return calcTotalForWindowD(party, mt.epochPartyM2M, windowSize)
+}
+
+// getRealisedReturnMetricTotal returns the sum of the relative returns over the given window.
+func (mt *marketTracker) getRealisedReturnMetricTotal(party string, windowSize int) num.Decimal {
+	return calcTotalForWindowD(party, mt.epochPartyRealisedReturn, windowSize)
 }
 
 // getFees returns the total fees paid/received (depending on what feeData represents) by the party over the given window size.
