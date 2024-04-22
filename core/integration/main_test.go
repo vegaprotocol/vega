@@ -357,6 +357,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheFollowingLPEventsShouldBeEmitted(execsetup.broker, table)
 	})
 
+	s.Step(`the following orders are cancelled on market "([^"]+)":$`, func(market string, table *godog.Table) error {
+		return steps.TheCancelledOrdersEventContains(execsetup.broker, market, table)
+	})
+
 	// block time stuff
 	s.Step(`^the average block duration is "([^"]+)" with variance "([^"]+)"$`, func(block, variance string) error {
 		return steps.TheAverageBlockDurationWithVariance(execsetup.block, block, variance)
