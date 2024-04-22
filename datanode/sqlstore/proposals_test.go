@@ -1222,7 +1222,6 @@ func getNewSpotMarketProposal(partyID string) *vega.Proposal {
 						Spot: &vega.SpotProduct{
 							BaseAsset:  "USD",
 							QuoteAsset: "ETH",
-							Name:       "ETH/USD",
 						},
 					},
 				},

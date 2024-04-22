@@ -196,7 +196,6 @@ func getTestSpotMarket() *protoTypes.Market {
 		Spot: &protoTypes.Spot{
 			BaseAsset:  "Ethereum",
 			QuoteAsset: "USD",
-			Name:       "ETH/USD",
 		},
 	}
 
@@ -462,7 +461,6 @@ func getNewSpotMarketProposal() *protoTypes.Proposal {
 						Spot: &protoTypes.SpotProduct{
 							BaseAsset:  "USD",
 							QuoteAsset: "ETH",
-							Name:       "ETH/USD",
 						},
 					},
 				},

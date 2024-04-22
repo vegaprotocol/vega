@@ -15,8 +15,6 @@ message SpotProduct {
   string base_asset = 1;
   // Quote asset ID.
   string quote_asset = 2;
-  // Product name.
-  string name = 3;
 }
 
 // Future product configuration

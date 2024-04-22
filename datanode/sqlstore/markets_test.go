@@ -394,7 +394,6 @@ func getTestSpotMarket() *vega.Market {
 		Spot: &vega.Spot{
 			BaseAsset:  "Ethereum",
 			QuoteAsset: "USD",
-			Name:       "ETH/USD",
 		},
 	}
 

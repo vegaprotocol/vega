@@ -29,6 +29,7 @@
 - [11121](https://github.com/vegaprotocol/vega/issues/11121) - Remove auction trigger staleness functionality
 - [11127](https://github.com/vegaprotocol/vega/issues/11127) - Price monitoring engine should record all observations with the same weight
 - [10995](https://github.com/vegaprotocol/vega/issues/10995) - Liquidation range defined by its own parameter.
+- [11151](https://github.com/vegaprotocol/vega/issues/11151) - Remove name field from the spot markets.
 
 ### 🐛 Fixes
 
@@ -62,11 +63,11 @@
 - [11089](https://github.com/vegaprotocol/vega/issues/11089) - Add tests for proto `enums` persisted to database.
 - [11105](https://github.com/vegaprotocol/vega/issues/11105) - Include all paid fees in reward cap.
 - [1109](https://github.com/vegaprotocol/core-test-coverage/issues/1109) - Correctly label acceptance coverage for `0042-LIQF-091`.
-- [11130](https://github.com/vegaprotocol/vega/issues/11130) - Add missing initialisation for max stop orders in spots. 
+- [11130](https://github.com/vegaprotocol/vega/issues/11130) - Add missing initialisation for max stop orders in spots.
 - [11133](https://github.com/vegaprotocol/vega/issues/11133) - Fix spot product resolver
-- [11154](https://github.com/vegaprotocol/vega/issues/11154) - Fix spot risk model resolver. 
-- [11159](https://github.com/vegaprotocol/vega/issues/11159) - Reject stop orders with size override position for spot product. 
-- [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission. 
+- [11154](https://github.com/vegaprotocol/vega/issues/11154) - Fix spot risk model resolver.
+- [11159](https://github.com/vegaprotocol/vega/issues/11159) - Reject stop orders with size override position for spot product.
+- [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission.
 
 ## 0.75.0
 

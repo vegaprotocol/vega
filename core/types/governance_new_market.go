@@ -988,7 +988,6 @@ func InstrumentConfigurationFromProto(
 	case *vegapb.InstrumentConfiguration_Spot:
 		r.Product = &InstrumentConfigurationSpot{
 			Spot: &SpotProduct{
-				Name:       pr.Spot.Name,
 				BaseAsset:  pr.Spot.BaseAsset,
 				QuoteAsset: pr.Spot.QuoteAsset,
 			},
