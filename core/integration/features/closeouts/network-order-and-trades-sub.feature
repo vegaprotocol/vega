@@ -10,7 +10,6 @@ Feature: Ensure network party are generated
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @NoPerp
   Scenario: Implement trade and order network
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

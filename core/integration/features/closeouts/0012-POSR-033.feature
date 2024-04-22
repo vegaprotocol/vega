@@ -14,7 +14,6 @@ Feature: Covers 0012-POSR-033
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @NoPerp
   Scenario: When calculating the available volume, volume outside the disposal price range should not be considered.
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

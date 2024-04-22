@@ -14,7 +14,6 @@ Feature: Covers 0012-POSR-031
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @NoPerp
   Scenario: A network disposal order can not cross with orders outside the disposal price range.
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

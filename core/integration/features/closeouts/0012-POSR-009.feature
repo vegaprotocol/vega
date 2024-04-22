@@ -13,7 +13,6 @@ Feature: When a party is distressed and gets closed out the network's position g
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @NoPerp
   Scenario: Implement trade and order network
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
