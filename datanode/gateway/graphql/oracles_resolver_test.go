@@ -78,7 +78,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"Oracle":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}}}},"status":"STATUS_ACTIVE"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"data":{"SourceType":{"External":{"SourceType":{"Oracle":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 		{
@@ -108,7 +108,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"Internal":{"SourceType":{"Time":{"conditions":[{"operator":12,"value":"blah"}]}}}}},"status":"STATUS_ACTIVE"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"data":{"SourceType":{"Internal":{"SourceType":{"Time":{"conditions":[{"operator":12,"value":"blah"}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 		{
@@ -152,7 +152,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"EthOracle":{"address":"test-address","method":"stake","trigger":{"Trigger":{"TimeTrigger":{"initial":11651379494838206464}}},"filters":[{"key":{"name":"property-name","type":4}}]}}}}},"status":"STATUS_ACTIVE"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"data":{"SourceType":{"External":{"SourceType":{"EthOracle":{"address":"test-address","method":"stake","trigger":{"Trigger":{"TimeTrigger":{"initial":11651379494838206464}}},"filters":[{"key":{"name":"property-name","type":4}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 	}
@@ -164,7 +164,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 			}
 
 			gotJsn, _ := json.Marshal(got)
-			assert.JSONEqf(t, tt.wantJsn, string(gotJsn), "mismatch:\n\twant: %s \n\tgot: %s", tt.wantJsn, string(gotJsn))
+			assert.JSONEqf(t, tt.wantJsn, string(gotJsn), "mismatch(%v):\n\twant: %s \n\tgot: %s", tt.name, tt.wantJsn, string(gotJsn))
 		})
 	}
 }
