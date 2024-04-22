@@ -534,8 +534,8 @@ message TransactionResult {
     commands.v1.BatchMarketInstructions batch_market_instructions = 119;
     commands.v1.KeyRotateSubmission key_rotate_submission = 120;
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
-    commands.v1.StopOrdersSubmission stop_order_submission = 122;
-    commands.v1.StopOrdersCancellation stop_order_cancellation = 123;
+    commands.v1.StopOrdersSubmission stop_orders_submission = 122;
+    commands.v1.StopOrdersCancellation stop_orders_cancellation = 123;
     commands.v1.CreateReferralSet create_referral_set = 124;
     commands.v1.UpdateReferralSet update_referral_set = 125;
     commands.v1.ApplyReferralCode apply_referral_code = 126;

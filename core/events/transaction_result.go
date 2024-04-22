@@ -163,12 +163,12 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 			EthereumKeyRotateSubmission: tv,
 		}
 	case *commandspb.StopOrdersSubmission:
-		t.evt.Transaction = &eventspb.TransactionResult_StopOrderSubmission{
-			StopOrderSubmission: tv,
+		t.evt.Transaction = &eventspb.TransactionResult_StopOrdersSubmission{
+			StopOrdersSubmission: tv,
 		}
 	case *commandspb.StopOrdersCancellation:
-		t.evt.Transaction = &eventspb.TransactionResult_StopOrderCancellation{
-			StopOrderCancellation: tv,
+		t.evt.Transaction = &eventspb.TransactionResult_StopOrdersCancellation{
+			StopOrdersCancellation: tv,
 		}
 	case *commandspb.CreateReferralSet:
 		t.evt.Transaction = &eventspb.TransactionResult_CreateReferralSet{
