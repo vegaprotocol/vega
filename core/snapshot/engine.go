@@ -16,9 +16,11 @@
 package snapshot
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"sync"
@@ -34,9 +36,12 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/version"
 
 	tmtypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/libp2p/go-libp2p/p2p/host/autonat/pb"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 )
@@ -510,6 +515,52 @@ func (e *Engine) Snapshot(ctx context.Context) ([]byte, DoneCh, error) {
 	e.commitsLeftBeforeSnapshot = e.intervalBetweenSnapshots
 
 	return e.snapshotNow(ctx, true)
+}
+
+// SnapshotDump takes a snapshot on demand, without persisting it to the underlying DB
+// it's meant to just dump to a file for debugging.
+func (e *Engine) SnapshotDump(ctx context.Context, path string) ([]byte, error) {
+	e.ensureEngineIsStarted()
+	// dump file
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	hash, ch, err := e.snapshotNow(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	<-ch
+	payloads, err := e.snapshotTree.AsProtoPayloads()
+	if err != nil {
+		return hash, err
+	}
+
+	w := bufio.NewWriter(f)
+	m := jsonpb.Marshaler{Indent: "    "}
+
+	payloadData := struct {
+		Data []*snapshotpb.Payload `json:"data,omitempty" protobuf:"bytes,1,rep,name=data"`
+		pb.Message
+	}{
+		Data: payloads,
+	}
+
+	s, err := m.MarshalToString(&payloadData)
+	if err != nil {
+		return hash, err
+	}
+
+	if _, err = w.WriteString(s); err != nil {
+		return hash, err
+	}
+
+	if err = w.Flush(); err != nil {
+		return hash, err
+	}
+
+	return hash, nil
 }
 
 // SnapshotNow triggers the snapshot process right now, ignoring the defined

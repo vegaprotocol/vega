@@ -131,6 +131,9 @@ type SnapshotEngine interface {
 	ReceiveSnapshotChunk(context.Context, *types.RawChunk, string) tmtypes.ResponseApplySnapshotChunk
 	RetrieveSnapshotChunk(uint64, uint32, uint32) (*types.RawChunk, error)
 	HasRestoredStateAlready() bool
+
+	// debug snapshot issues/hash mismatch problems
+	SnapshotDump(ctx context.Context, path string) ([]byte, error)
 }
 
 type StateVarEngine interface {
@@ -1114,6 +1117,15 @@ func (app *App) Finalize() []byte {
 		snapHash, err = app.snapshotEngine.SnapshotNow(app.blockCtx)
 		if err == nil {
 			app.protocolUpgradeService.SetCoreReadyForUpgrade()
+		}
+	} else if app.cfg.SnapshotDebug.DevEnabled {
+		if height, _ := vgcontext.BlockHeightFromContext(app.blockCtx); height == app.cfg.SnapshotDebug.CrashAtHeight {
+			hash, err := app.snapshotEngine.SnapshotDump(app.blockCtx, app.cfg.SnapshotDebug.DebugCrashFile)
+			if err != nil {
+				app.log.Panic("Failed to dump snapshot file", logging.Error(err), logging.String("snapshot-hash", string(hash)))
+			} else {
+				app.log.Panic("Dumped snapshot file successfully", logging.String("snapshot-hash", string(hash)), logging.String("dump-file", app.cfg.SnapshotDebug.DebugCrashFile))
+			}
 		}
 	} else {
 		snapHash, _, err = app.snapshotEngine.Snapshot(app.blockCtx)
