@@ -94,6 +94,11 @@ func NewEngine(
 ) *Engine {
 	l := log.Named(engineLogger)
 
+	// given that the EVM bridge configs are and array the "unset" values do not get populated
+	// with reasonable defaults so we need to make sure they are set to something reasonable
+	// if they are left out
+	cfg.setDefaults()
+
 	return &Engine{
 		cfg:                            cfg,
 		log:                            l,
