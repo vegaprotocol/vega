@@ -25,7 +25,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | network.markPriceUpdateMaximumFrequency | 5s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario: 001, using lognormal risk model, set "designatedLoser" closeout while the position of "designatedLoser" is not fully covered by orders on the order book (0007-POSN-013)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -199,7 +199,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario: 002, closeout trade with price outside price mornitoring bounds will not trigger auction 0032-PRIM-019
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -352,7 +352,6 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | party           | asset | market id | margin | general |
       | designatedLoser | USD   | ETH/DEC20 | 0      | 0       |
 
-  @NoPerp
   Scenario: 003, settlement works correctly when party enters and leaves within one MTM window
     Given the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |

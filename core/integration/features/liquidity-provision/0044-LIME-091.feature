@@ -62,7 +62,7 @@ Feature: Test change of SLA market parameter
       | market.liquidity.earlyExitPenalty                   | 0.25  |
 
     Given the average block duration is "1"
-  @Now @NoPerp
+  @Now
   Scenario: 001: lp1 and lp2 on the market ETH/MAR22, 0044-LIME-091, 0044-LIME-093, 0044-LIME-029
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |

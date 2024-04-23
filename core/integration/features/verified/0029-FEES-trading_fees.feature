@@ -523,7 +523,6 @@ Feature: Fees calculations
       | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 0 | 0 | 0 | 0 |
 
-  @NoPerp
   Scenario: S008, Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute (0029-FEES-007，0029-FEES-008)
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
@@ -980,7 +979,7 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario:S016,  Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead (0029-FEES-008)
 
     And the average block duration is "1"
@@ -1160,7 +1159,7 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-  @now @Liquidation @NoPerp
+  @now @Liquidation
   Scenario: S018, Testing fees in continuous trading during position resolution (0029-FEES-001)
 
     Given the fees configuration named "fees-config-1":
@@ -1254,7 +1253,7 @@ Feature: Fees calculations
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario: S019, Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid (0029-FEES-008)
 
     Given the fees configuration named "fees-config-1":

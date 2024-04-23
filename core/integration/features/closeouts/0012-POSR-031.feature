@@ -1,21 +1,20 @@
-Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTests.py & https://github.com/vegaprotocol/scenario-runner/tree/develop/scenarios/QA/issues/86)
+Feature: Covers 0012-POSR-031
 
   Background:
-
-    Given the fees configuration named "my-fees-config":
-      | maker fee | infrastructure fee |
-      | 0.00025   | 0.0005             |
+    # disposal strategy every 5 seconds, 20% until 10 or less, max 10% of the book used, slippage is set to 10 so price range is always wide enough
+    Given the liquidation strategies:
+      | name             | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | disposal-strat-1 | 5             | 0.2               | 10                 | 1                     | 0.1                     |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | fees           | auction duration | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | my-fees-config | 1                | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | disposal-strat-1     |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @Liquidation
-  Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
+  Scenario: A network disposal order can not cross with orders outside the disposal price range.
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -45,8 +44,8 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
     Then the opening auction period ends for market "ETH/DEC19"
 
-    # place orders and generate trades
-    When the parties place the following orders "1" blocks apart:
+    # place orders and generate trades, do not progress time
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference | expires in |
       | tt_10 | ETH/DEC19 | buy  | 5      | 100   | 0                | TYPE_LIMIT  | TIF_GTT | tt_10-1   | 3600       |
       | tt_11 | ETH/DEC19 | sell | 5      | 100   | 1                | TYPE_LIMIT  | TIF_GTT | tt_11-1   | 3600       |
@@ -61,31 +60,55 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
 
     And the mark price should be "100" for the market "ETH/DEC19"
 
-    # Ensure the network position is closed out
-    When the network moves ahead "2" blocks
     # checking margins
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | tt_5  | BTC   | ETH/DEC19 | 0      | 0       |
-    And debug trades
-    And the following trades should be executed:
-      | buyer   | price | size | seller  |
-      | network | 100   | 4    | tt_5    |
-      | tt_10   | 100   | 4    | network |
 
     # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
     #check positions
-    #   Note that the realised pnl for tt_15 is -102 as additional 2 was made
-    #   on top of initial deposit by earning maker fee on passive orders.
-    #   That same income was used to pay up a higher portion of the 200 owed in MTM
-    #   settlement by tt_15, hence lower realised pnl loss for tt_11 compared to
-    #   the no fees case. The benefit for tt_6 is not visible due to rounding.
     Then the parties should have the following profit and loss:
-      | party | volume | unrealised pnl | realised pnl |
-      | tt_4  | 4      | -200           | 0            |
-      | tt_5  | 0      | 0              | -102         |
-      | tt_6  | -4     | 200            | -28          |
-      | tt_10 | 30     | 0              | 0            |
-      | tt_11 | -30    | 200            | -63          |
+      | party   | volume | unrealised pnl | realised pnl |
+      | tt_4    | 4      | -200           | 0            |
+      | tt_5    | 0      | 0              | -100         |
+      | tt_6    | -4     | 200            | -27          |
+      | tt_10   | 26     | 0              | 0            |
+      | tt_11   | -30    | 200            | -65          |
+      | network | 4      | 0              | 0            |
+
+    # some time passes, position network still hasn't been closed/disposed of
+    When the network moves ahead "1" blocks
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | tt_4    | 4      | -200           | 0            |
+      | tt_5    | 0      | 0              | -100         |
+      | tt_6    | -4     | 200            | -27          |
+      | tt_10   | 26     | 0              | 0            |
+      | tt_11   | -30    | 200            | -65          |
+      | network | 4      | 0              | 0            |
+    # clear trade events to ensure that we are not picking up a closeout trade that happened before the disposal step expires
+    And clear trade events
+    # move mid price + create an order within the 10% range
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_6  | ETH/DEC19 | sell | 2      | 150   | 0                | TYPE_LIMIT | TIF_GTC | tt_10-2   |
+      | tt_10 | ETH/DEC19 | buy  | 4      | 126   | 0                | TYPE_LIMIT | TIF_GTC | tt_10-2   |
+
+
+
+    # some time passes, now the network  disposes of its position
+    When the network moves ahead "5" blocks
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | tt_4    | 4      | -200           | 0            |
+      | tt_5    | 0      | 0              | -100         |
+      | tt_6    | -4     | 200            | -27          |
+      | tt_10   | 30     | -104           | 0            |
+      | tt_11   | -30    | 200            | -65          |
+      | network | 0      | 0              | 104          |
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | tt_10 | sell           | 4      |
+

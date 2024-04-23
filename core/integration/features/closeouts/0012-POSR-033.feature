@@ -1,21 +1,20 @@
-Feature: 0012-POSR-012 Update the liquidation strategy through market update
+Feature: Covers 0012-POSR-033
 
   Background:
+    # disposal strategy every 5 seconds, 20% until 10 or less, max 10% of the book used, slippage is set to 10 so price range is always wide enough
     Given the liquidation strategies:
       | name             | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
-      | fast-liquidation | 10            | 0.1               | 20                 | 0.05                  | 0.5                     |
-
+      | disposal-strat-1 | 5             | 0.2               | 10                 | 0.5                   | 0.1                     |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy   |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | slow-liquidation-strat |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | disposal-strat-1     |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @LiquidationUpdate
-  Scenario: Update liquidation strategy through market update
+  Scenario: When calculating the available volume, volume outside the disposal price range should not be considered.
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -45,8 +44,8 @@ Feature: 0012-POSR-012 Update the liquidation strategy through market update
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
     Then the opening auction period ends for market "ETH/DEC19"
 
-    # place orders and generate trades
-    When the parties place the following orders "1" blocks apart:
+    # place orders and generate trades, do not progress time
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference | expires in |
       | tt_10 | ETH/DEC19 | buy  | 5      | 100   | 0                | TYPE_LIMIT  | TIF_GTT | tt_10-1   | 3600       |
       | tt_11 | ETH/DEC19 | sell | 5      | 100   | 1                | TYPE_LIMIT  | TIF_GTT | tt_11-1   | 3600       |
@@ -58,7 +57,6 @@ Feature: 0012-POSR-012 Update the liquidation strategy through market update
       | tt_6  | ETH/DEC19 | sell | 2      | 150   | 1                | TYPE_LIMIT  | TIF_GTC | tt_6-2    |            |
       | tt_10 | ETH/DEC19 | buy  | 25     | 100   | 0                | TYPE_LIMIT  | TIF_GTC | tt_10-2   |            |
       | tt_11 | ETH/DEC19 | sell | 25     | 0     | 3                | TYPE_MARKET | TIF_FOK | tt_11-2   |            |
-    And the network moves ahead "1" blocks
 
     And the mark price should be "100" for the market "ETH/DEC19"
 
@@ -79,41 +77,56 @@ Feature: 0012-POSR-012 Update the liquidation strategy through market update
       | tt_10   | 26     | 0              | 0            |
       | tt_11   | -30    | 200            | -65          |
       | network | 4      | 0              | 0            |
-    And the following trades should be executed:
-      | buyer   | price | size | seller |
-      | network | 100   | 4    | tt_5   |
 
-    When the parties place the following orders:
+    # some time passes, position network still hasn't been closed/disposed of
+    When the network moves ahead "1" blocks
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | tt_4    | 4      | -200           | 0            |
+      | tt_5    | 0      | 0              | -100         |
+      | tt_6    | -4     | 200            | -27          |
+      | tt_10   | 26     | 0              | 0            |
+      | tt_11   | -30    | 200            | -65          |
+      | network | 4      | 0              | 0            |
+    # clear trade events to ensure that we are not picking up a closeout trade that happened before the disposal step expires
+    And clear trade events
+    # move mid price + create an order within the 10% range, max fraction is 0.5, so we expect half of the volume to trade
+    # The book has much, much move volume, but we only check the volume in the available range
+    And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_10 | ETH/DEC19 | buy  | 50     | 100   | 0                | TYPE_LIMIT | TIF_GTC | tt_10-n   |
-    And the network moves ahead "101" blocks
+      | tt_6  | ETH/DEC19 | sell | 2      | 150   | 0                | TYPE_LIMIT | TIF_GTC | tt_10-2   |
+      | tt_10 | ETH/DEC19 | buy  | 4      | 126   | 0                | TYPE_LIMIT | TIF_GTC | tt_10-2   |
+
+
+
+    # some time passes, now the network  disposes of its position
+    When the network moves ahead "5" blocks
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | tt_4    | 4      | -200           | 0            |
       | tt_5    | 0      | 0              | -100         |
       | tt_6    | -4     | 200            | -27          |
-      | tt_10   | 27     | 0              | 0            |
+      | tt_10   | 28     | -52            | 0            |
       | tt_11   | -30    | 200            | -65          |
-      | network | 3      | 0              | 0            |
-    # Network trades with good party for a size of 1
-    And the following trades should be executed:
-      | buyer | price | size | seller  |
-      | tt_10 | 100   | 1    | network |
-    # Now update the market
-    When the markets are updated:
-      | id        | linear slippage factor | quadratic slippage factor | liquidation strategy |
-      | ETH/DEC19 | 0.25                   | 0                         | fast-liquidation     |
-    # Now the network should dispose of its entire position
-    When the network moves ahead "11" blocks
+      | network | 2      | 0              | 52           |
+    # Disposal fraction == 0.5, only a half of which trades
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | tt_10 | sell           | 2      |
+
+
+    # Next closeout check -> the network trades again, but only consumes half again, so we expect a volume of 1
+    When the network moves ahead "6" blocks
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | tt_4    | 4      | -200           | 0            |
       | tt_5    | 0      | 0              | -100         |
       | tt_6    | -4     | 200            | -27          |
-      | tt_10   | 30     | 0              | 0            |
+      | tt_10   | 29     | -78            | 0            |
       | tt_11   | -30    | 200            | -65          |
-      | network | 0      | 0              | 0            |
-    # Network has been closed out entirely now
-    And the following trades should be executed:
-      | buyer | price | size | seller  |
-      | tt_10 | 100   | 3    | network |
+      | network | 1      | 0              | 78           |
+    # Disposal fraction == 0.5, only a half of which trades
+    And the following network trades should be executed:
+      | party | aggressor side | volume |
+      | tt_10 | sell           | 1      |
+

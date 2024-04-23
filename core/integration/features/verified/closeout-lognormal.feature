@@ -21,7 +21,7 @@ Feature: Closeout scenarios
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @EndBlock @Liquidation @NoPerp
+  @EndBlock @Liquidation
   Scenario: 001, 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005; 0007-POSN-015)
     # setup accounts, we are trying to closeout trader3 first and then trader2
 

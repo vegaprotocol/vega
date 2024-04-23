@@ -54,7 +54,7 @@ Feature: Test LP SLA Bond penalty on change of SLA market parameter: price range
       | market.liquidity.earlyExitPenalty                   | 0.25  |
 
     Given the average block duration is "1"
-  @Now @NoPerp
+  @Now
   Scenario: 001: If a liquidity provider has `fraction_of_time_on_book` = `0.3`, `market.liquidity.commitmentMinTimeFraction = 0.6`, `market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.7`, `market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6`and the market parameter change `market.liquidity.commitmentMinTimeFraction = 0.3` is enacted during the epoch then at the end of the current epoch LP will have their bond slashed. If the LP has `fraction_of_time_on_book` = `0.3` at the end of the next epoch, they are meeting their commitment and will not forfeit any of their bond stake. (0044-LIME-088)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |

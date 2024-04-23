@@ -124,7 +124,7 @@ Feature: test risk model parameter ranges
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 22    |
 
-  @Now @NoPerp @SLABug
+  @Now @SLABug
   Scenario: 001, test different value of risk parameters within defined ranges in different market, AC: 0018-RSKM-001
 
     Given the liquidity monitoring parameters:
@@ -452,7 +452,7 @@ Feature: test risk model parameter ranges
       | party1 | USD   | ETH/MAR51 | 3021   | 49999999875869 |       |
       | party2 | USD   | ETH/MAR51 | 3021   | 49999999584845 |       |
 
-@Now @NoPerp
+  @Now
   Scenario: 002, test market ETH/MAR23 (tau=1)
 
     Given the liquidity monitoring parameters:
@@ -519,7 +519,7 @@ Feature: test risk model parameter ranges
 
   # initial margin level for LP = 1000*9092*86.2176101*1.2=9.4e8
 
-  @Now @NoPerp
+  @Now
   Scenario: 003, test market ETH/MAR52(sigma=10),
 
     Given the liquidity monitoring parameters:

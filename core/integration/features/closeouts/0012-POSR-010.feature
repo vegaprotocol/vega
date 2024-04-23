@@ -14,7 +14,6 @@ Feature: When the network party holds a non-zero position and there are not enou
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @NoPerp
   Scenario: Implement trade and order network. Covers both 0012-POSR-012 and 0012-POSR-011
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

@@ -16,7 +16,7 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | name                                    | value |
       | limits.markets.maxPeggedOrders          | 2     |
       
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario:
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
