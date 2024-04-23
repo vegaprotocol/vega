@@ -156,21 +156,13 @@ func (e *Engine) cleanupStaleDispatchStrategies() {
 	}
 }
 
-func compareStringSlices(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 func isSimilar(dispatchStrategy1, dispatchStrategy2 *vegapb.DispatchStrategy) bool {
-	return (dispatchStrategy1 == nil && dispatchStrategy2 == nil) ||
-		(dispatchStrategy1 != nil && dispatchStrategy2 != nil && dispatchStrategy1.AssetForMetric == dispatchStrategy2.AssetForMetric && dispatchStrategy1.Metric == dispatchStrategy2.Metric && compareStringSlices(dispatchStrategy1.Markets, dispatchStrategy2.Markets))
+	p1, _ := proto.Marshal(dispatchStrategy1)
+	hash1 := hex.EncodeToString(crypto.Hash(p1))
+
+	p2, _ := proto.Marshal(dispatchStrategy2)
+	hash2 := hex.EncodeToString(crypto.Hash(p2))
+	return hash1 == hash2
 }
 
 func (e *Engine) ensureNoRecurringTransferDuplicates(
