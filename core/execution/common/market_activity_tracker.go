@@ -1069,11 +1069,9 @@ func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
 	}
 	if _, ok := mt.partyM2M[party]; !ok {
 		mt.partyM2M[party] = amount
-		mt.partyRealisedReturn[party] = amount
 		return
 	}
 	mt.partyM2M[party] = mt.partyM2M[party].Add(amount)
-	mt.partyRealisedReturn[party] = mt.partyRealisedReturn[party].Add(amount)
 }
 
 func (mt *marketTracker) recordFundingPayment(party string, amount num.Decimal) {
