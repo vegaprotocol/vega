@@ -71,6 +71,7 @@
 - [11154](https://github.com/vegaprotocol/vega/issues/11154) - Fix spot risk model resolver.
 - [11159](https://github.com/vegaprotocol/vega/issues/11159) - Reject stop orders with size override position for spot product.
 - [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission.
+- [11177](https://github.com/vegaprotocol/vega/issues/11177) - Adjust the formulas for reduced position to the spec update and fix handling of closed out position. 
 
 ## 0.75.0
 

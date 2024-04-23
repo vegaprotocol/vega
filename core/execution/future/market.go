@@ -2636,11 +2636,23 @@ func (m *Market) handleConfirmationPassiveOrders(
 	}
 }
 
-func hasPositionDecreased(p1, p2 events.MarketPosition) bool {
-	return (p1.Size() > 0 && p2.Size() >= 0 && p2.Size() < p1.Size()) ||
-		(p1.Size() < 0 && p2.Size() <= 0 && p2.Size() > p1.Size()) ||
-		(p1.Size() > 0 && p2.Size() < 0 && -p2.Size() < p1.Size()) ||
-		(p1.Size() < 0 && p2.Size() >= 0 && p2.Size() < -p1.Size())
+func decreasedPosition(p1, p2 events.MarketPosition) int64 {
+	// was long, still long (or 0)
+	if p1.Size() > 0 && p2.Size() >= 0 && p2.Size() < p1.Size() {
+		return p1.Size() - p2.Size()
+	}
+	// was short, still short (or 0)
+	if p1.Size() < 0 && p2.Size() <= 0 && p2.Size() > p1.Size() {
+		return p2.Size() - p1.Size()
+	}
+	// position changed side
+	if p1.Size()*p2.Size() < 0 {
+		if p1.Size() > 0 {
+			return p1.Size()
+		}
+		return -p1.Size()
+	}
+	return 0
 }
 
 func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation, tradeT *types.TradeType) []*types.Order {
@@ -2689,8 +2701,17 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		preTradePositions := m.position.GetPositionsByParty(trade.Buyer, trade.Seller)
 		for i, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
 			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
-			if hasPositionDecreased(preTradePositions[i], mp) {
-				reaslisedPosition := trade.Price.ToDecimal().Sub(preTradePositions[i].AverageEntryPrice().ToDecimal()).Mul(num.DecimalFromInt64(int64(trade.Size))).Div(m.positionFactor)
+			if closedPosition := decreasedPosition(preTradePositions[i], mp); closedPosition > 0 {
+				var reaslisedPosition num.Decimal
+				if preTradePositions[i].Size() > 0 {
+					// a party **reduces** their **LONG** position
+					// (trade price - average entry price) * position delta$$
+					reaslisedPosition = trade.Price.ToDecimal().Sub(preTradePositions[i].AverageEntryPrice().ToDecimal()).Mul(num.DecimalFromInt64(closedPosition)).Div(m.positionFactor)
+				} else {
+					// a party **reduces** their **SHORT** position
+					// (average entry price - trade price) * position delta$$
+					reaslisedPosition = preTradePositions[i].AverageEntryPrice().ToDecimal().Sub(trade.Price.ToDecimal()).Mul(num.DecimalFromInt64(closedPosition)).Div(m.positionFactor)
+				}
 				m.marketActivityTracker.RecordRealisedPosition(m.GetSettlementAsset(), mp.Party(), m.mkt.ID, reaslisedPosition)
 			}
 		}
@@ -3002,8 +3023,17 @@ func (m *Market) finalizePartiesCloseOut(
 		if m.getMarginMode(mp.Party()) == types.MarginModeCrossMargin || (mp.Buy() == 0 && mp.Sell() == 0) {
 			toRemoveFromPosition = append(toRemoveFromPosition, mp)
 		}
-		realisedReturn := mp.Price().ToDecimal().Sub(mp.AverageEntryPrice().ToDecimal()).Mul(mp.Price().ToDecimal()).Div(m.positionFactor)
-		m.marketActivityTracker.RecordRealisedPosition(m.settlementAsset, mp.Party(), m.mkt.ID, realisedReturn)
+		var reaslisedPosition num.Decimal
+		if mp.Size() > 0 {
+			// a party **closed out** on their **LONG** position
+			// (trade price - average entry price) * position delta$$
+			reaslisedPosition = m.getCurrentMarkPrice().ToDecimal().Sub(mp.AverageEntryPrice().ToDecimal()).Mul(num.DecimalFromInt64(mp.Size())).Div(m.positionFactor)
+		} else {
+			// a party **closed out** their **SHORT** position
+			// (average entry price - trade price) * position delta$$
+			reaslisedPosition = mp.AverageEntryPrice().ToDecimal().Sub(m.getCurrentMarkPrice().ToDecimal()).Mul(num.DecimalFromInt64(-mp.Size())).Div(m.positionFactor)
+		}
+		m.marketActivityTracker.RecordRealisedPosition(m.settlementAsset, mp.Party(), m.mkt.ID, reaslisedPosition)
 	}
 	m.position.RemoveDistressed(toRemoveFromPosition)
 	// but we want to update the market activity tracker on their 0 position for all of the closed parties
