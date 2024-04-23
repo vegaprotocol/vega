@@ -104,7 +104,7 @@ Feature: Spot trader amends his orders
       | sell | 1006  | 0      |
       | sell | 10001 | 1      |
 
-  Scenario: In Spot market amending an order in a way that increases the volume sufficiently leads to holding account balance increasing (0004-AMND-049). In Spot market amending an order in a way that decreases the volume sufficiently leads to holding account balance decreasing (0004-AMND-050). In Spot market, if an order is amended such that holding requirement is increased and user has sufficient balance in the general account to top up their holding account then the amendment is executed successfully.
+  Scenario: In Spot market amending an order in a way that increases the volume sufficiently leads to holding account balance increasing (0004-AMND-049). In Spot market amending an order in a way that decreases the volume sufficiently leads to holding account balance decreasing (0004-AMND-050). In Spot market, if an order is amended such that holding requirement is increased and user has sufficient balance in the general account to top up their holding account then the amendment is executed successfully (0011-MARA-018).
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount |
       | trader1 | BTC   | 10000  |
@@ -148,7 +148,7 @@ Feature: Spot trader amends his orders
     Then "trader1" should have general account balance of "9997" for asset "BTC"
     Then "trader1" should have holding account balance of "3" for asset "BTC"
 
-    # trader1 amend increase volumne has insufficient funds, amend should fail and order should remain unchainged
+    # trader1 amend increase volumne has insufficient funds, amend should fail and order should remain unchanged 0011-MARA-019
     And the parties amend the following orders:
       | party   | reference | price | size delta | tif     | error                                                        |
       | trader1 | GTC-ref-1 | 1000  | 9998       | TIF_GTC | party does not have sufficient balance to cover the new size |
