@@ -67,16 +67,20 @@ func TestCalcTotalForWindowD(t *testing.T) {
 		data[i]["party1"] = num.DecimalFromInt64(i)
 	}
 	for idx := 0; idx < len(data); idx++ {
-		require.Equal(t, num.DecimalFromInt64(4950), calcTotalForWindowD("party1", data, maxWindowSize))
+		tot, _ := calcTotalForWindowD("party1", data, maxWindowSize)
+		require.Equal(t, num.DecimalFromInt64(4950), tot)
 	}
 
 	windowSize := 5
-	require.Equal(t, num.DecimalFromInt64(485), calcTotalForWindowD("party1", data, windowSize))
+	tot, _ := calcTotalForWindowD("party1", data, windowSize)
+	require.Equal(t, num.DecimalFromInt64(485), tot)
 
 	windowSize = 2
-	require.Equal(t, num.DecimalFromInt64(197), calcTotalForWindowD("party1", data, windowSize))
+	tot, _ = calcTotalForWindowD("party1", data, windowSize)
+	require.Equal(t, num.DecimalFromInt64(197), tot)
 
-	require.Equal(t, num.DecimalZero(), calcTotalForWindowD("party2", data, windowSize))
+	tot, _ = calcTotalForWindowD("party2", data, windowSize)
+	require.Equal(t, num.DecimalZero(), tot)
 }
 
 func TestGetTotalFees(t *testing.T) {
@@ -96,11 +100,17 @@ func TestGetFees(t *testing.T) {
 	feeHistory := []map[string]*num.Uint{{"p1": num.NewUint(100)}, {"p1": num.NewUint(97), "p2": num.NewUint(200)}}
 	windowSize := 5
 	// party has no fee data
-	require.Equal(t, "0", getFees(feeHistory, "p3", windowSize).String())
+	tot, ok := getFees(feeHistory, "p3", windowSize)
+	require.Equal(t, "0", tot.String())
+	require.False(t, ok)
 	// party1 has 197 in window (100, 97)
-	require.Equal(t, num.DecimalFromInt64(197), getFees(feeHistory, "p1", windowSize))
+	tot, ok = getFees(feeHistory, "p1", windowSize)
+	require.Equal(t, num.DecimalFromInt64(197), tot)
+	require.True(t, ok)
 	// party2 has 100 in window (0, 200)
-	require.Equal(t, num.DecimalFromInt64(200), getFees(feeHistory, "p2", windowSize))
+	tot, ok = getFees(feeHistory, "p2", windowSize)
+	require.Equal(t, num.DecimalFromInt64(200), tot)
+	require.True(t, ok)
 }
 
 func getDefaultTracker(t *testing.T) *marketTracker {
@@ -136,9 +146,13 @@ func TestGetRelativeReturnMetricTotal(t *testing.T) {
 		tracker.epochPartyM2M = append(tracker.epochPartyM2M, m)
 	}
 	// nothing for party2
-	require.Equal(t, num.DecimalZero(), tracker.getRelativeReturnMetricTotal("p2", 5))
+	tot, ok := tracker.getRelativeReturnMetricTotal("p2", 5)
+	require.False(t, ok)
+	require.Equal(t, num.DecimalZero(), tot)
 
-	require.Equal(t, num.DecimalFromInt64(485), tracker.getRelativeReturnMetricTotal("p1", 5))
+	tot, ok = tracker.getRelativeReturnMetricTotal("p1", 5)
+	require.True(t, ok)
+	require.Equal(t, num.DecimalFromInt64(485), tot)
 }
 
 func TestGetPositionMetricTotal(t *testing.T) {
@@ -151,9 +165,13 @@ func TestGetPositionMetricTotal(t *testing.T) {
 	}
 
 	// nothing for party2
-	require.Equal(t, uint64(0), tracker.getPositionMetricTotal("p2", 5))
+	tot, ok := tracker.getPositionMetricTotal("p2", 5)
+	require.False(t, ok)
+	require.Equal(t, uint64(0), tot)
 	// 99+98+97+96+95 for party1
-	require.Equal(t, uint64(485), tracker.getPositionMetricTotal("p1", 5))
+	tot, ok = tracker.getPositionMetricTotal("p1", 5)
+	require.True(t, ok)
+	require.Equal(t, uint64(485), tot)
 }
 
 func TestReturns(t *testing.T) {
@@ -208,12 +226,15 @@ func TestRealisedReturns(t *testing.T) {
 
 	tracker.processPartyRealisedReturnOfEpoch()
 
-	ret1 := tracker.getRealisedReturnMetricTotal("p1", 1)
+	ret1, ok := tracker.getRealisedReturnMetricTotal("p1", 1)
 	require.Equal(t, "-130", ret1.String())
-	ret2 := tracker.getRealisedReturnMetricTotal("p2", 1)
+	require.True(t, ok)
+	ret2, ok := tracker.getRealisedReturnMetricTotal("p2", 1)
 	require.Equal(t, "-90", ret2.String())
-	ret3 := tracker.getRealisedReturnMetricTotal("p3", 1)
+	require.True(t, ok)
+	ret3, ok := tracker.getRealisedReturnMetricTotal("p3", 1)
 	require.Equal(t, "200", ret3.String())
+	require.True(t, ok)
 
 	tracker.recordFundingPayment("p1", num.DecimalFromInt64(-30))
 	tracker.recordRealisedPosition("p2", num.DecimalFromInt64(70))
@@ -221,19 +242,25 @@ func TestRealisedReturns(t *testing.T) {
 	tracker.recordRealisedPosition("p3", num.DecimalFromInt64(-50))
 
 	tracker.processPartyRealisedReturnOfEpoch()
-	ret1 = tracker.getRealisedReturnMetricTotal("p1", 1)
+	ret1, ok = tracker.getRealisedReturnMetricTotal("p1", 1)
 	require.Equal(t, "-30", ret1.String())
-	ret2 = tracker.getRealisedReturnMetricTotal("p2", 1)
+	require.True(t, ok)
+	ret2, ok = tracker.getRealisedReturnMetricTotal("p2", 1)
 	require.Equal(t, "150", ret2.String())
-	ret3 = tracker.getRealisedReturnMetricTotal("p3", 1)
+	require.True(t, ok)
+	ret3, ok = tracker.getRealisedReturnMetricTotal("p3", 1)
 	require.Equal(t, "-50", ret3.String())
+	require.True(t, ok)
 
-	ret1 = tracker.getRealisedReturnMetricTotal("p1", 2)
+	ret1, ok = tracker.getRealisedReturnMetricTotal("p1", 2)
 	require.Equal(t, "-160", ret1.String())
-	ret2 = tracker.getRealisedReturnMetricTotal("p2", 2)
+	require.True(t, ok)
+	ret2, ok = tracker.getRealisedReturnMetricTotal("p2", 2)
 	require.Equal(t, "60", ret2.String())
-	ret3 = tracker.getRealisedReturnMetricTotal("p3", 2)
+	require.True(t, ok)
+	ret3, ok = tracker.getRealisedReturnMetricTotal("p3", 2)
 	require.Equal(t, "150", ret3.String())
+	require.True(t, ok)
 }
 
 func TestPositions(t *testing.T) {
@@ -246,23 +273,35 @@ func TestPositions(t *testing.T) {
 	tracker.recordPosition("p1", 30, num.DecimalOne(), time.Unix(45, 0), time.Unix(0, 0))
 	// 155555544 * ( 10000000 - 2500000 ) + ( 300000000 * 2500000 ) / 10000000 = 191666658
 	tracker.processPositionEndOfEpoch(time.Unix(0, 0), time.Unix(60, 0))
-	require.Equal(t, uint64(191666658), tracker.getPositionMetricTotal("p1", 1))
+	tot, ok := tracker.getPositionMetricTotal("p1", 1)
+	require.True(t, ok)
+	require.Equal(t, uint64(191666658), tot)
 
 	// epoch 2
 	// 191666658 * ( 10000000 - 10000000 ) + ( 300000000 * 10000000 ) / 10000000 = 300000000
 	tracker.recordPosition("p1", 10, num.DecimalOne(), time.Unix(90, 0), time.Unix(60, 0))
 	// 300000000 * ( 10000000 - 5000000 ) + ( 100000000 * 5000000 ) / 10000000 = 200000000
 	tracker.processPositionEndOfEpoch(time.Unix(60, 0), time.Unix(120, 0))
-	require.Equal(t, uint64(200000000), tracker.getPositionMetricTotal("p1", 1))
-	require.Equal(t, uint64(391666658), tracker.getPositionMetricTotal("p1", 2))
+	tot, ok = tracker.getPositionMetricTotal("p1", 1)
+	require.Equal(t, uint64(200000000), tot)
+	require.True(t, ok)
+	tot, ok = tracker.getPositionMetricTotal("p1", 2)
+	require.Equal(t, uint64(391666658), tot)
+	require.True(t, ok)
 
 	// epoch 3
 	// no position changes over the epoch
 	// 200000000 * ( 10000000 - 10000000 ) + ( 100000000 * 10000000 ) / 10000000 = 100000000
 	tracker.processPositionEndOfEpoch(time.Unix(120, 0), time.Unix(180, 0))
-	require.Equal(t, uint64(100000000), tracker.getPositionMetricTotal("p1", 1))
-	require.Equal(t, uint64(300000000), tracker.getPositionMetricTotal("p1", 2))
-	require.Equal(t, uint64(491666658), tracker.getPositionMetricTotal("p1", 3))
+	tot, ok = tracker.getPositionMetricTotal("p1", 1)
+	require.Equal(t, uint64(100000000), tot)
+	require.True(t, ok)
+	tot, ok = tracker.getPositionMetricTotal("p1", 2)
+	require.Equal(t, uint64(300000000), tot)
+	require.True(t, ok)
+	tot, ok = tracker.getPositionMetricTotal("p1", 3)
+	require.Equal(t, uint64(491666658), tot)
+	require.True(t, ok)
 }
 
 func TestAverageNotional(t *testing.T) {
