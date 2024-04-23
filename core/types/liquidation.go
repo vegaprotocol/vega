@@ -72,6 +72,10 @@ func (l *LiquidationNode) IntoProto() *snapshot.Liquidation {
 }
 
 func PayloadLiquidationNodeFromProto(p *snapshot.Payload_Liquidation) *LiquidationNode {
+	// @NOTE this is here only for the protocol upgrade
+	if p.Liquidation.Config != nil && p.Liquidation.Config.DisposalSlippageRange == "" {
+		p.Liquidation.Config.DisposalSlippageRange = "0"
+	}
 	node, err := LiquidationSnapshotFromProto(p.Liquidation)
 	if err != nil {
 		// @TODO figure out what to do with this error
