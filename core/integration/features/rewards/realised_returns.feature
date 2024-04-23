@@ -330,7 +330,7 @@ Feature: Realised returns reward metric
       | party4 | USDT.0.1 | 0       |
 
 
-  # Scenario: Parties who held a position during the epoch but closed their position with 0 gains or losses (0056-REWA-121)(0056-REWA-128)
+  # Scenario: Parties with long and short positions open and close position at same price, they have 0 realised returns but should still receive rewards (0056-REWA-121)(0056-REWA-128)
 
   #   # Set-up a recurring transfer dispatching rewards based on realised profit and loss
   #   Given the current epoch is "0"
@@ -339,17 +339,18 @@ Feature: Realised returns reward metric
   #     | reward | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_REALISED_RETURN | USDT.0.1 | 10000  | 1           |           | 1      | DISPATCH_METRIC_REALISED_RETURN | USDT.0.1     | ETH/USDT | 100         |
   #   And the network moves ahead "1" epochs
 
-  #   # Submit orders such that parties 1-4 only have unrealised gains/losses
   #   Given the parties place the following orders:
   #     | party  | market id | side | volume | price | resulting trades | type       | tif     |
   #     | party1 | ETH/USDT  | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
   #     | party2 | ETH/USDT  | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
   #     | party3 | ETH/USDT  | buy  | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
   #     | party4 | ETH/USDT  | sell | 10     | 1100  | 1                | TYPE_LIMIT | TIF_GTC |
-  #     | party2 | ETH/USDT  | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | party1 | ETH/USDT  | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-  #     | party4 | ETH/USDT  | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-  #     | party3 | ETH/USDT  | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+  #   Given the parties place the following orders:
+  #     | party  | market id | side | volume | price | resulting trades | type       | tif     |
+  #     | party1 | ETH/USDT  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+  #     | party2 | ETH/USDT  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+  #     | party3 | ETH/USDT  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+  #     | party4 | ETH/USDT  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
   #   When the network moves ahead "1" blocks
   #   Then the parties should have the following profit and loss:
   #     | party  | volume | unrealised pnl | realised pnl |
@@ -357,8 +358,7 @@ Feature: Realised returns reward metric
   #     | party2 | 0      | 0              | 0            |
   #     | party3 | 0      | 0              | -1000        |
   #     | party4 | 0      | 0              | 1000         |
-
-  #   # Move to the end of the epoch, check no rewards distributed for long or short positions as no realised gains/losses
+  #   # Move to the end of the epoch
   #   Given the network moves ahead "1" epochs
   #   Then parties should have the following vesting account balances:
   #     | party  | asset    | balance |
