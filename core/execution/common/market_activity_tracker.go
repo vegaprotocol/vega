@@ -111,11 +111,10 @@ type MarketActivityTracker struct {
 	partyContributionCache              map[string][]*types.PartyContributionScore
 	partyTakerNotionalVolume            map[string]*num.Uint
 	marketToPartyTakerNotionalVolume    map[string]map[string]*num.Uint
-	// transient map that is used and accessible only between the end of one epoch and the beginning of the next
-	// it's not needed for the snapshot because the switching between end of one epoch and the beginning of the new one is atommic.
-	takerFeesPaidInEpoch map[string]map[string]map[string]*num.Uint
-	ss                   *snapshotState
-	broker               Broker
+	takerFeesPaidInEpoch                []map[string]map[string]map[string]*num.Uint
+
+	ss     *snapshotState
+	broker Broker
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
@@ -129,7 +128,7 @@ func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker A
 		partyTakerNotionalVolume:         map[string]*num.Uint{},
 		marketToPartyTakerNotionalVolume: map[string]map[string]*num.Uint{},
 		ss:                               &snapshotState{},
-		takerFeesPaidInEpoch:             map[string]map[string]map[string]*num.Uint{},
+		takerFeesPaidInEpoch:             []map[string]map[string]map[string]*num.Uint{},
 		broker:                           broker,
 	}
 
@@ -412,12 +411,12 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 		mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
 		mat.clearDeletedMarkets()
 		mat.clearNotionalTakerVolume()
-		mat.takerFeesPaidInEpoch = map[string]map[string]map[string]*num.Uint{}
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
+		m := map[string]map[string]map[string]*num.Uint{}
 		for asset, market := range mat.assetToMarketTrackers {
-			mat.takerFeesPaidInEpoch[asset] = map[string]map[string]*num.Uint{}
+			m[asset] = map[string]map[string]*num.Uint{}
 			for mkt, mt := range market {
-				mat.takerFeesPaidInEpoch[asset][mkt] = mt.aggregatedFees()
+				m[asset][mkt] = mt.aggregatedFees()
 				mt.processNotionalEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processPositionEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processM2MEndOfEpoch()
@@ -425,6 +424,10 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 				mt.clearFeeActivity()
 			}
 		}
+		if len(mat.takerFeesPaidInEpoch) == maxWindowSize {
+			mat.takerFeesPaidInEpoch = mat.takerFeesPaidInEpoch[1:]
+		}
+		mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, m)
 	}
 	mat.currentEpoch = epoch.Seq
 }
@@ -1173,9 +1176,9 @@ func getTotalFees(totalFees []*num.Uint, windowSize int) num.Decimal {
 	return total.ToDecimal()
 }
 
-func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []string) map[string]*num.Uint {
+func (mat *MarketActivityTracker) getEpochTakeFees(asset string, markets []string, takerFeesPaidInEpoch map[string]map[string]map[string]*num.Uint) map[string]*num.Uint {
 	takerFees := map[string]*num.Uint{}
-	ast, ok := mat.takerFeesPaidInEpoch[asset]
+	ast, ok := takerFeesPaidInEpoch[asset]
 	if !ok {
 		return takerFees
 	}
@@ -1195,6 +1198,24 @@ func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []s
 				}
 				takerFees[party].AddSum(fees)
 			}
+		}
+	}
+	return takerFees
+}
+
+func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []string, epochs int32) map[string]*num.Uint {
+	takerFees := map[string]*num.Uint{}
+	for i := 0; i < int(epochs); i++ {
+		ind := len(mat.takerFeesPaidInEpoch) - i - 1
+		if ind < 0 {
+			break
+		}
+		m := mat.getEpochTakeFees(asset, markets, mat.takerFeesPaidInEpoch[ind])
+		for k, v := range m {
+			if _, ok := takerFees[k]; !ok {
+				takerFees[k] = num.UintZero()
+			}
+			takerFees[k].AddSum(v)
 		}
 	}
 	return takerFees

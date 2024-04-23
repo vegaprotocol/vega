@@ -32,6 +32,7 @@
 - [11167](https://github.com/vegaprotocol/vega/issues/11167) - Add realised return reward metric.
 - [11165] (https://github.com/vegaprotocol/vega/issues/11165) - Include negative returns in relative returns reward metric.
 - [11151](https://github.com/vegaprotocol/vega/issues/11151) - Remove name field from the spot markets.
+- [11170](https://github.com/vegaprotocol/vega/issues/11170) - Add transfer interval support 
 - [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
 
 ### 🐛 Fixes

@@ -46,7 +46,7 @@ type MarketActivityTracker interface {
 	GetProposer(market string) string
 	CalculateMetricForIndividuals(ctx context.Context, ds *vega.DispatchStrategy) []*types.PartyContributionScore
 	CalculateMetricForTeams(ctx context.Context, ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
-	GetLastEpochTakeFees(asset string, market []string) map[string]*num.Uint
+	GetLastEpochTakeFees(asset string, market []string, epochs int32) map[string]*num.Uint
 }
 
 // EpochEngine notifies the reward engine at the end of an epoch.
@@ -383,7 +383,11 @@ func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asse
 		}
 		var takerFeesPaidInRewardAsset map[string]*num.Uint
 		if ds.CapRewardFeeMultiple != nil {
-			takerFeesPaid := e.marketActivityTracker.GetLastEpochTakeFees(ds.AssetForMetric, ds.Markets)
+			epochs := int32(1)
+			if ds.TransferInterval != nil {
+				epochs = *ds.TransferInterval
+			}
+			takerFeesPaid := e.marketActivityTracker.GetLastEpochTakeFees(ds.AssetForMetric, ds.Markets, epochs)
 			takerFeesPaidInRewardAsset = e.convertTakerFeesToRewardAsset(takerFeesPaid, ds.AssetForMetric, asset)
 		}
 		if ds.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS {

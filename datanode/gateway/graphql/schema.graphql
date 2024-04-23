@@ -1485,6 +1485,9 @@ type DispatchStrategy {
 
   "Optional multiplier on taker fees used to cap the rewards a party may receive in an epoch"
   capRewardFeeMultiple: String
+
+  "Interval for the distribution of the transfer"
+  transfer_interval: Int!
 }
 
 type RankTable {

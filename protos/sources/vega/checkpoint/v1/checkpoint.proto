@@ -212,6 +212,7 @@ message MarketTracker {
   repeated MarketActivityTracker market_activity = 1;
   repeated TakerNotionalVolume taker_notional_volume = 2;
   repeated MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
+  repeated EpochPartyTakerFees epoch_taker_fees = 4;
 }
 
 message MarketActivityTracker {
@@ -243,6 +244,10 @@ message MarketActivityTracker {
   repeated EpochReturnsData realised_returns_history = 22;
 }
 
+message EpochPartyTakerFees {
+  repeated AssetMarketPartyTakerFees epoch_party_taker_fees_paid = 1;
+}
+
 message EpochTimeWeightPositionData {
   repeated PartyTimeWeightedPosition party_time_weighted_positions = 1;
 }
@@ -259,6 +264,17 @@ message PartyTimeWeightedNotional {
 message PartyTimeWeightedPosition {
   string party = 1;
   uint64 tw_position = 2;
+}
+
+message AssetMarketPartyTakerFees {
+  string asset = 1;
+  string market = 2;
+  repeated PartyTakerFees taker_fees = 3;
+}
+
+message PartyTakerFees {
+  string party = 1;
+  bytes taker_fees = 2;
 }
 
 message EpochPartyFees {

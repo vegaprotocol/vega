@@ -228,6 +228,12 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			continue
 		}
 
+		if v.DispatchStrategy != nil && v.DispatchStrategy.TransferInterval != nil &&
+			(newEpoch-v.StartEpoch+1) < uint64(*v.DispatchStrategy.TransferInterval) &&
+			(newEpoch-v.StartEpoch+1)%uint64(*v.DispatchStrategy.TransferInterval) != 0 {
+			continue
+		}
+
 		var (
 			startEpoch  = num.NewUint(v.StartEpoch).ToDecimal()
 			startAmount = v.Amount.ToDecimal()
