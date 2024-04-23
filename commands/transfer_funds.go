@@ -276,7 +276,7 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 		errs.AddForProperty(prefix+".window_length", errors.New("should not be set for "+vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS.String()))
 	}
 	if dispatchStrategy.WindowLength == 0 && toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
-		errs.AddForProperty(prefix+".window_length", errors.New("must bet between 1 and 100"))
+		errs.AddForProperty(prefix+".window_length", errors.New("must be between 1 and 100"))
 	}
 	if dispatchStrategy.WindowLength > 100 {
 		errs.AddForProperty(prefix+".window_length", ErrMustBeAtMost100)
@@ -307,5 +307,9 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 				errs.AddForProperty(prefix+".cap_reward_fee_multiple", ErrMustBePositive)
 			}
 		}
+	}
+
+	if dispatchStrategy.TransferInterval != nil && (*dispatchStrategy.TransferInterval <= 0 || *dispatchStrategy.TransferInterval > 100) {
+		errs.AddForProperty(prefix+".transfer_interval", errors.New("must be between 1 and 100"))
 	}
 }

@@ -88,6 +88,49 @@ func epochReturnDataToProto(epochData []map[string]num.Decimal) []*checkpoint.Ep
 	return ret
 }
 
+func epochTakerFeesToProto(epochData []map[string]map[string]map[string]*num.Uint) []*checkpoint.EpochPartyTakerFees {
+	ret := make([]*checkpoint.EpochPartyTakerFees, 0, len(epochData))
+	for _, epoch := range epochData {
+		ed := []*checkpoint.AssetMarketPartyTakerFees{}
+		assets := make([]string, 0, len(epoch))
+		for k := range epoch {
+			assets = append(assets, k)
+		}
+		sort.Strings(assets)
+		for _, asset := range assets {
+			assetData := epoch[asset]
+			markets := make([]string, 0, len(assetData))
+			for market := range assetData {
+				markets = append(markets, market)
+			}
+			sort.Strings(markets)
+			for _, market := range markets {
+				takerFees := assetData[market]
+				parties := make([]string, 0, len(takerFees))
+				for party := range takerFees {
+					parties = append(parties, party)
+				}
+				sort.Strings(parties)
+				partyFees := make([]*checkpoint.PartyTakerFees, 0, len(parties))
+				for _, party := range parties {
+					fee := takerFees[party].Bytes()
+					partyFees = append(partyFees, &checkpoint.PartyTakerFees{
+						Party:     party,
+						TakerFees: fee[:],
+					})
+				}
+				ed = append(ed, &checkpoint.AssetMarketPartyTakerFees{
+					Asset:     asset,
+					Market:    market,
+					TakerFees: partyFees,
+				})
+			}
+		}
+		ret = append(ret, &checkpoint.EpochPartyTakerFees{EpochPartyTakerFeesPaid: ed})
+	}
+	return ret
+}
+
 func timeWeightedNotionalToProto(twNotional map[string]*twNotional) []*checkpoint.TWNotionalData {
 	parties := make([]string, 0, len(twNotional))
 	for k := range twNotional {
@@ -289,6 +332,7 @@ func (mat *MarketActivityTracker) serialiseFeesTracker() *snapshot.MarketTracker
 		MarketActivity:                   marketActivity,
 		TakerNotionalVolume:              takerNotionalToProto(mat.partyTakerNotionalVolume),
 		MarketToPartyTakerNotionalVolume: marketToPartyTakerNotionalToProto(mat.marketToPartyTakerNotionalVolume),
+		EpochTakerFees:                   epochTakerFeesToProto(mat.takerFeesPaidInEpoch),
 	}
 }
 
@@ -562,6 +606,23 @@ func (mat *MarketActivityTracker) restore(tracker *snapshot.MarketTracker) {
 			if len(partyStats.Volume) > 0 {
 				mat.marketToPartyTakerNotionalVolume[marketToPartyStats.Market][partyStats.Party] = num.UintFromBytes(partyStats.Volume)
 			}
+		}
+	}
+	if tracker.EpochTakerFees != nil {
+		for _, epochData := range tracker.EpochTakerFees {
+			epochMap := map[string]map[string]map[string]*num.Uint{}
+			for _, assetMarketParty := range epochData.EpochPartyTakerFeesPaid {
+				if _, ok := epochMap[assetMarketParty.Asset]; !ok {
+					epochMap[assetMarketParty.Asset] = map[string]map[string]*num.Uint{}
+				}
+				if _, ok := epochMap[assetMarketParty.Asset][assetMarketParty.Market]; !ok {
+					epochMap[assetMarketParty.Asset][assetMarketParty.Market] = map[string]*num.Uint{}
+				}
+				for _, tf := range assetMarketParty.TakerFees {
+					epochMap[assetMarketParty.Asset][assetMarketParty.Market][tf.Party] = num.UintFromBytes(tf.TakerFees)
+				}
+			}
+			mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, epochMap)
 		}
 	}
 }

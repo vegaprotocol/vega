@@ -569,22 +569,109 @@ func TestGetLastEpochTakeFees(t *testing.T) {
 
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END})
 
-	m1 := tracker.GetLastEpochTakeFees("asset1", []string{"market1"})
+	m1 := tracker.GetLastEpochTakeFees("asset1", []string{"market1"}, 1)
 	require.Equal(t, 2, len(m1))
 	require.Equal(t, "620", m1["party1"].String())
 	require.Equal(t, "1000", m1["party2"].String())
-	m2 := tracker.GetLastEpochTakeFees("asset1", []string{"market2"})
+	m2 := tracker.GetLastEpochTakeFees("asset1", []string{"market2"}, 1)
 	require.Equal(t, 1, len(m2))
 	require.Equal(t, "150", m2["party2"].String())
 
-	mAll := tracker.GetLastEpochTakeFees("asset1", []string{"market1", "market2"})
+	mAll := tracker.GetLastEpochTakeFees("asset1", []string{"market1", "market2"}, 1)
 	require.Equal(t, "620", mAll["party1"].String())
 	require.Equal(t, "1150", mAll["party2"].String())
 
-	mNoMarkets := tracker.GetLastEpochTakeFees("asset1", []string{})
+	mNoMarkets := tracker.GetLastEpochTakeFees("asset1", []string{}, 1)
 	require.Equal(t, "620", mNoMarkets["party1"].String())
 	require.Equal(t, "1150", mNoMarkets["party2"].String())
 
+	require.Equal(t, mAll, mNoMarkets)
+}
+
+func TestGetLastEpochTakeFeesMultiEpochWindow(t *testing.T) {
+	epochEngine := &TestEpochEngine{}
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
+	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+
+	partyScores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	require.Equal(t, 0, len(partyScores))
+
+	tracker.MarketProposed("asset1", "market1", "me")
+	tracker.MarketProposed("asset1", "market2", "me2")
+
+	// update with a few transfers
+	transfersM1 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeInfrastructureFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(110)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(10)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
+
+	transfersM2 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
+
+	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END})
+	epochEngine.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START})
+
+	// double the fees for a window of 2
+	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
+	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
+
+	epochEngine.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_END})
+	m1 := tracker.GetLastEpochTakeFees("asset1", []string{"market1"}, 1)
+	require.Equal(t, 2, len(m1))
+	require.Equal(t, "620", m1["party1"].String())
+	require.Equal(t, "1000", m1["party2"].String())
+
+	m1 = tracker.GetLastEpochTakeFees("asset1", []string{"market1"}, 2)
+	require.Equal(t, 2, len(m1))
+	require.Equal(t, "1240", m1["party1"].String())
+	require.Equal(t, "2000", m1["party2"].String())
+
+	m2 := tracker.GetLastEpochTakeFees("asset1", []string{"market2"}, 1)
+	require.Equal(t, 1, len(m2))
+	require.Equal(t, "150", m2["party2"].String())
+
+	m2 = tracker.GetLastEpochTakeFees("asset1", []string{"market2"}, 2)
+	require.Equal(t, 1, len(m2))
+	require.Equal(t, "300", m2["party2"].String())
+
+	mAll := tracker.GetLastEpochTakeFees("asset1", []string{"market1", "market2"}, 1)
+	require.Equal(t, "620", mAll["party1"].String())
+	require.Equal(t, "1150", mAll["party2"].String())
+
+	mAll = tracker.GetLastEpochTakeFees("asset1", []string{"market1", "market2"}, 2)
+	require.Equal(t, "1240", mAll["party1"].String())
+	require.Equal(t, "2300", mAll["party2"].String())
+
+	mNoMarkets := tracker.GetLastEpochTakeFees("asset1", []string{}, 1)
+	require.Equal(t, "620", mNoMarkets["party1"].String())
+	require.Equal(t, "1150", mNoMarkets["party2"].String())
+
+	mNoMarkets = tracker.GetLastEpochTakeFees("asset1", []string{}, 2)
+	require.Equal(t, "1240", mNoMarkets["party1"].String())
+	require.Equal(t, "2300", mNoMarkets["party2"].String())
 	require.Equal(t, mAll, mNoMarkets)
 }
 

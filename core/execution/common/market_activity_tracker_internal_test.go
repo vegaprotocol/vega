@@ -1380,3 +1380,136 @@ func TestIntoProto(t *testing.T) {
 	mt2Proto := mt2.IntoProto("market1")
 	require.Equal(t, mt1Proto.String(), mt2Proto.String())
 }
+
+func TestEpochTakerFeesToProto(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		epoch1 := map[string]map[string]map[string]*num.Uint{}
+		epoch1["asset1"] = map[string]map[string]*num.Uint{}
+		epoch1["asset1"]["market1"] = map[string]*num.Uint{}
+		epoch1["asset1"]["market1"]["party3"] = num.NewUint(3)
+		epoch1["asset1"]["market1"]["party1"] = num.NewUint(1)
+		epoch1["asset1"]["market1"]["party2"] = num.NewUint(2)
+
+		epoch1["asset1"]["market2"] = map[string]*num.Uint{}
+		epoch1["asset1"]["market2"]["party4"] = num.NewUint(6)
+		epoch1["asset1"]["market2"]["party3"] = num.NewUint(5)
+		epoch1["asset1"]["market2"]["party1"] = num.NewUint(4)
+
+		epoch1["asset1"]["market3"] = map[string]*num.Uint{}
+		epoch1["asset1"]["market3"]["party6"] = num.NewUint(8)
+		epoch1["asset1"]["market3"]["party5"] = num.NewUint(7)
+
+		epoch1["asset2"] = map[string]map[string]*num.Uint{}
+		epoch1["asset2"]["market1"] = map[string]*num.Uint{}
+		epoch1["asset2"]["market1"]["party1"] = num.NewUint(11)
+		epoch1["asset2"]["market1"]["party2"] = num.NewUint(21)
+		epoch1["asset2"]["market1"]["party3"] = num.NewUint(31)
+
+		epoch1["asset2"]["market4"] = map[string]*num.Uint{}
+		epoch1["asset2"]["market4"]["party5"] = num.NewUint(9)
+		epoch1["asset2"]["market4"]["party6"] = num.NewUint(10)
+		epoch1["asset2"]["market4"]["party7"] = num.NewUint(11)
+
+		epoch2 := map[string]map[string]map[string]*num.Uint{}
+		epoch2["asset1"] = map[string]map[string]*num.Uint{}
+		epoch2["asset1"]["market1"] = map[string]*num.Uint{}
+		epoch2["asset1"]["market1"]["party5"] = num.NewUint(15)
+		epoch2["asset1"]["market1"]["party6"] = num.NewUint(16)
+		epoch2["asset1"]["market2"] = map[string]*num.Uint{}
+		epoch2["asset1"]["market2"]["party1"] = num.NewUint(17)
+		epoch2["asset1"]["market2"]["party2"] = num.NewUint(18)
+		epoch2["asset1"]["market3"] = map[string]*num.Uint{}
+		epoch2["asset1"]["market3"]["party4"] = num.NewUint(20)
+		epoch2["asset1"]["market3"]["party3"] = num.NewUint(19)
+
+		epoch2["asset2"] = map[string]map[string]*num.Uint{}
+		epoch2["asset2"]["market1"] = map[string]*num.Uint{}
+		epoch2["asset2"]["market4"] = map[string]*num.Uint{}
+		epoch2["asset2"]["market1"]["party7"] = num.NewUint(41)
+		epoch2["asset2"]["market4"]["party6"] = num.NewUint(31)
+
+		epochData := []map[string]map[string]map[string]*num.Uint{
+			epoch1,
+			epoch2,
+		}
+
+		res := epochTakerFeesToProto(epochData)
+		require.Equal(t, 2, len(res))
+		require.Equal(t, 5, len(res[0].EpochPartyTakerFeesPaid))
+		require.Equal(t, 5, len(res[1].EpochPartyTakerFeesPaid))
+
+		require.Equal(t, "asset1", res[0].EpochPartyTakerFeesPaid[0].Asset)
+		require.Equal(t, "market1", res[0].EpochPartyTakerFeesPaid[0].Market)
+		require.Equal(t, "party1", res[0].EpochPartyTakerFeesPaid[0].TakerFees[0].Party)
+		require.Equal(t, "1", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[0].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party2", res[0].EpochPartyTakerFeesPaid[0].TakerFees[1].Party)
+		require.Equal(t, "2", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[0].TakerFees[1].TakerFees).String())
+		require.Equal(t, "party3", res[0].EpochPartyTakerFeesPaid[0].TakerFees[2].Party)
+		require.Equal(t, "3", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[0].TakerFees[2].TakerFees).String())
+
+		require.Equal(t, "asset1", res[0].EpochPartyTakerFeesPaid[1].Asset)
+		require.Equal(t, "market2", res[0].EpochPartyTakerFeesPaid[1].Market)
+		require.Equal(t, "party1", res[0].EpochPartyTakerFeesPaid[1].TakerFees[0].Party)
+		require.Equal(t, "4", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[1].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party3", res[0].EpochPartyTakerFeesPaid[1].TakerFees[1].Party)
+		require.Equal(t, "5", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[1].TakerFees[1].TakerFees).String())
+		require.Equal(t, "party4", res[0].EpochPartyTakerFeesPaid[1].TakerFees[2].Party)
+		require.Equal(t, "6", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[1].TakerFees[2].TakerFees).String())
+
+		require.Equal(t, "asset1", res[0].EpochPartyTakerFeesPaid[2].Asset)
+		require.Equal(t, "market3", res[0].EpochPartyTakerFeesPaid[2].Market)
+		require.Equal(t, "party5", res[0].EpochPartyTakerFeesPaid[2].TakerFees[0].Party)
+		require.Equal(t, "7", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[2].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party6", res[0].EpochPartyTakerFeesPaid[2].TakerFees[1].Party)
+		require.Equal(t, "8", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[2].TakerFees[1].TakerFees).String())
+
+		require.Equal(t, "asset2", res[0].EpochPartyTakerFeesPaid[3].Asset)
+		require.Equal(t, "market1", res[0].EpochPartyTakerFeesPaid[3].Market)
+		require.Equal(t, "party1", res[0].EpochPartyTakerFeesPaid[3].TakerFees[0].Party)
+		require.Equal(t, "11", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[3].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party2", res[0].EpochPartyTakerFeesPaid[3].TakerFees[1].Party)
+		require.Equal(t, "21", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[3].TakerFees[1].TakerFees).String())
+		require.Equal(t, "party3", res[0].EpochPartyTakerFeesPaid[3].TakerFees[2].Party)
+		require.Equal(t, "31", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[3].TakerFees[2].TakerFees).String())
+
+		require.Equal(t, "asset2", res[0].EpochPartyTakerFeesPaid[4].Asset)
+		require.Equal(t, "market4", res[0].EpochPartyTakerFeesPaid[4].Market)
+		require.Equal(t, "party5", res[0].EpochPartyTakerFeesPaid[4].TakerFees[0].Party)
+		require.Equal(t, "9", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[4].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party6", res[0].EpochPartyTakerFeesPaid[4].TakerFees[1].Party)
+		require.Equal(t, "10", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[4].TakerFees[1].TakerFees).String())
+		require.Equal(t, "party7", res[0].EpochPartyTakerFeesPaid[4].TakerFees[2].Party)
+		require.Equal(t, "11", num.UintFromBytes(res[0].EpochPartyTakerFeesPaid[4].TakerFees[2].TakerFees).String())
+
+		require.Equal(t, "asset1", res[1].EpochPartyTakerFeesPaid[0].Asset)
+		require.Equal(t, "market1", res[1].EpochPartyTakerFeesPaid[0].Market)
+		require.Equal(t, "party5", res[1].EpochPartyTakerFeesPaid[0].TakerFees[0].Party)
+		require.Equal(t, "15", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[0].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party6", res[1].EpochPartyTakerFeesPaid[0].TakerFees[1].Party)
+		require.Equal(t, "16", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[0].TakerFees[1].TakerFees).String())
+
+		require.Equal(t, "asset1", res[1].EpochPartyTakerFeesPaid[1].Asset)
+		require.Equal(t, "market2", res[1].EpochPartyTakerFeesPaid[1].Market)
+		require.Equal(t, "party1", res[1].EpochPartyTakerFeesPaid[1].TakerFees[0].Party)
+		require.Equal(t, "17", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[1].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party2", res[1].EpochPartyTakerFeesPaid[1].TakerFees[1].Party)
+		require.Equal(t, "18", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[1].TakerFees[1].TakerFees).String())
+
+		require.Equal(t, "asset1", res[1].EpochPartyTakerFeesPaid[2].Asset)
+		require.Equal(t, "market3", res[1].EpochPartyTakerFeesPaid[2].Market)
+		require.Equal(t, "party3", res[1].EpochPartyTakerFeesPaid[2].TakerFees[0].Party)
+		require.Equal(t, "19", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[2].TakerFees[0].TakerFees).String())
+		require.Equal(t, "party4", res[1].EpochPartyTakerFeesPaid[2].TakerFees[1].Party)
+		require.Equal(t, "20", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[2].TakerFees[1].TakerFees).String())
+
+		require.Equal(t, "asset2", res[1].EpochPartyTakerFeesPaid[3].Asset)
+		require.Equal(t, "market1", res[1].EpochPartyTakerFeesPaid[3].Market)
+		require.Equal(t, "party7", res[1].EpochPartyTakerFeesPaid[3].TakerFees[0].Party)
+		require.Equal(t, "41", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[3].TakerFees[0].TakerFees).String())
+
+		require.Equal(t, "asset2", res[1].EpochPartyTakerFeesPaid[4].Asset)
+		require.Equal(t, "market4", res[1].EpochPartyTakerFeesPaid[4].Market)
+		require.Equal(t, "party6", res[1].EpochPartyTakerFeesPaid[4].TakerFees[0].Party)
+		require.Equal(t, "31", num.UintFromBytes(res[1].EpochPartyTakerFeesPaid[4].TakerFees[0].TakerFees).String())
+	}
+}

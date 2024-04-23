@@ -54,6 +54,7 @@ func (mat *MarketActivityTracker) Checkpoint() ([]byte, error) {
 		MarketActivity:                   marketTracker,
 		TakerNotionalVolume:              takerNotionalToProto(mat.partyTakerNotionalVolume),
 		MarketToPartyTakerNotionalVolume: marketToPartyTakerNotionalToProto(mat.marketToPartyTakerNotionalVolume),
+		EpochTakerFees:                   epochTakerFeesToProto(mat.takerFeesPaidInEpoch),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -85,6 +86,23 @@ func (mat *MarketActivityTracker) Load(_ context.Context, data []byte) error {
 			if len(partyStats.Volume) > 0 {
 				mat.marketToPartyTakerNotionalVolume[marketToPartyStats.Market][partyStats.Party] = num.UintFromBytes(partyStats.Volume)
 			}
+		}
+	}
+	if b.EpochTakerFees != nil {
+		for _, epochData := range b.EpochTakerFees {
+			epochMap := map[string]map[string]map[string]*num.Uint{}
+			for _, assetMarketParty := range epochData.EpochPartyTakerFeesPaid {
+				if _, ok := epochMap[assetMarketParty.Asset]; !ok {
+					epochMap[assetMarketParty.Asset] = map[string]map[string]*num.Uint{}
+				}
+				if _, ok := epochMap[assetMarketParty.Asset][assetMarketParty.Market]; !ok {
+					epochMap[assetMarketParty.Asset][assetMarketParty.Market] = map[string]*num.Uint{}
+				}
+				for _, tf := range assetMarketParty.TakerFees {
+					epochMap[assetMarketParty.Asset][assetMarketParty.Market][tf.Party] = num.UintFromBytes(tf.TakerFees)
+				}
+			}
+			mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, epochMap)
 		}
 	}
 	return nil
