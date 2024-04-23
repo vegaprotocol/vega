@@ -171,6 +171,20 @@ func (mr *MockETHClientMockRecorder) HeaderByNumber(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeaderByNumber", reflect.TypeOf((*MockETHClient)(nil).HeaderByNumber), arg0, arg1)
 }
 
+// IsEthereum mocks base method.
+func (m *MockETHClient) IsEthereum() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEthereum")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsEthereum indicates an expected call of IsEthereum.
+func (mr *MockETHClientMockRecorder) IsEthereum() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEthereum", reflect.TypeOf((*MockETHClient)(nil).IsEthereum))
+}
+
 // PendingCodeAt mocks base method.
 func (m *MockETHClient) PendingCodeAt(arg0 context.Context, arg1 common.Address) ([]byte, error) {
 	m.ctrl.T.Helper()

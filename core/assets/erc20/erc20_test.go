@@ -131,6 +131,10 @@ func (testEthClient) ChainID(context.Context) (*big.Int, error) {
 	return big.NewInt(1), nil
 }
 
+func (testEthClient) IsEthereum() bool {
+	return true
+}
+
 func (testEthClient) CollateralBridgeAddress() ethcommon.Address {
 	return ethcommon.HexToAddress(bridgeAddress)
 }
