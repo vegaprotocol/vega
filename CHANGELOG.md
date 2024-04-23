@@ -35,6 +35,7 @@
 - [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal.
 - [11184](https://github.com/vegaprotocol/vega/issues/11184) - relax the transfer restriction of 'same transfer' to match the full dispatch strategy.
 - [11185](https://github.com/vegaprotocol/vega/issues/11185) - distinguish between zero and none metric for rewards. 
+- [11158](https://github.com/vegaprotocol/vega/issues/11158) - resolve the quote asset for fee estimation in spot market. 
 
 ### 🐛 Fixes
 
