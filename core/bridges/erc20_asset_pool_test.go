@@ -29,19 +29,37 @@ const (
 )
 
 func TestAssetPoolSetBridgeAddress(t *testing.T) {
-	signer := testSigner{}
-	pool := bridges.NewERC20AssetPool(signer, erc20AssetPool)
-	sig, err := pool.SetBridgeAddress(
-		erc20AssetAddr,
-		num.NewUint(42),
-	)
+	tcs := []struct {
+		name     string
+		v1       bool
+		expected string
+	}{
+		{
+			name:     "v1 scheme",
+			v1:       true,
+			expected: "2488c05dd36a754db037f22a1d649109573e299a3c135efdb81c6f64632b26101c0b4ce19c896d370abae8d457682b21a4a3322f48380f29932b311b6ab47707",
+		},
+		{
+			name:     "v2 scheme",
+			v1:       false,
+			expected: "4b01dfa1a3b77ecc624f678805a74418862cbcb1e32b929e7dce7fbbfa73806ec1f5db1d40d28f4ebcb09d83f59815f04438142612ebc1683158a23c9fbf3a0c",
+		},
+	}
 
-	assert.NoError(t, err)
-	assert.NotNil(t, sig.Message)
-	assert.NotNil(t, sig.Signature)
-	assert.True(t, signer.Verify(sig.Message, sig.Signature))
-	assert.Equal(t,
-		"2488c05dd36a754db037f22a1d649109573e299a3c135efdb81c6f64632b26101c0b4ce19c896d370abae8d457682b21a4a3322f48380f29932b311b6ab47707",
-		sig.Signature.Hex(),
-	)
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			signer := testSigner{}
+			pool := bridges.NewERC20AssetPool(signer, erc20AssetPool, chainID, tc.v1)
+			sig, err := pool.SetBridgeAddress(
+				erc20AssetAddr,
+				num.NewUint(42),
+			)
+
+			assert.NoError(t, err)
+			assert.NotNil(t, sig.Message)
+			assert.NotNil(t, sig.Signature)
+			assert.True(t, signer.Verify(sig.Message, sig.Signature))
+			assert.Equal(t, tc.expected, sig.Signature.Hex())
+		})
+	}
 }

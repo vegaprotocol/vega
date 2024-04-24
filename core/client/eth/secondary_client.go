@@ -101,6 +101,11 @@ func (c *SecondaryClient) CollateralBridgeAddressHex() string {
 	return c.ethConfig.CollateralBridge().HexAddress()
 }
 
+// IsEthereum returns whether or not this client is the "primary" one and pointing to Ethereum.
+func (c *SecondaryClient) IsEthereum() bool {
+	return false
+}
+
 func (c *SecondaryClient) CurrentHeight(ctx context.Context) (uint64, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

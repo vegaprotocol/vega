@@ -27,12 +27,16 @@ import (
 type ERC20AssetPool struct {
 	signer   Signer
 	poolAddr string
+	chainID  string
+	v1       bool
 }
 
-func NewERC20AssetPool(signer Signer, poolAddr string) *ERC20AssetPool {
+func NewERC20AssetPool(signer Signer, poolAddr, chainID string, v1 bool) *ERC20AssetPool {
 	return &ERC20AssetPool{
 		signer:   signer,
 		poolAddr: poolAddr,
+		chainID:  chainID,
+		v1:       v1,
 	}
 }
 
@@ -76,7 +80,7 @@ func (e ERC20AssetPool) SetBridgeAddress(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.poolAddr)
+	msg, err := packScheme(buf, e.poolAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -124,7 +128,7 @@ func (e ERC20AssetPool) SetMultiSigControl(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.poolAddr)
+	msg, err := packScheme(buf, e.poolAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
