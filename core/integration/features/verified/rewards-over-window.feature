@@ -111,6 +111,8 @@ Feature: Maker fees paid reward metric calculated correctly for time window
       | referee3  | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
 
-    Then "referee1" should have vesting account balance of "5000" for asset "USD-1-10"
-    And "referee2" should have vesting account balance of "2500" for asset "USD-1-10"
-    And "referee3" should have vesting account balance of "2500" for asset "USD-1-10"
+    # NB: the change here is because before we were returning the score for fees paid for 0 so when choosing the top n members we'd be looking at the top 2 scores out of the 3 
+    # so team2 would get a score of 0.6, now they get 0.3, and team1 gets 0.4 so team1 gets 0.4/0.7 and team2 gets 0.3/0.7
+    Then "referee1" should have vesting account balance of "5714" for asset "USD-1-10"
+    And "referee2" should have vesting account balance of "2142" for asset "USD-1-10"
+    And "referee3" should have vesting account balance of "2142" for asset "USD-1-10"

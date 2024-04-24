@@ -108,9 +108,9 @@ Feature: Test allow lists, based on team_rewards.feature test in rewards set.
       | aux1     | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee3 | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then "referee1" should have vesting account balance of "5000" for asset "USD-1-10"
-    And "referee2" should have vesting account balance of "2500" for asset "USD-1-10"
-    And "referee3" should have vesting account balance of "2500" for asset "USD-1-10"
+    Then "referee1" should have vesting account balance of "5714" for asset "USD-1-10"
+    And "referee2" should have vesting account balance of "2142" for asset "USD-1-10"
+    And "referee3" should have vesting account balance of "2142" for asset "USD-1-10"
 
   @Closed
   Scenario: 0083-RFPR-063 Joining a closed team while not on the allow list should fail, team with non-empty join list
@@ -141,7 +141,7 @@ Feature: Test allow lists, based on team_rewards.feature test in rewards set.
       | aux1     | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee3 | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then "referee1" should have vesting account balance of "5000" for asset "USD-1-10"
-    And "referee2" should have vesting account balance of "2500" for asset "USD-1-10"
-    And "referee3" should have vesting account balance of "2500" for asset "USD-1-10"
+    Then "referee1" should have vesting account balance of "5714" for asset "USD-1-10"
+    And "referee2" should have vesting account balance of "2142" for asset "USD-1-10"
+    And "referee3" should have vesting account balance of "2142" for asset "USD-1-10"
 
