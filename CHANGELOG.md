@@ -35,8 +35,10 @@
 - [11170](https://github.com/vegaprotocol/vega/issues/11170) - Add transfer interval support.
 - [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal.
 - [11184](https://github.com/vegaprotocol/vega/issues/11184) - relax the transfer restriction of 'same transfer' to match the full dispatch strategy.
-- [11185](https://github.com/vegaprotocol/vega/issues/11185) - distinguish between zero and none metric for rewards. 
-- [11158](https://github.com/vegaprotocol/vega/issues/11158) - resolve the quote asset for fee estimation in spot market. 
+- [11185](https://github.com/vegaprotocol/vega/issues/11185) - distinguish between zero and none metric for rewards.
+- [11158](https://github.com/vegaprotocol/vega/issues/11158) - resolve the quote asset for fee estimation in spot market.
+- [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
+- [11182](https://github.com/vegaprotocol/vega/issues/11182) - Remove reduce only restriction on spot markets stop orders.
 
 ### 🐛 Fixes
 
@@ -75,7 +77,7 @@
 - [11154](https://github.com/vegaprotocol/vega/issues/11154) - Fix spot risk model resolver.
 - [11159](https://github.com/vegaprotocol/vega/issues/11159) - Reject stop orders with size override position for spot product.
 - [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission.
-- [11177](https://github.com/vegaprotocol/vega/issues/11177) - Adjust the formulas for reduced position to the spec update and fix handling of closed out position. 
+- [11177](https://github.com/vegaprotocol/vega/issues/11177) - Adjust the formulas for reduced position to the spec update and fix handling of closed out position.
 
 ## 0.75.0
 
