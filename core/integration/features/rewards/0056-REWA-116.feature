@@ -102,13 +102,16 @@ Feature: Relative return rewards
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC21 | buy  | 10     | 1002  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
       | aux1   | ETH/DEC21 | sell | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |           |
+    And the mark price should be "2000" for the market "ETH/DEC22"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC21 | sell | 10     | 999   | 0                | TYPE_LIMIT | TIF_GTC | p2-sell   |
       | aux2   | ETH/DEC21 | buy  | 10     | 999   | 1                | TYPE_LIMIT | TIF_GTC |           |
+    And the mark price should be "2000" for the market "ETH/DEC22"
 
     Then the network moves ahead "1" epochs
+    And the mark price should be "2000" for the market "ETH/DEC22"
 
     # M2M
     # party1 = -30
