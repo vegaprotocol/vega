@@ -194,7 +194,15 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
 		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
-			return len(e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)) > 0
+			hasNonZeroMetric := false
+			partyMetrics := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)
+			for _, pm := range partyMetrics {
+				if !pm.Score.IsZero() {
+					hasNonZeroMetric = true
+					break
+				}
+			}
+			return hasNonZeroMetric || (len(partyMetrics) > 0 && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
 		} else {
 			tcs, _ := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
 			return len(tcs) > 0

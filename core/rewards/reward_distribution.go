@@ -36,7 +36,7 @@ func adjustScoreForNegative(partyScores []*types.PartyContributionScore) []*type
 		}
 	}
 
-	if minScore.IsPositive() {
+	if !minScore.IsNegative() {
 		return partyScores
 	}
 

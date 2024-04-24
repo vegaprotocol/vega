@@ -106,6 +106,15 @@ Feature: Calculation of average position during closeout trades
             | aux2   | USD-1-10 | 2000    |
 
         Given the network moves ahead "1" epochs
+        # there are still rewards because while the position is 0 at the beginning of the epoch, the timeweighted position will only become 0
+        # at the beginning of the next epoch
+        Then parties should have the following vesting account balances:
+            | party  | asset    | balance |
+            | party1 | USD-1-10 | 3333    |
+            | aux2   | USD-1-10 | 3333    |
+            | aux1   | USD-1-10 | 3333    |
+
+        Given the network moves ahead "1" epochs
         # Expect to see no rewards as no positions open at the start of the epoch
         Then parties should have the following vesting account balances:
             | party  | asset    | balance |
