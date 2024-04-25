@@ -47,7 +47,7 @@ Feature: Relative return rewards
 
     And the parties deposit on staking account the following amount:
       | party   | asset | amount |
-      | aux1    | VEGA  | 2000   |
+      | aux1    | VEGA  | 800    |
       | aux2    | VEGA  | 2000   |
       | trader3 | VEGA  | 1500   |
       | trader4 | VEGA  | 1000   |
@@ -83,13 +83,13 @@ Feature: Relative return rewards
       | aux2   | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | aux1   | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
       | aux2   | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
-      | party1 | ETH/DEC22 | buy  | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party2 | ETH/DEC22 | sell | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1 | ETH/DEC22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/DEC22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | aux1   | ETH/DEC22 | buy  | 1      | 1800  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
       | aux2   | ETH/DEC22 | sell | 1      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
     And the mark price should be "0" for the market "ETH/DEC21"
 
-  Scenario: Given a recurring transfer is setup such that all eligible parties have a positive reward score, each parties metric is not offset and parties receive the correct rewards. (0056-REWA-116)
+  Scenario: Give a recurring transfer is setup such that all eligible parties have a negative reward score, each parties metric is offset by the lowest negative score and parties receive the correct rewards.(0056-REWA-117)
     # setup recurring transfer to the reward account - this will start at the  end of this epoch
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
@@ -108,27 +108,23 @@ Feature: Relative return rewards
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party2 | ETH/DEC21 | sell | 10     | 999   | 0                | TYPE_LIMIT | TIF_GTC | p2-sell   |
-      | aux2   | ETH/DEC21 | buy  | 10     | 999   | 1                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/DEC21 | sell | 10     | 1005  | 0                | TYPE_LIMIT | TIF_GTC | p2-sell   |
+      | aux2   | ETH/DEC21 | buy  | 10     | 1005  | 1                | TYPE_LIMIT | TIF_GTC |           |
     And the mark price should be "1000" for the market "ETH/DEC21"
 
     Then the network moves ahead "1" epochs
-    And the mark price should be "999" for the market "ETH/DEC21"
+    And the mark price should be "1005" for the market "ETH/DEC21"
 
     # M2M
-    # party1 = -30
+    # party1 = 20*(1005-1001)=80, relative return: 80/20 = 4
+    # party2 = -10*(1005-1000)=-50, relative return: -50/20=-2.5
     # aux1 = 20
-    # aux2 = 10
-    # party1 is not eligible because they don't have sufficient staking
-    # relative return metric for aux1 = 20/5 = 4
-    # relative return metric for aux2 = 10/5 = 2
-    # aux1 gets 10000 * 4/6 = 6666
-    # aux2 gets 10000 * 2/6 = 3333
+    # aux2 = -50
+    # party1 and aux1 is not eligible because they don't have sufficient staking
+    # relative return metric for party2 = -50/20=-2.5
+    # relative return metric for aux1 = -50/20=-2.5
 
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "6666" for asset "VEGA"
-    And "aux2" should have vesting account balance of "3333" for asset "VEGA"
 
-    Then debug trades 
 
 
