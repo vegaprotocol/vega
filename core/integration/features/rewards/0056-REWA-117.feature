@@ -122,7 +122,7 @@ Feature: Relative return rewards
     # aux2 = -50
     # party1 and aux1 is not eligible because they don't have sufficient staking
     # relative return metric for party2 = -50/20=-2.5
-    # relative return metric for aux1 = -50/20=-2.5
+    # relative return metric for aux2 = -50/20=-2.5
 
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
 
