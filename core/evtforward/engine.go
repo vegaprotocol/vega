@@ -139,6 +139,10 @@ func (e *Engine) SetupEthereumEngine(
 		e.ethEngine.UpdateStakingStartingBlock(e.stakingStartingBlock)
 	}
 
+	if err := filterer.VerifyClient(context.Background()); err != nil {
+		return err
+	}
+
 	e.Start()
 
 	return nil
@@ -202,6 +206,10 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 	}
 	if e.stakingStartingBlock != 0 {
 		e.ethEngine.UpdateStakingStartingBlock(e.stakingStartingBlock)
+	}
+
+	if err := filterer.VerifyClient(context.Background()); err != nil {
+		return err
 	}
 
 	e.Start()
