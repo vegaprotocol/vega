@@ -21,12 +21,12 @@ var stagnet1 = `{
       "network_id": "421614",
       "chain_id": "421614",
       "collateral_bridge_contract": {
-        "address": "0x41C013Ed92337DBf44FC6d66a1f9d0cC5B46C389"
+        "address": "0xC873176F0fbEB036d156C9Bdb4F8288cA9D80C8b"
       },
       "confirmations": 3,
       "multisig_control_contract": {
-        "address": "0x9138E4B468A4315FE05885eff7485c7244c65343",
-        "deployment_block_height": 36996691
+        "address": "0xf3fb67707ee4c2c4afd156640268dc63852F9b85",
+        "deployment_block_height": 37323267
       },
       "block_time": "250ms",
       "name": "Arbitrum (Sepolia)"
@@ -40,12 +40,12 @@ var testnet = `{
       "network_id": "421614",
       "chain_id": "421614",
       "collateral_bridge_contract": {
-        "address": "0x55c5b54930fB75e7e59f8bD953910B1bdff16340"
+        "address": "0xf7989D2902376cad63D0e5B7015efD0CFAd48eB5"
       },
       "confirmations": 3,
       "multisig_control_contract": {
-        "address": "0x0476C5A7171aF83C14C6DfE0cF7FB6Ca507Ef0A1",
-        "deployment_block_height": 36998306
+        "address": "0x18E2298DC3B8F1BAa505ce27f07Dba743e205415",
+        "deployment_block_height": 37322191
       },
       "block_time": "250ms",
       "name": "Arbitrum (Sepolia)"
