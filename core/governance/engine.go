@@ -439,7 +439,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			// state in the asset engine
 			switch v.Terms.Change.GetTermType() {
 			case types.ProposalTermsTypeNewAsset:
-				e.assets.SetRejected(ctx, p.ID)
+				e.assets.SetRejected(ctx, v.ID)
 			}
 		}
 	}
