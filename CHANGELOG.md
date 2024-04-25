@@ -78,6 +78,7 @@
 - [11159](https://github.com/vegaprotocol/vega/issues/11159) - Reject stop orders with size override position for spot product.
 - [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission.
 - [11177](https://github.com/vegaprotocol/vega/issues/11177) - Adjust the formulas for reduced position to the spec update and fix handling of closed out position.
+- [11193](https://github.com/vegaprotocol/vega/issues/11193) - Fix loading of liquidation strategy from proto with missing data. 
 
 ## 0.75.0
 
