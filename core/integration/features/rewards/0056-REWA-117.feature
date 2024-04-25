@@ -83,10 +83,10 @@ Feature: Relative return rewards
       | aux2   | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | aux1   | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
       | aux2   | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
-      | party1 | ETH/DEC22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party2 | ETH/DEC22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1   | ETH/DEC22 | buy  | 1      | 1800  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
-      | aux2   | ETH/DEC22 | sell | 1      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1   | ETH/DEC21 | buy  | 1      | 1800  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
+      | aux2   | ETH/DEC21 | sell | 1      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
     And the mark price should be "0" for the market "ETH/DEC21"
 
   Scenario: Give a recurring transfer is setup such that all eligible parties have a negative reward score, each parties metric is offset by the lowest negative score and parties receive the correct rewards.(0056-REWA-117)
