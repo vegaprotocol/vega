@@ -1403,6 +1403,35 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return orderConf, orderUpdates, err
 }
 
+func (m *Market) canCoverTradesAndFees(party string, partySide types.Side, trades []*types.Trade) error {
+	// check that the party can afford the traded amount + fees
+	if partySide == types.SideBuy {
+		totalTraded := num.UintZero()
+		for _, t := range trades {
+			fees, err := m.calculateFeesForTrades([]*types.Trade{t})
+			if err != nil {
+				m.log.Panic("failed to calculate fees for trade", logging.Trade(t))
+			}
+			size := num.NewUint(t.Size)
+			totalTraded.AddSum(size.Mul(size, t.Price), fees.TotalFeesAmountPerParty()[party])
+		}
+		totalTraded, _ = num.UintFromDecimal(totalTraded.ToDecimal().Div(m.positionFactor))
+		if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, totalTraded); err != nil {
+			return err
+		}
+	} else {
+		sizeTraded := uint64(0)
+		for _, t := range trades {
+			sizeTraded += t.Size
+		}
+		totalTraded := scaleBaseQuantityToAssetDP(sizeTraded, m.baseFactor)
+		if err := m.collateral.PartyHasSufficientBalance(m.baseAsset, party, totalTraded); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // submitValidatedOrder submits a new order.
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Order, error) {
 	isPegged := order.PeggedOrder != nil
@@ -1439,6 +1468,13 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// NB we don't apply fees here because if this is a sell the fees are taken from the quantity that the buyer pays (in quote asset)
 		// so this is deferred to handling confirmations - by this point the aggressor must have sufficient funds to cover for fees so this should
 		// not be an issue
+	}
+
+	// check that the party can afford the trade and fees
+	if trades != nil {
+		if err := m.canCoverTradesAndFees(order.Party, order.Side, trades); err != nil {
+			return nil, nil, m.unregisterAndReject(ctx, order, err)
+		}
 	}
 
 	// if an auction is ongoing and the order is pegged, park it and return
@@ -2396,6 +2432,13 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {
 		return nil, nil, errors.New("couldn't insert order in book")
+	}
+
+	// check that the party can afford the trade - if not return error and ignore the update
+	if trades != nil {
+		if err := m.canCoverTradesAndFees(newOrder.Party, newOrder.Side, trades); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	// "hot-swap" of the orders
