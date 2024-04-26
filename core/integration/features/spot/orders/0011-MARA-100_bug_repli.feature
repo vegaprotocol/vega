@@ -13,8 +13,8 @@ Feature: Spot market bug (from the incentive) replication
 
     Given the following assets are registered:
       | id  | decimal places |
-      | ETH | 2              |
-      | BTC | 2              |
+      | USD | 0              |
+      | BTC | 0              |
 
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -24,12 +24,11 @@ Feature: Spot market bug (from the incentive) replication
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 36000   | 0.999       | 1                 |
-      | 38000   | 0.999       | 2                 |
+      | 360000  | 0.999       | 1                 |
 
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | decimal places | position decimal places | sla params    |
-      | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | 2              | 2                       | default-basic |
+      | BTC/USD | BTC/USD | BTC        | USD         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | 0              | 0                       | default-basic |
 
     And the following network parameters are set:
       | name                                             | value |
@@ -40,57 +39,66 @@ Feature: Spot market bug (from the incentive) replication
       | market.liquidity.stakeToCcyVolume                | 1     |
 
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | party1 | ETH   | 100000 |
-      | party1 | BTC   | 10000  |
-      | party2 | ETH   | 100000 |
-      | party3 | ETH   | 100000 |
-      | party2 | BTC   | 10000  |
-      | lp     | ETH   | 100000 |
-      | lp     | BTC   | 10000  |
+      | party  | asset | amount  |
+      | party1 | USD   | 5000000 |
+      | party1 | BTC   | 100     |
+      | party2 | USD   | 1000    |
+      | party3 | USD   | 1000    |
+      | party2 | BTC   | 100     |
+      | lp     | USD   | 1000    |
+      | lp     | BTC   | 100     |
     And the average block duration is "1"
-
-    # No orders have been places so we shouldn't have any holding accounts
-    And "party1" should have only the following accounts:
-      | type                 | asset | amount |
-      | ACCOUNT_TYPE_GENERAL | ETH   | 100000 |
-      | ACCOUNT_TYPE_GENERAL | BTC   | 10000  |
-
-    And "party2" should have only the following accounts:
-      | type                 | asset | amount |
-      | ACCOUNT_TYPE_GENERAL | ETH   | 100000 |
-      | ACCOUNT_TYPE_GENERAL | BTC   | 10000  |
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
-      | lp1 | lp    | BTC/ETH   | 500               | 0.025 | submission |
-    # Place some orders to create the holding accounts
+      | lp1 | lp    | BTC/USD   | 5                 | 0.025 | submission |
+
+    Then "party2" should have general account balance of "1000" for asset "USD"
+    Then "party2" should have general account balance of "100" for asset "BTC"
+
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | BTC/ETH   | buy  | 10000  | 1500  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | BTC/ETH   | buy  | 1000   | 1600  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | BTC/ETH   | buy  | 400    | 1700  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | BTC/ETH   | buy  | 300    | 1800  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | BTC/ETH   | buy  | 300    | 1900  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | BTC/ETH   | buy  | 100    | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/ETH   | sell | 100    | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/ETH   | sell | 100    | 2100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/ETH   | sell | 100    | 2200  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/ETH   | sell | 100    | 2300  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | BTC/USD   | buy  | 100    | 5500  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | BTC/USD   | buy  | 3      | 5900  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | BTC/USD   | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 3      | 6100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 3      | 6200  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 4      | 6300  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 10     | 6400  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 5      | 6500  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the network moves ahead "2" blocks
 
-    Then the market data for the market "BTC/ETH" should be:
+    Then the market data for the market "BTC/USD" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | open interest |
-      | 2000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 36000   | 1749      | 2283      | 0             |
-      | 2000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 38000   | 1743      | 2291      | 0             |
+      | 6000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 3904      | 9072      | 0             |
+
+    Then "party2" should have general account balance of "7000" for asset "USD"
+    Then "party2" should have general account balance of "74" for asset "BTC"
+
+    Then "party2" should have holding account balance of "25" for asset "BTC"
+
 
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | reference |
-      | party3 | BTC/ETH   | buy  | 2000   | 0     | 1                | TYPE_MARKET | TIF_IOC |           |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | reference | error |
+      | party3 | BTC/USD   | buy  | 20     | 0     | 4                | TYPE_MARKET | TIF_IOC |           |       |
 
     Then the network moves ahead "1" blocks
 
-    # And the following trades should be executed:
-    #   | buyer  | price | size | seller |
-    #   | party3 | 2100  | 20   | party2 |
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party3 | 6400  | 10   | party2 |
+      | party3 | 6300  | 4    | party2 |
+      | party3 | 6200  | 3    | party2 |
+      | party3 | 6100  | 3    | party2 |
+
+    Then "party2" should have general account balance of "8000" for asset "USD"
+    Then "party2" should have general account balance of "74" for asset "BTC"
+
+    Then "party2" should have holding account balance of "5" for asset "BTC"
+
+    Then "party3" should have general account balance of "0" for asset "USD"
+    Then "party3" should have general account balance of "20" for asset "BTC"
+
+
