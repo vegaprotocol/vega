@@ -33,9 +33,10 @@ var ErrPriceNotFound = errors.New("price-volume pair not found")
 
 // OrderBookSide represent a side of the book, either Sell or Buy.
 type OrderBookSide struct {
-	side   types.Side
-	log    *logging.Logger
-	levels []*PriceLevel
+	side    types.Side
+	log     *logging.Logger
+	levels  []*PriceLevel
+	offbook OffbookSource
 }
 
 func (s *OrderBookSide) Hash() []byte {
@@ -400,9 +401,15 @@ func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 
 // fakeUncross returns hypothetical trades if the order book side were to be uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
-func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, error) {
+func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idealPrice *num.Uint) ([]*types.Trade, error) {
+	defer s.uncrossFinished()
+
+	// get a copy of the order passed in, so we can rely on fakeUncross to do its job
+	fake := agg.Clone()
+
 	var (
 		trades            []*types.Trade
+		offbookOrders     []*types.Order
 		totalVolumeToFill uint64
 	)
 	if agg.TimeInForce == types.OrderTimeInForceFOK {
@@ -411,6 +418,12 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 			checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LTE(agg.Price) }
 		} else {
 			checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GTE(agg.Price) }
+		}
+
+		// first check for volume between the theoretical best price and the first price level
+		_, oo := s.uncrossOffbook(len(s.levels), fake, idealPrice, true)
+		for _, order := range oo {
+			totalVolumeToFill += order.Remaining
 		}
 
 		for i := len(s.levels) - 1; i >= 0; i-- {
@@ -427,7 +440,13 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 						break
 					}
 				}
+
+				_, oo := s.uncrossOffbook(i, fake, idealPrice, true)
+				for _, order := range oo {
+					totalVolumeToFill += order.Remaining
+				}
 			}
+
 			if totalVolumeToFill >= agg.Remaining {
 				break
 			}
@@ -437,11 +456,13 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 		if totalVolumeToFill < agg.Remaining {
 			return nil, nil
 		}
+
+		// reset the offbook source so we can then do it all again....
+		s.uncrossFinished()
 	}
 
 	// get a copy of the order passed in, so we can rely on fakeUncross to do its job
-	fake := agg.Clone()
-
+	fake = agg.Clone()
 	var (
 		idx        = len(s.levels) - 1
 		ntrades    []*types.Trade
@@ -454,6 +475,8 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 	} else {
 		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LT(agg.Price) }
 	}
+
+	trades, offbookOrders = s.uncrossOffbook(idx+1, fake, idealPrice, true)
 
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
@@ -468,6 +491,12 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 		// break if a wash trade is detected
 		if err != nil && err == ErrWashTrade {
 			break
+		}
+
+		if fake.Remaining != 0 {
+			obTrades, obOrders := s.uncrossOffbook(idx, fake, idealPrice, true)
+			trades = append(trades, obTrades...)
+			offbookOrders = append(offbookOrders, obOrders...)
 		}
 
 		// the orders are still part of the levels, so we just have to move on anyway
@@ -548,9 +577,62 @@ func clonePriceLevel(lvl *PriceLevel) *PriceLevel {
 	}
 }
 
+// betweenLevels returns the inner, outer bounds for the given idx in the price levels.
+// Usually this means (inner, outer) = (lvl[i].price, lvl[i-1].price) but we also handle
+// the past the first and last price levels.
+func (s *OrderBookSide) betweenLevels(idx int, first, last *num.Uint) (*num.Uint, *num.Uint) {
+	// there are no price levels, so between is from low to high
+	if len(s.levels) == 0 {
+		return first, last
+	}
+
+	// we're at the first price level
+	if idx == len(s.levels) {
+		return first, s.levels[idx-1].price
+	}
+
+	// we're at the last price level
+	if idx == 0 {
+		return s.levels[0].price, last
+	}
+	return s.levels[idx].price, s.levels[idx-1].price
+}
+
+func (s *OrderBookSide) uncrossFinished() {
+	if s.offbook != nil {
+		s.offbook.NotifyFinished()
+	}
+}
+
+func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, idealPrice *num.Uint, fake bool) ([]*types.Trade, []*types.Order) {
+	if s.offbook == nil {
+		return nil, nil
+	}
+
+	// get the bounds between price levels for the given price level index
+	inner, outer := s.betweenLevels(idx, idealPrice, agg.Price)
+
+	// submit the order to the offbook source for volume between those bounds
+	orders := s.offbook.SubmitOrder(agg, inner, outer)
+
+	trades := make([]*types.Trade, 0, len(orders))
+	for _, o := range orders {
+		size := min(agg.Remaining, o.Remaining)
+		trade := newTrade(agg, o, size)
+		agg.Remaining -= size
+		if !fake {
+			o.Remaining -= size
+		}
+		trades = append(trades, trade)
+	}
+
+	return trades, orders
+}
+
 // uncross returns trades after order book side gets uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
-func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, *num.Uint, error) {
+func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreticalBestTrade *num.Uint) ([]*types.Trade, []*types.Order, *num.Uint, error) {
+	defer s.uncrossFinished()
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order
@@ -559,6 +641,8 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		checkPrice        func(*num.Uint) bool
 	)
 
+	fake := agg.Clone()
+
 	if agg.Side == types.SideSell {
 		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GTE(agg.Price) }
 	} else {
@@ -566,6 +650,11 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	}
 
 	if agg.TimeInForce == types.OrderTimeInForceFOK {
+		_, oo := s.uncrossOffbook(len(s.levels), fake, theoreticalBestTrade, true)
+		for _, order := range oo {
+			totalVolumeToFill += order.Remaining
+		}
+
 		// Process these backwards
 		for i := len(s.levels) - 1; i >= 0; i-- {
 			level := s.levels[i]
@@ -580,6 +669,11 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 					}
 					// in case of network trades, we want to calculate an accurate average price to return
 					totalVolumeToFill += order.Remaining
+
+					_, oo := s.uncrossOffbook(i, fake, theoreticalBestTrade, true)
+					for _, order := range oo {
+						totalVolumeToFill += order.Remaining
+					}
 
 					if totalVolumeToFill >= agg.Remaining {
 						break
@@ -598,6 +692,9 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		if totalVolumeToFill < agg.Remaining {
 			return trades, impactedOrders, lastTradedPrice, nil
 		}
+
+		// reset the offsource book so we can then do it all again....
+		s.uncrossFinished()
 	}
 
 	var (
@@ -607,6 +704,10 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		nimpact []*types.Order
 		err     error
 	)
+
+	// first check for off source volume between the best theoretical price and the first price level
+	trades, impactedOrders = s.uncrossOffbook(idx+1, agg, theoreticalBestTrade, false)
+	filled = agg.Remaining == 0
 
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
@@ -620,6 +721,15 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 			if err != nil && err == ErrWashTrade {
 				break
 			}
+
+			if !filled {
+				// now check for off source volume between the price levels
+				ot, oo := s.uncrossOffbook(idx, agg, theoreticalBestTrade, false)
+				trades = append(trades, ot...)
+				impactedOrders = append(impactedOrders, oo...)
+				filled = agg.Remaining == 0
+			}
+
 			if len(s.levels[idx].orders) <= 0 {
 				idx--
 			}

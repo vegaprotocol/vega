@@ -11,6 +11,7 @@ Feature: Distressed parties should not have general balance left
       | network.markPriceUpdateMaximumFrequency          | 0s    |
       | limits.markets.maxPeggedOrders                   | 4     |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
+      | market.liquidity.equityLikeShareFeeFraction      | 1     |
 
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:

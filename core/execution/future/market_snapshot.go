@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/execution/amm"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -162,10 +163,15 @@ func NewMarketFromSnapshot(
 		}
 	}
 
-	marketLiquidity := common.NewMarketLiquidityFromSnapshot(
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	// @TODO pass in AMM
+	marketLiquidity, err := common.NewMarketLiquidityFromSnapshot(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity, nil,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -253,6 +259,20 @@ func NewMarketFromSnapshot(
 		market.internalCompositePriceCalculator = common.NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.InternalCompositePriceCalculator)
 		market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 	}
+
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	if em.Amm == nil {
+		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor, positionFactor, marketActivityTracker)
+	} else {
+		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor, marketActivityTracker)
+	}
+	// now we can set the AMM on the market liquidity engine.
+	market.liquidity.SetAMM(market.amm)
+
+	book.SetOffbookSource(market.amm)
+
+	// now set AMM engine on liquidity market.
+	market.liquidity.SetAMM(market.amm)
 
 	for _, p := range em.Parties {
 		market.parties[p] = struct{}{}
@@ -350,6 +370,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		FeesStats:                      m.fee.GetState(assetQuantum),
 		PartyMarginFactors:             partyMarginFactors,
 		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
+		Amm:                            m.amm.IntoProto(),
 		MarketLiquidity:                m.liquidity.GetState(),
 	}
 	if m.perp && m.internalCompositePriceCalculator != nil {

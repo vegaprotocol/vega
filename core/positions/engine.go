@@ -315,7 +315,6 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
-
 	buyer.averageEntryPrice = CalcVWAP(buyer.averageEntryPrice, buyer.size, int64(trade.Size), trade.Price)
 	buyer.size += int64(trade.Size)
 	seller.averageEntryPrice = CalcVWAP(seller.averageEntryPrice, -seller.size, int64(trade.Size), trade.Price)
