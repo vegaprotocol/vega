@@ -105,9 +105,9 @@ func TheMarkets(
 		return nil, err
 	}
 
-	// if err := enableVoteAsset(collateralEngine); err != nil {
-	// 	return nil, err
-	// }
+	if err := enableVoteAsset(collateralEngine); err != nil {
+		return nil, err
+	}
 
 	for i, row := range rows {
 		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
@@ -183,7 +183,9 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 
 	err := collateralEngine.EnableAsset(context.Background(), voteAsset)
 	if err != nil {
-		return fmt.Errorf("couldn't enable asset(%s): %v", voteAsset.ID, err)
+		if err != collateral.ErrAssetAlreadyEnabled {
+			return fmt.Errorf("couldn't enable asset(%s): %v", voteAsset.ID, err)
+		}
 	}
 	return nil
 }
