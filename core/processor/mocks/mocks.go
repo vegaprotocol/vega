@@ -266,6 +266,20 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 	return m.recorder
 }
 
+// AmendAMM mocks base method.
+func (m *MockExecutionEngine) AmendAMM(arg0 context.Context, arg1 *types.AmendAMM, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AmendAMM", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AmendAMM indicates an expected call of AmendAMM.
+func (mr *MockExecutionEngineMockRecorder) AmendAMM(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendAMM", reflect.TypeOf((*MockExecutionEngine)(nil).AmendAMM), arg0, arg1, arg2)
+}
+
 // AmendLiquidityProvision mocks base method.
 func (m *MockExecutionEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
@@ -317,6 +331,20 @@ func (m *MockExecutionEngine) BlockEnd(arg0 context.Context) {
 func (mr *MockExecutionEngineMockRecorder) BlockEnd(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockEnd", reflect.TypeOf((*MockExecutionEngine)(nil).BlockEnd), arg0)
+}
+
+// CancelAMM mocks base method.
+func (m *MockExecutionEngine) CancelAMM(arg0 context.Context, arg1 *types.CancelAMM, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelAMM", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelAMM indicates an expected call of CancelAMM.
+func (mr *MockExecutionEngineMockRecorder) CancelAMM(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelAMM", reflect.TypeOf((*MockExecutionEngine)(nil).CancelAMM), arg0, arg1, arg2)
 }
 
 // CancelLiquidityProvision mocks base method.
@@ -416,6 +444,20 @@ func (m *MockExecutionEngine) StartOpeningAuction(arg0 context.Context, arg1 str
 func (mr *MockExecutionEngineMockRecorder) StartOpeningAuction(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartOpeningAuction", reflect.TypeOf((*MockExecutionEngine)(nil).StartOpeningAuction), arg0, arg1)
+}
+
+// SubmitAMM mocks base method.
+func (m *MockExecutionEngine) SubmitAMM(arg0 context.Context, arg1 *types.SubmitAMM, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitAMM", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitAMM indicates an expected call of SubmitAMM.
+func (mr *MockExecutionEngineMockRecorder) SubmitAMM(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitAMM", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitAMM), arg0, arg1, arg2)
 }
 
 // SubmitLiquidityProvision mocks base method.
@@ -2117,6 +2159,20 @@ func (m *MockLimits) CanTrade() bool {
 func (mr *MockLimitsMockRecorder) CanTrade() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanTrade", reflect.TypeOf((*MockLimits)(nil).CanTrade))
+}
+
+// CanUseAMMPool mocks base method.
+func (m *MockLimits) CanUseAMMPool() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanUseAMMPool")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanUseAMMPool indicates an expected call of CanUseAMMPool.
+func (mr *MockLimitsMockRecorder) CanUseAMMPool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanUseAMMPool", reflect.TypeOf((*MockLimits)(nil).CanUseAMMPool))
 }
 
 // MockStakeVerifier is a mock of StakeVerifier interface.

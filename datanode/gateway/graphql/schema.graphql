@@ -583,6 +583,24 @@ input RewardSummaryFilter {
 
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
+  ammPools(
+    "Party ID to filter for. If provided any other filters will be ignored."
+    partyId: ID
+    "Market ID to filter for. Must be provided as the only filter if used."
+    marketId: ID
+    "Pool ID to filter for. Party ID and Market ID filters must not be set if used."
+    poolId: ID
+    """
+    Party's underlying AMM sub-account to filter for. A party will only ever have one AMM sub-account regardless of how many AMM pools they have created.
+    This filter is ignored if party ID, market ID, or pool ID is set.
+    """
+    subAccountId: ID
+    "AMM pool status to filter for. This filter is ignored if any of the other filters are set."
+    status: AMMPoolStatus
+    "Optional pagination information"
+    pagination: Pagination
+  ): AMMPoolsConnection!
+
   "An asset which is used in the vega network"
   asset("ID of the asset" id: ID!): Asset
 
@@ -1449,6 +1467,8 @@ enum IndividualScope {
   INDIVIDUAL_SCOPE_IN_TEAM
   "All parties that are not part of a team are within the scope of this reward"
   INDIVIDUAL_SCOPE_NOT_IN_TEAM
+  "All keys representing AMMs are within the scope of this reward"
+  INDIVIDUAL_SCOPE_AMM
 }
 
 enum DistributionStrategy {
@@ -7459,3 +7479,82 @@ type GamePartyScore {
   rank: Int 
 }
   
+"Connection type for retrieving AMM pool information"
+type AMMPoolsConnection {
+  "Page of AMM Pools for the connection"
+  edges: [AMMPoolEdge]
+  "Current page information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the AMM pool and cursor information returned by an AMMPoolConnection"
+type AMMPoolEdge {
+  "AMM Pool information"
+  node: AMMPool!
+  "Cursor identifying the AMM Pool"
+  cursor: String!
+}
+
+type AMMPool {
+  "Party ID of the pool creator"
+  partyID: ID!
+  "Market ID of the pool"
+  marketID: ID!
+  "Pool ID"
+  poolID: ID!
+  "Sub-account of the pool"
+  subAccount: String!
+  "Amount committed to the pool"
+  commitment: String!
+  "Parameters for the liquidity provision"
+  parameters: ConcentratedLiquidityParameters!
+  "Status of the pool"
+  status: AMMPoolStatus!
+  "Reason for status if applicable"
+  statusReason: AMMPoolStatusReason!
+}
+
+type ConcentratedLiquidityParameters {
+  "Base amount"
+  base: String!
+  "Lower bound"
+  lowerBound: String!
+  "Upper bound"
+  upperBound: String!
+  "Margin ratio at the upper bound"
+  marginRatioAtUpperBound: String!
+  "Margin ratio at the lower bound"
+  marginRatioAtLowerBound: String!
+}
+
+enum AMMPoolStatus {
+  "Status has not been specified"
+  STATUS_UNSPECIFIED
+  "AMM pool is active"
+  STATUS_ACTIVE
+  "AMM pool has been rejected"
+  STATUS_REJECTED
+  "AMM pool has been cancelled"
+  STATUS_CANCELLED
+  "AMM pool has been stopped"
+  STATUS_STOPPED
+}
+
+enum AMMPoolStatusReason {
+  "Status has no reason specified"
+  STATUS_REASON_UNSPECIFIED
+  "AMM pool was cancelled by the party"
+  STATUS_REASON_CANCELLED_BY_PARTY
+  "AMM pool commitment cannot be fulfilled"
+  STATUS_REASON_CANNOT_FILL_COMMITMENT
+  "Party already owns an AMM pool on this market"
+  STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL
+  "Party was closed out"
+  STATUS_REASON_PARTY_CLOSED_OUT
+  "Market has been closed"
+  STATUS_REASON_MARKET_CLOSED
+  "Commitment level for the pool is too low"
+  STATUS_REASON_COMMITMENT_TOO_LOW
+  "AMM pool cannot be rebased"
+  STATUS_REASON_CANNOT_REBASE
+}

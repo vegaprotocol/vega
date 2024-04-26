@@ -213,6 +213,8 @@ http:
       get: "/api/v2/games/party-scores"
     - selector: datanode.api.v2.TradingDataService.ListGameTeamScores
       get: "/api/v2/games/team-scores"
+    - selector: datanode.api.v2.TradingDataService.ListAMMPools
+      get: "/api/v2/amm-pools"
 
     # websockets
 

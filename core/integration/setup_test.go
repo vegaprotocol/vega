@@ -527,5 +527,13 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MinEpochsInTeamForMetricRewardEligibility,
 			Watcher: execsetup.marketActivityTracker.OnMinEpochsInTeamForRewardEligibilityUpdated,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityEquityLikeShareFeeFractionUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAMMMinCommitmentQuantum,
+			Watcher: execsetup.executionEngine.OnMarketAMMMinCommitmentQuantum,
+		},
 	)
 }
