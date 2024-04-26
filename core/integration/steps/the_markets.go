@@ -183,7 +183,9 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 
 	err := collateralEngine.EnableAsset(context.Background(), voteAsset)
 	if err != nil {
-		return fmt.Errorf("couldn't enable asset(%s): %v", voteAsset.ID, err)
+		if err != collateral.ErrAssetAlreadyEnabled {
+			return fmt.Errorf("couldn't enable asset(%s): %v", voteAsset.ID, err)
+		}
 	}
 	return nil
 }
