@@ -93,8 +93,8 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		}
 
 		if gTransfer.Config.RecurringTransferConfig.DispatchStrategy != nil && gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval != nil &&
-			(e.currentEpoch-gTransfer.Config.RecurringTransferConfig.StartEpoch+1) < uint64(*gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval) &&
-			(e.currentEpoch-gTransfer.Config.RecurringTransferConfig.StartEpoch+1)%uint64(*gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval) != 0 {
+			((e.currentEpoch-gTransfer.Config.RecurringTransferConfig.StartEpoch+1) < uint64(*gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval) ||
+				(e.currentEpoch-gTransfer.Config.RecurringTransferConfig.StartEpoch+1)%uint64(*gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval) != 0) {
 			continue
 		}
 
