@@ -43,6 +43,7 @@ Feature: Spot market bug (from the incentive) replication
       | party1 | BTC   | 100      |
       | party2 | USD   | 1000     |
       | party3 | USD   | 1000     |
+      | party5 | USD   | 70000    |
       | party2 | BTC   | 100      |
       | party4 | BTC   | 1        |
       | lp     | USD   | 1000     |
@@ -112,15 +113,19 @@ Feature: Spot market bug (from the incentive) replication
       | party3 | p3-b2     | 66000 | -10        | TIF_GTC | party does not have sufficient balance to cover the trade and fees |
       | party4 | p4-s2     | 59000 | 2          | TIF_GTC | party does not have sufficient balance to cover the new size       |
 
+    And the order book should have the following volumes for market "BTC/USD":
+      | side | price | volume |
+      | buy  | 10    | 20     |
+      | sell | 66000 | 1      |
+
     #0080-SPOT-027:submit order - limit order, partly matched, party can't afford the trades
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                              |
-      | party3 | BTC/USD   | buy  | 6      | 6100  | 0                | TYPE_LIMIT | TIF_GTC | p3-b3     | party does not have sufficient balance to cover the trade and fees |
+      | party3 | BTC/USD   | buy  | 6      | 61000 | 0                | TYPE_LIMIT | TIF_GTC | p3-b3     | party does not have sufficient balance to cover the trade and fees |
+      | party5 | BTC/USD   | buy  | 2      | 61000 | 0                | TYPE_LIMIT | TIF_GTC | p5-b1     | party does not have sufficient balance to cover the trade and fees |
 
     #0080-SPOT-028:submit order - limit order, no match, added to the book, party can't cover the amount that needs to be transfered to the holding
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                              |
       | party4 | BTC/USD   | sell | 2      | 67000 | 0                | TYPE_LIMIT | TIF_GTC | p4-s3     | party does not have sufficient balance to cover the trade and fees |
-
-
 
