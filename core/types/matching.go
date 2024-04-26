@@ -27,29 +27,30 @@ import (
 )
 
 type Order struct {
-	ID             string
-	MarketID       string
-	Party          string
-	Side           Side
-	Price          *num.Uint
-	OriginalPrice  *num.Uint
-	Size           uint64
-	Remaining      uint64
-	TimeInForce    OrderTimeInForce
-	Type           OrderType
-	CreatedAt      int64
-	Status         OrderStatus
-	ExpiresAt      int64
-	Reference      string
-	Reason         OrderError
-	UpdatedAt      int64
-	Version        uint64
-	BatchID        uint64
-	PeggedOrder    *PeggedOrder
-	PostOnly       bool
-	ReduceOnly     bool
-	extraRemaining uint64
-	IcebergOrder   *IcebergOrder
+	ID               string
+	MarketID         string
+	Party            string
+	Side             Side
+	Price            *num.Uint
+	OriginalPrice    *num.Uint
+	Size             uint64
+	Remaining        uint64
+	TimeInForce      OrderTimeInForce
+	Type             OrderType
+	CreatedAt        int64
+	Status           OrderStatus
+	ExpiresAt        int64
+	Reference        string
+	Reason           OrderError
+	UpdatedAt        int64
+	Version          uint64
+	BatchID          uint64
+	PeggedOrder      *PeggedOrder
+	PostOnly         bool
+	ReduceOnly       bool
+	extraRemaining   uint64
+	IcebergOrder     *IcebergOrder
+	GeneratedOffbook bool
 }
 
 func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
@@ -959,6 +960,16 @@ var (
 	ErrPeggedOrdersNotAllowedInIsolatedMargin      = OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
 	ErrOrderNotInTickSize                          = OrderErrorPriceNotInTickSize
 )
+
+func OtherSide(s Side) Side {
+	switch s {
+	case SideBuy:
+		return SideSell
+	case SideSell:
+		return SideBuy
+	}
+	return SideUnspecified
+}
 
 func IsOrderError(err error) (OrderError, bool) {
 	oerr, ok := err.(OrderError)

@@ -11,6 +11,7 @@ Feature: Calculating SLA Performance
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
       | validators.epoch.length                          | 58s   |
       | market.liquidity.stakeToCcyVolume                | 1     |
+      | market.liquidity.equityLikeShareFeeFraction      | 1     |
 
     And the average block duration is "1"
 
@@ -715,7 +716,6 @@ Feature: Calculating SLA Performance
       | lp2  |     | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/DEC23 | 100    | USD   |
       |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL                           | ETH/DEC23 | 150    | USD   |
 
-
   Scenario: 4 LPs acheive various penalty fractions, unpaid liquidity fees distributed correctly as a bonus (0042-LIQF-055)
 
     # Initialise the market with the required parameters
@@ -792,3 +792,84 @@ Feature: Calculating SLA Performance
       |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 24673  | USD   |
       |      | lp2 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 2344   | USD   |
       |      | lp3 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 69087  | USD   |
+
+  Scenario: 4 LPs acheive various penalty fractions, unpaid liquidity fees distributed correctly as a bonus (0042-LIQF-055) + fee fraction set to 0.5
+
+    Given the following network parameters are set:
+      | name                                             | value |
+      | market.liquidity.equityLikeShareFeeFraction      | 0.5   |
+    # Initialise the market with the required parameters
+    And the liquidity sla params named "scenario-sla-params":
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1           | 0                            | 1                             | 1                      |
+    And the markets are updated:
+      | id        | sla params          | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC23 | scenario-sla-params | 1e-3                   | 0                         |
+
+    And the following network parameters are set:
+      | name                    | value |
+      | validators.epoch.length | 98s   |
+
+    # Setup the market with 4 LPs who initially meet their commitment
+    Given the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp1   | ETH/DEC23 | 10000000          | 0.1 | submission |
+      | lp2 | lp2   | ETH/DEC23 | 1000000           | 0.1 | submission |
+      | lp3 | lp3   | ETH/DEC23 | 70000000          | 0.1 | submission |
+      | lp4 | lp4   | ETH/DEC23 | 919000000         | 0.1 | submission |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lp1   | ETH/DEC23 | buy  | 10000  | 999   | 0                | TYPE_LIMIT | TIF_GTC | lp1-bid   |
+      | lp1   | ETH/DEC23 | sell | 10000  | 1001  | 0                | TYPE_LIMIT | TIF_GTC | lp1-ask   |
+      | lp2   | ETH/DEC23 | buy  | 1000   | 999   | 0                | TYPE_LIMIT | TIF_GTC | lp2-bid   |
+      | lp2   | ETH/DEC23 | sell | 1000   | 1001  | 0                | TYPE_LIMIT | TIF_GTC | lp2-ask   |
+      | lp3   | ETH/DEC23 | buy  | 70000  | 999   | 0                | TYPE_LIMIT | TIF_GTC | lp3-bid   |
+      | lp3   | ETH/DEC23 | sell | 70000  | 1001  | 0                | TYPE_LIMIT | TIF_GTC | lp3-ask   |
+      | lp4   | ETH/DEC23 | buy  | 919000 | 999   | 0                | TYPE_LIMIT | TIF_GTC | lp4-bid   |
+      | lp4   | ETH/DEC23 | sell | 919000 | 1001  | 0                | TYPE_LIMIT | TIF_GTC | lp4-ask   |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/DEC23 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC23 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the opening auction period ends for market "ETH/DEC23"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC23"
+
+    # Generate liquidity fees to be allocated to the LP
+    Given the network moves ahead "1" epochs
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC23 | buy  | 1000   | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC23 | sell | 1000   | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the accumulated liquidity fees should be "100000" for the market "ETH/DEC23"
+
+    # Ensure LPs have the correct penalty fractions whilst having approx. equal average liquidity scores
+    Given the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp4   | lp4-bid   | 999   | -1         | TIF_GTC |
+      | lp4   | lp4-ask   | 1001  | -1         | TIF_GTC |
+    And the network moves ahead "40" blocks
+    And the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp3   | lp3-bid   | 999   | -1         | TIF_GTC |
+      | lp3   | lp3-ask   | 1001  | -1         | TIF_GTC |
+    And the network moves ahead "55" blocks
+    And the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp2   | lp2-bid   | 999   | -1         | TIF_GTC |
+      | lp2   | lp2-ask   | 1001  | -1         | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then the following transfers should happen:
+      | from | to  | from account                                   | to account                     | market id | amount | asset |
+      |      | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC23 | 13000  | USD   |
+      |      | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC23 | 12550  | USD   |
+      |      | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC23 | 16000  | USD   |
+      |      | lp4 | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC23 | 58450  | USD   |
+      | lp1  | lp1 | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 13000  | USD   |
+      | lp2  | lp2 | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 11922  | USD   |
+      | lp3  | lp3 | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 6400   | USD   |
+      |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 28503  | USD   |
+      |      | lp2 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 26141  | USD   |
+      |      | lp3 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 14032  | USD   |
+      |      | lp3 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL           | ETH/DEC23 | 2      | USD   |

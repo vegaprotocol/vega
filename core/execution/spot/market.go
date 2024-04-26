@@ -217,7 +217,8 @@ func NewMarket(
 	mkt.MarketTimestamps = ts
 	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	els := common.NewEquityShares(num.DecimalZero())
-	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
+	// @TODO pass in AMM
+	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil)
 	market := &Market{
 		log:                           log,
 		idgen:                         nil,
@@ -259,7 +260,6 @@ func NewMarket(
 		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
-
 	return market, nil
 }
 
@@ -3223,6 +3223,18 @@ func (m *Market) GetMarketCounters() *types.MarketCounters {
 		OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
 		PositionCount:       0,
 	}
+}
+
+func (m *Market) SubmitAMM(context.Context, *types.SubmitAMM, string) error {
+	return errors.New("unimplemented")
+}
+
+func (m *Market) AmendAMM(context.Context, *types.AmendAMM, string) error {
+	return errors.New("unimplemented")
+}
+
+func (m *Market) CancelAMM(context.Context, *types.CancelAMM, string) error {
+	return errors.New("unimplemented")
 }
 
 // IDGen is an id generator for orders.

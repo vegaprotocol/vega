@@ -40,6 +40,9 @@ message SubmitTransactionRequest {
     commands.v1.JoinTeam join_team = 1022;
     commands.v1.BatchProposalSubmission batch_proposal_submission = 1023;
     commands.v1.UpdatePartyProfile update_party_profile = 1024;
+    commands.v1.SubmitAMM submit_amm = 1025;
+    commands.v1.AmendAMM amend_amm = 1026;
+    commands.v1.CancelAMM cancel_amm = 1027;
 
     // Validator commands
     commands.v1.NodeVote node_vote = 2002;

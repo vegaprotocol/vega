@@ -232,6 +232,8 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM
 				} else if indiScopeStr == "NOT_IN_TEAM" {
 					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM
+				} else if indiScopeStr == "INDIVIDUAL_SCOPE_AMM" {
+					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_AMM
 				}
 			}
 		}
