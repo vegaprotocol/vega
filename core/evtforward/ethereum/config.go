@@ -34,6 +34,7 @@ type Config struct {
 	MaxEthereumBlocks      uint64            `long:"max-ethereum-blocks"`
 	PollEventRetryDuration encoding.Duration
 	ChainID                string
+	SkipClientVerification bool
 }
 
 func NewDefaultConfig() Config {
