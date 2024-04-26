@@ -299,6 +299,12 @@ func (r RowWrapper) U32(name string) uint32 {
 	return uint32(value)
 }
 
+func (r RowWrapper) I32(name string) int32 {
+	value, err := strconv.ParseInt(r.values[name], 10, 32)
+	panicW(name, err)
+	return int32(value)
+}
+
 func (r RowWrapper) MustU64Slice(name, sep string) []uint64 {
 	value, err := U64Slice(r.mustColumn(name), sep)
 	panicW(name, err)
