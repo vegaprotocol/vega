@@ -39,6 +39,7 @@
 - [11158](https://github.com/vegaprotocol/vega/issues/11158) - resolve the quote asset for fee estimation in spot market.
 - [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
 - [11182](https://github.com/vegaprotocol/vega/issues/11182) - Remove reduce only restriction on spot markets stop orders.
+- [11057](https://github.com/vegaprotocol/vega/issues/11057) - Allow market maker to vote on governance proposals with their equity like shares only.
 
 ### 🐛 Fixes
 

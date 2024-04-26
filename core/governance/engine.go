@@ -948,9 +948,15 @@ func (e *Engine) canVote(
 	params *types.ProposalParameters,
 	party string,
 ) error {
+	// Here the error can only happen in case the party
+	// have no balances, which is not an error per se
+	// and we should keep going.
+	// This would allow us to go further in case a
+	// party is a market maker and they'd be voting
+	// with their equity like share.
 	voterTokens, err := getGovernanceTokens(e.accs, party)
 	if err != nil {
-		return err
+		voterTokens = num.UintZero()
 	}
 
 	if proposal.IsMarketUpdate() || proposal.IsSpotMarketUpdate() {
@@ -970,6 +976,10 @@ func (e *Engine) canVote(
 			return ErrVoterInsufficientTokens
 		}
 	} else {
+		// here the party had no balance, return existing error
+		if err != nil {
+			return err
+		}
 		if voterTokens.LT(params.MinVoterBalance) {
 			return ErrVoterInsufficientTokens
 		}
