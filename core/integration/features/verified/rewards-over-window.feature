@@ -96,6 +96,40 @@ Feature: Maker fees paid reward metric calculated correctly for time window
     And "referee3" should have vesting account balance of "2000" for asset "USD-1-10"
 
 
+  Scenario: Party funds pool with recurring transfer scoping individuals with transfer interval 5
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | teams | ntop | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      | window_length | transfer_interval |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | INDIVIDUALS  |       | 1    | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 | 5             | 5                 |
+    And the parties place the following orders:
+      | party     | market id    | side | volume | price | resulting trades | type       | tif     |
+      | referrer1 | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1  | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2  | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee3  | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    
+    When the network moves ahead "5" epochs
+    Then "referee1" should have vesting account balance of "4000" for asset "USD-1-10"
+    And "referee2" should have vesting account balance of "4000" for asset "USD-1-10"
+    And "referee3" should have vesting account balance of "2000" for asset "USD-1-10"
+
+    And the parties place the following orders:
+      | party     | market id    | side | volume | price | resulting trades | type       | tif     |
+      | referrer1 | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1  | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2  | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee3  | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "5" epochs
+    Then "referee1" should have vesting account balance of "8000" for asset "USD-1-10"
+    And "referee2" should have vesting account balance of "8000" for asset "USD-1-10"
+    And "referee3" should have vesting account balance of "4000" for asset "USD-1-10"
+
+
   Scenario: Party funds pool with recurring transfer scoping teams
 
     Given the parties submit the following recurring transfers:
@@ -111,7 +145,7 @@ Feature: Maker fees paid reward metric calculated correctly for time window
       | referee3  | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
 
-    # NB: the change here is because before we were returning the score for fees paid for 0 so when choosing the top n members we'd be looking at the top 2 scores out of the 3 
+    # NB: the change here is because before we were returning the score for fees paid for 0 so when choosing the top n members we'd be looking at the top 2 scores out of the 3
     # so team2 would get a score of 0.6, now they get 0.3, and team1 gets 0.4 so team1 gets 0.4/0.7 and team2 gets 0.3/0.7
     Then "referee1" should have vesting account balance of "5714" for asset "USD-1-10"
     And "referee2" should have vesting account balance of "2142" for asset "USD-1-10"
