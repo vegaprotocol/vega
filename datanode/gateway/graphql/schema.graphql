@@ -1487,7 +1487,7 @@ type DispatchStrategy {
   capRewardFeeMultiple: String
 
   "Interval for the distribution of the transfer"
-  transfer_interval: Int!
+  transferInterval: Int
 }
 
 type RankTable {
