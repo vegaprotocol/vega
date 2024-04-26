@@ -2225,6 +2225,12 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		if ret.Order.Side == types.SideSell {
 			asset = m.baseAsset
 		}
+
+		// verify that the party has sufficient funds in their general account to cover for this amount
+		if err := m.collateral.PartyHasSufficientBalance(asset, ret.Order.Party, num.Sum(amt, fees)); err != nil {
+			return nil, nil, err
+		}
+
 		transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, ret.Order.ID, ret.Order.Party, asset, amt, fees)
 		if err != nil {
 			m.log.Panic("failed to transfer funds to holding account for order", logging.Order(ret.Order), logging.Error(err))
@@ -3042,6 +3048,12 @@ func (m *Market) transferToHoldingAccount(ctx context.Context, order *types.Orde
 	if order.Side == types.SideSell {
 		asset = m.baseAsset
 	}
+
+	// verify that the party has sufficient funds in their general account to cover for this amount
+	if err := m.collateral.PartyHasSufficientBalance(asset, order.Party, num.Sum(amt, fees)); err != nil {
+		return err
+	}
+
 	transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, order.ID, order.Party, asset, amt, fees)
 	if err != nil {
 		m.log.Panic("failed to transfer funds to holding account for order", logging.Order(order), logging.Error(err))
