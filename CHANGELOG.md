@@ -80,6 +80,7 @@
 - [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission.
 - [11177](https://github.com/vegaprotocol/vega/issues/11177) - Adjust the formulas for reduced position to the spec update and fix handling of closed out position.
 - [11193](https://github.com/vegaprotocol/vega/issues/11193) - Fix loading of liquidation strategy from proto with missing data. 
+- [11200](https://github.com/vegaprotocol/vega/issues/11200) - Make sure a party can afford the trades before they are submitted to the book. 
 
 ## 0.75.0
 
