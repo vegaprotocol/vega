@@ -105,9 +105,9 @@ func TheMarkets(
 		return nil, err
 	}
 
-	if err := enableVoteAsset(collateralEngine); err != nil {
-		return nil, err
-	}
+	// if err := enableVoteAsset(collateralEngine); err != nil {
+	// 	return nil, err
+	// }
 
 	for i, row := range rows {
 		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
