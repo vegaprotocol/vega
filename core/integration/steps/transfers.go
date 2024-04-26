@@ -154,7 +154,7 @@ func PartiesSubmitRecurringTransfers(
 func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "start_epoch", "end_epoch", "factor",
-	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "ranks", "cap_reward_fee_multiple", "error"})
+	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "ranks", "cap_reward_fee_multiple", "transfer_interval", "error"})
 }
 
 func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
@@ -190,6 +190,12 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 		windowLength := uint64(1)
 		if r.HasColumn("window_length") {
 			windowLength = r.U64("window_length")
+		}
+
+		var transferInterval *int32
+		if r.HasColumn("transfer_interval") {
+			interval := r.I32("transfer_interval")
+			transferInterval = &interval
 		}
 
 		distributionStrategy := proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
@@ -274,7 +280,8 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 			NTopPerformers:       ntop,
 			StakingRequirement:   stakingRequirement,
 			NotionalTimeWeightedAveragePositionRequirement: notionalRequirement,
-			RankTable: ranks,
+			RankTable:        ranks,
+			TransferInterval: transferInterval,
 		}
 		if capRewardFeeMultiple != "" {
 			dispatchStrategy.CapRewardFeeMultiple = &capRewardFeeMultiple
