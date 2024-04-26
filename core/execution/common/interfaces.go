@@ -35,6 +35,8 @@ var One = num.UintOne()
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks_amm/mocks.go -package mocks_amm code.vegaprotocol.io/vega/core/execution/common AMMPool,AMM
+
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
 
@@ -187,6 +189,23 @@ type Collateral interface {
 	GetLiquidityFeesBonusDistributionAccount(marketID, asset string) (*types.Account, error)
 	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
+
+	// amm stuff
+	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)
+	SubAccountUpdate(
+		ctx context.Context,
+		party, subAccount, asset, market string,
+		transferType types.TransferType,
+		amount *num.Uint,
+	) (*types.LedgerMovement, error)
+	SubAccountRelease(
+		ctx context.Context,
+		party, subAccount, asset, market string, pos events.MarketPosition,
+	) ([]*types.LedgerMovement, events.Margin, error)
+	CreatePartyAMMsSubAccounts(
+		ctx context.Context,
+		party, subAccount, asset, market string,
+	) (general *types.Account, margin *types.Account, err error)
 }
 
 type OrderReferenceCheck types.Order
@@ -252,6 +271,7 @@ type LiquidityEngine interface {
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 	OnProvidersFeeCalculationTimeStep(time.Duration)
 	IsProbabilityOfTradingInitialised() bool
+	GetPartyLiquidityScore(orders []*types.Order, bestBid, bestAsk num.Decimal, minP, maxP *num.Uint) num.Decimal
 
 	LiquidityProviderSLAStats(t time.Time) []*types.LiquidityProviderSLA
 
@@ -292,11 +312,23 @@ type MarketLiquidityEngine interface {
 	ProvisionsPerParty() liquidity.ProvisionsPerParty
 	OnMarketClosed(context.Context, time.Time)
 	CalculateSuppliedStake() *num.Uint
+	SetELSFeeFraction(d num.Decimal)
 }
 
 type EquityLikeShares interface {
 	AllShares() map[string]num.Decimal
 	SetPartyStake(id string, newStakeU *num.Uint)
+}
+
+type AMMPool interface {
+	OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order)
+	LiquidityFee() num.Decimal
+	CommitmentAmount() *num.Uint
+}
+
+type AMM interface {
+	GetAMMPoolsBySubAccount() map[string]AMMPool
+	GetAllSubAccounts() []string
 }
 
 type CommonMarket interface {
@@ -338,6 +370,7 @@ type CommonMarket interface {
 	OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal)
 	OnMarketLiquidityV2BondPenaltyFactorUpdate(d num.Decimal)
 	OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t time.Duration)
+	OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d num.Decimal)
 
 	// liquidity provision
 	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error
@@ -352,6 +385,10 @@ type CommonMarket interface {
 	CancelAllStopOrders(context.Context, string) error
 	CancelStopOrder(context.Context, string, string) error
 	SubmitStopOrdersWithIDGeneratorAndOrderIDs(context.Context, *types.StopOrdersSubmission, string, IDGenerator, *string, *string) (*types.OrderConfirmation, error)
+
+	SubmitAMM(context.Context, *types.SubmitAMM, string) error
+	AmendAMM(context.Context, *types.AmendAMM, string) error
+	CancelAMM(context.Context, *types.CancelAMM, string) error
 
 	PostRestore(context.Context) error
 }

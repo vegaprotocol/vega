@@ -27,7 +27,7 @@ type Entities interface {
 		LiquidityProvider | FundingPeriod | FundingPeriodDataPoint | ReferralSet | ReferralSetRefereeStats |
 		FlattenReferralSetStats | Team | TeamMember | TeamMemberHistory | FundingPayment | FlattenVolumeDiscountStats |
 		PaidLiquidityFeesStats | CurrentAndPreviousLiquidityProvisions | TransferDetails | Game | TeamsStatistics | TeamMembersStatistics |
-		PartyMarginMode | PartyProfile
+		PartyMarginMode | PartyProfile | AMMPool
 }
 
 type PagedEntity[T proto.Message] interface {

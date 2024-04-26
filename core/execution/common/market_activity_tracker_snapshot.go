@@ -28,6 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -282,6 +284,9 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 	}
 	sort.Strings(paid)
 
+	ammParties := maps.Keys(mt.ammPartiesCache)
+	sort.Strings(ammParties)
+
 	return &checkpoint.MarketActivityTracker{
 		Market:                          market,
 		Asset:                           mt.asset,
@@ -305,6 +310,7 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		ReturnsDataHistory:              epochReturnDataToProto(mt.epochPartyM2M),
 		RealisedReturns:                 returnsDataToProto(mt.partyRealisedReturn),
 		RealisedReturnsHistory:          epochReturnDataToProto(mt.epochPartyRealisedReturn),
+		AmmParties:                      ammParties,
 	}
 }
 
@@ -409,6 +415,11 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		epochTimeWeightedPosition:   []map[string]uint64{},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
+		ammPartiesCache:             map[string]struct{}{},
+	}
+
+	for _, party := range tracker.AmmParties {
+		mft.ammPartiesCache[party] = struct{}{}
 	}
 
 	for _, bpfpa := range tracker.BonusPaid {

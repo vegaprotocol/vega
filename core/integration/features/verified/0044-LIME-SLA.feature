@@ -52,6 +52,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
       | validators.epoch.length                             | 10s   |
       | market.liquidity.providersFeeCalculationTimeStep    | 10s   |
+      | market.liquidity.equityLikeShareFeeFraction         | 1     |
+
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 0.5              | 20s         | 1.0            |
@@ -406,3 +408,94 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the parties should have the following account balances:
       | party | asset | market id | margin  | general  | bond  |
       | lp1   | USD   | ETH/JAN23 | 2806398 | 17013602 | 22500 |
+
+  @Now
+  Scenario: 001b: lp1 and lp2 under supplies liquidity (and expects to get penalty for not meeting the SLA) since both have orders outside price range, this time with half the fees paid based on score.
+    # half of the fees get paid based on score, the other half will be paid based on ELS.
+    Given the following network parameters are set:
+      | name                                        | value |
+      | market.liquidity.equityLikeShareFeeFraction | 0.5   |
+    And the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | lp1    | USD   | 200000 |
+      | lp2    | USD   | 15000  |
+      | party1 | USD   | 100000 |
+      | party2 | USD   | 100000 |
+      | party3 | USD   | 100000 |
+
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type    |
+      | lp_1 | lp1   | ETH/MAR22 | 80000             | 0.02 | submission |
+      | lp_2 | lp2   | ETH/MAR22 | 500               | 0.01 | submission |
+
+    When the network moves ahead "2" blocks
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2      | 200    | lp-b-1    |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 2      | 200    | lp-s-1    |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2      | 200    | lp-b-2    |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 2      | 200    | lp-s-2    |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1000  | 1    | party2 |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 80500          | 1             |
+    # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569036
+
+    And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
+
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 10671  | 109329  | 80000 |
+      | lp2   | USD   | ETH/MAR22 | 10671  | 3829    | 500   |
+    #margin_intial lp2: 2*1000*3.5569036*1.5=10671
+    #lp1: 21342+98658+80000=200000; lp2: 10671+3829+500=15000
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 7113         | 80500          | 2             |
+
+    Then the network moves ahead "6" blocks
+
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 10671  | 109329  | 40000 |
+      | lp2   | USD   | ETH/MAR22 | 10671  | 3829    | 250   |
+    #liquidity fee: 1000*0.02 = 20; lp1 get 19, lp2 get 0
+
+    Then the following transfers should happen:
+      | from   | to     | from account                   | to account                     | market id | amount | asset |
+      | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 14     | USD   |
+      | lp1    | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 40000  | USD   |
+      | lp2    | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 250    | USD   |
+      | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 14     | USD   |
+
+    And the insurance pool balance should be "40269" for the market "ETH/MAR22"
+
+    Then the network moves ahead "6" blocks
+
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 10671  | 109329  | 20000 |
+      | lp2   | USD   | ETH/MAR22 | 10671  | 3829    | 125   |
+
+    And the insurance pool balance should be "60394" for the market "ETH/MAR22"
+  # #increament in insurancepool: 60394-40269=20125 which is coming from SLA penalty on lp1 and lp2
+
+
