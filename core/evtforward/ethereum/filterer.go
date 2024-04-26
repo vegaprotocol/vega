@@ -248,6 +248,38 @@ func (f *LogFilterer) FilterMultisigControlEvents(ctx context.Context, startAt, 
 	}
 }
 
+// VerifyClient checks that the configured RPC node is able to properly query contract logs.
+func (f *LogFilterer) VerifyClient(ctx context.Context) error {
+	if f.cfg.SkipClientVerification {
+		f.log.Warn("skipping client verification", logging.String("chain-id", f.chainID))
+		return nil
+	}
+
+	f.log.Info("verifying forwarder client",
+		logging.String("chain-id", f.chainID),
+		logging.String("multisig-address", f.multiSigControl.HexAddress()),
+		logging.Uint64("deployment-height", f.multiSigControl.DeploymentBlockHeight()),
+	)
+	query := f.newMultisigControlQuery(
+		f.multiSigControl.DeploymentBlockHeight(),
+		f.multiSigControl.DeploymentBlockHeight()+1,
+	)
+
+	// we expect logs for the multisig at its deployment height, if the filter call fails
+	// or we don't find any logs then the Vega node isn't talking to a reliable RPC node
+	// or is pointing to the wrong chain.
+	logs, err := f.client.FilterLogs(ctx, query)
+	if err != nil {
+		return fmt.Errorf("please check your RPC node - failed to query contract logs: %w", err)
+	}
+
+	if len(logs) == 0 {
+		return fmt.Errorf("please check your RPC node - found no contract logs")
+	}
+
+	return nil
+}
+
 func (f *LogFilterer) filterLogs(ctx context.Context, query eth.FilterQuery) []ethtypes.Log {
 	var logs []ethtypes.Log
 
