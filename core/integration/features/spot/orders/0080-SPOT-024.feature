@@ -1,6 +1,6 @@
 Feature: Spot market bug (from the incentive) replication
 
-  Scenario: 0080-SPOT-024, 0080-SPOT-025 market orders should be rejected when traders do not have enough collateral to cover the trades in spot market 
+  Scenario: 0080-SPOT-024, 0080-SPOT-025 market orders should be rejected when traders do not have enough collateral to cover the trades in spot market
   Background:
 
     Given the following network parameters are set:
@@ -82,11 +82,11 @@ Feature: Spot market bug (from the incentive) replication
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     | reference | error                        |
-      | party3 | BTC/USD   | buy  | 20     | 0     | 0                | TYPE_MARKET | TIF_IOC |           | insufficient funds for order |
+      | party3 | BTC/USD   | buy  | 20     | 0     | 0                | TYPE_MARKET | TIF_IOC | p3-b1     | insufficient funds for order |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     | reference | error                                                              |
-      | party4 | BTC/USD   | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC |           | party does not have sufficient balance to cover the trade and fees |
+      | party4 | BTC/USD   | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | p4-s1     | party does not have sufficient balance to cover the trade and fees |
 
     Then the network moves ahead "1" blocks
 
@@ -97,5 +97,30 @@ Feature: Spot market bug (from the incentive) replication
 
     Then "party3" should have general account balance of "1000" for asset "USD"
     Then "party4" should have general account balance of "1" for asset "BTC"
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | party3 | BTC/USD   | buy  | 20     | 10    | 0                | TYPE_LIMIT | TIF_GTC | p3-b2     |       |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | party4 | BTC/USD   | sell | 1      | 66000 | 0                | TYPE_LIMIT | TIF_GTC | p4-s2     |       |
+
+    #0080-SPOT-026: amend order - order is amended such that would trade immediately and the party can't afford none/some of the trades
+    When the parties amend the following orders:
+      | party  | reference | price | size delta | tif     | error                                                              |
+      | party3 | p3-b2     | 66000 | -10        | TIF_GTC | party does not have sufficient balance to cover the trade and fees |
+      | party4 | p4-s2     | 59000 | 2          | TIF_GTC | party does not have sufficient balance to cover the new size       |
+
+    #0080-SPOT-027:submit order - limit order, partly matched, party can't afford the trades
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                              |
+      | party3 | BTC/USD   | buy  | 6      | 6100  | 0                | TYPE_LIMIT | TIF_GTC | p3-b3     | party does not have sufficient balance to cover the trade and fees |
+
+    #0080-SPOT-028:submit order - limit order, no match, added to the book, party can't cover the amount that needs to be transfered to the holding
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                              |
+      | party4 | BTC/USD   | sell | 2      | 67000 | 0                | TYPE_LIMIT | TIF_GTC | p4-s3     | party does not have sufficient balance to cover the trade and fees |
+
 
 
