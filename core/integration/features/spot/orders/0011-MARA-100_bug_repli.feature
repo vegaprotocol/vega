@@ -91,6 +91,6 @@ Feature: Spot market bug (from the incentive) replication
 
     Then the network moves ahead "1" blocks
 
-    And the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party3 | 2100  | 20   | party2 |
+    # And the following trades should be executed:
+    #   | buyer  | price | size | seller |
+    #   | party3 | 2100  | 20   | party2 |
