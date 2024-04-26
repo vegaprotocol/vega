@@ -24,7 +24,7 @@ Feature: Spot market bug (from the incentive) replication
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 360000  | 0.999       | 1                 |
+      | 36000   | 0.999       | 1                 |
 
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | decimal places | position decimal places | sla params    |
@@ -39,14 +39,14 @@ Feature: Spot market bug (from the incentive) replication
       | market.liquidity.stakeToCcyVolume                | 1     |
 
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount  |
-      | party1 | USD   | 5000000 |
-      | party1 | BTC   | 100     |
-      | party2 | USD   | 1000    |
-      | party3 | USD   | 1000    |
-      | party2 | BTC   | 100     |
-      | lp     | USD   | 1000    |
-      | lp     | BTC   | 100     |
+      | party  | asset | amount   |
+      | party1 | USD   | 50000000 |
+      | party1 | BTC   | 100      |
+      | party2 | USD   | 1000     |
+      | party3 | USD   | 1000     |
+      | party2 | BTC   | 100      |
+      | lp     | USD   | 1000     |
+      | lp     | BTC   | 100      |
     And the average block duration is "1"
 
     Given the parties submit the following liquidity provision:
@@ -58,23 +58,23 @@ Feature: Spot market bug (from the incentive) replication
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | BTC/USD   | buy  | 100    | 5500  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | BTC/USD   | buy  | 3      | 5900  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | BTC/USD   | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/USD   | sell | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/USD   | sell | 3      | 6100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/USD   | sell | 3      | 6200  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/USD   | sell | 4      | 6300  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/USD   | sell | 10     | 6400  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/USD   | sell | 5      | 6500  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | BTC/USD   | buy  | 100    | 55000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | BTC/USD   | buy  | 3      | 59000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | BTC/USD   | buy  | 1      | 60000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 1      | 60000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 3      | 61000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 3      | 62000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 4      | 63000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 10     | 64000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/USD   | sell | 5      | 65000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the network moves ahead "2" blocks
 
     Then the market data for the market "BTC/USD" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | open interest |
-      | 6000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 3904      | 9072      | 0             |
+      | 60000      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 36000   | 52466     | 68503     | 0             |
 
-    Then "party2" should have general account balance of "7000" for asset "USD"
+    Then "party2" should have general account balance of "61000" for asset "USD"
     Then "party2" should have general account balance of "74" for asset "BTC"
 
     Then "party2" should have holding account balance of "25" for asset "BTC"
@@ -88,12 +88,12 @@ Feature: Spot market bug (from the incentive) replication
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
-      | party3 | 6400  | 10   | party2 |
-      | party3 | 6300  | 4    | party2 |
-      | party3 | 6200  | 3    | party2 |
-      | party3 | 6100  | 3    | party2 |
+      | party3 | 64000 | 10   | party2 |
+      | party3 | 63000 | 4    | party2 |
+      | party3 | 62000 | 3    | party2 |
+      | party3 | 61000 | 3    | party2 |
 
-    Then "party2" should have general account balance of "8000" for asset "USD"
+    Then "party2" should have general account balance of "62000" for asset "USD"
     Then "party2" should have general account balance of "74" for asset "BTC"
 
     Then "party2" should have holding account balance of "5" for asset "BTC"
