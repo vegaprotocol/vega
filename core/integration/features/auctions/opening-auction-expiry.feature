@@ -58,5 +58,16 @@ Feature: Set up a market, create indiciative price different to actual opening a
 
     # Now the market should be cancelled
     Then the last market state should be "STATE_CANCELLED" for the market "ETH/DEC19"
- 
-    Then "party1" should have general account balance of "18" for asset "BTC"
+
+    #orders are cancelled
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | party5 | t5-s-1    | STATUS_CANCELLED |
+      | party6 | t6-b-1    | STATUS_CANCELLED |
+
+    #asset is released for party with orders and LP commitment
+    Then "party1" should have general account balance of "100000000" for asset "BTC"
+    Then "party5" should have general account balance of "100000000" for asset "BTC"
+    Then "party6" should have general account balance of "100000000" for asset "BTC"
+
+
