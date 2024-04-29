@@ -2489,6 +2489,8 @@ type PriceMonitoringBounds {
   trigger: PriceMonitoringTrigger!
   "Reference price used to calculate the valid price range"
   referencePrice: String!
+  "Has this bound been triggered yet or is it still active"
+  active: Boolean
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"

@@ -51,6 +51,7 @@ type PriceMonitoringBounds struct {
 	MaxValidPrice  *num.Uint
 	Trigger        *PriceMonitoringTrigger
 	ReferencePrice num.Decimal
+	Active         bool
 }
 
 func (p PriceMonitoringBounds) String() string {
@@ -145,6 +146,7 @@ func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 		MaxValidPrice:  num.UintToString(p.MaxValidPrice),
 		Trigger:        trigger,
 		ReferencePrice: p.ReferencePrice.BigInt().String(),
+		Active:         p.Active,
 	}
 }
 
@@ -165,6 +167,7 @@ func PriceMonitoringBoundsFromProto(pr *proto.PriceMonitoringBounds) (*PriceMoni
 		MinValidPrice:  minValid,
 		MaxValidPrice:  maxValid,
 		ReferencePrice: refPrice,
+		Active:         pr.Active,
 	}
 	if pr.Trigger != nil {
 		p.Trigger = PriceMonitoringTriggerFromProto(pr.Trigger)

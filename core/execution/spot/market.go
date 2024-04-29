@@ -397,7 +397,7 @@ func (m *Market) GetMarketData() types.MarketData {
 	}
 
 	targetStake := m.getTargetStake().String()
-	bounds := m.pMonitor.GetCurrentBounds()
+	bounds := m.pMonitor.GetBounds()
 	for _, b := range bounds {
 		b.MaxValidPrice = m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
 		b.MinValidPrice = m.priceToMarketPrecision(b.MinValidPrice)
