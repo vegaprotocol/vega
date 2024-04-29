@@ -31,6 +31,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
 
     # Start market with some dead time
     And the network moves ahead "5" blocks
+    Then the parties submit the following liquidity provision:
+      | id     | party  | market id | commitment amount | fee | lp type    |
+      | party1 | party1 | ETH/DEC19 | 30000             | 0.1 | submission |
+
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
@@ -54,3 +58,5 @@ Feature: Set up a market, create indiciative price different to actual opening a
 
     # Now the market should be cancelled
     Then the last market state should be "STATE_CANCELLED" for the market "ETH/DEC19"
+ 
+    Then "party1" should have general account balance of "18" for asset "BTC"
