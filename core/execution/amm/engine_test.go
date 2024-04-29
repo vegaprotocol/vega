@@ -488,6 +488,15 @@ func testBestPricesAndVolume(t *testing.T) {
 	assert.Equal(t, "2001", ask.String())
 	assert.Equal(t, uint64(38526), bvolume)
 	assert.Equal(t, uint64(36615), avolume)
+
+	// test GetVolumeAtPrice returns the same volume given best bid/ask
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(6 * 2).Return(
+		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
+	)
+	bvAt := tst.engine.GetVolumeAtPrice(bid, types.SideSell)
+	assert.Equal(t, bvolume, bvAt)
+	avAt := tst.engine.GetVolumeAtPrice(ask, types.SideBuy)
+	assert.Equal(t, avolume, avAt)
 }
 
 func testClosingReduceOnlyPool(t *testing.T) {
