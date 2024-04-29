@@ -299,10 +299,10 @@ func testBasicSubmitOrder(t *testing.T) {
 		Price:     num.NewUint(1900),
 	}
 
-	ensureBalancesN(t, tst.col, 10000000000, 2)
+	ensureBalancesN(t, tst.col, 10000000000, 3)
 	orders = tst.engine.SubmitOrder(agg, num.NewUint(2020), num.NewUint(1990))
 	require.Len(t, orders, 1)
-	assert.Equal(t, "2035", orders[0].Price.String())
+	assert.Equal(t, "2036", orders[0].Price.String())
 	// note that this volume being bigger than 242367 above means we've moved back to position, then flipped
 	// sign, and took volume from the other curve.
 	assert.Equal(t, uint64(371231), orders[0].Size)
@@ -408,7 +408,7 @@ func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
 	assert.Equal(t, "2049", orders[2].Price.String())
 
 	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
-	assert.Equal(t, "2124", orders[3].Price.String())
+	assert.Equal(t, "2125", orders[3].Price.String())
 	assert.Equal(t, "2124", orders[4].Price.String())
 
 	// third round, 1 orders moving the last pool to its boundary
@@ -459,11 +459,11 @@ func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
 	assert.Equal(t, "2053", orders[2].Price.String())
 
 	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
-	assert.Equal(t, "1923", orders[3].Price.String())
-	assert.Equal(t, "1923", orders[4].Price.String())
+	assert.Equal(t, "1925", orders[3].Price.String())
+	assert.Equal(t, "1925", orders[4].Price.String())
 
 	// third round, 1 orders moving the last pool to its boundary
-	assert.Equal(t, "1872", orders[5].Price.String())
+	assert.Equal(t, "1875", orders[5].Price.String())
 }
 
 func testBestPricesAndVolume(t *testing.T) {

@@ -31,7 +31,7 @@ import (
 
 func TestAMMPool(t *testing.T) {
 	t.Run("test volume between prices", testTradeableVolumeInRange)
-	t.Run("test trade price", testTradePrice)
+	t.Run("test best price", testBestPrice)
 	t.Run("test pool logic with position factor", testPoolPositionFactor)
 }
 
@@ -107,61 +107,55 @@ func testPoolPositionFactor(t *testing.T) {
 	assert.Equal(t, int(2222222), int(volume))
 
 	ensurePosition(t, p.pos, -1, num.NewUint(2000))
-	ensureBalances(t, p.col, 1000000)
+	ensureBalances(t, p.col, 100000)
 
 	// now best price should be the same as if the factor were 1, since its a price and not a volume
 	fairPrice := p.pool.BestPrice(nil)
-	assert.Equal(t, "1410", fairPrice.String())
+	assert.Equal(t, "2001", fairPrice.String())
 }
 
-func testTradePrice(t *testing.T) {
+func testBestPrice(t *testing.T) {
 	p := newTestPool(t)
 	defer p.ctrl.Finish()
 
 	tests := []struct {
-		name              string
-		position          int64
-		balance           uint64
-		averageEntryPrice *num.Uint
-		expectedPrice     string
-		order             *types.Order
+		name          string
+		position      int64
+		balance       uint64
+		expectedPrice string
+		order         *types.Order
 	}{
 		{
-			name:              "fair price is base price when position is zero",
-			expectedPrice:     "2000",
-			averageEntryPrice: num.UintZero(),
+			name:          "best price is base price when position is zero",
+			expectedPrice: "2000",
 		},
 		{
-			name:              "fair price positive position",
-			expectedPrice:     "1999",
-			position:          1,
-			balance:           1000000,
-			averageEntryPrice: num.NewUint(2000),
+			name:          "best price positive position",
+			expectedPrice: "1999",
+			position:      1,
+			balance:       100000,
 		},
 		{
-			name:              "fair price negative position",
-			expectedPrice:     "1410",
-			position:          -1,
-			balance:           1000000,
-			averageEntryPrice: num.NewUint(2000),
+			name:          "fair price negative position",
+			expectedPrice: "2001",
+			position:      -1,
+			balance:       100000,
 		},
 		{
-			name:              "trade price incoming buy",
-			expectedPrice:     "2000",
-			position:          1,
-			balance:           1000000,
-			averageEntryPrice: num.NewUint(2000),
+			name:          "best price incoming buy",
+			expectedPrice: "2000",
+			position:      1,
+			balance:       100000,
 			order: &types.Order{
 				Side: types.SideBuy,
 				Size: 1,
 			},
 		},
 		{
-			name:              "trade price incoming buy",
-			expectedPrice:     "1998",
-			position:          1,
-			balance:           1000000,
-			averageEntryPrice: num.NewUint(2000),
+			name:          "best price incoming buy",
+			expectedPrice: "1998",
+			position:      1,
+			balance:       100000,
 			order: &types.Order{
 				Side: types.SideSell,
 				Size: 1,
@@ -172,10 +166,11 @@ func testTradePrice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			order := tt.order
-			ensurePosition(t, p.pos, tt.position, tt.averageEntryPrice)
+			ensurePosition(t, p.pos, tt.position, num.UintZero())
 
 			if tt.position < 0 {
 				ensureBalances(t, p.col, tt.balance)
+				// ensureBalances(t, p.col, tt.balance)
 			}
 			fairPrice := p.pool.BestPrice(order)
 			assert.Equal(t, tt.expectedPrice, fairPrice.String())
@@ -211,9 +206,9 @@ func TestOneSidedCurve(t *testing.T) {
 
 	// fair price at short position is still ok
 	ensurePosition(t, p.pos, -10, num.UintZero())
-	ensureBalances(t, p.col, 1000000)
+	ensureBalances(t, p.col, 100000)
 	price = p.pool.BestPrice(nil)
-	assert.Equal(t, price.String(), "1410")
+	assert.Equal(t, price.String(), "2002")
 
 	// fair price when long should panic since AMM should never be able to get into that state
 	// fair price at short position is still ok
@@ -302,11 +297,11 @@ func TestNotebook(t *testing.T) {
 	ensurePosition(t, p.pos, -876, upmid.Clone())
 	ensureBalances(t, p.col, 100000)
 	fairPrice := p.pool.BestPrice(nil)
-	assert.Equal(t, "2095", fairPrice.String())
+	assert.Equal(t, "2093", fairPrice.String())
 
 	ensurePosition(t, p.pos, 1154, lowmid.Clone())
 	fairPrice = p.pool.BestPrice(nil)
-	assert.Equal(t, "1893", fairPrice.String())
+	assert.Equal(t, "1892", fairPrice.String())
 }
 
 type tstPool struct {
