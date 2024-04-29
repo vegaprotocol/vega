@@ -288,7 +288,7 @@ func (r RowWrapper) U64(name string) uint64 {
 }
 
 func U64(value string) (uint64, error) {
-	return strconv.ParseUint(value, 10, 0)
+	return strconv.ParseUint(value, 10, 64)
 }
 
 func (r RowWrapper) MustU32(name string) uint32 {
