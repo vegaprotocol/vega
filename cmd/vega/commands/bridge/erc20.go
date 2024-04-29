@@ -33,7 +33,6 @@ import (
 type ERC20Cmd struct {
 	config.VegaHomeFlag
 	config.PassphraseFlag
-	Config     nodewallets.Config
 	PrivateKey string `description:"A ethereum private key to be use to sign the messages"                                         long:"private-key" required:"false"`
 	ChainID    string `description:"The chain-id of the EVM bridge. Not required if generating signatures for the Ethereum bridge" long:"chain-id"    required:"false"`
 
@@ -60,38 +59,36 @@ type ERC20Cmd struct {
 var erc20Cmd *ERC20Cmd
 
 func (e *ERC20Cmd) GetSigner() (bridges.Signer, error) {
-	vegaPaths := paths.New(e.VegaHome)
-
-	_, conf, err := config.EnsureNodeConfig(vegaPaths)
-	if err != nil {
-		return nil, err
-	}
-
-	e.Config = conf.NodeWallet
-
-	var s bridges.Signer
 	if len(e.PrivateKey) <= 0 {
 		pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 		if err != nil {
 			return nil, err
 		}
 
-		s, err = nodewallets.GetEthereumWallet(vegaPaths, pass)
+		vegaPaths := paths.New(e.VegaHome)
+
+		if _, _, err := config.EnsureNodeConfig(vegaPaths); err != nil {
+			return nil, err
+		}
+
+		s, err := nodewallets.GetEthereumWallet(vegaPaths, pass)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 		}
-	} else {
-		s, err = NewPrivKeySigner(e.PrivateKey)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't load private key: %w", err)
-		}
+
+		return s, nil
 	}
+
+	s, err := NewPrivKeySigner(e.PrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load private key: %w", err)
+	}
+
 	return s, nil
 }
 
 func ERC20() *ERC20Cmd {
 	erc20Cmd = &ERC20Cmd{
-		Config:                 nodewallets.NewDefaultConfig(),
 		AddSigner:              ERC20AddSignerCmd{},
 		RemoveSigner:           ERC20RemoveSignerCmd{},
 		SetThreshold:           ERC20SetThresholdCmd{},
@@ -634,8 +631,6 @@ func (opts *ERC20VerifyGlobalResumeCmd) Execute(_ []string) error {
 	for _, v := range signers {
 		fmt.Printf("%v\n", v)
 	}
-	return nil
-
 	return nil
 }
 
