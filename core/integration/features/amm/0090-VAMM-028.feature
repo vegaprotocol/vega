@@ -257,7 +257,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm2-id | -74    | -304           | 0            | true   |
       | vamm1-id | -74    | 0              | 0            | true   |
 
-  @VAMM9
+  @VAMM
   Scenario: 0090-VAMM-029: The volume quoted to move from price 100 to price 90 in one step is the same as the sum of the volumes to move in 10 steps of 1.
     # Move mid price to 90 in one go. A volume of 347 is the minimum required, 346 only gets us to 91
     When the parties place the following orders:
@@ -399,3 +399,26 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party6   | -347   | 1472           | 0            |        |
       | vamm2-id | 347    | -1472          | 0            | true   |
       | vamm1-id | 347    | 0              | 0            | true   |
+
+  @VAMM
+  Scenario: 0090-VAMM-030: The volume quoted to move from price 110 to 90 is the same as the volume to move from 100 to 110 + 100 to 90.
+    # start out by moving mid prices to 90 and 110 respectively, these are the volumes required to move the price accordingly
+    # We don't need to do this as part of this test, but it serves to show where we get the volumes from
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party5 | ETH/MAR22 | sell | 347    | 90    | 1                | TYPE_LIMIT | TIF_GTC |
+      | party6 | ETH/MAR23 | buy  | 74     | 110   | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR23" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price | best offer price | best bid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 2999         | 1000           | 75            | 100       | 110       | 110              | 111              | 109            |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price | best offer price | best bid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 13915        | 1000           | 348           | 100       | 90        | 90               | 91               | 89             |
+
+    # Now to move from 110 down to 90, the volume ought to be 421 (=347+74)
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party6 | ETH/MAR23 | sell | 421    | 90    | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR23" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price | best offer price | best bid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 13915        | 1000           | 348           | 100       | 90        | 90               | 91               | 89             |
