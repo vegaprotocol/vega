@@ -342,6 +342,19 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 	return bestBid, bestBidVolume, bestAsk, bestAskVolume
 }
 
+// GetVolumeAtPrice returns the volumes across all registered AMM's that will uncross with with an order at the given price.
+// Calling this function with price 1000 and side == sell will return the buy orders that will uncross.
+func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
+	vol := uint64(0)
+	for _, pool := range e.poolsCpy {
+		// get the pool's current price
+		fp := pool.BestPrice(nil)
+		volume := pool.TradableVolumeInRange(side, fp, price)
+		vol += volume
+	}
+	return vol
+}
+
 func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint) []*types.Order {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("checking for volume between",

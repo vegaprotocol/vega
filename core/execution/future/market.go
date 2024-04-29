@@ -295,7 +295,6 @@ func NewMarket(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, positionEngine, pMonitor)
 
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -337,12 +336,13 @@ func NewMarket(
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
 		partyMarginFactor:             map[string]num.Decimal{},
-		liquidation:                   le,
 		banking:                       banking,
 		markPriceCalculator:           common.NewCompositePriceCalculator(ctx, mkt.MarkPriceConfiguration, oracleEngine, timeService),
 	}
 
 	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor, positionFactor, marketActivityTracker)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, positionEngine, pMonitor, market.amm)
+	market.liquidation = le
 	// now set AMM engine on liquidity market.
 	market.liquidity.SetAMM(market.amm)
 

@@ -32,13 +32,17 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,IDGen,Positions,PriceMonitor
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,IDGen,Positions,PriceMonitor,AMM
 
 type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
 
 type Book interface {
+	GetVolumeAtPrice(price *num.Uint, side types.Side) uint64
+}
+
+type AMM interface {
 	GetVolumeAtPrice(price *num.Uint, side types.Side) uint64
 }
 
@@ -65,6 +69,7 @@ type Engine struct {
 	position Positions
 	stopped  bool
 	pmon     PriceMonitor
+	amm      AMM
 }
 
 // protocol upgrade - default values for existing markets/proposals.
@@ -100,7 +105,7 @@ func GetLegacyStrat() *types.LiquidationStrategy {
 	return legacyStrat.DeepClone()
 }
 
-func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, pe Positions, pmon PriceMonitor) *Engine {
+func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, pe Positions, pmon PriceMonitor, amm AMM) *Engine {
 	// NOTE: This can be removed after protocol upgrade
 	if cfg == nil {
 		cfg = legacyStrat.DeepClone()
@@ -116,6 +121,7 @@ func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, brok
 		position: pe,
 		pos:      &Pos{},
 		pmon:     pmon,
+		amm:      amm,
 	}
 }
 
@@ -166,6 +172,7 @@ func (e *Engine) OnTick(ctx context.Context, now time.Time, midPrice *num.Uint) 
 		size = uint64(num.DecimalFromFloat(float64(size)).Mul(e.cfg.DisposalFraction).Ceil().IntPart())
 	}
 	available := e.book.GetVolumeAtPrice(bound, bookSide)
+	available += e.amm.GetVolumeAtPrice(price, side)
 	if available == 0 {
 		return nil, nil
 	}
