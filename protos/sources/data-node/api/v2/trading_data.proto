@@ -936,7 +936,7 @@ service TradingDataService {
   rpc GetTimeWeightedNotionalPosition(GetTimeWeightedNotionalPositionRequest) returns (GetTimeWeightedNotionalPositionResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
   }
-  
+
   // List AMM Pools
   //
   // Get a list of AMM pools or filter by market ID, party ID or pool ID
