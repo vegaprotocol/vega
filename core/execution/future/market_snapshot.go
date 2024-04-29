@@ -196,7 +196,6 @@ func NewMarketFromSnapshot(
 		// @TODO check for migration from v0.75.8, strictly speaking, not doing so should have the same effect, though...
 		mkt.LiquidationStrategy.DisposalSlippage = mkt.LiquiditySLAParams.PriceRange
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor)
 
 	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
 	for _, pmf := range em.PartyMarginFactors {
@@ -248,7 +247,6 @@ func NewMarketFromSnapshot(
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
 		partyMarginFactor:             partyMargin,
-		liquidation:                   le,
 		banking:                       banking,
 		markPriceCalculator:           markPriceCalculator,
 	}
@@ -266,6 +264,8 @@ func NewMarketFromSnapshot(
 	} else {
 		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor, marketActivityTracker)
 	}
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor, market.amm)
+	market.liquidation = le
 	// now we can set the AMM on the market liquidity engine.
 	market.liquidity.SetAMM(market.amm)
 
