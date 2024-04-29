@@ -409,6 +409,8 @@ func (p BatchProposalTerms) changesToProto() []*vegapb.BatchProposalTermsChange 
 			termsChange.Change = ch
 		case *vegapb.BatchProposalTermsChange_UpdateAsset:
 			termsChange.Change = ch
+		case *vegapb.BatchProposalTermsChange_NewAsset:
+			termsChange.Change = ch
 		case *vegapb.BatchProposalTermsChange_NewFreeform:
 			termsChange.Change = ch
 		case *vegapb.BatchProposalTermsChange_NewTransfer:
