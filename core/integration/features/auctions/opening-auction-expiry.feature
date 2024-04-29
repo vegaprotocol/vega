@@ -16,7 +16,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | limits.markets.maxPeggedOrders          | 2     |
 
   @DebugAuctionMax @Expires
-  Scenario: Simple test verifying the market is cancelled if it failes to leave opening auction
+  Scenario: 0043-MKTL-012 Simple test verifying the market is cancelled if it failes to leave opening auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |

@@ -18,7 +18,7 @@ Feature: Set up a spot market, with an opening auction, then uncross the book. M
       | id      | name    | base asset | quote asset | risk model           | auction duration | fees          | price monitoring | sla params    |
       | BTC/ETH | BTC/ETH | BTC        | ETH         | my-simple-risk-model | 5                | fees-config-1 | default-none     | default-basic |
 
-  Scenario: Ensure spot markets get cancelled if they fail to leave opening auction
+  Scenario: 0043-MKTL-013 Ensure spot markets get cancelled if they fail to leave opening auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
