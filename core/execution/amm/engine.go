@@ -258,7 +258,7 @@ func (e *Engine) OnMTM(ctx context.Context) {
 		if !p.closing() {
 			continue
 		}
-		if pos, _ := p.getPosition(); pos != 0 {
+		if pos := p.getPosition(); pos != 0 {
 			continue
 		}
 
@@ -420,26 +420,14 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 			continue
 		}
 
-		pos, ae := p.getPosition()
-		x, y := p.virtualBalances(pos, ae, agg.Side)
-		dx := num.DecimalFromInt64(int64(volume))
+		// calculate the price the pool wil give for the trading volume
+		price := p.PriceForVolume(volume, agg.Side)
 
-		// dy = x*y / (x - dx) - y
-		// where y and x are the balances on either side of the pool, and dx is the change in volume
-		// then the trade price is dy/dx
-		dy := x.Mul(y).Div(x.Sub(dx)).Sub(y)
-		price, _ := num.UintFromDecimal(dy.Div(dx))
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("generated order at price",
 				logging.String("price", price.String()),
 				logging.Uint64("volume", volume),
 				logging.String("id", p.ID),
-				logging.Int64("pos", pos),
-				logging.String("average-entry", ae.String()),
-				logging.String("y", y.String()),
-				logging.String("x", x.String()),
-				logging.String("dy", dy.String()),
-				logging.String("dx", dx.String()),
 			)
 		}
 

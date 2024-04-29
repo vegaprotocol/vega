@@ -200,56 +200,56 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party5 | ETH/MAR22 | sell | 40     | 115   | 1                | TYPE_LIMIT | TIF_GTC |
     Then the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 128   | 40   | party5 | true   |
+      | vamm1-id | 129   | 40   | party5 | true   |
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 347    | 1492           | 0            |        |
-      | party5   | -219   | 6221           | 0            |        |
-      | vamm1-id | -128   | -768           | -6945        | true   |
+      | party4   | 347    | 1839           | 0            |        |
+      | party5   | -219   | 6042           | 0            |        |
+      | vamm1-id | -128   | -896           | -6985        | true   |
     And the following transfers should happen:
        | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
        |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 21     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1008   | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 7627   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH       |
+       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1176   | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
+       | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 7191   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH       |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 900000  |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 58159   | 34404   | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 57723   | 34672   | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 128        | TRADING_MODE_CONTINUOUS | 120       | 120              | 122              | 119            |
+      | 129        | TRADING_MODE_CONTINUOUS | 121       | 121              | 122              | 120            |
 
     # OK, zero-out the vAMM
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party5 | ETH/MAR22 | sell | 128    | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/MAR22 | sell | 129    | 100   | 1                | TYPE_LIMIT | TIF_GTC |
     Then the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 130   | 128  | party5 | true   |
+      | vamm1-id | 131   | 128  | party5 | true   |
 
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 347    | 2186           | 0            |        |
-      | party5   | -347   | 5783           | 0            |        |
-      | vamm1-id | 0      | 0              | -7969        | true   |
+      | party4   | 347    | 2533           | 0            |        |
+      | party5   | -347   | 5604           | 0            |        |
+      | vamm1-id | 0      | 0              | -8137        | true   |
     And the AMM pool status should be:
       | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
     And the following transfers should happen:
       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 67     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 68     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 256    | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 34148  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92374  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 34416  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92207  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
-      | vamm1    | USD   |           | 992374  |        |        |
+      | vamm1    | USD   |           | 992207  |        |        |
       | vamm1-id | USD   | ETH/MAR22 | 0       | 0      | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 130        | TRADING_MODE_CONTINUOUS | 81        | 81               | 122              | 40             |
+      | 131        | TRADING_MODE_CONTINUOUS | 70        | 70               | 100              | 40             |
 
   @VAMM
   Scenario: 0087-VAMM-021: Same as the test above, only this time, the final order that closes the vAMM position is bigger than the remaining volume, so we check if the vAMM is cancelled instead of going long.
@@ -354,25 +354,25 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party5 | ETH/MAR22 | sell | 40     | 115   | 1                | TYPE_LIMIT | TIF_GTC |
     Then the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 128   | 40   | party5 | true   |
+      | vamm1-id | 129   | 40   | party5 | true   |
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 347    | 1492           | 0            |        |
-      | party5   | -219   | 6221           | 0            |        |
-      | vamm1-id | -128   | -768           | -6945        | true   |
+      | party4   | 347    | 1839           | 0            |        |
+      | party5   | -219   | 6042           | 0            |        |
+      | vamm1-id | -128   | -896           | -6985        | true   |
     And the following transfers should happen:
        | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
        |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 21     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1008   | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 7627   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH       |
+       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1176   | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
+       | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 7191   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH       |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 900000  |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 58159   | 34404  | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 57723   | 34672  | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 128        | TRADING_MODE_CONTINUOUS | 120       | 120              | 122              | 119            |
+      | 129        | TRADING_MODE_CONTINUOUS | 121       | 121              | 122              | 120            |
 
     # OK, zero-out the vAMM
     When the parties place the following orders:
@@ -380,27 +380,27 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party5 | ETH/MAR22 | sell | 130    | 100   | 1                | TYPE_LIMIT | TIF_GTC |
     Then the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 130   | 128  | party5 | true   |
+      | vamm1-id | 131   | 128  | party5 | true   |
 
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 347    | 2186           | 0            |        |
-      | party5   | -347   | 5783           | 0            |        |
-      | vamm1-id | 0      | 0              | -7969        | true   |
+      | party4   | 347    | 2533           | 0            |        |
+      | party5   | -347   | 5604           | 0            |        |
+      | vamm1-id | 0      | 0              | -8137        | true   |
     And the AMM pool status should be:
       | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
     And the following transfers should happen:
       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 67     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 68     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 256    | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 34148  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92374  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 34416  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92207  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
-      | vamm1    | USD   |           | 992374  |        |        |
+      | vamm1    | USD   |           | 992207  |        |        |
       | vamm1-id | USD   | ETH/MAR22 | 0       | 0      | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 130        | TRADING_MODE_CONTINUOUS | 70        | 70               | 100              | 40             |
+      | 131        | TRADING_MODE_CONTINUOUS | 70        | 70               | 100              | 40             |
