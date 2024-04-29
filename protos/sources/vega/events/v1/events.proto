@@ -1422,7 +1422,7 @@ enum BusEventType {
 
   // Event containing the IDs of orders cancelled by a party on a market.
   BUS_EVENT_TYPE_CANCELLED_ORDERS = 89;
-  
+
   // Event use to notify for a amm pool update.
   BUS_EVENT_TYPE_AMM_POOL = 90;
 
