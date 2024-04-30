@@ -16,7 +16,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | limits.markets.maxPeggedOrders          | 2     |
 
   @DebugAuctionMax @Expires
-  Scenario: Simple test verifying the market is cancelled if it failes to leave opening auction
+  Scenario: 0043-MKTL-012 Simple test verifying the market is cancelled if it failes to leave opening auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -31,6 +31,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
 
     # Start market with some dead time
     And the network moves ahead "5" blocks
+    Then the parties submit the following liquidity provision:
+      | id     | party  | market id | commitment amount | fee | lp type    |
+      | party1 | party1 | ETH/DEC19 | 30000             | 0.1 | submission |
+
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
@@ -54,3 +58,16 @@ Feature: Set up a market, create indiciative price different to actual opening a
 
     # Now the market should be cancelled
     Then the last market state should be "STATE_CANCELLED" for the market "ETH/DEC19"
+
+    #orders are cancelled
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | party5 | t5-s-1    | STATUS_CANCELLED |
+      | party6 | t6-b-1    | STATUS_CANCELLED |
+
+    #asset is released for party with orders and LP commitment
+    Then "party1" should have general account balance of "100000000" for asset "BTC"
+    Then "party5" should have general account balance of "100000000" for asset "BTC"
+    Then "party6" should have general account balance of "100000000" for asset "BTC"
+
+
