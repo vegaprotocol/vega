@@ -38,6 +38,8 @@ Feature: Set up a spot market, with an opening auction, then uncross the book. M
       | party3 | BTC/ETH   | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GFA | t3-b-1    |
 
     Then "party1" should have holding account balance of "100" for asset "ETH"
+    Then "party2" should have holding account balance of "95" for asset "ETH"
+    Then "party3" should have holding account balance of "110" for asset "ETH"
 
     When the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
@@ -61,4 +63,12 @@ Feature: Set up a spot market, with an opening auction, then uncross the book. M
     Then "party1" should have general account balance of "100000" for asset "ETH"
     Then "party2" should have general account balance of "100000" for asset "ETH"
     Then "party3" should have general account balance of "100000" for asset "ETH"
+
+    # check transfers for asset releasing
+    Then the following transfers should happen:
+      | from   | to     | from account         | to account           | market id | amount | asset |
+      | party3 | party3 | ACCOUNT_TYPE_HOLDING | ACCOUNT_TYPE_GENERAL |           | 110    | ETH   |
+      | party2 | party2 | ACCOUNT_TYPE_HOLDING | ACCOUNT_TYPE_GENERAL |           | 95     | ETH   |
+      | party1 | party1 | ACCOUNT_TYPE_HOLDING | ACCOUNT_TYPE_GENERAL |           | 100    | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_BOND    | ACCOUNT_TYPE_GENERAL | BTC/ETH   | 3000   | ETH   |
 
