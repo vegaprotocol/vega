@@ -59,7 +59,7 @@ Feature: A network disposal order which crosses with volume implied by an vAMM s
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params | liquidation strategy |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | ethMar22Oracle     | 1e0                    | 0                         | SLA-22     | disposal-strat-1     |
 
-    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0087-VAMM-006 through 0087-VAMM-014 on this setup
+    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 1000000 |

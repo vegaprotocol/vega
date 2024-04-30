@@ -48,7 +48,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
-    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0087-VAMM-006 through 0087-VAMM-014 on this setup
+    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 1000000 |
@@ -97,7 +97,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
   @VAMM
-  Scenario: 0087-VAMM-024: If other traders trade to move the market mid price to 140 the vAMM has a short position.
+  Scenario: 0090-VAMM-024: If other traders trade to move the market mid price to 140 the vAMM has a short position.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 4      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -119,7 +119,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
 
   @VAMM
-  Scenario: 0087-VAMM-025: If the vAMM is then amended such that it has a new base price of 140 it should attempt to place a trade to rebalance it's position to 0 at a mid price of 140. If that trade can execute with the slippage as configured in the request then the transaction is accepted.
+  Scenario: 0090-VAMM-025: If the vAMM is then amended such that it has a new base price of 140 it should attempt to place a trade to rebalance it's position to 0 at a mid price of 140. If that trade can execute with the slippage as configured in the request then the transaction is accepted.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 4      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -165,7 +165,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | vamm1-id | 0      | 0              | -82          | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-026: If the trade cannot execute with the slippage as configured in the request then the transaction is rejected and no changes to the vAMM are made.
+  Scenario: 0090-VAMM-026: If the trade cannot execute with the slippage as configured in the request then the transaction is rejected and no changes to the vAMM are made.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 4      | 120   | 1                | TYPE_LIMIT | TIF_GTC |

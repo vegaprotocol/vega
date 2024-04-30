@@ -48,7 +48,7 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
-    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0087-VAMM-006 through 0087-VAMM-014 on this setup
+    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 1000000 |
@@ -81,7 +81,7 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
     And the current epoch is "1"
 
   @VAMM
-  Scenario: 0087-VAMM-016: A vAMM's virtual ELS should be equal to the ELS of a regular LP with the same committed volume on the book (i.e. if a vAMM has an average volume on each side of the book across the epoch of 10k USDT, their ELS should be equal to that of a regular LP who has a commitment which requires supplying 10k USDT who joined at the same time as them).
+  Scenario: 0090-VAMM-016: A vAMM's virtual ELS should be equal to the ELS of a regular LP with the same committed volume on the book (i.e. if a vAMM has an average volume on each side of the book across the epoch of 10k USDT, their ELS should be equal to that of a regular LP who has a commitment which requires supplying 10k USDT who joined at the same time as them).
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
@@ -114,7 +114,7 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
       | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0.3343602994765785 | 10093.0000000000000000 | 20093                   |  
   
   @VAMM
-  Scenario: 0087-VAMM-017: A vAMM's virtual ELS should be equal to the ELS of a regular LP with the same committed volume on the book (i.e. if a vAMM has an average volume on each side of the book across the epoch of 10k USDT, their ELS should be equal to that of a regular LP who has a commitment which requires supplying 10k USDT who joined at the same time as them).
+  Scenario: 0090-VAMM-017: A vAMM's virtual ELS should be equal to the ELS of a regular LP with the same committed volume on the book (i.e. if a vAMM has an average volume on each side of the book across the epoch of 10k USDT, their ELS should be equal to that of a regular LP who has a commitment which requires supplying 10k USDT who joined at the same time as them).
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |

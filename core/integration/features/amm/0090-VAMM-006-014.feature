@@ -48,7 +48,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
-    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0087-VAMM-006 through 0087-VAMM-014 on this setup
+    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 1000000 |
@@ -97,7 +97,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
   @VAMM
-  Scenario: 0087-VAMM-006: If other traders trade to move the market mid price to 140 the vAMM has a short position.
+  Scenario: 0090-VAMM-006: If other traders trade to move the market mid price to 140 the vAMM has a short position.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 265    | 141   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -106,7 +106,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | buyer  | price | size | seller   | is amm |
       | party4 | 118   | 265  | vamm1-id | true   |
     And the network moves ahead "1" blocks
-    # Check best offer/bid as this scenario matches 0087-VAMM-027: if other traders trade to move the market mid price to 140 quotes with a mid price of 140 (volume quotes above 140 should be sells, volume quotes below 140 should be buys).
+    # Check best offer/bid as this scenario matches 0090-VAMM-027: if other traders trade to move the market mid price to 140 quotes with a mid price of 140 (volume quotes above 140 should be sells, volume quotes below 140 should be buys).
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
       | 118        | TRADING_MODE_CONTINUOUS | 140       | 140              | 141              | 139            |
@@ -116,7 +116,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm1-id | -265   | 0              | 0            | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-007: If other traders trade to move the market mid price to 90 the vAMM has a long position.
+  Scenario: 0090-VAMM-007: If other traders trade to move the market mid price to 90 the vAMM has a long position.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | sell | 350    | 90    | 1                | TYPE_LIMIT | TIF_GTC |
@@ -134,7 +134,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm1-id | 350    | 0              | 0            | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-008: If other traders trade to move the market mid price to 150 the vAMM will post no further sell orders above this price, and the vAMM's position notional value will be equal to 4x its total account balance.
+  Scenario: 0090-VAMM-008: If other traders trade to move the market mid price to 150 the vAMM will post no further sell orders above this price, and the vAMM's position notional value will be equal to 4x its total account balance.
     #When the network moves ahead "1" epochs
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -190,7 +190,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     # Notional value therefore is 317 * 122
 
   @VAMM
-  Scenario: 0087-VAMM-009: If other traders trade to move the market mid price to 85 the vAMM will post no further buy orders below this price, and the vAMM's position notional value will be equal to 4x its total account balance.
+  Scenario: 0090-VAMM-009: If other traders trade to move the market mid price to 85 the vAMM will post no further buy orders below this price, and the vAMM's position notional value will be equal to 4x its total account balance.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | sell | 550    | 80    | 1                | TYPE_LIMIT | TIF_GTC |
@@ -243,7 +243,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     #And the party "vamm1" has the following taker notional "4000"
 
   @VAMM
-  Scenario: 0087-VAMM-010: If other traders trade to move the market mid price to 110 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
+  Scenario: 0090-VAMM-010: If other traders trade to move the market mid price to 110 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 81     | 110   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -281,7 +281,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm1-id | 0      | 0              | -972         | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-011: If other traders trade to move the market mid price to 90 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
+  Scenario: 0090-VAMM-011: If other traders trade to move the market mid price to 90 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/MAR22 | sell | 388    | 90    | 1                | TYPE_LIMIT | TIF_GTC |
@@ -321,7 +321,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm1-id | 0      | 0              | -4257        | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-012: If other traders trade to move the market mid price to 90 and then in one trade move the mid price to 110 then trade to move the mid price back to 100 the vAMM will have a position of 0
+  Scenario: 0090-VAMM-012: If other traders trade to move the market mid price to 90 and then in one trade move the mid price to 110 then trade to move the mid price back to 100 the vAMM will have a position of 0
     # Move mid price to 90
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -383,7 +383,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm1-id | 0      | 0              | -5652        | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-013: If other traders trade to move the market mid price to 90 and then move the mid price back to 100 in several trades of varying size, the vAMM will have a position of 0.
+  Scenario: 0090-VAMM-013: If other traders trade to move the market mid price to 90 and then move the mid price back to 100 in several trades of varying size, the vAMM will have a position of 0.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/MAR22 | sell | 350    | 90    | 1                | TYPE_LIMIT | TIF_GTC |
@@ -428,7 +428,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm1-id | 0      | 0              | -3757        | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-014: If other traders trade to move the market mid price to 90 and then in one trade move the mid price to 110 then trade to move the mid price to 120 the vAMM will have a larger (more negative) but comparable position to if they had been moved straight from 100 to 120.
+  Scenario: 0090-VAMM-014: If other traders trade to move the market mid price to 90 and then in one trade move the mid price to 110 then trade to move the mid price to 120 the vAMM will have a larger (more negative) but comparable position to if they had been moved straight from 100 to 120.
     # Move mid price to 90
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
