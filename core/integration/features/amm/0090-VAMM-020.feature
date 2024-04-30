@@ -48,7 +48,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
-    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0087-VAMM-006 through 0087-VAMM-014 on this setup
+    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 1000000 |
@@ -98,8 +98,8 @@ Feature: Test vAMM cancellation by reduce-only from long.
 
 
   @VAMM
-  Scenario: 0087-VAMM-020: If a vAMM is cancelled and set in Reduce-Only mode when it is currently long, then It creates no further buy orders even if the current price is above the configured lower price. When one of it's sell orders is executed it still does not produce buy orders, and correctly quotes sell orders from a higher price. When the position reaches 0 the vAMM is closed and all funds are released to the user after the next mark to market.
-    # based on 0087-VAMM-007
+  Scenario: 0090-VAMM-020: If a vAMM is cancelled and set in Reduce-Only mode when it is currently long, then It creates no further buy orders even if the current price is above the configured lower price. When one of it's sell orders is executed it still does not produce buy orders, and correctly quotes sell orders from a higher price. When the position reaches 0 the vAMM is closed and all funds are released to the user after the next mark to market.
+    # based on 0090-VAMM-007
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | sell | 350    | 90    | 1                | TYPE_LIMIT | TIF_GTC |
@@ -230,8 +230,8 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | vamm1-id | USD   | ETH/MAR22 | 0       | 0      | true   |
 
   @VAMM
-  Scenario: 0087-VAMM-020: Same as the test above, only the final buy order that moves the vAMM position to 0 is more than big enough, and doesn't cause the vAMM to flip position from long to short.
-    # based on 0087-VAMM-007
+  Scenario: 0090-VAMM-020: Same as the test above, only the final buy order that moves the vAMM position to 0 is more than big enough, and doesn't cause the vAMM to flip position from long to short.
+    # based on 0090-VAMM-007
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | sell | 350    | 90    | 1                | TYPE_LIMIT | TIF_GTC |

@@ -52,7 +52,7 @@ Feature: Test vAMM submission works as expected (invalid submission)
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
   @VAMM
-  Scenario: 0087-VAMM-005:  When market.amm.minCommitmentQuantum is 1000, mid price of the market 100, a user with 1000 USDT is able to create a vAMM with commitment 100, and any other combination of settings.
+  Scenario: 0090-VAMM-005:  When market.amm.minCommitmentQuantum is 1000, mid price of the market 100, a user with 1000 USDT is able to create a vAMM with commitment 100, and any other combination of settings.
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | lp1    | USD   | 100000 |

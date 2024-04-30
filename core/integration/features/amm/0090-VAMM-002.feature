@@ -52,7 +52,7 @@ Feature: Test vAMM submission works as expected
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
   @VAMM
-  Scenario: 0087-VAMM-001: When market.amm.minCommitmentQuantum is 1, mid price of the market 100, a user with 1000 USDT is able to create a vAMM with commitment 1000, base price 100, upper price 150, lower price 85 and leverage ratio at each bound 0.25.
+  Scenario: 0090-VAMM-002: When market.amm.minCommitmentQuantum is 1, mid price of the market 100, a user with 1000 USDT is able to create a vAMM with commitment 1000, base price 100, no upper price, lower price 85 and leverage ratio at lower bound 0.25
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | lp1    | USD   | 100000 |
@@ -89,11 +89,11 @@ Feature: Test vAMM submission works as expected
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 3600    | 94        | 106       | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
+      | party | market id | amount | slippage | base | lower bound | lower margin ratio | proposed fee |
+      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 0.25               | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status        | base | lower bound | lower margin ratio |
+      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 0.25               |
 
     And set the following AMM sub account aliases:
       | party | market id | alias     |
@@ -101,3 +101,4 @@ Feature: Test vAMM submission works as expected
     And the following transfers should happen:
       | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+
