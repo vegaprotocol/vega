@@ -48,7 +48,7 @@ Feature: Test vAMM cancellation by abandoning.
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
-    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0087-VAMM-006 through 0087-VAMM-014 on this setup
+    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 1000000 |
@@ -98,8 +98,8 @@ Feature: Test vAMM cancellation by abandoning.
 
 
   @VAMM
-  Scenario: 0087-VAMM-019: If a vAMM is cancelled with Abandon Position then it is closed immediately. All funds which were in the general account of the vAMM are returned to the user who created the vAMM and the remaining position and margin funds are moved to the network to close out as it would a regular defaulted position.
-    # based on 0087-VAMM-008: vAMM creates a position, has some general balance left in general and margin accounts.
+  Scenario: 0090-VAMM-019: If a vAMM is cancelled with Abandon Position then it is closed immediately. All funds which were in the general account of the vAMM are returned to the user who created the vAMM and the remaining position and margin funds are moved to the network to close out as it would a regular defaulted position.
+    # based on 0090-VAMM-008: vAMM creates a position, has some general balance left in general and margin accounts.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 500    | 155   | 1                | TYPE_LIMIT | TIF_GTC |

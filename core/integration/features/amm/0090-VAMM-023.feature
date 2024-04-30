@@ -1,4 +1,4 @@
-Feature: Test vAMM cancellation without position works as expected.
+Feature: Test cancelled vAMM becomes active on amend.
 
   Background:
     Given the average block duration is "1"
@@ -52,7 +52,7 @@ Feature: Test vAMM cancellation without position works as expected.
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
   @VAMM
-  Scenario: 0087-VAMM-022: If a vAMM is cancelled and set in Reduce-Only mode when it currently has no position then all funds are released after the next mark to market.
+  Scenario: 0090-VAMM-023: If a vAMM is cancelled and set into Reduce-Only mode, then an amend is sent by the user who created it, the vAMM is amended according to those instructions and is moved out of Reduce-Only mode back into normal operation.
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | lp1    | USD   | 100000 |
@@ -86,8 +86,8 @@ Feature: Test vAMM cancellation without position works as expected.
       | party1 | 100   | 1    | party2 |
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | ref price | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 3600    | 94        | 106       | 39           | 1000           | 1             | 100       | 100       | 100              |
+      | mark price | trading mode             | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS  | 39           | 1000           | 1             | 100       | 100       | 100              |
 
     # trade to move the mark price to 105
     When the parties place the following orders:
@@ -127,15 +127,24 @@ Feature: Test vAMM cancellation without position works as expected.
       | vamm1     | USD   |           | 0       |        |        |
       | vamm1-acc | USD   | ETH/MAR22 | 1000    |        | true   |
 
-    # Now trigger a MTM settlement, this is when we see the status updated to cancelled and the funds get released.
+    # Now amend the reduce-only vAMM submission, and check to see if its status returns back to active
+    When the parties amend the following AMM:
+      | party | market id | slippage | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 0.1      | 105  | 90          | 155         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 105  | 90          | 155         | 0.25               | 0.25               |
+
+    # Now trigger a MTM settlement, this should not change anything, whereas without the amend it'd move the vAMM to the cancelled status.
     When the network moves ahead "1" blocks
     Then the AMM pool status should be:
-      | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
-    Then the following transfers should happen:
-      | from      | from account         | to    | to account           | market id | amount | asset | is amm | type                                 |
-      | vamm1-acc | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 105  | 90          | 155         | 0.25               | 0.25               |
     And the parties should have the following account balances:
       | party     | asset | market id | general | margin | is amm |
-      | vamm1     | USD   |           | 1000    |        |        |
-      | vamm1-acc | USD   | ETH/MAR22 | 0       |        | true   |
+      | vamm1     | USD   |           | 0       |        |        |
+      | vamm1-acc | USD   | ETH/MAR22 | 1000    |        | true   |
+    # The mark price has now moved to 105
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 105        | TRADING_MODE_CONTINUOUS | 461          | 1000           | 11            | 104       | 100       | 100              |
