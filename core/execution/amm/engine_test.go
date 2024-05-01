@@ -247,8 +247,8 @@ func testAmendAMMSparse(t *testing.T) {
 	// no amend to the commitment amount
 	amend.CommitmentAmount = nil
 	// no amend to the margin factors either
-	amend.Parameters.MarginRatioAtLowerBound = nil
-	amend.Parameters.MarginRatioAtUpperBound = nil
+	amend.Parameters.LeverageAtLowerBound = nil
+	amend.Parameters.LeverageAtUpperBound = nil
 	// to change something at least, inc the base + bounds by 1
 	amend.Parameters.Base.AddSum(num.UintOne())
 	amend.Parameters.UpperBound.AddSum(num.UintOne())
@@ -284,12 +284,11 @@ func testBasicSubmitOrder(t *testing.T) {
 		Type:      types.OrderTypeLimit,
 	}
 
-	ensureBalances(t, tst.col, 10000000000)
 	ensurePosition(t, tst.pos, 0, num.NewUint(0))
 	orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(2020))
 	require.Len(t, orders, 1)
 	assert.Equal(t, "2009", orders[0].Price.String())
-	assert.Equal(t, uint64(242367), orders[0].Size)
+	assert.Equal(t, 236855, int(orders[0].Size))
 
 	// AMM is now short, but another order comes in that will flip its position to long
 	agg = &types.Order{
@@ -299,13 +298,12 @@ func testBasicSubmitOrder(t *testing.T) {
 		Price:     num.NewUint(1900),
 	}
 
-	ensureBalancesN(t, tst.col, 10000000000, 3)
 	orders = tst.engine.SubmitOrder(agg, num.NewUint(2020), num.NewUint(1990))
 	require.Len(t, orders, 1)
-	assert.Equal(t, "2036", orders[0].Price.String())
+	assert.Equal(t, "2035", orders[0].Price.String())
 	// note that this volume being bigger than 242367 above means we've moved back to position, then flipped
 	// sign, and took volume from the other curve.
-	assert.Equal(t, uint64(371231), orders[0].Size)
+	assert.Equal(t, 362325, int(orders[0].Size))
 }
 
 func testSubmitMarketOrder(t *testing.T) {
@@ -331,7 +329,7 @@ func testSubmitMarketOrder(t *testing.T) {
 	orders := tst.engine.SubmitOrder(agg, num.NewUint(1980), num.NewUint(1990))
 	require.Len(t, orders, 1)
 	assert.Equal(t, "2005", orders[0].Price.String())
-	assert.Equal(t, uint64(129839), orders[0].Size)
+	assert.Equal(t, 126420, int(orders[0].Size))
 }
 
 func testSubmitOrderProRata(t *testing.T) {
@@ -347,7 +345,6 @@ func testSubmitOrderProRata(t *testing.T) {
 		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
 	}
 
-	ensureBalancesN(t, tst.col, 10000000000, 3)
 	ensurePositionN(t, tst.pos, 0, num.NewUint(0), 3)
 
 	// now submit an order against it
@@ -408,11 +405,11 @@ func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
 	assert.Equal(t, "2049", orders[2].Price.String())
 
 	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
-	assert.Equal(t, "2125", orders[3].Price.String())
-	assert.Equal(t, "2124", orders[4].Price.String())
+	assert.Equal(t, "2124", orders[3].Price.String())
+	assert.Equal(t, "2125", orders[4].Price.String())
 
 	// third round, 1 orders moving the last pool to its boundary
-	assert.Equal(t, "2174", orders[5].Price.String())
+	assert.Equal(t, "2175", orders[5].Price.String())
 }
 
 func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
@@ -486,8 +483,8 @@ func testBestPricesAndVolume(t *testing.T) {
 	bid, bvolume, ask, avolume := tst.engine.BestPricesAndVolumes()
 	assert.Equal(t, "1999", bid.String())
 	assert.Equal(t, "2001", ask.String())
-	assert.Equal(t, uint64(38526), bvolume)
-	assert.Equal(t, uint64(36615), avolume)
+	assert.Equal(t, 37512, int(bvolume))
+	assert.Equal(t, 35781, int(avolume))
 
 	// test GetVolumeAtPrice returns the same volume given best bid/ask
 	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(6 * 2).Return(
@@ -748,11 +745,11 @@ func getPoolSubmission(t *testing.T, party, market string) *types.SubmitAMM {
 		},
 		CommitmentAmount: num.NewUint(10000000000),
 		Parameters: &types.ConcentratedLiquidityParameters{
-			Base:                    num.NewUint(2000),
-			LowerBound:              num.NewUint(1800),
-			UpperBound:              num.NewUint(2200),
-			MarginRatioAtLowerBound: ptr.From(num.DecimalOne()),
-			MarginRatioAtUpperBound: ptr.From(num.DecimalOne()),
+			Base:                 num.NewUint(2000),
+			LowerBound:           num.NewUint(1800),
+			UpperBound:           num.NewUint(2200),
+			LeverageAtLowerBound: ptr.From(num.DecimalOne()),
+			LeverageAtUpperBound: ptr.From(num.DecimalOne()),
 		},
 	}
 }
@@ -767,11 +764,11 @@ func getPoolAmendment(t *testing.T, party, market string) *types.AmendAMM {
 		},
 		CommitmentAmount: num.NewUint(10000000000),
 		Parameters: &types.ConcentratedLiquidityParameters{
-			Base:                    num.NewUint(2100),
-			LowerBound:              num.NewUint(1900),
-			UpperBound:              num.NewUint(2300),
-			MarginRatioAtLowerBound: ptr.From(num.DecimalOne()),
-			MarginRatioAtUpperBound: ptr.From(num.DecimalOne()),
+			Base:                 num.NewUint(2100),
+			LowerBound:           num.NewUint(1900),
+			UpperBound:           num.NewUint(2300),
+			LeverageAtLowerBound: ptr.From(num.DecimalOne()),
+			LeverageAtUpperBound: ptr.From(num.DecimalOne()),
 		},
 	}
 }

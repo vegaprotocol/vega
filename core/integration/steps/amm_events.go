@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/cucumber/godog"
@@ -121,8 +122,8 @@ func parseAMMEventTable(table *godog.Table) []RowWrapper {
 		"base",
 		"lower bound",
 		"upper bound",
-		"lower margin ratio",
-		"upper margin ratio",
+		"lower leverage",
+		"upper leverage",
 	})
 }
 
@@ -155,12 +156,21 @@ func logEvents(log *logging.Logger, evts []*events.AMMPool) {
 			log.Info(fmt.Sprintf("AMM Party: %s on Market: %s - Amount: %s - no parameters", pool.PartyId, pool.MarketId, pool.Commitment))
 			continue
 		}
+
+		var lowerLeverage, upperLeverage string
+		if pool.Parameters.LeverageAtLowerBound != nil {
+			lowerLeverage = *pool.Parameters.LeverageAtLowerBound
+		}
+		if pool.Parameters.LeverageAtUpperBound != nil {
+			upperLeverage = *pool.Parameters.LeverageAtUpperBound
+		}
+
 		log.Info(fmt.Sprintf(
-			"AMM Party: %s on Market: %s - Amount: %s\nStatus: %s, Reason: %s\n Base: %s, Bounds: %s-%s, Margin ratios: %s-%s",
+			"AMM Party: %s on Market: %s - Amount: %s\nStatus: %s, Reason: %s\n Base: %s, Bounds: %s-%s, Leverages: %s-%s",
 			pool.PartyId, pool.MarketId, pool.Commitment,
 			pool.Status.String(), pool.StatusReason.String(),
 			pool.Parameters.Base, pool.Parameters.LowerBound, pool.Parameters.UpperBound,
-			pool.Parameters.MarginRatioAtLowerBound, pool.Parameters.MarginRatioAtUpperBound,
+			lowerLeverage, upperLeverage,
 		))
 	}
 }
@@ -186,12 +196,13 @@ func (a ammEvtRow) matchesEvt(e *events.AMMPool) error {
 		got = append(got, psr.String())
 		eFmt = eFmt + ", %s"
 	}
+
 	checks := map[string]string{
-		"base":               pool.Parameters.Base,
-		"lower bound":        pool.Parameters.LowerBound,
-		"upper bound":        pool.Parameters.UpperBound,
-		"lower margin ratio": pool.Parameters.MarginRatioAtLowerBound,
-		"upper margin ratio": pool.Parameters.MarginRatioAtUpperBound,
+		"base":           pool.Parameters.Base,
+		"lower bound":    pool.Parameters.LowerBound,
+		"upper bound":    pool.Parameters.UpperBound,
+		"lower leverage": ptr.UnBox(pool.Parameters.LeverageAtLowerBound),
+		"upper leverage": ptr.UnBox(pool.Parameters.LeverageAtUpperBound),
 	}
 	for name, val := range checks {
 		if !a.r.HasColumn(name) {

@@ -6,7 +6,7 @@ To create a new AMM submission:
 
 ```
 When the parties submit the following AMM:
-  | party    | market id | amount            | slippage           | base | lower bound    | upper bound    | lower margin ratio                   | upper margin ratio                   | error                                  |
+  | party    | market id | amount            | slippage           | base | lower bound    | upper bound    | lower leverage                   | upper leverage                   | error                                  |
   | party id | market ID | commitment amount | tolerance as float | uint | min price uint | max price uint | margin ratio at lower bound as float | margin ratio at upper bound as float | OPTIONAL: error expected on submission |
 ```
 
@@ -16,7 +16,7 @@ Once an AMM has been created, we may want to amend it, so to amend an existing A
 
 ```
 Then the parties ammend the following AMM:
-  | party               | market id            | amount         | slippage         | base     | lower bound | upper bound | lower margin ratio | upper margin ratio | error    |
+  | party               | market id            | amount         | slippage         | base     | lower bound | upper bound | lower leverage | upper leverage | error    |
   | party id (REQUIRED) | market ID (REQUIRED) | optional: uint | float (REQUIRED) | optional | optional    | optional    | optional           | optional           | optional |
 ```
 
@@ -38,7 +38,7 @@ To see what's going on with an existing AMM, we can check the AMM pool events wi
 
 ```
 Then the AMM pool status should be:
-  | party    | market id | amount           | status          | reason                      | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+  | party    | market id | amount           | status          | reason                      | base | lower bound | upper bound | lower leverage | upper leverage |
   | party ID | market ID | commitment amout | AMM pool status | OPTIONAL: AMM status reason | uint | uint        | uint        | float              | float              |
 ```
 
@@ -70,7 +70,7 @@ Checking the status for a given AMM only checks the most recent AMMPool event th
 
 ```
 And the following AMM pool events should be emitted:
-  | party    | market id | amount           | status          | reason                      | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+  | party    | market id | amount           | status          | reason                      | base | lower bound | upper bound | lower leverage | upper leverage |
   | party ID | market ID | commitment amout | AMM pool status | OPTIONAL: AMM status reason | uint | uint        | uint        | float              | float              |
 ```
 
@@ -79,21 +79,21 @@ The table data is identical to that used in the previous step, with the same opt
 ```
 When 
 When the parties submit the following AMM:
-  | party  | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+  | party  | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
   | party1 | ETH/DEC24 | 10000  | 0.1      | 1000 | 900         | 1100        | 0.2                | 0.15               |
 Then the parties amend the following AMM:
-  | party  | market id | amount | slippage | base | lower bound | upper bound | upper margin ratio |
+  | party  | market id | amount | slippage | base | lower bound | upper bound | upper leverage |
   | party1 | ETH/DEC24 | 20000  | 0.15     | 1010 | 910         | 1110        | 0.2                |
 # simple status check, only 1 event can be checked, checking for the initial submission will fail
 And the AMM pool status should be:
-  | party  | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+  | party  | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
   | party1 | ETH/DEC24 | 20000  | STATUS_ACTIVE | 1010 | 910         | 1110        | 0.2                | 0.2                |
 When the parties cancel the following AMM:
   | party  | market id | method           |
   | party1 | ETH/DEC24 | METHOD_IMMEDIATE |
 # check all events emitted so far
 Then the following AMM pool events should be emitted:
-  | party  | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio | reason                           |
+  | party  | market id | amount | status           | base | lower bound | upper bound | lower leverage | upper leverage | reason                           |
   | party1 | ETH/DEC24 | 10000  | STATUS_ACTIVE    | 1000 | 900         | 1100        | 0.2                | 0.15               |                                  |
   | party1 | ETH/DEC24 | 20000  | STATUS_ACTIVE    | 1010 | 910         | 1110        | 0.2                | 0.2                |                                  |
   | party1 | ETH/DEC24 | 20000  | STATUS_CANCELLED | 1010 | 910         | 1110        | 0.2                | 0.2                | STATUS_REASON_CANCELLED_BY_PARTY |
@@ -133,7 +133,7 @@ The new field `is amm` should be `true` for transfers involving AMM sub-accounts
 
 ```
 When the parties submit the following AMM:
-  | party  | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+  | party  | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
   | party1 | ETH/DEC24 | 10000  | 0.1      | 1000 | 900         | 1100        | 0.2                | 0.15               |
 Then set the the following AMM sub account aliases:
   | party  | market id | alias          |
