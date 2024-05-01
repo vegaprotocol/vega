@@ -50,7 +50,7 @@ func (p *AMMPools) Upsert(ctx context.Context, pool entities.AMMPool) error {
 insert into amm_pool(party_id, market_id, pool_id, sub_account,
 commitment, status, status_reason, 	parameters_base,
 parameters_lower_bound, parameters_upper_bound,
-parameters_margin_ratio_at_lower_bound, parameters_margin_ratio_at_upper_bound,
+parameters_leverage_at_lower_bound, parameters_leverage_at_upper_bound,
 created_at, last_updated) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 on conflict (party_id, market_id, pool_id, sub_account) do update set
 	commitment=excluded.commitment,
@@ -59,8 +59,8 @@ on conflict (party_id, market_id, pool_id, sub_account) do update set
 	parameters_base=excluded.parameters_base,
 	parameters_lower_bound=excluded.parameters_lower_bound,
 	parameters_upper_bound=excluded.parameters_upper_bound,
-	parameters_margin_ratio_at_lower_bound=excluded.parameters_margin_ratio_at_lower_bound,
-	parameters_margin_ratio_at_upper_bound=excluded.parameters_margin_ratio_at_upper_bound,
+	parameters_leverage_at_lower_bound=excluded.parameters_leverage_at_lower_bound,
+	parameters_leverage_at_upper_bound=excluded.parameters_leverage_at_upper_bound,
 	last_updated=excluded.last_updated;`,
 		pool.PartyID,
 		pool.MarketID,
@@ -72,8 +72,8 @@ on conflict (party_id, market_id, pool_id, sub_account) do update set
 		pool.ParametersBase,
 		pool.ParametersLowerBound,
 		pool.ParametersUpperBound,
-		pool.ParametersMarginRatioAtLowerBound,
-		pool.ParametersMarginRatioAtUpperBound,
+		pool.ParametersLeverageAtLowerBound,
+		pool.ParametersLeverageAtUpperBound,
 		pool.CreatedAt,
 		pool.LastUpdated,
 	); err != nil {

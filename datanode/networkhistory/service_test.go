@@ -11,7 +11,7 @@
 // GNU Affero General Public License for more details.
 //
 // You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.d
 
 package networkhistory_test
 
@@ -379,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmSUPiQXbT2UBg1ahuaZRFwCibAYhaiTM3oygCizKw8fPn", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmPmmX5EAvKPH4fN3YyeizoU1vWsu6yGUgMiSuCMAMi4hC", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmSDZw6Kmgy8AnAyLXyRFvhroXPL3ZmidbuadCw6qhHDB8", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmPN25uADicviTNB4BFtRbzSMpcjJytQKytuM2gpYFYyu7", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmXNZ5Ex7KMHcSGzYsgCx6RhqdgxdLJQ5TtF87sjVfJ7hM", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmXhzzQS7h1Xw6t5iDUt8gzyNGp3sdzxeFqhMo1CNstamK", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmXLNZwd4zKgKqVBTC4aiqmihFEvtMuts6NdKMh8DZNaEQ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "Qme3h4zHLpQaMqWC937FS4qCpbEUCwTEJ4ybwfn3FQgdPo", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmPsZh5tMCHCBeUTRDxKDHKzCV4CQ4TajGHuYbMJcqABh8", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmZT7CNCN6JKTNFD6j9XWgabVuiwdfU6o29QNfBQbyH4Zk", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmUwWom9vdzN6k1VaBwmya36QJda85HAzuaU1A1cFaY8wE", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmW8zeovx7kC1NXUM7P4rcrEvBhcgw7XdjktvtYLBbbxpg", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {

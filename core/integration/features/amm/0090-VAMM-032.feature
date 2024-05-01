@@ -67,7 +67,7 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
       | party3 | USD   | 1000000 |
       | party4 | USD   | 1000000 |
       | party5 | USD   | 1000000 |
-      | vamm1  | USD   | 1000    |
+      | vamm1  | USD   | 10000   |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -91,43 +91,43 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
   @VAMM
   Scenario: 0090-VAMM-032: When an AMM is active on a market at time of settlement with a position in a well collateralised state, the market can settle successfully and then all funds on the AMM key are transferred back to the main party's account.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | buy  | 5      | 110   | 1                | TYPE_LIMIT | TIF_GTC |
-      | party4 | ETH/MAR22 | buy  | 5      | 125   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | buy  | 1      | 125   | 1                | TYPE_LIMIT | TIF_GTC |
     # see the trades that make the vAMM go short
     Then debug trades
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 106   | 1    | vamm1-id | true   |
-      | party4 | 120   | 1    | vamm1-id | true   |
+      | party4 | 100   | 1    | vamm1-id | true   |
+      | party4 | 102   | 1    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | supplied stake | target stake |
-      | 120        | TRADING_MODE_CONTINUOUS | 142       | 142              | 1000           | 143          |
+      | 102        | TRADING_MODE_CONTINUOUS | 131       | 131              | 1000           | 122          |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 2      | 14             | 0            |        |
-      | vamm1-id | -2     | -14            | 0            | true   |
+      | party4   | 2      | 2             | 0            |        |
+      | vamm1-id | -2     | -2            | 0            | true   |
     And the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     # No terminate && settle the market
     When the oracles broadcast data signed with "0xCAFECAFE":
@@ -137,7 +137,7 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 0       |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 484     | 504    | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 9571    | 429    | true   |
 
     # Settlement price is ~9x mark price
     When the oracles broadcast data signed with "0xCAFECAFE":
@@ -148,17 +148,17 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
 
     # verify the that the margin balance is released, and then the correct balance if transferred from the pool account back to the party.
     # We see fees on both trades, a MTM loss transfer, margin being allocated, then the loss transfer from the final settlement
-    # and lastly a transfer of 0 to the general account, indicating there were no funds left to transfer.
+    # and lastly a transfer of the general account back to the owner.
     And the following transfers should happen:
       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 14     | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 504    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW             |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 504    | USD   | true   | TRANSFER_TYPE_LOSS                   |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 484    | USD   | true   | TRANSFER_TYPE_LOSS                   |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 0      | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 2      | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 429    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW             |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 429    | USD   | true   | TRANSFER_TYPE_LOSS                   |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1367   | USD   | true   | TRANSFER_TYPE_LOSS                   |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 8204   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
-      | vamm1    | USD   |           | 0       |        |        |
+      | vamm1    | USD   |           | 8204    |        |        |
       | vamm1-id | USD   | ETH/MAR22 | 0       | 0      | true   |

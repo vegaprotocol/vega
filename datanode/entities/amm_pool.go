@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -30,20 +31,20 @@ type _AMMPoolID struct{}
 type AMMPoolID = ID[_AMMPoolID]
 
 type AMMPool struct {
-	PartyID                           PartyID
-	MarketID                          MarketID
-	PoolID                            AMMPoolID
-	SubAccount                        AccountID
-	Commitment                        num.Decimal
-	Status                            AMMPoolStatus
-	StatusReason                      AMMPoolStatusReason
-	ParametersBase                    num.Decimal
-	ParametersLowerBound              num.Decimal
-	ParametersUpperBound              num.Decimal
-	ParametersMarginRatioAtLowerBound num.Decimal
-	ParametersMarginRatioAtUpperBound num.Decimal
-	CreatedAt                         time.Time
-	LastUpdated                       time.Time
+	PartyID                        PartyID
+	MarketID                       MarketID
+	PoolID                         AMMPoolID
+	SubAccount                     AccountID
+	Commitment                     num.Decimal
+	Status                         AMMPoolStatus
+	StatusReason                   AMMPoolStatusReason
+	ParametersBase                 num.Decimal
+	ParametersLowerBound           num.Decimal
+	ParametersUpperBound           num.Decimal
+	ParametersLeverageAtLowerBound *num.Decimal
+	ParametersLeverageAtUpperBound *num.Decimal
+	CreatedAt                      time.Time
+	LastUpdated                    time.Time
 }
 
 type AMMPoolsFilter interface {
@@ -60,9 +61,7 @@ func AMMPoolFromProto(pool *eventspb.AMMPool, vegaTime time.Time) (AMMPool, erro
 		commitment,
 		parametersBase,
 		parametersLowerBound,
-		parametersUpperBound,
-		parametersMarginRatioAtLowerBound,
-		parametersMarginRatioAtUpperBound num.Decimal
+		parametersUpperBound num.Decimal
 		err error
 	)
 	partyID := PartyID(pool.PartyId)
@@ -83,32 +82,52 @@ func AMMPoolFromProto(pool *eventspb.AMMPool, vegaTime time.Time) (AMMPool, erro
 	if parametersUpperBound, err = num.DecimalFromString(pool.Parameters.UpperBound); err != nil {
 		return AMMPool{}, err
 	}
-	if parametersMarginRatioAtLowerBound, err = num.DecimalFromString(pool.Parameters.MarginRatioAtLowerBound); err != nil {
-		return AMMPool{}, err
+
+	var lowerLeverage, upperLeverage *num.Decimal
+	if pool.Parameters.LeverageAtLowerBound != nil {
+		v, err := num.DecimalFromString(*pool.Parameters.LeverageAtLowerBound)
+		if err != nil {
+			return AMMPool{}, err
+		}
+		lowerLeverage = &v
 	}
-	if parametersMarginRatioAtUpperBound, err = num.DecimalFromString(pool.Parameters.MarginRatioAtUpperBound); err != nil {
-		return AMMPool{}, err
+
+	if pool.Parameters.LeverageAtUpperBound != nil {
+		v, err := num.DecimalFromString(*pool.Parameters.LeverageAtUpperBound)
+		if err != nil {
+			return AMMPool{}, err
+		}
+		upperLeverage = &v
 	}
 
 	return AMMPool{
-		PartyID:                           partyID,
-		MarketID:                          marketID,
-		PoolID:                            poolID,
-		SubAccount:                        accountID,
-		Commitment:                        commitment,
-		Status:                            status,
-		StatusReason:                      statusReason,
-		ParametersBase:                    parametersBase,
-		ParametersLowerBound:              parametersLowerBound,
-		ParametersUpperBound:              parametersUpperBound,
-		ParametersMarginRatioAtLowerBound: parametersMarginRatioAtLowerBound,
-		ParametersMarginRatioAtUpperBound: parametersMarginRatioAtUpperBound,
-		CreatedAt:                         vegaTime,
-		LastUpdated:                       vegaTime,
+		PartyID:                        partyID,
+		MarketID:                       marketID,
+		PoolID:                         poolID,
+		SubAccount:                     accountID,
+		Commitment:                     commitment,
+		Status:                         status,
+		StatusReason:                   statusReason,
+		ParametersBase:                 parametersBase,
+		ParametersLowerBound:           parametersLowerBound,
+		ParametersUpperBound:           parametersUpperBound,
+		ParametersLeverageAtLowerBound: lowerLeverage,
+		ParametersLeverageAtUpperBound: upperLeverage,
+		CreatedAt:                      vegaTime,
+		LastUpdated:                    vegaTime,
 	}, nil
 }
 
 func (p AMMPool) ToProto() *eventspb.AMMPool {
+	var lowerLeverage, upperLeverage *string
+	if p.ParametersLeverageAtLowerBound != nil {
+		lowerLeverage = ptr.From(p.ParametersLeverageAtLowerBound.String())
+	}
+
+	if p.ParametersLeverageAtUpperBound != nil {
+		upperLeverage = ptr.From(p.ParametersLeverageAtUpperBound.String())
+	}
+
 	return &eventspb.AMMPool{
 		PartyId:      p.PartyID.String(),
 		MarketId:     p.MarketID.String(),
@@ -118,11 +137,11 @@ func (p AMMPool) ToProto() *eventspb.AMMPool {
 		Status:       eventspb.AMMPool_Status(p.Status),
 		StatusReason: eventspb.AMMPool_StatusReason(p.StatusReason),
 		Parameters: &eventspb.AMMPool_ConcentratedLiquidityParameters{
-			Base:                    p.ParametersBase.String(),
-			LowerBound:              p.ParametersLowerBound.String(),
-			UpperBound:              p.ParametersUpperBound.String(),
-			MarginRatioAtLowerBound: p.ParametersMarginRatioAtLowerBound.String(),
-			MarginRatioAtUpperBound: p.ParametersMarginRatioAtUpperBound.String(),
+			Base:                 p.ParametersBase.String(),
+			LowerBound:           p.ParametersLowerBound.String(),
+			UpperBound:           p.ParametersUpperBound.String(),
+			LeverageAtLowerBound: lowerLeverage,
+			LeverageAtUpperBound: upperLeverage,
 		},
 	}
 }

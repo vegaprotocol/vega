@@ -7524,9 +7524,9 @@ type ConcentratedLiquidityParameters {
   "Upper bound"
   upperBound: String!
   "Margin ratio at the upper bound"
-  marginRatioAtUpperBound: String!
+  leverageAtUpperBound: String!
   "Margin ratio at the lower bound"
-  marginRatioAtLowerBound: String!
+  leverageAtLowerBound: String!
 }
 
 enum AMMPoolStatus {
