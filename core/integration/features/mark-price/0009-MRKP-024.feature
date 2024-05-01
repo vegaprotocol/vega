@@ -12,14 +12,14 @@ Feature: Test setting of mark price
       | lqm-params | 0.00             | 24h         | 1e-9           |
     And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
-      | 43200   | 0.9999999   | 10                |
+      | 360     | 0.9999999   | 10                |
     And the simple risk model named "simple-risk-model":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance | market type |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 50000000    | 1,0,0,0        | 20s,20s,24h0m0s,1h25m0s    | future      |
-      | ETH/FEB22 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | perp-oracle            | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 50000000    | 1,0,0,0        | 20s,20s,24h0m0s,1h25m0s    | perp        |
+      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights  | source staleness tolerance | market type |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 50000000    | 0,0.999,0.001,0 | 20s,20s,24h0m0s,1h25m0s    | future      |
+      | ETH/FEB22 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | perp-oracle            | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 50000000    | 0,0.999,0.001,0 | 20s,20s,24h0m0s,1h25m0s    | perp        |
 
   Scenario: 001 check mark price using weight average
     Given the parties deposit on asset's general account the following amount:
@@ -49,6 +49,8 @@ Feature: Test setting of mark price
       | sellSideProvider1 | ETH/FEB22 | sell | 3      | 17000  | 0                | TYPE_LIMIT | TIF_GTC | sell-4    |
       | sellSideProvider1 | ETH/FEB22 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
+    Then the mark price should be "0" for the market "ETH/FEB23"
+
     # AC 0009-MRKP-024
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
@@ -56,10 +58,10 @@ Feature: Test setting of mark price
 
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15900      | TRADING_MODE_CONTINUOUS | 43200   | 15801     | 15999     | 0            | 0              | 3             |
+      | 15900      | TRADING_MODE_CONTINUOUS | 360     | 15801     | 15999     | 0            | 0              | 3             |
     Then the market data for the market "ETH/FEB22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15900      | TRADING_MODE_CONTINUOUS | 43200   | 15801     | 15999     | 0            | 0              | 3             |
+      | 15900      | TRADING_MODE_CONTINUOUS | 360     | 15801     | 15999     | 0            | 0              | 3             |
 
     And the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -78,15 +80,15 @@ Feature: Test setting of mark price
     Then the mark price should be "15900" for the market "ETH/FEB22"
 
     When the network moves ahead "2" blocks
-    Then the mark price should be "15940" for the market "ETH/FEB23"
-    Then the mark price should be "15940" for the market "ETH/FEB22"
+    Then the mark price should be "15900" for the market "ETH/FEB23"
+    Then the mark price should be "15900" for the market "ETH/FEB22"
     And the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | buySideProvider  | ETH/FEB23 | buy  | 3      | 17000 | 0                | TYPE_LIMIT | TIF_GTC |           |
       | buySideProvider1 | ETH/FEB22 | buy  | 3      | 17000 | 0                | TYPE_LIMIT | TIF_GTC |           |
     When the network moves ahead "2" blocks
-    Then the mark price should be "15940" for the market "ETH/FEB23"
-    Then the mark price should be "15940" for the market "ETH/FEB22"
+    Then the mark price should be "15900" for the market "ETH/FEB23"
+    Then the mark price should be "15900" for the market "ETH/FEB22"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/FEB23"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/FEB22"
 
