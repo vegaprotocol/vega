@@ -67,7 +67,7 @@ Feature: vAMM behaviour when a market settles
       | party3 | USD   | 1000000 |
       | party4 | USD   | 1000000 |
       | party5 | USD   | 1000000 |
-      | vamm1  | USD   | 1000    |
+      | vamm1  | USD   | 10000   |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -93,18 +93,18 @@ Feature: vAMM behaviour when a market settles
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | from  | from account         | to       | to account           | market id | amount  | asset | is amm | type                             |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
   @VAMM
   Scenario Outline: 0090-VAMM-031: When an AMM is active on a market at time of settlement with a position in a well collateralised state, the market can settle successfully and then all funds on the AMM key are transferred back to the main party's account.
@@ -114,19 +114,19 @@ Feature: vAMM behaviour when a market settles
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 106   | 1    | vamm1-id | true   |
+      | party4 | 100   | 1    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | mid price | static mid price | supplied stake | target stake |
-      | 106        | TRADING_MODE_CONTINUOUS | 100       | 100              | 1000           | 84           |
+      | mark price | trading mode            | mid price | static mid price | supplied stake |
+      | 100        | TRADING_MODE_CONTINUOUS | 102       | 102              | 1000           |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 1      | 0              | 0            |        |
       | vamm1-id | -1     | 0              | 0            | true   |
     And the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount  | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 10000   | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     # No terminate && settle the market
     When the oracles broadcast data signed with "0xCAFECAFE":
@@ -136,7 +136,7 @@ Feature: vAMM behaviour when a market settles
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 0       |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 778     | 223     | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 9791    | 210    | true   |
 
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value          |
@@ -158,8 +158,8 @@ Feature: vAMM behaviour when a market settles
     # Different scenario's involving a final settlement: break even, profit and loss.
     Examples:
       | settle price | margin | amm balance | general balance |
-      | 106          | 223    | 1001        | 1001            | # settle price = market price: +1 from fees
-      | 105          | 224     | 1002        | 1002            | # settle price < market price: +1 from fees +1 from final settlement
-      | 107          | 222     | 1000        | 1000            | # settle price > market price: +1 from fees, -1 from final settlement
-      | 104          | 225     | 1003        | 1003            | # settle price < market price: +1 from fees +2 from final settlement
-      | 108          | 221     | 999         | 999             | # settle price > market price: +1 from fees, -2 from final settlement
+      | 106          | 204    | 9995        | 9995            | # settle price = market price: +1 from fees
+      | 105          | 205    | 9996        | 9996            | # settle price < market price: +1 from fees +1 from final settlement
+      | 107          | 203    | 9994        | 9994            | # settle price > market price: +1 from fees, -1 from final settlement
+      | 104          | 206    | 9997        | 9997            | # settle price < market price: +1 from fees +2 from final settlement
+      | 108          | 202    | 9993        | 9993             | # settle price > market price: +1 from fees, -2 from final settlement

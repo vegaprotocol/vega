@@ -89,10 +89,10 @@ Feature: Test vAMM submission works as expected
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 3600    | 94        | 106       | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | upper bound | upper margin ratio | proposed fee |
+      | party | market id | amount | slippage | base | upper bound | upper leverage | proposed fee |
       | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 150         | 0.25               | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | upper bound | upper margin ratio |
+      | party | market id | amount | status        | base | upper bound | upper leverage |
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 150         | 0.25               |
 
     And set the following AMM sub account aliases:

@@ -32,29 +32,37 @@ type AMMBaseCommand struct {
 }
 
 type ConcentratedLiquidityParameters struct {
-	Base                    *num.Uint
-	LowerBound              *num.Uint
-	UpperBound              *num.Uint
-	MarginRatioAtLowerBound *num.Decimal
-	MarginRatioAtUpperBound *num.Decimal
+	Base                 *num.Uint
+	LowerBound           *num.Uint
+	UpperBound           *num.Uint
+	LeverageAtLowerBound *num.Decimal
+	LeverageAtUpperBound *num.Decimal
 }
 
 func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMMPool_ConcentratedLiquidityParameters {
-	upper, lower, marginUpper, marginLower := "", "", "", ""
+	upper, lower := "", ""
 	if p.UpperBound != nil {
 		upper = p.UpperBound.String()
-		marginUpper = p.MarginRatioAtUpperBound.String()
 	}
+
 	if p.LowerBound != nil {
 		lower = p.LowerBound.String()
-		marginLower = p.MarginRatioAtLowerBound.String()
+	}
+
+	var lowerLeverage, upperLeverage *string
+	if p.LeverageAtLowerBound != nil {
+		lowerLeverage = ptr.From(p.LeverageAtLowerBound.String())
+	}
+
+	if p.LeverageAtUpperBound != nil {
+		upperLeverage = ptr.From(p.LeverageAtUpperBound.String())
 	}
 	return &eventspb.AMMPool_ConcentratedLiquidityParameters{
-		Base:                    p.Base.String(),
-		LowerBound:              lower,
-		UpperBound:              upper,
-		MarginRatioAtUpperBound: marginUpper,
-		MarginRatioAtLowerBound: marginLower,
+		Base:                 p.Base.String(),
+		LowerBound:           lower,
+		UpperBound:           upper,
+		LeverageAtUpperBound: upperLeverage,
+		LeverageAtLowerBound: lowerLeverage,
 	}
 }
 
@@ -74,12 +82,12 @@ func (p *ConcentratedLiquidityParameters) ApplyUpdate(update *ConcentratedLiquid
 		p.UpperBound = update.UpperBound
 	}
 
-	if update.MarginRatioAtLowerBound != nil {
-		p.MarginRatioAtLowerBound = update.MarginRatioAtLowerBound
+	if update.LeverageAtLowerBound != nil {
+		p.LeverageAtLowerBound = update.LeverageAtLowerBound
 	}
 
-	if update.MarginRatioAtUpperBound != nil {
-		p.MarginRatioAtUpperBound = update.MarginRatioAtUpperBound
+	if update.LeverageAtUpperBound != nil {
+		p.LeverageAtUpperBound = update.LeverageAtUpperBound
 	}
 }
 
@@ -94,13 +102,13 @@ func (p ConcentratedLiquidityParameters) Clone() *ConcentratedLiquidityParameter
 	if p.UpperBound != nil {
 		ret.UpperBound = p.UpperBound.Clone()
 	}
-	if p.MarginRatioAtLowerBound != nil {
-		cpy := *p.MarginRatioAtLowerBound
-		ret.MarginRatioAtLowerBound = &cpy
+	if p.LeverageAtLowerBound != nil {
+		cpy := *p.LeverageAtLowerBound
+		ret.LeverageAtLowerBound = &cpy
 	}
-	if p.MarginRatioAtUpperBound != nil {
-		cpy := *p.MarginRatioAtUpperBound
-		ret.MarginRatioAtUpperBound = &cpy
+	if p.LeverageAtUpperBound != nil {
+		cpy := *p.LeverageAtUpperBound
+		ret.LeverageAtUpperBound = &cpy
 	}
 	return ret
 }
@@ -122,27 +130,34 @@ func NewSubmitAMMFromProto(
 ) *SubmitAMM {
 	// all parameters have been validated by the command package here.
 	var (
-		upperBound, lowerBound   *num.Uint
-		upperMargin, lowerMargin *num.Decimal
+		upperBound, lowerBound       *num.Uint
+		upperLeverage, lowerLeverage *num.Decimal
 	)
 
 	commitment, _ := num.UintFromString(submitAMM.CommitmentAmount, 10)
-	base, _ := num.UintFromString(submitAMM.ConcentratedLiquidityParameters.Base, 10)
-	if submitAMM.ConcentratedLiquidityParameters.LowerBound != nil {
-		lowerBound, _ = num.UintFromString(*submitAMM.ConcentratedLiquidityParameters.LowerBound, 10)
-		lm, _ := num.DecimalFromString(*submitAMM.ConcentratedLiquidityParameters.MarginRatioAtLowerBound)
-		lowerMargin = ptr.From(lm)
+
+	params := submitAMM.ConcentratedLiquidityParameters
+	base, _ := num.UintFromString(params.Base, 10)
+	if params.LowerBound != nil {
+		lowerBound, _ = num.UintFromString(*params.LowerBound, 10)
 	}
-	if submitAMM.ConcentratedLiquidityParameters.UpperBound != nil {
-		upperBound, _ = num.UintFromString(*submitAMM.ConcentratedLiquidityParameters.UpperBound, 10)
-		// this must be set if upper bound is set
-		um, _ := num.DecimalFromString(*submitAMM.ConcentratedLiquidityParameters.MarginRatioAtUpperBound)
-		upperMargin = ptr.From(um)
+
+	if params.LeverageAtLowerBound != nil {
+		leverage, _ := num.DecimalFromString(*params.LeverageAtLowerBound)
+		lowerLeverage = ptr.From(leverage)
+	}
+
+	if params.UpperBound != nil {
+		upperBound, _ = num.UintFromString(*params.UpperBound, 10)
+	}
+
+	if params.LeverageAtUpperBound != nil {
+		leverage, _ := num.DecimalFromString(*params.LeverageAtUpperBound)
+		upperLeverage = ptr.From(leverage)
 	}
 
 	slippage, _ := num.DecimalFromString(submitAMM.SlippageTolerance)
 	proposedFee, _ := num.DecimalFromString(submitAMM.ProposedFee)
-
 	return &SubmitAMM{
 		AMMBaseCommand: AMMBaseCommand{
 			Party:             party,
@@ -152,11 +167,11 @@ func NewSubmitAMMFromProto(
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{
-			Base:                    base,
-			LowerBound:              lowerBound,
-			UpperBound:              upperBound,
-			MarginRatioAtLowerBound: lowerMargin,
-			MarginRatioAtUpperBound: upperMargin,
+			Base:                 base,
+			LowerBound:           lowerBound,
+			UpperBound:           upperBound,
+			LeverageAtLowerBound: lowerLeverage,
+			LeverageAtUpperBound: upperLeverage,
 		},
 	}
 }
@@ -171,16 +186,24 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 	cpy := *s.Parameters
 	s.Parameters = &cpy
 	// this should be split to a different function, because this is modifying the
-	var lower, upper, marginLower, marginUpper *string
+	var lower, upper, leverageLower, leverageUpper *string
 	var base string
 	if s.Parameters.LowerBound != nil {
 		lower = ptr.From(s.Parameters.LowerBound.String())
-		marginLower = ptr.From(s.Parameters.MarginRatioAtLowerBound.String())
 	}
+
+	if s.Parameters.LeverageAtLowerBound != nil {
+		leverageLower = ptr.From(s.Parameters.LeverageAtLowerBound.String())
+	}
+
 	if s.Parameters.UpperBound != nil {
 		upper = ptr.From(s.Parameters.UpperBound.String())
-		marginUpper = ptr.From(s.Parameters.MarginRatioAtUpperBound.String())
 	}
+
+	if s.Parameters.LeverageAtUpperBound != nil {
+		leverageUpper = ptr.From(s.Parameters.LeverageAtUpperBound.String())
+	}
+
 	if s.Parameters.Base != nil {
 		base = s.Parameters.Base.String()
 	}
@@ -190,11 +213,11 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 		SlippageTolerance: s.SlippageTolerance.String(),
 		ProposedFee:       s.ProposedFee.String(),
 		ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-			UpperBound:              upper,
-			LowerBound:              lower,
-			Base:                    base,
-			MarginRatioAtUpperBound: marginUpper,
-			MarginRatioAtLowerBound: marginLower,
+			UpperBound:           upper,
+			LowerBound:           lower,
+			Base:                 base,
+			LeverageAtUpperBound: leverageUpper,
+			LeverageAtLowerBound: leverageLower,
 		},
 	}
 }
@@ -231,11 +254,11 @@ func (a AmendAMM) IntoProto() *commandspb.AmendAMM {
 	if a.Parameters.UpperBound != nil {
 		ret.ConcentratedLiquidityParameters.UpperBound = ptr.From(a.Parameters.UpperBound.String())
 	}
-	if a.Parameters.MarginRatioAtLowerBound != nil {
-		ret.ConcentratedLiquidityParameters.MarginRatioAtLowerBound = ptr.From(a.Parameters.MarginRatioAtLowerBound.String())
+	if a.Parameters.LeverageAtLowerBound != nil {
+		ret.ConcentratedLiquidityParameters.LeverageAtLowerBound = ptr.From(a.Parameters.LeverageAtLowerBound.String())
 	}
-	if a.Parameters.MarginRatioAtUpperBound != nil {
-		ret.ConcentratedLiquidityParameters.MarginRatioAtUpperBound = ptr.From(a.Parameters.MarginRatioAtUpperBound.String())
+	if a.Parameters.LeverageAtUpperBound != nil {
+		ret.ConcentratedLiquidityParameters.LeverageAtUpperBound = ptr.From(a.Parameters.LeverageAtUpperBound.String())
 	}
 	return ret
 }
@@ -247,7 +270,7 @@ func NewAmendAMMFromProto(
 	// all parameters have been validated by the command package here.
 
 	var commitment, base, lowerBound, upperBound *num.Uint
-	var marginRatioAtUpperBound, marginRatioAtLowerBound *num.Decimal
+	var leverageAtUpperBound, leverageAtLowerBound *num.Decimal
 
 	// this is optional
 	if amendAMM.CommitmentAmount != nil {
@@ -265,13 +288,13 @@ func NewAmendAMMFromProto(
 		if amendAMM.ConcentratedLiquidityParameters.UpperBound != nil {
 			upperBound, _ = num.UintFromString(*amendAMM.ConcentratedLiquidityParameters.UpperBound, 10)
 		}
-		if amendAMM.ConcentratedLiquidityParameters.MarginRatioAtLowerBound != nil {
-			marginRatio, _ := num.DecimalFromString(*amendAMM.ConcentratedLiquidityParameters.MarginRatioAtLowerBound)
-			marginRatioAtLowerBound = ptr.From(marginRatio)
+		if amendAMM.ConcentratedLiquidityParameters.LeverageAtLowerBound != nil {
+			leverage, _ := num.DecimalFromString(*amendAMM.ConcentratedLiquidityParameters.LeverageAtLowerBound)
+			leverageAtLowerBound = ptr.From(leverage)
 		}
-		if amendAMM.ConcentratedLiquidityParameters.MarginRatioAtUpperBound != nil {
-			marginRatio, _ := num.DecimalFromString(*amendAMM.ConcentratedLiquidityParameters.MarginRatioAtUpperBound)
-			marginRatioAtUpperBound = ptr.From(marginRatio)
+		if amendAMM.ConcentratedLiquidityParameters.LeverageAtUpperBound != nil {
+			leverage, _ := num.DecimalFromString(*amendAMM.ConcentratedLiquidityParameters.LeverageAtUpperBound)
+			leverageAtUpperBound = ptr.From(leverage)
 		}
 	}
 
@@ -291,11 +314,11 @@ func NewAmendAMMFromProto(
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{
-			Base:                    base,
-			LowerBound:              lowerBound,
-			UpperBound:              upperBound,
-			MarginRatioAtUpperBound: marginRatioAtUpperBound,
-			MarginRatioAtLowerBound: marginRatioAtLowerBound,
+			Base:                 base,
+			LowerBound:           lowerBound,
+			UpperBound:           upperBound,
+			LeverageAtUpperBound: leverageAtUpperBound,
+			LeverageAtLowerBound: leverageAtLowerBound,
 		},
 	}
 }

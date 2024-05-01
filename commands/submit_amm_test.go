@@ -224,50 +224,50 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: ptr.From(""),
+					LeverageAtUpperBound: ptr.From(""),
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.leverage_at_upper_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: ptr.From("abc"),
+					LeverageAtUpperBound: ptr.From("abc"),
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.leverage_at_upper_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: ptr.From("-10"),
+					LeverageAtUpperBound: ptr.From("-10"),
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (must be positive)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.leverage_at_upper_bound (must be positive)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: ptr.From(""),
+					LeverageAtLowerBound: ptr.From(""),
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.leverage_at_lower_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: ptr.From("abc"),
+					LeverageAtLowerBound: ptr.From("abc"),
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.leverage_at_lower_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: ptr.From("-10"),
+					LeverageAtLowerBound: ptr.From("-10"),
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (must be positive)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.leverage_at_lower_bound (must be positive)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
@@ -293,9 +293,9 @@ func TestCheckSubmitAMM(t *testing.T) {
 				SlippageTolerance: "0.09",
 				CommitmentAmount:  "10000",
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					Base:                    "20000",
-					MarginRatioAtUpperBound: ptr.From("0.1"),
-					MarginRatioAtLowerBound: ptr.From("0.1"),
+					Base:                 "20000",
+					LeverageAtUpperBound: ptr.From("0.1"),
+					LeverageAtLowerBound: ptr.From("0.1"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (lower_bound and upper_bound cannot both be empty)",
@@ -307,11 +307,11 @@ func TestCheckSubmitAMM(t *testing.T) {
 				CommitmentAmount:  "10000",
 				ProposedFee:       "0.03",
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					Base:                    "20000",
-					UpperBound:              ptr.From("30000"),
-					LowerBound:              ptr.From("10000"),
-					MarginRatioAtUpperBound: ptr.From("0.1"),
-					MarginRatioAtLowerBound: ptr.From("0.1"),
+					Base:                 "20000",
+					UpperBound:           ptr.From("30000"),
+					LowerBound:           ptr.From("10000"),
+					LeverageAtUpperBound: ptr.From("0.1"),
+					LeverageAtLowerBound: ptr.From("0.1"),
 				},
 			},
 		},

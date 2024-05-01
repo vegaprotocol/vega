@@ -449,10 +449,10 @@ message SubmitAMM {
     optional string lower_bound = 2;
     // Base price bound configuration for the pool.
     string base = 3;
-    // Margin ratio at upper bounds. Must be set if an upper bound is provided.
-    optional string margin_ratio_at_upper_bound = 4;
-    // Margin ratio at lower bounds. Must be set if a lower bound is provided.
-    optional string margin_ratio_at_lower_bound = 5;
+    // Leverage at upper bounds. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_upper_bound = 4;
+    // Leverage at lower bounds. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_lower_bound = 5;
   }
 }
 
@@ -476,10 +476,10 @@ message AmendAMM {
     optional string lower_bound = 2;
     // Base price bound configuration for the pool.
     optional string base = 3;
-    // Margin ratio at upper bound.
-    optional string margin_ratio_at_upper_bound = 4;
-    // Margin ratio at lower bound.
-    optional string margin_ratio_at_lower_bound = 5;
+    // Leverage at upper bounds. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_upper_bound = 4;
+    // Leverage at lower bounds. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_lower_bound = 5;
   }
 }
 

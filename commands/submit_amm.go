@@ -102,28 +102,24 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.lower_bound", errors.New("lower_bound and upper_bound cannot both be empty"))
 		}
 
-		if cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound == nil {
-			if !emptyUpper {
-				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrIsRequired)
+		if cmd.ConcentratedLiquidityParameters.LeverageAtUpperBound != nil {
+			if len(*cmd.ConcentratedLiquidityParameters.LeverageAtUpperBound) <= 0 {
+				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.leverage_at_upper_bound", ErrIsNotValidNumber)
+			} else if leverage, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.LeverageAtUpperBound); err != nil {
+				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.leverage_at_upper_bound", ErrIsNotValidNumber)
+			} else if leverage.LessThan(num.DecimalZero()) {
+				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.leverage_at_upper_bound", ErrMustBePositive)
 			}
-		} else if len(*cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound) <= 0 {
-			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrIsNotValidNumber)
-		} else if marginRatio, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound); err != nil {
-			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrIsNotValidNumber)
-		} else if marginRatio.LessThan(num.DecimalZero()) {
-			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrMustBePositive)
 		}
 
-		if cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound == nil {
-			if !emptyLower {
-				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrIsRequired)
+		if cmd.ConcentratedLiquidityParameters.LeverageAtLowerBound != nil {
+			if len(*cmd.ConcentratedLiquidityParameters.LeverageAtLowerBound) <= 0 {
+				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.leverage_at_lower_bound", ErrIsNotValidNumber)
+			} else if leverage, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.LeverageAtLowerBound); err != nil {
+				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.leverage_at_lower_bound", ErrIsNotValidNumber)
+			} else if leverage.LessThan(num.DecimalZero()) {
+				errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.leverage_at_lower_bound", ErrMustBePositive)
 			}
-		} else if len(*cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound) <= 0 {
-			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrIsNotValidNumber)
-		} else if marginRatio, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound); err != nil {
-			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrIsNotValidNumber)
-		} else if marginRatio.LessThan(num.DecimalZero()) {
-			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrMustBePositive)
 		}
 
 		if len(cmd.SlippageTolerance) <= 0 {

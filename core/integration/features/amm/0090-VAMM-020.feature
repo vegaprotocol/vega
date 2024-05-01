@@ -83,11 +83,11 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
@@ -132,8 +132,8 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party | market id | method             |
       | vamm1 | ETH/MAR22 | METHOD_REDUCE_ONLY |
     Then the AMM pool status should be:
-      | party | market id | amount | status             | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status             | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 4              | 4              |
     # Check if the vAMM doesn't place any more buy orders: submit sell orders at previous best bid, ask, and mid prices:
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -213,8 +213,8 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party5   | 380    | 1490           | 0            |        |
       | vamm1-id | 0      | 0              | -3700        | true   |
     And the AMM pool status should be:
-      | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status           | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 4              | 4              |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
       | 98         | TRADING_MODE_CONTINUOUS | 100       | 100              | 160              | 40             |
@@ -264,8 +264,8 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party | market id | method             |
       | vamm1 | ETH/MAR22 | METHOD_REDUCE_ONLY |
     Then the AMM pool status should be:
-      | party | market id | amount | status             | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status             | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 4              | 4              |
     # Check if the vAMM doesn't place any more buy orders: submit sell orders at previous best bid, ask, and mid prices:
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -344,8 +344,8 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party5   | 380    | 1490           | 0            |        |
       | vamm1-id | 0      | 0              | -3700        | true   |
     And the AMM pool status should be:
-      | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status           | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 4              | 4              |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
       | 98         | TRADING_MODE_CONTINUOUS | 135       | 135              | 160              | 110            |

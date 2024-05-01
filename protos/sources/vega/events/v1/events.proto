@@ -89,10 +89,10 @@ message AMMPool {
     string lower_bound = 2;
     // Lower price bound configuration for the pool. If unset, the AMM will never hold a long position.
     string upper_bound = 3;
-    // Margin ratio at upper bounds.
-    string margin_ratio_at_upper_bound = 4;
-    // Margin ratio at upper bounds.
-    string margin_ratio_at_lower_bound = 5;
+    // Leverage at upper bounds.
+    optional string leverage_at_upper_bound = 4;
+    // Leverage at lower bounds.
+    optional string leverage_at_lower_bound = 5;
   }
 }
 

@@ -197,7 +197,7 @@ func NewFromProto(
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
-) *Engine {
+) (*Engine, error) {
 	e := New(log, broker, collateral, market, risk, position, priceFactor, positionFactor, marketActivityTracker)
 
 	for _, v := range state.SubAccounts {
@@ -210,10 +210,14 @@ func NewFromProto(
 	}
 
 	for _, v := range state.Pools {
-		e.add(NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor))
+		p, err := NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor)
+		if err != nil {
+			return e, err
+		}
+		e.add(p)
 	}
 
-	return e
+	return e, nil
 }
 
 func (e *Engine) IntoProto() *v1.AmmState {
@@ -435,7 +439,6 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 
 		// calculate the price the pool wil give for the trading volume
 		price := p.PriceForVolume(volume, agg.Side)
-
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("generated order at price",
 				logging.String("price", price.String()),
