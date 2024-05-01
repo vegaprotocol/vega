@@ -2594,6 +2594,7 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 		MinAmount:   t.Amount.Amount.Clone(),
 		Asset:       t.Amount.Asset,
 		Type:        t.Type,
+		TransferID:  t.TransferID,
 	}, nil
 }
 
