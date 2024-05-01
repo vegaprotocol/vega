@@ -173,10 +173,13 @@ func (p Proposal) Cursor() *Cursor {
 }
 
 func (p Proposal) ToProtoEdge(_ ...any) (*v2.GovernanceDataEdge, error) {
-	proposalsProto := make([]*vega.Proposal, len(p.Proposals))
+	j := len(p.Proposals) - 1
+	proposalsProto := make([]*vega.Proposal, j+1)
 
 	for i, proposal := range p.Proposals {
-		proposalsProto[i] = proposal.ToProto()
+		// fill slice in reverse order. The records are inserted (and returned) in reverse order, so to match
+		// the order in which markets were created, the proposals should be returned in the original order.
+		proposalsProto[j-i] = proposal.ToProto()
 	}
 
 	return &v2.GovernanceDataEdge{
