@@ -262,7 +262,10 @@ func NewMarketFromSnapshot(
 	if em.Amm == nil {
 		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor, positionFactor, marketActivityTracker)
 	} else {
-		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor, marketActivityTracker)
+		market.amm, err = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor, marketActivityTracker)
+		if err != nil {
+			return nil, err
+		}
 	}
 	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor, market.amm)
 	market.liquidation = le

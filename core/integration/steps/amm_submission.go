@@ -93,10 +93,10 @@ func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 		"base",         // uint
 		"proposed fee", // dec
 	}, []string{
-		"lower bound",        // uint
-		"upper bound",        // uint
-		"lower margin ratio", // dec
-		"upper margin ratio", // dec
+		"lower bound",    // uint
+		"upper bound",    // uint
+		"lower leverage", // dec
+		"upper leverage", // dec
 		"error",
 	})
 }
@@ -107,13 +107,13 @@ func parseAmendAMMTable(table *godog.Table) []RowWrapper {
 		"market id", // str
 		"slippage",  // dec
 	}, []string{
-		"proposed fee",       // dec
-		"amount",             // uint
-		"base",               // uint
-		"lower bound",        // uint
-		"upper bound",        // uint
-		"lower margin ratio", // dec
-		"upper margin ratio", // dec
+		"proposed fee",   // dec
+		"amount",         // uint
+		"base",           // uint
+		"lower bound",    // uint
+		"upper bound",    // uint
+		"lower leverage", // dec
+		"upper leverage", // dec
 		"error",
 	})
 }
@@ -135,8 +135,8 @@ type ammRow struct {
 
 func (a ammRow) toSubmission() *types.SubmitAMM {
 	reqPairs := [][2]string{
-		{"lower bound", "lower margin ratio"},
-		{"upper bound", "upper margin ratio"},
+		{"lower bound", "lower leverage"},
+		{"upper bound", "upper leverage"},
 	}
 	// at least one of the pairs is required
 	hasOne := false
@@ -150,6 +150,7 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 	if !hasOne {
 		panic("required at least one pair of bound parameters (upper/lower bound + margin ratio)")
 	}
+
 	return &types.SubmitAMM{
 		AMMBaseCommand: types.AMMBaseCommand{
 			MarketID:          a.marketID(),
@@ -159,11 +160,11 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 		},
 		CommitmentAmount: a.amount(),
 		Parameters: &types.ConcentratedLiquidityParameters{
-			Base:                    a.base(),
-			LowerBound:              a.lowerBound(),
-			UpperBound:              a.upperBound(),
-			MarginRatioAtLowerBound: a.lowerMargin(),
-			MarginRatioAtUpperBound: a.upperMargin(),
+			Base:                 a.base(),
+			LowerBound:           a.lowerBound(),
+			UpperBound:           a.upperBound(),
+			LeverageAtLowerBound: a.lowerLeverage(),
+			LeverageAtUpperBound: a.upperLeverage(),
 		},
 	}
 }
@@ -194,12 +195,12 @@ func (a ammRow) toAmendment() *types.AmendAMM {
 		params.UpperBound = a.upperBound()
 		paramSet = true
 	}
-	if a.r.HasColumn("lower margin ratio") {
-		params.MarginRatioAtLowerBound = a.lowerMargin()
+	if a.r.HasColumn("lower leverage") {
+		params.LeverageAtLowerBound = a.lowerLeverage()
 		paramSet = true
 	}
-	if a.r.HasColumn("upper margin ratio") {
-		params.MarginRatioAtUpperBound = a.upperMargin()
+	if a.r.HasColumn("upper leverage") {
+		params.LeverageAtUpperBound = a.upperLeverage()
 		paramSet = true
 	}
 	if paramSet {
@@ -261,18 +262,18 @@ func (a ammRow) upperBound() *num.Uint {
 	return a.r.MustUint("upper bound")
 }
 
-func (a ammRow) lowerMargin() *num.Decimal {
+func (a ammRow) lowerLeverage() *num.Decimal {
 	if !a.r.HasColumn("lower bound") {
 		return nil
 	}
-	return ptr.From(a.r.MustDecimal("lower margin ratio"))
+	return ptr.From(a.r.MustDecimal("lower leverage"))
 }
 
-func (a ammRow) upperMargin() *num.Decimal {
+func (a ammRow) upperLeverage() *num.Decimal {
 	if !a.r.HasColumn("upper bound") {
 		return nil
 	}
-	return ptr.From(a.r.MustDecimal("upper margin ratio"))
+	return ptr.From(a.r.MustDecimal("upper leverage"))
 }
 
 func (a ammRow) method() types.AMMPoolCancellationMethod {

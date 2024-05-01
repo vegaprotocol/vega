@@ -218,50 +218,50 @@ func TestCheckAmendAMM(t *testing.T) {
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: ptr.From(""),
+					LeverageAtUpperBound: ptr.From(""),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.leverage_at_upper_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: ptr.From("abc"),
+					LeverageAtUpperBound: ptr.From("abc"),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.leverage_at_upper_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: ptr.From("-10"),
+					LeverageAtUpperBound: ptr.From("-10"),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (must be positive)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.leverage_at_upper_bound (must be positive)",
 		},
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: ptr.From(""),
+					LeverageAtLowerBound: ptr.From(""),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.leverage_at_lower_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: ptr.From("abc"),
+					LeverageAtLowerBound: ptr.From("abc"),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.leverage_at_lower_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: ptr.From("-10"),
+					LeverageAtLowerBound: ptr.From("-10"),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (must be positive)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.leverage_at_lower_bound (must be positive)",
 		},
 		{
 			submission: commandspb.AmendAMM{

@@ -35,8 +35,8 @@ create table if not exists amm_pool (
     parameters_base numeric not null,
     parameters_lower_bound numeric not null,
     parameters_upper_bound numeric not null,
-    parameters_margin_ratio_at_upper_bound numeric not null,
-    parameters_margin_ratio_at_lower_bound numeric not null,
+    parameters_leverage_at_upper_bound numeric,
+    parameters_leverage_at_lower_bound numeric,
     created_at timestamp with time zone not null,
     last_updated timestamp with time zone not null,
     primary key (party_id, market_id, pool_id, sub_account)

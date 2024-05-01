@@ -570,7 +570,7 @@ message PoolMapEntry {
     string l = 1;
     string high = 2;
     string low = 3;
-    string rf = 4;
+    string pv = 4;
     bool empty = 5;
   }
 

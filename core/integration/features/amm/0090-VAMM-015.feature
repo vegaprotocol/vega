@@ -100,10 +100,10 @@ Feature: Ensure the vAMM contributes to fee factor setting
     And the liquidity fee factor should be "0.04" for the market "ETH/MAR22"
   
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
       | vamm1 | ETH/MAR22 | 100000 | 0.1      | 80   | 65          | 130         | 0.25               | 0.25               | 0.03         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 80   | 65          | 130         | 0.25               | 0.25               |
 
     And set the following AMM sub account aliases:

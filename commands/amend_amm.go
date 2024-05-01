@@ -93,21 +93,21 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 			}
 		}
 
-		if cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound != nil {
+		if cmd.ConcentratedLiquidityParameters.LeverageAtUpperBound != nil {
 			hasUpdate = true
-			if marginRatio, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound); err != nil {
-				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrIsNotValidNumber)
-			} else if marginRatio.LessThan(num.DecimalZero()) {
-				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrMustBePositive)
+			if leverage, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.LeverageAtUpperBound); err != nil {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.leverage_at_upper_bound", ErrIsNotValidNumber)
+			} else if leverage.LessThan(num.DecimalZero()) {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.leverage_at_upper_bound", ErrMustBePositive)
 			}
 		}
 
-		if cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound != nil {
+		if cmd.ConcentratedLiquidityParameters.LeverageAtLowerBound != nil {
 			hasUpdate = true
-			if marginRatio, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound); err != nil {
-				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrIsNotValidNumber)
-			} else if marginRatio.LessThan(num.DecimalZero()) {
-				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrMustBePositive)
+			if leverage, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.LeverageAtLowerBound); err != nil {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.leverage_at_lower_bound", ErrIsNotValidNumber)
+			} else if leverage.LessThan(num.DecimalZero()) {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.leverage_at_lower_bound", ErrMustBePositive)
 			}
 		}
 

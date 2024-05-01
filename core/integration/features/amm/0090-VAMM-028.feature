@@ -98,13 +98,13 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
 
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
-      | vamm2 | ETH/MAR23 | 100000 | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
+      | vamm2 | ETH/MAR23 | 100000 | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
-      | vamm2 | ETH/MAR23 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | vamm2 | ETH/MAR23 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
@@ -257,7 +257,6 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm2-id | -74    | -304           | 0            | true   |
       | vamm1-id | -74    | 0              | 0            | true   |
 
-  @VAMM
   Scenario: 0090-VAMM-029: The volume quoted to move from price 100 to price 90 in one step is the same as the sum of the volumes to move in 10 steps of 1.
     # Move mid price to 90 in one go. A volume of 347 is the minimum required, 346 only gets us to 91
     When the parties place the following orders:
@@ -299,7 +298,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 1519         | 1000           | 38            | 100       | 98        | 98               | 99               | 97             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 99    | 36   | party6 | true   |
+      | vamm2-id | 100    | 36   | party6 | true   |
 
     # Move mid price to 97
     When the parties place the following orders:
@@ -321,7 +320,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 4478         | 1000           | 112           | 100       | 96        | 96               | 97               | 95             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 98    | 38   | party6 | true   |
+      | vamm2-id | 97    | 38   | party6 | true   |
 
     # Move mid price to 95
     When the parties place the following orders:
@@ -344,7 +343,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 7517         | 1000           | 188           | 100       | 94        | 94               | 95               | 93             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 96    | 39   | party6 | true   |
+      | vamm2-id | 95    | 39   | party6 | true   |
 
     # Move mid price to 93
     When the parties place the following orders:
@@ -377,7 +376,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 12276        | 1000           | 307           | 100       | 91        | 91               | 92               | 90             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 93    | 41   | party6 | true   |
+      | vamm2-id | 92    | 41   | party6 | true   |
 
     # Move mid price to 90
     When the parties place the following orders:
@@ -396,8 +395,8 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party3   | 1      | -9             | 0            |        |
       | party4   | -1     | 9              | 0            |        |
-      | party6   | -347   | 1472           | 0            |        |
-      | vamm2-id | 347    | -1472          | 0            | true   |
+      | party6   | -347   | 1390           | 0            |        |
+      | vamm2-id | 347    | -1390          | 0            | true   |
       | vamm1-id | 347    | 0              | 0            | true   |
 
   @VAMM

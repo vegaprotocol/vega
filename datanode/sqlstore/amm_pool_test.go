@@ -65,20 +65,20 @@ func TestAMMPool_Upsert(t *testing.T) {
 		for i, test := range upsertTests {
 			upsertTime = upsertTime.Add(time.Duration(i) * time.Minute)
 			pool := entities.AMMPool{
-				PartyID:                           partyID,
-				MarketID:                          marketID,
-				PoolID:                            poolID,
-				SubAccount:                        subAccount,
-				Commitment:                        num.DecimalFromInt64(100),
-				Status:                            test.Status,
-				StatusReason:                      test.Reason,
-				ParametersBase:                    num.DecimalFromInt64(100),
-				ParametersLowerBound:              num.DecimalFromInt64(100),
-				ParametersUpperBound:              num.DecimalFromInt64(100),
-				ParametersMarginRatioAtLowerBound: num.DecimalFromInt64(100),
-				ParametersMarginRatioAtUpperBound: num.DecimalFromInt64(100),
-				CreatedAt:                         block.VegaTime,
-				LastUpdated:                       upsertTime,
+				PartyID:                        partyID,
+				MarketID:                       marketID,
+				PoolID:                         poolID,
+				SubAccount:                     subAccount,
+				Commitment:                     num.DecimalFromInt64(100),
+				Status:                         test.Status,
+				StatusReason:                   test.Reason,
+				ParametersBase:                 num.DecimalFromInt64(100),
+				ParametersLowerBound:           num.DecimalFromInt64(100),
+				ParametersUpperBound:           num.DecimalFromInt64(100),
+				ParametersLeverageAtLowerBound: ptr.From(num.DecimalFromInt64(100)),
+				ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
+				CreatedAt:                      block.VegaTime,
+				LastUpdated:                    upsertTime,
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -102,20 +102,20 @@ func TestAMMPool_Upsert(t *testing.T) {
 		for i, amount := range amounts {
 			upsertTime = upsertTime.Add(time.Duration(i) * time.Minute)
 			pool := entities.AMMPool{
-				PartyID:                           partyID,
-				MarketID:                          marketID,
-				PoolID:                            poolID,
-				SubAccount:                        subAccount,
-				Commitment:                        amount,
-				Status:                            entities.AMMPoolStatusActive,
-				StatusReason:                      entities.AMMPoolStatusReasonUnspecified,
-				ParametersBase:                    amount,
-				ParametersLowerBound:              amount,
-				ParametersUpperBound:              amount,
-				ParametersMarginRatioAtLowerBound: amount,
-				ParametersMarginRatioAtUpperBound: amount,
-				CreatedAt:                         block.VegaTime,
-				LastUpdated:                       upsertTime,
+				PartyID:                        partyID,
+				MarketID:                       marketID,
+				PoolID:                         poolID,
+				SubAccount:                     subAccount,
+				Commitment:                     amount,
+				Status:                         entities.AMMPoolStatusActive,
+				StatusReason:                   entities.AMMPoolStatusReasonUnspecified,
+				ParametersBase:                 amount,
+				ParametersLowerBound:           amount,
+				ParametersUpperBound:           amount,
+				ParametersLeverageAtLowerBound: ptr.From(amount),
+				ParametersLeverageAtUpperBound: ptr.From(amount),
+				CreatedAt:                      block.VegaTime,
+				LastUpdated:                    upsertTime,
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -127,6 +127,36 @@ func TestAMMPool_Upsert(t *testing.T) {
 				partyID, marketID, poolID, subAccount))
 			assert.Equal(t, pool, upserted)
 		}
+	})
+
+	t.Run("Upsert with empty leverages", func(t *testing.T) {
+		upsertTime := block.VegaTime
+
+		pool := entities.AMMPool{
+			PartyID:                        partyID,
+			MarketID:                       marketID,
+			PoolID:                         poolID,
+			SubAccount:                     subAccount,
+			Commitment:                     num.DecimalFromInt64(100),
+			Status:                         entities.AMMPoolStatusActive,
+			StatusReason:                   entities.AMMPoolStatusReasonUnspecified,
+			ParametersBase:                 num.DecimalFromInt64(1800),
+			ParametersLowerBound:           num.DecimalFromInt64(2000),
+			ParametersUpperBound:           num.DecimalFromInt64(2200),
+			ParametersLeverageAtLowerBound: nil,
+			ParametersLeverageAtUpperBound: nil,
+			CreatedAt:                      block.VegaTime,
+			LastUpdated:                    upsertTime,
+		}
+		require.NoError(t, ps.Upsert(ctx, pool))
+		var upserted entities.AMMPool
+		require.NoError(t, pgxscan.Get(
+			ctx,
+			connectionSource.Connection,
+			&upserted,
+			`SELECT * FROM amm_pool WHERE party_id = $1 AND market_id = $2 AND pool_id = $3 AND sub_account = $4`,
+			partyID, marketID, poolID, subAccount))
+		assert.Equal(t, pool, upserted)
 	})
 }
 
@@ -173,20 +203,20 @@ func setupAMMPoolsTest(ctx context.Context, t *testing.T) (
 					statusReason = entities.AMMPoolStatusReasonCancelledByParty
 				}
 				pool := entities.AMMPool{
-					PartyID:                           partyID,
-					MarketID:                          marketID,
-					PoolID:                            poolID,
-					SubAccount:                        subAccount,
-					Commitment:                        num.DecimalFromInt64(100),
-					Status:                            status,
-					StatusReason:                      statusReason,
-					ParametersBase:                    num.DecimalFromInt64(100),
-					ParametersLowerBound:              num.DecimalFromInt64(100),
-					ParametersUpperBound:              num.DecimalFromInt64(100),
-					ParametersMarginRatioAtLowerBound: num.DecimalFromInt64(100),
-					ParametersMarginRatioAtUpperBound: num.DecimalFromInt64(100),
-					CreatedAt:                         block.VegaTime,
-					LastUpdated:                       block.VegaTime,
+					PartyID:                        partyID,
+					MarketID:                       marketID,
+					PoolID:                         poolID,
+					SubAccount:                     subAccount,
+					Commitment:                     num.DecimalFromInt64(100),
+					Status:                         status,
+					StatusReason:                   statusReason,
+					ParametersBase:                 num.DecimalFromInt64(100),
+					ParametersLowerBound:           num.DecimalFromInt64(100),
+					ParametersUpperBound:           num.DecimalFromInt64(100),
+					ParametersLeverageAtLowerBound: ptr.From(num.DecimalFromInt64(100)),
+					ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
+					CreatedAt:                      block.VegaTime,
+					LastUpdated:                    block.VegaTime,
 				}
 				require.NoError(t, ps.Upsert(ctx, pool))
 				pools = append(pools, pool)
