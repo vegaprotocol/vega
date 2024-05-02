@@ -23,6 +23,11 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
+type RiskFactorOverride struct {
+	Short num.Decimal
+	Long  num.Decimal
+}
+
 type LogNormalModelParams struct {
 	Mu    num.Decimal
 	R     num.Decimal
@@ -33,6 +38,8 @@ type LogNormalRiskModel struct {
 	RiskAversionParameter num.Decimal
 	Tau                   num.Decimal
 	Params                *LogNormalModelParams
+	// nil if no override
+	RiskFactorOverride *RiskFactorOverride
 }
 
 func (l LogNormalModelParams) IntoProto() *proto.LogNormalModelParams {
@@ -70,10 +77,18 @@ func (l LogNormalRiskModel) IntoProto() *proto.LogNormalRiskModel {
 	if l.Params != nil {
 		params = l.Params.IntoProto()
 	}
+	var riskFactorOverride *proto.RiskFactorOverride
+	if l.RiskFactorOverride != nil {
+		riskFactorOverride = &proto.RiskFactorOverride{
+			Short: l.RiskFactorOverride.Short.String(),
+			Long:  l.RiskFactorOverride.Long.String(),
+		}
+	}
 	return &proto.LogNormalRiskModel{
 		RiskAversionParameter: ra,
 		Tau:                   t,
 		Params:                params,
+		RiskFactorOverride:    riskFactorOverride,
 	}
 }
 
@@ -84,6 +99,12 @@ func (l LogNormalRiskModel) DeepClone() *LogNormalRiskModel {
 	}
 	if l.Params != nil {
 		cpy.Params = l.Params.DeepClone()
+	}
+	if l.RiskFactorOverride != nil {
+		cpy.RiskFactorOverride = &RiskFactorOverride{
+			Short: l.RiskFactorOverride.Short,
+			Long:  l.RiskFactorOverride.Long,
+		}
 	}
 	return &cpy
 }
@@ -138,6 +159,20 @@ func (t TradableInstrumentLogNormalRiskModel) Equal(trm isTRM) bool {
 	if !t.LogNormalRiskModel.Tau.Equal(ct.LogNormalRiskModel.Tau) || !t.LogNormalRiskModel.RiskAversionParameter.Equal(ct.LogNormalRiskModel.RiskAversionParameter) {
 		return false
 	}
+
+	if t.LogNormalRiskModel.RiskFactorOverride != nil {
+		if ct.LogNormalRiskModel.RiskFactorOverride == nil {
+			return false
+		}
+
+		if !t.LogNormalRiskModel.RiskFactorOverride.Short.Equal(ct.LogNormalRiskModel.RiskFactorOverride.Short) ||
+			!t.LogNormalRiskModel.RiskFactorOverride.Long.Equal(ct.LogNormalRiskModel.RiskFactorOverride.Long) {
+			return false
+		}
+	} else if ct.LogNormalRiskModel.RiskFactorOverride != nil {
+		return false
+	}
+
 	// check params
 	p, cp := t.LogNormalRiskModel.Params, ct.LogNormalRiskModel.Params
 	// check if all params match
@@ -326,11 +361,20 @@ func TradableInstrumentLogNormalFromProto(p *proto.TradableInstrument_LogNormalR
 	if p == nil {
 		return nil
 	}
+	var override *RiskFactorOverride
+	if p.LogNormalRiskModel.RiskFactorOverride != nil {
+		override = &RiskFactorOverride{
+			Short: num.MustDecimalFromString(p.LogNormalRiskModel.RiskFactorOverride.Short),
+			Long:  num.MustDecimalFromString(p.LogNormalRiskModel.RiskFactorOverride.Long),
+		}
+	}
+
 	return &TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(p.LogNormalRiskModel.RiskAversionParameter),
 			Tau:                   num.DecimalFromFloat(p.LogNormalRiskModel.Tau),
 			Params:                LogNormalParamsFromProto(p.LogNormalRiskModel.Params),
+			RiskFactorOverride:    override,
 		},
 	}
 }

@@ -189,6 +189,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new spot market with invalid liquidity fee settings", testLiquidityFeeSettingsSpot)
 	t.Run("Submitting a new market with invalid mark price configuration ", testCompositePriceConfiguration)
 	t.Run("Submitting a new market with invalid tick size fails and with valid tick size succeeds", testNewMarketTickSize)
+
+	t.Run("Log Normal risk factor overrides", testNewLogNormalRiskParametersChangeSubmissionWithOverrides)
 }
 
 type tickSizeCase struct {
@@ -2495,6 +2497,129 @@ func testNewLogNormalRiskParametersChangeSubmissionWithLogNormalRiskParametersSu
 	})
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal"), commands.ErrIsRequired)
+}
+
+func testNewLogNormalRiskParametersChangeSubmissionWithOverrides(t *testing.T) {
+	cases := []struct {
+		desc     string
+		get      string
+		override *vegapb.RiskFactorOverride
+		err      string
+	}{
+		{
+			desc:     "no override is valid",
+			get:      "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override",
+			override: nil,
+			err:      "",
+		},
+		{
+			desc:     "non nil, but with empty short",
+			get:      "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{},
+			err:      "is required",
+		},
+		{
+			desc: "non nil, but with bad value short",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{
+				Short: "asd",
+			},
+			err: "is not a valid number",
+		},
+		{
+			desc: "non nil, but with negative short",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{
+				Short: "-1",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "non nil, but with 0 short",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "non nil, but with empty long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+			},
+			err: "is required",
+		},
+		{
+			desc: "non nil, but with bad value long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "asd",
+			},
+			err: "is not a valid number",
+		},
+		{
+			desc: "non nil, but with negative long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "-1",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "non nil, but with 0 long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "0",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "both valid",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "0.1",
+			},
+			err: "",
+		},
+	}
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+								LogNormal: &vegapb.LogNormalRiskModel{
+									RiskAversionParameter: 0.1,
+									Tau:                   1,
+									Params: &vegapb.LogNormalModelParams{
+										Mu:    0,
+										Sigma: 0.1,
+										R:     0,
+									},
+									RiskFactorOverride: c.override,
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		if len(c.err) <= 0 {
+			// no error
+			assert.Len(t, err.Get(c.get), 0, c.desc)
+			continue
+		}
+
+		assert.Contains(t, err.Get(c.get), errors.New(c.err), "test: %v, err: %v", c.desc, err)
+	}
 }
 
 func testNewLogNormalRiskParametersChangeSubmissionWithoutParamsFails(t *testing.T) {

@@ -2276,6 +2276,33 @@ func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_L
 		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-1,1]"))
 	}
 
+	// if not nil, both short and long must be specified and correct
+	if params.LogNormal.RiskFactorOverride != nil {
+		short := params.LogNormal.RiskFactorOverride.Short
+		long := params.LogNormal.RiskFactorOverride.Long
+		if len(short) <= 0 {
+			return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsRequired)
+		}
+
+		d, err := num.DecimalFromString(short)
+		if err != nil {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrMustBePositive)
+		}
+
+		if len(long) <= 0 {
+			return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsRequired)
+		}
+
+		d, err = num.DecimalFromString(long)
+		if err != nil {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrMustBePositive)
+		}
+	}
+
 	return errs
 }
 
@@ -2312,6 +2339,33 @@ func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfigura
 
 	if math.IsNaN(params.LogNormal.Params.R) {
 		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+	}
+
+	// if not nil, both short and long must be specified and correct
+	if params.LogNormal.RiskFactorOverride != nil {
+		short := params.LogNormal.RiskFactorOverride.Short
+		long := params.LogNormal.RiskFactorOverride.Long
+		if len(short) <= 0 {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsRequired)
+		}
+
+		d, err := num.DecimalFromString(short)
+		if err != nil {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrMustBePositive)
+		}
+
+		if len(long) <= 0 {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsRequired)
+		}
+
+		d, err = num.DecimalFromString(long)
+		if err != nil {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrMustBePositive)
+		}
 	}
 
 	return errs
