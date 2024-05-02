@@ -3576,12 +3576,38 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
+func (e *Engine) createPartyGeneralSubAccount(ctx context.Context, party, subAccount, asset string) (string, error) {
+	if !e.AssetExists(asset) {
+		return "", ErrInvalidAssetID
+	}
+
+	generalID := e.accountID(noMarket, subAccount, asset, types.AccountTypeGeneral)
+	if _, ok := e.accs[generalID]; !ok {
+		acc := types.Account{
+			ID:              generalID,
+			Asset:           asset,
+			MarketID:        noMarket,
+			Balance:         num.UintZero(),
+			Owner:           subAccount,
+			Type:            types.AccountTypeGeneral,
+			SubAccountOwner: &party,
+		}
+		e.accs[generalID] = &acc
+		e.addPartyAccount(subAccount, generalID, &acc)
+		e.addAccountToHashableSlice(&acc)
+		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: subAccount}))
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
+	}
+
+	return generalID, nil
+}
+
 // CreatePartyAMMSubAccounts ...
 func (e *Engine) CreatePartyAMMsSubAccounts(
 	ctx context.Context,
 	party, subAccount, asset, market string,
 ) (general *types.Account, margin *types.Account, err error) {
-	generalID, err := e.CreatePartyGeneralAccount(ctx, subAccount, asset)
+	generalID, err := e.createPartyGeneralSubAccount(ctx, party, subAccount, asset)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -3945,6 +3971,12 @@ func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, party
 }
 
 func (e *Engine) GetPartyVestedRewardAccount(partyID, asset string) (*types.Account, error) {
+	// check if party is a sub account, if yes use the owner as party id
+	genralAcc, err := e.GetPartyGeneralAccount(partyID, asset)
+	if err == nil && genralAcc.IsSubAccount() {
+		partyID = *genralAcc.SubAccountOwner
+	}
+
 	vested := e.accountID(noMarket, partyID, asset, types.AccountTypeVestedRewards)
 	return e.GetAccountByID(vested)
 }
@@ -3954,6 +3986,12 @@ func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyI
 	if !e.AssetExists(asset) {
 		e.log.Panic("trying to use a nonexisting asset for reward accounts, something went very wrong somewhere",
 			logging.String("asset-id", asset))
+	}
+
+	// check if party is a sub account, if yes use the owner as party id
+	genralAcc, err := e.GetPartyGeneralAccount(partyID, asset)
+	if err == nil && genralAcc.IsSubAccount() {
+		partyID = *genralAcc.SubAccountOwner
 	}
 
 	id := e.accountID(noMarket, partyID, asset, types.AccountTypeVestedRewards)
