@@ -2079,6 +2079,17 @@ type LogNormalRiskModel {
   tau: Float!
   "Parameters for the log normal risk model"
   params: LogNormalModelParams!
+  "An optional override for the risk factor calculated by the risk model."
+  riskFactorOverride: RiskFactorOverride
+}
+
+
+"Risk factor override to control stable leverage"
+type RiskFactorOverride {
+  "Short Risk factor value"
+  short: String!
+  "Long Risk factor value"
+  long: String!
 }
 
 "A type of simple/dummy risk model where you can specify the risk factor long and short in params"
