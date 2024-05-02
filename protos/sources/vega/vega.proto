@@ -947,6 +947,8 @@ message Account {
   string market_id = 5;
   // Account type related to this account.
   AccountType type = 6;
+  // Party that the sub-account belongs to, if the account is a sub-account.
+  optional string sub_account_owner = 7;
 }
 
 // Asset value information used within a transfer

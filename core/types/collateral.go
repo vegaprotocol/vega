@@ -30,10 +30,11 @@ const (
 )
 
 type AccountDetails struct {
-	Owner    string
-	AssetID  string
-	MarketID string
-	Type     AccountType
+	Owner           string
+	AssetID         string
+	MarketID        string
+	Type            AccountType
+	SubAccountOwner *string
 }
 
 func (ad *AccountDetails) ID() string {
@@ -76,25 +77,27 @@ func (ad *AccountDetails) IntoProto() *proto.AccountDetails {
 }
 
 type Account struct {
-	ID       string
-	Owner    string
-	Balance  *num.Uint
-	Asset    string
-	MarketID string // NB: this market may not always refer to a valid market id. instead in the case of transfers it just represents a hash corresponding to a dispatch metric.
-	Type     AccountType
+	ID              string
+	Owner           string
+	Balance         *num.Uint
+	Asset           string
+	MarketID        string // NB: this market may not always refer to a valid market id. instead in the case of transfers it just represents a hash corresponding to a dispatch metric.
+	Type            AccountType
+	SubAccountOwner *string
 }
 
 func (a Account) ToDetails() *AccountDetails {
 	return &AccountDetails{
-		Owner:    a.Owner,
-		MarketID: a.MarketID,
-		AssetID:  a.Asset,
-		Type:     a.Type,
+		Owner:           a.Owner,
+		MarketID:        a.MarketID,
+		AssetID:         a.Asset,
+		Type:            a.Type,
+		SubAccountOwner: a.SubAccountOwner,
 	}
 }
 
 func (a Account) String() string {
-	return fmt.Sprintf(
+	s := fmt.Sprintf(
 		"ID(%s) owner(%s) balance(%s) asset(%s) marketID(%s) type(%s)",
 		a.ID,
 		a.Owner,
@@ -103,6 +106,12 @@ func (a Account) String() string {
 		a.MarketID,
 		a.Type.String(),
 	)
+
+	if a.SubAccountOwner != nil {
+		s = fmt.Sprintf("%s subAccountOwner(%s)", s, *a.SubAccountOwner)
+	}
+
+	return s
 }
 
 func (a *Account) Clone() *Account {
@@ -111,26 +120,32 @@ func (a *Account) Clone() *Account {
 	return &acccpy
 }
 
+func (a *Account) IsSubAccount() bool {
+	return a.SubAccountOwner != nil
+}
+
 func AccountFromProto(a *proto.Account) *Account {
 	bal, _ := num.UintFromString(a.Balance, 10)
 	return &Account{
-		ID:       a.Id,
-		Owner:    a.Owner,
-		Balance:  bal,
-		Asset:    a.Asset,
-		MarketID: a.MarketId,
-		Type:     a.Type,
+		ID:              a.Id,
+		Owner:           a.Owner,
+		Balance:         bal,
+		Asset:           a.Asset,
+		MarketID:        a.MarketId,
+		Type:            a.Type,
+		SubAccountOwner: a.SubAccountOwner,
 	}
 }
 
 func (a *Account) IntoProto() *proto.Account {
 	return &proto.Account{
-		Id:       a.ID,
-		Owner:    a.Owner,
-		Balance:  num.UintToString(a.Balance),
-		Asset:    a.Asset,
-		MarketId: a.MarketID,
-		Type:     a.Type,
+		Id:              a.ID,
+		Owner:           a.Owner,
+		Balance:         num.UintToString(a.Balance),
+		Asset:           a.Asset,
+		MarketId:        a.MarketID,
+		Type:            a.Type,
+		SubAccountOwner: a.SubAccountOwner,
 	}
 }
 

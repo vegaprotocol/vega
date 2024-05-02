@@ -3703,3 +3703,41 @@ func TestBalanceSnapshot(t *testing.T) {
 		require.EqualValues(t, d, got)
 	}
 }
+
+func TestVestedAccountMapping(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	ctx := context.Background()
+
+	party1 := "party1"
+	asset := "BTC"
+	acc := eng.GetOrCreatePartyVestedRewardAccount(ctx, party1, "ETH")
+	assert.Equal(t, acc.Owner, party1)
+
+	// test for sub account mapping
+	party2 := "party2"
+	subAccount2 := "party2-sub"
+	_, _, err := eng.CreatePartyAMMsSubAccounts(ctx, party2, subAccount2, asset, "market1")
+	assert.NoError(t, err)
+
+	vestedAccount := eng.GetOrCreatePartyVestedRewardAccount(ctx, subAccount2, asset)
+	assert.Equal(t, vestedAccount.Owner, party2)
+
+	vestedAccount, err = eng.GetPartyVestedRewardAccount(subAccount2, asset)
+	assert.NoError(t, err)
+	assert.Equal(t, vestedAccount.Owner, party2)
+
+	subAccount1 := "party1-sub"
+	_, _, err = eng.CreatePartyAMMsSubAccounts(ctx, party1, subAccount1, asset, "market1")
+	assert.NoError(t, err)
+
+	vestedAccount = eng.GetOrCreatePartyVestedRewardAccount(ctx, subAccount1, asset)
+	assert.Equal(t, vestedAccount.Owner, party1)
+
+	vestedAccount, err = eng.GetPartyVestedRewardAccount(subAccount1, asset)
+	assert.NoError(t, err)
+	assert.Equal(t, vestedAccount.Owner, party1)
+}
