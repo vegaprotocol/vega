@@ -688,6 +688,7 @@ message ExecutionMarkets {
   repeated Successors successors = 4;
   repeated string market_ids = 5;
   SLANetworkParams sla_network_params = 6;
+  repeated vega.events.v1.MarketCommunityTags markets_community_tags = 7;
 }
 
 message Successors {
