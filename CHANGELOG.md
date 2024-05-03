@@ -83,6 +83,8 @@
 - [11200](https://github.com/vegaprotocol/vega/issues/11200) - Make sure a party can afford the trades before they are submitted to the book. 
 - [11205](https://github.com/vegaprotocol/vega/issues/11205) - Evaluate transfer interval correctly. 
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Add transfer ID to recurring governance transfer ledger entries.
+- [11221](https://github.com/vegaprotocol/vega/issues/11221) - Fix for totalRewardsEarned being twice the rewardEarned.
+
 
 ## 0.75.0
 
