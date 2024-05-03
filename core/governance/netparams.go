@@ -155,6 +155,22 @@ func (e *Engine) getVolumeRebateProgramNetworkParameters() *types.ProposalParame
 	)
 }
 
+func (e *Engine) getUpdateMarketCommunityTagsParameters() *types.ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalUpdateCommunityTagsMinClose,
+		netparams.GovernanceProposalUpdateCommunityTagsMaxClose,
+		netparams.GovernanceProposalUpdateCommunityTagsMinEnact,
+		netparams.GovernanceProposalUpdateCommunityTagsMaxEnact,
+		netparams.GovernanceProposalUpdateCommunityTagsRequiredParticipation,
+		netparams.GovernanceProposalUpdateCommunityTagsRequiredMajority,
+		netparams.GovernanceProposalUpdateCommunityTagsMinProposerBalance,
+		netparams.GovernanceProposalUpdateCommunityTagsMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
 func (e *Engine) getNewAssetProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalAssetMinClose,

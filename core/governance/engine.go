@@ -53,6 +53,9 @@ var (
 	ErrParentMarketAlreadySucceeded              = errors.New("the parent market was already succeeded by a prior proposal")
 	ErrParentMarketSucceededByCompeting          = errors.New("the parent market has been succeeded by a competing propsal")
 	ErrSettlementDataOutOfRange                  = errors.New("the settlement data is invalid")
+	ErrUnknownMarketID                           = func(id string) error {
+		return fmt.Errorf("unknown market id %v", id)
+	}
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams,Banking
@@ -745,6 +748,8 @@ func (e *Engine) getProposalParams(proposalTerm types.ProposalTerm) (*types.Prop
 		return e.getVolumeDiscountProgramNetworkParameters(), nil
 	case types.ProposalTermsTypeUpdateVolumeRebateProgram:
 		return e.getVolumeRebateProgramNetworkParameters(), nil
+	case types.ProposalTermsTypeUpdateMarketCommunityTags:
+		return e.getUpdateMarketCommunityTagsParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
@@ -1097,9 +1102,19 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateUpdateVolumeDiscountProgram(e.netp, terms.GetUpdateVolumeDiscountProgram())
 	case types.ProposalTermsTypeUpdateVolumeRebateProgram:
 		return validateUpdateVolumeRebateProgram(e.netp, terms.GetUpdateVolumeRebateProgram())
+	case types.ProposalTermsTypeUpdateMarketCommunityTags:
+		return validateUpdateMarketCommunityTags(terms.GetUpdateMarketCommunityTags(), e.markets)
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
+}
+
+func validateUpdateMarketCommunityTags(p *types.UpdateMarketCommunityTags, markets Markets) (types.ProposalError, error) {
+	if !markets.MarketExists(p.MarketID) {
+		return types.ProposalErrorUnknownMarketID, ErrUnknownMarketID(p.MarketID)
+	}
+
+	return types.ProposalErrorUnspecified, nil
 }
 
 func (e *Engine) validateGovernanceTransfer(newTransfer *types.NewTransfer) (types.ProposalError, error) {

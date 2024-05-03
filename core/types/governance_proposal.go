@@ -133,6 +133,8 @@ const (
 	ProposalErrorInvalidSizeDecimalPlaces = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES
 	// ProposalErrorInvalidVolumeRebateProgram is returned when the volume rebate program proposal is not valid.
 	ProposalErrorInvalidVolumeRebateProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_VOLUME_REBATE_PROGRAM
+	// ProposalErrorUnknownMarketID ...
+	ProposalErrorUnknownMarketID = vegapb.ProposalError_PROPOSAL_ERROR_UNKNOWN_MARKET_ID
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -173,6 +175,7 @@ const (
 	ProposalTermsTypeUpdateReferralProgram
 	ProposalTermsTypeUpdateVolumeDiscountProgram
 	ProposalTermsTypeUpdateVolumeRebateProgram
+	ProposalTermsTypeUpdateMarketCommunityTags
 )
 
 type ProposalSubmission struct {
@@ -490,6 +493,14 @@ func (p Proposal) IsVolumeDiscountProgramUpdate() bool {
 
 func (p Proposal) IsVolumeRebateProgramUpdate() bool {
 	return p.Terms.IsVolumeRebateProgramUpdate()
+}
+
+func (p Proposal) IsUpdateMarketCommunityTags() bool {
+	return p.Terms.IsUpdateMarketCommunityTags()
+}
+
+func (p Proposal) UpdateMarketCommunityTags() *UpdateMarketCommunityTags {
+	return p.Terms.UpdateMarketCommunityTags()
 }
 
 func (p Proposal) MarketUpdate() *UpdateMarket {

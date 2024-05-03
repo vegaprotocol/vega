@@ -13,6 +13,14 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+// A list of tag to associate to a market.
+message MarketCommunityTags {
+  // A market ID.
+  string market_id = 1;
+  // A list of tags;
+  repeated string tags = 2;
+}
+
 // Time weighted notional position update for the current epoch.
 // The time weighted notional position is used to determine whether
 // a party is eligible for receiving rewards at the end of an epoch.
@@ -1535,6 +1543,9 @@ enum BusEventType {
   // Event indicating the updated statistics for the volume rebate.
   BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED = 95;
 
+  // Event containing market community tags.
+  BUS_EVENT_TYPE_MARKET_COMMUNITY_TAG = 96;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1734,6 +1745,9 @@ message BusEvent {
     VolumeRebateProgramEnded volume_rebate_program_ended = 192;
     // Event notifying of an update to the volume rebate statistics.
     VolumeRebateStatsUpdated volume_rebate_stats_updated = 193;
+    // Event notifying of a Market community tags update.
+    MarketCommunityTags market_community_tags = 194;
+
     // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
