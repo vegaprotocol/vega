@@ -555,3 +555,73 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 		})
 	}
 }
+
+func TestSLAParamChangePushesOutOfCommitment(t *testing.T) {
+	te := newTestEngine(t)
+	slaParams := te.defaultSLAParams.DeepClone()
+	te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor)
+	te.engine.UpdateSLAParameters(slaParams)
+
+	idGen := &stubIDGen{}
+	ctx := context.Background()
+	party := "lp-party-1"
+
+	te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
+
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         te.marketID,
+		CommitmentAmount: num.NewUint(100),
+		Fee:              num.NewDecimalFromFloat(0.5),
+		Reference:        fmt.Sprintf("provision-by-%s", party),
+	}
+
+	buyOrdersPerBlock := [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}}
+	sellsOrdersPerBlock := [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}}
+
+	_, err := te.engine.SubmitLiquidityProvision(ctx, lps, party, idGen)
+	require.NoError(t, err)
+
+	one := num.UintOne()
+	positionFactor := num.DecimalOne()
+	midPrice := num.NewUint(15)
+
+	epochLength := time.Duration(100) * time.Second
+	epochStart := time.Now()
+	epochEnd := time.Now().Add(epochLength)
+	epochEndAgain := time.Now().Add(2 * epochLength)
+
+	te.engine.ResetSLAEpoch(epochStart, one, midPrice, positionFactor)
+
+	te.engine.ApplyPendingProvisions(ctx, epochStart)
+
+	te.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
+
+	te.orderbook.EXPECT().GetLastTradedPrice().Return(num.NewUint(15)).AnyTimes()
+	te.orderbook.EXPECT().GetIndicativePrice().Return(num.NewUint(15)).AnyTimes()
+
+	orders := []*types.Order{}
+	te.orderbook.EXPECT().GetOrdersPerParty(party).DoAndReturn(func(party string) []*types.Order {
+		return orders
+	}).AnyTimes()
+
+	orders = generateOrders(*idGen, te.marketID, buyOrdersPerBlock[0], sellsOrdersPerBlock[0])
+
+	te.tsvc.SetTime(epochStart)
+	te.engine.EndBlock(one, midPrice, positionFactor)
+
+	// LP meets commitment right up til the end of the epoch
+	te.tsvc.SetTime(epochEnd)
+	te.engine.EndBlock(one, midPrice, positionFactor)
+	te.engine.CalculateSLAPenalties(epochEnd)
+	stats := te.engine.LiquidityProviderSLAStats(epochEnd)
+	require.Equal(t, "1", stats[0].CurrentEpochFractionOfTimeOnBook)
+
+	// now update the params so that the new update parameters mean they do not meet the commitment
+	te.engine.ResetSLAEpoch(epochEnd, one, num.NewUint(15000), positionFactor)
+
+	// at the end of the next epoch the time on book should be 0
+	te.engine.CalculateSLAPenalties(epochEndAgain)
+	stats = te.engine.LiquidityProviderSLAStats(epochEndAgain)
+	require.Equal(t, "0", stats[0].CurrentEpochFractionOfTimeOnBook)
+}

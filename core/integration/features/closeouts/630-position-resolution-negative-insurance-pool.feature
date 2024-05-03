@@ -10,7 +10,7 @@ Feature: Regression test for issue 630
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario: Trader is being closed out.
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

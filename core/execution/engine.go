@@ -796,14 +796,14 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 
 	e.collateral.CreateSpotMarketAccounts(ctx, marketConfig.ID, quoteAsset)
 
-	if err := e.propagateSpotInitialNetParams(ctx, mkt); err != nil {
+	if err := e.propagateSpotInitialNetParams(ctx, mkt, false); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Market) error {
+func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Market, isRestore bool) error {
 	if !e.npv.minLpStakeQuantumMultiple.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, e.npv.minLpStakeQuantumMultiple)
 	}
@@ -848,6 +848,10 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
+
+	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
+
+	e.propagateSLANetParams(ctx, mkt, isRestore)
 	return nil
 }
 
@@ -1688,7 +1692,7 @@ func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Co
 		)
 	}
 
-	for _, m := range e.futureMarketsCpy {
+	for _, m := range e.allMarketsCpy {
 		// Set immediately during opening auction
 		if m.IsOpeningAuction() {
 			m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d)

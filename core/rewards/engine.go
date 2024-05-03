@@ -30,7 +30,7 @@ import (
 
 var (
 	decimal1, _        = num.DecimalFromString("1")
-	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward}
+	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward, types.AccountTypeRealisedReturnReward}
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/rewards MarketActivityTracker,Delegation,TimeService,Topology,Transfers,Teams,Vesting,ActivityStreak
@@ -46,7 +46,7 @@ type MarketActivityTracker interface {
 	GetProposer(market string) string
 	CalculateMetricForIndividuals(ctx context.Context, ds *vega.DispatchStrategy) []*types.PartyContributionScore
 	CalculateMetricForTeams(ctx context.Context, ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
-	GetLastEpochTakeFees(asset string, market []string) map[string]*num.Uint
+	GetLastEpochTakeFees(asset string, market []string, epochs int32) map[string]*num.Uint
 }
 
 // EpochEngine notifies the reward engine at the end of an epoch.
@@ -376,14 +376,18 @@ func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asse
 		balance, _ := num.UintFromDecimal(account.Balance.ToDecimal().Mul(factor))
 		e.log.Info("reward balance", logging.String("epoch", epochSeq), logging.String("reward-type", rewardType.String()), logging.String("account-balance", account.Balance.String()), logging.String("factor", factor.String()), logging.String("effective-balance", balance.String()))
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.log)
-	case types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward:
+	case types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeRealisedReturnReward:
 		ds := e.transfers.GetDispatchStrategy(account.MarketID)
 		if ds == nil {
 			return nil
 		}
 		var takerFeesPaidInRewardAsset map[string]*num.Uint
 		if ds.CapRewardFeeMultiple != nil {
-			takerFeesPaid := e.marketActivityTracker.GetLastEpochTakeFees(ds.AssetForMetric, ds.Markets)
+			epochs := int32(1)
+			if ds.TransferInterval != nil {
+				epochs = *ds.TransferInterval
+			}
+			takerFeesPaid := e.marketActivityTracker.GetLastEpochTakeFees(ds.AssetForMetric, ds.Markets, epochs)
 			takerFeesPaidInRewardAsset = e.convertTakerFeesToRewardAsset(takerFeesPaid, ds.AssetForMetric, asset)
 		}
 		if ds.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS {

@@ -111,8 +111,8 @@ func (n NewSpotMarket) String() string {
 
 type NewSpotMarketConfiguration struct {
 	Instrument                *InstrumentConfiguration
-	DecimalPlaces             uint64
-	PositionDecimalPlaces     int64
+	PriceDecimalPlaces        uint64
+	SizeDecimalPlaces         int64
 	Metadata                  []string
 	PriceMonitoringParameters *PriceMonitoringParameters
 	TargetStakeParameters     *TargetStakeParameters
@@ -155,8 +155,8 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 
 	r := &vegapb.NewSpotMarketConfiguration{
 		Instrument:                instrument,
-		DecimalPlaces:             n.DecimalPlaces,
-		PositionDecimalPlaces:     n.PositionDecimalPlaces,
+		PriceDecimalPlaces:        n.PriceDecimalPlaces,
+		SizeDecimalPlaces:         n.SizeDecimalPlaces,
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
@@ -175,11 +175,11 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 
 func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 	cpy := &NewSpotMarketConfiguration{
-		DecimalPlaces:         n.DecimalPlaces,
-		PositionDecimalPlaces: n.PositionDecimalPlaces,
-		Metadata:              make([]string, len(n.Metadata)),
-		SLAParams:             n.SLAParams.DeepClone(),
-		TickSize:              n.TickSize.Clone(),
+		PriceDecimalPlaces: n.PriceDecimalPlaces,
+		SizeDecimalPlaces:  n.SizeDecimalPlaces,
+		Metadata:           make([]string, len(n.Metadata)),
+		SLAParams:          n.SLAParams.DeepClone(),
+		TickSize:           n.TickSize.Clone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -204,8 +204,8 @@ func (n NewSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
 		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s) tickSize (%s)",
 		n.Metadata,
-		n.DecimalPlaces,
-		n.PositionDecimalPlaces,
+		n.PriceDecimalPlaces,
+		n.SizeDecimalPlaces,
 		stringer.PtrToString(n.Instrument),
 		stringer.PtrToString(n.PriceMonitoringParameters),
 		stringer.PtrToString(n.TargetStakeParameters),
@@ -248,8 +248,8 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 
 	r := &NewSpotMarketConfiguration{
 		Instrument:                instrument,
-		DecimalPlaces:             p.DecimalPlaces,
-		PositionDecimalPlaces:     p.PositionDecimalPlaces,
+		PriceDecimalPlaces:        p.PriceDecimalPlaces,
+		SizeDecimalPlaces:         p.SizeDecimalPlaces,
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParams,
@@ -392,7 +392,6 @@ type SpotProduct struct {
 
 func (f SpotProduct) IntoProto() *vegapb.SpotProduct {
 	return &vegapb.SpotProduct{
-		Name:       f.Name,
 		BaseAsset:  f.BaseAsset,
 		QuoteAsset: f.QuoteAsset,
 	}

@@ -61,13 +61,15 @@ func New(
 	cancel func(),
 	stopBlockchain func() error,
 	nodewallets *nodewallets.NodeWallets,
-	ethClient *ethclient.Client,
-	ethConfirmation *ethclient.EthereumConfirmations,
+	primaryEthClient *ethclient.PrimaryClient,
+	secondaryEthClient *ethclient.SecondaryClient,
+	primaryEthConfirmation *ethclient.EthereumConfirmations,
+	secondaryEthConfirmation *ethclient.EthereumConfirmations,
 	blockchainClient *blockchain.Client,
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
 	l2Clients *ethclient.L2Clients,
-) (p *Protocol, err error) {
+) (proto *Protocol, err error) {
 	log = log.Named(namedLogger)
 
 	defer func() {
@@ -76,20 +78,31 @@ func New(
 			return
 		}
 
-		ids := p.confWatcher.OnConfigUpdateWithID(
-			func(cfg config.Config) { p.ReloadConf(cfg.Processor) },
+		ids := proto.confWatcher.OnConfigUpdateWithID(
+			func(cfg config.Config) { proto.ReloadConf(cfg.Processor) },
 		)
-		p.confListenerIDs = ids
+		proto.confListenerIDs = ids
 	}()
 
 	svcs, err := newServices(
-		ctx, log, confWatcher, nodewallets, ethClient, ethConfirmation, blockchainClient, vegaPaths, stats, l2Clients,
+		ctx,
+		log,
+		confWatcher,
+		nodewallets,
+		primaryEthClient,
+		secondaryEthClient,
+		primaryEthConfirmation,
+		secondaryEthConfirmation,
+		blockchainClient,
+		vegaPaths,
+		stats,
+		l2Clients,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	proto := &Protocol{
+	proto = &Protocol{
 		App: processor.NewApp(
 			log,
 			svcs.vegaPaths,
@@ -100,7 +113,7 @@ func New(
 			svcs.banking,
 			svcs.broker,
 			svcs.witness,
-			svcs.eventForwarder,
+			svcs.primaryEventForwarder,
 			svcs.executionEngine,
 			svcs.genesisHandler,
 			svcs.governance,
@@ -129,7 +142,8 @@ func New(
 			svcs.referralProgram,
 			svcs.volumeDiscount,
 			svcs.blockchainClient,
-			svcs.erc20MultiSigTopology,
+			svcs.primaryMultisig,
+			svcs.secondaryMultisig,
 			stats.GetVersion(),
 			svcs.protocolUpgradeEngine,
 			svcs.codec,
@@ -149,8 +163,12 @@ func New(
 			Watcher: proto.App.OnSpamProtectionMaxBatchSizeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.BlockchainsEthereumConfig,
-			Watcher: proto.App.OnBlockchainEthereumConfigUpdate,
+			Param:   netparams.BlockchainsPrimaryEthereumConfig,
+			Watcher: proto.App.OnBlockchainPrimaryEthereumConfigUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.BlockchainsEVMBridgeConfigs,
+			Watcher: proto.App.OnBlockchainEVMChainConfigUpdate,
 		},
 	)
 
@@ -180,7 +198,7 @@ func (n *Protocol) Protocol() semver.Version {
 }
 
 func (n *Protocol) GetEventForwarder() *evtforward.Forwarder {
-	return n.services.eventForwarder
+	return n.services.primaryEventForwarder
 }
 
 func (n *Protocol) GetTimeService() *vegatime.Svc {

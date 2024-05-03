@@ -35,14 +35,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-var (
-	ErrUnableToFindDeposit                 = errors.New("unable to find erc20 deposit event")
-	ErrUnableToFindWithdrawal              = errors.New("unable to find erc20 withdrawal event")
-	ErrUnableToFindERC20AssetList          = errors.New("unable to find erc20 asset list event")
-	ErrUnableToFindERC20AssetLimitsUpdated = errors.New("unable to find ERC20 asset limits updated event")
-	ErrMissingConfirmations                = errors.New("missing confirmation from ethereum")
-	ErrNotAnErc20Asset                     = errors.New("not an erc20 asset")
-)
+var ErrNotAnErc20Asset = errors.New("not an erc20 asset")
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/assets/erc20 ETHClient
 type ETHClient interface {
@@ -51,11 +44,14 @@ type ETHClient interface {
 	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
 	ConfirmationsRequired() uint64
+	ChainID(ctx context.Context) (*big.Int, error)
+	IsEthereum() bool
 }
 
 type ERC20 struct {
 	asset     *types.Asset
 	address   string
+	chainID   string
 	ok        bool
 	wallet    ethnw.EthereumWallet
 	ethClient ETHClient
@@ -78,6 +74,7 @@ func New(
 			Details: asset,
 			Status:  types.AssetStatusProposed,
 		},
+		chainID:   source.ChainID,
 		address:   source.ContractAddress,
 		wallet:    w,
 		ethClient: ethClient,
@@ -96,6 +93,13 @@ func (e *ERC20) SetEnabled() {
 	e.asset.Status = types.AssetStatusEnabled
 }
 
+// SetChainID sets the chain-id on the ERC20. This should only be used during the migration from 0.75.
+func (e *ERC20) SetChainID(chainID string) {
+	e.chainID = chainID
+	source := e.asset.Details.Source.(*types.AssetDetailsErc20)
+	source.ERC20.ChainID = chainID
+}
+
 func (e *ERC20) Update(updatedAsset *types.Asset) {
 	e.asset = updatedAsset
 }
@@ -110,6 +114,10 @@ func (e *ERC20) ProtoAsset() *typespb.Asset {
 
 func (e ERC20) Type() *types.Asset {
 	return e.asset.DeepClone()
+}
+
+func (e ERC20) ChainID() string {
+	return e.chainID
 }
 
 func (e *ERC20) GetAssetClass() common.AssetClass {
@@ -137,7 +145,7 @@ func (e *ERC20) SignListAsset() (msg []byte, sig []byte, err error) {
 	}
 
 	source := e.asset.Details.GetERC20()
-	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
+	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, e.ethClient.IsEthereum()).
 		ListAsset(e.address, e.asset.ID, source.LifetimeLimit, source.WithdrawThreshold, nonce)
 	if err != nil {
 		return nil, nil, err
@@ -148,7 +156,7 @@ func (e *ERC20) SignListAsset() (msg []byte, sig []byte, err error) {
 
 func (e *ERC20) SignSetAssetLimits(nonce *num.Uint, lifetimeLimit *num.Uint, withdrawThreshold *num.Uint) (msg []byte, sig []byte, err error) {
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
-	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
+	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, e.ethClient.IsEthereum()).
 		SetAssetLimits(e.address, lifetimeLimit, withdrawThreshold, nonce)
 	if err != nil {
 		return nil, nil, err
@@ -165,7 +173,7 @@ func (e *ERC20) SignWithdrawal(
 ) (msg []byte, sig []byte, err error) {
 	nonce, _ := num.UintFromBig(withdrawRef)
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
-	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
+	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, e.ethClient.IsEthereum()).
 		WithdrawAsset(e.address, amount, ethPartyAddress, now, nonce)
 	if err != nil {
 		return nil, nil, err

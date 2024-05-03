@@ -180,7 +180,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return err
 	})
 	s.Step(`^the spot markets:$`, func(table *godog.Table) error {
-		markets, err := steps.TheSpotMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
+		markets, err := steps.TheSpotMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.timeService.GetTimeNow(), table)
 		execsetup.markets = markets
 		return err
 	})
@@ -289,6 +289,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartyAddsTheFollowingOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
 	})
 
+	s.Step(`^the party "([^"]+)" adds the following cancels to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingCancelsToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the party "([^"]+)" adds the following amends to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingAmendsToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
 	s.Step(`^the party "([^"]+)" adds the following iceberg orders to a batch:$`, func(party string, table *godog.Table) error {
 		return steps.PartyAddsTheFollowingIcebergOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
 	})
@@ -299,6 +307,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^the party "([^"]+)" submits their batch instruction$`, func(party string) error {
 		return steps.PartySubmitsTheirBatchInstruction(party, execsetup.executionEngine)
+	})
+	s.Step(`^the party "([^"]+)" submits their batch instruction with error "([^"]+)"$`, func(party, err string) error {
+		return steps.PartySubmitsTheirBatchInstructionWithError(party, err, execsetup.executionEngine)
 	})
 
 	s.Step(`^the parties place the following orders "([^"]+)" blocks apart:$`, func(blockCount string, table *godog.Table) error {
@@ -344,6 +355,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the following LP events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingLPEventsShouldBeEmitted(execsetup.broker, table)
+	})
+
+	s.Step(`the following orders are cancelled on market "([^"]+)":$`, func(market string, table *godog.Table) error {
+		return steps.TheCancelledOrdersEventContains(execsetup.broker, market, table)
 	})
 
 	// block time stuff

@@ -41,7 +41,7 @@ Feature: test risk model parameter sigma
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @Now @NoPerp
+  @Now
   Scenario: 001, test market ETH/MAR53(sigma=50),
 
     Given the liquidity monitoring parameters:
@@ -101,7 +101,7 @@ Feature: test risk model parameter sigma
       | party  | market id | maintenance    | search         | initial        | release        |
       | party0 | ETH/MAR53 | 49999950000000 | 59999940000000 | 74999925000000 | 84999915000000 |
 
-  @Now @NoPerp
+  @Now
   Scenario: 002, test market ETH/MAR0 (kind of "normal" risk parameters setting),
 
     Given the liquidity monitoring parameters:

@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -43,22 +44,17 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	defer func() {
 		m.triggerStopOrders(ctx, idgen)
 	}()
-	var (
-		trades []*types.Trade
-		err    error
-	)
+	indicativeUncrossingPrice := num.UintZero()
 
 	checkExceeded := m.mkt.State == types.MarketStatePending
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
 	isOpening := m.as.IsOpeningAuction()
 	if isOpening && !m.pMonitor.Initialised() {
-		if trades, err = m.matching.GetIndicativeTrades(); err != nil {
-			m.log.Panic("Can't get indicative trades")
-		}
-		if len(trades) > 0 {
+		indicativeUncrossingPrice = m.matching.OrderBook.GetIndicativePrice()
+		if !indicativeUncrossingPrice.IsZero() {
 			// pass the first uncrossing trades to price engine so state variables depending on it can be initialised
-			m.pMonitor.CheckPrice(ctx, m.as, trades, true, true)
+			m.pMonitor.ResetPriceHistory(indicativeUncrossingPrice)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
 	}
@@ -71,15 +67,13 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 		return
 	}
-	if len(trades) == 0 {
-		if trades, err = m.matching.GetIndicativeTrades(); err != nil {
-			m.log.Panic("Can't get indicative trades")
-		}
+	if indicativeUncrossingPrice.IsZero() {
+		indicativeUncrossingPrice = m.matching.OrderBook.GetIndicativePrice()
 	}
 
 	// opening auction
 	if isOpening {
-		if len(trades) == 0 {
+		if indicativeUncrossingPrice.IsZero() {
 			if checkExceeded && m.as.ExceededMaxOpening(now) {
 				m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
 				m.terminateMarket(ctx, types.MarketStateCancelled, nil)
@@ -101,11 +95,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
 		m.as.SetReadyToLeave()
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true, true)
-		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
-			// this should never, ever happen
-			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
-		}
 
 		// if we don't have yet consensus for the floating point parameters, stay in the opening auction
 		if !m.CanLeaveOpeningAuction() {
@@ -143,7 +132,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		m.checkBondBalance(ctx)
 	}
 	if isPrice || m.as.CanLeave() {
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
+		m.pMonitor.CheckPrice(ctx, m.as, indicativeUncrossingPrice, true, true)
 	}
 	end := m.as.CanLeave()
 	if isPrice && end {

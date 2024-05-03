@@ -1455,7 +1455,7 @@ func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 	// ensure the balance is always returned as expected
 
 	broker.EXPECT().Send(gomock.Any()).Times(1)
-	tEng.netp.Update(context.Background(), netparams.BlockchainsEthereumConfig, "{\"network_id\":\"1\",\"chain_id\":\"1\",\"collateral_bridge_contract\":{\"address\":\"0x23872549cE10B40e31D6577e0A920088B0E0666a\"},\"confirmations\":64,\"staking_bridge_contract\":{\"address\":\"0x195064D33f09e0c42cF98E665D9506e0dC17de68\",\"deployment_block_height\":13146644},\"token_vesting_contract\":{\"address\":\"0x23d1bFE8fA50a167816fBD79D7932577c06011f4\",\"deployment_block_height\":12834524},\"multisig_control_contract\":{\"address\":\"0xDD2df0E7583ff2acfed5e49Df4a424129cA9B58F\",\"deployment_block_height\":15263593}}")
+	tEng.netp.Update(context.Background(), netparams.BlockchainsPrimaryEthereumConfig, "{\"network_id\":\"1\",\"chain_id\":\"1\",\"collateral_bridge_contract\":{\"address\":\"0x23872549cE10B40e31D6577e0A920088B0E0666a\"},\"confirmations\":64,\"staking_bridge_contract\":{\"address\":\"0x195064D33f09e0c42cF98E665D9506e0dC17de68\",\"deployment_block_height\":13146644},\"token_vesting_contract\":{\"address\":\"0x23d1bFE8fA50a167816fBD79D7932577c06011f4\",\"deployment_block_height\":12834524},\"multisig_control_contract\":{\"address\":\"0xDD2df0E7583ff2acfed5e49Df4a424129cA9B58F\",\"deployment_block_height\":15263593}}")
 	tEng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().DoAndReturn(func(p string) (*num.Uint, error) {
 		b, ok := tEng.tokenBal[p]
 		if !ok {
@@ -1628,6 +1628,7 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 					DisposalFraction:    num.DecimalFromFloat(0.1),
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+					DisposalSlippage:    num.DecimalFromFloat(0.1),
 				},
 				TickSize: num.NewUint(1),
 			},
@@ -1718,6 +1719,7 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 					DisposalFraction:    num.DecimalFromFloat(0.1),
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+					DisposalSlippage:    num.DecimalFromFloat(0.1),
 				},
 				TickSize: num.UintOne(),
 			},
@@ -1763,8 +1765,8 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 						},
 					},
 				},
-				Metadata:      []string{"asset_class:spot/crypto", "product:spot"},
-				DecimalPlaces: 0,
+				Metadata:           []string{"asset_class:spot/crypto", "product:spot"},
+				PriceDecimalPlaces: 0,
 				SLAParams: &types.LiquiditySLAParams{
 					PriceRange:                  num.DecimalOne(),
 					CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5),
@@ -1782,6 +1784,10 @@ func updateSpotMarketTerms() *types.ProposalTermsUpdateSpotMarket {
 		UpdateSpotMarket: &types.UpdateSpotMarket{
 			MarketID: vgrand.RandomStr(5),
 			Changes: &types.UpdateSpotMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "some name",
+					Code: "some code",
+				},
 				RiskParameters: &types.UpdateSpotMarketConfigurationLogNormal{
 					LogNormal: &types.LogNormalRiskModel{
 						RiskAversionParameter: num.DecimalFromFloat(0.02),
@@ -1907,6 +1913,7 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 					DisposalFraction:    num.DecimalFromFloat(0.1),
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+					DisposalSlippage:    num.DecimalFromFloat(0.1),
 				},
 				TickSize: num.UintOne(),
 			},
@@ -1987,9 +1994,10 @@ func (e *tstEngine) newBatchSubmission(
 
 	for _, proposal := range proposals {
 		sub.Terms.Changes = append(sub.Terms.Changes, types.BatchProposalChange{
-			ID:            proposal.ID,
-			Change:        proposal.Terms.Change,
-			EnactmentTime: proposal.Terms.EnactmentTimestamp,
+			ID:             proposal.ID,
+			Change:         proposal.Terms.Change,
+			EnactmentTime:  proposal.Terms.EnactmentTimestamp,
+			ValidationTime: proposal.Terms.ValidationTimestamp,
 		})
 	}
 
@@ -2393,6 +2401,28 @@ func (e *tstEngine) ensureAllAssetEnabled(t *testing.T) {
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
 		ret := assets.NewAsset(builtin.New(id, details.NewAsset.Changes))
 		return ret, nil
+	})
+	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+}
+
+func (e *tstEngine) ensureAllAssetEnabledWithDP(t *testing.T, base, quote string, baseDecimals, quoteDecimals uint64) {
+	t.Helper()
+	baseDetails := newAssetTerms()
+	baseDetails.NewAsset.Changes.Symbol = base
+	baseDetails.NewAsset.Changes.Decimals = baseDecimals
+
+	quoteDetails := newAssetTerms()
+	quoteDetails.NewAsset.Changes.Symbol = quote
+	quoteDetails.NewAsset.Changes.Decimals = quoteDecimals
+
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
+		if id == base {
+			ret := assets.NewAsset(builtin.New(id, baseDetails.NewAsset.Changes))
+			return ret, nil
+		} else {
+			ret := assets.NewAsset(builtin.New(id, quoteDetails.NewAsset.Changes))
+			return ret, nil
+		}
 	})
 	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 }

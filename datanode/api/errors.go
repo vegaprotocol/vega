@@ -340,7 +340,7 @@ var (
 	// ErrGetTimeWeightedNotionalPosition is returned when the time weighted notional position cannot be retrieved.
 	ErrGetTimeWeightedNotionalPosition = errors.New("failed to get time weighted notional position")
 
-	ErrDateRangeValidationFailed = errors.New("invalid date range")
+	ErrDateRangeValidationFailed = newInvalidArgumentError("invalid date range")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

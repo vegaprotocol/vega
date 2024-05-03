@@ -348,9 +348,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC21 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC21 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
-
-    And the mark price should be "110000" for the market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode            | auction trigger             | extension trigger           | mark price | indicative price | indicative volume |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 110000     | 0                | 0                 |
 
     #T1 = T0 + 10s
     When time is updated to "2020-10-16T00:02:10Z"
@@ -360,9 +360,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC21 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC21 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
-
-    And the mark price should be "110000" for the market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode                    | auction trigger       | extension trigger           | mark price | indicative price | indicative volume | auction end |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 110000     | 111000           | 1                 | 240         |
 
     #T1 + 04min00s (last second of the auction)
     When time is updated to "2020-10-16T00:03:10Z"
@@ -372,17 +372,65 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC21 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
       | party2 | ETH/DEC21 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode                    | auction trigger       | extension trigger           | mark price | indicative price | indicative volume | auction end | horizon | ref price | min bound | max bound |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 110000     | 133000           | 2                 | 240         | 120     | 110000    | 108900    | 111109    |
 
     #T1 + 04min01s (auction gets extended as we've removed trigger staleness functionality)
     When time is updated to "2020-10-16T00:06:11Z"
 
-    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
-
-    And the mark price should be "110000" for the market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode                    | auction trigger       | extension trigger     | mark price | indicative price | indicative volume | auction end |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 110000     | 133000           | 2                 | 600         |
 
     #T1 + 10min01s 
     When time is updated to "2020-10-16T00:12:11Z"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the mark price should be "133000" for the market "ETH/DEC21"
+
+    And the market data for the market "ETH/DEC21" should be:
+      | horizon | ref price | min bound | max bound |
+      |  60     | 133000    | 132283    | 133720    |
+      | 120     | 133000    | 131670    | 134341    |
+
+    Scenario: Non-persistent order results in no trades. Persistent order which results in an n-th trade breaching the trigger and causing auction - all previous n-1 trades get executed.
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | aux    | ETH   | 100000000000 |
+      | aux2   | ETH   | 100000000000 |
+
+    And the parties place the following orders:
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux   | ETH/DEC21 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC21 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC21 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
+    And the opening auction period ends for market "ETH/DEC21"
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    |
+   
+    When the parties place the following orders with ticks:
+      | party    | market id | side | volume | price  | resulting trades | type       | tif     | error                                                       |
+      | aux      | ETH/DEC21 | sell | 3      | 100540 | 0                | TYPE_LIMIT | TIF_GTC |                                                             |
+      | aux2     | ETH/DEC21 | sell | 2      | 100541 | 0                | TYPE_LIMIT | TIF_GTC |                                                             |
+      | party1   | ETH/DEC21 | sell | 1      | 100542 | 0                | TYPE_LIMIT | TIF_GTC |                                                             |
+      | party2   | ETH/DEC21 | buy  | 10     | 100543 | 0                | TYPE_LIMIT | TIF_IOC | OrderError: non-persistent order trades out of price bounds |
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    |
+
+    When the parties place the following orders with ticks:
+      | party    | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party2   | ETH/DEC21 | buy  | 10     | 100543 | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger       | horizon | min bound | max bound |
+      | 100000     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 120     | 99000     | 101008    |
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party2 | 0      | 0              | 0            |

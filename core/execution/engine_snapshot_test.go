@@ -40,6 +40,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
@@ -124,6 +125,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	collateralService := mocks.NewMockCollateral(ctrl)
+	collateralService.EXPECT().HasGeneralAccount(gomock.Any(), gomock.Any()).Return(true).AnyTimes()
 	collateralService.EXPECT().GetPartyMargin(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -209,6 +211,10 @@ func getSpotMarketConfig() *types.Market {
 				MakerFee:          num.DecimalFromFloat(0.1),
 				InfrastructureFee: num.DecimalFromFloat(0.1),
 				LiquidityFee:      num.DecimalFromFloat(0.1),
+			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method:      types.LiquidityFeeMethodConstant,
+				FeeConstant: num.DecimalFromFloat(0.001),
 			},
 		},
 		LiquiditySLAParams: &types.LiquiditySLAParams{
@@ -504,7 +510,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 }
 
 func TestValidSpotMarketSnapshot(t *testing.T) {
-	ctx := context.Background()
+	ctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
 	engine, ctrl := createEngine(t)
 	defer ctrl.Finish()
 	assert.NotNil(t, engine)
@@ -512,6 +518,9 @@ func TestValidSpotMarketSnapshot(t *testing.T) {
 	marketConfig := getSpotMarketConfig()
 	err := engine.SubmitSpotMarket(ctx, marketConfig, "", time.Now())
 	assert.NoError(t, err)
+
+	marketConfig.State = types.MarketStateActive
+	engine.OnTick(ctx, time.Now())
 
 	err = engine.SubmitLiquidityProvision(ctx, &types.LiquidityProvisionSubmission{
 		MarketID:         marketConfig.ID,
@@ -580,6 +589,35 @@ func TestValidSpotMarketSnapshot(t *testing.T) {
 			assert.True(t, bytes.Equal(b, b2))
 		}
 	}
+	submissionProto := &commandspb.StopOrdersSubmission{
+		FallsBelow: &commandspb.StopOrderSetup{
+			OrderSubmission: &commandspb.OrderSubmission{
+				MarketId:    marketConfig.ID,
+				Price:       "100",
+				Size:        20,
+				Side:        vega.Side_SIDE_BUY,
+				TimeInForce: vega.Order_TIME_IN_FORCE_FOK,
+				ExpiresAt:   12345,
+				Type:        vega.Order_TYPE_LIMIT,
+				Reference:   "ref_buy",
+			},
+		},
+		RisesAbove: &commandspb.StopOrderSetup{
+			OrderSubmission: &commandspb.OrderSubmission{
+				MarketId:    marketConfig.ID,
+				Price:       "200",
+				Size:        10,
+				Side:        vega.Side_SIDE_SELL,
+				TimeInForce: vega.Order_TIME_IN_FORCE_GFA,
+				ExpiresAt:   54321,
+				Type:        vega.Order_TYPE_MARKET,
+				Reference:   "ref_sell",
+			},
+		},
+	}
+
+	stopSubmission, _ := types.NewStopOrderSubmissionFromProto(submissionProto)
+	require.NotPanics(t, func() { engine2.SubmitStopOrders(ctx, stopSubmission, "zohar", nil, nil, nil) })
 }
 
 func TestValidSettledMarketSnapshot(t *testing.T) {

@@ -134,9 +134,7 @@ func (s *ProxyServer) Start(ctx context.Context) (http.Handler, error) {
 
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
-		// 20MB, this is in bytes
-		// not the greatest solution, it x5 the default value.
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024 * 1024 * 20)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(s.Config.Node.MaxMsgSize)),
 	}
 
 	marshalW := func(h http.Handler) http.Handler {

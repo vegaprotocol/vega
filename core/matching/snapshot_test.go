@@ -239,8 +239,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 		assert.Nil(t, o2.OriginalPrice)
 	}
 
-	pf, _ := num.UintFromDecimal(priceFactor)
-	ob2.ob.OrderBook.RestoreWithMarketPriceFactor(pf)
+	ob2.ob.OrderBook.RestoreWithMarketPriceFactor(priceFactor)
 
 	// now the orders should be equal
 	for _, order := range orders {

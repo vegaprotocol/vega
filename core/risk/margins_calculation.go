@@ -61,7 +61,7 @@ func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint
 
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
-func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool, inc num.Decimal) *types.MarginLevels {
+func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool, inc num.Decimal, auctionPrice *num.Uint) *types.MarginLevels {
 	var (
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal
@@ -99,7 +99,11 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		if auction {
 			marginMaintenanceLng = minV.Add(slippageVolume.Mul(mPriceDec.Mul(rf.Long)))
 			if withPotentialBuyAndSell {
-				maintenanceMarginLongOpenOrders := m.BuySumProduct().ToDecimal().Div(e.positionFactor).Mul(rf.Long)
+				p := m.BuySumProduct()
+				if auctionPrice != nil {
+					p = num.Max(p, num.UintZero().Mul(num.UintFromUint64(uint64(m.Buy())), auctionPrice))
+				}
+				maintenanceMarginLongOpenOrders := p.ToDecimal().Div(e.positionFactor).Mul(rf.Long)
 				marginMaintenanceLng = marginMaintenanceLng.Add(maintenanceMarginLongOpenOrders)
 			}
 		} else {
@@ -131,7 +135,11 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		if auction {
 			marginMaintenanceSht = minV.Add(absSlippageVolume.Mul(mPriceDec.Mul(rf.Short)))
 			if withPotentialBuyAndSell {
-				maintenanceMarginShortOpenOrders := m.SellSumProduct().ToDecimal().Div(e.positionFactor).Mul(rf.Short)
+				p := m.SellSumProduct()
+				if auctionPrice != nil {
+					p = num.Max(p, num.UintZero().Mul(num.UintFromUint64(uint64(m.Sell())), auctionPrice))
+				}
+				maintenanceMarginShortOpenOrders := p.ToDecimal().Div(e.positionFactor).Mul(rf.Short)
 				marginMaintenanceSht = marginMaintenanceSht.Add(maintenanceMarginShortOpenOrders)
 			}
 		} else {
@@ -180,7 +188,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 }
 
-func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition num.Decimal, auction bool) num.Decimal {
+func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition num.Decimal, auction bool, auctionPrice num.Decimal) num.Decimal {
 	buySumProduct, sellSumProduct := num.DecimalZero(), num.DecimalZero()
 	sizeSells, sizeBuys := int64(0), int64(0)
 	for _, o := range buyOrders {
@@ -203,14 +211,14 @@ func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders
 			sizeSells += size
 		}
 	}
-	return computeMaintenanceMargin(sizePosition, sizeBuys, sizeSells, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition, auction)
+	return computeMaintenanceMargin(sizePosition, sizeBuys, sizeSells, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition, auction, auctionPrice)
 }
 
 func calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor num.Decimal) num.Decimal {
 	return linearSlippageFactor.Mul(slippageVolume.Abs()).Add(quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume)))
 }
 
-func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition num.Decimal, auction bool) num.Decimal {
+func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition num.Decimal, auction bool, auctionPrice num.Decimal) num.Decimal {
 	var (
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal
@@ -230,7 +238,11 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 		slippageCap := marketObservable.Mul(calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor))
 		if auction {
 			marginMaintenanceLng = slippageCap.Add(slippageVolume.Mul(marketObservable.Mul(riskFactorLong)))
-			maintenanceMarginLongOpenOrders := buySumProduct.Div(positionFactor).Mul(riskFactorLong)
+			p := buySumProduct
+			if !auctionPrice.IsZero() {
+				p = num.MaxD(p, auctionPrice.Mul(num.DecimalFromInt64(buySize)))
+			}
+			maintenanceMarginLongOpenOrders := p.Div(positionFactor).Mul(riskFactorLong)
 			marginMaintenanceLng = marginMaintenanceLng.Add(maintenanceMarginLongOpenOrders)
 		} else {
 			marginMaintenanceLng = num.MaxD(
@@ -251,7 +263,11 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 		slippageCap := marketObservable.Mul(calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor))
 		if auction {
 			marginMaintenanceSht = slippageCap.Add(absSlippageVolume.Mul(marketObservable.Mul(riskFactorShort)))
-			maintenanceMarginShortOpenOrders := sellSumProduct.Div(positionFactor).Mul(riskFactorShort)
+			p := sellSumProduct
+			if !auctionPrice.IsZero() {
+				p = num.MaxD(p, auctionPrice.Mul(num.DecimalFromInt64(sellSize)))
+			}
+			maintenanceMarginShortOpenOrders := p.Div(positionFactor).Mul(riskFactorShort)
 			marginMaintenanceSht = marginMaintenanceSht.Add(maintenanceMarginShortOpenOrders)
 		} else {
 			marginMaintenanceSht = num.MaxD(
@@ -339,28 +355,44 @@ func calcOrderSideMarginIsolatedMode(currentPosition int64, orders []*OrderInfo,
 	return margin.Mul(marginFactor).Div(positionFactor)
 }
 
-func CalculateRequiredMarginInIsolatedMode(sizePosition int64, averageEntryPrice, marketObservable num.Decimal, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor num.Decimal) (num.Decimal, num.Decimal) {
-	totalOrderNotional := num.DecimalZero()
+func CalculateRequiredMarginInIsolatedMode(sizePosition int64, averageEntryPrice, marketObservable num.Decimal, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor num.Decimal, auctionPrice *num.Uint) (num.Decimal, num.Decimal) {
 	marketOrderAdjustedPositionNotional := averageEntryPrice.Copy().Mul(num.DecimalFromInt64(sizePosition))
+	var orders []*types.Order = make([]*types.Order, 0, len(buyOrders)+len(sellOrders))
 
 	// assume market orders fill immediately at marketObservable price
 	for _, o := range buyOrders {
 		if o.IsMarketOrder {
+			sizePosition += int64(o.TrueRemaining)
 			marketOrderAdjustedPositionNotional = marketOrderAdjustedPositionNotional.Add(marketObservable.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
 		} else {
-			totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+			price, _ := num.UintFromDecimal(o.Price)
+			ord := &types.Order{
+				Status:    types.OrderStatusActive,
+				Remaining: o.TrueRemaining,
+				Price:     price,
+				Side:      types.SideBuy,
+			}
+			orders = append(orders, ord)
 		}
 	}
 	for _, o := range sellOrders {
 		if o.IsMarketOrder {
+			sizePosition -= int64(o.TrueRemaining)
 			marketOrderAdjustedPositionNotional = marketOrderAdjustedPositionNotional.Sub(marketObservable.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
 		} else {
-			totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+			price, _ := num.UintFromDecimal(o.Price)
+			ord := &types.Order{
+				Status:    types.OrderStatusActive,
+				Remaining: o.TrueRemaining,
+				Price:     price,
+				Side:      types.SideSell,
+			}
+			orders = append(orders, ord)
 		}
 	}
 
 	requiredPositionMargin := marketOrderAdjustedPositionNotional.Abs().Mul(marginFactor).Div(positionFactor)
-	requiredOrderMargin := totalOrderNotional.Mul(marginFactor).Div(positionFactor)
+	requiredOrderMargin := CalcOrderMargins(sizePosition, orders, positionFactor, marginFactor, auctionPrice)
 
-	return requiredPositionMargin, requiredOrderMargin
+	return requiredPositionMargin, requiredOrderMargin.ToDecimal()
 }

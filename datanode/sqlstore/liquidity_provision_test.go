@@ -1173,3 +1173,32 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 
 	return activeProviders
 }
+
+func TestLiquidityProvision_Status(t *testing.T) {
+	var liquidityProvisionStatus vega.LiquidityProvision_Status
+
+	states := getEnums(t, liquidityProvisionStatus)
+	assert.Len(t, states, 7)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+			bs, lpStore, _ := setupLPTests(t)
+			block := addTestBlock(t, ctx, bs)
+			lpProto := getTestLiquidityProvision(false)
+			lp := lpProto[0]
+			lp.Status = vega.LiquidityProvision_Status(s)
+
+			txHash := generateTxHash()
+
+			want, err := entities.LiquidityProvisionFromProto(lp, txHash, block.VegaTime)
+			require.NoError(t, err)
+			assert.NoError(t, lpStore.Upsert(ctx, want))
+			require.NoError(t, lpStore.Flush(ctx))
+
+			got, err := lpStore.GetByTxHash(ctx, txHash)
+			require.NoError(t, err)
+			require.Len(t, got, 1)
+			assert.Equal(t, want, got[0])
+		})
+	}
+}

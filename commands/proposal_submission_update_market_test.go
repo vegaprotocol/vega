@@ -26,6 +26,7 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/test"
+	"code.vegaprotocol.io/vega/protos/vega"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -137,6 +138,7 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a market update with invalid mark price configuration ", testUpdateMarketCompositePriceConfiguration)
 	t.Run("Submitting a market update with invalid intenal composite price configuration", testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig)
 	t.Run("Submitting a market update with invalid tick size fails and valid tick size succeeds", testUpdateMarketTickSize)
+	t.Run("Submitting a spot market update with invalid liquifity fee settings", testUpdateLiquidityFeeSettingsSpot)
 }
 
 func testUpdateMarketTickSize(t *testing.T) {
@@ -3827,5 +3829,92 @@ func testUpdatePerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 
 			assert.Contains(t, errs, v.err, v.desc)
 		})
+	}
+}
+
+func testUpdateLiquidityFeeSettingsSpot(t *testing.T) {
+	cases := []struct {
+		lfs   *vega.LiquidityFeeSettings
+		field string
+		err   error
+	}{
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+				FeeConstant: ptr.From("0.1"),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
+				FeeConstant: ptr.From("0.1"),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: nil,
+			},
+			field: "fee_constant",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("hello"),
+			},
+			field: "fee_constant",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("-0.1"), // (0042-LIQF-072)
+			},
+			field: "fee_constant",
+			err:   commands.ErrMustBePositiveOrZero,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("1.1"), // (0042-LIQF-072)
+			},
+			field: "fee_constant",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_METHOD_UNSPECIFIED,
+			},
+			field: "method",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_Method(int32(100)),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+	}
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_UpdateSpotMarket{
+					UpdateSpotMarket: &vegapb.UpdateSpotMarket{
+						Changes: &vegapb.UpdateSpotMarketConfiguration{
+							Instrument:           &vegapb.UpdateSpotInstrumentConfiguration{},
+							LiquidityFeeSettings: c.lfs,
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.liquidity_fee_settings."+c.field), c.err)
 	}
 }

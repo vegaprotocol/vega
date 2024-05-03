@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 
@@ -79,4 +80,9 @@ func tempTransaction(t *testing.T) context.Context {
 	})
 
 	return ctx
+}
+
+func getEnums[T entities.ProtoEnum](t *testing.T, enumsT T) map[int32]string {
+	t.Helper()
+	return enumsT.GetEnums()
 }

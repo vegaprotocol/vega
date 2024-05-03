@@ -56,7 +56,6 @@ var (
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrNoGeneralAccountWhenCreateBondAccount   = errors.New("party general account missing when trying to create a bond account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
-	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
 	// ErrAssetAlreadyEnabled signals the given asset has already been enabled in this engine.
 	ErrAssetAlreadyEnabled    = errors.New("asset already enabled")
@@ -639,6 +638,10 @@ func (e *Engine) transferSpotFees(ctx context.Context, marketID string, assetID 
 			return nil, err
 		}
 
+		if req == nil {
+			continue
+		}
+
 		res, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error("Failed to transfer funds", logging.Error(err))
@@ -700,6 +703,9 @@ func (e *Engine) getSpotFeeTransferRequest(
 
 	switch t.Type {
 	case types.TransferTypeInfrastructureFeePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
 		treq.FromAccount = []*types.Account{general}
 		treq.ToAccount = []*types.Account{infraFee}
 		return treq, nil
@@ -708,6 +714,9 @@ func (e *Engine) getSpotFeeTransferRequest(
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferTypeLiquidityFeePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
 		treq.FromAccount = []*types.Account{general}
 		treq.ToAccount = []*types.Account{liquiFee}
 		return treq, nil
@@ -716,6 +725,9 @@ func (e *Engine) getSpotFeeTransferRequest(
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferTypeMakerFeePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
 		treq.FromAccount = []*types.Account{general}
 		treq.ToAccount = []*types.Account{makerFee}
 		return treq, nil
@@ -2530,7 +2542,8 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 			// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
 			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
-			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeRealisedReturnReward,
+			types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -2581,6 +2594,7 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 		MinAmount:   t.Amount.Amount.Clone(),
 		Asset:       t.Amount.Asset,
 		Type:        t.Type,
+		TransferID:  t.TransferID,
 	}, nil
 }
 
@@ -2635,7 +2649,8 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 		// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeNetworkTreasury,
 			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
-			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeRealisedReturnReward,
+			types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -4380,11 +4395,62 @@ func (e *Engine) ReleaseFromHoldingAccount(ctx context.Context, transfer *types.
 }
 
 // ClearSpotMarket moves remaining LP fees to the global reward account and removes market accounts.
-func (e *Engine) ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error) {
+func (e *Engine) ClearSpotMarket(ctx context.Context, mktID, quoteAsset string, parties []string) ([]*types.LedgerMovement, error) {
 	resps := []*types.LedgerMovement{}
 
-	treasury, _ := e.GetNetworkTreasuryAccount(quoteAsset)
 	req := &types.TransferRequest{
+		FromAccount: make([]*types.Account, 1),
+		ToAccount:   make([]*types.Account, 1),
+		Asset:       quoteAsset,
+		Type:        types.TransferTypeClearAccount,
+	}
+
+	for _, v := range parties {
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, v, quoteAsset, types.AccountTypeGeneral))
+		if err != nil {
+			e.log.Debug(
+				"Failed to get the general account",
+				logging.String("party-id", v),
+				logging.String("market-id", mktID),
+				logging.String("asset", quoteAsset),
+				logging.Error(err))
+			// just try to do other parties
+			continue
+		}
+		// Then we do bond account
+		bondAcc, err := e.GetAccountByID(e.accountID(mktID, v, quoteAsset, types.AccountTypeBond))
+		if err != nil {
+			// this not an actual error
+			// a party may not have a bond account if
+			// its not also a liquidity provider
+			continue
+		}
+
+		req.FromAccount[0] = bondAcc
+		req.ToAccount[0] = generalAcc
+		req.Amount = bondAcc.Balance.Clone()
+
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("Clearing party bond account",
+				logging.String("market-id", mktID),
+				logging.String("asset", quoteAsset),
+				logging.String("party", v),
+				logging.BigUint("bond-before", bondAcc.Balance),
+				logging.BigUint("general-before", generalAcc.Balance),
+				logging.BigUint("general-after", num.Sum(generalAcc.Balance, bondAcc.Balance)))
+		}
+
+		ledgerEntries, err := e.clearAccount(ctx, req, v, quoteAsset, mktID)
+		if err != nil {
+			e.log.Panic("unable to clear party account", logging.Error(err))
+		}
+
+		// add entries to the response
+		resps = append(resps, ledgerEntries)
+	}
+
+	treasury, _ := e.GetNetworkTreasuryAccount(quoteAsset)
+	req = &types.TransferRequest{
 		FromAccount: make([]*types.Account, 1),
 		ToAccount:   make([]*types.Account, 1),
 		Asset:       quoteAsset,

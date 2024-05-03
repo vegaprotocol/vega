@@ -95,7 +95,6 @@ func TestCandlesPagination(t *testing.T) {
 
 	candles, _, err = candleStore.GetCandleDataForTimeSpan(ctx, candleID, nil,
 		nil, pagination)
-
 	if err != nil {
 		t.Fatalf("failed to get candles with pagination:%s", err)
 	}

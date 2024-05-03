@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased 0.76.0
+## Unreleased 0.77.0
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🗑️ Deprecation
 
@@ -12,11 +12,94 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxxx)
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+
+## 0.76.0
+
+### 🚨 Breaking changes
+
+- [11079](https://github.com/vegaprotocol/vega/issues/11079) - rename decimal places fields for spots governance.
+
+### 🛠 Improvements
+
+- [10926](https://github.com/vegaprotocol/vega/issues/10926) - Backport governance proposal to change market name for spots
+- [906](https://github.com/vegaprotocol/core-test-coverage/issues/906) - Add coverage for `0068-MATC-060`
+- [907](https://github.com/vegaprotocol/core-test-coverage/issues/907) - Add coverage for `0068-MATC-061`
+- [908](https://github.com/vegaprotocol/core-test-coverage/issues/908) - Add coverage for `0068-MATC-062`
+- [909](https://github.com/vegaprotocol/core-test-coverage/issues/909) - Add coverage for `0068-MATC-063`
+- [910](https://github.com/vegaprotocol/core-test-coverage/issues/910) - Add coverage for `0068-MATC-064`
+- [911](https://github.com/vegaprotocol/core-test-coverage/issues/911) - Add coverage for `0068-MATC-065`
+- [742](https://github.com/vegaprotocol/core-test-coverage/issues/742) - Add coverage for `0044-LIME-029`
+- [10994](https://github.com/vegaprotocol/vega/pull/10994) - `rewards.team.minEpochsInTeam` can now be set to `0`
+- [11061](https://github.com/vegaprotocol/vega/issues/11061) - `SLA` snapshot now loads current parameters and not pending ones.
+- [11009](https://github.com/vegaprotocol/vega/issues/11009) - Relax market decimals validation in governance.
+- [11036](https://github.com/vegaprotocol/vega/issues/11036) - Cross-margin mode: use max(order price, auction price) for margin calculation in auction
+- [10998](https://github.com/vegaprotocol/vega/issues/10998) - Ensure reward totals are carried over across epochs in database.
+- [1102](https://github.com/vegaprotocol/core-test-coverage/issues/1102) - Add coverage for `0042-LIQF-084`
+- [11121](https://github.com/vegaprotocol/vega/issues/11121) - Remove auction trigger staleness functionality
+- [11127](https://github.com/vegaprotocol/vega/issues/11127) - Price monitoring engine should record all observations with the same weight
+- [10995](https://github.com/vegaprotocol/vega/issues/10995) - Liquidation range defined by its own parameter.
+- [11167](https://github.com/vegaprotocol/vega/issues/11167) - Add realised return reward metric.
+- [11165](https://github.com/vegaprotocol/vega/issues/11165) - Include negative returns in relative returns reward metric.
+- [11151](https://github.com/vegaprotocol/vega/issues/11151) - Remove name field from the spot markets.
+- [11170](https://github.com/vegaprotocol/vega/issues/11170) - Add transfer interval support.
+- [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal.
+- [11184](https://github.com/vegaprotocol/vega/issues/11184) - relax the transfer restriction of 'same transfer' to match the full dispatch strategy.
+- [11185](https://github.com/vegaprotocol/vega/issues/11185) - distinguish between zero and none metric for rewards.
+- [11158](https://github.com/vegaprotocol/vega/issues/11158) - resolve the quote asset for fee estimation in spot market.
+- [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
+- [11182](https://github.com/vegaprotocol/vega/issues/11182) - Remove reduce only restriction on spot markets stop orders.
+- [11153](https://github.com/vegaprotocol/vega/issues/11153) - Add check on start-up that bridge `RPC-endpoints` are functional.
+
+### 🐛 Fixes
+
+- [10946](https://github.com/vegaprotocol/vega/issues/10945) - Save dispatch strategy for recurring governance transfer in the database.
+- [11000](https://github.com/vegaprotocol/vega/issues/11000) - Vesting summary events are now sorted properly before sending.
+- [11065](https://github.com/vegaprotocol/vega/issues/11065) - `SLA` commitment state is reset properly at the end of an epoch
+- [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
+- [10970](https://github.com/vegaprotocol/vega/issues/10970) - Logic for whether a team member joined more than `rewards.team.minEpochsInTeam` is fixed.
+- [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
+- [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
+- [10952](https://github.com/vegaprotocol/vega/issues/10952) - Fix bug that caused spot markets to get stuck in opening auction.
+- [10950](https://github.com/vegaprotocol/vega/issues/10950) - Fix bug that caused cancelled liquidity provisions to stick around after opening auction.
+- [10975](https://github.com/vegaprotocol/vega/issues/10975) - Fix marshaller for stop order rejection error.
+- [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state.
+- [10969](https://github.com/vegaprotocol/vega/issues/10969) - Ensure teams statistics are computed from team rewards.
+- [10962](https://github.com/vegaprotocol/vega/issues/10962) - Fix `lastFeeDistribution` time in snapshot.
+- [10974](https://github.com/vegaprotocol/vega/issues/10974) - Target stake for spot should not consider position factor.
+- [10980](https://github.com/vegaprotocol/vega/issues/10980) - Make `gRPC` message size limit configurable, default to 20MB.
+- [10984](https://github.com/vegaprotocol/vega/issues/10984) - Save has traded flag from spot to snapshot.
+- [10997](https://github.com/vegaprotocol/vega/issues/10997) - Handle cases where leaving opening auction triggers monitoring auction.
+- [11010](https://github.com/vegaprotocol/vega/issues/11010) - Release bond in spot market when market is terminated.
+- [11033](https://github.com/vegaprotocol/vega/issues/11033) - Do not track positions for spots in datanode.
+- [11016](https://github.com/vegaprotocol/vega/issues/11016) - Update holding account when amending order with cancel/replace on remaining funds.
+- [11038](https://github.com/vegaprotocol/vega/issues/11038) - Simplify price ranges state.
+- [11042](https://github.com/vegaprotocol/vega/issues/11042) - Add missing value to enum.
+- [11059](https://github.com/vegaprotocol/vega/issues/11059) - Disambiguate `vega_time` in order clause.
+- [11052](https://github.com/vegaprotocol/vega/pull/11052) - Add missing rejection reason in GraphQL schema for proposals
+- [11073](https://github.com/vegaprotocol/vega/issues/11073) - Handle properly price factor < 1.
+- [11047](https://github.com/vegaprotocol/vega/issues/11047) - Add missing migration for recreating stop order views after the new fields were added.
+- [11090](https://github.com/vegaprotocol/vega/issues/11090) - Games API should only use the current team members.
+- [11089](https://github.com/vegaprotocol/vega/issues/11089) - Add tests for proto `enums` persisted to database.
+- [11105](https://github.com/vegaprotocol/vega/issues/11105) - Include all paid fees in reward cap.
+- [1109](https://github.com/vegaprotocol/core-test-coverage/issues/1109) - Correctly label acceptance coverage for `0042-LIQF-091`.
+- [11130](https://github.com/vegaprotocol/vega/issues/11130) - Add missing initialisation for max stop orders in spots.
+- [11133](https://github.com/vegaprotocol/vega/issues/11133) - Fix spot product resolver
+- [11154](https://github.com/vegaprotocol/vega/issues/11154) - Fix spot risk model resolver.
+- [11159](https://github.com/vegaprotocol/vega/issues/11159) - Reject stop orders with size override position for spot product.
+- [11161](https://github.com/vegaprotocol/vega/issues/11161) - Add validation for time in force GFA in stop order submission.
+- [11177](https://github.com/vegaprotocol/vega/issues/11177) - Adjust the formulas for reduced position to the spec update and fix handling of closed out position.
+- [11193](https://github.com/vegaprotocol/vega/issues/11193) - Fix loading of liquidation strategy from proto with missing data.
+- [11200](https://github.com/vegaprotocol/vega/issues/11200) - Make sure a party can afford the trades before they are submitted to the book.
+- [11205](https://github.com/vegaprotocol/vega/issues/11205) - Evaluate transfer interval correctly.
+- [10374](https://github.com/vegaprotocol/vega/issues/10374) - Add transfer ID to recurring governance transfer ledger entries.
+- [11221](https://github.com/vegaprotocol/vega/issues/11221) - Fix for `totalRewardsEarned` being twice the `rewardEarned`.
+
 
 ## 0.75.0
 
@@ -88,6 +171,9 @@
 - [10904](https://github.com/vegaprotocol/vega/issues/10904) - Balance changes API should validate date range properly.
 - [10911](https://github.com/vegaprotocol/vega/issues/10911) - Fix `unregistration` of spot market state var.
 - [10915](https://github.com/vegaprotocol/vega/issues/10915) - Fix duplicate deposit entries, add new `STATUS_DUPLICATE_REJECTED` status.
+- [11047](https://github.com/vegaprotocol/vega/issues/11047) - Fix proto conversion for stop orders.
+- [11041](https://github.com/vegaprotocol/vega/issues/11041) - Add validation for genesis asset quantum.
+- [11011](https://github.com/vegaprotocol/vega/issues/11011) - Make spot fees best effort.
 
 ## 0.74.3
 
@@ -121,11 +207,10 @@
 - [10683](https://github.com/vegaprotocol/vega/issues/10683) - Fix GraphQL does not correctly marshal transfers status in filter.
 - [10685](https://github.com/vegaprotocol/vega/issues/10685) - Fix list transfers returns too much data..
 - [10691](https://github.com/vegaprotocol/vega/issues/10691) - Fix team stats include rewards from individual games
-- [10647](https://github.com/vegaprotocol/vega/issues/10647)  Add filter by game ID to transfers API.
+- [10647](https://github.com/vegaprotocol/vega/issues/10647) Add filter by game ID to transfers API.
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
 - [10696](https://github.com/vegaprotocol/vega/issues/10696) - Fix position updates to undo positions changes on isolated margin failure.
 - [10712](https://github.com/vegaprotocol/vega/issues/10712) - Fix the unit of auction extension and leave check auction early if governance auction has been extended.
-
 
 ## 0.74.1
 
@@ -223,6 +308,9 @@
 - [10517](https://github.com/vegaprotocol/vega/issues/10517) - Add optional cap to metric based rewards.
 - [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 - [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
+- [10612](https://github.com/vegaprotocol/vega/issues/10612) - Convert all assets to be associated to the configured Ethereum chain.
+- [10624](https://github.com/vegaprotocol/vega/issues/10624) - Ensure chain event are not duplicated when chain identifier is missing.
+- [10623](https://github.com/vegaprotocol/vega/issues/10623) - Introduce secondary Ethereum client
 
 ### 🐛 Fixes
 

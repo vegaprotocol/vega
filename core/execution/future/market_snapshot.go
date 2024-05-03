@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -140,8 +141,8 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	exp := assetDecimals - mkt.DecimalPlaces
-	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
+	exp := int(assetDecimals) - int(mkt.DecimalPlaces)
+	priceFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity
@@ -154,9 +155,16 @@ func NewMarketFromSnapshot(
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 
-	marketLiquidity := common.NewMarketLiquidity(
+	// if we're upgrading and the market liquidity state is nil, all we can do is take the old SLA values which will *probably* be the right ones
+	if vgcontext.InProgressUpgrade(ctx) && em.MarketLiquidity == nil {
+		em.MarketLiquidity = &snapshot.MarketLiquidity{
+			PriceRange: mkt.LiquiditySLAParams.PriceRange.String(),
+		}
+	}
+
+	marketLiquidity := common.NewMarketLiquidityFromSnapshot(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity,
 	)
 
 	// backward compatibility check for nil
@@ -178,8 +186,11 @@ func NewMarketFromSnapshot(
 	// this can be removed once this parameter is no longer optional
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
+	} else if mkt.LiquidationStrategy.DisposalSlippage.IsZero() {
+		// @TODO check for migration from v0.75.8, strictly speaking, not doing so should have the same effect, though...
+		mkt.LiquidationStrategy.DisposalSlippage = mkt.LiquiditySLAParams.PriceRange
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, pMonitor)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor)
 
 	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
 	for _, pmf := range em.PartyMarginFactors {
@@ -339,6 +350,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		FeesStats:                      m.fee.GetState(assetQuantum),
 		PartyMarginFactors:             partyMarginFactors,
 		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
+		MarketLiquidity:                m.liquidity.GetState(),
 	}
 	if m.perp && m.internalCompositePriceCalculator != nil {
 		em.InternalCompositePriceCalculator = m.internalCompositePriceCalculator.IntoProto()

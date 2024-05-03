@@ -43,6 +43,7 @@ func parseLiquidationStrategyTable(table *godog.Table) []RowWrapper {
 		"disposal fraction",
 		"full disposal size",
 		"max fraction consumed",
+		"disposal slippage range",
 	}, nil)
 }
 
@@ -56,6 +57,7 @@ func (l lsRow) liquidationStrategy() *types.LiquidationStrategy {
 		DisposalFraction:    l.disposalFraction(),
 		FullDisposalSize:    l.fullDisposalSize(),
 		MaxFractionConsumed: l.maxFraction(),
+		DisposalSlippage:    l.disposalSlippage(),
 	}
 }
 
@@ -78,4 +80,8 @@ func (l lsRow) fullDisposalSize() uint64 {
 
 func (l lsRow) maxFraction() num.Decimal {
 	return l.r.MustDecimal("max fraction consumed")
+}
+
+func (l lsRow) disposalSlippage() num.Decimal {
+	return l.r.MustDecimal("disposal slippage range")
 }

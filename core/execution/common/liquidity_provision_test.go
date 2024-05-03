@@ -96,7 +96,7 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 		common.SpotMarketType,
 		marketID,
 		settlementAsset,
-		num.NewUint(1),
+		num.DecimalOne(),
 		num.NewDecimalFromFloat(0.5),
 	)
 
@@ -198,6 +198,7 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 			Source: types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress: "addrs",
+					ChainID:         "1",
 				},
 			},
 		},
@@ -412,6 +413,7 @@ func TestLiquidityProvisionsAmendments(t *testing.T) {
 			Source: types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress: "addrs",
+					ChainID:         "1",
 				},
 			},
 		},
@@ -528,6 +530,7 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 			Source: types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress: "addrs",
+					ChainID:         "1",
 				},
 			},
 		},
@@ -610,6 +613,8 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 		}).
 		AnyTimes()
 
+	testLiquidity.equityShares.EXPECT().SetPartyStake(provider, gomock.Any()).Times(1)
+	testLiquidity.equityShares.EXPECT().AllShares().Times(1).Return(nil)
 	err = testLiquidity.marketLiquidity.CancelLiquidityProvision(ctx, provider)
 	assert.NoError(t, err)
 

@@ -84,8 +84,7 @@ func (m *Market) repricePeggedOrders(
 			} else {
 				// Repriced so all good make sure status is correct
 				order.Price = price.Clone()
-				order.OriginalPrice = price.Clone()
-				order.OriginalPrice.Div(order.OriginalPrice, m.priceFactor)
+				order.OriginalPrice, _ = num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
 				order.Status = types.OrderStatusActive
 				order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 				toSubmit = append(toSubmit, order)

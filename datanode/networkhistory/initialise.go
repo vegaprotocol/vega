@@ -305,7 +305,7 @@ func GetMostRecentHistorySegmentFromPeersAddresses(ctx context.Context, peerAddr
 }
 
 func GetMostRecentHistorySegmentFromPeer(ctx context.Context, ip string, datanodeGrpcAPIPort int) (*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
-	client, conn, err := GetDatanodeClientFromIPAndPort(ip, datanodeGrpcAPIPort)
+	client, conn, err := GetDatanodeClientFromIPAndPort(ip, datanodeGrpcAPIPort, 20*1024*1024) // @TODO hard-coded 20MB value, same as default config, pass this in correctly
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datanode client:%w", err)
 	}
@@ -350,9 +350,13 @@ func SelectMostRecentHistorySegmentResponse(peerToResponse map[string]*v2.GetMos
 	return nil
 }
 
-func GetDatanodeClientFromIPAndPort(ip string, port int) (v2.TradingDataServiceClient, *grpc.ClientConn, error) {
+func GetDatanodeClientFromIPAndPort(ip string, port, maxMsgSize int) (v2.TradingDataServiceClient, *grpc.ClientConn, error) {
 	address := net.JoinHostPort(ip, strconv.Itoa(port))
-	tdconn, err := grpc.Dial(address, grpc.WithInsecure())
+	tdconn, err := grpc.Dial(
+		address,
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
+	)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -21,7 +21,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 )
@@ -33,26 +32,14 @@ func PartiesCancelAllTheirOrdersForTheMarkets(
 ) error {
 	for _, r := range parseCancelAllOrderTable(table) {
 		row := cancelAllOrderRow{row: r}
-
 		party := row.Party()
-
-		orders := broker.GetOrdersByPartyAndMarket(party, row.MarketID())
-
-		dedupOrders := map[string]vega.Order{}
-		for _, o := range orders {
-			dedupOrders[o.Reference] = o
+		cancel := types.OrderCancellation{
+			MarketID: row.MarketID(),
 		}
-
-		for _, o := range dedupOrders {
-			cancel := types.OrderCancellation{
-				OrderID:  o.Id,
-				MarketID: o.MarketId,
-			}
-			_, err := exec.CancelOrder(context.Background(), &cancel, party)
-			err = checkExpectedError(row, err, nil)
-			if err != nil {
-				return err
-			}
+		_, err := exec.CancelOrder(context.Background(), &cancel, party)
+		err = checkExpectedError(row, err, nil)
+		if err != nil {
+			return err
 		}
 	}
 

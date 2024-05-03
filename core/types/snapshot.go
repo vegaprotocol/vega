@@ -88,6 +88,7 @@ const (
 	FloatingPointConsensusSnapshot SnapshotNamespace = "floatingpoint"
 	MarketActivityTrackerSnapshot  SnapshotNamespace = "marketActivityTracker"
 	ERC20MultiSigTopologySnapshot  SnapshotNamespace = "erc20multisigtopology"
+	EVMMultiSigTopologiesSnapshot  SnapshotNamespace = "evmmultisigtopologies"
 	PoWSnapshot                    SnapshotNamespace = "pow"
 	ProtocolUpgradeSnapshot        SnapshotNamespace = "protocolUpgradeProposals"
 	SettlementSnapshot             SnapshotNamespace = "settlement"

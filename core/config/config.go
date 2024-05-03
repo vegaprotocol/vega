@@ -171,7 +171,11 @@ func (c Config) GetMaxMemoryFactor() (float64, error) {
 }
 
 func (c Config) HaveEthClient() bool {
-	return c.IsValidator() && len(c.Ethereum.RPCEndpoint) > 0
+	return c.IsValidator() && len(c.Ethereum.RPCEndpoint) > 0 && len(c.Ethereum.EVMBridgeConfigs) > 0
+}
+
+func (c Config) IsNullChain() bool {
+	return c.Blockchain.ChainProvider == blockchain.ProviderNullChain
 }
 
 type Loader struct {

@@ -33,8 +33,8 @@ import (
 type ERC20Cmd struct {
 	config.VegaHomeFlag
 	config.PassphraseFlag
-	Config     nodewallets.Config
-	PrivateKey string `description:"A ethereum private key to be use to sign the messages" long:"private-key" required:"false"`
+	PrivateKey string `description:"A ethereum private key to be use to sign the messages"                                         long:"private-key" required:"false"`
+	ChainID    string `description:"The chain-id of the EVM bridge. Not required if generating signatures for the Ethereum bridge" long:"chain-id"    required:"false"`
 
 	AddSigner              ERC20AddSignerCmd              `command:"add_signer"                description:"Create signature to add a new signer to the erc20 bridge"`
 	RemoveSigner           ERC20RemoveSignerCmd           `command:"remove_signer"             description:"Create signature to remove a signer from the erc20 bridge"`
@@ -59,38 +59,36 @@ type ERC20Cmd struct {
 var erc20Cmd *ERC20Cmd
 
 func (e *ERC20Cmd) GetSigner() (bridges.Signer, error) {
-	vegaPaths := paths.New(e.VegaHome)
-
-	_, conf, err := config.EnsureNodeConfig(vegaPaths)
-	if err != nil {
-		return nil, err
-	}
-
-	e.Config = conf.NodeWallet
-
-	var s bridges.Signer
 	if len(e.PrivateKey) <= 0 {
 		pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 		if err != nil {
 			return nil, err
 		}
 
-		s, err = nodewallets.GetEthereumWallet(vegaPaths, pass)
+		vegaPaths := paths.New(e.VegaHome)
+
+		if _, _, err := config.EnsureNodeConfig(vegaPaths); err != nil {
+			return nil, err
+		}
+
+		s, err := nodewallets.GetEthereumWallet(vegaPaths, pass)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 		}
-	} else {
-		s, err = NewPrivKeySigner(e.PrivateKey)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't load private key: %w", err)
-		}
+
+		return s, nil
 	}
+
+	s, err := NewPrivKeySigner(e.PrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load private key: %w", err)
+	}
+
 	return s, nil
 }
 
 func ERC20() *ERC20Cmd {
 	erc20Cmd = &ERC20Cmd{
-		Config:                 nodewallets.NewDefaultConfig(),
 		AddSigner:              ERC20AddSignerCmd{},
 		RemoveSigner:           ERC20RemoveSignerCmd{},
 		SetThreshold:           ERC20SetThresholdCmd{},
@@ -144,7 +142,7 @@ func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
 
 	creation := time.Unix(opts.Creation, 0)
 
-	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20Logic.WithdrawAsset(
 		opts.TokenAddress, amount, opts.ReceiverAddress, creation, nonce,
 	)
@@ -191,7 +189,7 @@ func (opts *ERC20VerifyWithdrawAssetCmd) Execute(_ []string) error {
 		return errors.New("invalid signatures format")
 	}
 
-	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	addresses, err := erc20Logic.VerifyWithdrawAsset(
 		opts.TokenAddress, amount, opts.ReceiverAddress, creation, nonce, opts.Signatures,
 	)
@@ -238,7 +236,7 @@ func (opts *ERC20ListAssetCmd) Execute(_ []string) error {
 		return errors.New("invalid withdraw-threshold, needs to be base 10")
 	}
 
-	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20Logic.ListAsset(
 		opts.TokenAddress, opts.VegaAssetID, lifetimeLimit, withdrawThreshod, nonce,
 	)
@@ -286,7 +284,7 @@ func (opts *ERC20VerifyListAssetCmd) Execute(_ []string) error {
 		return errors.New("invalid signatures format")
 	}
 
-	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	addresses, err := erc20Logic.VerifyListAsset(
 		opts.TokenAddress, opts.VegaAssetID, lifetimeLimit, withdrawThreshod, nonce, opts.Signatures,
 	)
@@ -322,7 +320,7 @@ func (opts *ERC20RemoveAssetCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10")
 	}
 
-	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20Logic.RemoveAsset(
 		opts.TokenAddress, nonce,
 	)
@@ -355,7 +353,7 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10")
 	}
 
-	multiSigControl := bridges.NewERC20MultiSigControl(w)
+	multiSigControl := bridges.NewERC20MultiSigControl(w, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := multiSigControl.AddSigner(
 		opts.NewSigner, opts.Submitter, nonce,
 	)
@@ -388,7 +386,7 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10")
 	}
 
-	multiSigControl := bridges.NewERC20MultiSigControl(w)
+	multiSigControl := bridges.NewERC20MultiSigControl(w, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := multiSigControl.RemoveSigner(
 		opts.OldSigner, opts.Submitter, nonce,
 	)
@@ -425,7 +423,7 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10 and not overflow")
 	}
 
-	multiSigControl := bridges.NewERC20MultiSigControl(w)
+	multiSigControl := bridges.NewERC20MultiSigControl(w, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := multiSigControl.SetThreshold(
 		opts.NewThreshold, opts.Submitter, nonce,
 	)
@@ -457,7 +455,7 @@ func (opts *ERC20BurnNonceCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10 and not overflow")
 	}
 
-	multiSigControl := bridges.NewERC20MultiSigControl(w)
+	multiSigControl := bridges.NewERC20MultiSigControl(w, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := multiSigControl.BurnNonce(opts.Submitter, nonce)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
@@ -488,7 +486,7 @@ func (opts *ERC20SetBridgeAddressCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10")
 	}
 
-	erc20Logic := bridges.NewERC20AssetPool(w, opts.AssetPoolAddress)
+	erc20Logic := bridges.NewERC20AssetPool(w, opts.AssetPoolAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20Logic.SetBridgeAddress(
 		opts.NewAddress, nonce,
 	)
@@ -521,7 +519,7 @@ func (opts *ERC20SetMultisigControlCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10")
 	}
 
-	erc20Logic := bridges.NewERC20AssetPool(w, opts.AssetPoolAddress)
+	erc20Logic := bridges.NewERC20AssetPool(w, opts.AssetPoolAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20Logic.SetMultiSigControl(
 		opts.NewAddress, nonce,
 	)
@@ -553,7 +551,7 @@ func (opts *ERC20GlobalStopCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10 and not overflow")
 	}
 
-	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20.GlobalStop(
 		nonce,
 	)
@@ -585,7 +583,7 @@ func (opts *ERC20GlobalResumeCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10 and not overflow")
 	}
 
-	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20.GlobalResume(
 		nonce,
 	)
@@ -621,7 +619,7 @@ func (opts *ERC20VerifyGlobalResumeCmd) Execute(_ []string) error {
 		return errors.New("invalid signatures format")
 	}
 
-	erc20 := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	erc20 := bridges.NewERC20Logic(nil, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	signers, err := erc20.VerifyGlobalResume(
 		nonce, opts.Signatures,
 	)
@@ -633,8 +631,6 @@ func (opts *ERC20VerifyGlobalResumeCmd) Execute(_ []string) error {
 	for _, v := range signers {
 		fmt.Printf("%v\n", v)
 	}
-	return nil
-
 	return nil
 }
 
@@ -671,7 +667,7 @@ func (opts *ERC20SetAssetLimitsCmd) Execute(_ []string) error {
 		return errors.New("invalid deposit-lifetime-maximum needs to be base 10 and not overflow")
 	}
 
-	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20.SetAssetLimits(
 		opts.TokenAddress, depositLifetime, threshold, nonce,
 	)
@@ -720,7 +716,7 @@ func (opts *ERC20VerifySetAssetLimitsCmd) Execute(_ []string) error {
 		return errors.New("invalid signatures format")
 	}
 
-	erc20 := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	erc20 := bridges.NewERC20Logic(nil, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	signers, err := erc20.VerifySetAssetLimits(
 		opts.TokenAddress, depositLifetime, threshold, nonce, opts.Signatures,
 	)
@@ -756,7 +752,7 @@ func (opts *ERC20SetWithdrawDelayCmd) Execute(_ []string) error {
 		return errors.New("invalid nonce, needs to be base 10 and not overflow")
 	}
 
-	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	bundle, err := erc20.SetWithdrawDelay(
 		opts.Delay, nonce,
 	)
@@ -793,7 +789,7 @@ func (opts *ERC20VerifySetWithdrawDelayCmd) Execute(_ []string) error {
 		return errors.New("invalid signatures format")
 	}
 
-	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress, erc20Cmd.ChainID, erc20Cmd.ChainID == "")
 	addresses, err := erc20Logic.VerifyWithdrawDelay(
 		opts.Delay, nonce, opts.Signatures,
 	)

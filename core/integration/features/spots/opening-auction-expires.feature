@@ -18,26 +18,57 @@ Feature: Set up a spot market, with an opening auction, then uncross the book. M
       | id      | name    | base asset | quote asset | risk model           | auction duration | fees          | price monitoring | sla params    |
       | BTC/ETH | BTC/ETH | BTC        | ETH         | my-simple-risk-model | 5                | fees-config-1 | default-none     | default-basic |
 
-  Scenario: Ensure spot markets get cancelled if they fail to leave opening auction
+  Scenario: 0043-MKTL-013 Ensure spot markets get cancelled if they fail to leave opening auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount     |
-      | party1 | ETH   | 1000000000 |
-      | party2 | ETH   | 1000000000 |
-      | party2 | BTC   | 5          |
+      | party  | asset | amount |
+      | party1 | ETH   | 100000 |
+      | party2 | ETH   | 100000 |
+      | party3 | ETH   | 100000 |
+      | party2 | BTC   | 5      |
 
+    Then the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party3 | BTC/ETH   | 3000              | 0.1 | submission |
     # place orders and generate trades
     When the parties place the following orders:
-      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | party2 | BTC/ETH   | buy  | 1      | 950000  | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
-      | party1 | BTC/ETH   | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | BTC/ETH   | buy  | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
+      | party1 | BTC/ETH   | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
+      | party3 | BTC/ETH   | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GFA | t3-b-1    |
 
-    Then "party1" should have holding account balance of "1000000" for asset "ETH"
+    Then "party1" should have holding account balance of "100" for asset "ETH"
+    Then "party2" should have holding account balance of "95" for asset "ETH"
+    Then "party3" should have holding account balance of "110" for asset "ETH"
 
     When the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
 
-    When the network moves ahead "11" blocks
+    When the network moves ahead "9" blocks
+    Then the last market state should be "STATE_PENDING" for the market "BTC/ETH"
+
+    When the network moves ahead "1" blocks
     Then the last market state should be "STATE_CANCELLED" for the market "BTC/ETH"
+
+    #orders are cancelled
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | party2 | t2-b-1    | STATUS_CANCELLED |
+      | party1 | t1-b-1    | STATUS_CANCELLED |
+      | party3 | t3-b-1    | STATUS_CANCELLED |
+
+    #asset is released for party with orders and LP commitment
+    Then "party1" should have general account balance of "100000" for asset "ETH"
+    Then "party2" should have general account balance of "100000" for asset "ETH"
+    Then "party3" should have general account balance of "100000" for asset "ETH"
+
+    # check transfers for asset releasing
+    Then the following transfers should happen:
+      | from   | to     | from account         | to account           | market id | amount | asset |
+      | party3 | party3 | ACCOUNT_TYPE_HOLDING | ACCOUNT_TYPE_GENERAL |           | 110    | ETH   |
+      | party2 | party2 | ACCOUNT_TYPE_HOLDING | ACCOUNT_TYPE_GENERAL |           | 95     | ETH   |
+      | party1 | party1 | ACCOUNT_TYPE_HOLDING | ACCOUNT_TYPE_GENERAL |           | 100    | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_BOND    | ACCOUNT_TYPE_GENERAL | BTC/ETH   | 3000   | ETH   |
+

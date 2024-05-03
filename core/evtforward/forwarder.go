@@ -80,8 +80,7 @@ type Forwarder struct {
 	timeService      TimeService
 	nodes            []string
 
-	top  ValidatorTopology
-	efss *efSnapshotState
+	top ValidatorTopology
 }
 
 type tsEvt struct {
@@ -90,7 +89,12 @@ type tsEvt struct {
 }
 
 // New creates a new instance of the event forwarder.
-func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService, top ValidatorTopology) *Forwarder {
+func New(log *logging.Logger,
+	cfg Config,
+	cmd Commander,
+	timeService TimeService,
+	top ValidatorTopology,
+) *Forwarder {
 	log = log.Named(forwarderLogger)
 	log.SetLevel(cfg.Level.Get())
 	var allowlist atomic.Value
@@ -109,7 +113,6 @@ func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
-		efss:             &efSnapshotState{},
 	}
 	forwarder.updateValidatorsList()
 	return forwarder

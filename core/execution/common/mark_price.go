@@ -275,12 +275,16 @@ func (mpc *CompositePriceCalculator) GetConfig() *types.CompositePriceConfigurat
 	return mpc.config
 }
 
-func (mpc *CompositePriceCalculator) updateMarkPriceIfNotInAuction(ctx context.Context, checkPriceMonitor bool, priceMonitor PriceMonitor, as AuctionState, mpcCandidate *num.Uint) error {
+func (mpc *CompositePriceCalculator) updateMarkPriceIfNotInAuction(ctx context.Context, checkPriceMonitor bool, priceMonitor PriceMonitor, as AuctionState, mpcCandidate *num.Uint, resetPriceMonitoringEngine bool) error {
 	if !checkPriceMonitor {
 		mpc.price = mpcCandidate
 		return nil
 	}
-	priceMonitor.CheckPrice(ctx, as, []*types.Trade{{Price: mpcCandidate, Size: 1}}, true, true)
+	if resetPriceMonitoringEngine {
+		priceMonitor.ResetPriceHistory(mpcCandidate)
+	} else {
+		priceMonitor.CheckPrice(ctx, as, mpcCandidate, true, true)
+	}
 	if as.InAuction() || as.AuctionStart() {
 		return fmt.Errorf("price monitoring failed for the new mark price")
 	}
@@ -290,13 +294,13 @@ func (mpc *CompositePriceCalculator) updateMarkPriceIfNotInAuction(ctx context.C
 
 // CalculateMarkPrice is called at the end of each mark price calculation interval and calculates the mark price
 // using the mark price type methodology.
-func (mpc *CompositePriceCalculator) CalculateMarkPrice(ctx context.Context, priceMonitor PriceMonitor, as AuctionState, t int64, ob *matching.CachedOrderBook, markPriceFrequency time.Duration, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, checkPriceMonitor bool) (*num.Uint, error) {
+func (mpc *CompositePriceCalculator) CalculateMarkPrice(ctx context.Context, priceMonitor PriceMonitor, as AuctionState, t int64, ob *matching.CachedOrderBook, markPriceFrequency time.Duration, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, checkPriceMonitor bool, resetPriceMonitoringEngine bool) (*num.Uint, error) {
 	var err error
 	if mpc.config.CompositePriceType == types.CompositePriceTypeByLastTrade {
 		// if there are no trades, the mark price remains what it was before.
 		if len(mpc.trades) > 0 {
 			mpcCandidate := mpc.trades[len(mpc.trades)-1].Price.Clone()
-			err = mpc.updateMarkPriceIfNotInAuction(ctx, checkPriceMonitor, priceMonitor, as, mpcCandidate)
+			err = mpc.updateMarkPriceIfNotInAuction(ctx, checkPriceMonitor, priceMonitor, as, mpcCandidate, resetPriceMonitoringEngine)
 		}
 		mpc.trades = []*types.Trade{}
 		return mpc.price, err
@@ -324,11 +328,11 @@ func (mpc *CompositePriceCalculator) CalculateMarkPrice(ctx context.Context, pri
 	}
 	if mpc.config.CompositePriceType == types.CompositePriceTypeByMedian {
 		if p := CompositePriceByMedian(mpc.priceSources, mpc.sourceLastUpdate, mpc.config.SourceStalenessTolerance, t); p != nil && !p.IsZero() {
-			err = mpc.updateMarkPriceIfNotInAuction(ctx, checkPriceMonitor, priceMonitor, as, p)
+			err = mpc.updateMarkPriceIfNotInAuction(ctx, checkPriceMonitor, priceMonitor, as, p, resetPriceMonitoringEngine)
 		}
 	} else {
 		if p := CompositePriceByWeight(mpc.priceSources, mpc.config.SourceWeights, mpc.sourceLastUpdate, mpc.config.SourceStalenessTolerance, t); p != nil && !p.IsZero() {
-			err = mpc.updateMarkPriceIfNotInAuction(ctx, checkPriceMonitor, priceMonitor, as, p)
+			err = mpc.updateMarkPriceIfNotInAuction(ctx, checkPriceMonitor, priceMonitor, as, p, resetPriceMonitoringEngine)
 		}
 	}
 	mpc.trades = []*types.Trade{}

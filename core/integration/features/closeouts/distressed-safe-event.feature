@@ -10,7 +10,7 @@ Feature: Ensure distressed status events are correctly emitted, both for safe an
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @CloseOut @Liquidation @NoPerp
+  @CloseOut @Liquidation
   Scenario: Implement trade and order network
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

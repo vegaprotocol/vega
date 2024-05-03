@@ -128,6 +128,8 @@ type UpdateSpotMarketConfiguration struct {
 	RiskParameters            updateRiskParams
 	SLAParams                 *LiquiditySLAParams
 	TickSize                  *num.Uint
+	Instrument                *InstrumentConfiguration
+	LiquidityFeeSettings      *LiquidityFeeSettings
 }
 
 func (n UpdateSpotMarketConfiguration) String() string {
@@ -147,6 +149,10 @@ func (n UpdateSpotMarketConfiguration) DeepClone() *UpdateSpotMarketConfiguratio
 		Metadata:  make([]string, len(n.Metadata)),
 		SLAParams: n.SLAParams.DeepClone(),
 		TickSize:  n.TickSize.Clone(),
+		Instrument: &InstrumentConfiguration{
+			Code: n.Instrument.Code,
+			Name: n.Instrument.Name,
+		},
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.PriceMonitoringParameters != nil {
@@ -157,6 +163,10 @@ func (n UpdateSpotMarketConfiguration) DeepClone() *UpdateSpotMarketConfiguratio
 	}
 	if n.RiskParameters != nil {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
+	}
+
+	if n.LiquidityFeeSettings != nil {
+		cpy.LiquidityFeeSettings = n.LiquidityFeeSettings.DeepClone()
 	}
 	return cpy
 }
@@ -172,12 +182,22 @@ func (n UpdateSpotMarketConfiguration) IntoProto() *vegapb.UpdateSpotMarketConfi
 	}
 	targetStakeParameters := n.TargetStakeParameters.IntoProto()
 
+	var liquidityFeeSettings *vegapb.LiquidityFeeSettings
+	if n.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = n.LiquidityFeeSettings.IntoProto()
+	}
+
 	r := &vegapb.UpdateSpotMarketConfiguration{
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
 		SlaParams:                 n.SLAParams.IntoProto(),
 		TickSize:                  n.TickSize.String(),
+		Instrument: &vegapb.UpdateSpotInstrumentConfiguration{
+			Code: n.Instrument.Code,
+			Name: n.Instrument.Name,
+		},
+		LiquidityFeeSettings: liquidityFeeSettings,
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateSpotMarketConfiguration_Simple:
@@ -210,6 +230,11 @@ func UpdateSpotMarketConfigurationFromProto(p *vegapb.UpdateSpotMarketConfigurat
 		TargetStakeParameters:     targetStakeParameters,
 		SLAParams:                 slaParams,
 		TickSize:                  tickSize,
+		LiquidityFeeSettings:      LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
+		Instrument: &InstrumentConfiguration{
+			Name: p.Instrument.Name,
+			Code: p.Instrument.Code,
+		},
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

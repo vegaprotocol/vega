@@ -651,7 +651,6 @@ Feature: Fees calculations
       | trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
       | trader4 | ETH   | ETH/DEC21 | 104    | 0       |
 
-  @NoPerp
   Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
     # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
     # <PC> - Also need to confirm if all 4 internal levels of margin should be 0, as in another case where the trade shouldn't be going through it's non-zero
@@ -675,7 +674,7 @@ Feature: Fees calculations
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 0.25                   | 0                         | SLA        |
     And the following network parameters are set:
-      | name                                               | value |
+      | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
@@ -1037,7 +1036,6 @@ Feature: Fees calculations
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
 
-  @NoPerp
   Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
@@ -1254,7 +1252,6 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-  @NoPerp
   Scenario: Testing fees in continuous trading during position resolution
 
     Given the fees configuration named "fees-config-1":

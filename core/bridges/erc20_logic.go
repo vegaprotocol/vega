@@ -33,12 +33,16 @@ import (
 type ERC20Logic struct {
 	signer     Signer
 	bridgeAddr string
+	chainID    string
+	v1         bool
 }
 
-func NewERC20Logic(signer Signer, bridgeAddr string) *ERC20Logic {
+func NewERC20Logic(signer Signer, bridgeAddr string, chainID string, v1 bool) *ERC20Logic {
 	return &ERC20Logic{
 		signer:     signer,
 		bridgeAddr: bridgeAddr,
+		chainID:    chainID,
+		v1:         v1,
 	}
 }
 
@@ -109,7 +113,7 @@ func (e ERC20Logic) ListAsset(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -184,7 +188,7 @@ func (e ERC20Logic) buildListAssetMessage(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -268,7 +272,7 @@ func (e ERC20Logic) RemoveAsset(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -356,7 +360,7 @@ func (e ERC20Logic) buildWithdrawAssetMessage(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	return packBufAndSubmitter(buf, e.bridgeAddr)
+	return packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 }
 
 func (e ERC20Logic) VerifyWithdrawAsset(
@@ -449,7 +453,7 @@ func (e ERC20Logic) SetAssetLimits(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -511,7 +515,7 @@ func (e ERC20Logic) buildSetAssetLimitsMessage(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -606,7 +610,7 @@ func (e ERC20Logic) buildWithdrawDelayMessage(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	return packBufAndSubmitter(buf, e.bridgeAddr)
+	return packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 }
 
 func (e ERC20Logic) VerifyWithdrawDelay(
@@ -673,7 +677,7 @@ func (e ERC20Logic) GlobalStop(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -712,7 +716,7 @@ func (e ERC20Logic) GlobalResume(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -752,7 +756,7 @@ func (e ERC20Logic) VerifyGlobalResume(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	msg, err := packScheme(buf, e.bridgeAddr, e.chainID, e.v1)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}

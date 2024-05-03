@@ -260,6 +260,8 @@ message ERC20MultiSigSignerAdded {
   string nonce = 6;
   // Epoch that the node was added for
   string epoch_seq = 7;
+  // EVM chain ID that the multisig control contract lives on.
+  string chain_id = 8;
 }
 
 message ERC20MultiSigSignerRemovedSubmitter {
@@ -284,6 +286,8 @@ message ERC20MultiSigSignerRemoved {
   string nonce = 5;
   // Epoch that the node was removed for
   string epoch_seq = 6;
+  // EVM chain ID that the multisig control contract lives on.
+  string chain_id = 8;
 }
 
 message Transfer {
@@ -411,6 +415,7 @@ message ERC20MultiSigSignerEvent {
   string tx_hash = 6;
   uint64 log_index = 7;
   uint64 block_number = 8;
+  string chain_id = 9;
 }
 
 message ERC20MultiSigThresholdSetEvent {
@@ -421,6 +426,7 @@ message ERC20MultiSigThresholdSetEvent {
   string tx_hash = 5;
   uint64 log_index = 6;
   uint64 block_number = 7;
+  string chain_id = 8;
 }
 
 message CheckpointEvent {
@@ -528,8 +534,8 @@ message TransactionResult {
     commands.v1.BatchMarketInstructions batch_market_instructions = 119;
     commands.v1.KeyRotateSubmission key_rotate_submission = 120;
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
-    commands.v1.StopOrdersSubmission stop_order_submission = 122;
-    commands.v1.StopOrdersCancellation stop_order_cancellation = 123;
+    commands.v1.StopOrdersSubmission stop_orders_submission = 122;
+    commands.v1.StopOrdersCancellation stop_orders_cancellation = 123;
     commands.v1.CreateReferralSet create_referral_set = 124;
     commands.v1.UpdateReferralSet update_referral_set = 125;
     commands.v1.ApplyReferralCode apply_referral_code = 126;
@@ -890,6 +896,15 @@ message ExpiredOrders {
   string market_id = 1;
   // Slice of expired order IDs
   repeated string order_ids = 2;
+}
+
+message CancelledOrders {
+  // Market ID for the event.
+  string market_id = 1;
+  // The ID of the party which cancelled the orders.
+  string party_id = 2;
+  // The order IDs that were cancelled.
+  repeated string order_ids = 3;
 }
 
 message TeamCreated {
@@ -1337,6 +1352,9 @@ enum BusEventType {
   // Event indicating time weighted notional position has been updated.
   BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED = 88;
 
+  // Event containing the IDs of orders cancelled by a party on a market.
+  BUS_EVENT_TYPE_CANCELLED_ORDERS = 89;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1522,6 +1540,8 @@ message BusEvent {
     TeamsStatsUpdated teams_stats_updated = 185;
     // Event notifying an update of the time weighted notional position for a party in an asset
     TimeWeightedNotionalPositionUpdated time_weighted_notional_position_updated = 186;
+    // Event notifying of multiple orders being cancelled for a given party, on a given market.
+    CancelledOrders cancelled_orders = 187;
 
     // Market tick events
     MarketEvent market = 1001;

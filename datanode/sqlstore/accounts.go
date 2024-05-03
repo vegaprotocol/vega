@@ -56,7 +56,7 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 		`INSERT INTO accounts(id, party_id, asset_id, market_id, type, tx_hash, vega_time)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id`,
-		deterministicIDFromAccount(a),
+		DeterministicIDFromAccount(a),
 		a.PartyID,
 		a.AssetID,
 		a.MarketID,
@@ -123,7 +123,7 @@ func (as *Accounts) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]
 // If an account already exists, fetch that one.
 // In either case, update the entities.Account object passed with an ID from the database.
 func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
-	accountID := deterministicIDFromAccount(a)
+	accountID := DeterministicIDFromAccount(a)
 	if account, ok := as.getAccountFromCache(accountID); ok {
 		a.ID = account.ID
 		a.VegaTime = account.VegaTime
@@ -186,7 +186,7 @@ func (as *Accounts) getAccountFromCache(id entities.AccountID) (entities.Account
 	return entities.Account{}, false
 }
 
-func deterministicIDFromAccount(a *entities.Account) entities.AccountID {
+func DeterministicIDFromAccount(a *entities.Account) entities.AccountID {
 	idAsBytes := sha256.Sum256([]byte(a.AssetID.String() + a.PartyID.String() + a.MarketID.String() + a.Type.String()))
 	accountID := hex.EncodeToString(idAsBytes[:])
 	return entities.AccountID(accountID)

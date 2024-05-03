@@ -164,3 +164,9 @@ func TransferWithGameID(gameID *string) TransferOption {
 		transfer.GameId = gameID
 	}
 }
+
+func TransferWithType(typ entities.TransferType) TransferOption {
+	return func(t *testing.T, transfer *eventspb.Transfer) {
+		t.Helper()
+	}
+}

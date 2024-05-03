@@ -186,6 +186,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new market with invalid hysteresis epochs fails", testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a new market with valid hysteresis epochs succeeds", testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
 	t.Run("Submitting a new market with invalid liquidity fee settings", testLiquidityFeeSettings)
+	t.Run("Submitting a new spot market with invalid liquidity fee settings", testLiquidityFeeSettingsSpot)
 	t.Run("Submitting a new market with invalid mark price configuration ", testCompositePriceConfiguration)
 	t.Run("Submitting a new market with invalid tick size fails and with valid tick size succeeds", testNewMarketTickSize)
 }
@@ -5998,6 +5999,97 @@ func testLiquidityFeeSettings(t *testing.T) {
 	}
 }
 
+func testLiquidityFeeSettingsSpot(t *testing.T) {
+	cases := []struct {
+		lfs   *vega.LiquidityFeeSettings
+		field string
+		err   error
+	}{
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+				FeeConstant: ptr.From("0.1"),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
+				FeeConstant: ptr.From("0.1"),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: nil,
+			},
+			field: "fee_constant",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("hello"),
+			},
+			field: "fee_constant",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("-0.1"), // (0042-LIQF-072)
+			},
+			field: "fee_constant",
+			err:   commands.ErrMustBePositiveOrZero,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("1.1"), // (0042-LIQF-072)
+			},
+			field: "fee_constant",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_METHOD_UNSPECIFIED,
+			},
+			field: "method",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_Method(int32(100)),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+	}
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewSpotMarket{
+					NewSpotMarket: &vegapb.NewSpotMarket{
+						Changes: &vegapb.NewSpotMarketConfiguration{
+							Instrument: &vegapb.InstrumentConfiguration{
+								Product: &vegapb.InstrumentConfiguration_Spot{
+									Spot: &vegapb.SpotProduct{},
+								},
+							},
+							LiquidityFeeSettings: c.lfs,
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.liquidity_fee_settings."+c.field), c.err)
+	}
+}
+
 func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T) {
 	pubKey := []*dstypes.Signer{
 		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
@@ -6060,10 +6152,11 @@ func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T
 							},
 						},
 						LiquidationStrategy: &vegapb.LiquidationStrategy{
-							DisposalTimeStep:    20,
-							DisposalFraction:    "0.05",
-							FullDisposalSize:    20,
-							MaxFractionConsumed: "0.01",
+							DisposalTimeStep:      20,
+							DisposalFraction:      "0.05",
+							FullDisposalSize:      20,
+							MaxFractionConsumed:   "0.01",
+							DisposalSlippageRange: "0.1",
 						},
 					},
 				},
@@ -6074,6 +6167,7 @@ func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction"))
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed"))
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step"))
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range"))
 }
 
 type compositePriceConfigCase struct {
@@ -6495,10 +6589,11 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 							},
 						},
 						LiquidationStrategy: &vegapb.LiquidationStrategy{
-							DisposalTimeStep:    20,
-							DisposalFraction:    "0.05",
-							FullDisposalSize:    20,
-							MaxFractionConsumed: "0.01",
+							DisposalTimeStep:      20,
+							DisposalFraction:      "0.05",
+							FullDisposalSize:      20,
+							MaxFractionConsumed:   "0.01",
+							DisposalSlippageRange: "0.1",
 						},
 					},
 				},
@@ -6512,28 +6607,41 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 	}{
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "123",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.01",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "123",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.01",
+				DisposalSlippageRange: "0.1",
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "-0.1",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "-0.1",
+				DisposalSlippageRange: "100", // large values are fine
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    0,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.1",
+				DisposalTimeStep:      0,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "0.5",
+			},
+			err: commands.ErrMustBePositive,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:      5,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "-0.5",
 			},
 			err: commands.ErrMustBePositive,
 		},
@@ -6542,6 +6650,7 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction",
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed",
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step",
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range",
 	}
 	for ec, exp := range data {
 		nm := submission.Terms.GetNewMarket()
@@ -6567,30 +6676,43 @@ func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T)
 	}{
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "-2",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.01",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "-2",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.01",
+				DisposalSlippageRange: "0.5",
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    20,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "2",
+				DisposalTimeStep:      20,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "2",
+				DisposalSlippageRange: "0.5",
 			},
 			err: commands.ErrMustBeBetween01,
 		},
 		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
 			ls: &vegapb.LiquidationStrategy{
-				DisposalTimeStep:    3601,
-				DisposalFraction:    "0.1",
-				FullDisposalSize:    20,
-				MaxFractionConsumed: "0.1",
+				DisposalTimeStep:      3601,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "0.5",
 			},
 			err: commands.ErrMustBeAtMost3600,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_slippage_range": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:      5,
+				DisposalFraction:      "0.1",
+				FullDisposalSize:      20,
+				MaxFractionConsumed:   "0.1",
+				DisposalSlippageRange: "0", // zero or missing values fail, too
+			},
+			err: commands.ErrMustBePositive,
 		},
 	}
 	for ec, exp := range data {

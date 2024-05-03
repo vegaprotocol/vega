@@ -88,6 +88,21 @@ func (t *TableOrdering) Reversed() TableOrdering {
 	return reversed
 }
 
+// SetPrefixAll sets a prefix for all columns in the table ordering slice.
+func (t *TableOrdering) SetPrefixAll(pf string) {
+	if len(*t) == 0 {
+		return
+	}
+	// need to cast to underlying slice type to be able to re-assign elements.
+	ts := []ColumnOrdering(*t)
+	for i, col := range *t {
+		col.Prefix = pf
+		ts[i] = col
+	}
+	// cast is needed here, if not the unit test fails.
+	*t = TableOrdering(ts)
+}
+
 // CursorPredicate generates an SQL predicate which excludes all rows before the supplied cursor,
 // with regards to the supplied table ordering. The values used for comparison are added to
 // the args list and bind variables used in the query fragment.

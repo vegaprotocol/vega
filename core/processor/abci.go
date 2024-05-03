@@ -131,6 +131,9 @@ type SnapshotEngine interface {
 	ReceiveSnapshotChunk(context.Context, *types.RawChunk, string) tmtypes.ResponseApplySnapshotChunk
 	RetrieveSnapshotChunk(uint64, uint32, uint32) (*types.RawChunk, error)
 	HasRestoredStateAlready() bool
+
+	// debug snapshot issues/hash mismatch problems
+	SnapshotDump(ctx context.Context, path string) ([]byte, error)
 }
 
 type StateVarEngine interface {
@@ -152,7 +155,7 @@ type PartiesEngine interface {
 
 type ReferralProgram interface {
 	UpdateProgram(program *types.ReferralProgram)
-	SetExists(types.ReferralSetID) bool
+	PartyOwnsReferralSet(types.PartyID, types.ReferralSetID) error
 	CreateReferralSet(context.Context, types.PartyID, types.ReferralSetID) error
 	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
 	CheckSufficientBalanceForApplyReferralCode(types.PartyID, *num.Uint) error
@@ -210,49 +213,50 @@ type App struct {
 	rates          *ratelimit.Rates
 
 	// service injection
-	assets                 Assets
-	banking                Banking
-	broker                 Broker
-	witness                Witness
-	evtfwd                 EvtForwarder
-	exec                   ExecutionEngine
-	ghandler               *genesis.Handler
-	gov                    GovernanceEngine
-	notary                 Notary
-	stats                  Stats
-	time                   TimeService
-	top                    ValidatorTopology
-	netp                   NetworkParameters
-	oracles                *Oracle
-	delegation             DelegationEngine
-	limits                 Limits
-	stake                  StakeVerifier
-	stakingAccounts        StakingAccounts
-	checkpoint             Checkpoint
-	spam                   SpamEngine
-	pow                    PoWEngine
-	epoch                  EpochService
-	snapshotEngine         SnapshotEngine
-	stateVar               StateVarEngine
-	teamsEngine            TeamsEngine
-	partiesEngine          PartiesEngine
-	referralProgram        ReferralProgram
-	volumeDiscountProgram  VolumeDiscountProgram
-	protocolUpgradeService ProtocolUpgradeService
-	erc20MultiSigTopology  ERC20MultiSigTopology
-	gastimator             *Gastimator
-	ethCallEngine          EthCallEngine
-	balanceChecker         BalanceChecker
+	assets                         Assets
+	banking                        Banking
+	broker                         Broker
+	witness                        Witness
+	evtForwarder                   EvtForwarder
+	primaryChainID                 uint64
+	secondaryChainID               uint64
+	exec                           ExecutionEngine
+	ghandler                       *genesis.Handler
+	gov                            GovernanceEngine
+	notary                         Notary
+	stats                          Stats
+	time                           TimeService
+	top                            ValidatorTopology
+	netp                           NetworkParameters
+	oracles                        *Oracle
+	delegation                     DelegationEngine
+	limits                         Limits
+	stake                          StakeVerifier
+	stakingAccounts                StakingAccounts
+	checkpoint                     Checkpoint
+	spam                           SpamEngine
+	pow                            PoWEngine
+	epoch                          EpochService
+	snapshotEngine                 SnapshotEngine
+	stateVar                       StateVarEngine
+	teamsEngine                    TeamsEngine
+	partiesEngine                  PartiesEngine
+	referralProgram                ReferralProgram
+	volumeDiscountProgram          VolumeDiscountProgram
+	protocolUpgradeService         ProtocolUpgradeService
+	primaryErc20MultiSigTopology   ERC20MultiSigTopology
+	secondaryErc20MultiSigTopology ERC20MultiSigTopology
+	gastimator                     *Gastimator
+	ethCallEngine                  EthCallEngine
+	balanceChecker                 BalanceChecker
 
 	nilPow  bool
 	nilSpam bool
 
-	maxBatchSize   atomic.Uint64
-	defaultChainID uint64
+	maxBatchSize atomic.Uint64
 }
 
-func NewApp(
-	log *logging.Logger,
+func NewApp(log *logging.Logger,
 	vegaPaths paths.Paths,
 	config Config,
 	cancelFn func(),
@@ -261,7 +265,7 @@ func NewApp(
 	banking Banking,
 	broker Broker,
 	witness Witness,
-	evtfwd EvtForwarder,
+	evtForwarder EvtForwarder,
 	exec ExecutionEngine,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
@@ -285,8 +289,9 @@ func NewApp(
 	referralProgram ReferralProgram,
 	volumeDiscountProgram VolumeDiscountProgram,
 	blockchainClient BlockchainClient,
-	erc20MultiSigTopology ERC20MultiSigTopology,
-	version string, // we need the version for snapshot reload
+	primaryMultisig ERC20MultiSigTopology,
+	secondaryMultisig ERC20MultiSigTopology,
+	version string,
 	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
 	gastimator *Gastimator,
@@ -309,41 +314,42 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:                 assets,
-		banking:                banking,
-		broker:                 broker,
-		witness:                witness,
-		evtfwd:                 evtfwd,
-		exec:                   exec,
-		ghandler:               ghandler,
-		gov:                    gov,
-		notary:                 notary,
-		stats:                  stats,
-		time:                   time,
-		top:                    top,
-		netp:                   netp,
-		oracles:                oracles,
-		delegation:             delegation,
-		limits:                 limits,
-		stake:                  stake,
-		checkpoint:             checkpoint,
-		spam:                   spam,
-		pow:                    pow,
-		stakingAccounts:        stakingAccounts,
-		epoch:                  epoch,
-		snapshotEngine:         snapshot,
-		stateVar:               stateVarEngine,
-		teamsEngine:            teamsEngine,
-		referralProgram:        referralProgram,
-		volumeDiscountProgram:  volumeDiscountProgram,
-		version:                version,
-		blockchainClient:       blockchainClient,
-		erc20MultiSigTopology:  erc20MultiSigTopology,
-		protocolUpgradeService: protocolUpgradeService,
-		gastimator:             gastimator,
-		ethCallEngine:          ethCallEngine,
-		balanceChecker:         balanceChecker,
-		partiesEngine:          partiesEngine,
+		assets:                         assets,
+		banking:                        banking,
+		broker:                         broker,
+		witness:                        witness,
+		evtForwarder:                   evtForwarder,
+		exec:                           exec,
+		ghandler:                       ghandler,
+		gov:                            gov,
+		notary:                         notary,
+		stats:                          stats,
+		time:                           time,
+		top:                            top,
+		netp:                           netp,
+		oracles:                        oracles,
+		delegation:                     delegation,
+		limits:                         limits,
+		stake:                          stake,
+		checkpoint:                     checkpoint,
+		spam:                           spam,
+		pow:                            pow,
+		stakingAccounts:                stakingAccounts,
+		epoch:                          epoch,
+		snapshotEngine:                 snapshot,
+		stateVar:                       stateVarEngine,
+		teamsEngine:                    teamsEngine,
+		referralProgram:                referralProgram,
+		volumeDiscountProgram:          volumeDiscountProgram,
+		version:                        version,
+		blockchainClient:               blockchainClient,
+		primaryErc20MultiSigTopology:   primaryMultisig,
+		secondaryErc20MultiSigTopology: secondaryMultisig,
+		protocolUpgradeService:         protocolUpgradeService,
+		gastimator:                     gastimator,
+		ethCallEngine:                  ethCallEngine,
+		balanceChecker:                 balanceChecker,
+		partiesEngine:                  partiesEngine,
 	}
 
 	// setup handlers
@@ -627,17 +633,29 @@ func (app *App) ensureConfig() {
 	if app.cfg.KeepCheckpointsMax < 1 {
 		app.cfg.KeepCheckpointsMax = 1
 	}
+
 	v := &proto.EthereumConfig{}
-	if err := app.netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, v); err != nil {
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsPrimaryEthereumConfig, v); err != nil {
 		return
 	}
-	cID, err := strconv.ParseUint(v.ChainId, 10, 64)
+	primaryChainID, err := strconv.ParseUint(v.ChainId, 10, 64)
 	if err != nil {
 		return
 	}
-	app.defaultChainID = cID
-	app.gov.OnChainIDUpdate(cID)
-	app.exec.OnChainIDUpdate(cID)
+	app.primaryChainID = primaryChainID
+	_ = app.gov.OnChainIDUpdate(primaryChainID)
+	_ = app.exec.OnChainIDUpdate(primaryChainID)
+
+	bridgeConfigs := &proto.EVMBridgeConfigs{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsEVMBridgeConfigs, bridgeConfigs); err != nil {
+		return
+	}
+
+	secondaryChainID, err := strconv.ParseUint(bridgeConfigs.Configs[0].ChainId, 10, 64)
+	if err != nil {
+		return
+	}
+	app.secondaryChainID = secondaryChainID
 }
 
 // ReloadConf updates the internal configuration.
@@ -1100,6 +1118,15 @@ func (app *App) Finalize() []byte {
 		if err == nil {
 			app.protocolUpgradeService.SetCoreReadyForUpgrade()
 		}
+	} else if app.cfg.SnapshotDebug.DevEnabled {
+		if height, _ := vgcontext.BlockHeightFromContext(app.blockCtx); height == app.cfg.SnapshotDebug.CrashAtHeight {
+			hash, err := app.snapshotEngine.SnapshotDump(app.blockCtx, app.cfg.SnapshotDebug.DebugCrashFile)
+			if err != nil {
+				app.log.Panic("Failed to dump snapshot file", logging.Error(err), logging.String("snapshot-hash", string(hash)))
+			} else {
+				app.log.Panic("Dumped snapshot file successfully", logging.String("snapshot-hash", string(hash)), logging.String("dump-file", app.cfg.SnapshotDebug.DebugCrashFile))
+			}
+		}
 	} else {
 		snapHash, _, err = app.snapshotEngine.Snapshot(app.blockCtx)
 	}
@@ -1540,7 +1567,8 @@ func (app *App) DeliverIssueSignatures(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(is); err != nil {
 		return err
 	}
-	return app.top.IssueSignatures(ctx, vgcrypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
+
+	return app.top.IssueSignatures(ctx, vgcrypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.ChainId, is.Kind)
 }
 
 func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {
@@ -1779,9 +1807,7 @@ func (app *App) DeliverAmendOrder(
 	return nil
 }
 
-func (app *App) DeliverWithdraw(
-	ctx context.Context, tx abci.Tx, id string,
-) error {
+func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx, id string) error {
 	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
@@ -2609,8 +2635,8 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
 	}
 
-	if !app.referralProgram.SetExists(types.ReferralSetID(params.Id)) {
-		return fmt.Errorf("no referral set for ID %q", params.Id)
+	if err := app.referralProgram.PartyOwnsReferralSet(types.PartyID(tx.Party()), types.ReferralSetID(params.Id)); err != nil {
+		return fmt.Errorf("cannot update referral set: %w", err)
 	}
 
 	if params.IsTeam {
@@ -2693,7 +2719,7 @@ func (app *App) UpdatePartyProfile(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) OnBlockchainEthereumConfigUpdate(ctx context.Context, conf any) error {
+func (app *App) OnBlockchainPrimaryEthereumConfigUpdate(_ context.Context, conf any) error {
 	cfg, err := types.EthereumConfigFromUntypedProto(conf)
 	if err != nil {
 		return err
@@ -2702,7 +2728,20 @@ func (app *App) OnBlockchainEthereumConfigUpdate(ctx context.Context, conf any) 
 	if err != nil {
 		return err
 	}
-	app.defaultChainID = cID
-	app.exec.OnChainIDUpdate(cID)
+	app.primaryChainID = cID
+	_ = app.exec.OnChainIDUpdate(cID)
 	return app.gov.OnChainIDUpdate(cID)
+}
+
+func (app *App) OnBlockchainEVMChainConfigUpdate(_ context.Context, conf any) error {
+	cfg, err := types.EVMChainConfigFromUntypedProto(conf)
+	if err != nil {
+		return err
+	}
+	cID, err := strconv.ParseUint(cfg.Configs[0].ChainID(), 10, 64)
+	if err != nil {
+		return err
+	}
+	app.secondaryChainID = cID
+	return nil
 }

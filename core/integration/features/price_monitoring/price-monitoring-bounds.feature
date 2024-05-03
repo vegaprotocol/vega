@@ -128,7 +128,7 @@ Feature: Price monitoring triggers test on or around monitoring bounds with deci
       | mark price  | trading mode            | target stake     | supplied stake   | open interest |
       | 10015612114 | TRADING_MODE_CONTINUOUS | 1489121209109520 | 9000000000000000 | 2             |
 
-  @PriceBounds @NoPerp
+  @PriceBounds
   Scenario: Trades below minimum price bound by 1 after an update to the price monitoring parameters
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount                     |
@@ -189,7 +189,7 @@ Feature: Price monitoring triggers test on or around monitoring bounds with deci
       | mark price | trading mode            | target stake     | supplied stake   | open interest |
       | 9000000000 | TRADING_MODE_CONTINUOUS | 1338120000000000 | 9000000000000000 | 2             |
 
-  @PriceBounds @NoPerp
+  @PriceBounds
   Scenario: Trades above maximum price bound by 1 decimal after market update
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount                     |

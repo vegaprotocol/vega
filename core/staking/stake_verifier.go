@@ -89,19 +89,23 @@ type StakeVerifier struct {
 
 type pendingSD struct {
 	*types.StakeDeposited
-	check func() error
+	chainID string
+	check   func() error
 }
 
 func (p pendingSD) GetID() string                    { return p.ID }
+func (p pendingSD) GetChainID() string               { return p.chainID }
 func (p pendingSD) GetType() types.NodeVoteType      { return types.NodeVoteTypeStakeDeposited }
 func (p *pendingSD) Check(ctx context.Context) error { return p.check() }
 
 type pendingSR struct {
 	*types.StakeRemoved
-	check func() error
+	chainID string
+	check   func() error
 }
 
 func (p pendingSR) GetID() string                    { return p.ID }
+func (p pendingSR) GetChainID() string               { return p.chainID }
 func (p pendingSR) GetType() types.NodeVoteType      { return types.NodeVoteTypeStakeRemoved }
 func (p *pendingSR) Check(ctx context.Context) error { return p.check() }
 
@@ -166,6 +170,7 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 
 	pending := &pendingSR{
 		StakeRemoved: event,
+		chainID:      s.accs.chainID,
 		check:        func() error { return s.ocv.CheckStakeRemoved(event) },
 	}
 	s.pendingSRs = append(s.pendingSRs, pending)
@@ -191,6 +196,7 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 
 	pending := &pendingSD{
 		StakeDeposited: event,
+		chainID:        s.accs.chainID,
 		check:          func() error { return s.ocv.CheckStakeDeposited(event) },
 	}
 

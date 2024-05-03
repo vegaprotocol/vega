@@ -33,6 +33,8 @@ type Config struct {
 	Level                  encoding.LogLevel `long:"log-level"`
 	MaxEthereumBlocks      uint64            `long:"max-ethereum-blocks"`
 	PollEventRetryDuration encoding.Duration
+	ChainID                string
+	SkipClientVerification bool
 }
 
 func NewDefaultConfig() Config {
@@ -40,5 +42,15 @@ func NewDefaultConfig() Config {
 		Level:                  encoding.LogLevel{Level: logging.InfoLevel},
 		PollEventRetryDuration: encoding.Duration{Duration: defaultDurationBetweenTwoRetry},
 		MaxEthereumBlocks:      maxEthereumBlocks,
+	}
+}
+
+func (c *Config) setDefaults() {
+	if c.MaxEthereumBlocks == 0 {
+		c.MaxEthereumBlocks = maxEthereumBlocks
+	}
+
+	if c.PollEventRetryDuration.Duration == 0 {
+		c.PollEventRetryDuration.Duration = defaultDurationBetweenTwoRetry
 	}
 }

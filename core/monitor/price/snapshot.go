@@ -41,6 +41,8 @@ func NewMonitorFromSnapshot(
 		return nil, ErrNilPriceMonitoringSettings
 	}
 
+	priceRangesCache, needRecalc := newPriceRangeCacheFromSlice(pm.PriceRangeCache)
+
 	e := &Engine{
 		market:              marketID,
 		log:                 log,
@@ -54,7 +56,7 @@ func NewMonitorFromSnapshot(
 		refPriceCache:       keyDecimalPairToMap(pm.RefPriceCache),
 		refPriceCacheTime:   pm.RefPriceCacheTime,
 		bounds:              priceBoundsToBounds(pm.Bounds),
-		priceRangesCache:    newPriceRangeCacheFromSlice(pm.PriceRangeCache),
+		priceRangesCache:    priceRangesCache,
 		pricesNow:           pricesNowToInternal(pm.PricesNow),
 		pricesPast:          pricesPastToInternal(pm.PricesPast),
 		stateChanged:        true,
@@ -62,16 +64,17 @@ func NewMonitorFromSnapshot(
 	}
 	e.boundFactorsInitialised = pm.PriceBoundsConsensusReached
 	stateVarEngine.RegisterStateVariable(asset, marketID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.EventType{statevar.EventTypeTimeTrigger, statevar.EventTypeAuctionEnded, statevar.EventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
+
+	if needRecalc {
+		e.getCurrentPriceRanges(true)
+	}
 	return e, nil
 }
 
-func pricesNowToInternal(cps []*types.CurrentPrice) []currentPrice {
-	cpsi := make([]currentPrice, 0, len(cps))
+func pricesNowToInternal(cps []*types.CurrentPrice) []*num.Uint {
+	cpsi := make([]*num.Uint, 0, len(cps))
 	for _, cp := range cps {
-		cpsi = append(cpsi, currentPrice{
-			Price:  cp.Price.Clone(),
-			Volume: cp.Volume,
-		})
+		cpsi = append(cpsi, cp.Price.Clone())
 	}
 	return cpsi
 }
@@ -80,8 +83,8 @@ func pricesPastToInternal(pps []*types.PastPrice) []pastPrice {
 	ppsi := make([]pastPrice, 0, len(pps))
 	for _, pp := range pps {
 		ppsi = append(ppsi, pastPrice{
-			Time:                pp.Time,
-			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+			Time:         pp.Time,
+			AveragePrice: pp.VolumeWeightedPrice,
 		})
 	}
 	return ppsi
@@ -149,23 +152,29 @@ func (e *Engine) serialiseBounds() []*types.PriceBound {
 	return bounds
 }
 
-func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) map[*bound]priceRange {
-	priceRangesCache := map[*bound]priceRange{}
+func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) (map[int]priceRange, bool) {
+	priceRangesCache := map[int]priceRange{}
+	needsRecalc := false
 	for _, pr := range prs {
-		priceRangesCache[priceBoundTypeToInternal(pr.Bound)] = priceRange{
+		if pr.BoundIndex < 0 {
+			needsRecalc = true
+			break
+		}
+		priceRangesCache[pr.BoundIndex] = priceRange{
 			MinPrice:       wrapPriceRange(pr.Range.Min, true),
 			MaxPrice:       wrapPriceRange(pr.Range.Max, false),
 			ReferencePrice: pr.Range.Ref,
 		}
 	}
-	return priceRangesCache
+
+	return priceRangesCache, needsRecalc
 }
 
 func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
 	prc := make([]*types.PriceRangeCache, 0, len(e.priceRangesCache))
-	for bound, priceRange := range e.priceRangesCache {
+	for ind, priceRange := range e.priceRangesCache {
 		prc = append(prc, &types.PriceRangeCache{
-			Bound: internalBoundToPriceBoundType(bound),
+			BoundIndex: ind,
 			Range: &types.PriceRange{
 				Min: priceRange.MinPrice.Original(),
 				Max: priceRange.MaxPrice.Original(),
@@ -174,17 +183,7 @@ func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
 		})
 	}
 
-	sort.Slice(prc, func(i, j int) bool {
-		if prc[i].Bound.UpFactor.Equal(prc[j].Bound.UpFactor) {
-			if prc[i].Bound.DownFactor.Equal(prc[j].Bound.DownFactor) {
-				return prc[i].Bound.Trigger.Horizon < prc[j].Bound.Trigger.Horizon
-			}
-			return prc[j].Bound.DownFactor.LessThan(prc[i].Bound.DownFactor)
-		}
-
-		return prc[j].Bound.UpFactor.GreaterThan(prc[i].Bound.UpFactor)
-	})
-
+	sort.Slice(prc, func(i, j int) bool { return prc[i].BoundIndex < prc[j].BoundIndex })
 	return prc
 }
 
@@ -196,8 +195,8 @@ func (e *Engine) serialisePricesNow() []*types.CurrentPrice {
 	psn := make([]*types.CurrentPrice, 0, len(e.pricesNow))
 	for _, pn := range e.pricesNow {
 		psn = append(psn, &types.CurrentPrice{
-			Price:  pn.Price.Clone(),
-			Volume: pn.Volume,
+			Price:  pn.Clone(),
+			Volume: 1,
 		})
 	}
 
@@ -217,7 +216,7 @@ func (e *Engine) serialisePricesPast() []*types.PastPrice {
 	for _, pp := range e.pricesPast {
 		pps = append(pps, &types.PastPrice{
 			Time:                pp.Time,
-			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+			VolumeWeightedPrice: pp.AveragePrice,
 		})
 	}
 

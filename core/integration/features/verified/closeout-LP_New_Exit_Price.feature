@@ -30,7 +30,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | limits.markets.maxPeggedOrders          | 2     |
     And the average block duration is "1"
 
-  @Liquidation @NoPerp
+  @Liquidation
   Scenario: 001 Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)

@@ -42,6 +42,8 @@ Feature: Relative return rewards
       | lpprov                                                           | ETH   | 200000000 |
       | party1                                                           | ETH   | 100000    |
       | party2                                                           | ETH   | 100000    |
+      | party3                                                           | ETH   | 100000    |
+      | party4                                                           | ETH   | 100000    |
 
 
     And the parties deposit on staking account the following amount:
@@ -53,6 +55,8 @@ Feature: Relative return rewards
       | lpprov  | VEGA  | 10000  |
       | party1  | VEGA  | 2000   |
       | party2  | VEGA  | 2000   |
+      | party3  | VEGA  | 2000   |
+      | party4  | VEGA  | 2000   |
 
 
     Given time is updated to "2023-09-23T00:00:00Z"
@@ -155,7 +159,7 @@ Feature: Relative return rewards
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
     And "aux2" should have vesting account balance of "10000" for asset "VEGA"
 
-  Scenario: multiple eligible parties split the reward (0056-REWA-084,0056-REWA-085)
+  Scenario: multiple eligible parties split the reward (0056-REWA-112,0056-REWA-113)
     # setup recurring transfer to the reward account - this will start at the  end of this epoch
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
@@ -175,15 +179,16 @@ Feature: Relative return rewards
       | aux2   | ETH/DEC21 | buy  | 10     | 999   | 1                | TYPE_LIMIT | TIF_GTC |           |
 
     Then the network moves ahead "1" epochs
-
-    # party1 is the loser and has negative metric therefore is not getting any reward.
+    # party1 is the loser and has negative metric and is the only loser so they don't get a reward.
     # aux1 and aux2 split the reward proportionally to their metric
     # both aux1 and aux2 are eligible
+    # pre adjustment by the negative of party1 we have: aux1 20, aux2 10, party1 -30
+    # post adjustmnet by -30 of party1 we have: aux1: 50, aux2 40, party1 0.
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "6666" for asset "VEGA"
-    And "aux2" should have vesting account balance of "3333" for asset "VEGA"
+    And "aux1" should have vesting account balance of "5555" for asset "VEGA"
+    And "aux2" should have vesting account balance of "4444" for asset "VEGA"
 
-  Scenario: multiple epochs multiple positions (0056-REWA-087)
+  Scenario: multiple epochs multiple positions (0056-REWA-115)
     Given the network moves ahead "1" epochs
 
     # setup recurring transfer to the reward account - this will start at the  end of this epoch
@@ -209,11 +214,15 @@ Feature: Relative return rewards
     # metric over a window=2:
     # aux1 = 2
     # party1 = 0.5
-    # aux1 gets 10000 * 2/2.5 = 8000
-    # party1 gets 10000 * 0.5/2.5 = 2000
+    # aux2 get -1.6666666666666667/2 = -0.8333
+    # after adjustment:
+    # aux1 gets 10000 * 2.8333/4.16 = 6800
+    # party1 gets 10000 * 1.333/4.16 = 3200
+    # note the adjustment by the negative of aux2 which is the lowest negative return so after adjustment
+    # gets nothing.
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "8000" for asset "VEGA"
-    And "party1" should have vesting account balance of "2000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "6800" for asset "VEGA"
+    And "party1" should have vesting account balance of "3200" for asset "VEGA"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -231,14 +240,21 @@ Feature: Relative return rewards
     # aux1 = [4, -1.3333333333333333] => 1.3333333333
     # party1 = [1, -0.8] => 0.1
     # aux2 = [-1.6666666666666667, 4] => 1.1666666667
-    # party2 = [0, -4] => 0
-    # aux1 gets: 10000*1.3333333333/2.6 = 5128
-    # party1 gets: 10000*0.1/2.6 = 384
-    # aux2 gets: 10000*1.1666666667/2.6 = 4487
+    # party2 = [0, -4] => -2
+    # with offset adjustment -2
+    # aux1 = 3.3333333333
+    # party1 = 2.1
+    # aux2 = 3.1666666667
+    # party2 = 0
+
+    # aux1 gets: 10000*3.3333333333/8.6 = 3876, 3876+6800=10676
+    # party1 gets: 10000*2.1/8.6 = 2441, 2418+3200 = 5641
+    # aux2 gets: 10000*3.1666666667/8.6 = 3682
+
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "980000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "13128" for asset "VEGA"
-    And "party1" should have vesting account balance of "2384" for asset "VEGA"
-    And "aux2" should have vesting account balance of "4487" for asset "VEGA"
+    And "aux1" should have vesting account balance of "10675" for asset "VEGA"
+    And "party1" should have vesting account balance of "5641" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3682" for asset "VEGA"
 
   Scenario: multiple multiple markets - only one in scope
     Given the network moves ahead "1" epochs
@@ -276,8 +292,8 @@ Feature: Relative return rewards
     # aux1 gets 10000 * 2/2.5 = 8000
     # party1 gets 10000 * 0.5/2.5 = 2000
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "8000" for asset "VEGA"
-    And "party1" should have vesting account balance of "2000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "6800" for asset "VEGA"
+    And "party1" should have vesting account balance of "3200" for asset "VEGA"
 
   Scenario: If an eligible party is participating in multiple in-scope markets, their relative returns reward metric should be the sum of their relative returns from each market (0056-REWA-085,0056-REWA-086, with pro rata distribution strategy 0056-REWA-093)
     Then the network moves ahead "1" epochs
@@ -321,7 +337,7 @@ Feature: Relative return rewards
     # aux2 m2m=10 p=2.5 => ret=4
 
     # metric over a window=2
-    # party1 = -1.6666666666666667-3.3333333333333333 = 0
+    # party1 = -1.6666666666666667-3.3333333333333333 = -5
     # party2 = 6/2 = 3
     # aux1 = 4/2 = 2
     # aux2 = (4-1.6666666666666667)/2 = 1.1666666667
@@ -329,12 +345,12 @@ Feature: Relative return rewards
     # reward
     # aux1 = 10000*2/6.1666666667 = 3243
     # aux2 = 10000*1.1666666667/6.1666666667 = 1891
-    # party2 = 10000*3/6.1666666667 = 4864
+    # party2 = 10000*3/6.1666666667 = 4310
 
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "3243" for asset "VEGA"
-    And "aux2" should have vesting account balance of "1891" for asset "VEGA"
-    And "party2" should have vesting account balance of "4864" for asset "VEGA"
+    And "aux1" should have vesting account balance of "3275" for asset "VEGA"
+    And "aux2" should have vesting account balance of "2413" for asset "VEGA"
+    And "party2" should have vesting account balance of "4310" for asset "VEGA"
 
   Scenario: If an eligible party is participating in multiple in-scope markets, their relative returns reward metric should be the sum of their relative returns from each market (0056-REWA-085,0056-REWA-086, with rank distribution strategy 0056-REWA-094)
     Then the network moves ahead "1" epochs
@@ -388,7 +404,7 @@ Feature: Relative return rewards
     # 1. party2 => 10000 * 10/20 = 5000
     # 2. aux1 => 10000 * 5/20 = 2500
     # 3. aux2 => 10000 * 5/20 = 2500
-    
+
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
     And "aux1" should have vesting account balance of "2500" for asset "VEGA"
     And "aux2" should have vesting account balance of "2500" for asset "VEGA"

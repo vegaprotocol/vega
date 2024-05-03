@@ -212,25 +212,6 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 						Size:        100,
 						TimeInForce: vega.Order_TIME_IN_FORCE_IOC,
 						Type:        vega.Order_TYPE_MARKET,
-					},
-					ExpiresAt:      ptr.From(int64(1000)),
-					ExpiryStrategy: ptr.From(vega.StopOrder_EXPIRY_STRATEGY_CANCELS),
-					Trigger: &commandspb.StopOrderSetup_TrailingPercentOffset{
-						TrailingPercentOffset: "0.1",
-					},
-				},
-			},
-			errStr: "stop_orders_submission.rises_below.order_submission.reduce_only (must be reduce only)",
-		},
-		{
-			submission: commandspb.StopOrdersSubmission{
-				RisesAbove: &commandspb.StopOrderSetup{
-					OrderSubmission: &commandspb.OrderSubmission{
-						MarketId:    "f9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
-						Side:        vega.Side_SIDE_BUY,
-						Size:        100,
-						TimeInForce: vega.Order_TIME_IN_FORCE_IOC,
-						Type:        vega.Order_TYPE_MARKET,
 						ReduceOnly:  true,
 					},
 					ExpiresAt:      ptr.From(int64(1000)),
@@ -452,6 +433,46 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 				},
 			},
 			errStr: "stop_orders_submission.falls_below.size_override_value (must be between 0 (excluded) and 1 (included))",
+		},
+		{
+			submission: commandspb.StopOrdersSubmission{
+				RisesAbove: &commandspb.StopOrderSetup{
+					OrderSubmission: &commandspb.OrderSubmission{
+						MarketId:    "f9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+						Side:        vega.Side_SIDE_BUY,
+						Size:        100,
+						TimeInForce: vega.Order_TIME_IN_FORCE_GFA,
+						Type:        vega.Order_TYPE_MARKET,
+						ReduceOnly:  true,
+					},
+					ExpiresAt:      ptr.From(int64(1000)),
+					ExpiryStrategy: ptr.From(vega.StopOrder_EXPIRY_STRATEGY_CANCELS),
+					Trigger: &commandspb.StopOrderSetup_TrailingPercentOffset{
+						TrailingPercentOffset: "0.1",
+					},
+				},
+			},
+			errStr: commands.ErrIsNotValid.Error(),
+		},
+		{
+			submission: commandspb.StopOrdersSubmission{
+				FallsBelow: &commandspb.StopOrderSetup{
+					OrderSubmission: &commandspb.OrderSubmission{
+						MarketId:    "f9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+						Side:        vega.Side_SIDE_BUY,
+						Size:        100,
+						TimeInForce: vega.Order_TIME_IN_FORCE_GFA,
+						Type:        vega.Order_TYPE_MARKET,
+						ReduceOnly:  true,
+					},
+					ExpiresAt:      ptr.From(int64(1000)),
+					ExpiryStrategy: ptr.From(vega.StopOrder_EXPIRY_STRATEGY_CANCELS),
+					Trigger: &commandspb.StopOrderSetup_TrailingPercentOffset{
+						TrailingPercentOffset: "0.1",
+					},
+				},
+			},
+			errStr: commands.ErrIsNotValid.Error(),
 		},
 	}
 

@@ -897,7 +897,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.C
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, pagination)
+	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, req.ChainId, pagination)
 	if err != nil {
 		return nil, formatE(ErrMultiSigServiceGetAdded, err)
 	}
@@ -920,6 +920,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.C
 				Timestamp:  b.VegaTime.UnixNano(),
 				Signatures: entities.PackNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+				ChainId:    b.ChainID,
 			},
 			Cursor: b.Cursor().Encode(),
 		}
@@ -953,7 +954,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, pagination)
+	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, req.ChainId, pagination)
 	if err != nil {
 		return nil, formatE(ErrMultiSigServiceGetRemoved, err)
 	}
@@ -976,6 +977,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context
 				Timestamp:  b.VegaTime.UnixNano(),
 				Signatures: entities.PackNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+				ChainId:    b.ChainID,
 			},
 			Cursor: b.Cursor().Encode(),
 		}
@@ -1114,10 +1116,11 @@ func (t *TradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		return nil, formatE(ErrAssetServiceGetAll, err)
 	}
 
-	var address string
+	var address, chainID string
 	for _, v := range assets {
 		if v.ID == w.Asset {
 			address = v.ERC20Contract
+			chainID = v.ChainID
 			break
 		}
 	}
@@ -1132,7 +1135,8 @@ func (t *TradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
 		Signatures:    entities.PackNodeSignatures(signatures),
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
-		Creation: w.CreatedTimestamp.Unix(),
+		Creation:      w.CreatedTimestamp.Unix(),
+		SourceChainId: chainID,
 	}, nil
 }
 
@@ -3417,7 +3421,11 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	var wMarginDelta, bMarginDelta, posMarginDelta num.Decimal
 	combinedMargin := marginAccountBalance.Add(orderAccountBalance)
 	if isolatedMarginMode {
-		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
+		var ap *num.Uint = nil
+		if !auctionPrice.IsZero() {
+			ap, _ = num.UintFromDecimal(auctionPrice)
+		}
+		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor, ap)
 		posMarginDelta = requiredPositionMargin.Sub(marginAccountBalance)
 		wMarginDelta = requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin)
 		bMarginDelta = wMarginDelta
@@ -3524,8 +3532,8 @@ func (t *TradingDataServiceV2) computeMarginRange(
 		orderMargin = risk.CalcOrderMarginIsolatedMode(openVolume, bNonMarketOrders, sNonMarketOrders, positionFactor, marginFactor, auctionPrice)
 	}
 
-	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
-	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
+	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction, auctionPrice)
+	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction, auctionPrice)
 
 	return worst, best, orderMargin
 }

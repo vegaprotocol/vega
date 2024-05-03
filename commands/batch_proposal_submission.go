@@ -117,6 +117,8 @@ func checkBatchProposalChanges(terms *protoTypes.BatchProposalTermsChange) Error
 		errs.Merge(checkNetworkParameterUpdateBatchChanges(c))
 	case *protoTypes.BatchProposalTermsChange_UpdateAsset:
 		errs.Merge(checkUpdateAssetBatchChanges(c))
+	case *protoTypes.BatchProposalTermsChange_NewAsset:
+		errs.Merge(checkNewAssetBatchChanges(c))
 	case *protoTypes.BatchProposalTermsChange_NewFreeform:
 		errs.Merge(checkNewFreeformBatchChanges(c))
 	case *protoTypes.BatchProposalTermsChange_NewTransfer:
@@ -206,6 +208,16 @@ func checkUpdateAssetBatchChanges(change *protoTypes.BatchProposalTermsChange_Up
 	}
 
 	return checkUpdateAsset(change.UpdateAsset).AddPrefix("batch_proposal_submission.terms.changes.")
+}
+
+func checkNewAssetBatchChanges(change *protoTypes.BatchProposalTermsChange_NewAsset) Errors {
+	errs := NewErrors()
+
+	if change.NewAsset == nil {
+		return errs.FinalAddForProperty("batch_proposal_submission.terms.changes.new_asset", ErrIsRequired)
+	}
+
+	return checkBatchNewAssetChanges(change).AddPrefix("batch_proposal_submission.terms.changes.")
 }
 
 func checkNewFreeformBatchChanges(change *protoTypes.BatchProposalTermsChange_NewFreeform) Errors {

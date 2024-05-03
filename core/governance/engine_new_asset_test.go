@@ -40,6 +40,7 @@ func TestProposalForNewAsset(t *testing.T) {
 	t.Run("Submitting a proposal for new asset with closing time before validation time fails", testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails)
 	t.Run("Voting during validation of proposal for new asset succeeds", testVotingDuringValidationOfProposalForNewAssetSucceeds)
 	t.Run("Rejects erc20 proposals for address already used", testRejectsERC20ProposalForAddressAlreadyUsed)
+	t.Run("Rejects erc20 proposals for unknown chain id", testRejectsERC20ProposalForUnknownChainID)
 }
 
 func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
@@ -55,12 +56,13 @@ func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
 			ContractAddress:   "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990",
 			LifetimeLimit:     num.NewUint(1),
 			WithdrawThreshold: num.NewUint(1),
+			ChainID:           "1",
 		},
 	}
 	proposal.Terms.Change = newAssetERC20
 
 	// setup
-	eng.assets.EXPECT().ExistsForEthereumAddress("0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990").Times(1).Return(true)
+	eng.assets.EXPECT().ValidateEthereumAddress("0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990", "1").Times(1).Return(assets.ErrErc20AddressAlreadyInUse)
 
 	// setup
 	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorERC20AddressAlreadyInUse)
@@ -68,7 +70,7 @@ func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
 
-	require.EqualError(t, err, governance.ErrErc20AddressAlreadyInUse.Error())
+	require.EqualError(t, err, assets.ErrErc20AddressAlreadyInUse.Error())
 	require.Nil(t, toSubmit)
 }
 
@@ -220,6 +222,112 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	assert.EqualError(t, err, governance.ErrProposalDoesNotExist.Error())
 }
 
+func TestVotingDuringValidationOfProposalForNewAssetInBatchSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+
+	// when
+	proposer := vgrand.RandomStr(5)
+	batchID := eng.newProposalID()
+
+	newAssetProposal := eng.newProposalForNewAsset(proposer, now)
+
+	// setup
+	var bAsset *assets.Asset
+	var fcheck func(interface{}, bool)
+	var rescheck validators.Resource
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, ref string, assetDetails *types.AssetDetails) (string, error) {
+		bAsset = assets.NewAsset(builtin.New(ref, assetDetails))
+		return ref, nil
+	})
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(id string) (*assets.Asset, error) {
+		return bAsset, nil
+	})
+	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Do(func(r validators.Resource, f func(interface{}, bool), _ time.Time) error {
+		fcheck = f
+		rescheck = r
+		return nil
+	})
+	eng.ensureStakingAssetTotalSupply(t, 9)
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, proposer, 1)
+
+	// expect
+	eng.expectProposalWaitingForNodeVoteEvent(t, proposer, batchID)
+
+	// eng.expectOpenProposalEvent(t, proposer, batchID)
+	eng.expectProposalEvents(t, []expectedProposal{
+		{
+			partyID:    proposer,
+			proposalID: newAssetProposal.ID,
+			state:      types.ProposalStateWaitingForNodeVote,
+			reason:     types.ProposalErrorUnspecified,
+		},
+	})
+
+	batchClosingTime := now.Add(48 * time.Hour)
+
+	// when
+	_, err := eng.submitBatchProposal(t, eng.newBatchSubmission(
+		batchClosingTime.Unix(),
+		newAssetProposal,
+	), batchID, proposer)
+
+	assert.NoError(t, err)
+
+	// given
+	voter1 := vgrand.RandomStr(5)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+
+	// expect
+	eng.expectVoteEvent(t, voter1, batchID)
+
+	// then
+	err = eng.addYesVote(t, voter1, batchID)
+	require.NoError(t, err)
+
+	_ = fcheck
+	_ = rescheck
+	// call success on the validation
+	fcheck(rescheck, true)
+
+	// then
+	afterValidation := time.Unix(newAssetProposal.Terms.ValidationTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, batchID)
+	// and the inner proposals
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	// eng.expectGetMarketState(t, ID)
+
+	// when
+	eng.OnTick(context.Background(), afterValidation)
+
+	// given
+	afterClosing := time.Unix(newAssetProposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// // expect
+	eng.expectPassedProposalEvent(t, batchID)
+	// and the inner proposals
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+
+	// // when
+	eng.OnTick(context.Background(), afterClosing)
+
+	eng.assets.EXPECT().SetPendingListing(gomock.Any(), newAssetProposal.ID).Times(1)
+	eng.OnTick(context.Background(), afterClosing.Add(1*time.Minute))
+
+	// when
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterClosing.Add(48*time.Hour))
+	require.Len(t, toBeEnacted, 1)
+}
+
 func TestNoVotesAnd0RequiredFails(t *testing.T) {
 	eng := getTestEngine(t, time.Now())
 
@@ -299,4 +407,35 @@ func TestNoVotesAnd0RequiredFails(t *testing.T) {
 
 	// then
 	require.Len(t, toBeEnacted, 0)
+}
+
+func testRejectsERC20ProposalForUnknownChainID(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow().Add(48*time.Hour))
+
+	newAssetERC20 := newAssetTerms()
+	newAssetERC20.NewAsset.Changes.Source = &types.AssetDetailsErc20{
+		ERC20: &types.ERC20{
+			ContractAddress:   "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990",
+			LifetimeLimit:     num.NewUint(1),
+			WithdrawThreshold: num.NewUint(1),
+			ChainID:           "666",
+		},
+	}
+	proposal.Terms.Change = newAssetERC20
+
+	// setup
+	eng.assets.EXPECT().ValidateEthereumAddress("0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990", "666").Times(1).Return(assets.ErrUnknownChainID)
+
+	// setup
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidAssetDetails)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	require.EqualError(t, err, assets.ErrUnknownChainID.Error())
+	require.Nil(t, toSubmit)
 }

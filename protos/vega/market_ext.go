@@ -29,6 +29,8 @@ func (m *Market) GetAsset() (string, error) {
 		return pimpl.Future.SettlementAsset, nil
 	case *Instrument_Perpetual:
 		return pimpl.Perpetual.SettlementAsset, nil
+	case *Instrument_Spot:
+		return pimpl.Spot.QuoteAsset, nil
 	default:
 		return "", ErrUnknownAsset
 	}

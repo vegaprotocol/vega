@@ -38,6 +38,7 @@ const (
 	DispatchMetricRelativeReturn                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN)
 	DispatchMetricReturnVolatility                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY)
 	DispatchMetricValidatorRanking                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING)
+	DispatchMetricRealisedReturn                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN)
 )
 
 func (m DispatchMetric) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -580,6 +581,7 @@ const (
 	ProposalErrorInvalidSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS)
 	ProposalErrorMissingSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS)
 	ProposalInvalidPerpetualProduct               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT)
+	ProposalErrorInvalidSizeDecimalPlaces         = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -966,6 +968,8 @@ const (
 	StopOrderRejectionReasonNotClosingThePosition        = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION)
 	StopOrderRejectionReasonNotAllowedDuringAuction      = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION)
 	StopOrderRejectionReasonOCONotAllowedSameExpiryTime  = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES)
+	StopOrderRejectionSizeOverrideUnSupportedForSpot     = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT)
+	StopOrderRejectionLinkedPercentageInvalid            = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID)
 )
 
 func (s StopOrderRejectionReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -1059,4 +1063,8 @@ func (m *MarginMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	}
 	*m = MarginMode(val)
 	return nil
+}
+
+type ProtoEnum interface {
+	GetEnums() map[int32]string
 }

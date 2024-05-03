@@ -319,7 +319,7 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 	}
 
 	var lastFeeDistributionTime int64
-	if e.lastFeeDistribution != (time.Time{}) {
+	if !e.lastFeeDistribution.IsZero() {
 		lastFeeDistributionTime = e.lastFeeDistribution.UnixNano()
 	}
 
@@ -485,7 +485,11 @@ func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Paylo
 	var err error
 
 	e.nAvg = int64(ls.RunningAverageCounter)
-	e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
+	if ls.LastFeeDistributionTime == 0 {
+		e.lastFeeDistribution = time.Time{}
+	} else {
+		e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
+	}
 
 	if ls.FeeCalculationTimeStep != 0 {
 		e.feeCalculationTimeStep = time.Duration(ls.FeeCalculationTimeStep)
@@ -514,6 +518,10 @@ func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *typ
 	// market SLA parameters
 	e.slaParams = types.LiquiditySLAParamsFromProto(ls.MarketSlaParameters)
 
+	one := num.DecimalOne()
+	e.openPlusPriceRange = one.Add(e.slaParams.PriceRange)
+	e.openMinusPriceRange = one.Sub(e.slaParams.PriceRange)
+
 	// now network SLA parameters
 	bondMax, _ := num.DecimalFromString(ls.BondPenaltyMax)
 	bondSlope, _ := num.DecimalFromString(ls.BondPenaltySlope)
@@ -523,7 +531,7 @@ func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *typ
 	e.nonPerformanceBondPenaltySlope = bondSlope
 	e.stakeToCcyVolume = stakeToVolume
 
-	e.serialisedScores, err = proto.Marshal(p.IntoProto())
+	e.serialisedParemeters, err = proto.Marshal(p.IntoProto())
 	return err
 }
 

@@ -3426,12 +3426,19 @@ func TestClearSpotMarket(t *testing.T) {
 	acc, err := eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
 	require.NoError(t, err)
 
+	// create and topup bond account
+	_, err = eng.CreatePartyGeneralAccount(context.Background(), "party1", "BTC")
+	require.NoError(t, err)
+	bondAccID, err := eng.CreatePartyBondAccount(context.Background(), "party1", testMarketID, "BTC")
+	require.NoError(t, err)
+	eng.IncrementBalance(context.Background(), bondAccID, num.NewUint(10000))
+
 	eng.IncrementBalance(context.Background(), acc.ID, num.NewUint(1000))
 
 	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
 	require.NoError(t, err)
 
-	_, err = eng.ClearSpotMarket(context.Background(), testMarketID, "BTC")
+	_, err = eng.ClearSpotMarket(context.Background(), testMarketID, "BTC", []string{"party1"})
 	require.NoError(t, err)
 
 	treasury, err := eng.GetNetworkTreasuryAccount("BTC")
@@ -3444,6 +3451,10 @@ func TestClearSpotMarket(t *testing.T) {
 
 	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
 	require.Error(t, err)
+
+	generalAccountBalance, err := eng.GetPartyGeneralAccount("party1", "BTC")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(10000), generalAccountBalance.Balance)
 }
 
 func TestCreateSpotMarketAccounts(t *testing.T) {

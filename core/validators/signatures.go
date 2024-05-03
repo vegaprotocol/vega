@@ -33,7 +33,10 @@ import (
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
-var ErrNoPendingSignaturesForNodeID = errors.New("there are no pending signatures for the given nodeID")
+var (
+	ErrNoPendingSignaturesForNodeID = errors.New("there are no pending signatures for the given nodeID")
+	ErrUnknownChainID               = errors.New("chain id does not correspond to any bridge")
+)
 
 type Signatures interface {
 	PreparePromotionsSignatures(
@@ -45,8 +48,8 @@ type Signatures interface {
 	)
 	SetNonce(currentTime time.Time)
 	PrepareValidatorSignatures(ctx context.Context, validators []NodeIDAddress, epochSeq uint64, added bool)
-	EmitValidatorAddedSignatures(ctx context.Context, submitter, nodeID string, currentTime time.Time) error
-	EmitValidatorRemovedSignatures(ctx context.Context, submitter, nodeID string, currentTime time.Time) error
+	EmitValidatorAddedSignatures(ctx context.Context, submitter, nodeID, chainID string, currentTime time.Time) error
+	EmitValidatorRemovedSignatures(ctx context.Context, submitter, nodeID, chainID string, currentTime time.Time) error
 	ClearStaleSignatures()
 	SerialisePendingSignatures() *snapshot.ToplogySignatures
 	RestorePendingSignatures(*snapshot.ToplogySignatures)
@@ -64,21 +67,26 @@ type signatureData struct {
 type issuedSignature struct {
 	EthAddress       string
 	SubmitterAddress string
+	ChainID          string
 }
 
 type signatureWithSubmitter struct {
 	signatureData
 	SubmitterAddress string
+	chainID          string
 }
 
 type ERC20Signatures struct {
-	log              *logging.Logger
-	notary           Notary
-	multiSigTopology MultiSigTopology
-	multisig         *bridges.ERC20MultiSigControl
+	log             *logging.Logger
+	notary          Notary
+	primaryMultisig MultiSigTopology
+	// primaryBridge     *bridges.ERC20MultiSigControl
+	secondaryMultisig MultiSigTopology
+	// secondaryBridge   *bridges.ERC20MultiSigControl
 	lastNonce        *num.Uint
 	broker           Broker
 	isValidatorSetup bool
+	signer           Signer
 
 	// stored nonce's etc. to be able to generate signatures to remove/add an ethereum address from the multisig bundle
 	pendingSignatures map[string]*signatureData
@@ -87,7 +95,8 @@ type ERC20Signatures struct {
 
 func NewSignatures(
 	log *logging.Logger,
-	multiSigTopology MultiSigTopology,
+	primaryMultisig MultiSigTopology,
+	secondaryMultisig MultiSigTopology,
 	notary Notary,
 	nw NodeWallets,
 	broker Broker,
@@ -96,7 +105,8 @@ func NewSignatures(
 	s := &ERC20Signatures{
 		log:               log,
 		notary:            notary,
-		multiSigTopology:  multiSigTopology,
+		primaryMultisig:   primaryMultisig,
+		secondaryMultisig: secondaryMultisig,
 		lastNonce:         num.UintZero(),
 		broker:            broker,
 		isValidatorSetup:  isValidatorSetup,
@@ -104,7 +114,7 @@ func NewSignatures(
 		issuedSignatures:  map[string]issuedSignature{},
 	}
 	if isValidatorSetup {
-		s.multisig = bridges.NewERC20MultiSigControl(nw.GetEthereum())
+		s.signer = nw.GetEthereum()
 	}
 	return s
 }
@@ -119,6 +129,17 @@ type NodeIDAddress struct {
 	NodeID           string
 	EthAddress       string
 	SubmitterAddress string
+}
+
+// isBridge returns whether the given chainID corresponds to one of the bridges, and returns if it is the Ethereum bridge.
+func (s *ERC20Signatures) isBridge(chainID string) (isBridge bool, isEthereum bool) {
+	switch chainID {
+	case s.primaryMultisig.ChainID():
+		isBridge, isEthereum = true, true
+	case s.secondaryMultisig.ChainID():
+		isBridge, isEthereum = true, false
+	}
+	return
 }
 
 func (s *ERC20Signatures) OfferSignatures() {
@@ -140,6 +161,7 @@ func (s *ERC20Signatures) getSignatureWithSubmitterByResID(resID string) (*signa
 	return &signatureWithSubmitter{
 		signatureData:    *sd,
 		SubmitterAddress: is.SubmitterAddress,
+		chainID:          is.ChainID,
 	}, nil
 }
 
@@ -157,7 +179,12 @@ func (s *ERC20Signatures) offerValidatorAddedSignatures(resID string) []byte {
 		s.log.Panic("expected added signature but got removed signature instead", logging.String("ethereumAddress", sig.EthAddress))
 	}
 
-	signature, err := s.multisig.AddSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
+	isBridge, isEthereum := s.isBridge(sig.chainID)
+	if !isBridge {
+		s.log.Panic("unexpected bridge chainID", logging.String("chain-id", sig.chainID))
+	}
+
+	signature, err := bridges.NewERC20MultiSigControl(s.signer, sig.chainID, isEthereum).AddSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
 	if err != nil {
 		s.log.Panic("could not sign remove signer event, wallet not configured properly",
 			logging.Error(err))
@@ -180,7 +207,12 @@ func (s *ERC20Signatures) offerValidatorRemovedSignatures(resID string) []byte {
 		s.log.Panic("expected removed signature but got added signature instead", logging.String("ethereumAddress", sig.EthAddress))
 	}
 
-	signature, err := s.multisig.RemoveSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
+	isBridge, isEthereum := s.isBridge(sig.chainID)
+	if !isBridge {
+		s.log.Panic("unexpected bridge chainID", logging.String("chain-id", sig.chainID))
+	}
+
+	signature, err := bridges.NewERC20MultiSigControl(s.signer, sig.chainID, isEthereum).RemoveSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
 	if err != nil {
 		s.log.Panic("could not sign remove signer event, wallet not configured properly",
 			logging.Error(err))
@@ -250,7 +282,8 @@ func (s *ERC20Signatures) PreparePromotionsSignatures(
 	for _, v := range toAdd {
 		if v.SubmitterAddress != "" {
 			s.log.Debug("sending automatic add signatures", logging.String("submitter", v.SubmitterAddress), logging.String("nodeID", v.NodeID))
-			s.EmitValidatorAddedSignatures(ctx, v.SubmitterAddress, v.NodeID, currentTime)
+			s.EmitValidatorAddedSignatures(ctx, v.SubmitterAddress, v.NodeID, s.primaryMultisig.ChainID(), currentTime)
+			s.EmitValidatorAddedSignatures(ctx, v.SubmitterAddress, v.NodeID, s.secondaryMultisig.ChainID(), currentTime)
 		}
 	}
 
@@ -260,7 +293,8 @@ func (s *ERC20Signatures) PreparePromotionsSignatures(
 		for _, v := range newState {
 			if v.SubmitterAddress != "" && v.Status == ValidatorStatusTendermint {
 				s.log.Debug("sending automatic remove signatures", logging.String("submitter", v.SubmitterAddress), logging.String("nodeID", r.NodeID))
-				s.EmitValidatorRemovedSignatures(ctx, v.SubmitterAddress, r.NodeID, currentTime)
+				s.EmitValidatorRemovedSignatures(ctx, v.SubmitterAddress, r.NodeID, s.primaryMultisig.ChainID(), currentTime)
+				s.EmitValidatorRemovedSignatures(ctx, v.SubmitterAddress, r.NodeID, s.secondaryMultisig.ChainID(), currentTime)
 			}
 		}
 	}
@@ -295,10 +329,15 @@ func (s *ERC20Signatures) PrepareValidatorSignatures(ctx context.Context, valida
 }
 
 // EmitValidatorAddedSignatures emit signatures to add nodeID's ethereum address onto that can be submitter to the contract by submitter.
-func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, submitter, nodeID string, currentTime time.Time) error {
+func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, submitter, nodeID, chainID string, currentTime time.Time) error {
 	toEmit := s.getSignatureData(nodeID, true)
 	if len(toEmit) == 0 {
 		return ErrNoPendingSignaturesForNodeID
+	}
+
+	isBridge, isEthereum := s.isBridge(chainID)
+	if !isBridge {
+		return ErrUnknownChainID
 	}
 
 	evts := []events.Event{}
@@ -306,15 +345,19 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 		var sig []byte
 		nonce := pending.Nonce
 
-		resid := hex.EncodeToString(vgcrypto.Hash([]byte(submitter + nonce.String())))
+		resid := hex.EncodeToString(vgcrypto.Hash([]byte(submitter + nonce.String() + chainID)))
 		if _, ok := s.issuedSignatures[resid]; ok {
 			// we've already issued a signature for this submitter we don't want to do it again, it'll annoy the notary engine
-			s.log.Debug("add signatures already issued", logging.String("submitter", submitter), logging.String("add-address", pending.EthAddress))
+			s.log.Debug("add signatures already issued",
+				logging.String("chain-id", chainID),
+				logging.String("submitter", submitter),
+				logging.String("add-address",
+					pending.EthAddress))
 			continue
 		}
 
 		if s.isValidatorSetup {
-			signature, err := s.multisig.AddSigner(pending.EthAddress, submitter, nonce)
+			signature, err := bridges.NewERC20MultiSigControl(s.signer, chainID, isEthereum).AddSigner(pending.EthAddress, submitter, nonce)
 			if err != nil {
 				s.log.Panic("could not sign remove signer event, wallet not configured properly",
 					logging.Error(err))
@@ -333,6 +376,7 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 				NewSigner:   pending.EthAddress,
 				Submitter:   submitter,
 				Nonce:       nonce.String(),
+				ChainId:     chainID,
 			},
 		))
 
@@ -340,6 +384,7 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 		s.issuedSignatures[resid] = issuedSignature{
 			EthAddress:       pending.EthAddress,
 			SubmitterAddress: submitter,
+			ChainID:          chainID,
 		}
 	}
 	s.broker.SendBatch(evts)
@@ -347,10 +392,15 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 }
 
 // EmitValidatorRemovedSignatures emit signatures to remove nodeID's ethereum address onto that can be submitter to the contract by submitter.
-func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, submitter, nodeID string, currentTime time.Time) error {
+func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, submitter, nodeID, chainID string, currentTime time.Time) error {
 	toEmit := s.getSignatureData(nodeID, false)
 	if len(toEmit) == 0 {
 		return ErrNoPendingSignaturesForNodeID
+	}
+
+	isBridge, isEthereum := s.isBridge(chainID)
+	if !isBridge {
+		return ErrUnknownChainID
 	}
 
 	evts := []events.Event{}
@@ -361,7 +411,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		var sig []byte
 		nonce := pending.Nonce
 
-		resid := hex.EncodeToString(vgcrypto.Hash([]byte(pending.EthAddress + submitter + nonce.String())))
+		resid := hex.EncodeToString(vgcrypto.Hash([]byte(pending.EthAddress + submitter + nonce.String() + chainID)))
 		if _, ok := s.issuedSignatures[resid]; ok {
 			// we've already issued a signature for this submitter we don't want to do it again, it'll annoy the notary engine
 			s.log.Debug("remove signatures already issued", logging.String("submitter", submitter), logging.String("add-address", pending.EthAddress))
@@ -369,7 +419,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		}
 
 		if s.isValidatorSetup {
-			signature, err := s.multisig.RemoveSigner(pending.EthAddress, submitter, nonce)
+			signature, err := bridges.NewERC20MultiSigControl(s.signer, chainID, isEthereum).RemoveSigner(pending.EthAddress, submitter, nonce)
 			if err != nil {
 				s.log.Panic("could not sign remove signer event, wallet not configured properly",
 					logging.Error(err))
@@ -394,6 +444,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 				EpochSeq:            num.NewUint(pending.EpochSeq).String(),
 				OldSigner:           pending.EthAddress,
 				Nonce:               nonce.String(),
+				ChainId:             chainID,
 			},
 		))
 
@@ -401,6 +452,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		s.issuedSignatures[resid] = issuedSignature{
 			EthAddress:       pending.EthAddress,
 			SubmitterAddress: submitter,
+			ChainID:          chainID,
 		}
 	}
 	s.broker.SendBatch(evts)
@@ -412,7 +464,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 func (s *ERC20Signatures) ClearStaleSignatures() {
 	toRemove := []string{}
 	for e, p := range s.pendingSignatures {
-		if p.Added == s.multiSigTopology.IsSigner(e) {
+		if p.Added == s.primaryMultisig.IsSigner(e) && p.Added == s.secondaryMultisig.IsSigner(e) {
 			toRemove = append(toRemove, e)
 		}
 	}
@@ -427,12 +479,12 @@ type noopSignatures struct {
 	log *logging.Logger
 }
 
-func (n *noopSignatures) EmitValidatorAddedSignatures(_ context.Context, _, _ string, _ time.Time) error {
+func (n *noopSignatures) EmitValidatorAddedSignatures(_ context.Context, _, _, _ string, _ time.Time) error {
 	n.log.Error("noopSignatures implementation in use in production")
 	return nil
 }
 
-func (n *noopSignatures) EmitValidatorRemovedSignatures(_ context.Context, _, _ string, _ time.Time) error {
+func (n *noopSignatures) EmitValidatorRemovedSignatures(_ context.Context, _, _, _ string, _ time.Time) error {
 	n.log.Error("noopSignatures implementation in use in production")
 	return nil
 }

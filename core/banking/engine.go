@@ -17,8 +17,8 @@ package banking
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 	"slices"
 	"sort"
@@ -31,13 +31,10 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
-	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
 	"golang.org/x/exp/maps"
@@ -136,23 +133,44 @@ type dispatchStrategyCacheEntry struct {
 }
 
 type Engine struct {
-	cfg            Config
-	log            *logging.Logger
-	timeService    TimeService
-	broker         broker.Interface
-	col            Collateral
-	witness        Witness
-	notary         Notary
-	assets         Assets
-	top            Topology
-	ethEventSource EthereumEventSource
+	cfg         Config
+	log         *logging.Logger
+	timeService TimeService
+	broker      broker.Interface
+	col         Collateral
+	witness     Witness
+	notary      Notary
+	assets      Assets
+	top         Topology
 
-	assetActs        map[string]*assetAction
-	seen             *treeset.Set
-	lastSeenEthBlock uint64 // the block height of the latest ERC20 chain event
-	withdrawals      map[string]withdrawalRef
-	withdrawalCnt    *big.Int
-	deposits         map[string]*types.Deposit
+	// assetActions tracks all the asset actions the engine must process on network
+	// tick.
+	assetActions map[string]*assetAction
+	// seenAssetActions keeps track of all asset action the node has seen.
+	seenAssetActions *treeset.Set
+
+	// primaryEthChainID stores the Ethereum Mainnet chain ID. It is used during the
+	// chain event deduplication phase, to ensure we correctly deduplicate
+	// chain events that have been seen before the introduce of the second bridge.
+	primaryEthChainID string
+	// lastSeenPrimaryEthBlock holds the block height of the latest ERC20 chain
+	// event, from the primary chain, processed by the engine.
+	lastSeenPrimaryEthBlock uint64
+	primaryBridgeState      *bridgeState
+	primaryBridgeView       ERC20BridgeView
+	primaryEthEventSource   EthereumEventSource
+
+	// lastSeenSecondaryEthBlock holds the block height of the latest ERC20 chain
+	// event, from the secondary chain, processed by the engine.
+	lastSeenSecondaryEthBlock uint64
+	secondaryEthChainID       string
+	secondaryBridgeState      *bridgeState
+	secondaryBridgeView       ERC20BridgeView
+	secondaryEthEventSource   EthereumEventSource
+
+	withdrawals   map[string]withdrawalRef
+	withdrawalCnt *big.Int
+	deposits      map[string]*types.Deposit
 
 	currentEpoch uint64
 	bss          *bankingSnapshotState
@@ -184,9 +202,6 @@ type Engine struct {
 	// transfer id to recurringTransfers
 	recurringTransfersMap map[string]*types.RecurringTransfer
 
-	bridgeState *bridgeState
-	bridgeView  ERC20BridgeView
-
 	minWithdrawQuantumMultiple num.Decimal
 
 	maxGovTransferQunatumMultiplier num.Decimal
@@ -198,8 +213,7 @@ type withdrawalRef struct {
 	ref *big.Int
 }
 
-func New(
-	log *logging.Logger,
+func New(log *logging.Logger,
 	cfg Config,
 	col Collateral,
 	witness Witness,
@@ -209,8 +223,10 @@ func New(
 	broker broker.Interface,
 	top Topology,
 	marketActivityTracker MarketActivityTracker,
-	bridgeView ERC20BridgeView,
-	ethEventSource EthereumEventSource,
+	primaryBridgeView ERC20BridgeView,
+	secondaryBridgeView ERC20BridgeView,
+	primaryEthEventSource EthereumEventSource,
+	secondaryEthEventSource EthereumEventSource,
 ) (e *Engine) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -225,9 +241,10 @@ func New(
 		assets:                          assets,
 		notary:                          notary,
 		top:                             top,
-		ethEventSource:                  ethEventSource,
-		assetActs:                       map[string]*assetAction{},
-		seen:                            treeset.NewWithStringComparator(),
+		primaryEthEventSource:           primaryEthEventSource,
+		secondaryEthEventSource:         secondaryEthEventSource,
+		assetActions:                    map[string]*assetAction{},
+		seenAssetActions:                treeset.NewWithStringComparator(),
 		withdrawals:                     map[string]withdrawalRef{},
 		deposits:                        map[string]*types.Deposit{},
 		withdrawalCnt:                   big.NewInt(0),
@@ -243,12 +260,16 @@ func New(
 		minWithdrawQuantumMultiple:      num.DecimalZero(),
 		marketActivityTracker:           marketActivityTracker,
 		hashToStrategy:                  map[string]*dispatchStrategyCacheEntry{},
-		bridgeState: &bridgeState{
+		primaryBridgeState: &bridgeState{
+			active: true,
+		},
+		secondaryBridgeState: &bridgeState{
 			active: true,
 		},
 		feeDiscountPerPartyAndAsset:               map[partyAssetKey]*num.Uint{},
 		pendingPerAssetAndPartyFeeDiscountUpdates: map[string]map[string]*num.Uint{},
-		bridgeView: bridgeView,
+		primaryBridgeView:                         primaryBridgeView,
+		secondaryBridgeView:                       secondaryBridgeView,
 	}
 }
 
@@ -265,6 +286,14 @@ func (e *Engine) OnMaxAmountChanged(ctx context.Context, f num.Decimal) error {
 func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal) error {
 	e.minWithdrawQuantumMultiple = f
 	return nil
+}
+
+func (e *Engine) OnPrimaryEthChainIDUpdated(chainID string) {
+	e.primaryEthChainID = chainID
+}
+
+func (e *Engine) OnSecondaryEthChainIDUpdated(chainID string) {
+	e.secondaryEthChainID = chainID
 }
 
 // ReloadConf updates the internal configuration.
@@ -296,82 +325,56 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	}
 }
 
-func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
-	assetActionKeys := make([]string, 0, len(e.assetActs))
-	for k := range e.assetActs {
-		assetActionKeys = append(assetActionKeys, k)
-	}
-	sort.Strings(assetActionKeys)
+func (e *Engine) OnTick(ctx context.Context, now time.Time) {
+	e.processAssetActions(ctx, now)
 
-	// iterate over asset actions deterministically
-	for _, k := range assetActionKeys {
-		v := e.assetActs[k]
-		state := v.state.Load()
-		if state == pendingState {
-			continue
-		}
-
-		// get the action reference to ensure it's not a duplicate
-		ref := v.getRef()
-		refKey, err := getRefKey(ref)
-		if err != nil {
-			e.log.Error("failed to serialise ref",
-				logging.String("asset-class", ref.Asset),
-				logging.String("tx-hash", ref.Hash),
-				logging.String("action", v.String()))
-			continue
-		}
-
-		switch state {
-		case okState:
-			// check if this transaction have been seen before then
-			if e.seen.Contains(refKey) {
-				// do nothing of this transaction, just display an error
-				e.log.Error("chain event reference a transaction already processed",
-					logging.String("asset-class", ref.Asset),
-					logging.String("tx-hash", ref.Hash),
-					logging.String("action", v.String()))
-
-				if err := e.dedupAction(ctx, v); err != nil {
-					e.log.Error("unable to deduplicate action", logging.String("action", v.String()), logging.Error(err))
-				}
-			} else {
-				// first time we seen this transaction, let's add iter
-				e.seen.Add(refKey)
-				if err := e.finalizeAction(ctx, v); err != nil {
-					e.log.Error("unable to finalize action",
-						logging.String("action", v.String()),
-						logging.Error(err))
-				}
-			}
-
-		case rejectedState:
-			e.log.Error("network rejected banking action",
-				logging.String("action", v.String()))
-		}
-		// delete anyway the action
-		// at this point the action was either rejected, so we do no need
-		// need to keep waiting for its validation, or accepted. in the case
-		// it's accepted it's then sent to the given collateral function
-		// (deposit, withdraw, allowlist), then an error can occur down the
-		// line in the collateral but if that happened there's no way for
-		// us to recover for this event, so we have no real reason to keep
-		// it in memory
-		delete(e.assetActs, k)
-	}
-
-	e.notary.OfferSignatures(
-		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
+	e.notary.OfferSignatures(types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
 
 	// then process all scheduledTransfers
-	if err := e.distributeScheduledTransfers(ctx); err != nil {
+	if err := e.distributeScheduledTransfers(ctx, now); err != nil {
 		e.log.Error("could not process scheduled transfers",
 			logging.Error(err),
 		)
 	}
 
 	// process governance transfers
-	e.distributeScheduledGovernanceTransfers(ctx)
+	e.distributeScheduledGovernanceTransfers(ctx, now)
+}
+
+func (e *Engine) processAssetActions(ctx context.Context, now time.Time) {
+	sortedAssetActionKeys := maps.Keys(e.assetActions)
+	sort.Strings(sortedAssetActionKeys)
+
+	for _, key := range sortedAssetActionKeys {
+		action := e.assetActions[key]
+
+		switch action.state.Load() {
+		case pendingState:
+			// The verification of the action has not been completed yet, so
+			// we skip it until it is.
+			continue
+		case okState:
+			if err := e.deduplicateAssetAction(ctx, action); err != nil {
+				e.log.Warn("an error occurred during asset action deduplication",
+					logging.Error(err),
+					logging.String("action", action.String()),
+					logging.String("tx-hash", action.txHash),
+					logging.String("chain-id", action.chainID))
+				break
+			}
+
+			if err := e.finalizeAction(ctx, action, now); err != nil {
+				e.log.Error("unable to finalize action",
+					logging.String("action", action.String()),
+					logging.Error(err))
+			}
+		case rejectedState:
+			e.log.Error("network rejected banking action",
+				logging.String("action", action.String()))
+		}
+
+		delete(e.assetActions, key)
+	}
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {
@@ -421,23 +424,31 @@ func (e *Engine) dedupAction(ctx context.Context, aa *assetAction) error {
 	return nil
 }
 
-func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
+func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction, now time.Time) error {
 	switch {
 	case aa.IsBuiltinAssetDeposit():
 		dep := e.deposits[aa.id]
-		return e.finalizeDeposit(ctx, dep)
+		return e.finalizeDeposit(ctx, dep, now)
 	case aa.IsERC20Deposit():
 		dep := e.deposits[aa.id]
-		return e.finalizeDeposit(ctx, dep)
+		return e.finalizeDeposit(ctx, dep, now)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20AssetLimitsUpdated():
 		return e.finalizeAssetLimitsUpdated(ctx, aa.erc20AssetLimitsUpdated.VegaAssetID)
 	case aa.IsERC20BridgeStopped():
-		e.bridgeState.NewBridgeStopped(aa.blockHeight, aa.logIndex)
+		b, err := e.bridgeStateForChainID(aa.chainID)
+		if err != nil {
+			return err
+		}
+		b.NewBridgeStopped(aa.blockHeight, aa.logIndex)
 		return nil
 	case aa.IsERC20BridgeResumed():
-		e.bridgeState.NewBridgeResumed(aa.blockHeight, aa.logIndex)
+		b, err := e.bridgeStateForChainID(aa.chainID)
+		if err != nil {
+			return err
+		}
+		b.NewBridgeResumed(aa.blockHeight, aa.logIndex)
 		return nil
 	default:
 		return ErrUnknownAssetAction
@@ -478,7 +489,7 @@ func (e *Engine) finalizeAssetLimitsUpdated(ctx context.Context, assetID string)
 	return e.col.PropagateAssetUpdate(ctx, *asset.ToAssetType())
 }
 
-func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
+func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit, now time.Time) error {
 	defer func() {
 		e.broker.Send(events.NewDepositEvent(ctx, *d))
 		// whatever happens, the deposit is in its final state (cancelled or finalized)
@@ -491,7 +502,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 	}
 
 	d.Status = types.DepositStatusFinalized
-	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
+	d.CreditDate = now.UnixNano()
 	e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
 	return nil
 }
@@ -502,9 +513,7 @@ func (e *Engine) dedupDeposit(ctx context.Context, d *types.Deposit) error {
 	return nil
 }
 
-func (e *Engine) finalizeWithdraw(
-	ctx context.Context, w *types.Withdrawal,
-) error {
+func (e *Engine) finalizeWithdraw(ctx context.Context, w *types.Withdrawal) error {
 	// always send the withdrawal event, don't delete it from the map because we
 	// may still receive events
 	defer func() {
@@ -612,13 +621,26 @@ func (e *Engine) sendTeamsStats(ctx context.Context, seq uint64) {
 	}
 }
 
-func getRefKey(ref snapshot.TxRef) (string, error) {
-	buf, err := vgproto.Marshal(&ref)
-	if err != nil {
-		return "", err
+func (e *Engine) bridgeViewForChainID(chainID string) (ERC20BridgeView, error) {
+	switch chainID {
+	case e.primaryEthChainID:
+		return e.primaryBridgeView, nil
+	case e.secondaryEthChainID:
+		return e.secondaryBridgeView, nil
+	default:
+		return nil, fmt.Errorf("chain id %q is not supported", chainID)
 	}
+}
 
-	return hex.EncodeToString(crypto.Hash(buf)), nil
+func (e *Engine) bridgeStateForChainID(chainID string) (*bridgeState, error) {
+	switch chainID {
+	case e.primaryEthChainID:
+		return e.primaryBridgeState, nil
+	case e.secondaryEthChainID:
+		return e.secondaryBridgeState, nil
+	default:
+		return nil, fmt.Errorf("chain id %q is not supported", chainID)
+	}
 }
 
 func newPendingState() *atomic.Uint32 {

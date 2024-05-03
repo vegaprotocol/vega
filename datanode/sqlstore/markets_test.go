@@ -394,7 +394,6 @@ func getTestSpotMarket() *vega.Market {
 		Spot: &vega.Spot{
 			BaseAsset:  "Ethereum",
 			QuoteAsset: "USD",
-			Name:       "ETH/USD",
 		},
 	}
 
@@ -552,10 +551,11 @@ func getTestMarket() *vega.Market {
 func getTestFutureMarketWithLiquidationStrategy(termInt bool) *vega.Market {
 	mkt := getTestFutureMarket(termInt)
 	mkt.LiquidationStrategy = &vega.LiquidationStrategy{
-		DisposalTimeStep:    10,
-		DisposalFraction:    "0.1",
-		FullDisposalSize:    20,
-		MaxFractionConsumed: "0.01",
+		DisposalTimeStep:      10,
+		DisposalFraction:      "0.1",
+		FullDisposalSize:      20,
+		MaxFractionConsumed:   "0.01",
+		DisposalSlippageRange: "0.1",
 	}
 	return mkt
 }
@@ -1519,10 +1519,11 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	ts := sqlstore.NewParties(connectionSource)
 
 	emptyLS := &vega.LiquidationStrategy{
-		DisposalTimeStep:    0,
-		DisposalFraction:    "0",
-		FullDisposalSize:    0,
-		MaxFractionConsumed: "0",
+		DisposalTimeStep:      0,
+		DisposalFraction:      "0",
+		FullDisposalSize:      0,
+		MaxFractionConsumed:   "0",
+		DisposalSlippageRange: "0",
 	}
 	liquidationStrat := entities.LiquidationStrategyFromProto(emptyLS)
 	parentMarket := entities.Market{
@@ -1779,4 +1780,59 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	}
 
 	return md, entries, props
+}
+
+func TestMarketsEnums(t *testing.T) {
+	t.Run("All proto market states should be supported", testMarketState)
+	t.Run("All proto market trading modes should be supported", testMarketTradingMode)
+}
+
+func testMarketState(t *testing.T) {
+	var marketState vega.Market_State
+	states := getEnums(t, marketState)
+	assert.Len(t, states, 11)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			bs, md := setupMarketsTest(t)
+
+			ctx := tempTransaction(t)
+
+			block := addTestBlock(t, ctx, bs)
+
+			marketProto := getTestFutureMarket(true)
+			marketProto.State = vega.Market_State(s)
+
+			market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err, "Converting market proto to database entity")
+			require.NoError(t, md.Upsert(ctx, market))
+			got, err := md.GetByID(ctx, market.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, market.State, got.State)
+		})
+	}
+}
+
+func testMarketTradingMode(t *testing.T) {
+	var marketTradingMode vega.Market_TradingMode
+	modes := getEnums(t, marketTradingMode)
+	assert.Len(t, modes, 7)
+	for m, mode := range modes {
+		t.Run(mode, func(t *testing.T) {
+			bs, md := setupMarketsTest(t)
+
+			ctx := tempTransaction(t)
+
+			block := addTestBlock(t, ctx, bs)
+
+			marketProto := getTestFutureMarket(true)
+			marketProto.TradingMode = vega.Market_TradingMode(m)
+
+			market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+			require.NoError(t, err, "Converting market proto to database entity")
+			require.NoError(t, md.Upsert(ctx, market))
+			got, err := md.GetByID(ctx, market.ID.String())
+			require.NoError(t, err)
+			assert.Equal(t, market.TradingMode, got.TradingMode)
+		})
+	}
 }

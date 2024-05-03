@@ -16,9 +16,11 @@
 package snapshot
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"sync"
@@ -34,9 +36,12 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/version"
 
 	tmtypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/libp2p/go-libp2p/p2p/host/autonat/pb"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 )
@@ -44,7 +49,6 @@ import (
 const (
 	namedLogger = "snapshot"
 	numWorkers  = 1000
-	chanSize    = numWorkers * 10
 
 	// This is a limitation by Tendermint. It must be strictly positive, and
 	// non-zero.
@@ -513,6 +517,52 @@ func (e *Engine) Snapshot(ctx context.Context) ([]byte, DoneCh, error) {
 	return e.snapshotNow(ctx, true)
 }
 
+// SnapshotDump takes a snapshot on demand, without persisting it to the underlying DB
+// it's meant to just dump to a file for debugging.
+func (e *Engine) SnapshotDump(ctx context.Context, path string) ([]byte, error) {
+	e.ensureEngineIsStarted()
+	// dump file
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	hash, ch, err := e.snapshotNow(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	<-ch
+	payloads, err := e.snapshotTree.AsProtoPayloads()
+	if err != nil {
+		return hash, err
+	}
+
+	w := bufio.NewWriter(f)
+	m := jsonpb.Marshaler{Indent: "    "}
+
+	payloadData := struct {
+		Data []*snapshotpb.Payload `json:"data,omitempty" protobuf:"bytes,1,rep,name=data"`
+		pb.Message
+	}{
+		Data: payloads,
+	}
+
+	s, err := m.MarshalToString(&payloadData)
+	if err != nil {
+		return hash, err
+	}
+
+	if _, err = w.WriteString(s); err != nil {
+		return hash, err
+	}
+
+	if err = w.Flush(); err != nil {
+		return hash, err
+	}
+
+	return hash, nil
+}
+
 // SnapshotNow triggers the snapshot process right now, ignoring the defined
 // interval.
 func (e *Engine) SnapshotNow(ctx context.Context) ([]byte, error) {
@@ -544,8 +594,11 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	treeKeysCounter := atomic.Int64{}
 	treeKeysCounter.Store(int64(len(treeKeysToSnapshot)))
 
-	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, chanSize)
-	serializedStateChan := make(chan snapshotResult, chanSize)
+	// we push the tree keys into this channel so it can only have at most len(treeKeysToSnapshot) things in it
+	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, len(treeKeysToSnapshot))
+
+	// this is the channel where the workers send their result back to the main thread here, so one slot per worker is enough
+	serializedStateChan := make(chan snapshotResult, numWorkers)
 
 	snapMetricsRecord := newSnapMetricsState()
 	defer func() {
@@ -563,9 +616,13 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 		}()
 	}
 
-	for _, treeKeyToSnapshot := range treeKeysToSnapshot {
-		treeKeysToSnapshotChan <- treeKeyToSnapshot
-	}
+	// the above loop sets the worker threads ready to read keys from treeKeysToSnapshotChan
+	// so we can push the keys in async while the loop below over serializedStateChan starts reading the results
+	go func() {
+		for _, treeKeyToSnapshot := range treeKeysToSnapshot {
+			treeKeysToSnapshotChan <- treeKeyToSnapshot
+		}
+	}()
 
 	if len(treeKeysToSnapshot) == 0 {
 		close(treeKeysToSnapshotChan)
@@ -573,7 +630,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	}
 
 	// analyse the results
-	results := make([]snapshotResult, 0, chanSize)
+	results := make([]snapshotResult, 0, len(treeKeysToSnapshot))
 	for res := range serializedStateChan {
 		if res.err != nil {
 			e.log.Panic("Failed to update snapshot namespace",
@@ -925,7 +982,7 @@ func (e *Engine) addProviders(newProviders ...types.StateProvider) {
 		duplicatedKeys := findDuplicatedKeys(existingKeys, newKeys)
 		if len(duplicatedKeys) > 0 {
 			// This is a programming error that might happen when adding a
-			// provider to the codebase, during an .
+			// provider to the codebase.
 			e.log.Panic("A state provider in the same namespace is already using these keys",
 				zap.String("namespace", namespace.String()),
 				zap.Any("keys", duplicatedKeys),

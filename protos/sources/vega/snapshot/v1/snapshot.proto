@@ -118,7 +118,7 @@ message Payload {
     ProofOfWork proof_of_work = 53;
     PendingAssetUpdates pending_asset_updates = 54;
     ProtocolUpgradeProposals protocol_upgrade_proposals = 55;
-    BankingBridgeState banking_bridge_state = 56;
+    BankingBridgeState banking_primary_bridge_state = 56;
     SettlementState settlement_state = 57;
     LiquidityScores liquidity_scores = 58;
     SpotLiquidityTarget spot_liquidity_target = 59;
@@ -146,6 +146,8 @@ message Payload {
     Parties parties = 83;
     L2EthOracles l2_eth_oracles = 84;
     EthOracleVerifierMisc eth_oracle_verifier_misc = 85;
+    BankingEVMBridgeStates banking_evm_bridge_states = 86;
+    EVMMultisigTopologies evm_multisig_topologies = 87;
   }
 }
 
@@ -235,6 +237,7 @@ message EventForwarder {
   // this is deprecated, use the other one now
   repeated string acked_events = 1;
   repeated EventForwarderBucket buckets = 2;
+  string chain_id = 3;
 }
 
 message CollateralAccounts {
@@ -273,6 +276,7 @@ message TxRef {
   uint64 block_nr = 2;
   string hash = 3;
   uint64 log_index = 4;
+  string chain_id = 5;
 }
 
 message BankingWithdrawals {
@@ -285,7 +289,8 @@ message BankingDeposits {
 
 message BankingSeen {
   repeated string refs = 1;
-  uint64 last_seen_eth_block = 2;
+  uint64 last_seen_primary_eth_block = 2;
+  uint64 last_seen_secondary_eth_block = 3;
 }
 
 message BankingAssetActions {
@@ -310,6 +315,10 @@ message BankingScheduledGovernanceTransfers {
 
 message BankingBridgeState {
   vega.checkpoint.v1.BridgeState bridge_state = 1;
+}
+
+message BankingEVMBridgeStates {
+  repeated vega.checkpoint.v1.BridgeState bridge_states = 1;
 }
 
 message Checkpoint {
@@ -360,6 +369,7 @@ message GovernanceBatchActive {
 message GovernanceNode {
   repeated vega.Proposal proposals = 1;
   repeated ProposalData proposal_data = 2; // includes votes
+  repeated BatchProposalData batch_proposal_data = 3;
 }
 
 message StakingAccount {
@@ -419,6 +429,7 @@ message PriceBound {
 message PriceRangeCache {
   PriceBound bound = 1;
   PriceRange range = 2;
+  uint64 bound_index = 3;
 }
 
 message CurrentPrice {
@@ -503,6 +514,8 @@ message SpotMarket {
   StopOrders stop_orders = 19;
   repeated vega.Order expiring_stop_orders = 20;
   vega.events.v1.FeesStats fees_stats = 21;
+  bool has_traded = 22;
+  MarketLiquidity market_liquidity = 23;
 }
 
 message Market {
@@ -537,6 +550,7 @@ message Market {
   CompositePriceCalculator mark_price_calculator = 29;
   optional CompositePriceCalculator internal_composite_price_calculator = 30;
   int64 next_internal_composite_price_calc = 31;
+  MarketLiquidity market_liquidity = 32;
 }
 
 message PartyMarginFactor {
@@ -901,6 +915,7 @@ message IssuedERC20MultisigControlSignature {
   string resource_id = 1;
   string ethereum_address = 2;
   string submitter_address = 3;
+  string chain_id = 4;
 }
 
 message ValidatorState {
@@ -1091,6 +1106,7 @@ message MarketTracker {
   repeated checkpoint.v1.MarketActivityTracker market_activity = 1;
   repeated checkpoint.v1.TakerNotionalVolume taker_notional_volume = 2;
   repeated checkpoint.v1.MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
+  repeated checkpoint.v1.EpochPartyTakerFees epoch_taker_fees = 4;
 }
 
 message SignerEventsPerAddress {
@@ -1110,6 +1126,16 @@ message ERC20MultiSigTopologyPending {
   repeated vega.events.v1.ERC20MultiSigThresholdSetEvent pending_threshold_set = 2;
   repeated string witnessed_signers = 3;
   repeated string witnessed_threshold_sets = 4;
+}
+
+message EVMMultisigTopology {
+  string chain_id = 1;
+  ERC20MultiSigTopologyVerified verified = 2;
+  ERC20MultiSigTopologyPending pending = 3;
+}
+
+message EVMMultisigTopologies {
+  repeated EVMMultisigTopology evm_multisig_topology = 1;
 }
 
 message ProofOfWork {
@@ -1342,4 +1368,8 @@ message PartyProfile {
   string party_id = 1;
   string alias = 2;
   repeated vega.Metadata metadata = 3;
+}
+
+message MarketLiquidity {
+  string price_range = 1;
 }

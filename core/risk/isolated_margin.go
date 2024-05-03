@@ -33,8 +33,8 @@ import (
 func (e *Engine) calculateIsolatedMargins(m events.Margin, marketObservable *num.Uint, inc num.Decimal, marginFactor num.Decimal, auctionPrice *num.Uint, orders []*types.Order) *types.MarginLevels {
 	auction := e.as.InAuction() && !e.as.CanLeave()
 	// NB:we don't include orders when calculating margin for isolated margin as they are margined separately!
-	margins := e.calculateMargins(m, marketObservable, *e.factors, false, auction, inc)
-	margins.OrderMargin = calcOrderMargins(m.Size(), orders, e.positionFactor, marginFactor, auctionPrice)
+	margins := e.calculateMargins(m, marketObservable, *e.factors, false, auction, inc, auctionPrice)
+	margins.OrderMargin = CalcOrderMargins(m.Size(), orders, e.positionFactor, marginFactor, auctionPrice)
 	margins.CollateralReleaseLevel = num.UintZero()
 	margins.SearchLevel = num.UintZero()
 	margins.MarginMode = types.MarginModeIsolatedMargin
@@ -332,10 +332,10 @@ func (e *Engine) SwitchToIsolatedMargin(ctx context.Context, evt events.Margin, 
 // 1. recalcualtion of the required margin in cross margin mode + margin levels are buffered
 // 2. return a transfer of all the balance from order margin account to margin account
 // NB: cannot fail.
-func (e *Engine) SwitchFromIsolatedMargin(ctx context.Context, evt events.Margin, marketObservable *num.Uint, inc num.Decimal) events.Risk {
+func (e *Engine) SwitchFromIsolatedMargin(ctx context.Context, evt events.Margin, marketObservable *num.Uint, inc num.Decimal, auctionPrice *num.Uint) events.Risk {
 	amt := evt.OrderMarginBalance().Clone()
 	auction := e.as.InAuction() && !e.as.CanLeave()
-	margins := e.calculateMargins(evt, marketObservable, *e.factors, true, auction, inc)
+	margins := e.calculateMargins(evt, marketObservable, *e.factors, true, auction, inc, auctionPrice)
 	margins.Party = evt.Party()
 	margins.Asset = evt.Asset()
 	margins.MarketID = evt.MarketID()
@@ -497,11 +497,11 @@ func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*t
 }
 
 func (e *Engine) CalcOrderMarginsForClosedOutParty(orders []*types.Order, marginFactor num.Decimal) *num.Uint {
-	return calcOrderMargins(0, orders, e.positionFactor, marginFactor, nil)
+	return CalcOrderMargins(0, orders, e.positionFactor, marginFactor, nil)
 }
 
-// calcOrderMargins calculates the the order margin required for the party given their current orders and margin factor.
-func calcOrderMargins(positionSize int64, orders []*types.Order, positionFactor, marginFactor num.Decimal, auctionPrice *num.Uint) *num.Uint {
+// CalcOrderMargins calculates the the order margin required for the party given their current orders and margin factor.
+func CalcOrderMargins(positionSize int64, orders []*types.Order, positionFactor, marginFactor num.Decimal, auctionPrice *num.Uint) *num.Uint {
 	if len(orders) == 0 {
 		return num.UintZero()
 	}

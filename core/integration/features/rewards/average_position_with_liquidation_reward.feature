@@ -51,7 +51,7 @@ Feature: Calculation of average position during closeout trades
         When the network moves ahead "1" blocks
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD-1-10"
 
-    @Liquidation @NoPerp
+    @Liquidation
     Scenario: Bug time-weighted average position not updated correctly during closeout trades
         # Setup such that distributed rewards are all vested the following epoch, i,e. the balance in the vested account is equal to the rewards distributed that epocha
 
@@ -104,6 +104,15 @@ Feature: Calculation of average position during closeout trades
             | party1 | USD-1-10 | 4000    |
             | aux1   | USD-1-10 | 4000    |
             | aux2   | USD-1-10 | 2000    |
+
+        Given the network moves ahead "1" epochs
+        # there are still rewards because while the position is 0 at the beginning of the epoch, the timeweighted position will only become 0
+        # at the beginning of the next epoch
+        Then parties should have the following vesting account balances:
+            | party  | asset    | balance |
+            | party1 | USD-1-10 | 3333    |
+            | aux2   | USD-1-10 | 3333    |
+            | aux1   | USD-1-10 | 3333    |
 
         Given the network moves ahead "1" epochs
         # Expect to see no rewards as no positions open at the start of the epoch

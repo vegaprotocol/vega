@@ -156,21 +156,13 @@ func (e *Engine) cleanupStaleDispatchStrategies() {
 	}
 }
 
-func compareStringSlices(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 func isSimilar(dispatchStrategy1, dispatchStrategy2 *vegapb.DispatchStrategy) bool {
-	return (dispatchStrategy1 == nil && dispatchStrategy2 == nil) ||
-		(dispatchStrategy1 != nil && dispatchStrategy2 != nil && dispatchStrategy1.AssetForMetric == dispatchStrategy2.AssetForMetric && dispatchStrategy1.Metric == dispatchStrategy2.Metric && compareStringSlices(dispatchStrategy1.Markets, dispatchStrategy2.Markets))
+	p1, _ := proto.Marshal(dispatchStrategy1)
+	hash1 := hex.EncodeToString(crypto.Hash(p1))
+
+	p2, _ := proto.Marshal(dispatchStrategy2)
+	hash2 := hex.EncodeToString(crypto.Hash(p2))
+	return hash1 == hash2
 }
 
 func (e *Engine) ensureNoRecurringTransferDuplicates(
@@ -199,9 +191,18 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 		vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
-		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
+		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
 		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
-			return len(e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)) > 0
+			hasNonZeroMetric := false
+			partyMetrics := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)
+			for _, pm := range partyMetrics {
+				if !pm.Score.IsZero() {
+					hasNonZeroMetric = true
+					break
+				}
+			}
+			return hasNonZeroMetric || (len(partyMetrics) > 0 && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
 		} else {
 			tcs, _ := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
 			return len(tcs) > 0
@@ -224,6 +225,12 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 	for _, v := range e.recurringTransfers {
 		if v.StartEpoch > newEpoch {
 			// not started
+			continue
+		}
+
+		if v.DispatchStrategy != nil && v.DispatchStrategy.TransferInterval != nil &&
+			((newEpoch-v.StartEpoch+1) < uint64(*v.DispatchStrategy.TransferInterval) ||
+				(newEpoch-v.StartEpoch+1)%uint64(*v.DispatchStrategy.TransferInterval) != 0) {
 			continue
 		}
 

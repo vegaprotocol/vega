@@ -68,7 +68,7 @@ var (
 func defaultNetParams() map[string]value {
 	m := map[string]value{
 		// spots
-		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("1"),
 
 		// perps
 		PerpsMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
@@ -197,9 +197,8 @@ func defaultNetParams() map[string]value {
 		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
 
 		// staking and delegation
-		StakingAndDelegationRewardPayoutFraction: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1.0"),
-		StakingAndDelegationRewardPayoutDelay:    NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
-
+		StakingAndDelegationRewardPayoutFraction:          NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1.0"),
+		StakingAndDelegationRewardPayoutDelay:             NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
 		StakingAndDelegationRewardMaxPayoutPerParticipant: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
 		StakingAndDelegationRewardDelegatorShare:          NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.883"),
 		StakingAndDelegationRewardMinimumValidatorStake:   NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
@@ -209,7 +208,7 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(gteD1).Mutable(true).MustUpdate("3.0"),
 
 		// team rewards - //TODO review the constraint and defaults
-		MinEpochsInTeamForMetricRewardEligibility: NewInt(gteI1, lteI500).Mutable(true).MustUpdate("5"),
+		MinEpochsInTeamForMetricRewardEligibility: NewInt(gteI0, lteI500).Mutable(true).MustUpdate("5"),
 
 		// spam protection policies
 		SpamProtectionMaxVotes:                         NewInt(gteI1).Mutable(true).MustUpdate("3"),
@@ -220,6 +219,7 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMinTokensForDelegation:           NewDecimal(gteD1).Mutable(true).MustUpdate("1000000000000000000"),
 		SpamProtectionMinimumWithdrawalQuantumMultiple: NewDecimal(gtD0, DecimalLT(num.MustDecimalFromString("1e6"))).Mutable(true).MustUpdate("10"),
 		SpamProtectionMinMultisigUpdates:               NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxMultisigUpdates:               NewInt(gteI0).Mutable(true).MustUpdate("4"),
 		SpamProtectionMaxCreateReferralSet:             NewInt(gteI0).Mutable(true).MustUpdate("3"),
 		SpamProtectionMaxUpdateReferralSet:             NewInt(gteI0).Mutable(true).MustUpdate("3"),
 		SpamProtectionMaxApplyReferralCode:             NewInt(gteI0).Mutable(true).MustUpdate("5"),
@@ -235,12 +235,12 @@ func defaultNetParams() map[string]value {
 		// e.g: assets and collateral when setting up a new ID.
 		RewardAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 
-		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, types.CheckUntypedEthereumConfig).Mutable(true).
-			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"collateral_bridge_contract\": { \"address\": \"0xXXX\" }, \"confirmations\": 3, \"staking_bridge_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0}, \"token_vesting_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }, \"multisig_control_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }}"),
 		BlockchainsEthereumL2Configs: NewJSON(&proto.EthereumL2Configs{}, types.CheckUntypedEthereumL2Configs).Mutable(true).
-			MustUpdate(
-				`{"configs":[{"network_id":"100","chain_id":"100","confirmations":3,"name":"Gnosis Chain", "block_interval": 3}, {"network_id":"42161","chain_id":"42161","confirmations":3,"name":"Arbitrum One", "block_interval": 50}]}`,
-			),
+			MustUpdate(`{"configs":[{"network_id":"100","chain_id":"100","confirmations":3,"name":"Gnosis Chain", "block_interval": 3}, {"network_id":"42161","chain_id":"42161","confirmations":3,"name":"Arbitrum One", "block_interval": 50}]}`),
+		BlockchainsPrimaryEthereumConfig: NewJSON(&proto.EthereumConfig{}, types.CheckUntypedEthereumConfig).Mutable(true).
+			MustUpdate(`{"network_id": "XXX", "chain_id": "XXX", "collateral_bridge_contract": { "address": "0xXXX" }, "confirmations": 3, "staking_bridge_contract": { "address": "0xXXX", "deployment_block_height": 0}, "token_vesting_contract": { "address": "0xXXX", "deployment_block_height": 0 }, "multisig_control_contract": { "address": "0xXXX", "deployment_block_height": 0 }}`),
+		BlockchainsEVMBridgeConfigs: NewJSON(&proto.EVMBridgeConfigs{}, types.CheckUntypedEVMChainConfig).Mutable(true).
+			MustUpdate(`{"configs": [{"network_id": "XXX", "chain_id": "XXX", "collateral_bridge_contract": { "address": "0xXXX" }, "confirmations": 3, "multisig_control_contract": {"address": "0xXXX", "deployment_block_height": 0}}]}`),
 
 		ValidatorsEpochLength: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("24h0m0s"),
 

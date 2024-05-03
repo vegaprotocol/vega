@@ -461,6 +461,7 @@ func mustOrderFromProto(o *vegapb.Order) *types.Order {
 
 func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
 	var order *types.Order
+	cancel := false
 	for _, e := range tm.events {
 		switch evt := e.(type) {
 		case *events.Order:
@@ -468,7 +469,12 @@ func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
 			if ord.Id == id {
 				order = mustOrderFromProto(ord)
 			}
+		case *events.CancelledOrders:
+			cancel = true
 		}
+	}
+	if cancel {
+		order.Status = types.OrderStatusCancelled
 	}
 	return order
 }
@@ -5191,7 +5197,17 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	require.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideSell, "party-A", 1, 1000)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order04", types.SideBuy, "party-A", 1, 1000)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	require.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),

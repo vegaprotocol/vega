@@ -96,6 +96,8 @@ message StopOrder {
     REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION = 8;
     // Stop OCO orders cannot have the same expiry timestamp
     REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES = 9;
+    // Stop orders with a position size override are not supported for spot markets
+    REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT = 10;
   }
 
   // ID of this stop order
@@ -920,6 +922,9 @@ enum AccountType {
   // Per asset market account for party in isolated margin mode
   ACCOUNT_TYPE_ORDER_MARGIN = 29;
 
+  // Per asset market reward account for realised return
+  ACCOUNT_TYPE_REWARD_REALISED_RETURN = 30;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -1075,6 +1080,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_RETURN_VOLATILITY = 7;
   // Dispatch metric that uses the validator ranking of the validator as metric
   DISPATCH_METRIC_VALIDATOR_RANKING = 8;
+  // Dispatch metric that uses the realised return of the party in a market
+  DISPATCH_METRIC_REALISED_RETURN = 9;
 }
 
 enum EntityScope {
@@ -1132,6 +1139,8 @@ message DispatchStrategy {
   repeated Rank rank_table = 13;
   // If set, the actual amount of rewards transferred to each public key during distribution for this transfer will be `min(calculated_reward_in_quantum, cap_reward_fee_multiple × fees_paid_this_epoch_in_quantum).
   optional string cap_reward_fee_multiple = 14;
+  // Number of epochs between transfers, i.e. when 4, funds will be transferred every 4 epochs with the first transfer occurring 4 epochs after the transaction is processed.
+  optional int32 transfer_interval = 15;
 }
 
 message Rank {
@@ -1545,7 +1554,7 @@ message EthereumConfig {
   string network_id = 1;
   // Chain ID of this Ethereum network.
   string chain_id = 2;
-  //// Contract configuration of the collateral bridge contract for this Ethereum network.
+  // Contract configuration of the collateral bridge contract for this Ethereum network.
   EthereumContractConfig collateral_bridge_contract = 3;
   // Number of block confirmations to wait to consider an Ethereum transaction trusted.
   // An Ethereum block is trusted when there are at least "n" blocks confirmed by the
@@ -1561,8 +1570,36 @@ message EthereumConfig {
   EthereumContractConfig multisig_control_contract = 7;
 }
 
+// EVM Chain configuration details.
+message EVMBridgeConfig {
+  // Network ID of this EVM compatible network.
+  string network_id = 1;
+  // Chain ID of this EVM compatible network.
+  string chain_id = 2;
+  // Contract configuration of the collateral bridge contract for this EVM compatible network.
+  EthereumContractConfig collateral_bridge_contract = 3;
+  // Number of block confirmations to wait to consider an EVM compatible chain transaction trusted.
+  // An EVM compatible chain block is trusted when there are at least "n" blocks confirmed by the
+  // network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
+  // and the current block to be forged (or mined) on the EVM compatible chain is block 14, block
+  // 10 would be considered as trusted, but not block 11.
+  uint32 confirmations = 4;
+  // Contract configuration of the multisig control contract for this EVM compatible network.
+  EthereumContractConfig multisig_control_contract = 5;
+  // Approximate block time of the EVM chain as a duration e.g. 12s, 250ms.
+  string block_time = 6;
+  // Display name of this network.
+  string name = 7;
+}
+
+// A list of EVM bridge configurations
+message EVMBridgeConfigs {
+  // The EVM configurations
+  repeated EVMBridgeConfig configs = 1;
+}
+
 message EthereumContractConfig {
-  // Address of the contract for this Ethereum network. The address should start with "0x".
+  // Address of the contract for this EVM compatible network. The address should start with "0x".
   string address = 1;
   // Block height at which the stacking contract has been deployed for this Ethereum network.
   uint64 deployment_block_height = 6;

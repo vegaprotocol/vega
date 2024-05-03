@@ -41,6 +41,7 @@ var (
 	ErrDuplicateChainID                                   = errors.New("duplicate chain ID name")
 	ErrCannotRemoveL2Config                               = errors.New("L2 config cannot be removed")
 	ErrCanOnlyAmendedConfirmationsAndBlockInterval        = errors.New("can only amended L2 config confirmations and block interval")
+	ErrInvalidBlockLengthDuration                         = errors.New("block-length duration is invalid")
 )
 
 type EthereumConfig struct {
@@ -229,7 +230,7 @@ func CheckEthereumConfig(cfgProto *proto.EthereumConfig) error {
 func toEthereumConfigProto(v interface{}) (*proto.EthereumConfig, error) {
 	cfg, ok := v.(*proto.EthereumConfig)
 	if !ok {
-		return nil, fmt.Errorf("type \"%s\" is not a EthereumConfig proto", vgreflect.TypeName(v))
+		return nil, fmt.Errorf("type %q is not a EthereumConfig proto", vgreflect.TypeName(v))
 	}
 	return cfg, nil
 }
@@ -249,7 +250,7 @@ type EthereumL2Config struct {
 func toEthereumL2ConfigsProto(v interface{}) (*proto.EthereumL2Configs, error) {
 	cfg, ok := v.(*proto.EthereumL2Configs)
 	if !ok {
-		return nil, fmt.Errorf("type \"%s\" is not a EthereumL2Configs proto", vgreflect.TypeName(v))
+		return nil, fmt.Errorf("type %q is not a EthereumL2Configs proto", vgreflect.TypeName(v))
 	}
 	return cfg, nil
 }

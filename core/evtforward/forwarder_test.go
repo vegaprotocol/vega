@@ -76,9 +76,7 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 	cfg := evtforward.NewDefaultConfig()
 	// add the pubkeys
 	cfg.BlockchainQueueAllowlist = allowlist
-	evtfwd := evtforward.New(
-		logging.NewTestLogger(), cfg,
-		cmd, tim, top)
+	evtfwd := evtforward.New(logging.NewTestLogger(), cfg, cmd, tim, top)
 
 	return &testEvtFwd{
 		Forwarder: evtfwd,

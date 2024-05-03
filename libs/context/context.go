@@ -169,3 +169,37 @@ func InProgressUpgradeFrom(ctx context.Context, from string) bool {
 	}
 	return from == si.version && si.upgrade
 }
+
+// InProgressUpgradeFromMultiple returns whether the data in the contexts tells us that the
+// node is restoring from a snapshot taken for a protocol-upgrade by one of the given versions.
+// This can be useful in situations where mainnet and fairground are running different versions.
+func InProgressUpgradeFromMultiple(ctx context.Context, versions ...string) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	si, ok := v.(snapshotInfo)
+	if !ok || !si.upgrade {
+		return false
+	}
+	for _, from := range versions {
+		if from == si.version {
+			return true
+		}
+	}
+	return false
+}
+
+// InProgressUpgrade returns whether the data in the contexts tells us that the
+// node is restoring from a snapshot taken for a protocol-upgrade.
+func InProgressUpgrade(ctx context.Context) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	si, ok := v.(snapshotInfo)
+	if !ok {
+		return false
+	}
+	return si.upgrade
+}

@@ -26,8 +26,6 @@ message Spot {
   string base_asset = 1;
   // Asset ID of the underlying quote asset for the spot product.
   string quote_asset = 2;
-  // Name of the instrument.
-  string name = 3;
 }
 
 // Future product definition
@@ -348,7 +346,7 @@ message Market {
   TradableInstrument tradable_instrument = 2;
   // Number of decimal places that a price must be shifted by in order to get a
   // correct price denominated in the currency of the market, for example:
-  // `realPrice = price / 10^decimalPlaces`.
+  // `realPrice = price / 10^decimalPlaces`. On spot markets, also called 'size decimal places'.
   uint64 decimal_places = 3;
   // Fees configuration that apply to the market.
   Fees fees = 4;
@@ -366,6 +364,7 @@ message Market {
   // Timestamps for when the market state changes.
   MarketTimestamps market_timestamps = 10;
   // The number of decimal places for a position.
+  // On spot markets, used for order size, also known as 'size decimal places'.
   int64 position_decimal_places = 11;
   // Percentage move up and down from the mid price which specifies the range of
   // price levels over which automated liquidity provisions will be deployed.
@@ -412,6 +411,9 @@ message LiquidationStrategy {
   uint64 full_disposal_size = 3;
   // Max fraction of the total volume of the orderbook, within liquidity bounds, that the network can use to close its position; range 0 through 1.
   string max_fraction_consumed = 4;
+  // Decimal > 0 specifying the range range above and below the mid price within which the network will trade to dispose of its position.
+  // The value can be > 1. For example, if set to 1.5, the minimum price will be 0, ie max(0, mid_price * (1 - 1.5)), and the maximum price will be mid_price * (1 + 1.5).
+  string disposal_slippage_range = 5;
 }
 
 enum CompositePriceType {

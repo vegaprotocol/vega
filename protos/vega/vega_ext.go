@@ -104,3 +104,95 @@ func (t *Trade) SetIDs(aggressive, passive *Order, idx int) {
 	t.SellOrder = aggressive.Id
 	t.BuyOrder = passive.Id
 }
+
+func (DispatchMetric) GetEnums() map[int32]string {
+	return DispatchMetric_name
+}
+
+func (Side) GetEnums() map[int32]string {
+	return Side_name
+}
+
+func (Asset_Status) GetEnums() map[int32]string {
+	return Asset_Status_name
+}
+
+func (Market_TradingMode) GetEnums() map[int32]string {
+	return Market_TradingMode_name
+}
+
+func (Market_State) GetEnums() map[int32]string {
+	return Market_State_name
+}
+
+func (NodeStatus) GetEnums() map[int32]string {
+	return NodeStatus_name
+}
+
+func (ValidatorNodeStatus) GetEnums() map[int32]string {
+	return ValidatorNodeStatus_name
+}
+
+func (Deposit_Status) GetEnums() map[int32]string {
+	return Deposit_Status_name
+}
+
+func (Withdrawal_Status) GetEnums() map[int32]string {
+	return Withdrawal_Status_name
+}
+
+func (Proposal_State) GetEnums() map[int32]string {
+	return Proposal_State_name
+}
+
+func (ProposalError) GetEnums() map[int32]string {
+	return ProposalError_name
+}
+
+func (Vote_Value) GetEnums() map[int32]string {
+	return Vote_Value_name
+}
+
+func (PositionStatus) GetEnums() map[int32]string {
+	return PositionStatus_name
+}
+
+func (DataSourceSpec_Status) GetEnums() map[int32]string {
+	return DataSourceSpec_Status_name
+}
+
+func (LiquidityProvision_Status) GetEnums() map[int32]string {
+	return LiquidityProvision_Status_name
+}
+
+func (TransferType) GetEnums() map[int32]string {
+	return TransferType_name
+}
+
+func (MarginMode) GetEnums() map[int32]string {
+	return MarginMode_name
+}
+
+func (StopOrder_ExpiryStrategy) GetEnums() map[int32]string {
+	return StopOrder_ExpiryStrategy_name
+}
+
+func (StopOrder_TriggerDirection) GetEnums() map[int32]string {
+	return StopOrder_TriggerDirection_name
+}
+
+func (StopOrder_Status) GetEnums() map[int32]string {
+	return StopOrder_Status_name
+}
+
+func (StopOrder_RejectionReason) GetEnums() map[int32]string {
+	return StopOrder_RejectionReason_name
+}
+
+func (CompositePriceType) GetEnums() map[int32]string {
+	return CompositePriceType_name
+}
+
+func (AuctionTrigger) GetEnums() map[int32]string {
+	return AuctionTrigger_name
+}

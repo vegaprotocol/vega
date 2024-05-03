@@ -1222,7 +1222,6 @@ func getNewSpotMarketProposal(partyID string) *vega.Proposal {
 						Spot: &vega.SpotProduct{
 							BaseAsset:  "USD",
 							QuoteAsset: "ETH",
-							Name:       "ETH/USD",
 						},
 					},
 				},
@@ -1548,4 +1547,73 @@ func testShouldUpdateSavePerpetualMarketProposalsToStore(t *testing.T) {
 		perps := savedToProto.Terms.GetUpdateMarket().GetChanges().GetInstrument().GetPerpetual()
 		assert.NotNil(t, perps)
 	})
+}
+
+func TestProposalEnums(t *testing.T) {
+	t.Run("Should save and retrieve proposals with all possible errors", testProposalError)
+	t.Run("Should save and retrieve proposals with all possible states", testProposalState)
+}
+
+func testProposalError(t *testing.T) {
+	var proposalError vega.ProposalError
+	errs := getEnums(t, proposalError)
+	assert.Len(t, errs, 55)
+
+	for e, err := range errs {
+		t.Run(err, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			partyStore := sqlstore.NewParties(connectionSource)
+			propStore := sqlstore.NewProposals(connectionSource)
+			blockStore := sqlstore.NewBlocks(connectionSource)
+			block1 := addTestBlock(t, ctx, blockStore)
+
+			party1 := addTestParty(t, ctx, partyStore, block1)
+			rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
+			terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
+			id1 := GenerateID()
+
+			reference1 := GenerateID()
+			prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalError(e), nil, entities.BatchProposalTerms{})
+
+			prop1ID := prop1.ID.String()
+
+			expected := prop1
+			actual, err := propStore.GetByID(ctx, prop1ID)
+			require.NoError(t, err)
+			assertProposalMatch(t, expected, actual)
+		})
+	}
+}
+
+func testProposalState(t *testing.T) {
+	var proposalState vega.Proposal_State
+	errs := getEnums(t, proposalState)
+	assert.Len(t, errs, 8)
+
+	for s, state := range errs {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			partyStore := sqlstore.NewParties(connectionSource)
+			propStore := sqlstore.NewProposals(connectionSource)
+			blockStore := sqlstore.NewBlocks(connectionSource)
+			block1 := addTestBlock(t, ctx, blockStore)
+
+			party1 := addTestParty(t, ctx, partyStore, block1)
+			rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
+			terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
+			id1 := GenerateID()
+
+			reference1 := GenerateID()
+			prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalState(s), rationale1, terms1, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+
+			prop1ID := prop1.ID.String()
+
+			expected := prop1
+			actual, err := propStore.GetByID(ctx, prop1ID)
+			require.NoError(t, err)
+			assertProposalMatch(t, expected, actual)
+		})
+	}
 }

@@ -80,10 +80,10 @@ Feature: Team Rewards
     When the network moves ahead "1" epochs
     Then parties should have the following vesting account balances:
       | party     | asset    | balance |
-      | ref1-0001 | USD-1-10 | 1724    |
-      | ref1-0002 | USD-1-10 | 1724    |
+      | ref1-0001 | USD-1-10 | 1428    |
+      | ref1-0002 | USD-1-10 | 1428    |
       | ref3-0001 | USD-1-10 | 0       |
-      | ref3-0002 | USD-1-10 | 2068    |
-      | ref2-0001 | USD-1-10 | 2241    |
-      | ref2-0002 | USD-1-10 | 2241    |
+      | ref3-0002 | USD-1-10 | 3428    |
+      | ref2-0001 | USD-1-10 | 1857    |
+      | ref2-0002 | USD-1-10 | 1857    |
 

@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -630,4 +631,48 @@ func testPositionCursorPaginationPartyMarketNoCursorNewestFirst(t *testing.T) {
 		StartCursor:     want[0].Cursor().Encode(),
 		EndCursor:       want[0].Cursor().Encode(),
 	}, pageInfo)
+}
+
+func TestPositionStatusEnum(t *testing.T) {
+	var positionStatus vegapb.PositionStatus
+	states := getEnums(t, positionStatus)
+	for s, state := range states {
+		t.Run(state, func(t *testing.T) {
+			ctx := tempTransaction(t)
+
+			ps := sqlstore.NewPositions(connectionSource)
+			qs := sqlstore.NewParties(connectionSource)
+			bs := sqlstore.NewBlocks(connectionSource)
+
+			block := addTestBlockForTime(t, ctx, bs, time.Now().Add((-26*time.Hour)-(2*time.Second)))
+
+			market := entities.Market{ID: entities.MarketID("dead")}
+			party := addTestParty(t, ctx, qs, block)
+			pos := entities.NewEmptyPosition(market.ID, party.ID)
+			volume := int64(100)
+			pos.OpenVolume = volume
+			pos.PendingOpenVolume = volume
+			pos.VegaTime = block.VegaTime
+			pos.RealisedPnl = decimal.New(0, 0)
+			pos.PendingRealisedPnl = decimal.New(0, 0)
+			pos.UnrealisedPnl = decimal.New(0, 0)
+			pos.PendingUnrealisedPnl = decimal.New(0, 0)
+			pos.AverageEntryPrice = decimal.New(0, 0)
+			pos.PendingAverageEntryPrice = decimal.New(0, 0)
+			pos.AverageEntryMarketPrice = decimal.New(0, 0)
+			pos.PendingAverageEntryMarketPrice = decimal.New(0, 0)
+			pos.Adjustment = decimal.New(0, 0)
+			pos.Loss = decimal.New(0, 0)
+			pos.TxHash = generateTxHash()
+			pos.DistressedStatus = entities.PositionStatus(s)
+			require.NoError(t, ps.Add(ctx, pos))
+			_, err := ps.Flush(ctx)
+			require.NoError(t, err)
+
+			got, err := ps.GetByTxHash(ctx, pos.TxHash)
+			require.NoError(t, err)
+			assert.Len(t, got, 1)
+			assert.Equal(t, pos.DistressedStatus, got[0].DistressedStatus)
+		})
+	}
 }

@@ -71,12 +71,12 @@ func updateSpotMarkets(markets []*types.Market, updates []types.UpdateSpotMarket
 	return nil
 }
 
-func TheSpotMarkets(config *market.Config, executionEngine Execution, collateralEngine *collateral.Engine, netparams *netparams.Store, now time.Time, table *godog.Table) ([]types.Market, error) {
+func TheSpotMarkets(config *market.Config, executionEngine Execution, collateralEngine *collateral.Engine, now time.Time, table *godog.Table) ([]types.Market, error) {
 	rows := parseSpotMarketsTable(table)
 	markets := make([]types.Market, 0, len(rows))
 
 	for _, row := range rows {
-		mkt := newSpotMarket(config, netparams, spotMarketRow{row: row})
+		mkt := newSpotMarket(config, spotMarketRow{row: row})
 		markets = append(markets, mkt)
 	}
 
@@ -137,19 +137,7 @@ func (r spotMarketRow) liquidityMonitoring() string {
 	return r.row.MustStr("liquidity monitoring")
 }
 
-func setSpotLiquidityMonitoringNetParams(liqMon *types.LiquidityMonitoringParameters, netparams *netparams.Store) {
-	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
-	// so we do this step here manually
-	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
-		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
-	}
-
-	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
-		liqMon.TargetStakeParameters.ScalingFactor = sf
-	}
-}
-
-func newSpotMarket(config *market.Config, netparams *netparams.Store, row spotMarketRow) types.Market {
+func newSpotMarket(config *market.Config, row spotMarketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
 		panic(err)
@@ -169,8 +157,6 @@ func newSpotMarket(config *market.Config, netparams *netparams.Store, row spotMa
 	if err != nil {
 		panic(err)
 	}
-
-	setSpotLiquidityMonitoringNetParams(liqMon, netparams)
 
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
@@ -251,6 +237,17 @@ func spotMarketUpdate(config *market.Config, existing *types.Market, row spotMar
 		update.Changes.SLAParams = types.LiquiditySLAParamsFromProto(slaParams)
 	}
 
+	update.Changes.LiquidityFeeSettings = existing.Fees.LiquidityFeeSettings
+	if liquidityFeeSettings, ok := row.tryLiquidityFeeSettings(); ok {
+		settings, err := config.FeesConfig.Get(liquidityFeeSettings)
+		if err != nil {
+			panic(err)
+		}
+		s := types.LiquidityFeeSettingsFromProto(settings.LiquidityFeeSettings)
+		existing.Fees.LiquidityFeeSettings = s
+		update.Changes.LiquidityFeeSettings = s
+	}
+
 	// risk model
 	if rm, ok := row.riskModel(); ok {
 		tip := existing.TradableInstrument.IntoProto()
@@ -304,6 +301,7 @@ func parseSpotMarketsTable(table *godog.Table) []RowWrapper {
 		"decimal places",
 		"position decimal places",
 		"tick size",
+		"liquidity monitoring",
 	})
 }
 
@@ -403,6 +401,14 @@ func (r spotMarketUpdateRow) liquidityMonitoring() (string, bool) {
 	if r.row.HasColumn("liquidity monitoring") {
 		lm := r.row.MustStr("liquidity monitoring")
 		return lm, true
+	}
+	return "", false
+}
+
+func (r spotMarketUpdateRow) tryLiquidityFeeSettings() (string, bool) {
+	if r.row.HasColumn("liquidity fee settings") {
+		s := r.row.MustStr("liquidity fee settings")
+		return s, true
 	}
 	return "", false
 }

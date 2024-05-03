@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
@@ -55,7 +56,7 @@ type MarketLiquidity struct {
 	marketID   string
 	asset      string
 
-	priceFactor *num.Uint
+	priceFactor num.Decimal
 
 	priceRange                num.Decimal
 	earlyExitPenalty          num.Decimal
@@ -76,7 +77,7 @@ func NewMarketLiquidity(
 	marketType marketType,
 	marketID string,
 	asset string,
-	priceFactor *num.Uint,
+	priceFactor num.Decimal,
 	priceRange num.Decimal,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
@@ -661,6 +662,12 @@ func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party st
 			return err
 		}
 	}
+	// remove ELS for the cancelled LP if cancellation was applied immediately (e.g. during opening auction)
+	if applied {
+		m.equityShares.SetPartyStake(party, amendment.CommitmentAmount)
+		// force update for all shares
+		_ = m.equityShares.AllShares()
+	}
 
 	return nil
 }
@@ -781,42 +788,42 @@ func (m *MarketLiquidity) ValidOrdersPriceRange() (*num.Uint, *num.Uint, error) 
 	// (1 + priceRange) * midPrice
 	upperBoundPriceD := num.DecimalOne().Add(m.priceRange).Mul(midPrice)
 
-	priceFactor := m.priceFactor.ToDecimal()
-
 	// ceil lower bound
-	ceiledLowerBound, rL := lowerBoundPriceD.QuoRem(priceFactor, int32(0))
+	ceiledLowerBound, rL := lowerBoundPriceD.QuoRem(m.priceFactor, int32(0))
 	if !rL.IsZero() {
 		ceiledLowerBound = ceiledLowerBound.Add(num.DecimalOne())
 	}
-	lowerBoundPriceD = ceiledLowerBound.Mul(priceFactor)
+	lowerBoundPriceD = ceiledLowerBound.Mul(m.priceFactor)
 
 	// floor upper bound
-	flooredUpperBound, _ := upperBoundPriceD.QuoRem(priceFactor, int32(0))
-	upperBoundPriceD = flooredUpperBound.Mul(priceFactor)
+	flooredUpperBound, _ := upperBoundPriceD.QuoRem(m.priceFactor, int32(0))
+	upperBoundPriceD = flooredUpperBound.Mul(m.priceFactor)
 
 	lowerBound, _ := num.UintFromDecimal(lowerBoundPriceD)
 	upperBound, _ := num.UintFromDecimal(upperBoundPriceD)
 
 	// floor at 1 to avoid non-positive value
+	uintPriceFactor, _ := num.UintFromDecimal(m.priceFactor)
+
 	if lowerBound.IsNegative() || lowerBound.IsZero() {
-		lowerBound = m.priceFactor
+		lowerBound = uintPriceFactor
 	}
 
 	if lowerBound.GTE(upperBound) {
 		// if we ended up with overlapping upper and lower bound we set the upper bound to lower bound plus one tick.
-		upperBound = upperBound.Add(lowerBound, m.priceFactor)
+		upperBound = upperBound.Add(lowerBound, uintPriceFactor)
 	}
 
 	// we can't have lower bound >= best static ask as then a buy order with that price would trade on entry
 	// so place it one tick to the left
 	if lowerBound.GTE(bestAsk) {
-		lowerBound = num.UintZero().Sub(bestAsk, m.priceFactor)
+		lowerBound = num.UintZero().Sub(bestAsk, uintPriceFactor)
 	}
 
 	// we can't have upper bound <= best static bid as then a sell order with that price would trade on entry
 	// so place it one tick to the right
 	if upperBound.LTE(bestAsk) {
-		upperBound = num.UintZero().Add(bestAsk, m.priceFactor)
+		upperBound = num.UintZero().Add(bestAsk, uintPriceFactor)
 	}
 
 	return lowerBound, upperBound, nil
@@ -885,4 +892,46 @@ func (m *MarketLiquidity) ProvisionsPerParty() liquidity.ProvisionsPerParty {
 
 func (m *MarketLiquidity) CalculateSuppliedStake() *num.Uint {
 	return m.liquidityEngine.CalculateSuppliedStake()
+}
+
+func NewMarketLiquidityFromSnapshot(
+	log *logging.Logger,
+	liquidityEngine LiquidityEngine,
+	collateral Collateral,
+	broker Broker,
+	orderBook liquidity.OrderBook,
+	equityShares EquityLikeShares,
+	marketActivityTracker *MarketActivityTracker,
+	fee *fee.Engine,
+	marketType marketType,
+	marketID string,
+	asset string,
+	priceFactor num.Decimal,
+	state *snapshot.MarketLiquidity,
+) *MarketLiquidity {
+	priceRange, _ := num.DecimalFromString(state.PriceRange)
+
+	ml := &MarketLiquidity{
+		log:                   log,
+		liquidityEngine:       liquidityEngine,
+		collateral:            collateral,
+		broker:                broker,
+		orderBook:             orderBook,
+		equityShares:          equityShares,
+		marketActivityTracker: marketActivityTracker,
+		fee:                   fee,
+		marketType:            marketType,
+		marketID:              marketID,
+		asset:                 asset,
+		priceFactor:           priceFactor,
+		priceRange:            priceRange,
+	}
+
+	return ml
+}
+
+func (m *MarketLiquidity) GetState() *snapshot.MarketLiquidity {
+	return &snapshot.MarketLiquidity{
+		PriceRange: m.priceRange.String(),
+	}
 }

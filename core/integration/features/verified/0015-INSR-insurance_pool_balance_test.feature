@@ -1,6 +1,6 @@
 Feature: Test closeout type 1: margin >= cost of closeout
 
-  @NoPerp @PanicDebug
+  @PanicDebug
   Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910 (0015-INSR-001, 0015-INSR-003, 0018-RSKM-001, 0018-RSKM-003, 0010-MARG-004, 0010-MARG-005, 0010-MARG-006, 0010-MARG-007, 0010-MARG-008. 0010-MARG-009)
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -53,9 +53,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general   |
       | aux1             | USD   | ETH/DEC19 | 1200   | 999998800 |
-      | aux2             | USD   | ETH/DEC19 | 180    | 999999820 |
+      | aux2             | USD   | ETH/DEC19 | 300    | 999999700 |
       | sellSideProvider | USD   | ETH/DEC19 | 450000 | 999550000 |
-      | buySideProvider  | USD   | ETH/DEC19 | 120000 | 999880000 |
+      | buySideProvider  | USD   | ETH/DEC19 | 150000 | 999850000 |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"

@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -71,6 +72,30 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 				e.enactedProposals = append(e.enactedProposals[:i], e.enactedProposals[i+1:]...)
 				break
 			}
+		}
+	}
+
+	// update market events may require updating to set the liquidation strategy slippage
+	if vgcontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
+		evts := make([]events.Event, 0, len(e.activeProposals)/2)
+		for _, p := range e.activeProposals {
+			if !p.Proposal.IsMarketUpdate() {
+				continue
+			}
+			mID := p.Proposal.MarketUpdate().MarketID
+			changes := p.Proposal.MarketUpdate().Changes
+			if changes.LiquidationStrategy != nil && changes.LiquidationStrategy.DisposalSlippage.IsZero() {
+				existingMarket, ok := e.markets.GetMarket(mID, false)
+				if !ok {
+					continue
+				}
+				// execution engine has already been restored at this point, so we can get the current slippage value from the market itself.
+				changes.LiquidationStrategy.DisposalSlippage = existingMarket.LiquidationStrategy.DisposalSlippage
+				evts = append(evts, events.NewProposalEvent(ctx, *p.Proposal))
+			}
+		}
+		if len(evts) > 0 {
+			e.broker.SendBatch(evts)
 		}
 	}
 
@@ -164,7 +189,9 @@ func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 // serialiseNodeProposals returns the engine's proposals waiting for node validation.
 func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	nodeProposals := e.nodeProposalValidation.getProposals()
+	nodeBatchProposals := e.nodeProposalValidation.getBatchProposals()
 	proposals := make([]*types.ProposalData, 0, len(nodeProposals))
+	batchProposals := make([]*snapshotpb.BatchProposalData, 0, len(nodeBatchProposals))
 
 	for _, np := range nodeProposals {
 		proposals = append(proposals, &types.ProposalData{
@@ -175,10 +202,29 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 		})
 	}
 
+	for _, proposal := range nodeBatchProposals {
+		bp := &snapshotpb.BatchProposalData{
+			BatchProposal: &snapshotpb.ProposalData{
+				Proposal: proposal.ToProto(),
+				Yes:      votesAsProtoSlice(proposal.yes),
+				No:       votesAsProtoSlice(proposal.no),
+				Invalid:  votesAsProtoSlice(proposal.invalidVotes),
+			},
+			Proposals: make([]*vegapb.Proposal, 0, len(proposal.Proposals)),
+		}
+
+		for _, proposal := range proposal.Proposals {
+			bp.Proposals = append(bp.Proposals, proposal.IntoProto())
+		}
+
+		batchProposals = append(batchProposals, bp)
+	}
+
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceNode{
 			GovernanceNode: &types.GovernanceNode{
-				ProposalData: proposals,
+				ProposalData:      proposals,
+				BatchProposalData: batchProposals,
 			},
 		},
 	}
@@ -252,6 +298,11 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	vevts := []events.Event{}
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
+		if vgcontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
+			if p.Proposal.IsNewMarket() || p.Proposal.IsMarketUpdate() {
+				setLiquidationSlippage(p.Proposal)
+			}
+		}
 		pp := &proposal{
 			Proposal:     p.Proposal,
 			yes:          votesAsMap(p.Yes),
@@ -287,6 +338,22 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	return err
 }
 
+func setLiquidationSlippage(p *types.Proposal) {
+	if p.IsNewMarket() {
+		if !p.NewMarket().Changes.LiquidationStrategy.DisposalSlippage.IsZero() {
+			return
+		}
+		changes := p.NewMarket().Changes
+		changes.LiquidationStrategy.DisposalSlippage = changes.LiquiditySLAParameters.PriceRange
+		return
+	}
+	// this must be a market update
+	changes := p.MarketUpdate().Changes
+	if changes.LiquidationStrategy != nil && changes.LiquiditySLAParameters != nil && changes.LiquidationStrategy.DisposalSlippage.IsZero() {
+		changes.LiquidationStrategy.DisposalSlippage = changes.LiquiditySLAParameters.PriceRange
+	}
+}
+
 func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.GovernanceBatchActive, p *types.Payload) error {
 	e.activeBatchProposals = make(map[string]*batchProposal, len(active.BatchProposals))
 
@@ -304,6 +371,11 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 
 		evts = append(evts, events.NewProposalEventFromProto(ctx, bp.BatchProposal.ToProto()))
 		for _, p := range bp.BatchProposal.Proposals {
+			if vgcontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
+				if p.IsMarketUpdate() || p.IsNewMarket() {
+					setLiquidationSlippage(p)
+				}
+			}
 			evts = append(evts, events.NewProposalEvent(ctx, *p))
 		}
 
@@ -381,6 +453,11 @@ func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.Governanc
 	for _, p := range node.ProposalData {
 		e.nodeProposalValidation.restore(ctx, p)
 		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+	}
+
+	for _, p := range node.BatchProposalData {
+		prop, _ := e.nodeProposalValidation.restoreBatch(ctx, p)
+		e.broker.Send(events.NewProposalEventFromProto(ctx, prop.ToProto()))
 	}
 
 	var err error

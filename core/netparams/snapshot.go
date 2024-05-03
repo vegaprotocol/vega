@@ -21,7 +21,10 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type snapState struct {
@@ -127,30 +130,51 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	if pl.Namespace() != s.state.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
+
+	s.isProtocolUpgradeRunning = vgcontext.InProgressUpgrade(ctx)
+
 	np, ok := pl.Data.(*types.PayloadNetParams)
 	if !ok {
 		return nil, types.ErrInconsistentNamespaceKeys // it's the only possible key/namespace combo here
 	}
 
-	fromSnapshot := map[string]struct{}{}
 	for _, kv := range np.NetParams.Params {
 		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false, false); err != nil {
 			return nil, err
 		}
+	}
 
-		fromSnapshot[kv.Key] = struct{}{}
+	// TODO use a UpgradeFrom tag when we know which versions we will upgrade from
+	if vgcontext.InProgressUpgrade(ctx) {
+		haveConfig := false
+		bridgeConfigs := &vegapb.EVMBridgeConfigs{}
+		if err := s.GetJSONStruct(BlockchainsEVMBridgeConfigs, bridgeConfigs); err == nil {
+			haveConfig = bridgeConfigs.Configs[0].ChainId != "XXX"
+		}
+
+		// if the config hasn't been set, then initialise it from the bridge mapping
+		// this is to initially avoid having to know which version we are upgrading from on our test networks
+		if !haveConfig {
+			vgChainID, err := vgcontext.ChainIDFromContext(ctx)
+			if err != nil {
+				panic(fmt.Errorf("no vega chain ID found in context: %w", err))
+			}
+
+			if secondaryEthConf, ok := bridgeMapping[vgChainID]; ok {
+				s.log.Info("setting second bridge config during upgrade", logging.String("cfg", secondaryEthConf))
+				if err := s.UpdateOptionalValidation(ctx, BlockchainsEVMBridgeConfigs, secondaryEthConf, false, false); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		if err := s.UpdateOptionalValidation(ctx, SpotMarketTradingEnabled, "1", false, false); err != nil {
+			return nil, err
+		}
 	}
 
 	// Now they have been loaded, dispatch the changes so that the other engines pick them up
 	for k := range s.store {
-		// is this a new parameter? if yes, we are likely doing a protocol
-		// upgrade, and should be sending that to the datanode please.
-		if _, ok := fromSnapshot[k]; !ok {
-			s.protocolUpgradeNewParameters = append(
-				s.protocolUpgradeNewParameters, k,
-			)
-		}
-
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			return nil, fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
 		}

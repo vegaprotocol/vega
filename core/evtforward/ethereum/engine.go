@@ -55,10 +55,31 @@ type Engine struct {
 	nextStakingBlockNumber         uint64
 	nextVestingBlockNumber         uint64
 
+	chainID string
+
 	shouldFilterVestingBridge bool
 	shouldFilterStakingBridge bool
 
 	cancelEthereumQueries context.CancelFunc
+}
+
+type fwdWrapper struct {
+	f       Forwarder
+	chainID string
+}
+
+func (f fwdWrapper) ForwardFromSelf(event *commandspb.ChainEvent) {
+	// add the chainID of the source on events where this is necessary
+	switch ev := event.Event.(type) {
+	case *commandspb.ChainEvent_Erc20:
+		ev.Erc20.ChainId = f.chainID
+	case *commandspb.ChainEvent_Erc20Multisig:
+		ev.Erc20Multisig.ChainId = f.chainID
+	default:
+		// do nothing
+	}
+
+	f.f.ForwardFromSelf(event)
 }
 
 func NewEngine(
@@ -69,20 +90,27 @@ func NewEngine(
 	stakingDeployment types.EthereumContract,
 	vestingDeployment types.EthereumContract,
 	multiSigDeployment types.EthereumContract,
+	chainID string,
 ) *Engine {
 	l := log.Named(engineLogger)
+
+	// given that the EVM bridge configs are and array the "unset" values do not get populated
+	// with reasonable defaults so we need to make sure they are set to something reasonable
+	// if they are left out
+	cfg.setDefaults()
 
 	return &Engine{
 		cfg:                            cfg,
 		log:                            l,
 		poller:                         newPoller(cfg.PollEventRetryDuration.Get()),
 		filterer:                       filterer,
-		forwarder:                      forwarder,
+		forwarder:                      fwdWrapper{forwarder, chainID},
 		shouldFilterStakingBridge:      stakingDeployment.HasAddress(),
 		nextStakingBlockNumber:         stakingDeployment.DeploymentBlockHeight(),
 		shouldFilterVestingBridge:      vestingDeployment.HasAddress(),
 		nextVestingBlockNumber:         vestingDeployment.DeploymentBlockHeight(),
 		nextMultiSigControlBlockNumber: multiSigDeployment.DeploymentBlockHeight(),
+		chainID:                        chainID,
 	}
 }
 
@@ -118,7 +146,6 @@ func (e *Engine) Start() {
 	defer cancelEthereumQueries()
 
 	e.cancelEthereumQueries = cancelEthereumQueries
-
 	if e.log.IsDebug() {
 		e.log.Debug("Start listening for Ethereum events from")
 	}
@@ -126,6 +153,7 @@ func (e *Engine) Start() {
 	e.poller.Loop(func() {
 		if e.log.IsDebug() {
 			e.log.Debug("Clock is ticking, gathering Ethereum events",
+				logging.String("chain-id", e.chainID),
 				logging.Uint64("next-collateral-block-number", e.nextCollateralBlockNumber),
 				logging.Uint64("next-multisig-control-block-number", e.nextMultiSigControlBlockNumber),
 				logging.Uint64("next-staking-block-number", e.nextStakingBlockNumber),

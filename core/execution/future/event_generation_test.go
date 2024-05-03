@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -78,6 +79,11 @@ func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.Mar
 	t.Helper()
 	for _, event := range tm.orderEvents {
 		mdb.Push(event)
+	}
+	for _, evt := range tm.events {
+		if co, ok := evt.(*events.CancelledOrders); ok {
+			mdb.Push(co)
+		}
 	}
 	needToQuit := false
 	orders := mdb.GetAllOrders(tm.market.GetID())
@@ -177,8 +183,8 @@ func TestEvents_LeavingAuctionCancelsGFAOrders(t *testing.T) {
 	// Leave auction to force the order to be removed
 	leaveAuction(t, tm, ctx, &now)
 
-	// Check we have 6 events (2 additional orders submitted and filled)
-	assert.Equal(t, uint64(6), tm.orderEventCount)
+	// Check we have 5 events (2 additional orders submitted and filled)
+	assert.Equal(t, uint64(5), tm.orderEventCount)
 
 	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(0), mdb.GetOrderCount(tm.market.GetID()))
@@ -246,7 +252,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(12), tm.orderEventCount)
+	assert.Equal(t, uint64(11), tm.orderEventCount)
 
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 

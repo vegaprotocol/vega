@@ -135,9 +135,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-    @deprecated(
-      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-    )
+  @deprecated(
+    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+  )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -650,6 +650,8 @@ type Query {
     submitter: String
     "The epoch that generated the bundle i.e the epoch in which the node was promoted to tendermint validator"
     epochSeq: String
+    "Filter signature bundles to those related to the contract on the given chain ID"
+    chainID: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
@@ -662,6 +664,8 @@ type Query {
     submitter: String
     "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
     epochSeq: String
+    "Filter signature bundles to those related to the contract on the given chain ID"
+    chainID: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerRemovedConnection!
@@ -697,7 +701,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-    @deprecated(reason: "Use estimateFees and estimatePosition instead")
+  @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -780,9 +784,9 @@ type Query {
     partyId: ID!
     "Optional asset ID to filter for. If omitted, statistics for each asset are returned."
     assetId: ID
-    "Optional epoch to filter from (included). If omitted, `toEpoch` must not be set. If both omitted, the most recent epoch's data is returned."
+    "Optional epoch to filter from (included). If omitted, its value defaults to `toEpoch` minus 29."
     fromEpoch: Int
-    "Optional epoch to filter to (included). If omitted, the range goes from `fromEpoch` to the most recent epoch."
+    "Optional epoch to filter to (included). If omitted, the range goes from `fromEpoch` to `fromEpoch` plus 29. If both `fromEpoch` and `toEpoch` are omitted, `toEpoch` defaults to the last epoch."
     toEpoch: Int
   ): [FeesStatsForParty]
 
@@ -1354,7 +1358,7 @@ type Transfer {
 }
 
 union TransferKind =
-    OneOffTransfer
+  OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -1411,6 +1415,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_RETURN_VOLATILITY
   "Dispatch metric that uses the validator ranking of the validator as metric"
   DISPATCH_METRIC_VALIDATOR_RANKING
+  "Dispatch metric that uses the realised return of the party in the market"
+  DISPATCH_METRIC_REALISED_RETURN
 }
 
 enum EntityScope {
@@ -1479,6 +1485,9 @@ type DispatchStrategy {
 
   "Optional multiplier on taker fees used to cap the rewards a party may receive in an epoch"
   capRewardFeeMultiple: String
+
+  "Interval for the distribution of the transfer"
+  transferInterval: Int
 }
 
 type RankTable {
@@ -1852,6 +1861,8 @@ type ERC20 {
   Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
+  "The chain ID the asset originates from."
+  chainId: String!
 }
 
 "An asset originated from an Ethereum ERC20 Token"
@@ -2080,8 +2091,6 @@ type Spot {
   baseAsset: Asset!
   "Underlying quote asset for the spot product"
   quoteAsset: Asset!
-  "Name of the instrument"
-  name: String!
 }
 
 "Perpetual future product"
@@ -2494,7 +2503,7 @@ type Market {
 
   """
   The number of decimal places that an integer must be shifted by in order to get a correct
-  number denominated in the currency of the market. (uint64)
+  number denominated in the currency of the market. On spot markets, also called price decimal places. (uint64)
 
   Examples:
   Currency     Balance  decimalPlaces  Real Balance
@@ -2514,7 +2523,8 @@ type Market {
   The number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
   2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
-  This sets how big the smallest order / position on the market can be.
+  This sets how big the smallest order / position on the market can be. On spot markets, used for order size
+  and also known as size decimal places.
   """
   positionDecimalPlaces: Int!
 
@@ -2564,9 +2574,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Current depth on the order book for this market"
   depth(
@@ -2608,7 +2618,7 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-    @deprecated(reason: "Use liquidityProvisions instead")
+  @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2621,7 +2631,7 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2780,7 +2790,7 @@ type Candle {
   "Volume price (uint64)"
   volume: String!
 
-  "Total notional value of trades (uint64)"
+  "Total notional value of trades. This value is determined by multiplying price, using market decimal places, by size, using position decimal places. The number of decimal places needed to convert this value to a decimal is market decimal places plus position decimal places. (uint64)"
   notional: String!
 }
 
@@ -2805,9 +2815,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2823,7 +2833,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-    @deprecated(reason: "Use root positions query instead of sub-query")
+  @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2888,7 +2898,7 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-    @deprecated(reason: "Use liquidityProvisions instead")
+  @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -3233,9 +3243,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "The order type"
   type: OrderType
@@ -3291,10 +3301,14 @@ enum StopOrderRejectionReason {
   REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
   "This stop order does not close the position"
   REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+ "The percentage value for the linked stop order is invalid"
+  REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID
   "Stop orders are not allowed during the opening auction"
   REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION
   "Stop order cannot have matching OCO expiry times"
   REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES
+  "Stop orders on spot markets cannot have a position size override"
+  REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT
 }
 
 "Stop order size override settings"
@@ -3690,7 +3704,7 @@ type AccountUpdate {
 
 "All the data related to the approval of a withdrawal from the network"
 type Erc20WithdrawalApproval {
-  "The source asset in the ethereum network"
+  "The source asset on the bridged EVM chain"
   assetSource: String!
   "The amount to be withdrawn"
   amount: String!
@@ -3705,6 +3719,8 @@ type Erc20WithdrawalApproval {
   targetAddress: String!
   "RFC3339Nano timestamp at which the withdrawal was created"
   creation: String!
+  "The chain ID of the bridged EVM chain"
+  sourceChainId: String!
 }
 
 "Response for the signature bundle to add a particular validator to the signer list of the multisig contract"
@@ -3731,6 +3747,8 @@ type ERC20MultiSigSignerAddedBundle {
   signatures: String!
   "The epoch in which the validator was added"
   epochSeq: String!
+  "The ID of the EVM chain this signature bundle is valid for"
+  chainID: String!
 }
 
 "Response for the signature bundle to remove a particular validator from the signer list of the multisig contract"
@@ -3759,6 +3777,8 @@ type ERC20MultiSigSignerRemovedBundle {
   signatures: String!
   "The epoch in which the validator was removed"
   epochSeq: String!
+  "The chain ID of the EVM blockchain this signature bundle is valid for"
+  chainID: String!
 }
 
 "Response for the signature bundle to allowlist an ERC20 token in the collateral bridge"
@@ -4031,6 +4051,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
   "Proposal declined because the participation threshold was not reached"
   PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
+  "Proposal declined because one of the sub proposals was rejected"
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
   "Asset details are invalid"
   PROPOSAL_ERROR_INVALID_ASSET_DETAILS
   "Too many price monitoring triggers specified in market"
@@ -4069,6 +4091,24 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_SLA_PARAMS
   "Perpetual market proposal contained invalid product definition"
   PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT
+  "Spot market proposal contains too many size decimal places"
+  PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES
+  "LP price range must be larger than 0"
+  PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE
+  "LP price range must not be larger than 100"
+  PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE
+  "Linear slippage factor is out of range, either negative or too large"
+  PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE
+  "Quadratic slippage factor is out of range, either negative or too large"
+  PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE
+  "Referral program proposal is invalid"
+  PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM
+  "Volume discount program proposal is invalid"
+  PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM
+  "One or more proposals in a batch has been rejected"
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
+  "One or more proposals in a batch has been declined"
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
 }
 
 "Why the order was rejected by the core node"
@@ -4392,6 +4432,8 @@ enum AccountType {
   ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
   "Per asset market account for party in isolated margin mode"
   ACCOUNT_TYPE_ORDER_MARGIN
+  "Realised return reward account is per asset per reward scheme"
+  ACCOUNT_TYPE_REWARD_REALISED_RETURN
 }
 
 "Types that describe why a transfer has been made"
@@ -4505,8 +4547,6 @@ type SpotProduct {
   baseAsset: Asset!
   "Underlying quote asset for the spot product"
   quoteAsset: Asset!
-  "Name of the instrument"
-  name: String!
 }
 
 type PerpetualProduct {
@@ -4654,7 +4694,7 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4719,7 +4759,7 @@ type UpdateMarketConfiguration {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4773,7 +4813,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-    UpdateMarketSimpleRiskModel
+  UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4854,7 +4894,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-    OneOffGovernanceTransfer
+  OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -4942,7 +4982,7 @@ type NewSpotMarket {
   "New spot market instrument configuration"
   instrument: InstrumentConfiguration!
   "Decimal places used for the new market, sets the smallest price increment on the book"
-  decimal_places: Int!
+  priceDecimalPlaces: Int!
   "Optional spot market metadata tags"
   metadata: [String!]!
   "Price monitoring parameters"
@@ -4952,7 +4992,7 @@ type NewSpotMarket {
   "New spot market risk model parameters"
   riskParameters: RiskModel
   "Decimal places for order sizes, sets what size the smallest order / position on the spot market can be"
-  positionDecimalPlaces: Int!
+  sizeDecimalPlaces: Int!
   "Specifies the liquidity provision SLA parameters"
   liquiditySLAParams: LiquiditySLAParameters!
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4969,7 +5009,16 @@ type UpdateSpotMarket {
   updateSpotMarketConfiguration: UpdateSpotMarketConfiguration!
 }
 
+type UpdateSpotInstrumentConfiguration {
+  "Instrument code, human-readable shortcode used to describe the instrument."
+  code: String!
+ "Instrument name"
+  name: String!
+}
+
 type UpdateSpotMarketConfiguration {
+  "Updated spot market instrument configuration."
+  instrument: UpdateSpotInstrumentConfiguration!
   "Optional spot market metadata tags"
   metadata: [String!]!
   "Price monitoring parameters"
@@ -5008,6 +5057,8 @@ type LiquidationStrategy {
   fullDisposalSize: Int!
   "Specifies the maximum size by which the network can reduce its position as a fraction of the volume on the book."
   maxFractionConsumed: String!
+  "Specifies the slippage relative to the mid prige within which the network will place orders to dispose of its position."
+  disposalSlippageRange: String!
 }
 
 "Representation of a network parameter"
@@ -5019,7 +5070,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-    NewMarket
+  NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -5078,6 +5129,10 @@ type BatchProposalTermsChange {
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   """
   enactmentDatetime: Timestamp
+  """
+  RFC3339Nano time and date allocated to the validator to validate the proposal.
+  """
+  validationDatetime: Timestamp
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -6502,7 +6557,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-    DataSourceSpecConfigurationTime
+  DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -6524,7 +6579,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-    DataSourceDefinitionInternal
+  DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """

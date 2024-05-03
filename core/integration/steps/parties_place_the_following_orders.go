@@ -298,8 +298,66 @@ func PartyAddsTheFollowingOrdersToABatch(party string, exec Execution, time *stu
 	return nil
 }
 
+func PartyAddsTheFollowingCancelsToABatch(party string, exec Execution, time *stubs.TimeStub, table *godog.Table) error {
+	// ensure time is set + idgen is not nil
+	now := time.GetTimeNow()
+	time.SetTime(now)
+	for _, r := range parseAddCancelToBatchTable(table) {
+		row := newCancelOrderInBatchRow(r)
+
+		// Convert the reference into a orderID
+		orderID := refToOrderId[row.Reference()]
+		orderCancel := types.OrderCancellation{
+			MarketID: row.MarketID(),
+			OrderID:  orderID,
+		}
+		if err := exec.AddCancelOrderToBatch(&orderCancel, party); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func PartyAddsTheFollowingAmendsToABatch(party string, exec Execution, time *stubs.TimeStub, table *godog.Table) error {
+	// ensure time is set + idgen is not nil
+	now := time.GetTimeNow()
+	time.SetTime(now)
+	for _, r := range parseAddAmendToBatchTable(table) {
+		row := newAmendOrderInBatchRow(r)
+
+		// Convert the reference into a orderID
+		orderID := refToOrderId[row.Reference()]
+		orderAmend := types.OrderAmendment{
+			OrderID:         orderID,
+			Price:           row.Price(),
+			SizeDelta:       row.SizeDelta(),
+			MarketID:        row.MarketID(),
+			Size:            row.Size(),
+			ExpiresAt:       row.ExpiresAt(),
+			TimeInForce:     row.TimeInForce(),
+			PeggedOffset:    row.PeggedOffset(),
+			PeggedReference: row.PeggedReference(),
+		}
+		if err := exec.AddAmendOrderToBatch(&orderAmend, party); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func PartySubmitsTheirBatchInstruction(party string, exec Execution) error {
 	return exec.ProcessBatch(context.Background(), party)
+}
+
+func PartySubmitsTheirBatchInstructionWithError(party, err string, exec Execution) error {
+	retErr := exec.ProcessBatch(context.Background(), party)
+
+	err = fmt.Sprintf("1 (%s)", err)
+	re := retErr.Error()
+	if re != err {
+		return retErr
+	}
+	return nil
 }
 
 func PartyStartsABatchInstruction(party string, exec Execution) error {
@@ -476,6 +534,111 @@ func parseAddOrderToBatchTable(table *godog.Table) []RowWrapper {
 		"expires in",
 		"only",
 	})
+}
+
+func parseAddCancelToBatchTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"market id",
+		"reference",
+	}, []string{})
+}
+
+func parseAddAmendToBatchTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"market id",
+		"reference",
+	}, []string{
+		"price",
+		"size",
+		"size delta",
+		"expires at",
+		"tif",
+		"pegged offset",
+		"pegged reference",
+	})
+}
+
+type cancelOrderInBatchRow struct {
+	row RowWrapper
+}
+
+func newCancelOrderInBatchRow(r RowWrapper) cancelOrderInBatchRow {
+	row := cancelOrderInBatchRow{
+		row: r,
+	}
+	return row
+}
+
+func (r cancelOrderInBatchRow) MarketID() string {
+	return r.row.MustStr("market id")
+}
+
+func (r cancelOrderInBatchRow) Reference() string {
+	return r.row.MustStr("reference")
+}
+
+type amendOrderInBatchRow struct {
+	row RowWrapper
+}
+
+func newAmendOrderInBatchRow(r RowWrapper) amendOrderInBatchRow {
+	row := amendOrderInBatchRow{
+		row: r,
+	}
+	return row
+}
+
+func (r amendOrderInBatchRow) MarketID() string {
+	return r.row.MustStr("market id")
+}
+
+func (r amendOrderInBatchRow) Price() *num.Uint {
+	return r.row.MustUint("price")
+}
+
+func (r amendOrderInBatchRow) PeggedOffset() *num.Uint {
+	if !r.row.HasColumn("pegged offset") {
+		return nil
+	}
+	return r.row.MustUint("pegged offset")
+}
+
+func (r amendOrderInBatchRow) PeggedReference() types.PeggedReference {
+	if !r.row.HasColumn("pegged reference") {
+		return types.PeggedReferenceUnspecified
+	}
+	return r.row.MustPeggedReference("pegged reference")
+}
+
+func (r amendOrderInBatchRow) SizeDelta() int64 {
+	if !r.row.HasColumn("size delta") {
+		return 0
+	}
+	return r.row.MustI64("size delta")
+}
+
+func (r amendOrderInBatchRow) Size() *uint64 {
+	if !r.row.HasColumn("size") {
+		return nil
+	}
+	size := r.row.MustU64("size")
+	return &size
+}
+
+func (r amendOrderInBatchRow) ExpiresAt() *int64 {
+	if !r.row.HasColumn("expires at") {
+		return nil
+	}
+	expires := r.row.MustI64("expires at")
+	return &expires
+}
+
+func (r amendOrderInBatchRow) TimeInForce() types.OrderTimeInForce {
+	return r.row.MustTIF("tif")
+}
+
+func (r amendOrderInBatchRow) Reference() string {
+	return r.row.MustStr("reference")
 }
 
 type submitOrderRow struct {

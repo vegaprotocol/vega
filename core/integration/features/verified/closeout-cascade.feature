@@ -19,7 +19,7 @@ Feature: Closeout-cascades
       | limits.markets.maxPeggedOrders          | 2     |
       
   @NetworkParty
-  @CloseOutTrades @Liquidation @NoPerp
+  @CloseOutTrades @Liquidation
   Scenario: Distressed position gets taken over by another party whose margin level is insufficient to support it (however mark price doesn't get updated on closeout trade and hence no further closeouts are carried out) (0005-COLL-002)
     # setup accounts, we are trying to closeout trader3 first and then trader2
 

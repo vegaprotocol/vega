@@ -41,6 +41,7 @@ type Config struct {
 	CoreNodeGRPCPort         int               `long:"core-node-grpc-port"`
 	RateLimit                ratelimit.Config  `group:"rate-limits"`
 	MaxSubscriptionPerClient uint32            `long:"max-subscription-per-client"`
+	MaxMsgSize               int               `long:"max-msg-size"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -60,5 +61,6 @@ func NewDefaultConfig() Config {
 		CoreNodeGRPCPort:         3002,
 		RateLimit:                ratelimit.NewDefaultConfig(),
 		MaxSubscriptionPerClient: 250,
+		MaxMsgSize:               20 * 1024 * 1024,
 	}
 }

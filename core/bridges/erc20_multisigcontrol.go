@@ -23,12 +23,16 @@ import (
 )
 
 type ERC20MultiSigControl struct {
-	signer Signer
+	signer  Signer
+	chainID string
+	v1      bool
 }
 
-func NewERC20MultiSigControl(signer Signer) *ERC20MultiSigControl {
+func NewERC20MultiSigControl(signer Signer, chainID string, v1 bool) *ERC20MultiSigControl {
 	return &ERC20MultiSigControl{
-		signer: signer,
+		signer:  signer,
+		chainID: chainID,
+		v1:      v1,
 	}
 }
 
@@ -61,7 +65,7 @@ func (e *ERC20MultiSigControl) BurnNonce(
 		return nil, err
 	}
 
-	msg, err := packBufAndSubmitter(buf, submitter)
+	msg, err := packScheme(buf, submitter, e.chainID, e.v1)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +111,10 @@ func (e *ERC20MultiSigControl) SetThreshold(
 		return nil, err
 	}
 
-	msg, err := packBufAndSubmitter(buf, submitter)
+	msg, err := packScheme(buf, submitter, e.chainID, e.v1)
 	if err != nil {
 		return nil, err
 	}
-
 	return sign(e.signer, msg)
 }
 
@@ -153,7 +156,7 @@ func (e *ERC20MultiSigControl) AddSigner(
 		return nil, err
 	}
 
-	msg, err := packBufAndSubmitter(buf, submitter)
+	msg, err := packScheme(buf, submitter, e.chainID, e.v1)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +202,7 @@ func (e *ERC20MultiSigControl) RemoveSigner(
 		return nil, err
 	}
 
-	msg, err := packBufAndSubmitter(buf, submitter)
+	msg, err := packScheme(buf, submitter, e.chainID, e.v1)
 	if err != nil {
 		return nil, err
 	}

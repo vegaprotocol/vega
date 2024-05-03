@@ -52,6 +52,7 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
@@ -67,6 +68,7 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
@@ -81,6 +83,7 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
 	},
 }
 
@@ -243,6 +246,48 @@ func checkNetworkParameterUpdate(parameter *vegapb.NetworkParameter) Errors {
 }
 
 func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
+	errs := NewErrors()
+
+	if change.NewAsset == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset", ErrIsRequired)
+	}
+
+	if change.NewAsset.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes", ErrIsRequired)
+	}
+
+	if len(change.NewAsset.Changes.Name) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.name", ErrIsRequired)
+	}
+	if len(change.NewAsset.Changes.Symbol) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.symbol", ErrIsRequired)
+	}
+
+	if len(change.NewAsset.Changes.Quantum) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsRequired)
+	} else if quantum, err := num.DecimalFromString(change.NewAsset.Changes.Quantum); err != nil {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsNotValidNumber)
+	} else if quantum.LessThanOrEqual(num.DecimalZero()) {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrMustBePositive)
+	}
+
+	if change.NewAsset.Changes.Source == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsRequired)
+	}
+
+	switch s := change.NewAsset.Changes.Source.(type) {
+	case *protoTypes.AssetDetails_BuiltinAsset:
+		errs.Merge(checkBuiltinAssetSource(s))
+	case *protoTypes.AssetDetails_Erc20:
+		errs.Merge(checkERC20AssetSource(s))
+	default:
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsNotValid)
+	}
+
+	return errs
+}
+
+func checkBatchNewAssetChanges(change *protoTypes.BatchProposalTermsChange_NewAsset) Errors {
 	errs := NewErrors()
 
 	if change.NewAsset == nil {
@@ -638,7 +683,8 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN {
 			errs.AddForProperty("new_transfer.changes.destination_type", ErrIsNotValid)
 		}
 		if oneoff.DeliverOn < 0 {
@@ -697,6 +743,10 @@ func checkERC20AssetSource(s *protoTypes.AssetDetails_Erc20) Errors {
 	}
 
 	asset := s.Erc20
+
+	if len(asset.ChainId) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.erc20.chain_id", ErrIsRequired)
+	}
 
 	if len(asset.ContractAddress) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.erc20.contract_address", ErrIsRequired)
@@ -846,11 +896,11 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	if !isCorrectProduct {
 		return errs.FinalAddForProperty("new_spot_market.changes.instrument.product", ErrIsMismatching)
 	}
-	if changes.DecimalPlaces >= 150 {
+	if changes.PriceDecimalPlaces >= 150 {
 		errs.AddForProperty("new_spot_market.changes.decimal_places", ErrMustBeLessThan150)
 	}
 
-	if changes.PositionDecimalPlaces >= 7 || changes.PositionDecimalPlaces <= -7 {
+	if changes.SizeDecimalPlaces >= 7 || changes.SizeDecimalPlaces <= -7 {
 		errs.AddForProperty("new_spot_market.changes.position_decimal_places", ErrMustBeWithinRange7)
 	}
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_spot_market.changes"))
@@ -859,6 +909,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
 	errs.Merge(checkTickSize(changes.TickSize, "new_spot_market.changes"))
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_spot_market.changes.liquidity_fee_settings"))
 
 	return errs
 }
@@ -1013,11 +1064,13 @@ func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
 	}
 
 	changes := updateSpotMarket.Changes
+	errs.Merge(checkUpdateSpotInstrument(changes.Instrument).AddPrefix("proposal_submission.terms.change."))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "update_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "update_spot_market.changes"))
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "update_spot_market.changes.sla_params"))
 	errs.Merge(checkTickSize(changes.TickSize, "update_spot_market.changes"))
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "update_spot_market.changes.liquidity_fee_settings"))
 	return errs
 }
 
@@ -1076,6 +1129,10 @@ func checkLiquidationStrategy(params *protoTypes.LiquidationStrategy, parent str
 		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_time_step", parent), ErrMustBePositive)
 	} else if params.DisposalTimeStep > 3600 {
 		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_time_step", parent), ErrMustBeAtMost3600)
+	}
+	slippage, err := num.DecimalFromString(params.DisposalSlippageRange)
+	if err != nil || slippage.IsNegative() || slippage.IsZero() {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_slippage_range", parent), ErrMustBePositive)
 	}
 	return errs
 }
@@ -1144,6 +1201,21 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.product", parent), ErrIsNotValid)
 	}
 
+	return errs
+}
+
+func checkUpdateSpotInstrument(instrument *protoTypes.UpdateSpotInstrumentConfiguration) Errors {
+	errs := NewErrors()
+	if instrument == nil {
+		return errs.FinalAddForProperty("update_spot_market.changes.instrument", ErrIsRequired)
+	}
+	if len(instrument.Code) == 0 {
+		errs.AddForProperty("update_spot_market.changes.instrument.code", ErrIsRequired)
+	}
+
+	if len(instrument.Name) == 0 {
+		errs.AddForProperty("update_spot_market.changes.instrument.name", ErrIsRequired)
+	}
 	return errs
 }
 
@@ -1327,9 +1399,7 @@ func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	if spot.BaseAsset == spot.QuoteAsset {
 		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsNotValid)
 	}
-	if len(spot.Name) == 0 {
-		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.name", ErrIsRequired)
-	}
+
 	return errs
 }
 

@@ -134,6 +134,47 @@ func (t *Tree) AsPayloads() ([]*types.Payload, error) {
 	return payloads, nil
 }
 
+func (t *Tree) AsProtoPayloads() ([]*snapshotpb.Payload, error) {
+	lastSnapshotTree, err := t.innerTree.GetImmutable(t.innerTree.Version())
+	if err != nil {
+		return nil, fmt.Errorf("could not generate the immutable AVL tree: %w", err)
+	}
+
+	exporter, err := lastSnapshotTree.Export()
+	if err != nil {
+		return nil, fmt.Errorf("could not export the AVL tree: %w", err)
+	}
+	defer exporter.Close()
+
+	payloads := []*snapshotpb.Payload{}
+
+	exportedNode, err := exporter.Next()
+	for err == nil {
+		// If there is no value, it means the node is an intermediary node and
+		// not a leaf. Only leaves hold the data we are looking for.
+		if exportedNode.Value == nil {
+			exportedNode, err = exporter.Next()
+			continue
+		}
+
+		// sort out the payload for this node
+		payloadProto := &snapshotpb.Payload{}
+		if perr := proto.Unmarshal(exportedNode.Value, payloadProto); perr != nil {
+			return nil, perr
+		}
+
+		payloads = append(payloads, payloadProto)
+
+		exportedNode, err = exporter.Next()
+	}
+
+	if !errors.Is(err, iavl.ErrorExportDone) {
+		return nil, fmt.Errorf("failed to export AVL tree: %w", err)
+	}
+
+	return payloads, nil
+}
+
 func (t *Tree) FindImmutableTreeByHeight(blockHeight uint64) (*iavl.ImmutableTree, error) {
 	version, err := t.metadataDB.FindVersionByBlockHeight(blockHeight)
 	if err != nil {
@@ -200,7 +241,7 @@ func (t *Tree) AddSnapshot(s *types.Snapshot) error {
 		if n.IsLeaf {
 			payload, ok := payloads[n.Key]
 			if !ok {
-				return fmt.Errorf("the payloads for key %q is missing from the snapshot: %w", n.Key, err)
+				return fmt.Errorf("the payload for key %q is missing from the snapshot", n.Key)
 			}
 			value, err = proto.Marshal(payload.IntoProto())
 			if err != nil {

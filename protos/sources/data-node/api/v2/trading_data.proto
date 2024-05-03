@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.75.0";
+    version: "v0.76.0";
   }
   schemes: [
     HTTP,
@@ -279,14 +279,14 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Governance"};
   }
 
-  // List ERC20 multi-sig signer added bundles
+  // List ERC20 multisig signer added bundles
   //
   // Get a list of the signature bundles to add a particular validator to the signer list of the multisig contract
   rpc ListERC20MultiSigSignerAddedBundles(ListERC20MultiSigSignerAddedBundlesRequest) returns (ListERC20MultiSigSignerAddedBundlesResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "ERC20 bridge"};
   }
 
-  // List ERC20 multi-sig signer removed bundles
+  // List ERC20 multisig signer removed bundles
   //
   // Get a list of the signature bundles to remove a particular validator from signer list of the multisig contract
   rpc ListERC20MultiSigSignerRemovedBundles(ListERC20MultiSigSignerRemovedBundlesRequest) returns (ListERC20MultiSigSignerRemovedBundlesResponse) {
@@ -404,7 +404,7 @@ service TradingDataService {
 
   // List margin levels
   //
-  // Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
+  // Get a list of margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
   rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin"};
   }
@@ -436,7 +436,7 @@ service TradingDataService {
   // List epoch reward summaries
   //
   // Get a list of reward summaries by epoch for a given range of epochs.
-  // The result is filtered by list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
+  // The result is filtered by a list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
   // If no data is provided, all reward summaries will be returned, grouped by epochs, market IDs, asset IDs and reward type.
   rpc ListEpochRewardSummaries(ListEpochRewardSummariesRequest) returns (ListEpochRewardSummariesResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Rewards"};
@@ -851,14 +851,14 @@ service TradingDataService {
 
   // Get fees statistics
   //
-  // Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as filter.
+  // Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as a filter.
   rpc GetFeesStats(GetFeesStatsRequest) returns (GetFeesStatsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Fees"};
   }
 
   // Get fees statistics for a party
   //
-  // Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as filter.
+  // Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as a filter.
   rpc GetFeesStatsForParty(GetFeesStatsForPartyRequest) returns (GetFeesStatsForPartyResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Fees"};
   }
@@ -1274,7 +1274,7 @@ message ListOrderVersionsResponse {
 message ObserveOrdersRequest {
   // Restrict orders to those placed on the given markets.
   repeated string market_ids = 1;
-  // Restrict orders to those placed on the by the given parties.
+  // Restrict orders to those placed on the market by the given parties.
   repeated string party_ids = 2;
   // Whether liquidity orders should be excluded from the stream. If not set, liquidity orders will be included.
   optional bool exclude_liquidity = 3;
@@ -1889,7 +1889,7 @@ message ListCandleIntervalsRequest {
 message IntervalToCandleId {
   // Interval for the candle.
   string interval = 1;
-  // Unique id of the candle.
+  // Unique ID of the candle.
   string candle_id = 2;
 }
 
@@ -1916,7 +1916,8 @@ message Candle {
   string close = 6;
   // Total trading volume during the candle interval.
   uint64 volume = 7;
-  // Total notional value traded during the candle interval.
+  // Total notional value traded during the candle interval. This value is determined by multiplying price, using market decimal places, by size, using position decimal places.
+  // The number of decimal places needed to convert this value to a decimal is market decimal places plus position decimal places.
   uint64 notional = 8;
 }
 
@@ -2026,6 +2027,8 @@ message ListERC20MultiSigSignerAddedBundlesRequest {
   string epoch_seq = 3;
   // Pagination controls.
   Pagination pagination = 4;
+  // Filter signature bundles to those related to the contract on the given chain ID.
+  optional string chain_id = 5;
 }
 
 // Response from adding a signature bundle to the signer list of a multisig contract for a particular validator
@@ -2072,6 +2075,8 @@ message ERC20MultiSigSignerAddedBundle {
   string signatures = 6;
   // Epoch in which the validator was added.
   string epoch_seq = 3;
+  // ID of the EVM chain this signature bundle is valid for.
+  string chain_id = 7;
 }
 
 // Request for removing a signature bundle from the signer list of the multisig contract for a particular validator
@@ -2082,9 +2087,10 @@ message ListERC20MultiSigSignerRemovedBundlesRequest {
   string submitter = 2;
   // Epoch in which the bundle was generated, i.e. the epoch in which the node was demoted from a consensus validator.
   string epoch_seq = 3;
-
   // Pagination controls.
   Pagination pagination = 4;
+  // Filter signature bundles to those related to the contract on the given chain ID.
+  optional string chain_id = 5;
 }
 
 // Response when removing a signature bundle from the signer list of the multisig contract for a particular validator
@@ -2131,6 +2137,8 @@ message ERC20MultiSigSignerRemovedBundle {
   string signatures = 6;
   // Epoch in which the validator was removed.
   string epoch_seq = 7;
+  // ID of the EVM chain this signature bundle is valid for.
+  string chain_id = 8;
 }
 
 // Request for listing the signature bundle to an ERC-20 token in the collateral bridge
@@ -2168,7 +2176,7 @@ message GetERC20SetAssetLimitsBundleResponse {
   string nonce = 3;
   // Lifetime limit deposit for this asset.
   string lifetime_limit = 4;
-  // Threshold withdraw for this asset.
+  // Withdrawal threshold for this asset.
   string threshold = 5;
   // Signatures bundle as hex encoded data, prefixed with `0x`
   // e.g: `0x + sig1 + sig2 + ... + sixN`.
@@ -2185,7 +2193,7 @@ message GetERC20WithdrawalApprovalRequest {
 // function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
 message GetERC20WithdrawalApprovalResponse {
   reserved 3;
-  // Address of asset on Ethereum.
+  // Address of asset on the bridged EVM chain.
   string asset_source = 1;
   // Amount to be withdrawn.
   string amount = 2;
@@ -2194,10 +2202,12 @@ message GetERC20WithdrawalApprovalResponse {
   // Signatures bundle as hex encoded data, prefixed with `0x`
   // e.g: 0x + sig1 + sig2 + ... + sixN.
   string signatures = 5;
-  // Ethereum address, prefixed with `0x`, that will receive the withdrawn assets.
+  // Address, prefixed with `0x`, that will receive the withdrawn assets.
   string target_address = 6;
   // Creation timestamps.
   int64 creation = 7;
+  // Chain ID of the bridged EVM chain.
+  string source_chain_id = 8;
 }
 
 // -- Trades --
@@ -3404,7 +3414,7 @@ message GetStakeResponse {
 
 // Stake linking data with the corresponding cursor.
 message StakeLinkingEdge {
-  // Stake linking represent the intent from a party to deposit.
+  // Stake linking representing the intent from a party to deposit.
   vega.events.v1.StakeLinking node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
@@ -3463,7 +3473,7 @@ message ObserveLedgerMovementsRequest {}
 
 // Response from ledger movements subscription
 message ObserveLedgerMovementsResponse {
-  // Ledger movements data with list of ledger entries and and post-transfer balances.
+  // Ledger movements data with list of ledger entries and post-transfer balances.
   vega.LedgerMovement ledger_movement = 1;
 }
 
@@ -3789,7 +3799,7 @@ message FundingPayment {
   string market_id = 2;
   // Funding period sequence this payment was calculated from.
   uint64 funding_period_seq = 3;
-  // Timestamp, in Unix nanoseconds, at which this funding payment occured.
+  // Timestamp, in Unix nanoseconds, at which this funding payment occurred.
   int64 timestamp = 4;
   // Funding payment amount, where a positive value indicates an earned payment received and a negative value a loss.
   string amount = 5;
@@ -3925,11 +3935,11 @@ message EstimatePositionRequest {
   string average_entry_price = 3 [(google.api.field_behavior) = REQUIRED];
   // Open and/or hypothetical orders.
   repeated OrderInfo orders = 4;
-  // Margin account balance. Needs to be provided scaled to asset decimal places.
+  // Margin account balance. Needs to scaled by asset decimal places.
   string margin_account_balance = 5 [(google.api.field_behavior) = REQUIRED];
-  // General account balance. Needs to be provided scaled to asset decimal places.
+  // General account balance. Needs to scaled by asset decimal places.
   string general_account_balance = 6 [(google.api.field_behavior) = REQUIRED];
-  // Order margin account balance. Needs to be provided scaled to asset decimal places.
+  // Order margin account balance. Needs to be scaled by asset decimal places.
   string order_margin_account_balance = 7 [(google.api.field_behavior) = REQUIRED];
   // Margin mode for the party, cross margin or isolated margin.
   vega.MarginMode margin_mode = 8 [(google.api.field_behavior) = REQUIRED];
@@ -4443,9 +4453,9 @@ message ListTeamRefereeHistoryResponse {
 
 // Request that is sent to retrieve fees statistics.
 message GetFeesStatsRequest {
-  // Restrict fee statistics to those related for the given market.
+  // Restrict fee statistics to those related to the given market.
   optional string market_id = 1;
-  // Restrict fee statistics to those related for the given asset.
+  // Restrict fee statistics to those related to the given asset.
   optional string asset_id = 2;
   // Epoch to get referral fee statistics for. If not set, the last complete epoch is used.
   optional uint64 epoch_seq = 3;
@@ -4611,7 +4621,7 @@ message EstimateTransferFeeResponse {
 message GetTotalTransferFeeDiscountRequest {
   // ID of party eligible for the discount.
   string party_id = 1;
-  // ID of asset to associated with the discount.
+  // ID of asset associated with the discount.
   string asset_id = 5;
 }
 
@@ -4625,10 +4635,13 @@ message GetTotalTransferFeeDiscountResponse {
 message ListGamesRequest {
   // Game ID to filter for.
   optional string game_id = 1;
-  // First epoch to retrieve game data from. If not provided, defaults to the last epoch minus 30,
-  // or the first epoch available if not enough epochs have passed.
+  // Oldest epoch to retrieve game data from, inclusive. The maximum range of epochs that can be fetched at once is 30.
+  // If not provided, defaults to the 'to' epoch minus 29, or the first epoch available if not enough epochs have passed.
+  // If the 'to' epoch is not specified, it will be set to the chosen 'from' epoch + 29.
   optional uint64 epoch_from = 2;
-  // Last epoch to retrieve game data to (inclusive). If not provided, defaults to the last epoch.
+  // Most recent epoch to retrieve game data to, inclusive. If not provided, defaults to the latest epoch. The maximum range of epochs that can be fetched at once is 30.
+  // If no 'from' epoch is provided, or the 'from' epoch is out of range, i.e., the 'to' epoch - 'from' epoch > 29,
+  // the 'from' epoch will be set to the 'to' epoch - 29.
   optional uint64 epoch_to = 3;
   // Entity scope to filter games for, i.e. team games or individual games only
   optional vega.EntityScope entity_scope = 4;

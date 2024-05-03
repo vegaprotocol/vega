@@ -49,7 +49,8 @@ type OracleEngine interface {
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
-	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool, recordInHistory bool) bool
+	CheckPrice(ctx context.Context, as price.AuctionState, price *num.Uint, persistent bool, recordInHistory bool) bool
+	ResetPriceHistory(price *num.Uint)
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -177,7 +178,7 @@ type Collateral interface {
 	ClearInsurancepool(ctx context.Context, marketID string, asset string, clearFees bool) ([]*types.LedgerMovement, error)
 	TransferToHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
 	ReleaseFromHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
-	ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error)
+	ClearSpotMarket(ctx context.Context, mktID, quoteAsset string, parties []string) ([]*types.LedgerMovement, error)
 	PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error
 	PartyCanCoverFees(asset, mktID, partyID string, amount *num.Uint) error
 	TransferSpot(ctx context.Context, partyID, toPartyID, asset string, quantity *num.Uint) (*types.LedgerMovement, error)

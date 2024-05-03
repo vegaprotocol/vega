@@ -15,8 +15,6 @@ message SpotProduct {
   string base_asset = 1;
   // Quote asset ID.
   string quote_asset = 2;
-  // Product name.
-  string name = 3;
 }
 
 // Future product configuration
@@ -85,7 +83,7 @@ message NewSpotMarketConfiguration {
   // New spot market instrument configuration.
   InstrumentConfiguration instrument = 1;
   // Decimal places used for the new spot market, sets the smallest price increment on the book.
-  uint64 decimal_places = 2;
+  uint64 price_decimal_places = 2;
   // Optional new spot market metadata, tags.
   repeated string metadata = 3;
   // Price monitoring parameters.
@@ -100,7 +98,7 @@ message NewSpotMarketConfiguration {
     LogNormalRiskModel log_normal = 101;
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the spot market can be.
-  int64 position_decimal_places = 6;
+  int64 size_decimal_places = 6;
   // Specifies the liquidity provision SLA parameters.
   LiquiditySLAParameters sla_params = 7;
   // Specifies how the liquidity fee for the market will be calculated.
@@ -246,6 +244,15 @@ message UpdateSpotMarketConfiguration {
   LiquidityFeeSettings liquidity_fee_settings = 5;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 6;
+  // Specifies the name and code of the spot instrument.
+  UpdateSpotInstrumentConfiguration instrument = 7;
+}
+
+message UpdateSpotInstrumentConfiguration {
+  // Instrument code, human-readable shortcode used to describe the instrument.
+  string code = 1;
+  // Instrument name
+  string name = 2;
 }
 
 // Instrument configuration
@@ -375,6 +382,9 @@ message BatchProposalTermsChange {
   // Timestamp as Unix time in seconds when proposal terms gets enacted if proposal passed the vote,
   // constrained by `minEnact` and `maxEnact` network parameters.
   int64 enactment_timestamp = 1;
+  // Validation timestamp as Unix time in seconds.
+  int64 validation_timestamp = 2;
+
   // Changes being proposed.
   oneof change {
     // Proposal change for modifying an existing futures market.
@@ -402,6 +412,8 @@ message BatchProposalTermsChange {
     UpdateReferralProgram update_referral_program = 111;
     // Proposal change for updating the volume discount program.
     UpdateVolumeDiscountProgram update_volume_discount_program = 112;
+    // Proposal change for adding a new asset.
+    NewAsset new_asset = 113;
   }
 }
 
@@ -659,6 +671,8 @@ enum ProposalError {
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED = 58;
   // One or more proposals in a batch has been declined
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED = 59;
+  // Spot market decimal places cannot be greater than the base asset’s decimal places
+  PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES = 60;
 }
 
 // Governance vote

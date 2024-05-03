@@ -1,7 +1,11 @@
 Feature: 0012-POSR-012 Update the liquidation strategy through market update
 
   Background:
-    Given the markets:
+    Given the liquidation strategies:
+      | name             | disposal step | disposal fraction | full disposal size | max fraction consumed | disposal slippage range |
+      | fast-liquidation | 10            | 0.1               | 20                 | 0.05                  | 0.5                     |
+
+    And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy   |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | slow-liquidation-strat |
     And the following network parameters are set:
@@ -10,7 +14,7 @@ Feature: 0012-POSR-012 Update the liquidation strategy through market update
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @NoPerp @LiquidationUpdate
+  @LiquidationUpdate
   Scenario: Update liquidation strategy through market update
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -97,8 +101,8 @@ Feature: 0012-POSR-012 Update the liquidation strategy through market update
       | tt_10 | 100   | 1    | network |
     # Now update the market
     When the markets are updated:
-      | id        | linear slippage factor | quadratic slippage factor | liquidation strategy      |
-      | ETH/DEC19 | 0.25                   | 0                         | default-liquidation-strat |
+      | id        | linear slippage factor | quadratic slippage factor | liquidation strategy |
+      | ETH/DEC19 | 0.25                   | 0                         | fast-liquidation     |
     # Now the network should dispose of its entire position
     When the network moves ahead "11" blocks
     Then the parties should have the following profit and loss:

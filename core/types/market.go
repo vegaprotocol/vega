@@ -389,7 +389,6 @@ type Spot struct {
 
 func SpotFromProto(s *vegapb.Spot) *Spot {
 	return &Spot{
-		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
 		QuoteAsset: s.QuoteAsset,
 	}
@@ -397,7 +396,6 @@ func SpotFromProto(s *vegapb.Spot) *Spot {
 
 func (s Spot) IntoProto() *vegapb.Spot {
 	return &vegapb.Spot{
-		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
 		QuoteAsset: s.QuoteAsset,
 	}

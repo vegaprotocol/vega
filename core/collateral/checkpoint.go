@@ -66,6 +66,7 @@ var partyOverrides = map[string]types.AccountType{
 	systemOwner + types.AccountTypeMarketProposerReward.String():   types.AccountTypeMarketProposerReward,
 	systemOwner + types.AccountTypeFeesInfrastructure.String():     types.AccountTypeFeesInfrastructure,
 	systemOwner + types.AccountTypePendingTransfers.String():       types.AccountTypePendingTransfers,
+	systemOwner + types.AccountTypeRealisedReturnReward.String():   types.AccountTypeRealisedReturnReward,
 }
 
 var tradingRewardAccountTypes = map[types.AccountType]struct{}{
@@ -77,6 +78,7 @@ var tradingRewardAccountTypes = map[types.AccountType]struct{}{
 	types.AccountTypeRelativeReturnReward:   {},
 	types.AccountTypeReturnVolatilityReward: {},
 	types.AccountTypeValidatorRankingReward: {},
+	types.AccountTypeRealisedReturnReward:   {},
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
@@ -192,7 +194,8 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward,
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers,
 			types.AccountTypeNetworkTreasury, types.AccountTypeGlobalInsurance, types.AccountTypeVestedRewards,
-			types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
+			types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeRealisedReturnReward,
+			types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			owner := acc.Owner
 			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
 			// similarly LP Fee bonus distribution bonus account would fall over into the network treasury of the asset.
@@ -216,7 +219,8 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 				acc.Type == types.AccountTypeAveragePositionReward ||
 				acc.Type == types.AccountTypeRelativeReturnReward ||
 				acc.Type == types.AccountTypeReturnVolatilityReward ||
-				acc.Type == types.AccountTypeValidatorRankingReward {
+				acc.Type == types.AccountTypeValidatorRankingReward ||
+				acc.Type == types.AccountTypeRealisedReturnReward {
 				owner += separator + acc.MarketID
 			}
 

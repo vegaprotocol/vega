@@ -32,6 +32,7 @@ type AssetID = ID[_Asset]
 
 type Asset struct {
 	ID                AssetID
+	ChainID           string `db:"chain_id"`
 	Name              string
 	Symbol            string
 	Decimals          int
@@ -68,6 +69,7 @@ func (a Asset) ToProto() *pb.Asset {
 				ContractAddress:   a.ERC20Contract,
 				LifetimeLimit:     a.LifetimeLimit.String(),
 				WithdrawThreshold: a.WithdrawThreshold.String(),
+				ChainId:           a.ChainID,
 			},
 		}
 	}

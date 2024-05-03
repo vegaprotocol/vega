@@ -16,15 +16,19 @@
 package bridges
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+var prefix = []byte{0x19}
 
 type Signer interface {
 	Sign([]byte) ([]byte, error)
@@ -46,7 +50,18 @@ func (b Bytes) Hex() string {
 	return hex.EncodeToString(b)
 }
 
-func packBufAndSubmitter(
+func packScheme(
+	buf []byte, submitter, chainID string, v1 bool,
+) ([]byte, error) {
+	if v1 {
+		return packSchemeV1(buf, submitter)
+	}
+	return packSchemeV2(buf, submitter, chainID)
+}
+
+// packSchemeV1 returns the payload to be hashed and signed where
+// payload = abi.encode(message, msg.sender).
+func packSchemeV1(
 	buf []byte, submitter string,
 ) ([]byte, error) {
 	typBytes, err := abi.NewType("bytes", "", nil)
@@ -71,6 +86,44 @@ func packBufAndSubmitter(
 	})
 
 	return args2.Pack(buf, submitterAddr)
+}
+
+// packSchemeV2 returns the payload to be hashed and signed where
+// payload = abi.encodePacked(bytes1(0x19), block.chainid, abi.encode(message, msg.sender))
+// where abi.encodePacked is the concatenation of the individual byte slices.
+func packSchemeV2(
+	buf []byte, submitter, chainID string,
+) ([]byte, error) {
+	typBytes, err := abi.NewType("bytes", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typAddr, err := abi.NewType("address", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	submitterAddr := ethcmn.HexToAddress(submitter)
+	args := abi.Arguments([]abi.Argument{
+		{
+			Name: "bytes",
+			Type: typBytes,
+		},
+		{
+			Name: "address",
+			Type: typAddr,
+		},
+	})
+
+	// abi.encode(message, msg.sender)
+	buf, err = args.Pack(buf, submitterAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// concat(prefix, chain-id, abi.encode(message, msg.sender))
+	cid := num.MustUintFromString(chainID, 10).Bytes()
+	return bytes.Join([][]byte{prefix, cid[:], buf}, nil), nil
 }
 
 func sign(signer Signer, msg []byte) (*SignaturePayload, error) {

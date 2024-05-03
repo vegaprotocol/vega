@@ -16,12 +16,41 @@
 package rewards
 
 import (
+	"math"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
+
+func adjustScoreForNegative(partyScores []*types.PartyContributionScore) []*types.PartyContributionScore {
+	if len(partyScores) == 0 {
+		return partyScores
+	}
+	minScore := num.DecimalFromInt64(math.MaxInt64)
+	adjustedPartyScores := make([]*types.PartyContributionScore, 0, len(partyScores))
+	for _, ps := range partyScores {
+		if ps.Score.LessThan(minScore) {
+			minScore = ps.Score
+		}
+	}
+
+	if !minScore.IsNegative() {
+		return partyScores
+	}
+
+	minScore = minScore.Neg()
+
+	for _, ps := range partyScores {
+		adjustedScore := ps.Score.Add(minScore)
+		if !adjustedScore.IsZero() {
+			adjustedPartyScores = append(adjustedPartyScores, &types.PartyContributionScore{Party: ps.Party, Score: adjustedScore})
+		}
+	}
+
+	return adjustedPartyScores
+}
 
 func findRank(rankingTable []*vega.Rank, ind int) uint32 {
 	var lastSeen *vega.Rank
@@ -41,17 +70,19 @@ func findRank(rankingTable []*vega.Rank, ind int) uint32 {
 
 func rankingRewardCalculator(partyMetric []*types.PartyContributionScore, rankingTable []*vega.Rank, partyRewardFactor map[string]num.Decimal) []*types.PartyContributionScore {
 	partyScores := []*types.PartyContributionScore{}
-	sort.Slice(partyMetric, func(i, j int) bool {
-		return partyMetric[i].Score.GreaterThan(partyMetric[j].Score)
+	adjustedPartyScores := adjustScoreForNegative(partyMetric)
+
+	sort.Slice(adjustedPartyScores, func(i, j int) bool {
+		return adjustedPartyScores[i].Score.GreaterThan(adjustedPartyScores[j].Score)
 	})
 	shareRatio := num.DecimalZero()
 	totalScores := num.DecimalZero()
-	for i, ps := range partyMetric {
+	for i, ps := range adjustedPartyScores {
 		rewardFactor, ok := partyRewardFactor[ps.Party]
 		if !ok {
 			rewardFactor = num.DecimalOne()
 		}
-		if i == 0 || !ps.Score.Equal(partyMetric[i-1].Score) {
+		if i == 0 || !ps.Score.Equal(adjustedPartyScores[i-1].Score) {
 			shareRatio = num.DecimalFromInt64(int64(findRank(rankingTable, i+1)))
 		}
 		score := shareRatio.Mul(rewardFactor)
@@ -74,8 +105,9 @@ func rankingRewardCalculator(partyMetric []*types.PartyContributionScore, rankin
 
 func proRataRewardCalculator(partyContribution []*types.PartyContributionScore, partyRewardFactor map[string]num.Decimal) []*types.PartyContributionScore {
 	total := num.DecimalZero()
+	adjustedPartyScores := adjustScoreForNegative(partyContribution)
 	partiesWithScore := []*types.PartyContributionScore{}
-	for _, metric := range partyContribution {
+	for _, metric := range adjustedPartyScores {
 		factor, ok := partyRewardFactor[metric.Party]
 		if !ok {
 			factor = num.DecimalOne()

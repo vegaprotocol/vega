@@ -229,11 +229,11 @@ func (e *Engine) GetTeamMembers(team string, minEpochsInTeam uint64) []string {
 	}
 	teamMembers := make([]string, 0, len(t.Referees)+1)
 	for _, m := range t.Referees {
-		if m.StartedAtEpoch-e.currentEpoch >= minEpochsInTeam {
+		if e.currentEpoch-m.StartedAtEpoch >= minEpochsInTeam {
 			teamMembers = append(teamMembers, string(m.PartyID))
 		}
 	}
-	if t.Referrer.StartedAtEpoch-e.currentEpoch >= minEpochsInTeam {
+	if e.currentEpoch-t.Referrer.StartedAtEpoch >= minEpochsInTeam {
 		teamMembers = append(teamMembers, string(t.Referrer.PartyID))
 	}
 	sort.Strings(teamMembers)

@@ -57,8 +57,12 @@ func (e *Engine) LoadState(ctx context.Context, pl *types.Payload) ([]types.Stat
 		if d.Config != nil {
 			e.cfg = d.Config.DeepClone()
 		} else {
-			// @NOTE this can be removed after protocol upgrade has completed
+			// this can probably be removed now
 			e.cfg = GetLegacyStrat()
+		}
+		// @NOTE this should have a protocol upgrade guard around it
+		if e.cfg.DisposalFraction.IsZero() {
+			e.cfg.DisposalFraction = defaultStrat.DisposalSlippage
 		}
 	default:
 		return nil, types.ErrUnknownSnapshotType

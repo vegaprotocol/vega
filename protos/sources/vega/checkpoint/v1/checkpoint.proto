@@ -164,18 +164,21 @@ message ScheduledGovernanceTransferAtTime {
 message Banking {
   repeated ScheduledTransferAtTime transfers_at_time = 1;
   RecurringTransfers recurring_transfers = 2;
-  BridgeState bridge_state = 3;
+  BridgeState primary_bridge_state = 3;
   repeated AssetAction asset_actions = 4;
-  uint64 last_seen_eth_block = 5;
+  uint64 last_seen_primary_eth_block = 5;
   repeated string seen_refs = 6;
   repeated ScheduledGovernanceTransferAtTime governance_transfers_at_time = 7;
   repeated GovernanceTransfer recurring_governance_transfers = 8;
+  BridgeState secondary_bridge_state = 9;
+  uint64 last_seen_secondary_eth_block = 10;
 }
 
 message BridgeState {
   bool active = 1;
   uint64 block_height = 2;
   uint64 log_index = 3;
+  string chain_id = 4;
 }
 
 message Validators {
@@ -209,6 +212,7 @@ message MarketTracker {
   repeated MarketActivityTracker market_activity = 1;
   repeated TakerNotionalVolume taker_notional_volume = 2;
   repeated MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
+  repeated EpochPartyTakerFees epoch_taker_fees = 4;
 }
 
 message MarketActivityTracker {
@@ -233,6 +237,15 @@ message MarketActivityTracker {
   repeated EpochTimeWeightPositionData time_weighted_position_data_history = 16;
   repeated EpochTimeWeightedNotionalData time_weighted_notional_data_history = 17;
   repeated EpochReturnsData returns_data_history = 18;
+  repeated PartyFees infra_fees = 19;
+  repeated PartyFees lp_paid_fees = 20;
+
+  repeated ReturnsData realised_returns = 21;
+  repeated EpochReturnsData realised_returns_history = 22;
+}
+
+message EpochPartyTakerFees {
+  repeated AssetMarketPartyTakerFees epoch_party_taker_fees_paid = 1;
 }
 
 message EpochTimeWeightPositionData {
@@ -251,6 +264,17 @@ message PartyTimeWeightedNotional {
 message PartyTimeWeightedPosition {
   string party = 1;
   uint64 tw_position = 2;
+}
+
+message AssetMarketPartyTakerFees {
+  string asset = 1;
+  string market = 2;
+  repeated PartyTakerFees taker_fees = 3;
+}
+
+message PartyTakerFees {
+  string party = 1;
+  bytes taker_fees = 2;
 }
 
 message EpochPartyFees {
@@ -314,6 +338,7 @@ message AssetAction {
   vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
   bool erc20_bridge_stopped = 11;
   bool erc20_bridge_resumed = 12;
+  string chain_id = 13;
 }
 
 message ELSShare {

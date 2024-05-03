@@ -271,6 +271,6 @@ Feature:  switch to isolated margin without position and with orders during auct
       | party  | market    | margin_mode  | margin_factor | error |
       | party5 | ETH/FEB23 | cross margin |               |       |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party5 | ETH/FEB23 | 1480        | 1628   | 1776    | 2072    | cross margin | 0             | 0     |
+      | party  | market id | maintenance | margin mode  | margin factor | order |
+      | party5 | ETH/FEB23 | 1580        | cross margin | 0             | 0     |
 

@@ -16,6 +16,7 @@
 package sqlstore_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -71,6 +72,73 @@ func TestCursorPredicate(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedPredicate, predicate)
 			assert.Equal(t, tc.expectedArgs, args)
+		})
+	}
+}
+
+func TestTableOrderingPrefix(t *testing.T) {
+	prefix := "prefix_str"
+	prefixSuffixed := fmt.Sprintf("%s.", prefix)
+	testCases := []struct {
+		name          string
+		ordering      sqlstore.TableOrdering
+		orderPrefixed string
+		orderNoPrefix string
+	}{
+		{
+			name: "single ascending", // ascending, single column
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("vega_time", sqlstore.ASC),
+			},
+			orderPrefixed: fmt.Sprintf("ORDER BY %s.vega_time ASC", prefix),
+			orderNoPrefix: "ORDER BY vega_time ASC",
+		},
+		{
+			name: "single descending", // descending, single column
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("vega_time", sqlstore.DESC),
+			},
+			orderPrefixed: fmt.Sprintf("ORDER BY %s.vega_time DESC", prefix),
+			orderNoPrefix: "ORDER BY vega_time DESC",
+		},
+		{
+			name: "multiple ascending", // ascending, multiple columns
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("vega_time", sqlstore.ASC),
+				sqlstore.NewColumnOrdering("tx_hash", sqlstore.ASC),
+			},
+			orderPrefixed: fmt.Sprintf("ORDER BY %s.vega_time ASC,%s.tx_hash ASC", prefix, prefix),
+			orderNoPrefix: "ORDER BY vega_time ASC,tx_hash ASC",
+		},
+		{
+			name: "multiple descending", // descending, multiple columns
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("vega_time", sqlstore.DESC),
+				sqlstore.NewColumnOrdering("tx_hash", sqlstore.DESC),
+			},
+			orderPrefixed: fmt.Sprintf("ORDER BY %s.vega_time DESC,%s.tx_hash DESC", prefix, prefix),
+			orderNoPrefix: "ORDER BY vega_time DESC,tx_hash DESC",
+		},
+		{
+			name: "multiple mixed", // multiple columns, one descending, one ascending
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("vega_time", sqlstore.DESC),
+				sqlstore.NewColumnOrdering("tx_hash", sqlstore.ASC),
+			},
+			orderPrefixed: fmt.Sprintf("ORDER BY %s.vega_time DESC,%s.tx_hash ASC", prefix, prefix),
+			orderNoPrefix: "ORDER BY vega_time DESC,tx_hash ASC",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(tt *testing.T) {
+			require.Equal(t, tc.orderNoPrefix, tc.ordering.OrderByClause())
+			tc.ordering.SetPrefixAll(prefix)
+			require.Equal(t, tc.orderPrefixed, tc.ordering.OrderByClause())
+			tc.ordering.SetPrefixAll("")
+			require.Equal(t, tc.orderNoPrefix, tc.ordering.OrderByClause())
+			// make sure that a prefix with the "." suffix included does not duplicate the "."
+			tc.ordering.SetPrefixAll(prefixSuffixed)
+			require.Equal(t, tc.orderPrefixed, tc.ordering.OrderByClause())
 		})
 	}
 }

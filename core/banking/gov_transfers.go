@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -51,12 +52,12 @@ var (
 		types.AccountTypeRelativeReturnReward:   {},
 		types.AccountTypeReturnVolatilityReward: {},
 		types.AccountTypeValidatorRankingReward: {},
+		types.AccountTypeRealisedReturnReward:   {},
 	}
 )
 
-func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context) {
+func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context, now time.Time) {
 	timepoints := []int64{}
-	now := e.timeService.GetTimeNow()
 	for k := range e.scheduledGovernanceTransfers {
 		if now.UnixNano() >= k {
 			timepoints = append(timepoints, k)
@@ -88,6 +89,12 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 	for _, gTransfer := range e.recurringGovernanceTransfers {
 		e.log.Info("distributeRecurringGovernanceTransfers", logging.Uint64("epoch", e.currentEpoch), logging.String("transfer", gTransfer.IntoProto().String()))
 		if gTransfer.Config.RecurringTransferConfig.StartEpoch > e.currentEpoch {
+			continue
+		}
+
+		if gTransfer.Config.RecurringTransferConfig.DispatchStrategy != nil && gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval != nil &&
+			((e.currentEpoch-gTransfer.Config.RecurringTransferConfig.StartEpoch+1) < uint64(*gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval) ||
+				(e.currentEpoch-gTransfer.Config.RecurringTransferConfig.StartEpoch+1)%uint64(*gTransfer.Config.RecurringTransferConfig.DispatchStrategy.TransferInterval) != 0) {
 			continue
 		}
 

@@ -30,7 +30,8 @@ import (
 	lproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	proto "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -64,14 +65,17 @@ type marketTracker struct {
 	makerFeesReceived map[string]*num.Uint
 	makerFeesPaid     map[string]*num.Uint
 	lpFees            map[string]*num.Uint
+	infraFees         map[string]*num.Uint
+	lpPaidFees        map[string]*num.Uint
 
 	totalMakerFeesReceived *num.Uint
 	totalMakerFeesPaid     *num.Uint
 	totalLpFees            *num.Uint
 
-	twPosition map[string]*twPosition
-	partyM2M   map[string]num.Decimal
-	twNotional map[string]*twNotional
+	twPosition          map[string]*twPosition
+	partyM2M            map[string]num.Decimal
+	partyRealisedReturn map[string]num.Decimal
+	twNotional          map[string]*twNotional
 
 	// historical data.
 	epochMakerFeesReceived      []map[string]*num.Uint
@@ -83,6 +87,7 @@ type marketTracker struct {
 	epochTimeWeightedPosition   []map[string]uint64
 	epochTimeWeightedNotional   []map[string]*num.Uint
 	epochPartyM2M               []map[string]num.Decimal
+	epochPartyRealisedReturn    []map[string]num.Decimal
 
 	valueTraded     *num.Uint
 	proposersPaid   map[string]struct{} // identifier of payout_asset : funder : markets_in_scope
@@ -106,11 +111,10 @@ type MarketActivityTracker struct {
 	partyContributionCache              map[string][]*types.PartyContributionScore
 	partyTakerNotionalVolume            map[string]*num.Uint
 	marketToPartyTakerNotionalVolume    map[string]map[string]*num.Uint
-	// transient map that is used and accessible only between the end of one epoch and the beginning of the next
-	// it's not needed for the snapshot because the switching between end of one epoch and the beginning of the new one is atommic.
-	takerFeesPaidInEpoch map[string]map[string]map[string]*num.Uint
-	ss                   *snapshotState
-	broker               Broker
+	takerFeesPaidInEpoch                []map[string]map[string]map[string]*num.Uint
+
+	ss     *snapshotState
+	broker Broker
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
@@ -124,7 +128,7 @@ func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker A
 		partyTakerNotionalVolume:         map[string]*num.Uint{},
 		marketToPartyTakerNotionalVolume: map[string]map[string]*num.Uint{},
 		ss:                               &snapshotState{},
-		takerFeesPaidInEpoch:             map[string]map[string]map[string]*num.Uint{},
+		takerFeesPaidInEpoch:             []map[string]map[string]map[string]*num.Uint{},
 		broker:                           broker,
 	}
 
@@ -179,11 +183,14 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		makerFeesReceived:           map[string]*num.Uint{},
 		makerFeesPaid:               map[string]*num.Uint{},
 		lpFees:                      map[string]*num.Uint{},
+		infraFees:                   map[string]*num.Uint{},
+		lpPaidFees:                  map[string]*num.Uint{},
 		totalMakerFeesReceived:      num.UintZero(),
 		totalMakerFeesPaid:          num.UintZero(),
 		totalLpFees:                 num.UintZero(),
 		twPosition:                  map[string]*twPosition{},
 		partyM2M:                    map[string]num.Decimal{},
+		partyRealisedReturn:         map[string]num.Decimal{},
 		twNotional:                  map[string]*twNotional{},
 		epochTotalMakerFeesReceived: []*num.Uint{},
 		epochTotalMakerFeesPaid:     []*num.Uint{},
@@ -192,6 +199,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		epochMakerFeesPaid:          []map[string]*num.Uint{},
 		epochLpFees:                 []map[string]*num.Uint{},
 		epochPartyM2M:               []map[string]num.Decimal{},
+		epochPartyRealisedReturn:    []map[string]decimal.Decimal{},
 		epochTimeWeightedPosition:   []map[string]uint64{},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
@@ -265,7 +273,7 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 			Asset:  asset,
 			Market: v,
 			Score:  score,
-			Metric: proto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			Metric: vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
 		})
 		totalScore = totalScore.Add(score)
 	}
@@ -276,7 +284,7 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 	for _, mcs := range scores {
 		scoresString += mcs.Market + ":" + mcs.Score.String() + ","
 	}
-	mat.log.Info("markets contributions:", logging.String("asset", asset), logging.String("metric", proto.DispatchMetric_name[int32(proto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)]), logging.String("market-scores", scoresString[:len(scoresString)-1]))
+	mat.log.Info("markets contributions:", logging.String("asset", asset), logging.String("metric", vega.DispatchMetric_name[int32(vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)]), logging.String("market-scores", scoresString[:len(scoresString)-1]))
 
 	return scores
 }
@@ -382,25 +390,44 @@ func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
 	}
 }
 
+func (mt *marketTracker) aggregatedFees() map[string]*num.Uint {
+	totalFees := map[string]*num.Uint{}
+	fees := []map[string]*num.Uint{mt.infraFees, mt.lpPaidFees, mt.makerFeesPaid}
+	for _, fee := range fees {
+		for party, paid := range fee {
+			if _, ok := totalFees[party]; !ok {
+				totalFees[party] = num.UintZero()
+			}
+			totalFees[party].AddSum(paid)
+		}
+	}
+	return totalFees
+}
+
 // OnEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
 func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
-	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
+	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
 		mat.epochStartTime = epoch.StartTime
 		mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
 		mat.clearDeletedMarkets()
 		mat.clearNotionalTakerVolume()
-		mat.takerFeesPaidInEpoch = map[string]map[string]map[string]*num.Uint{}
-	} else if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
+	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
+		m := map[string]map[string]map[string]*num.Uint{}
 		for asset, market := range mat.assetToMarketTrackers {
-			mat.takerFeesPaidInEpoch[asset] = map[string]map[string]*num.Uint{}
+			m[asset] = map[string]map[string]*num.Uint{}
 			for mkt, mt := range market {
-				mat.takerFeesPaidInEpoch[asset][mkt] = mt.makerFeesPaid
+				m[asset][mkt] = mt.aggregatedFees()
 				mt.processNotionalEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processPositionEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processM2MEndOfEpoch()
+				mt.processPartyRealisedReturnOfEpoch()
 				mt.clearFeeActivity()
 			}
 		}
+		if len(mat.takerFeesPaidInEpoch) == maxWindowSize {
+			mat.takerFeesPaidInEpoch = mat.takerFeesPaidInEpoch[1:]
+		}
+		mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, m)
 	}
 	mat.currentEpoch = epoch.Seq
 }
@@ -431,6 +458,8 @@ func (mt *marketTracker) clearFeeActivity() {
 	mt.makerFeesReceived = map[string]*num.Uint{}
 	mt.makerFeesPaid = map[string]*num.Uint{}
 	mt.lpFees = map[string]*num.Uint{}
+	mt.infraFees = map[string]*num.Uint{}
+	mt.lpPaidFees = map[string]*num.Uint{}
 
 	mt.epochTotalMakerFeesReceived = append(mt.epochTotalMakerFeesReceived, mt.totalMakerFeesReceived)
 	mt.epochTotalMakerFeesPaid = append(mt.epochTotalMakerFeesPaid, mt.totalMakerFeesPaid)
@@ -456,6 +485,10 @@ func (mat *MarketActivityTracker) UpdateFeesFromTransfers(asset, market string, 
 			mat.addFees(mt.makerFeesReceived, t.Owner, t.Amount.Amount, mt.totalMakerFeesReceived)
 		case types.TransferTypeLiquidityFeeNetDistribute, types.TransferTypeSlaPerformanceBonusDistribute:
 			mat.addFees(mt.lpFees, t.Owner, t.Amount.Amount, mt.totalLpFees)
+		case types.TransferTypeInfrastructureFeePay:
+			mat.addFees(mt.infraFees, t.Owner, t.Amount.Amount, num.UintZero())
+		case types.TransferTypeLiquidityFeePay:
+			mat.addFees(mt.lpPaidFees, t.Owner, t.Amount.Amount, num.UintZero())
 		default:
 		}
 	}
@@ -505,11 +538,27 @@ func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, po
 	}
 }
 
+// RecordRealisedPosition updates the market tracker on decreased position.
+func (mat *MarketActivityTracker) RecordRealisedPosition(asset, party, market string, positionDecrease num.Decimal) {
+	if tracker, ok := mat.getMarketTracker(asset, market); ok {
+		tracker.allPartiesCache[party] = struct{}{}
+		tracker.recordRealisedPosition(party, positionDecrease)
+	}
+}
+
 // RecordM2M passes the mark to market win/loss transfer amount to the asset/market tracker to be recorded.
 func (mat *MarketActivityTracker) RecordM2M(asset, party, market string, amount num.Decimal) {
 	if tracker, ok := mat.getMarketTracker(asset, market); ok {
 		tracker.allPartiesCache[party] = struct{}{}
 		tracker.recordM2M(party, amount)
+	}
+}
+
+// RecordFundingPayment passes the mark to market win/loss transfer amount to the asset/market tracker to be recorded.
+func (mat *MarketActivityTracker) RecordFundingPayment(asset, party, market string, amount num.Decimal) {
+	if tracker, ok := mat.getMarketTracker(asset, market); ok {
+		tracker.allPartiesCache[party] = struct{}{}
+		tracker.recordFundingPayment(party, amount)
 	}
 }
 
@@ -615,8 +664,8 @@ func (mat *MarketActivityTracker) calculateMetricForIndividuals(ctx context.Cont
 		if !mat.isEligibleForReward(ctx, asset, party, markets, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID) {
 			continue
 		}
-		score := mat.calculateMetricForParty(asset, party, markets, metric, windowSize)
-		if score.IsZero() {
+		score, ok := mat.calculateMetricForParty(asset, party, markets, metric, windowSize)
+		if !ok {
 			continue
 		}
 		ret = append(ret, &types.PartyContributionScore{Party: party, Score: score})
@@ -661,7 +710,7 @@ func calculateMetricForTeamUtil(ctx context.Context,
 	windowSize int,
 	topN num.Decimal,
 	isEligibleForReward func(ctx context.Context, asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, gameID string) bool,
-	calculateMetricForParty func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) num.Decimal,
+	calculateMetricForParty func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) (num.Decimal, bool),
 	gameID string,
 ) (num.Decimal, []*types.PartyContributionScore) {
 	teamPartyScores := []*types.PartyContributionScore{}
@@ -669,7 +718,9 @@ func calculateMetricForTeamUtil(ctx context.Context,
 		if !isEligibleForReward(ctx, asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID) {
 			continue
 		}
-		teamPartyScores = append(teamPartyScores, &types.PartyContributionScore{Party: party, Score: calculateMetricForParty(asset, party, marketsInScope, metric, windowSize)})
+		if score, ok := calculateMetricForParty(asset, party, marketsInScope, metric, windowSize); ok {
+			teamPartyScores = append(teamPartyScores, &types.PartyContributionScore{Party: party, Score: score})
+		}
 	}
 
 	if len(teamPartyScores) == 0 {
@@ -701,7 +752,7 @@ func calculateMetricForTeamUtil(ctx context.Context,
 }
 
 // calculateMetricForParty returns the value of a reward metric score for the given party for markets of the given assets which are in scope over the given window size.
-func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) num.Decimal {
+func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) (num.Decimal, bool) {
 	// exclude unsupported metrics
 	if metric == vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
 		mat.log.Panic("unexpected dispatch metric market value here")
@@ -712,11 +763,12 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	uTotal := uint64(0)
 	total := num.DecimalZero()
 	marketTotal := num.DecimalZero()
-	returns := make([]num.Decimal, windowSize)
+	returns := make([]*num.Decimal, windowSize)
+	found := false
 
 	assetTrackers, ok := mat.assetToMarketTrackers[asset]
 	if !ok {
-		return num.DecimalZero()
+		return num.DecimalZero(), false
 	}
 
 	markets := marketsInScope
@@ -735,25 +787,58 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 		}
 		switch metric {
 		case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
-			uTotal += marketTracker.getPositionMetricTotal(party, windowSize)
+			if t, ok := marketTracker.getPositionMetricTotal(party, windowSize); ok {
+				found = true
+				uTotal += t
+			}
 		case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN:
-			total = total.Add(marketTracker.getRelativeReturnMetricTotal(party, windowSize))
+			if t, ok := marketTracker.getRelativeReturnMetricTotal(party, windowSize); ok {
+				found = true
+				total = total.Add(t)
+			}
+		case vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
+			if t, ok := marketTracker.getRealisedReturnMetricTotal(party, windowSize); ok {
+				found = true
+				total = total.Add(t)
+			}
 		case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
 			r, ok := marketTracker.getReturns(party, windowSize)
 			if !ok {
 				continue
 			}
+			found = true
 			for i, ret := range r {
-				returns[i] = returns[i].Add(ret)
+				if ret != nil {
+					if returns[i] != nil {
+						*returns[i] = returns[i].Add(*ret)
+					} else {
+						returns[i] = ret
+					}
+				}
 			}
 		case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID:
-			total = total.Add(getFees(marketTracker.epochMakerFeesPaid, party, windowSize))
+			if t, ok := getFees(marketTracker.epochMakerFeesPaid, party, windowSize); ok {
+				if t.IsPositive() {
+					found = true
+				}
+				total = total.Add(t)
+			}
 			marketTotal = marketTotal.Add(getTotalFees(marketTracker.epochTotalMakerFeesPaid, windowSize))
 		case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED:
-			total = total.Add(getFees(marketTracker.epochMakerFeesReceived, party, windowSize))
+			if t, ok := getFees(marketTracker.epochMakerFeesReceived, party, windowSize); ok {
+				if t.IsPositive() {
+					found = true
+				}
+				total = total.Add(t)
+			}
 			marketTotal = marketTotal.Add(getTotalFees(marketTracker.epochTotalMakerFeesReceived, windowSize))
 		case vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
-			total = total.Add(getFees(marketTracker.epochLpFees, party, windowSize))
+			if t, ok := getFees(marketTracker.epochLpFees, party, windowSize); ok {
+				if t.IsPositive() {
+					found = true
+				}
+				total = total.Add(t)
+			}
 			marketTotal = marketTotal.Add(getTotalFees(marketTracker.epochTotalLpFees, windowSize))
 		}
 	}
@@ -761,30 +846,33 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	switch metric {
 	case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
 		// descaling the total tw position metric by dividing by the scaling factor
-		return num.DecimalFromInt64(int64(uTotal)).Div(num.DecimalFromInt64(int64(windowSize) * scalingFactor))
-	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN:
-		return num.MaxD(num.DecimalZero(), total.Div(num.DecimalFromInt64(int64(windowSize))))
+		return num.DecimalFromInt64(int64(uTotal)).Div(num.DecimalFromInt64(int64(windowSize) * scalingFactor)), found
+	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
+		return total.Div(num.DecimalFromInt64(int64(windowSize))), found
 	case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
 		filteredReturns := []num.Decimal{}
 		for _, d := range returns {
-			if d.IsPositive() {
-				filteredReturns = append(filteredReturns, d)
+			if d != nil {
+				filteredReturns = append(filteredReturns, *d)
 			}
 		}
-		if len(filteredReturns) == 0 {
-			return num.DecimalZero()
+		if len(filteredReturns) < 2 {
+			return num.DecimalZero(), false
 		}
 		variance, _ := num.Variance(filteredReturns)
-		return variance
+		if !variance.IsZero() {
+			return num.DecimalOne().Div(variance), found
+		}
+		return variance, found
 	case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		if marketTotal.IsZero() {
-			return num.DecimalZero()
+			return num.DecimalZero(), found
 		}
-		return total.Div(marketTotal)
+		return total.Div(marketTotal), found
 	default:
 		mat.log.Panic("unexpected metric")
 	}
-	return num.DecimalZero()
+	return num.DecimalZero(), found
 }
 
 func (mat *MarketActivityTracker) RecordNotionalTakerVolume(marketID string, party string, volumeToAdd *num.Uint) {
@@ -989,6 +1077,12 @@ func (mt *marketTracker) processPositionEndOfEpoch(epochStartTime time.Time, end
 		mt.epochTimeWeightedPosition = mt.epochTimeWeightedPosition[1:]
 	}
 	mt.epochTimeWeightedPosition = append(mt.epochTimeWeightedPosition, m)
+	for p, twp := range mt.twPosition {
+		// if the position at the beginning of the epoch is 0 clear it so we don't keep zero positions forever
+		if twp.currentEpochTWPosition == 0 && twp.position == 0 {
+			delete(mt.twPosition, p)
+		}
+	}
 }
 
 // //// return metric //////
@@ -1003,6 +1097,28 @@ func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
 		return
 	}
 	mt.partyM2M[party] = mt.partyM2M[party].Add(amount)
+}
+
+func (mt *marketTracker) recordFundingPayment(party string, amount num.Decimal) {
+	if party == "network" || amount.IsZero() {
+		return
+	}
+	if _, ok := mt.partyRealisedReturn[party]; !ok {
+		mt.partyRealisedReturn[party] = amount
+		return
+	}
+	mt.partyRealisedReturn[party] = mt.partyRealisedReturn[party].Add(amount)
+}
+
+func (mt *marketTracker) recordRealisedPosition(party string, realisedPosition num.Decimal) {
+	if party == "network" {
+		return
+	}
+	if _, ok := mt.partyRealisedReturn[party]; !ok {
+		mt.partyRealisedReturn[party] = realisedPosition
+		return
+	}
+	mt.partyRealisedReturn[party] = mt.partyRealisedReturn[party].Add(realisedPosition)
 }
 
 // processM2MEndOfEpoch is called at the end of the epoch to reset the running total for the next epoch and record the total m2m in the ended epoch.
@@ -1020,47 +1136,65 @@ func (mt *marketTracker) processM2MEndOfEpoch() {
 			v = m2m.Div(num.DecimalFromInt64(int64(p)).Div(dScalingFactor))
 		}
 		m[party] = v
-		mt.partyM2M[party] = num.DecimalZero()
 	}
 	if len(mt.epochPartyM2M) == maxWindowSize {
 		mt.epochPartyM2M = mt.epochPartyM2M[1:]
 	}
+	mt.partyM2M = map[string]decimal.Decimal{}
 	mt.epochPartyM2M = append(mt.epochPartyM2M, m)
 }
 
+// processPartyRealisedReturnOfEpoch is called at the end of the epoch to reset the running total for the next epoch and record the total m2m in the ended epoch.
+func (mt *marketTracker) processPartyRealisedReturnOfEpoch() {
+	m := map[string]num.Decimal{}
+	for party, realised := range mt.partyRealisedReturn {
+		m[party] = realised
+	}
+	if len(mt.epochPartyRealisedReturn) == maxWindowSize {
+		mt.epochPartyRealisedReturn = mt.epochPartyRealisedReturn[1:]
+	}
+	mt.epochPartyRealisedReturn = append(mt.epochPartyRealisedReturn, m)
+	mt.partyRealisedReturn = map[string]decimal.Decimal{}
+}
+
 // getReturns returns a slice of the total of the party's return by epoch in the given window.
-func (mt *marketTracker) getReturns(party string, windowSize int) ([]num.Decimal, bool) {
-	if _, ok := mt.partyM2M[party]; !ok {
-		return []num.Decimal{}, false
-	}
-	returns := make([]num.Decimal, 0, windowSize)
+func (mt *marketTracker) getReturns(party string, windowSize int) ([]*num.Decimal, bool) {
+	returns := make([]*num.Decimal, windowSize)
 	if len(mt.epochPartyM2M) == 0 {
-		return []num.Decimal{}, false
+		return []*num.Decimal{}, false
 	}
+	found := false
 	for i := 0; i < windowSize; i++ {
 		ind := len(mt.epochPartyM2M) - i - 1
 		if ind < 0 {
-			returns = append(returns, num.DecimalZero())
-			continue
+			break
 		}
 		epochData := mt.epochPartyM2M[ind]
-		returns = append(returns, epochData[party])
+		if t, ok := epochData[party]; ok {
+			found = true
+			returns[i] = &t
+		}
 	}
-	return returns, true
+	return returns, found
 }
 
 // getPositionMetricTotal returns the sum of the epoch's time weighted position over the time window.
-func (mt *marketTracker) getPositionMetricTotal(party string, windowSize int) uint64 {
+func (mt *marketTracker) getPositionMetricTotal(party string, windowSize int) (uint64, bool) {
 	return calcTotalForWindowUint64(party, mt.epochTimeWeightedPosition, windowSize)
 }
 
 // getRelativeReturnMetricTotal returns the sum of the relative returns over the given window.
-func (mt *marketTracker) getRelativeReturnMetricTotal(party string, windowSize int) num.Decimal {
+func (mt *marketTracker) getRelativeReturnMetricTotal(party string, windowSize int) (num.Decimal, bool) {
 	return calcTotalForWindowD(party, mt.epochPartyM2M, windowSize)
 }
 
+// getRealisedReturnMetricTotal returns the sum of the relative returns over the given window.
+func (mt *marketTracker) getRealisedReturnMetricTotal(party string, windowSize int) (num.Decimal, bool) {
+	return calcTotalForWindowD(party, mt.epochPartyRealisedReturn, windowSize)
+}
+
 // getFees returns the total fees paid/received (depending on what feeData represents) by the party over the given window size.
-func getFees(feeData []map[string]*num.Uint, party string, windowSize int) num.Decimal {
+func getFees(feeData []map[string]*num.Uint, party string, windowSize int) (num.Decimal, bool) {
 	return calcTotalForWindowU(party, feeData, windowSize)
 }
 
@@ -1080,9 +1214,9 @@ func getTotalFees(totalFees []*num.Uint, windowSize int) num.Decimal {
 	return total.ToDecimal()
 }
 
-func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []string) map[string]*num.Uint {
+func (mat *MarketActivityTracker) getEpochTakeFees(asset string, markets []string, takerFeesPaidInEpoch map[string]map[string]map[string]*num.Uint) map[string]*num.Uint {
 	takerFees := map[string]*num.Uint{}
-	ast, ok := mat.takerFeesPaidInEpoch[asset]
+	ast, ok := takerFeesPaidInEpoch[asset]
 	if !ok {
 		return takerFees
 	}
@@ -1107,59 +1241,83 @@ func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []s
 	return takerFees
 }
 
+func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []string, epochs int32) map[string]*num.Uint {
+	takerFees := map[string]*num.Uint{}
+	for i := 0; i < int(epochs); i++ {
+		ind := len(mat.takerFeesPaidInEpoch) - i - 1
+		if ind < 0 {
+			break
+		}
+		m := mat.getEpochTakeFees(asset, markets, mat.takerFeesPaidInEpoch[ind])
+		for k, v := range m {
+			if _, ok := takerFees[k]; !ok {
+				takerFees[k] = num.UintZero()
+			}
+			takerFees[k].AddSum(v)
+		}
+	}
+	return takerFees
+}
+
 // calcTotalForWindowU returns the total relevant data from the given slice starting from the given dataIdx-1, going back <window_size> elements.
-func calcTotalForWindowU(party string, data []map[string]*num.Uint, windowSize int) num.Decimal {
+func calcTotalForWindowU(party string, data []map[string]*num.Uint, windowSize int) (num.Decimal, bool) {
+	found := false
 	if len(data) == 0 {
-		return num.DecimalZero()
+		return num.DecimalZero(), found
 	}
 	total := num.UintZero()
 	for i := 0; i < windowSize; i++ {
 		ind := len(data) - i - 1
 		if ind < 0 {
-			return total.ToDecimal()
+			return total.ToDecimal(), found
 		}
 		if v, ok := data[ind][party]; ok {
+			found = true
 			total.AddSum(v)
 		}
 	}
-	return total.ToDecimal()
+	return total.ToDecimal(), found
 }
 
 // calcTotalForWindowD returns the total relevant data from the given slice starting from the given dataIdx-1, going back <window_size> elements.
-func calcTotalForWindowD(party string, data []map[string]num.Decimal, windowSize int) num.Decimal {
+func calcTotalForWindowD(party string, data []map[string]num.Decimal, windowSize int) (num.Decimal, bool) {
+	found := false
 	if len(data) == 0 {
-		return num.DecimalZero()
+		return num.DecimalZero(), found
 	}
 	total := num.DecimalZero()
 	for i := 0; i < windowSize; i++ {
 		ind := len(data) - i - 1
 		if ind < 0 {
-			return total
+			return total, found
 		}
 		if v, ok := data[ind][party]; ok {
+			found = true
 			total = total.Add(v)
 		}
 	}
-	return total
+	return total, found
 }
 
 // calcTotalForWindowUint64 returns the total relevant data from the given slice starting from the given dataIdx-1, going back <window_size> elements.
-func calcTotalForWindowUint64(party string, data []map[string]uint64, windowSize int) uint64 {
+func calcTotalForWindowUint64(party string, data []map[string]uint64, windowSize int) (uint64, bool) {
+	found := false
 	if len(data) == 0 {
-		return 0
+		return 0, found
 	}
 
 	total := uint64(0)
 	for i := 0; i < windowSize; i++ {
 		ind := len(data) - i - 1
 		if ind < 0 {
-			return total
+			return total, found
 		}
 		if v, ok := data[ind][party]; ok {
+			found = true
 			total += v
 		}
 	}
-	return total
+	return total, found
 }
 
 // returns the sorted slice of keys for the given map.

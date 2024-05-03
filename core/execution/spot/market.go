@@ -74,7 +74,7 @@ type Market struct {
 
 	lastTradedPrice *num.Uint
 	markPrice       *num.Uint
-	priceFactor     *num.Uint
+	priceFactor     num.Decimal
 
 	// own engines
 	matching                      *matching.CachedOrderBook
@@ -164,9 +164,9 @@ func NewMarket(
 	}
 
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
-	priceFactor := num.NewUint(1)
-	if exp := quoteAssetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
-		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
+	priceFactor := num.DecimalOne()
+	if exp := int(quoteAssetDetails.DecimalPlaces()) - int(mkt.DecimalPlaces); exp != 0 {
+		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 	baseFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(baseAssetDetails.DecimalPlaces()) - mkt.PositionDecimalPlaces))
 	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, as.InAuction(), peggedOrderNotify)
@@ -267,6 +267,15 @@ func (m *Market) IsOpeningAuction() bool {
 	return m.as.IsOpeningAuction()
 }
 
+func (m *Market) getParties() []string {
+	parties := make([]string, 0, len(m.parties))
+	for k := range m.parties {
+		parties = append(parties, k)
+	}
+	sort.Strings(parties)
+	return parties
+}
+
 func (m *Market) GetPartiesStats() *types.MarketStats {
 	return &types.MarketStats{}
 }
@@ -351,7 +360,8 @@ func (m *Market) GetMarketState() types.MarketState {
 }
 
 func (m *Market) priceToMarketPrecision(price *num.Uint) *num.Uint {
-	return price.Div(price, m.priceFactor)
+	p, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+	return p
 }
 
 func (m *Market) GetMarketData() types.MarketData {
@@ -389,14 +399,14 @@ func (m *Market) GetMarketData() types.MarketData {
 	targetStake := m.getTargetStake().String()
 	bounds := m.pMonitor.GetCurrentBounds()
 	for _, b := range bounds {
-		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
-		m.priceToMarketPrecision(b.MinValidPrice)
+		b.MaxValidPrice = m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
+		b.MinValidPrice = m.priceToMarketPrecision(b.MinValidPrice)
 
 		rp, _ := num.UintFromDecimal(b.ReferencePrice)
-		m.priceToMarketPrecision(rp)
+		rp = m.priceToMarketPrecision(rp)
 		b.ReferencePrice = num.DecimalFromUint(rp)
 
-		if m.priceFactor.NEQ(common.One) {
+		if m.priceFactor.GreaterThan(num.DecimalOne()) {
 			b.MinValidPrice.AddSum(common.One) // ceil
 		}
 	}
@@ -643,22 +653,31 @@ func (m *Market) BeginBlock(_ context.Context) {}
 
 // BlockEnd notifies the market of the end of the block.
 func (m *Market) BlockEnd(ctx context.Context) {
+	t := m.timeService.GetTimeNow()
+	if m.mkt.State == types.MarketStateProposed ||
+		m.mkt.State == types.MarketStateCancelled ||
+		m.mkt.State == types.MarketStateRejected ||
+		m.mkt.State == types.MarketStateSettled {
+		if (m.nextMTM.IsZero() || !m.nextMTM.After(t)) && !m.as.InAuction() {
+			m.nextMTM = t.Add(m.mtmDelta)
+		}
+		return
+	}
 	// simplified version of updating mark price every MTM interval
 	mp := m.getLastTradedPrice()
 	if !m.hasTraded && m.markPrice != nil {
 		// no trades happened, make sure we're just using the current mark price
 		mp = m.markPrice.Clone()
 	}
-	t := m.timeService.GetTimeNow()
-	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
-		if !m.pMonitor.CheckPrice(ctx, m.as, []*types.Trade{{Price: mp, Size: 1}}, true, true) {
-			m.markPrice = mp
-		}
-		m.nextMTM = t.Add(m.mtmDelta) // add delta here
 
-		// last traded price should not reflect the closeout trades
-		m.lastTradedPrice = mp.Clone()
-		m.hasTraded = false
+	if !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
+		m.pMonitor.CheckPrice(ctx, m.as, mp, true, true)
+		if !m.as.InAuction() && !m.as.AuctionStart() {
+			m.markPrice = mp
+			m.lastTradedPrice = mp.Clone()
+			m.hasTraded = false
+		}
+		m.nextMTM = t.Add(m.mtmDelta)
 	}
 	m.tsCalc.RecordTotalStake(m.liquidity.CalculateSuppliedStake().Uint64(), m.timeService.GetTimeNow())
 	m.liquidity.EndBlock(m.markPrice, m.midPrice(), m.positionFactor)
@@ -699,7 +718,7 @@ func (m *Market) removeOrders(ctx context.Context) {
 // cleanMarketWithState clears the collateral state of the market and clears up state vars and sets the terminated state of the market
 // NB: should it actually go to settled?.
 func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.MarketState) error {
-	clearMarketTransfers, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset)
+	clearMarketTransfers, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset, m.getParties())
 	if err != nil {
 		m.log.Error("Clear market error",
 			logging.MarketID(m.GetID()),
@@ -800,7 +819,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
+	offset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
 	if order.Side == types.SideSell {
 		price = price.AddSum(offset)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
@@ -831,8 +850,7 @@ func (m *Market) repricePeggedOrder(order *types.Order) error {
 	if err != nil {
 		return err
 	}
-	original := price.Clone()
-	order.OriginalPrice = original.Div(original, m.priceFactor) // set original price in market precision
+	order.OriginalPrice, _ = num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor)) // set original price in market precision
 	order.Price = price
 	return nil
 }
@@ -1124,9 +1142,17 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		return nil, common.ErrTradingNotAllowed
 	}
 
+	now := m.timeService.GetTimeNow()
 	orderCnt := 0
-
 	if fallsBelow != nil {
+		if fallsBelow.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+			rejectStopOrders(types.StopOrderRejectionSizeOverrideUnsupportedForSpot, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSizeOverrideNotSupportedForSpots
+		}
+		if fallsBelow.Expiry.Expires() && fallsBelow.Expiry.ExpiresAt.Before(now) {
+			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderExpiryInThePast
+		}
 		if fallsBelow.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(party, m.quoteAsset) {
 			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
@@ -1138,6 +1164,14 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		orderCnt++
 	}
 	if risesAbove != nil {
+		if risesAbove.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+			rejectStopOrders(types.StopOrderRejectionSizeOverrideUnsupportedForSpot, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSizeOverrideNotSupportedForSpots
+		}
+		if risesAbove.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Before(now) {
+			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderExpiryInThePast
+		}
 		if risesAbove.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(party, m.quoteAsset) {
 			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
@@ -1147,6 +1181,13 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 		orderCnt++
+	}
+
+	if risesAbove != nil && fallsBelow != nil {
+		if risesAbove.Expiry.Expires() && fallsBelow.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Compare(*fallsBelow.Expiry.ExpiresAt) == 0 {
+			rejectStopOrders(types.StopOrderRejectionOCONotAllowedSameExpiryTime, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderNotAllowedSameExpiry
+		}
 	}
 
 	// now check if that party hasn't exceeded the max amount per market
@@ -1162,7 +1203,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	// or no order is triggered
 	// let's just submit it straight away
 	if m.as.InAuction() || !triggered {
-		m.poolStopOrders(ctx, fallsBelow, risesAbove)
+		m.poolStopOrders(fallsBelow, risesAbove)
 		return nil, nil
 	}
 
@@ -1200,26 +1241,20 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 }
 
 func (m *Market) poolStopOrders(
-	ctx context.Context,
 	fallsBelow, risesAbove *types.StopOrder,
 ) {
-	evts := []events.Event{}
 	if fallsBelow != nil {
 		m.stopOrders.Insert(fallsBelow)
 		if fallsBelow.Expiry.Expires() {
-			m.expiringStopOrders.Insert(fallsBelow.ID, fallsBelow.CreatedAt.UnixNano())
+			m.expiringStopOrders.Insert(fallsBelow.ID, fallsBelow.Expiry.ExpiresAt.UnixNano())
 		}
-		evts = append(evts, events.NewStopOrderEvent(ctx, fallsBelow))
 	}
 	if risesAbove != nil {
 		m.stopOrders.Insert(risesAbove)
 		if risesAbove.Expiry.Expires() {
-			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.CreatedAt.UnixNano())
+			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.Expiry.ExpiresAt.UnixNano())
 		}
-		evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
 	}
-
-	m.broker.SendBatch(evts)
 }
 
 func (m *Market) stopOrderWouldTriggerAtSubmission(
@@ -1229,13 +1264,15 @@ func (m *Market) stopOrderWouldTriggerAtSubmission(
 		return false
 	}
 
+	lastTradedPrice := m.priceToMarketPrecision(m.getLastTradedPrice())
+
 	switch stopOrder.Trigger.Direction {
 	case types.StopOrderTriggerDirectionFallsBelow:
-		if m.lastTradedPrice.LTE(stopOrder.Trigger.Price()) {
+		if lastTradedPrice.LTE(stopOrder.Trigger.Price()) {
 			return true
 		}
 	case types.StopOrderTriggerDirectionRisesAbove:
-		if m.lastTradedPrice.GTE(stopOrder.Trigger.Price()) {
+		if lastTradedPrice.GTE(stopOrder.Trigger.Price()) {
 			return true
 		}
 	}
@@ -1249,19 +1286,31 @@ func (m *Market) triggerStopOrders(
 	if m.lastTradedPrice == nil {
 		return nil
 	}
+	lastTradedPrice := m.priceToMarketPrecision(m.getLastTradedPrice())
+	triggered, cancelled := m.stopOrders.PriceUpdated(lastTradedPrice)
 
-	triggered, cancelled := m.stopOrders.PriceUpdated(m.lastTradedPrice)
-
-	if len(triggered) <= 0 {
+	if len(triggered) <= 0 && len(cancelled) <= 0 {
 		return nil
 	}
 
+	now := m.timeService.GetTimeNow()
+	// remove from expiring orders + set updatedAt
+	for _, v := range append(triggered, cancelled...) {
+		v.UpdatedAt = now
+		if v.Expiry.Expires() {
+			m.expiringStopOrders.RemoveOrder(v.Expiry.ExpiresAt.UnixNano(), v.ID)
+		}
+	}
 	evts := make([]events.Event, 0, len(cancelled))
 	for _, v := range cancelled {
 		evts = append(evts, events.NewStopOrderEvent(ctx, v))
 	}
 
 	m.broker.SendBatch(evts)
+
+	if len(triggered) <= 0 {
+		return nil
+	}
 
 	confirmations := m.submitStopOrders(ctx, triggered, types.StopOrderStatusTriggered, idgen)
 
@@ -1290,7 +1339,7 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(ctx context.Context, order
 	order := orderSubmission.IntoOrder(party)
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
-		order.Price.Mul(order.Price, m.priceFactor)
+		order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
 	}
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.ID = orderID
@@ -1308,10 +1357,8 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(ctx context.Context, order
 	}
 
 	if !m.as.InAuction() {
-		m.checkForReferenceMoves(
-			ctx, false)
+		m.checkForReferenceMoves(ctx, false)
 	}
-
 	return conf, nil
 }
 
@@ -1356,6 +1403,35 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return orderConf, orderUpdates, err
 }
 
+func (m *Market) canCoverTradesAndFees(party string, partySide types.Side, trades []*types.Trade) error {
+	// check that the party can afford the traded amount + fees
+	if partySide == types.SideBuy {
+		totalTraded := num.UintZero()
+		for _, t := range trades {
+			fees, err := m.calculateFeesForTrades([]*types.Trade{t})
+			if err != nil {
+				m.log.Panic("failed to calculate fees for trade", logging.Trade(t))
+			}
+			size := num.NewUint(t.Size)
+			totalTraded.AddSum(size.Mul(size, t.Price), fees.TotalFeesAmountPerParty()[party])
+		}
+		totalTraded, _ = num.UintFromDecimal(totalTraded.ToDecimal().Div(m.positionFactor))
+		if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, totalTraded); err != nil {
+			return err
+		}
+	} else {
+		sizeTraded := uint64(0)
+		for _, t := range trades {
+			sizeTraded += t.Size
+		}
+		totalTraded := scaleBaseQuantityToAssetDP(sizeTraded, m.baseFactor)
+		if err := m.collateral.PartyHasSufficientBalance(m.baseAsset, party, totalTraded); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // submitValidatedOrder submits a new order.
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Order, error) {
 	isPegged := order.PeggedOrder != nil
@@ -1392,6 +1468,13 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// NB we don't apply fees here because if this is a sell the fees are taken from the quantity that the buyer pays (in quote asset)
 		// so this is deferred to handling confirmations - by this point the aggressor must have sufficient funds to cover for fees so this should
 		// not be an issue
+	}
+
+	// check that the party can afford the trade and fees
+	if trades != nil {
+		if err := m.canCoverTradesAndFees(order.Party, order.Side, trades); err != nil {
+			return nil, nil, m.unregisterAndReject(ctx, order, err)
+		}
 	}
 
 	// if an auction is ongoing and the order is pegged, park it and return
@@ -1451,18 +1534,20 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent, false) {
-		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
-	}
+	for _, trade := range trades {
+		if m.pMonitor.CheckPrice(ctx, m.as, trade.Price, persistent, false) {
+			return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
+		}
 
-	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
-		m.broker.Send(evt)
-	}
+		if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
+			m.broker.Send(evt)
+		}
 
-	// start the  monitoring auction if required?
-	if m.as.AuctionStart() {
-		m.enterAuction(ctx)
-		return nil, nil
+		// start the  monitoring auction if required?
+		if m.as.AuctionStart() {
+			m.enterAuction(ctx)
+			return nil, nil
+		}
 	}
 
 	return trades, nil
@@ -1694,15 +1779,19 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	})
 
 	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
+	orderIDs := make([]string, 0, len(orders))
 
 	// now iterate over all orders and cancel one by one.
 	for _, order := range orders {
-		cancellation, err := m.cancelOrder(ctx, partyID, order.ID)
+		cancellation, err := m.cancelOrderInBatch(ctx, partyID, order.ID)
 		if err != nil {
 			return nil, err
 		}
 		cancellations = append(cancellations, cancellation)
+		orderIDs = append(orderIDs, order.ID)
 	}
+
+	m.broker.Send(events.NewCancelledOrdersEvent(ctx, m.GetID(), partyID, orderIDs...))
 
 	m.checkForReferenceMoves(ctx, false)
 
@@ -1718,7 +1807,7 @@ func (m *Market) CancelStopOrder(
 	}
 
 	stopOrders, err := m.stopOrders.Cancel(partyID, orderID)
-	if err != nil {
+	if err != nil || len(stopOrders) <= 0 { // could return just an empty slice
 		return err
 	}
 
@@ -1771,8 +1860,17 @@ func (m *Market) CancelOrderWithIDGenerator(ctx context.Context, partyID, orderI
 	return conf, nil
 }
 
-// CancelOrder cancels the given order. If the order is found on the book, we release locked funds from holding account to the general account of the party.
+func (m *Market) cancelOrderInBatch(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+	return m.cancelSingleOrder(ctx, partyID, orderID, true)
+}
+
+// cancelOrder cancels the given order. If the order is found on the book, we release locked funds from holding account to the general account of the party.
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+	return m.cancelSingleOrder(ctx, partyID, orderID, false)
+}
+
+// cancelSingleOrder cancels the given order. If the order is found on the book, we release locked funds from holding account to the general account of the party.
+func (m *Market) cancelSingleOrder(ctx context.Context, partyID, orderID string, inBatch bool) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1823,7 +1921,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	// Publish the changed order details
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-	m.broker.Send(events.NewOrderEvent(ctx, order))
+	if !inBatch {
+		m.broker.Send(events.NewCancelledOrdersEvent(ctx, m.GetID(), partyID, orderID))
+	}
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
@@ -2125,6 +2225,12 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		if ret.Order.Side == types.SideSell {
 			asset = m.baseAsset
 		}
+
+		// verify that the party has sufficient funds in their general account to cover for this amount
+		if err := m.collateral.PartyHasSufficientBalance(asset, ret.Order.Party, num.Sum(amt, fees)); err != nil {
+			return nil, nil, err
+		}
+
 		transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, ret.Order.ID, ret.Order.Party, asset, amt, fees)
 		if err != nil {
 			m.log.Panic("failed to transfer funds to holding account for order", logging.Order(ret.Order), logging.Error(err))
@@ -2215,7 +2321,7 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 		}
 		price := order.Price
 		if amendment.Price != nil {
-			price = num.UintZero().Mul(amendment.Price, m.priceFactor)
+			price, _ = num.UintFromDecimal(amendment.Price.ToDecimal().Mul(m.priceFactor))
 		}
 		if order.PeggedOrder != nil {
 			p, err := m.getNewPeggedPrice(order)
@@ -2258,6 +2364,7 @@ func (m *Market) StopSnapshots() {
 }
 
 func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, orders []*types.Order, err error) {
+	wasInAuction := m.as.InAuction()
 	defer func() {
 		if err != nil {
 			return
@@ -2265,7 +2372,8 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 
 		orders = m.handleConfirmation(ctx, conf)
 		m.handleConfirmationPassiveOrders(ctx, conf)
-		if !conf.Order.IsFinished() && !m.as.InAuction() {
+		// if we were in auction before we handled the transfer already, if we're finished, there's nothing to do here.
+		if !conf.Order.IsFinished() && !wasInAuction {
 			amt := m.calculateAmountBySide(newOrder.Side, newOrder.Price, newOrder.TrueRemaining())
 			asset := m.quoteAsset
 			if newOrder.Side == types.SideSell {
@@ -2330,6 +2438,13 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {
 		return nil, nil, errors.New("couldn't insert order in book")
+	}
+
+	// check that the party can afford the trade - if not return error and ignore the update
+	if trades != nil {
+		if err := m.canCoverTradesAndFees(newOrder.Party, newOrder.Side, trades); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	// "hot-swap" of the orders
@@ -2417,10 +2532,57 @@ func (m *Market) removeExpiredStopOrders(ctx context.Context, timestamp int64, i
 	toExpire := m.expiringStopOrders.Expire(timestamp)
 	stopOrders := m.stopOrders.RemoveExpired(toExpire)
 
+	//  ensure any OCO orders are also expire
+	toExpireSet := map[string]struct{}{}
+	for _, v := range toExpire {
+		toExpireSet[v] = struct{}{}
+	}
+
+	for _, so := range stopOrders {
+		if _, ok := toExpireSet[so.ID]; !ok {
+			if so.Expiry.Expires() {
+				m.expiringStopOrders.RemoveOrder(so.Expiry.ExpiresAt.UnixNano(), so.ID)
+			}
+		}
+	}
+
+	updatedAt := m.timeService.GetTimeNow()
+
+	if m.as.InAuction() {
+		m.removeExpiredStopOrdersInAuction(ctx, updatedAt, stopOrders)
+		return nil
+	}
+
+	return m.removeExpiredStopOrdersInContinuous(ctx, updatedAt, stopOrders, idgen)
+}
+
+func (m *Market) removeExpiredStopOrdersInAuction(
+	ctx context.Context,
+	updatedAt time.Time,
+	stopOrders []*types.StopOrder,
+) {
+	evts := []events.Event{}
+	for _, v := range stopOrders {
+		v.UpdatedAt = updatedAt
+		v.Status = types.StopOrderStatusExpired
+		// nothing to do, can send the event now
+		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(evts)
+}
+
+func (m *Market) removeExpiredStopOrdersInContinuous(
+	ctx context.Context,
+	updatedAt time.Time,
+	stopOrders []*types.StopOrder,
+	idgen common.IDGenerator,
+) []*types.OrderConfirmation {
 	evts := []events.Event{}
 	filteredOCO := []*types.StopOrder{}
 	for _, v := range stopOrders {
-		if v.Expiry.Expires() && *v.Expiry.ExpiryStrategy == types.StopOrderExpiryStrategySubmit && len(v.OCOLinkID) <= 0 {
+		v.UpdatedAt = updatedAt
+		if v.Status == types.StopOrderStatusExpired && v.Expiry.Expires() && *v.Expiry.ExpiryStrategy == types.StopOrderExpiryStrategySubmit {
 			filteredOCO = append(filteredOCO, v)
 			continue
 		}
@@ -2539,7 +2701,7 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	mid := num.UintZero()
 	one := num.NewUint(1)
 	two := num.Sum(one, one)
-	one.Mul(one, m.priceFactor)
+	one, _ = num.UintFromDecimal(one.ToDecimal().Mul(m.priceFactor))
 	if side == types.SideBuy {
 		mid = mid.Div(num.Sum(bid, ask, one), two)
 	} else {
@@ -2596,7 +2758,17 @@ func (m *Market) canTrade() bool {
 // at this point no fees would have been collected or anything like this.
 func (m *Market) cleanupOnReject(ctx context.Context) {
 	m.stopAllLiquidityProvisionOnReject(ctx)
-	tresps, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset)
+
+	stopOrders := m.stopOrders.Settled()
+	evts := make([]events.Event, 0, len(stopOrders))
+	for _, o := range stopOrders {
+		evts = append(evts, events.NewStopOrderEvent(ctx, o))
+	}
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
+
+	tresps, err := m.collateral.ClearSpotMarket(ctx, m.GetID(), m.quoteAsset, m.getParties())
 	if err != nil {
 		m.log.Panic("unable to cleanup a rejected market",
 			logging.String("market-id", m.GetID()),
@@ -2779,7 +2951,8 @@ func (m *Market) processFeesReleaseOnLeaveAuction(ctx context.Context) {
 			if o.Side == types.SideBuy && o.PeggedOrder == nil {
 				transfer, err := m.orderHoldingTracker.ReleaseFeeFromHoldingAccount(ctx, o.ID, party, m.quoteAsset)
 				if err != nil {
-					m.log.Panic("failed to release fee from holding account at the end of an auction", logging.Order(o), logging.Error(err))
+					// it's valid, if fees for the order were zero, we don't update the holding account
+					// cache so it can be legitimately not there.
 					continue
 				}
 				transfers = append(transfers, transfer)
@@ -2810,13 +2983,9 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 		// release buyer's trade + fees quote quantity from the holding account
 		var transfer *types.LedgerMovement
 		var err error
-		if m.as.IsMonitorAuction() || m.as.IsOpeningAuction() {
-			// in auction the buyer and seller split the fees, but that just means that total they need to have in the holding account
-			// is still quantity + fees/2 because the other half of the fees (the seller half) is paid out of what is supposed to go to the seller
-			transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccountAuctionEnd(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
-		} else {
-			transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
-		}
+		// in auction the buyer and seller split the fees, but that just means that total they need to have in the holding account
+		// is still quantity + fees/2 because the other half of the fees (the seller half) is paid out of what is supposed to go to the seller
+		transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccountAuctionEnd(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
 
 		if err != nil {
 			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
@@ -2879,6 +3048,12 @@ func (m *Market) transferToHoldingAccount(ctx context.Context, order *types.Orde
 	if order.Side == types.SideSell {
 		asset = m.baseAsset
 	}
+
+	// verify that the party has sufficient funds in their general account to cover for this amount
+	if err := m.collateral.PartyHasSufficientBalance(asset, order.Party, num.Sum(amt, fees)); err != nil {
+		return err
+	}
+
 	transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, order.ID, order.Party, asset, amt, fees)
 	if err != nil {
 		m.log.Panic("failed to transfer funds to holding account for order", logging.Order(order), logging.Error(err))

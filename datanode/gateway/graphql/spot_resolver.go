@@ -40,7 +40,7 @@ func (r spotProductResolver) BaseAsset(ctx context.Context, obj *vega.SpotProduc
 }
 
 func (r spotProductResolver) QuoteAsset(ctx context.Context, obj *vega.SpotProduct) (*vega.Asset, error) {
-	return r.r.getAssetByID(ctx, obj.BaseAsset)
+	return r.r.getAssetByID(ctx, obj.QuoteAsset)
 }
 
 type updateSpotMarketResolver VegaResolverRoot
@@ -50,6 +50,14 @@ func (r updateSpotMarketResolver) UpdateSpotMarketConfiguration(ctx context.Cont
 }
 
 type updateSpotMarketConfigurationResolver VegaResolverRoot
+
+// Instrument implements UpdateSpotMarketConfigurationResolver.
+func (r *updateSpotMarketConfigurationResolver) Instrument(ctx context.Context, obj *types.UpdateSpotMarketConfiguration) (*UpdateSpotInstrumentConfiguration, error) {
+	return &UpdateSpotInstrumentConfiguration{
+		Name: obj.Instrument.Name,
+		Code: obj.Instrument.Code,
+	}, nil
+}
 
 func (r updateSpotMarketConfigurationResolver) PriceMonitoringParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*PriceMonitoringParameters, error) {
 	return PriceMonitoringParametersFromProto(obj.PriceMonitoringParameters)
@@ -65,9 +73,9 @@ func (r updateSpotMarketConfigurationResolver) TargetStakeParameters(ctx context
 func (r updateSpotMarketConfigurationResolver) RiskParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (RiskModel, error) {
 	switch model := obj.RiskParameters.(type) {
 	case *vega.UpdateSpotMarketConfiguration_Simple:
-		return model, nil
+		return model.Simple, nil
 	case *vega.UpdateSpotMarketConfiguration_LogNormal:
-		return model, nil
+		return model.LogNormal, nil
 	default:
 		return nil, errors.New("unknown risk model")
 	}
@@ -87,8 +95,8 @@ func (r newSpotMarketResolver) Instrument(ctx context.Context, obj *vega.NewSpot
 	return obj.Changes.Instrument, nil
 }
 
-func (r newSpotMarketResolver) DecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
-	return int(obj.Changes.DecimalPlaces), nil
+func (r newSpotMarketResolver) PriceDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
+	return int(obj.Changes.PriceDecimalPlaces), nil
 }
 
 func (r newSpotMarketResolver) Metadata(ctx context.Context, obj *vega.NewSpotMarket) ([]string, error) {
@@ -109,16 +117,16 @@ func (r newSpotMarketResolver) TargetStakeParameters(ctx context.Context, obj *v
 func (r newSpotMarketResolver) RiskParameters(ctx context.Context, obj *vega.NewSpotMarket) (RiskModel, error) {
 	switch model := obj.Changes.RiskParameters.(type) {
 	case *vega.NewSpotMarketConfiguration_Simple:
-		return model, nil
+		return model.Simple, nil
 	case *vega.NewSpotMarketConfiguration_LogNormal:
-		return model, nil
+		return model.LogNormal, nil
 	default:
 		return nil, errors.New("unknown risk model")
 	}
 }
 
-func (r newSpotMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
-	return int(obj.Changes.PositionDecimalPlaces), nil
+func (r newSpotMarketResolver) SizeDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error) {
+	return int(obj.Changes.SizeDecimalPlaces), nil
 }
 
 func (r newSpotMarketResolver) LiquiditySLAParams(ctx context.Context, obj *vega.NewSpotMarket) (*vega.LiquiditySLAParameters, error) {

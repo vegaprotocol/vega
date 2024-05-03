@@ -57,6 +57,7 @@ func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a duplicated proposal with internal time termination for new market fails", testSubmittingDuplicatedProposalWithInternalTimeTerminationForNewMarketFails)
 	t.Run("Submitting a proposal for new market with bad risk parameter fails", testSubmittingProposalForNewMarketWithBadRiskParameterFails)
 	t.Run("Submitting a proposal for new market with internal time termination with bad risk parameter fails", testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskParameterFails)
+	t.Run("Submitting a proposal for a ne market without disposal slippage range fails", testSubmittingProposalWithoutDisposalSlippageFails)
 
 	t.Run("Rejecting a proposal for new market succeeds", testRejectingProposalForNewMarketSucceeds)
 
@@ -64,6 +65,7 @@ func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Voting with a majority of 'yes' makes the new market proposal passed", testVotingWithMajorityOfYesMakesNewMarketProposalPassed)
 	t.Run("Voting with a majority of 'no' makes the new market proposal declined", testVotingWithMajorityOfNoMakesNewMarketProposalDeclined)
 	t.Run("Voting with insufficient participation makes the new market proposal declined", testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined)
+	t.Run("Invalid combination of decimals for market", testInvalidDecimalPlace)
 }
 
 func TestProposalForSuccessorMarket(t *testing.T) {
@@ -473,6 +475,7 @@ func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.
 							DisposalFraction:    num.DecimalFromFloat(0.1),
 							FullDisposalSize:    20,
 							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+							DisposalSlippage:    num.DecimalFromFloat(0.1),
 						},
 						TickSize: num.UintOne(),
 					},
@@ -554,6 +557,7 @@ func testSubmittingProposalWithEmptySettlingDataForNewMarketFails(t *testing.T) 
 							DisposalFraction:    num.DecimalFromFloat(0.1),
 							FullDisposalSize:    20,
 							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+							DisposalSlippage:    num.DecimalFromFloat(0.1),
 						},
 						TickSize: num.UintOne(),
 					},
@@ -644,6 +648,7 @@ func testSubmittingProposalWithEmptyTerminationDataForNewMarketFails(t *testing.
 							DisposalFraction:    num.DecimalFromFloat(0.1),
 							FullDisposalSize:    20,
 							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+							DisposalSlippage:    num.DecimalFromFloat(0.1),
 						},
 						TickSize: num.UintOne(),
 					},
@@ -759,6 +764,7 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 							DisposalFraction:    num.DecimalFromFloat(0.1),
 							FullDisposalSize:    20,
 							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+							DisposalSlippage:    num.DecimalFromFloat(0.1),
 						},
 						TickSize: num.UintOne(),
 					},
@@ -829,6 +835,7 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 							DisposalFraction:    num.DecimalFromFloat(0.1),
 							FullDisposalSize:    20,
 							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+							DisposalSlippage:    num.DecimalFromFloat(0.1),
 						},
 						TickSize: num.UintOne(),
 					},
@@ -964,6 +971,7 @@ func testSubmittingProposalWithInternalTimeTriggerTerminationFails(t *testing.T)
 							DisposalFraction:    num.DecimalFromFloat(0.1),
 							FullDisposalSize:    20,
 							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+							DisposalSlippage:    num.DecimalFromFloat(0.1),
 						},
 						TickSize: num.UintOne(),
 					},
@@ -1065,6 +1073,7 @@ func testSubmittingProposalWithInternalTimeTriggerSettlementFails(t *testing.T) 
 							DisposalFraction:    num.DecimalFromFloat(0.1),
 							FullDisposalSize:    20,
 							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+							DisposalSlippage:    num.DecimalFromFloat(0.1),
 						},
 						TickSize: num.UintOne(),
 					},
@@ -1223,6 +1232,31 @@ func testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskPar
 	// then
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid risk parameter")
+}
+
+func testSubmittingProposalWithoutDisposalSlippageFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	// given
+	party := eng.newValidParty("a-valid-party", 1)
+	eng.ensureAllAssetEnabled(t)
+
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
+	proposal.Terms.GetNewMarket().Changes.LiquidationStrategy = &types.LiquidationStrategy{
+		DisposalTimeStep:    time.Second * 10,
+		DisposalFraction:    num.DecimalFromFloat(0.2),
+		FullDisposalSize:    10,
+		MaxFractionConsumed: num.DecimalFromFloat(0.5),
+	}
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "liquidation strategy must specify a disposal slippage range > 0")
 }
 
 func testOutOfRangeRiskParamFail(t *testing.T, lnm *types.LogNormalRiskModel) {
@@ -1688,4 +1722,28 @@ func testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails(t *testing.
 	// then
 	require.EqualError(t, err, "time trigger starts in the past")
 	require.Nil(t, toSubmit)
+}
+
+func testInvalidDecimalPlace(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewPerpsMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
+
+	proposal.Terms.GetNewMarket().Changes.DecimalPlaces = 12
+	proposal.Terms.GetNewMarket().Changes.PositionDecimalPlaces = 7
+
+	// set the time differently to start e.g sometimes after the enactment ti
+	enactAt := proposal.Terms.EnactmentTimestamp
+	proposal.Terms.Change.(*types.ProposalTermsNewMarket).NewMarket.Changes.Instrument.Product.(*types.InstrumentConfigurationPerps).Perps.DataSourceSpecForSettlementSchedule.GetInternalTimeTriggerSpecConfiguration().Triggers[0].Initial = ptr.From(time.Unix(enactAt, 0).Add(60 * time.Minute))
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorTooManyMarketDecimalPlaces)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+	require.Equal(t, "market decimal + position decimals must be less than or equal to asset decimals", err.Error())
 }

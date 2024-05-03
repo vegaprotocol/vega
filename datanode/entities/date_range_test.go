@@ -41,7 +41,7 @@ func TestDateRange_Validate(t *testing.T) {
 				End:      nil,
 				Required: true,
 			},
-			Err: entities.ErrInvalidDateRange,
+			Err: entities.ErrDateRangeIsRequired,
 		},
 		{
 			name: "Should not error if not required and no dates provided",

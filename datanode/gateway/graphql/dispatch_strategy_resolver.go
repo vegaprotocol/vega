@@ -42,3 +42,10 @@ func (d *dispatchStrategyResolver) WindowLength(ctx context.Context, obj *vega.D
 func (d *dispatchStrategyResolver) LockPeriod(ctx context.Context, obj *vega.DispatchStrategy) (int, error) {
 	return int(obj.LockPeriod), nil
 }
+
+func (d *dispatchStrategyResolver) TransferInterval(ctx context.Context, obj *vega.DispatchStrategy) (int, error) {
+	if obj.TransferInterval == nil {
+		return 1, nil
+	}
+	return int(*obj.TransferInterval), nil
+}
