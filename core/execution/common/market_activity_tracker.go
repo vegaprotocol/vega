@@ -684,6 +684,10 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(ctx context.Context, a
 
 	ps := make(map[string][]*types.PartyContributionScore, len(teamScores))
 	for _, t := range teamKeys {
+		println("calculating metric for team", t, "with parties:")
+		for _, tp := range teams[t] {
+			println("team", t, "party", tp)
+		}
 		ts, teamMemberScores := mat.calculateMetricForTeam(ctx, asset, teams[t], marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, gameID)
 		if ts.IsZero() {
 			continue
