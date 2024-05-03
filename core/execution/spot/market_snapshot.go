@@ -226,6 +226,8 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 		HasTraded:                  m.hasTraded,
 		FeesStats:                  m.fee.GetState(quoteAssetQuantum),
 		MarketLiquidity:            m.liquidity.GetState(),
+		StopOrders:                 m.stopOrders.ToProto(),
+		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 	}
 
 	return em
