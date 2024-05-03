@@ -32,15 +32,12 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/vesting Collateral,ActivityStreakVestingMultiplier,Broker,Assets
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/vesting ActivityStreakVestingMultiplier,Assets
 
 type Collateral interface {
-	TransferVestedRewards(
-		ctx context.Context, transfers []*types.Transfer,
-	) ([]*types.LedgerMovement, error)
+	TransferVestedRewards(ctx context.Context, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
 	GetVestingRecovery() map[string]map[string]*num.Uint
-	GetAllVestingQuantumBalance(party string) *num.Uint
-	GetVestingAccounts() []*types.Account
+	GetAllVestingQuantumBalance(party string) num.Decimal
 }
 
 type ActivityStreakVestingMultiplier interface {
@@ -111,9 +108,7 @@ func (e *Engine) OnCheckpointLoaded() {
 	}
 }
 
-func (e *Engine) OnBenefitTiersUpdate(
-	_ context.Context, v interface{},
-) error {
+func (e *Engine) OnBenefitTiersUpdate(_ context.Context, v interface{}) error {
 	tiers, err := types.VestingBenefitTiersFromUntypedProto(v)
 	if err != nil {
 		return err
@@ -126,16 +121,12 @@ func (e *Engine) OnBenefitTiersUpdate(
 	return nil
 }
 
-func (e *Engine) OnRewardVestingBaseRateUpdate(
-	_ context.Context, baseRate num.Decimal,
-) error {
+func (e *Engine) OnRewardVestingBaseRateUpdate(_ context.Context, baseRate num.Decimal) error {
 	e.baseRate = baseRate
 	return nil
 }
 
-func (e *Engine) OnRewardVestingMinimumTransferUpdate(
-	_ context.Context, minimumTransfer num.Decimal,
-) error {
+func (e *Engine) OnRewardVestingMinimumTransferUpdate(_ context.Context, minimumTransfer num.Decimal) error {
 	e.minTransfer = minimumTransfer
 	return nil
 }
@@ -145,12 +136,12 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		e.broadcastRewardBonusMultipliers(ctx, epoch.Seq)
 		e.moveLocked()
 		e.distributeVested(ctx)
-		e.clearup()
+		e.clearState()
 		e.broadcastSummary(ctx, epoch.Seq)
 	}
 }
 
-func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+func (e *Engine) OnEpochRestore(_ context.Context, epoch types.Epoch) {
 	e.epochSeq = epoch.Seq
 }
 
@@ -161,24 +152,20 @@ func (e *Engine) AddReward(
 ) {
 	// no locktime, just increase the amount in vesting
 	if lockedForEpochs == 0 {
-		e.increaseVestingBalance(
-			party, asset, amount,
-		)
+		e.increaseVestingBalance(party, asset, amount)
 		return
 	}
 
-	e.increaseLockedForAsset(
-		party, asset, amount, lockedForEpochs,
-	)
+	e.increaseLockedForAsset(party, asset, amount, lockedForEpochs)
 }
 
-func (e *Engine) GetRewardBonusMultiplier(party string) (*num.Uint, num.Decimal) {
+func (e *Engine) GetRewardBonusMultiplier(party string) (num.Decimal, num.Decimal) {
 	quantumBalance := e.c.GetAllVestingQuantumBalance(party)
 
 	multiplier := num.DecimalOne()
 
 	for _, b := range e.benefitTiers {
-		if quantumBalance.LT(b.MinimumQuantumBalance) {
+		if quantumBalance.LessThan(num.DecimalFromUint(b.MinimumQuantumBalance)) {
 			break
 		}
 
@@ -234,7 +221,7 @@ func (e *Engine) increaseVestingBalance(
 	partyRewards.Vesting[asset] = vesting
 }
 
-// checkLocked will move around locked funds.
+// moveLocked will move around locked funds.
 // if the lock for epoch reach 0, the full amount
 // is added to the vesting amount for the asset.
 func (e *Engine) moveLocked() {
@@ -272,9 +259,7 @@ func (e *Engine) distributeVested(ctx context.Context) {
 		sort.Strings(assets)
 		for _, asset := range assets {
 			balance := rewards.Vesting[asset]
-			transfer := e.makeTransfer(
-				party, asset, balance.Clone(),
-			)
+			transfer := e.makeTransfer(party, asset, balance.Clone())
 
 			// we are clearing the account,
 			// we can delete it.
@@ -289,7 +274,7 @@ func (e *Engine) distributeVested(ctx context.Context) {
 	}
 
 	// nothing to be done
-	if len(transfers) <= 0 {
+	if len(transfers) == 0 {
 		return
 	}
 
@@ -344,9 +329,9 @@ func (e *Engine) makeTransfer(
 }
 
 // just remove party entries once they are not needed anymore.
-func (e *Engine) clearup() {
+func (e *Engine) clearState() {
 	for party, v := range e.state {
-		if len(v.Locked) <= 0 && len(v.Vesting) <= 0 {
+		if len(v.Locked) == 0 && len(v.Vesting) == 0 {
 			delete(e.state, party)
 		}
 	}
@@ -357,12 +342,6 @@ func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
 		EpochSeq:              seq,
 		PartiesVestingSummary: []*eventspb.PartyVestingSummary{},
 	}
-
-	parties := make([]string, 0, len(e.state))
-	for k := range e.state {
-		parties = append(parties, k)
-	}
-	sort.Strings(parties)
 
 	for p, pRewards := range e.state {
 		pSummary := &eventspb.PartyVestingSummary{
@@ -427,6 +406,8 @@ func (e *Engine) broadcastRewardBonusMultipliers(ctx context.Context, seq uint64
 
 	for _, party := range parties {
 		quantumBalance, multiplier := e.GetRewardBonusMultiplier(party)
+		// To avoid excessively large decimals.
+		quantumBalance.Round(2)
 		evt.Stats = append(evt.Stats, &eventspb.PartyVestingStats{
 			PartyId:               party,
 			RewardBonusMultiplier: multiplier.String(),
