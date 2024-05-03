@@ -30,6 +30,10 @@ func calculateRewardsByScores(rewardBalance num.Decimal, partyScores []*types.Pa
 	if cap.IsZero() {
 		remainingRounds = 1
 	}
+	for _, ps := range partyScores {
+		println("reward score", ps.Party, ps.Score.String())
+	}
+
 	for {
 		totalPerRound := num.UintZero()
 		for _, p := range partyScores {
@@ -159,5 +163,6 @@ func calcPartyInTeamRewardShare(teamScore *types.PartyContributionScore, partyTo
 	for _, pcs := range ps {
 		pcs.Score = pcs.Score.Mul(teamScore.Score).Div(totalScores)
 	}
+
 	return ps
 }

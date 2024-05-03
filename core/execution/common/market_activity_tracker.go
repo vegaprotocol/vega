@@ -692,6 +692,18 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(ctx context.Context, a
 		ps[t] = teamMemberScores
 	}
 
+	println("calculateMetricForTeams ======>", metric.String())
+	for _, team := range teamScores {
+		println("team", team.Party, "score", team.Score.String())
+	}
+
+	println("party scores for teams ======>")
+	for team, partyScores := range ps {
+		for _, score := range partyScores {
+			println("team", team, "party", score.Party, "score", score.Score.String())
+		}
+	}
+
 	return teamScores, ps
 }
 
