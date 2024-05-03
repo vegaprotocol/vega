@@ -174,6 +174,7 @@ const (
 	CancelledOrdersEvent
 	GameScoresEvent
 	AMMPoolEvent
+	MarketCommunityTagsEvent
 )
 
 var (
@@ -277,6 +278,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS:                        CancelledOrdersEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_GAME_SCORES:                             GameScoresEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_AMM:                                     AMMPoolEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_COMMUNITY_TAG:                    MarketCommunityTagsEvent,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -371,6 +373,7 @@ var (
 		CancelledOrdersEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS,
 		GameScoresEvent:                          eventspb.BusEventType_BUS_EVENT_TYPE_GAME_SCORES,
 		AMMPoolEvent:                             eventspb.BusEventType_BUS_EVENT_TYPE_AMM,
+		MarketCommunityTagsEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_COMMUNITY_TAG,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -464,6 +467,7 @@ var (
 		CancelledOrdersEvent:                     "CancelledOrdersEvent",
 		GameScoresEvent:                          "GameScoresEvent",
 		AMMPoolEvent:                             "AMMPoolEvent",
+		MarketCommunityTagsEvent:                 "MarketCommunityTagsEvent",
 	}
 )
 

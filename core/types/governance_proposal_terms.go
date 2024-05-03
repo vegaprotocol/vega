@@ -86,6 +86,24 @@ func (p *ProposalTerms) IsVolumeDiscountProgramUpdate() bool {
 	}
 }
 
+func (p *ProposalTerms) IsUpdateMarketCommunityTags() bool {
+	switch p.Change.(type) {
+	case *ProposalTermsUpdateMarketCommunityTags:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *ProposalTerms) UpdateMarketCommunityTags() *UpdateMarketCommunityTags {
+	switch terms := p.Change.(type) {
+	case *ProposalTermsUpdateMarketCommunityTags:
+		return terms.UpdateMarketCommunityTags
+	default:
+		return nil
+	}
+}
+
 func (p *ProposalTerms) MarketUpdate() *UpdateMarket {
 	switch terms := p.Change.(type) {
 	case *ProposalTermsUpdateMarket:
@@ -171,6 +189,8 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		terms.Change = ch
 	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
 		terms.Change = ch
+	case *vegapb.ProposalTerms_UpdateMarketCommunityTags:
+		terms.Change = ch
 	}
 
 	return terms
@@ -250,6 +270,15 @@ func (p *ProposalTerms) GetUpdateMarket() *UpdateMarket {
 	switch c := p.Change.(type) {
 	case *ProposalTermsUpdateMarket:
 		return c.UpdateMarket
+	default:
+		return nil
+	}
+}
+
+func (p *ProposalTerms) GetUpdateMarketCommunityTags() *UpdateMarketCommunityTags {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateMarketCommunityTags:
+		return c.UpdateMarketCommunityTags
 	default:
 		return nil
 	}
@@ -341,6 +370,8 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 		change, err = NewUpdateReferralProgramProposalFromProto(ch.UpdateReferralProgram)
 	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
 		change, err = NewUpdateVolumeDiscountProgramProposalFromProto(ch.UpdateVolumeDiscountProgram)
+	case *vegapb.ProposalTerms_UpdateMarketCommunityTags:
+		change = NewUpdateMarketCommunityTagsFromProto(ch.UpdateMarketCommunityTags)
 	}
 	if err != nil {
 		return nil, err

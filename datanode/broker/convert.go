@@ -200,6 +200,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.GameScoresEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_AMM:
 		return events.AMMPoolEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_COMMUNITY_TAG:
+		return events.MarketCommunityTagsEventFromStream(ctx, be)
 	}
 
 	return nil

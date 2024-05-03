@@ -13,6 +13,14 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+// A list of tag to associate to a market.
+message MarketCommunityTags {
+  // A market ID.
+  string market_id = 1;
+  // A list of tags;
+  repeated string tags = 2;
+}
+
 // Time weighted notional position update for the current epoch.
 // The time weighted notional position is used to determine whether
 // a party is eligible for receiving rewards at the end of an epoch.
@@ -1481,6 +1489,9 @@ enum BusEventType {
   // Event use to notify for an AMM update.
   BUS_EVENT_TYPE_AMM = 91;
 
+  // Event containing market community tags.
+  BUS_EVENT_TYPE_MARKET_COMMUNITY_TAG = 92;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1672,6 +1683,8 @@ message BusEvent {
     GameScores game_scores = 188;
     // Event notifying of AMM updates.
     AMM amm = 189;
+    // Event notifying of a Market community tags update.
+    MarketCommunityTags market_community_tags = 190;
 
     // Market tick events
     MarketEvent market = 1001;
