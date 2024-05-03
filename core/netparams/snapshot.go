@@ -167,6 +167,10 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 				}
 			}
 		}
+
+		if err := s.UpdateOptionalValidation(ctx, SpotMarketTradingEnabled, "1", false, false); err != nil {
+			return nil, err
+		}
 	}
 
 	// Now they have been loaded, dispatch the changes so that the other engines pick them up

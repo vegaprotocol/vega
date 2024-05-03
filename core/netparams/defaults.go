@@ -68,7 +68,7 @@ var (
 func defaultNetParams() map[string]value {
 	m := map[string]value{
 		// spots
-		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("1"),
 
 		// perps
 		PerpsMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
