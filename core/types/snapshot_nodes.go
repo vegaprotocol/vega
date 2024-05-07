@@ -2901,6 +2901,7 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 		AuctionState:               AuctionStateFromProto(em.AuctionState),
 		PeggedOrders:               PeggedOrdersStateFromProto(em.PeggedOrders),
 		ExpiringOrders:             make([]*Order, 0, len(em.ExpiringOrders)),
+		ExpiringStopOrders:         make([]*Order, 0, len(em.ExpiringStopOrders)),
 		LastEquityShareDistributed: em.LastEquityShareDistributed,
 		EquityShare:                EquityShareFromProto(em.EquityShare),
 		LastBestAsk:                lastBA,
@@ -2924,7 +2925,7 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, or)
 	}
 	for _, o := range em.ExpiringStopOrders {
-		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
+		ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
 	}
 	return &ret
 }
@@ -2936,6 +2937,7 @@ func (e ExecSpotMarket) IntoProto() *snapshot.SpotMarket {
 		AuctionState:               e.AuctionState.IntoProto(),
 		PeggedOrders:               e.PeggedOrders.IntoProto(),
 		ExpiringOrders:             make([]*vega.Order, 0, len(e.ExpiringOrders)),
+		ExpiringStopOrders:         make([]*vega.Order, 0, len(e.ExpiringStopOrders)),
 		LastEquityShareDistributed: e.LastEquityShareDistributed,
 		EquityShare:                e.EquityShare.IntoProto(),
 		LastBestAsk:                e.LastBestAsk.String(),
@@ -2962,7 +2964,7 @@ func (e ExecSpotMarket) IntoProto() *snapshot.SpotMarket {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
 	}
 	for _, o := range e.ExpiringStopOrders {
-		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &vega.Order{Id: o.ID, ExpiresAt: o.ExpiresAt})
+		ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &vega.Order{Id: o.ID, ExpiresAt: o.ExpiresAt})
 	}
 	return &ret
 }
