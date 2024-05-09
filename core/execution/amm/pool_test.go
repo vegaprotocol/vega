@@ -34,6 +34,7 @@ func TestAMMPool(t *testing.T) {
 	t.Run("test best price", testBestPrice)
 	t.Run("test pool logic with position factor", testPoolPositionFactor)
 	t.Run("test one sided pool", testOneSidedPool)
+	t.Run("test near zero volume curve triggers and error", testNearZeroCurveErrors)
 }
 
 func testTradeableVolumeInRange(t *testing.T) {
@@ -212,6 +213,88 @@ func testOneSidedPool(t *testing.T) {
 	assert.Panics(t, func() { p.pool.BestPrice(nil) })
 }
 
+func testNearZeroCurveErrors(t *testing.T) {
+	baseCmd := types.AMMBaseCommand{
+		Party:             vgcrypto.RandomHash(),
+		MarketID:          vgcrypto.RandomHash(),
+		SlippageTolerance: num.DecimalFromFloat(0.1),
+	}
+
+	submit := &types.SubmitAMM{
+		AMMBaseCommand:   baseCmd,
+		CommitmentAmount: num.NewUint(1000),
+		Parameters: &types.ConcentratedLiquidityParameters{
+			Base:                 num.NewUint(1900),
+			LowerBound:           num.NewUint(1800),
+			UpperBound:           num.NewUint(2000),
+			LeverageAtLowerBound: ptr.From(num.DecimalFromFloat(50)),
+			LeverageAtUpperBound: ptr.From(num.DecimalFromFloat(50)),
+		},
+	}
+
+	// test that creating a pool with a near zero volume curve will error
+	pool, err := newBasicPoolWithSubmit(t, submit)
+	assert.Nil(t, pool)
+	assert.ErrorContains(t, err, "insufficient volume in the lower curve from high price - 1 to the end")
+
+	// test that a pool with higher commitment amount will not error
+	submit.CommitmentAmount = num.NewUint(100000)
+	pool, err = newBasicPoolWithSubmit(t, submit)
+	assert.NotNil(t, pool)
+	assert.NoError(t, err)
+
+	// test that amending a pool to a near zero volume curve will error
+	amend := &types.AmendAMM{
+		AMMBaseCommand:   baseCmd,
+		CommitmentAmount: num.NewUint(100),
+	}
+
+	_, err = pool.Update(
+		amend,
+		&types.RiskFactor{Short: num.DecimalFromFloat(0.02), Long: num.DecimalFromFloat(0.02)},
+		&types.ScalingFactors{InitialMargin: num.DecimalFromFloat(1.25)},
+		num.DecimalZero(),
+	)
+	assert.ErrorContains(t, err, "insufficient volume in the lower curve from high price - 1 to the end")
+
+	amend.CommitmentAmount = num.NewUint(1000000)
+	_, err = pool.Update(
+		amend,
+		&types.RiskFactor{Short: num.DecimalFromFloat(0.02), Long: num.DecimalFromFloat(0.02)},
+		&types.ScalingFactors{InitialMargin: num.DecimalFromFloat(1.25)},
+		num.DecimalZero(),
+	)
+	assert.NoError(t, err)
+}
+
+func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error) {
+	ctrl := gomock.NewController(t)
+	col := mocks.NewMockCollateral(ctrl)
+	pos := mocks.NewMockPosition(ctrl)
+
+	sqrter := &Sqrter{cache: map[string]num.Decimal{}}
+
+	return NewPool(
+		vgcrypto.RandomHash(),
+		vgcrypto.RandomHash(),
+		vgcrypto.RandomHash(),
+		submit,
+		sqrter.sqrt,
+		col,
+		pos,
+		&types.RiskFactor{
+			Short: num.DecimalFromFloat(0.02),
+			Long:  num.DecimalFromFloat(0.02),
+		},
+		&types.ScalingFactors{
+			InitialMargin: num.DecimalFromFloat(1.25), // this is 1/0.8 which is margin_usage_at_bound_above in the note-book
+		},
+		num.DecimalZero(),
+		num.DecimalOne(),
+		num.DecimalOne(),
+	)
+}
+
 func ensurePositionN(t *testing.T, p *mocks.MockPosition, pos int64, averageEntry *num.Uint, times int) {
 	t.Helper()
 
@@ -346,7 +429,7 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 		},
 	}
 
-	pool := NewPool(
+	pool, err := NewPool(
 		vgcrypto.RandomHash(),
 		vgcrypto.RandomHash(),
 		vgcrypto.RandomHash(),
@@ -365,6 +448,7 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 		num.DecimalOne(),
 		positionFactor,
 	)
+	assert.NoError(t, err)
 
 	return &tstPool{
 		pool: pool,
