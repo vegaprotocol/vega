@@ -101,7 +101,7 @@
 - [11205](https://github.com/vegaprotocol/vega/issues/11205) - Evaluate transfer interval correctly.
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Add transfer ID to recurring governance transfer ledger entries.
 - [11221](https://github.com/vegaprotocol/vega/issues/11221) - Fix for `totalRewardsEarned` being twice the `rewardEarned`.
-
+- [11250](https://github.com/vegaprotocol/vega/issues/11250) - Add missing dispatch strategy in transfer proposal.
 
 ## 0.75.0
 
