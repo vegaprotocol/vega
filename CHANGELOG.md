@@ -70,6 +70,7 @@
 - [10950](https://github.com/vegaprotocol/vega/issues/10950) - Fix bug that caused cancelled liquidity provisions to stick around after opening auction.
 - [10975](https://github.com/vegaprotocol/vega/issues/10975) - Fix marshaller for stop order rejection error.
 - [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state.
+- [11252](https://github.com/vegaprotocol/vega/issues/11252) - Treat no position as zero position when calculating stop order overrides.
 - [10969](https://github.com/vegaprotocol/vega/issues/10969) - Ensure teams statistics are computed from team rewards.
 - [10962](https://github.com/vegaprotocol/vega/issues/10962) - Fix `lastFeeDistribution` time in snapshot.
 - [10974](https://github.com/vegaprotocol/vega/issues/10974) - Target stake for spot should not consider position factor.

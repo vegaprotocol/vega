@@ -4145,10 +4145,13 @@ func (m *Market) submitStopOrders(
 		if v.Status == status {
 			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
 				// Update the order size to match that of the party's position
-				pos, _ := m.position.GetPositionByPartyID(v.Party)
+				var pos int64
+				if position, ok := m.position.GetPositionByPartyID(v.Party); ok {
+					pos = position.Size()
+				}
 
 				// Scale this size if required
-				scaledPos := num.DecimalFromInt64(pos.Size())
+				scaledPos := num.DecimalFromInt64(pos)
 				if v.SizeOverrideValue != nil {
 					scaledPos = scaledPos.Mul(v.SizeOverrideValue.PercentageSize)
 					scaledPos = scaledPos.Round(0)
