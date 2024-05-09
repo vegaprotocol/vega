@@ -4733,6 +4733,11 @@ func (m *Market) canTrade() bool {
 func (m *Market) cleanupOnReject(ctx context.Context) {
 	m.tradableInstrument.Instrument.Unsubscribe(ctx)
 
+	m.markPriceCalculator.Close(ctx)
+	if m.internalCompositePriceCalculator != nil {
+		m.internalCompositePriceCalculator.Close(ctx)
+	}
+
 	// get the list of all parties in this market
 	parties := make([]string, 0, len(m.parties))
 	for k := range m.parties {
