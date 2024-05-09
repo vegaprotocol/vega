@@ -19,6 +19,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.76.1
+
+### 🐛 Fixes
+
+- [11250](https://github.com/vegaprotocol/vega/issues/11250) - Add missing dispatch strategy in transfer proposal.
+- [11252](https://github.com/vegaprotocol/vega/issues/11252) - Treat no position as zero position when calculating stop order overrides.
+- [11249](https://github.com/vegaprotocol/vega/issues/11249) - Composite mark price oracles are now deactivated when a market is rejected.
+
+
 ## 0.76.0
 
 ### 🚨 Breaking changes
@@ -99,7 +108,6 @@
 - [11205](https://github.com/vegaprotocol/vega/issues/11205) - Evaluate transfer interval correctly.
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Add transfer ID to recurring governance transfer ledger entries.
 - [11221](https://github.com/vegaprotocol/vega/issues/11221) - Fix for `totalRewardsEarned` being twice the `rewardEarned`.
-
 
 ## 0.75.0
 
