@@ -62,6 +62,7 @@
 - [11000](https://github.com/vegaprotocol/vega/issues/11000) - Vesting summary events are now sorted properly before sending.
 - [11065](https://github.com/vegaprotocol/vega/issues/11065) - `SLA` commitment state is reset properly at the end of an epoch
 - [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
+- [11249](https://github.com/vegaprotocol/vega/issues/11249) - Composite mark price oracles are now deactivated when a market is rejected.
 - [10970](https://github.com/vegaprotocol/vega/issues/10970) - Logic for whether a team member joined more than `rewards.team.minEpochsInTeam` is fixed.
 - [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
 - [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
