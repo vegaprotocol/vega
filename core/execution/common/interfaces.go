@@ -59,7 +59,7 @@ type PriceMonitor interface {
 	Changed() bool
 	IsBoundFactorsInitialised() bool
 	Initialised() bool
-	UpdateSettings(risk.Model, *types.PriceMonitoringSettings)
+	UpdateSettings(risk.Model, *types.PriceMonitoringSettings, price.AuctionState)
 }
 
 // TimeService ...
