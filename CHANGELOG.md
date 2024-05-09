@@ -19,6 +19,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.76.1
+
+### 🐛 Fixes
+
+- [11250](https://github.com/vegaprotocol/vega/issues/11250) - Add missing dispatch strategy in transfer proposal.
+- [11252](https://github.com/vegaprotocol/vega/issues/11252) - Treat no position as zero position when calculating stop order overrides.
+- [11249](https://github.com/vegaprotocol/vega/issues/11249) - Composite mark price oracles are now deactivated when a market is rejected.
+
+
 ## 0.76.0
 
 ### 🚨 Breaking changes
@@ -62,7 +71,6 @@
 - [11000](https://github.com/vegaprotocol/vega/issues/11000) - Vesting summary events are now sorted properly before sending.
 - [11065](https://github.com/vegaprotocol/vega/issues/11065) - `SLA` commitment state is reset properly at the end of an epoch
 - [10960](https://github.com/vegaprotocol/vega/issues/10960) - Only the owner of a referral set can update it.
-- [11249](https://github.com/vegaprotocol/vega/issues/11249) - Composite mark price oracles are now deactivated when a market is rejected.
 - [10970](https://github.com/vegaprotocol/vega/issues/10970) - Logic for whether a team member joined more than `rewards.team.minEpochsInTeam` is fixed.
 - [10943](https://github.com/vegaprotocol/vega/issues/10943) - Fix error message format when node vote is sent again.
 - [10928](https://github.com/vegaprotocol/vega/issues/10928) - Fix `collateralIncreaseEstimate` for limit orders in isolated margin mode
@@ -70,7 +78,6 @@
 - [10950](https://github.com/vegaprotocol/vega/issues/10950) - Fix bug that caused cancelled liquidity provisions to stick around after opening auction.
 - [10975](https://github.com/vegaprotocol/vega/issues/10975) - Fix marshaller for stop order rejection error.
 - [10973](https://github.com/vegaprotocol/vega/issues/10973) - Avoid entering an auction or doing mark-to-market before market entered opening auction or after it is in a terminal state.
-- [11252](https://github.com/vegaprotocol/vega/issues/11252) - Treat no position as zero position when calculating stop order overrides.
 - [10969](https://github.com/vegaprotocol/vega/issues/10969) - Ensure teams statistics are computed from team rewards.
 - [10962](https://github.com/vegaprotocol/vega/issues/10962) - Fix `lastFeeDistribution` time in snapshot.
 - [10974](https://github.com/vegaprotocol/vega/issues/10974) - Target stake for spot should not consider position factor.
@@ -101,7 +108,6 @@
 - [11205](https://github.com/vegaprotocol/vega/issues/11205) - Evaluate transfer interval correctly.
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Add transfer ID to recurring governance transfer ledger entries.
 - [11221](https://github.com/vegaprotocol/vega/issues/11221) - Fix for `totalRewardsEarned` being twice the `rewardEarned`.
-- [11250](https://github.com/vegaprotocol/vega/issues/11250) - Add missing dispatch strategy in transfer proposal.
 
 ## 0.75.0
 
