@@ -79,8 +79,9 @@ func (r *newTransferResolver) Kind(ctx context.Context, obj *vega.NewTransfer) (
 	case *vega.NewTransferConfiguration_Recurring:
 		govTransfer := obj.Changes.GetRecurring()
 		evtTransfer := &eventspb.RecurringGovernanceTransfer{
-			StartEpoch: govTransfer.StartEpoch,
-			EndEpoch:   govTransfer.EndEpoch,
+			StartEpoch:       govTransfer.StartEpoch,
+			EndEpoch:         govTransfer.EndEpoch,
+			DispatchStrategy: govTransfer.DispatchStrategy,
 		}
 		return evtTransfer, nil
 	default:
