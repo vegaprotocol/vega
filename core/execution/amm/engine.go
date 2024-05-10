@@ -656,7 +656,7 @@ func (e *Engine) SubmitAMM(
 
 		return err
 	}
-	pool := NewPool(
+	pool, err := NewPool(
 		poolID,
 		subAccount,
 		e.market.GetSettlementAsset(),
@@ -670,6 +670,17 @@ func (e *Engine) SubmitAMM(
 		e.priceFactor,
 		e.positionFactor,
 	)
+	if err != nil {
+		e.broker.Send(
+			events.NewAMMPoolEvent(
+				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
+				submit.CommitmentAmount, submit.Parameters,
+				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCommitmentTooLow, // TODO Karel - check if this error is ok to return
+			),
+		)
+
+		return err
+	}
 
 	if targetPrice != nil {
 		if err := e.rebasePool(ctx, pool, targetPrice, submit.SlippageTolerance, idgen); err != nil {
@@ -720,7 +731,11 @@ func (e *Engine) AmendAMM(
 
 	oldCommitment := pool.Commitment.Clone()
 	fairPrice := pool.BestPrice(nil)
-	oldParams := pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+	oldParams, err := pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+	if err != nil {
+		return err
+	}
+
 	if err := e.rebasePool(ctx, pool, fairPrice, amend.SlippageTolerance, idgeneration.New(deterministicID)); err != nil {
 		// couldn't rebase the pool back to its original fair price so the amend is rejected
 		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, oldCommitment); err != nil {
@@ -729,7 +744,9 @@ func (e *Engine) AmendAMM(
 		// restore updated parameters
 		pool.Parameters = oldParams
 		// restore curves
-		pool.setCurves(e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+		if err := pool.setCurves(e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage()); err != nil {
+			e.log.Panic("could not restore curves after failed rebase", logging.Error(err))
+		}
 
 		return err
 	}

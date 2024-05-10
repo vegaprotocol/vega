@@ -108,7 +108,7 @@ func NewPool(
 	linearSlippage num.Decimal,
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
-) *Pool {
+) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(priceFactor))
 	pool := &Pool{
 		ID:             id,
@@ -127,8 +127,11 @@ func NewPool(
 		oneTick:        oneTick,
 		status:         types.AMMPoolStatusActive,
 	}
-	pool.setCurves(rf, sf, linearSlippage)
-	return pool
+	err := pool.setCurves(rf, sf, linearSlippage)
+	if err != nil {
+		return nil, err
+	}
+	return pool, nil
 }
 
 func NewPoolFromProto(
@@ -267,7 +270,7 @@ func (p *Pool) Update(
 	rf *types.RiskFactor,
 	sf *types.ScalingFactors,
 	linearSlippage num.Decimal,
-) *types.ConcentratedLiquidityParameters {
+) (*types.ConcentratedLiquidityParameters, error) {
 	if amend.CommitmentAmount != nil {
 		p.Commitment = amend.CommitmentAmount
 	}
@@ -276,8 +279,10 @@ func (p *Pool) Update(
 	}
 	oldParams := p.Parameters.Clone()
 	p.Parameters.ApplyUpdate(amend.Parameters)
-	p.setCurves(rf, sf, linearSlippage)
-	return oldParams
+	if err := p.setCurves(rf, sf, linearSlippage); err != nil {
+		return oldParams, err
+	}
+	return oldParams, nil
 }
 
 // emptyCurve creates the curve details that represent no liquidity.
@@ -375,7 +380,7 @@ func (p *Pool) setCurves(
 	rfs *types.RiskFactor,
 	sfs *types.ScalingFactors,
 	linearSlippage num.Decimal,
-) {
+) error {
 	// convert the bounds into asset precision
 	base, _ := num.UintFromDecimal(p.Parameters.Base.ToDecimal().Mul(p.priceFactor))
 	p.lower = emptyCurve(base)
@@ -395,6 +400,12 @@ func (p *Pool) setCurves(
 			p.positionFactor,
 			true,
 		)
+
+		highPriceMinusOne := num.UintZero().Sub(p.lower.high, p.oneTick)
+		// verify that the lower curve maintains sufficient volume from highPrice - 1 to the end of the curve.
+		if p.lower.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.lower.high) < 1 {
+			return fmt.Errorf("insufficient volume in the lower curve from high price - 1 to the end")
+		}
 	}
 
 	if p.Parameters.UpperBound != nil {
@@ -411,7 +422,15 @@ func (p *Pool) setCurves(
 			p.positionFactor,
 			false,
 		)
+
+		highPriceMinusOne := num.UintZero().Sub(p.upper.high, p.oneTick)
+		// verify that the upper curve maintains sufficient volume from highPrice - 1 to the end of the curve.
+		if p.upper.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.upper.high) < 1 {
+			return fmt.Errorf("insufficient volume in the lower curve from high price - 1 to the end")
+		}
 	}
+
+	return nil
 }
 
 // impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
