@@ -96,8 +96,7 @@ func (e *SnapshotEngine) loadStateFromSnapshot(_ context.Context, state *snapsho
 					e.log.Panic("uint256 in snapshot underflow",
 						logging.String("value", epochBalance.Balance))
 				}
-				e.increaseLockedForAsset(
-					entry.Party, locked.Asset, balance, epochBalance.Epoch)
+				e.increaseLockedForAsset(entry.Party, locked.Asset, balance, epochBalance.Epoch)
 			}
 		}
 	}

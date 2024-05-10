@@ -148,6 +148,9 @@ func TestDistributeAfterDelay(t *testing.T) {
 
 	t.Run("First reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -156,19 +159,11 @@ func TestDistributeAfterDelay(t *testing.T) {
 				Stats: []*eventspb.PartyVestingStats{
 					{
 						PartyId:               party,
-						RewardBonusMultiplier: "1",
-						QuantumBalance:        "300",
+						RewardBonusMultiplier: "2",
+						QuantumBalance:        "390",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -199,6 +194,9 @@ func TestDistributeAfterDelay(t *testing.T) {
 
 	t.Run("Second reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -208,18 +206,10 @@ func TestDistributeAfterDelay(t *testing.T) {
 					{
 						PartyId:               party,
 						RewardBonusMultiplier: "2",
-						QuantumBalance:        "390",
+						QuantumBalance:        "400",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -337,6 +327,9 @@ func TestDistributeWithNoDelay(t *testing.T) {
 
 	t.Run("First reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -345,19 +338,11 @@ func TestDistributeWithNoDelay(t *testing.T) {
 				Stats: []*eventspb.PartyVestingStats{
 					{
 						PartyId:               party,
-						RewardBonusMultiplier: "1",
-						QuantumBalance:        "300",
+						RewardBonusMultiplier: "2",
+						QuantumBalance:        "390",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -388,6 +373,9 @@ func TestDistributeWithNoDelay(t *testing.T) {
 
 	t.Run("Second reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -397,18 +385,10 @@ func TestDistributeWithNoDelay(t *testing.T) {
 					{
 						PartyId:               party,
 						RewardBonusMultiplier: "2",
-						QuantumBalance:        "390",
+						QuantumBalance:        "400",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -523,6 +503,9 @@ func TestDistributeWithStreakRate(t *testing.T) {
 
 	t.Run("First reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -531,19 +514,11 @@ func TestDistributeWithStreakRate(t *testing.T) {
 				Stats: []*eventspb.PartyVestingStats{
 					{
 						PartyId:               party,
-						RewardBonusMultiplier: "1",
-						QuantumBalance:        "300",
+						RewardBonusMultiplier: "2",
+						QuantumBalance:        "399",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -574,6 +549,9 @@ func TestDistributeWithStreakRate(t *testing.T) {
 
 	t.Run("Second reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -583,18 +561,10 @@ func TestDistributeWithStreakRate(t *testing.T) {
 					{
 						PartyId:               party,
 						RewardBonusMultiplier: "2",
-						QuantumBalance:        "399",
+						QuantumBalance:        "400",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -763,6 +733,9 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 
 	t.Run("First reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -771,19 +744,11 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 				Stats: []*eventspb.PartyVestingStats{
 					{
 						PartyId:               party,
-						RewardBonusMultiplier: "1",
-						QuantumBalance:        "300",
+						RewardBonusMultiplier: "2",
+						QuantumBalance:        "390",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -820,6 +785,9 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 
 	t.Run("Second reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -829,18 +797,10 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 					{
 						PartyId:               party,
 						RewardBonusMultiplier: "2",
-						QuantumBalance:        "390",
+						QuantumBalance:        "489",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -871,6 +831,9 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 
 	t.Run("Third reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -880,18 +843,10 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 					{
 						PartyId:               party,
 						RewardBonusMultiplier: "2",
-						QuantumBalance:        "489",
+						QuantumBalance:        "499",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -922,6 +877,9 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 
 	t.Run("Fourth reward payment", func(t *testing.T) {
 		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 			e, ok := evt.(*events.VestingStatsUpdated)
 			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
@@ -930,19 +888,11 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 				Stats: []*eventspb.PartyVestingStats{
 					{
 						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "499",
+						RewardBonusMultiplier: "3",
+						QuantumBalance:        "500",
 					},
 				},
 			}, e.Proto())
-		}).Times(1)
-
-		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-			e, ok := evt.(*events.LedgerMovements)
-			require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
-			// LedgerMovements is the result of a mock, so it doesn't really make sense to verify data
-			// consistency.
-			assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
 		}).Times(1)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -985,4 +935,16 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 			Action: vegapb.EpochAction_EPOCH_ACTION_END,
 		})
 	})
+}
+
+// LedgerMovements is the result of a mock, so it doesn't really make sense to
+// verify data consistency.
+func expectLedgerMovements(t *testing.T, v *testEngine) {
+	t.Helper()
+
+	v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+		e, ok := evt.(*events.LedgerMovements)
+		require.True(t, ok, "Event should be a LedgerMovements, but is %T", evt)
+		assert.Equal(t, eventspb.LedgerMovements{LedgerMovements: []*vegapb.LedgerMovement{}}, e.Proto())
+	}).Times(1)
 }

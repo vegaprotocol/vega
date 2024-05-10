@@ -133,11 +133,11 @@ func (e *Engine) OnRewardVestingMinimumTransferUpdate(_ context.Context, minimum
 
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
-		e.broadcastRewardBonusMultipliers(ctx, epoch.Seq)
 		e.moveLocked()
 		e.distributeVested(ctx)
-		e.clearState()
+		e.broadcastVestingStatsUpdate(ctx, epoch.Seq)
 		e.broadcastSummary(ctx, epoch.Seq)
+		e.clearState()
 	}
 }
 
@@ -328,7 +328,6 @@ func (e *Engine) makeTransfer(
 	return transfer
 }
 
-// just remove party entries once they are not needed anymore.
 func (e *Engine) clearState() {
 	for party, v := range e.state {
 		if len(v.Locked) == 0 && len(v.Vesting) == 0 {
@@ -344,6 +343,10 @@ func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
 	}
 
 	for p, pRewards := range e.state {
+		if len(pRewards.Vesting) == 0 && len(pRewards.Locked) == 0 {
+			continue
+		}
+
 		pSummary := &eventspb.PartyVestingSummary{
 			Party:                p,
 			PartyLockedBalances:  []*eventspb.PartyLockedBalance{},
@@ -395,7 +398,7 @@ func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
 	e.broker.Send(events.NewVestingBalancesSummaryEvent(ctx, evt))
 }
 
-func (e *Engine) broadcastRewardBonusMultipliers(ctx context.Context, seq uint64) {
+func (e *Engine) broadcastVestingStatsUpdate(ctx context.Context, seq uint64) {
 	evt := &eventspb.VestingStatsUpdated{
 		AtEpoch: seq,
 		Stats:   make([]*eventspb.PartyVestingStats, 0, len(e.state)),
