@@ -61,7 +61,7 @@ Feature: Test vAMM submission works as expected
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
-      | vamm1  | USD   | 1000   |
+      | vamm1  | USD   | 100000 |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -90,15 +90,15 @@ Feature: Test vAMM submission works as expected
       | 100        | TRADING_MODE_CONTINUOUS | 3600    | 94        | 106       | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | upper bound | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 150         | 0.25               | 0.01         |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 150         | 0.25               | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | upper bound | upper leverage |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 150         | 0.25               |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 150         | 0.25               |
 
     And set the following AMM sub account aliases:
       | party | market id | alias     |
       | vamm1 | ETH/MAR22 | vamm1-acc |
     And the following transfers should happen:
       | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 

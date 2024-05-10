@@ -59,7 +59,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | party3 | USD   | 1000000 |
       | party4 | USD   | 1000000 |
       | party5 | USD   | 1000000 |
-      | vamm1  | USD   | 10000   |
+      | vamm1  | USD   | 30000   |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -84,17 +84,17 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 10000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
+      | vamm1 | ETH/MAR22 | 30000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
   @VAMM
   Scenario: 0090-VAMM-024: If other traders trade to move the market mid price to 140 the vAMM has a short position.
@@ -102,21 +102,22 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 4      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
     # see the trades that make the vAMM go short
+
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 102   | 4    | vamm1-id | true   |
+      | party4 | 100   | 4    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 102        | TRADING_MODE_CONTINUOUS | 106       | 106              |
+      | 100        | TRADING_MODE_CONTINUOUS | 102       | 102              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 4      | 0              | 0            |        |
       | vamm1-id | -4     | 0              | 0            | true   |
     And the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
   @VAMM
   Scenario: 0090-VAMM-025: If the vAMM is then amended such that it has a new base price of 140 it should attempt to place a trade to rebalance it's position to 0 at a mid price of 140. If that trade can execute with the slippage as configured in the request then the transaction is accepted.
@@ -126,19 +127,19 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 102   | 4    | vamm1-id | true   |
+      | party4 | 100   | 4    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 102        | TRADING_MODE_CONTINUOUS | 106       | 106              |
+      | 100        | TRADING_MODE_CONTINUOUS | 102       | 102              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 4      | 0              | 0            |        |
       | vamm1-id | -4     | 0              | 0            | true   |
     And the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     # Now amend the vAMM in a way that gets accepted.
     When the parties amend the following AMM:
@@ -146,16 +147,16 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | vamm1 | ETH/MAR22 | 0.5      | 140  | 90          | 155         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 140  | 90          | 155         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 140  | 90          | 155         | 4              | 4              |
     # ensure the vamm closed its position
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 150        | TRADING_MODE_CONTINUOUS | 142       | 142              |
+      | 150        | TRADING_MODE_CONTINUOUS | 141       | 141              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 4      | 192            | 0            |        |
-      | vamm1-id | -4     | 0              | -192         | true   |
+      | party4   | 4      | 200            | 0            |        |
+      | vamm1-id | -4     | 0              | -200         | true   |
 
   @VAMM
   Scenario: 0090-VAMM-026: If the trade cannot execute with the slippage as configured in the request then the transaction is rejected and no changes to the vAMM are made.
@@ -165,19 +166,19 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 102   | 4    | vamm1-id | true   |
+      | party4 | 100   | 4    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 102        | TRADING_MODE_CONTINUOUS | 106       | 106              |
+      | 100        | TRADING_MODE_CONTINUOUS | 102       | 102              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 4      | 0              | 0            |        |
       | vamm1-id | -4     | 0              | 0            | true   |
     And the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     # Now amend the vAMM that doesn't trade and gets rejected
     When the parties amend the following AMM:
@@ -186,7 +187,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
     # ensure the status of the vAMM remains the same (if no update event is sent, this test will pass even if the vAMM was in some way changed)
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     # To account for a passing test caused by an event not being sent out, cancel the vAMM and check the status
     When the parties cancel the following AMM:
@@ -194,4 +195,4 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | vamm1 | ETH/MAR22 | METHOD_REDUCE_ONLY |
     Then the AMM pool status should be:
       | party | market id | amount | status             | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 30000  | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 4              | 4              |
