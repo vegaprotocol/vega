@@ -142,9 +142,9 @@ type Engine struct {
 	asset          string
 }
 
-func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonitoringSettings) {
+func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonitoringSettings, as AuctionState) {
 	e.riskModel = riskModel
-	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings)
+	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings, as)
 	e.initialised = false
 	e.boundFactorsInitialised = false
 	e.priceRangesCache = make(map[int]priceRange, len(e.bounds)) // clear the cache
@@ -169,7 +169,7 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, auctionState Aucti
 	}
 
 	// Other functions depend on this sorting
-	horizons, bounds := computeBoundsAndHorizons(settings)
+	horizons, bounds := computeBoundsAndHorizons(settings, auctionState)
 
 	e := &Engine{
 		riskModel:               riskModel,
@@ -525,7 +525,9 @@ func (e *Engine) noHistory() bool {
 	return len(e.pricesPast) == 0 && len(e.pricesNow) == 0
 }
 
-func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings) (map[int64]num.Decimal, []*bound) {
+func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings, as AuctionState) (map[int64]num.Decimal, []*bound) {
+	// set bounds to inactive if we're in price monitoring auction
+	active := !as.IsPriceAuction()
 	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
 	for _, p := range settings.Parameters.Triggers {
 		p := *p
@@ -541,7 +543,7 @@ func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings) (map[int6
 	bounds := make([]*bound, 0, len(parameters))
 	for _, p := range parameters {
 		bounds = append(bounds, &bound{
-			Active:  true,
+			Active:  active,
 			Trigger: p,
 		})
 		if _, ok := horizons[p.Horizon]; !ok {
