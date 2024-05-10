@@ -190,6 +190,11 @@ func (m *MarketLiquidity) scaleScores(scores map[string]num.Decimal) map[string]
 	for _, s := range scores {
 		total = total.Add(s)
 	}
+
+	if total.IsZero() {
+		return scores
+	}
+
 	for k, v := range scores {
 		scores[k] = v.Div(total)
 	}

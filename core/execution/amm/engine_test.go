@@ -647,15 +647,19 @@ func testMarketClosure(t *testing.T) {
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	tst := getTestEngine(t)
 
-	party, subAccount := getParty(t, tst)
-	submit := getPoolSubmission(t, party, tst.marketID)
+	for i := 0; i < 10; i++ {
+		party, subAccount := getParty(t, tst)
+		submit := getPoolSubmission(t, party, tst.marketID)
 
-	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+		expectSubaccountCreation(t, tst, party, subAccount)
+		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+		expectSubAccountClose(t, tst, party, subAccount)
+	}
 
-	expectSubAccountClose(t, tst, party, subAccount)
 	require.NoError(t, tst.engine.MarketClosing(ctx))
-	assert.Len(t, tst.engine.poolsCpy, 0)
+	for _, p := range tst.engine.poolsCpy {
+		assert.Equal(t, types.AMMPoolStatusStopped, p.status)
+	}
 }
 
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {
