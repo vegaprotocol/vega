@@ -258,6 +258,7 @@ func (e *Engine) OnMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) 
 
 // OnMTM is called whenever core does an MTM and is a signal that any pool's that are closing and have 0 position can be fully removed.
 func (e *Engine) OnMTM(ctx context.Context) {
+	rm := []string{}
 	for _, p := range e.poolsCpy {
 		if !p.closing() {
 			continue
@@ -271,7 +272,10 @@ func (e *Engine) OnMTM(ctx context.Context) {
 			e.log.Error("unable to release subaccount balance", logging.Error(err))
 		}
 		p.status = types.AMMPoolStatusCancelled
-		e.remove(ctx, p.party)
+		rm = append(rm, p.party)
+	}
+	for _, party := range rm {
+		e.remove(ctx, party)
 	}
 }
 
@@ -281,12 +285,15 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	e.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("amm-engine"+e.market.GetID()))
 
 	// any pools that for some reason have zero balance in their accounts will get stopped
+	rm := []string{}
 	for _, p := range e.poolsCpy {
 		if p.getBalance().IsZero() {
 			p.status = types.AMMPoolStatusStopped
-			e.remove(ctx, p.party)
-			continue
+			rm = append(rm, p.party)
 		}
+	}
+	for _, party := range rm {
+		e.remove(ctx, party)
 	}
 }
 
@@ -780,7 +787,8 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 			return err
 		}
 		p.status = types.AMMPoolStatusStopped
-		e.remove(ctx, p.party)
+		e.sendUpdate(ctx, p)
+		e.marketActivityTracker.RemoveAMMSubAccount(e.market.GetSettlementAsset(), e.market.GetID(), p.SubAccount)
 	}
 	return nil
 }
