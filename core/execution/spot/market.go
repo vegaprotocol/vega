@@ -292,7 +292,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market) error {
 	if err != nil {
 		return err
 	}
-	m.pMonitor.UpdateSettings(riskModel, m.mkt.PriceMonitoringSettings)
+	m.pMonitor.UpdateSettings(riskModel, m.mkt.PriceMonitoringSettings, m.as)
 	m.liquidity.UpdateMarketConfig(riskModel, m.pMonitor)
 	m.updateLiquidityFee(ctx)
 
