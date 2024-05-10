@@ -401,7 +401,7 @@ func (p *Pool) setCurves(
 			true,
 		)
 
-		highPriceMinusOne := num.UintZero().Sub(p.lower.high, num.UintOne())
+		highPriceMinusOne := num.UintZero().Sub(p.lower.high, p.oneTick)
 		// verify that the lower curve maintains sufficient volume from highPrice - 1 to the end of the curve.
 		if p.lower.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.lower.high) < 1 {
 			return fmt.Errorf("insufficient volume in the lower curve from high price - 1 to the end")
@@ -423,7 +423,7 @@ func (p *Pool) setCurves(
 			false,
 		)
 
-		highPriceMinusOne := num.UintZero().Sub(p.upper.high, num.UintOne())
+		highPriceMinusOne := num.UintZero().Sub(p.upper.high, p.oneTick)
 		// verify that the upper curve maintains sufficient volume from highPrice - 1 to the end of the curve.
 		if p.upper.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.upper.high) < 1 {
 			return fmt.Errorf("insufficient volume in the lower curve from high price - 1 to the end")

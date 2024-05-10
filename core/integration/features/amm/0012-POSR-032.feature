@@ -71,7 +71,7 @@ Feature: A network disposal order which crosses with volume implied by an vAMM s
       | party4 | USD   | 1000000 |
       | party5 | USD   | 1000000 |
       | partyX | USD   | 100     |
-      | vamm1  | USD   | 10000   |
+      | vamm1  | USD   | 100000  |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -110,18 +110,18 @@ Feature: A network disposal order which crosses with volume implied by an vAMM s
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 79           | 1000           | 2             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 10000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
+      | party | market id | amount  | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | party | market id | amount  | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount  | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
   @VAMM
   Scenario: the distressed party uncrosses with the vAMM orders
