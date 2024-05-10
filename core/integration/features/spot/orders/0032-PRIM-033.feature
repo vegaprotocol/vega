@@ -85,35 +85,28 @@ Feature: Spot market
       | 1000       | TRADING_MODE_MONITORING_AUCTION | 90      | 994       | 1006      | 0            | 0              | 0             | 1704067203000000000 | 1704067213000000000 |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | 120     | 993       | 1007      | 0            | 0              | 0             | 1704067203000000000 | 1704067213000000000 |
 
-    # Now update the risk model 
+    # Now update the risk model to deactivate all pending price bounds
     Then the spot markets are updated:
       | id      | risk model             |
       | BTC/ETH | lognormal-risk-model-2 |
 
-    # Make sure the auction time is the same
-    And the market data for the market "BTC/ETH" should be:
-      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest | auction start       | auction end         |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 30      | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067213000000000 |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 60      | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067213000000000 |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 90      | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067213000000000 |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 120     | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067213000000000 |
-
+    # If we move ahead 25 blocks we should come out of auction instead of it being extended
     When the network moves ahead "25" blocks
 
     And the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest | auction start       | auction end         |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 30      | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067243000000000 |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 60      | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067243000000000 |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 90      | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067243000000000 |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 120     | 900       | 1100      | 0            | 0              | 0             | 1704067203000000000 | 1704067243000000000 |
+      | 1008       | TRADING_MODE_CONTINUOUS         | 30      | 1004      | 1012      | 0            | 0              | 0             | 0 | 0 |
+      | 1008       | TRADING_MODE_CONTINUOUS         | 60      | 1003      | 1013      | 0            | 0              | 0             | 0 | 0 |
+      | 1008       | TRADING_MODE_CONTINUOUS         | 90      | 1001      | 1015      | 0            | 0              | 0             | 0 | 0 |
+      | 1008       | TRADING_MODE_CONTINUOUS         | 120     | 1000      | 1016      | 0            | 0              | 0             | 0 | 0 |
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
 
     # The mark price should show the orders have traded
-    And the mark price should be "1007" for the market "BTC/ETH"
+    And the mark price should be "1008" for the market "BTC/ETH"
 
    And the orders should have the following states:
     | party  | market id | reference | side | volume | remaining | price | status         |
-    | party1 | BTC/ETH   | buy1      | buy  | 1      | 0         | 1006  | STATUS_FILLED  |
-    | party5 | BTC/ETH   | sell1     | sell | 1      | 0         | 1006  | STATUS_FILLED  |
+    | party1 | BTC/ETH   | buy1      | buy  | 1      | 0         | 1008  | STATUS_FILLED  |
+    | party5 | BTC/ETH   | sell1     | sell | 1      | 0         | 1008  | STATUS_FILLED  |
 
