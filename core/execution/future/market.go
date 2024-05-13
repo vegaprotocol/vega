@@ -2278,7 +2278,7 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.ID = orderID
 	// check max price in case of capped market
-	if m.capMax != nil && order.Price.GT(m.capMax) {
+	if m.capMax != nil && order.Price != nil && order.Price.GT(m.capMax) {
 		order.Status = types.OrderStatusRejected
 		order.Reason = types.OrderErrorPriceLTEMaxPrice
 		m.broker.Send(events.NewOrderEvent(ctx, order))
