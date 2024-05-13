@@ -89,6 +89,21 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 		errs.AddForProperty("transfer.reference", ErrMustBeLessThan100Chars)
 	}
 
+	// sub account checks
+	if cmd.FromSubAccount != nil {
+		if !IsVegaPublicKey(*cmd.FromSubAccount) {
+			errs.AddForProperty("transfer.from_sub_account", ErrShouldBeAValidVegaPublicKey)
+		}
+
+		if cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS {
+			errs.AddForProperty("transfer.from_sub_account", errors.New("from_sub_account can only be set for vested rewards"))
+		}
+
+		if cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL {
+			errs.AddForProperty("transfer.from_sub_account", errors.New("from_sub_account can only be set when transferring to general account"))
+		}
+	}
+
 	if cmd.Kind == nil {
 		errs.AddForProperty("transfer.kind", ErrIsRequired)
 	} else {
