@@ -4776,6 +4776,13 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 		// we cannot perform the final settlement because the settlement price is out of the [0, max_price] range
 		return
 	}
+	if m.fCap != nil && m.fCap.Binary {
+		// binary settlement is either 0 or max price:
+		if !settlementDataInAsset.IsZero() && !settlementDataInAsset.EQ(m.capMax) {
+			// not zero, not max price -> no final settlement can occur yet
+			return
+		}
+	}
 
 	if m.mkt.State == types.MarketStateTradingTerminated && settlementDataInAsset != nil {
 		err := m.closeMarket(ctx, m.timeService.GetTimeNow(), finalState, settlementDataInAsset)
