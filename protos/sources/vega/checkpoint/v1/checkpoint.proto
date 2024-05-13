@@ -146,6 +146,7 @@ message ScheduledTransferAtTime {
 
 message RecurringTransfers {
   repeated vega.events.v1.Transfer recurring_transfers = 1;
+  int64 next_metric_update = 2;
 }
 
 message GovernanceTransfer {

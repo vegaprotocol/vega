@@ -975,6 +975,7 @@ func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1
 
 	app.epoch.OnBlockEnd(app.blockCtx)
 	app.stateVar.OnBlockEnd(app.blockCtx)
+	app.banking.OnBlockEnd(app.blockCtx, app.currentTimestamp)
 
 	powerUpdates := app.top.GetValidatorPowerUpdates()
 	if len(powerUpdates) == 0 {

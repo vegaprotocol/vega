@@ -155,6 +155,7 @@ const (
 
 	RewardMarketCreationQuantumMultiple       = "rewards.marketCreationQuantumMultiple"
 	MinEpochsInTeamForMetricRewardEligibility = "rewards.team.minEpochsInTeam"
+	RewardsUpdateFrequency                    = "rewards.updateFrequency"
 
 	// spam policies params.
 	SpamProtectionMaxVotes                         = "spam.protection.max.votes"
@@ -271,6 +272,7 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	RewardsUpdateFrequency:                                       {},
 	SpamProtectionMaxUpdatePartyProfile:                          {},
 	SpamProtectionUpdateProfileMinFunds:                          {},
 	GovernanceProposalVolumeDiscountProgramMinClose:              {},

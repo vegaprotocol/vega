@@ -22,8 +22,13 @@ import (
 
 // PartyContributionScore represents the fraction the party has in the total fee.
 type PartyContributionScore struct {
-	Party string
-	Score num.Decimal
+	Party          string
+	Score          num.Decimal
+	StakingBalance *num.Uint
+	OpenVolume     *num.Uint
+	TotalFeesPaid  *num.Uint
+	IsEligible     bool
+	RankingIndex   int64
 }
 
 type MarketContributionScore struct {

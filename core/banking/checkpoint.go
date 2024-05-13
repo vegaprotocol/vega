@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sort"
 	"sync/atomic"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -272,6 +273,7 @@ func (e *Engine) loadRecurringTransfers(
 	ctx context.Context, r *checkpoint.RecurringTransfers,
 ) []events.Event {
 	evts := []events.Event{}
+	e.nextMetricUpdate = time.Unix(0, r.NextMetricUpdate)
 	for _, v := range r.RecurringTransfers {
 		transfer := types.RecurringTransferFromEvent(v)
 		e.recurringTransfers = append(e.recurringTransfers, transfer)
@@ -334,7 +336,7 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	for _, v := range e.recurringTransfers {
 		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(nil, e.getGameID(v)))
 	}
-
+	out.NextMetricUpdate = e.nextMetricUpdate.UnixNano()
 	return out
 }
 

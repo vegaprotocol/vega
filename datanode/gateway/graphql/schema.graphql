@@ -1120,6 +1120,22 @@ type Query {
     pagination: Pagination
   ): StopOrderConnection
 
+  "Get a list of current game team scores. If provided, the filter will be applied to the list of games/teams to restrict the results."
+  gameTeamScores(
+    "Optional filter to restrict the results of the list."
+    filter: GameTeamScoreFilter
+    "Optional pagination information"
+    pagination: Pagination
+  ): GameTeamScoreConnection
+
+  "Get a list of current game party scores. If provided, the filter will be applied to the list of games/parties to restrict the results."
+  gamePartyScores(
+    "Optional filter to restrict the results of the list."
+    filter: GamePartyScoreFilter
+    "Optional pagination information"
+    pagination: Pagination
+  ): GamePartyScoreConnection
+
   "List markets in a succession line"
   successorMarkets(
     "Market ID of any market in the succession line"
@@ -5969,6 +5985,22 @@ input StopOrderFilter {
   liveOnly: Boolean
 }
 
+input GameTeamScoreFilter {
+  "Zero or more game IDs to filter by"
+  gameIds: [ID!]
+  "Zero or more team IDs to filter by"
+  teamIds: [ID!]
+}
+
+input GamePartyScoreFilter {
+  "Zero or more game IDs to filter by"
+  gameIds: [ID!]
+  "Zero or more team IDs to filter by"
+  teamIds: [ID!]
+  "Zero or more party IDs to filter by"
+  partyIds: [ID!]
+}
+
 input OrderByPartyIdsFilter {
   order: OrderFilter
   partyIds: [ID!]
@@ -6000,6 +6032,39 @@ type StopOrderConnection {
   "The pagination information"
   pageInfo: PageInfo
 }
+
+"Connection type for retrieving cursor-based paginated game team score information"
+type GameTeamScoreConnection {
+  "The game team scores in this connection"
+  edges: [GameTeamScoreEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Connection type for retrieving cursor-based paginated game party score information"
+type GamePartyScoreConnection {
+  "The game party scores in this connection"
+  edges: [GamePartyScoreEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the game party scores and cursor information returned by a GamePartyScoreConnection"
+type GamePartyScoreEdge {
+  "The game party score"
+  node: GamePartyScore
+  "The cursor for this game party score"
+  cursor: String
+}
+
+"Edge type containing the game team scores and cursor information returned by a GameTeamScoreConnection"
+type GameTeamScoreEdge {
+  "The game team score"
+  node: GameTeamScore
+  "The cursor for this game team score"
+  cursor: String
+}
+
 
 "Edge type containing the position and cursor information returned by a PositionConnection"
 type PositionEdge {
@@ -7351,3 +7416,44 @@ type TimeWeightedNotionalPosition {
   "Time of the last block in which the metric was updated"
   lastUpdated: Timestamp!
 }
+
+"Game team score"
+type GameTeamScore {
+  "Game ID"
+  gameId: ID!
+  "Team ID"
+  teamId: ID!
+  "The epoch for which this score is"
+  epochId: Int!
+  "Time of the score in RFC3339Nano"
+  time: Timestamp!
+  "The score"
+  score: String!
+}
+
+"Game party score"
+type GamePartyScore {
+  "Game ID"
+  gameId: ID!
+  "Team ID (optional)"
+  teamId: ID
+  "The epoch for which this score is"
+  epochId: Int!
+  "The party ID"
+  partyId: ID! 
+   "Time of the score in RFC3339Nano"
+  time: Timestamp!
+  "The current score of the party in the game"
+  score: String!
+  "The staking balance of the party in the game, will be populated only if the game has a requirement for it"
+  stakingBalance: String
+  "The open volume of the party in the game, will be populated only if the game has a requirement for it"
+  openVolume: String 
+  "The total fees paid by the party in the game during the relevant period"
+  totalFeesPaid: String!
+  "Is the party eligible for a reward in this game based on existing information"
+  isEligible: Boolean!
+  "If the party is a member of a team, this is their relative position in the sorting order of the team's scores"
+  rank: Int 
+}
+  

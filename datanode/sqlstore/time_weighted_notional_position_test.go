@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -37,7 +38,7 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			GameID:                       entities.GameID(GenerateID()),
 			EpochSeq:                     1,
-			TimeWeightedNotionalPosition: 1000,
+			TimeWeightedNotionalPosition: num.DecimalFromInt64(1000),
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
@@ -57,12 +58,12 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			GameID:                       entities.GameID(GenerateID()),
 			EpochSeq:                     2,
-			TimeWeightedNotionalPosition: 1000,
+			TimeWeightedNotionalPosition: num.DecimalFromInt64(1000),
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
-		want.TimeWeightedNotionalPosition = 2000
+		want.TimeWeightedNotionalPosition = num.DecimalFromInt64(2000)
 		err = tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		var got entities.TimeWeightedNotionalPosition
@@ -83,7 +84,7 @@ func TestTimeWeightedNotionalPosition_Get(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			GameID:                       entities.GameID(GenerateID()),
 			EpochSeq:                     1,
-			TimeWeightedNotionalPosition: 1000,
+			TimeWeightedNotionalPosition: num.DecimalFromInt64(1000),
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
@@ -100,13 +101,13 @@ func TestTimeWeightedNotionalPosition_Get(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			GameID:                       entities.GameID(GenerateID()),
 			EpochSeq:                     1,
-			TimeWeightedNotionalPosition: 1000,
+			TimeWeightedNotionalPosition: num.DecimalFromInt64(1000),
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		want.EpochSeq = 2
-		want.TimeWeightedNotionalPosition = 2000
+		want.TimeWeightedNotionalPosition = num.DecimalFromInt64(2000)
 		want.VegaTime = want.VegaTime.Add(time.Second)
 		err = tw.Upsert(ctx, want)
 		require.NoError(t, err)

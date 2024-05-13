@@ -295,6 +295,7 @@ func defaultNetParams() map[string]value {
 		RewardsVestingBaseRate:        NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.25"),
 		RewardsVestingMinimumTransfer: NewDecimal(gtD0).Mutable(true).MustUpdate("10"),
 		RewardsVestingBenefitTiers:    NewJSON(&proto.VestingBenefitTiers{}, types.CheckUntypedVestingBenefitTier).Mutable(true).MustUpdate(`{"tiers": []}`),
+		RewardsUpdateFrequency:        NewDuration(gte1s).Mutable(true).MustUpdate("10m"),
 
 		// Referral program
 		ReferralProgramMaxReferralTiers:                        NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("10"),

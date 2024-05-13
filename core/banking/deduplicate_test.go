@@ -54,7 +54,6 @@ func TestAssetActionDeduplication(t *testing.T) {
 	asset1 := assets.NewAsset(erc20Asset)
 
 	t.Run("Generate asset list", func(t *testing.T) {
-		eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 		eng.assets.EXPECT().Get(assetID1).Times(1).Return(asset1, nil)
 		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, ""))
 
@@ -71,7 +70,6 @@ func TestAssetActionDeduplication(t *testing.T) {
 	})
 
 	t.Run("Generate duplicated asset list and ", func(t *testing.T) {
-		eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 		eng.assets.EXPECT().Get(assetID1).Times(1).Return(asset1, nil)
 		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, ""))
 
@@ -88,7 +86,6 @@ func TestAssetActionDeduplication(t *testing.T) {
 	// set, which might happen with the introduction of the second bridge. We have
 	// to ensure the event is acknowledge as a duplicate.
 	t.Run("Generate a duplicated event but updated with the chain ID", func(t *testing.T) {
-		eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 		eng.assets.EXPECT().Get(assetID1).Times(1).Return(asset1, nil)
 		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, "1"))
 

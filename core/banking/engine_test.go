@@ -64,6 +64,10 @@ func getTestEngine(t *testing.T) *testEngine {
 	col := mocks.NewMockCollateral(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	tsvc := mocks.NewMockTimeService(ctrl)
+	tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).AnyTimes()
 	notary := mocks.NewMockNotary(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	top := mocks.NewMockTopology(ctrl)
@@ -118,7 +122,6 @@ func testDepositSuccess(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.NoError(t, err)
 
@@ -147,7 +150,6 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	require.NoError(t, eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42))
 
 	// then we call the callback from the fake witness
@@ -161,7 +163,6 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng.OnTick(context.Background(), time.Now())
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	require.NoError(t, eng.DepositBuiltinAsset(context.Background(), bad, "depositid2", 43))
 
 	// then we call the callback from the fake witness
@@ -188,7 +189,6 @@ func testDepositFailure(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.NoError(t, err)
 
@@ -217,7 +217,6 @@ func testDepositError(t *testing.T) {
 	eng.witness.err = expectError
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.EqualError(t, err, expectError.Error())
 }
@@ -236,7 +235,6 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.EqualError(t, err, expectError.Error())
 }

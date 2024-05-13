@@ -361,6 +361,16 @@ func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 	return asMultiplier.Mul(vsMultiplier)
 }
 
+func filterEligible(ps []*types.PartyContributionScore) []*types.PartyContributionScore {
+	filtered := []*types.PartyContributionScore{}
+	for _, psEntry := range ps {
+		if psEntry.IsEligible {
+			filtered = append(filtered, psEntry)
+		}
+	}
+	return filtered
+}
+
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
 // for market based rewards, we only care about account for specific markets (as opposed to global account for an asset).
 func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, rankingScoresContributions []*types.PartyContributionScore) *payout {
@@ -391,7 +401,7 @@ func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asse
 			takerFeesPaidInRewardAsset = e.convertTakerFeesToRewardAsset(takerFeesPaid, ds.AssetForMetric, asset)
 		}
 		if ds.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
-			partyScores := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)
+			partyScores := filterEligible(e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds))
 			partyRewardFactors := map[string]num.Decimal{}
 			for _, pcs := range partyScores {
 				partyRewardFactors[pcs.Party] = e.getRewardMultiplierForParty(pcs.Party)
@@ -399,6 +409,14 @@ func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asse
 			return calculateRewardsByContributionIndividual(epochSeq, account.Asset, account.ID, account.Balance, partyScores, partyRewardFactors, timestamp, ds, takerFeesPaidInRewardAsset)
 		} else {
 			teamScores, partyScores := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
+			filteredPartyScore := map[string][]*types.PartyContributionScore{}
+			for t, team := range partyScores {
+				filtered := filterEligible(team)
+				if len(filtered) > 0 {
+					filteredPartyScore[t] = filtered
+				}
+			}
+			partyScores = filteredPartyScore
 			partyRewardFactors := map[string]num.Decimal{}
 			for _, team := range partyScores {
 				for _, pcs := range team {

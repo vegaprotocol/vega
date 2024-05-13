@@ -299,6 +299,7 @@ message BankingAssetActions {
 
 message BankingRecurringTransfers {
   vega.checkpoint.v1.RecurringTransfers recurring_transfers = 1;
+  int64 next_metric_update = 2;
 }
 
 message BankingScheduledTransfers {

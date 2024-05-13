@@ -81,11 +81,6 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 func testSimpledScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
 
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).AnyTimes()
-
 	// let's do a massive fee, easy to test.
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
 	e.OnTick(context.Background(), time.Unix(10, 0))
@@ -229,7 +224,6 @@ func TestGovernanceScheduledTransfer(t *testing.T) {
 	}
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
-	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, 0))
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	checkp, err := e.Checkpoint()
@@ -290,7 +284,6 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	}
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
-	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, 0))
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	checkp, err := e.Checkpoint()

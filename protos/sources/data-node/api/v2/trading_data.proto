@@ -103,6 +103,20 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
   }
 
+  // List game team scores
+  //
+  // Get a list of team scores for the given filters
+  rpc ListGameTeamScores(ListGameTeamScoresRequest) returns (ListGameTeamScoresResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Games"};
+  }
+
+  // List game party scores
+  //
+  // Get a list of party scores for the given filters
+  rpc ListGamePartyScores(ListGamePartyScoresRequest) returns (ListGamePartyScoresResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Games"};
+  }
+
   // Deprecated: List positions
   //
   // Get a list of positions by party's public key using cursor based pagination
@@ -1314,6 +1328,80 @@ message GetStopOrderRequest {
 message GetStopOrderResponse {
   // Order details, if one was found.
   vega.events.v1.StopOrderEvent order = 1;
+}
+
+// Request that is sent when executing a query for a list of team game scores.
+message ListGameTeamScoresRequest {
+  // Optional pagination control.
+  optional Pagination pagination = 1;
+  // Team games filter contains all filtering conditions and values that are applied to the team games score listing.
+  optional GameTeamScoresFilter filter = 2;
+}
+
+message GameTeamScoresFilter {
+  // Restrict game scores to the given ones.
+  repeated string game_ids = 1;
+  // Restrict game scores to those for the given teams.
+  repeated string team_ids = 2;
+}
+
+// Response received from the query for getting a list of game scores for teams.
+message ListGameTeamScoresResponse {
+  // Page of team game scores data and corresponding page information.
+  GameTeamScoresConnection team_scores = 1;
+}
+
+// Page of team game scores data and corresponding page information.
+message GameTeamScoresConnection {
+  // Page of orders and their corresponding cursors.
+  repeated GameTeamScoresEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message GameTeamScoresEdge {
+  // Data associated with an order submitted to a Vega node.
+  vega.events.v1.GameTeamScore node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Request that is sent when executing a query for a list of party game scores.
+message ListGamePartyScoresRequest {
+  // Optional pagination control.
+  optional Pagination pagination = 1;
+  // Party games filter contains all filtering conditions and values that are applied to the party games score listing.
+  optional GamePartyScoresFilter filter = 2;
+}
+
+message GamePartyScoresFilter {
+  // Restrict game scores to those in the given games.
+  repeated string game_ids = 1;
+  // Restrict game scores to the parties in the given teams.
+  repeated string team_ids = 2;
+  // Restrict game scores to those relating to the given parties.
+  repeated string party_ids = 3;
+}
+
+// Response received from the query for getting a list of game scores for teams.
+message ListGamePartyScoresResponse {
+  // Page of party game scores data and corresponding page information.
+  GamePartyScoresConnection party_scores = 1;
+}
+
+// Page of party game scores data and corresponding page information.
+message GamePartyScoresConnection {
+  // Page of orders and their corresponding cursors.
+  repeated GamePartyScoresEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message GamePartyScoresEdge {
+  // Data associated with an order submitted to a Vega node.
+  vega.events.v1.GamePartyScore node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
 }
 
 // Request that is sent when executing a query for a list of stop orders.

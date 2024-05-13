@@ -419,6 +419,22 @@ type Filter struct {
 	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
+type GamePartyScoreFilter struct {
+	// Zero or more game IDs to filter by
+	GameIds []string `json:"gameIds,omitempty"`
+	// Zero or more team IDs to filter by
+	TeamIds []string `json:"teamIds,omitempty"`
+	// Zero or more party IDs to filter by
+	PartyIds []string `json:"partyIds,omitempty"`
+}
+
+type GameTeamScoreFilter struct {
+	// Zero or more game IDs to filter by
+	GameIds []string `json:"gameIds,omitempty"`
+	// Zero or more team IDs to filter by
+	TeamIds []string `json:"teamIds,omitempty"`
+}
+
 // Individual party participating in a game and their metrics
 type IndividualGameEntity struct {
 	// Party ID of the participant

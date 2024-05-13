@@ -1620,6 +1620,46 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListFundingPeriods(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFundingPeriods", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListFundingPeriods), varargs...)
 }
 
+// ListGamePartyScores mocks base method.
+func (m *MockTradingDataServiceClientV2) ListGamePartyScores(arg0 context.Context, arg1 *v2.ListGamePartyScoresRequest, arg2 ...grpc.CallOption) (*v2.ListGamePartyScoresResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListGamePartyScores", varargs...)
+	ret0, _ := ret[0].(*v2.ListGamePartyScoresResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListGamePartyScores indicates an expected call of ListGamePartyScores.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListGamePartyScores(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListGamePartyScores", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListGamePartyScores), varargs...)
+}
+
+// ListGameTeamScores mocks base method.
+func (m *MockTradingDataServiceClientV2) ListGameTeamScores(arg0 context.Context, arg1 *v2.ListGameTeamScoresRequest, arg2 ...grpc.CallOption) (*v2.ListGameTeamScoresResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListGameTeamScores", varargs...)
+	ret0, _ := ret[0].(*v2.ListGameTeamScoresResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListGameTeamScores indicates an expected call of ListGameTeamScores.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListGameTeamScores(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListGameTeamScores", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListGameTeamScores), varargs...)
+}
+
 // ListGames mocks base method.
 func (m *MockTradingDataServiceClientV2) ListGames(arg0 context.Context, arg1 *v2.ListGamesRequest, arg2 ...grpc.CallOption) (*v2.ListGamesResponse, error) {
 	m.ctrl.T.Helper()

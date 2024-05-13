@@ -196,15 +196,25 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
 			hasNonZeroMetric := false
 			partyMetrics := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)
+			gs := events.NewPartyGameScoresEvent(ctx, int64(e.currentEpoch), e.hashDispatchStrategy(ds), e.timeService.GetTimeNow(), partyMetrics)
+			e.broker.Send(gs)
+			hasEligibleParties := false
 			for _, pm := range partyMetrics {
 				if !pm.Score.IsZero() {
 					hasNonZeroMetric = true
+				}
+				if pm.IsEligible {
+					hasEligibleParties = true
+				}
+				if hasNonZeroMetric && hasEligibleParties {
 					break
 				}
 			}
-			return hasNonZeroMetric || (len(partyMetrics) > 0 && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
+			return hasNonZeroMetric || (hasEligibleParties && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
 		} else {
-			tcs, _ := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
+			tcs, pcs := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
+			gs := events.NewTeamGameScoresEvent(ctx, int64(e.currentEpoch), e.hashDispatchStrategy(ds), e.timeService.GetTimeNow(), tcs, pcs)
+			e.broker.Send(gs)
 			return len(tcs) > 0
 		}
 	case vegapb.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING:

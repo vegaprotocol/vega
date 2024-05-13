@@ -113,6 +113,7 @@ type MarketActivityTracker interface {
 	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
 	MarketTrackedForAsset(market, asset string) bool
 	TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint
+	PublishGameMetric(ctx context.Context, dispatchStrategy []*vega.DispatchStrategy, now time.Time)
 }
 
 type EthereumEventSource interface {
@@ -206,6 +207,9 @@ type Engine struct {
 
 	maxGovTransferQunatumMultiplier num.Decimal
 	maxGovTransferFraction          num.Decimal
+
+	metricUpdateFrequency time.Duration
+	nextMetricUpdate      time.Time
 }
 
 type withdrawalRef struct {
@@ -259,6 +263,7 @@ func New(log *logging.Logger,
 		minTransferQuantumMultiple:      num.DecimalZero(),
 		minWithdrawQuantumMultiple:      num.DecimalZero(),
 		marketActivityTracker:           marketActivityTracker,
+		nextMetricUpdate:                time.Time{},
 		hashToStrategy:                  map[string]*dispatchStrategyCacheEntry{},
 		primaryBridgeState: &bridgeState{
 			active: true,
@@ -310,6 +315,28 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfg = cfg
 }
 
+func (e *Engine) OnBlockEnd(ctx context.Context, now time.Time) {
+	if !now.Before(e.nextMetricUpdate) {
+		e.publishMetricData(ctx, now)
+		e.nextMetricUpdate = now.Add(e.metricUpdateFrequency)
+	}
+}
+
+// publishMetricData requests the market activity tracker to publish and event
+// for each game with the current metric data for each party.
+func (e *Engine) publishMetricData(ctx context.Context, now time.Time) {
+	hashes := make([]string, 0, len(e.hashToStrategy))
+	for hash := range e.hashToStrategy {
+		hashes = append(hashes, hash)
+	}
+	sort.Strings(hashes)
+	dss := make([]*vega.DispatchStrategy, 0, len(hashes))
+	for _, hash := range hashes {
+		dss = append(dss, e.hashToStrategy[hash].ds)
+	}
+	e.marketActivityTracker.PublishGameMetric(ctx, dss, now)
+}
+
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case proto.EpochAction_EPOCH_ACTION_START:
@@ -320,6 +347,8 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		e.distributeRecurringGovernanceTransfers(ctx)
 		e.applyPendingFeeDiscountsUpdates(ctx)
 		e.sendTeamsStats(ctx, ep.Seq)
+		// as the metrics are going to be published here, we want to progress the next update.
+		e.nextMetricUpdate = e.timeService.GetTimeNow().Add(e.metricUpdateFrequency)
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}

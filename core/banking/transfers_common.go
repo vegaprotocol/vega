@@ -18,6 +18,7 @@ package banking
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -25,6 +26,15 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+func (e *Engine) OnRewardsUpdateFrequencyUpdate(ctx context.Context, d time.Duration) error {
+	if !e.nextMetricUpdate.IsZero() {
+		e.nextMetricUpdate = e.nextMetricUpdate.Add(-e.metricUpdateFrequency)
+	}
+	e.nextMetricUpdate = e.nextMetricUpdate.Add(d)
+	e.metricUpdateFrequency = d
+	return nil
+}
 
 func (e *Engine) OnTransferFeeFactorUpdate(ctx context.Context, f num.Decimal) error {
 	e.transferFeeFactor = f
