@@ -87,7 +87,7 @@ func (e *Engine) recurringTransfer(
 		return err
 	}
 
-	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From); err != nil {
+	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From, transfer.FromDerivedKey); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
@@ -272,7 +272,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			e.log.Panic("this should never happen", logging.Error(err))
 		}
 
-		if err = e.ensureMinimalTransferAmount(a, amount, v.FromAccountType, v.From); err != nil {
+		if err = e.ensureMinimalTransferAmount(a, amount, v.FromAccountType, v.From, v.FromDerivedKey); err != nil {
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error(), e.getGameID(v)))
