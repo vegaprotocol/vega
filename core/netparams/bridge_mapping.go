@@ -52,11 +52,29 @@ var testnet = `{
     }
   ]
 }`
+var validatorsTestnet = `{
+  "configs": [
+    {
+      "network_id": "421614",
+      "chain_id": "421614",
+      "collateral_bridge_contract": {
+        "address": "0x927067717B0A9bd553fC421Ae63b3377694b4166"
+      },
+      "confirmations": 3,
+      "multisig_control_contract": {
+        "address": "0x752faCb1e1EEf7A5a154db5Bf54988E80b0e96Da",
+        "deployment_block_height": 43630575
+      },
+      "block_time": "250ms",
+      "name": "Arbitrum (Sepolia)"
+    }
+  ]
+}`
 
 var bridgeMapping = map[string]string{
 	"vega-stagnet1-202307191148":       stagnet1,
 	"vega-fairground-202305051805":     testnet,
 	"vega-mainnet-mirror-202306231148": "{}",
-	"vega-testnet-0002-v4":             "{}",
+	"vega-testnet-0002-v4":             validatorsTestnet,
 	"vega-mainnet-0011":                "{}",
 }
