@@ -16,7 +16,7 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11066](https://github.com/vegaprotocol/vega/issues/11066) - Ensure vesting statistics match vesting accounts numbers.
 
 
 ## 0.76.1

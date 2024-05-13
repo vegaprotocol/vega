@@ -89,7 +89,7 @@ type Teams interface {
 
 type Vesting interface {
 	AddReward(party, asset string, amount *num.Uint, lockedForEpochs uint64)
-	GetRewardBonusMultiplier(party string) (*num.Uint, num.Decimal)
+	GetRewardBonusMultiplier(party string) (num.Decimal, num.Decimal)
 }
 
 type ActivityStreak interface {

@@ -219,8 +219,8 @@ func (e *Engine) GetPartyBalance(party string) *num.Uint {
 	return num.UintZero()
 }
 
-func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {
-	balance := num.UintZero()
+func (e *Engine) GetAllVestingQuantumBalance(party string) num.Decimal {
+	balance := num.DecimalZero()
 
 	for asset, details := range e.enabledAssets {
 		// vesting balance
@@ -229,14 +229,14 @@ func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {
 			quantum = details.Details.Quantum
 		}
 		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestingRewards)]; ok {
-			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(quantum))
-			balance.AddSum(quantumBalance)
+			quantumBalance := acc.Balance.ToDecimal().Div(quantum)
+			balance = balance.Add(quantumBalance)
 		}
 
 		// vested balance
 		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestedRewards)]; ok {
-			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(quantum))
-			balance.AddSum(quantumBalance)
+			quantumBalance := acc.Balance.ToDecimal().Div(quantum)
+			balance = balance.Add(quantumBalance)
 		}
 	}
 
@@ -863,9 +863,7 @@ func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, tr
 	return responses, nil
 }
 
-func (e *Engine) TransferVestedRewards(
-	ctx context.Context, transfers []*types.Transfer,
-) ([]*types.LedgerMovement, error) {
+func (e *Engine) TransferVestedRewards(ctx context.Context, transfers []*types.Transfer) ([]*types.LedgerMovement, error) {
 	if len(transfers) == 0 {
 		return nil, nil
 	}
@@ -3640,10 +3638,10 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	return generalID, nil
 }
 
-// GetOrCreatePartyVestingAccount create the general account for a party.
+// GetOrCreatePartyVestingRewardAccount create the general account for a party.
 func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
 	if !e.AssetExists(asset) {
-		e.log.Panic("trying to use a nonexisting asset for reward accounts, something went very wrong somewhere",
+		e.log.Panic("trying to use a non-existent asset for reward accounts, something went very wrong somewhere",
 			logging.String("asset-id", asset))
 	}
 
@@ -3673,7 +3671,7 @@ func (e *Engine) GetPartyVestedRewardAccount(partyID, asset string) (*types.Acco
 	return e.GetAccountByID(vested)
 }
 
-// GetOrCreatePartyVestedAccount create the general account for a party.
+// GetOrCreatePartyVestedRewardAccount create the general account for a party.
 func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
 	if !e.AssetExists(asset) {
 		e.log.Panic("trying to use a nonexisting asset for reward accounts, something went very wrong somewhere",

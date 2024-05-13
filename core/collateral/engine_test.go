@@ -149,7 +149,7 @@ func TestGetAllVestingQuantumBalance(t *testing.T) {
 	party := "party1"
 
 	balance := eng.GetAllVestingQuantumBalance(party)
-	assert.Equal(t, int(balance.Uint64()), 0)
+	assert.Equal(t, balance.String(), "0")
 
 	assetT := types.Asset{
 		ID: "USDC",
@@ -179,7 +179,7 @@ func TestGetAllVestingQuantumBalance(t *testing.T) {
 	)
 
 	balance = eng.GetAllVestingQuantumBalance(party)
-	assert.Equal(t, int(balance.Uint64()), 100)
+	assert.Equal(t, balance.String(), "100")
 
 	// add some more of the other account
 	// now add some balance to an asset
@@ -190,7 +190,7 @@ func TestGetAllVestingQuantumBalance(t *testing.T) {
 	)
 
 	balance = eng.GetAllVestingQuantumBalance(party)
-	assert.Equal(t, int(balance.Uint64()), 103)
+	assert.Equal(t, balance.String(), "103.1666666666666667")
 }
 
 func testClearFeeAccounts(t *testing.T) {
