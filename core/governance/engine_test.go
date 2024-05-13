@@ -2034,12 +2034,12 @@ func (e *tstEngine) newProposalForNewPerpsMarket(
 func (e *tstEngine) newProposalForCapped(
 	partyID string,
 	now time.Time,
-	termFilter *dstypes.SpecFilter,
-	termBinding *datasource.SpecBindingForFuture,
-	termExt bool,
+	_ *dstypes.SpecFilter,
+	_ *datasource.SpecBindingForFuture,
+	_ bool,
 	fCap *types.FutureCap,
 ) types.Proposal {
-	return e.getMarketProposal(partyID, now, termFilter, termBinding, termExt, fCap)
+	return e.getMarketProposal(partyID, now, nil, nil, true, fCap)
 }
 
 func (e *tstEngine) newProposalForNewMarket(

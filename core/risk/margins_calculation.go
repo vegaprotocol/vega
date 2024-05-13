@@ -89,10 +89,10 @@ func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, rf
 	}
 	base := price.ToDecimal()
 	if riskiestLng.IsPositive() {
-		marginMaintenanceLng = riskiestLng.Mul(base)
+		marginMaintenanceLng = riskiestLng.Mul(base).Mul(rf.Long)
 	}
 	if riskiestSht.IsNegative() {
-		marginMaintenanceSht = riskiestSht.Mul(base)
+		marginMaintenanceSht = riskiestSht.Mul(base).Mul(rf.Short)
 	}
 
 	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) && marginMaintenanceLng.IsPositive() {
