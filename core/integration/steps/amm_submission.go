@@ -134,21 +134,8 @@ type ammRow struct {
 }
 
 func (a ammRow) toSubmission() *types.SubmitAMM {
-	reqPairs := [][2]string{
-		{"lower bound", "lower leverage"},
-		{"upper bound", "upper leverage"},
-	}
-	// at least one of the pairs is required
-	hasOne := false
-	for _, pair := range reqPairs {
-		if req := a.r.HasColumn(pair[0]); req != a.r.HasColumn(pair[1]) {
-			panic(fmt.Sprintf("values for %s and %s should be provided in pairs", pair[0], pair[1]))
-		} else if req {
-			hasOne = true
-		}
-	}
-	if !hasOne {
-		panic("required at least one pair of bound parameters (upper/lower bound + margin ratio)")
+	if !a.r.HasColumn("lower bound") && !a.r.HasColumn("upper bound") {
+		panic("required at least one upper bound and lower bound")
 	}
 
 	return &types.SubmitAMM{
@@ -263,14 +250,14 @@ func (a ammRow) upperBound() *num.Uint {
 }
 
 func (a ammRow) lowerLeverage() *num.Decimal {
-	if !a.r.HasColumn("lower bound") {
+	if !a.r.HasColumn("lower leverage") {
 		return nil
 	}
 	return ptr.From(a.r.MustDecimal("lower leverage"))
 }
 
 func (a ammRow) upperLeverage() *num.Decimal {
-	if !a.r.HasColumn("upper bound") {
+	if !a.r.HasColumn("upper leverage") {
 		return nil
 	}
 	return ptr.From(a.r.MustDecimal("upper leverage"))

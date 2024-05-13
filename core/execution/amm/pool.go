@@ -265,24 +265,50 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 	}
 }
 
+// Update returns a copy of the give pool but with its curves and parameters update as specified by `amend`.
 func (p *Pool) Update(
 	amend *types.AmendAMM,
 	rf *types.RiskFactor,
 	sf *types.ScalingFactors,
 	linearSlippage num.Decimal,
-) (*types.ConcentratedLiquidityParameters, error) {
+) (*Pool, error) {
+	commitment := p.Commitment.Clone()
 	if amend.CommitmentAmount != nil {
-		p.Commitment = amend.CommitmentAmount
+		commitment = amend.CommitmentAmount
 	}
+
+	proposedFee := p.ProposedFee
 	if amend.ProposedFee.IsPositive() {
-		p.ProposedFee = amend.ProposedFee
+		proposedFee = amend.ProposedFee
 	}
-	oldParams := p.Parameters.Clone()
-	p.Parameters.ApplyUpdate(amend.Parameters)
-	if err := p.setCurves(rf, sf, linearSlippage); err != nil {
-		return oldParams, err
+
+	// parameters cannot only be updated all at once or not at all
+	parameters := p.Parameters.Clone()
+	if amend.Parameters != nil {
+		parameters = amend.Parameters
 	}
-	return oldParams, nil
+
+	updated := &Pool{
+		ID:             p.ID,
+		SubAccount:     p.SubAccount,
+		Commitment:     commitment,
+		ProposedFee:    proposedFee,
+		Parameters:     parameters,
+		asset:          p.asset,
+		market:         p.market,
+		party:          p.party,
+		collateral:     p.collateral,
+		position:       p.position,
+		priceFactor:    p.priceFactor,
+		positionFactor: p.positionFactor,
+		status:         types.AMMPoolStatusActive,
+		sqrt:           p.sqrt,
+		oneTick:        p.oneTick,
+	}
+	if err := updated.setCurves(rf, sf, linearSlippage); err != nil {
+		return nil, err
+	}
+	return updated, nil
 }
 
 // emptyCurve creates the curve details that represent no liquidity.
@@ -404,7 +430,7 @@ func (p *Pool) setCurves(
 		highPriceMinusOne := num.UintZero().Sub(p.lower.high, p.oneTick)
 		// verify that the lower curve maintains sufficient volume from highPrice - 1 to the end of the curve.
 		if p.lower.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.lower.high) < 1 {
-			return fmt.Errorf("insufficient volume in the lower curve from high price - 1 to the end")
+			return fmt.Errorf("insufficient commitment - less than one volume at price levels on lower curve")
 		}
 	}
 
@@ -426,7 +452,7 @@ func (p *Pool) setCurves(
 		highPriceMinusOne := num.UintZero().Sub(p.upper.high, p.oneTick)
 		// verify that the upper curve maintains sufficient volume from highPrice - 1 to the end of the curve.
 		if p.upper.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.upper.high) < 1 {
-			return fmt.Errorf("insufficient volume in the lower curve from high price - 1 to the end")
+			return fmt.Errorf("insufficient commitment - less than one volume at price levels on upper curve")
 		}
 	}
 
@@ -767,6 +793,10 @@ func (p *Pool) LiquidityFee() num.Decimal {
 
 func (p *Pool) CommitmentAmount() *num.Uint {
 	return p.Commitment.Clone()
+}
+
+func (p *Pool) Owner() string {
+	return p.party
 }
 
 func (p *Pool) closing() bool {

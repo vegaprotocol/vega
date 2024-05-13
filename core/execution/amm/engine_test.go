@@ -37,13 +37,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	riskFactors    = &types.RiskFactor{Market: "", Short: num.DecimalOne(), Long: num.DecimalOne()}
+	scalingFactors = &types.ScalingFactors{InitialMargin: num.DecimalOne()}
+	slippage       = num.DecimalOne()
+)
+
 func TestSubmitAMM(t *testing.T) {
 	t.Run("test one pool per party", testOnePoolPerParty)
-	t.Run("test rebase on submit", testRebaseOnSubmit)
-	t.Run("test rebase on submit order fails", testRebaseOnSubmitOrderFails)
-	t.Run("test rebase on submit order did not trade", testRebaseOnSubmitOrderDidNotTrade)
-	t.Run("test rebase on submit order target is base", testSubmitTargetIsBase)
-	t.Run("test rebase on submit order target out of bounds", testSubmitTargetIsOutOfBounds)
 }
 
 func TestAMMTrading(t *testing.T) {
@@ -58,8 +59,7 @@ func TestAMMTrading(t *testing.T) {
 
 func TestAmendAMM(t *testing.T) {
 	t.Run("test amend AMM which doesn't exist", testAmendAMMWhichDoesntExist)
-	t.Run("test amend AMM with rebase", testAmendAMMWithRebase)
-	t.Run("test amend AMM with sparse amend", testAmendAMMSparse)
+	t.Run("test amend AMM with sparse amend", TestAmendAMMSparse)
 }
 
 func TestClosingAMM(t *testing.T) {
@@ -83,118 +83,11 @@ func testOnePoolPerParty(t *testing.T) {
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// when the party submits another, it is rejected
-	err := tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil)
+	_, err := tst.engine.Create(ctx, submit, vgcrypto.RandomHash(), riskFactors, scalingFactors, slippage)
 	require.ErrorContains(t, err, "party already own a pool for market")
-}
-
-func testRebaseOnSubmit(t *testing.T) {
-	tst := getTestEngine(t)
-	ctx := context.Background()
-
-	// the party will make this AMM submission
-	party, subAccount := getParty(t, tst)
-	submit := getPoolSubmission(t, party, tst.marketID)
-	expectSubaccountCreation(t, tst, party, subAccount)
-
-	// where the mark-price is away from the base price
-	target := num.NewUint(2100)
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(2).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
-	)
-
-	// so that an order will be submitting to rebase the pool
-	expectOrderSubmission(t, tst, subAccount, types.OrderStatusFilled, nil)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), target))
-}
-
-func testSubmitTargetIsBase(t *testing.T) {
-	tst := getTestEngine(t)
-	ctx := context.Background()
-
-	// the party will make this AMM submission
-	party, subAccount := getParty(t, tst)
-	submit := getPoolSubmission(t, party, tst.marketID)
-	expectSubaccountCreation(t, tst, party, subAccount)
-
-	// where the mark-price is the same as the base price
-	target := num.NewUint(2000)
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(1).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
-	)
-
-	// so no rebasing order is necessary
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), target))
-}
-
-func testSubmitTargetIsOutOfBounds(t *testing.T) {
-	tst := getTestEngine(t)
-	ctx := context.Background()
-
-	// the party will make this AMM submission
-	party, subAccount := getParty(t, tst)
-	submit := getPoolSubmission(t, party, tst.marketID)
-	expectSubaccountCreation(t, tst, party, subAccount)
-
-	// where the mark-price is the same as the base price
-	target := num.NewUint(1)
-
-	// the submission will fail so subaccount will be emptied
-	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
-	err := tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), target)
-	require.ErrorIs(t, ErrRebaseTargetOutsideBounds, err)
-}
-
-func testRebaseOnSubmitOrderFails(t *testing.T) {
-	tst := getTestEngine(t)
-	ctx := context.Background()
-
-	// the party will make this AMM submission
-	party, subAccount := getParty(t, tst)
-	submit := getPoolSubmission(t, party, tst.marketID)
-	expectSubaccountCreation(t, tst, party, subAccount)
-
-	// where the mark-price is away from the base price
-	target := num.NewUint(2100)
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(2).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
-	)
-
-	// so that an order will be submitting to rebase the pool
-	expectOrderSubmission(t, tst, subAccount, types.OrderStatusStopped, assert.AnError)
-
-	// the subaccount balances will be reverted
-	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
-
-	err := tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), target)
-	require.ErrorIs(t, err, assert.AnError)
-}
-
-func testRebaseOnSubmitOrderDidNotTrade(t *testing.T) {
-	tst := getTestEngine(t)
-	ctx := context.Background()
-
-	// the party will make this AMM submission
-	party, subAccount := getParty(t, tst)
-	submit := getPoolSubmission(t, party, tst.marketID)
-	expectSubaccountCreation(t, tst, party, subAccount)
-
-	// where the mark-price is away from the base price
-	target := num.NewUint(2100)
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(2).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
-	)
-
-	// so that an order will be submitting to rebase the pool
-	expectOrderSubmission(t, tst, subAccount, types.OrderStatusStopped, nil)
-
-	// the subaccount balances will be reverted
-	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
-
-	err := tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), target)
-	require.ErrorIs(t, err, ErrRebaseOrderDidNotTrade)
 }
 
 func testAmendAMMWhichDoesntExist(t *testing.T) {
@@ -205,43 +98,18 @@ func testAmendAMMWhichDoesntExist(t *testing.T) {
 	party, _ := getParty(t, tst)
 	amend := getPoolAmendment(t, party, tst.marketID)
 
-	err := tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash())
+	_, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
 	require.ErrorIs(t, err, ErrNoPoolMatchingParty)
 }
 
-func testAmendAMMWithRebase(t *testing.T) {
-	ctx := context.Background()
-	tst := getTestEngine(t)
-
-	party, subAccount := getParty(t, tst)
-	submit := getPoolSubmission(t, party, tst.marketID)
-
-	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
-
-	// now amend it so that we have to rebase the pool
-	amend := getPoolAmendment(t, party, tst.marketID)
-
-	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
-	)
-
-	// so that an order will be submitting to rebase the pool
-	expectOrderSubmission(t, tst, subAccount, types.OrderStatusFilled, nil)
-
-	err := tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash())
-	require.NoError(t, err)
-}
-
-func testAmendAMMSparse(t *testing.T) {
+func TestAmendAMMSparse(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
 	party, subAccount := getParty(t, tst)
 	submit := getPoolSubmission(t, party, tst.marketID)
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	amend := getPoolAmendment(t, party, tst.marketID)
 	// no amend to the commitment amount
@@ -254,26 +122,20 @@ func testAmendAMMSparse(t *testing.T) {
 	amend.Parameters.UpperBound.AddSum(num.UintOne())
 	amend.Parameters.LowerBound.AddSum(num.UintOne())
 
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
-	)
-
-	// so that an order will be submitting to rebase the pool
-	expectOrderSubmission(t, tst, subAccount, types.OrderStatusFilled, nil)
-
-	err := tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash())
+	updated, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
 	require.NoError(t, err)
+
+	tst.engine.Confirm(ctx, updated)
 }
 
 func testBasicSubmitOrder(t *testing.T) {
-	ctx := context.Background()
 	tst := getTestEngine(t)
 
 	party, subAccount := getParty(t, tst)
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// now submit an order against it
 	agg := &types.Order{
@@ -307,14 +169,13 @@ func testBasicSubmitOrder(t *testing.T) {
 }
 
 func testSubmitMarketOrder(t *testing.T) {
-	ctx := context.Background()
 	tst := getTestEngine(t)
 
 	party, subAccount := getParty(t, tst)
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// now submit an order against it
 	agg := &types.Order{
@@ -333,7 +194,6 @@ func testSubmitMarketOrder(t *testing.T) {
 }
 
 func testSubmitOrderProRata(t *testing.T) {
-	ctx := context.Background()
 	tst := getTestEngine(t)
 
 	// create three pools
@@ -342,7 +202,7 @@ func testSubmitOrderProRata(t *testing.T) {
 		submit := getPoolSubmission(t, party, tst.marketID)
 
 		expectSubaccountCreation(t, tst, party, subAccount)
-		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+		whenAMMIsSubmitted(t, tst, submit)
 	}
 
 	ensurePositionN(t, tst.pos, 0, num.NewUint(0), 3)
@@ -363,7 +223,6 @@ func testSubmitOrderProRata(t *testing.T) {
 }
 
 func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
-	ctx := context.Background()
 	tst := getTestEngine(t)
 
 	// create three pools
@@ -376,7 +235,7 @@ func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
 		submit.Parameters.UpperBound.Sub(submit.Parameters.UpperBound, num.NewUint(uint64(i*50)))
 
 		expectSubaccountCreation(t, tst, party, subAccount)
-		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+		whenAMMIsSubmitted(t, tst, submit)
 	}
 
 	ensureBalancesN(t, tst.col, 10000000000, -1)
@@ -413,7 +272,6 @@ func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
 }
 
 func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
-	ctx := context.Background()
 	tst := getTestEngine(t)
 
 	// create three pools
@@ -426,7 +284,7 @@ func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
 		submit.Parameters.UpperBound.Sub(submit.Parameters.UpperBound, num.NewUint(uint64(i*50)))
 
 		expectSubaccountCreation(t, tst, party, subAccount)
-		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+		whenAMMIsSubmitted(t, tst, submit)
 	}
 
 	ensureBalancesN(t, tst.col, 10000000000, -1)
@@ -464,7 +322,6 @@ func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
 }
 
 func testBestPricesAndVolume(t *testing.T) {
-	ctx := context.Background()
 	tst := getTestEngine(t)
 
 	// create three pools
@@ -473,7 +330,7 @@ func testBestPricesAndVolume(t *testing.T) {
 		submit := getPoolSubmission(t, party, tst.marketID)
 
 		expectSubaccountCreation(t, tst, party, subAccount)
-		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+		whenAMMIsSubmitted(t, tst, submit)
 	}
 
 	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(9).Return(
@@ -504,7 +361,7 @@ func testClosingReduceOnlyPool(t *testing.T) {
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// pool position is zero it should get removed right away with no fuss
 	ensurePosition(t, tst.pos, 0, num.UintZero())
@@ -526,7 +383,7 @@ func testClosingPoolImmediate(t *testing.T) {
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// pool has a position but gets closed anyway
 	ensurePosition(t, tst.pos, 12, num.UintZero())
@@ -546,7 +403,7 @@ func testAmendMakesClosingPoolActive(t *testing.T) {
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// pool position is non-zero so it''l hang around
 	ensurePosition(t, tst.pos, 12, num.UintZero())
@@ -558,12 +415,12 @@ func testAmendMakesClosingPoolActive(t *testing.T) {
 	assert.Len(t, tst.engine.pools, 1)
 	assert.True(t, tst.engine.poolsCpy[0].closing())
 
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
-	)
-	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
 	amend := getPoolAmendment(t, party, tst.marketID)
-	require.NoError(t, tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash()))
+	expectBalanceChecks(t, tst, party, subAccount, amend.CommitmentAmount.Uint64())
+
+	updated, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
+	require.NoError(t, err)
+	tst.engine.Confirm(ctx, updated)
 
 	// pool is active again
 	assert.False(t, tst.engine.poolsCpy[0].closing())
@@ -577,7 +434,7 @@ func testClosingPoolRemovedWhenPositionZero(t *testing.T) {
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// pool position is non-zero so it''l hang around
 	ensurePosition(t, tst.pos, 12, num.UintZero())
@@ -608,7 +465,7 @@ func testStoppingDistressedAMM(t *testing.T) {
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 
 	// call remove distressed with a AMM's owner will not remove the pool
 	closed := []events.MarketPosition{
@@ -633,7 +490,7 @@ func testAMMWithNoBalanceStopped(t *testing.T) {
 	submit := getPoolSubmission(t, party, tst.marketID)
 
 	expectSubaccountCreation(t, tst, party, subAccount)
-	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	whenAMMIsSubmitted(t, tst, submit)
 	ensureBalances(t, tst.col, 10000)
 	tst.engine.OnTick(ctx, time.Now())
 	assert.Len(t, tst.engine.pools, 1)
@@ -652,7 +509,7 @@ func testMarketClosure(t *testing.T) {
 		submit := getPoolSubmission(t, party, tst.marketID)
 
 		expectSubaccountCreation(t, tst, party, subAccount)
-		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+		whenAMMIsSubmitted(t, tst, submit)
 		expectSubAccountClose(t, tst, party, subAccount)
 	}
 
@@ -667,27 +524,6 @@ func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount st
 
 	// accounts are created
 	tst.col.EXPECT().CreatePartyAMMsSubAccounts(gomock.Any(), party, subAccount, tst.assetID, tst.marketID).Times(1)
-
-	expectSubAccountUpdate(t, tst, party, subAccount, 0)
-}
-
-func expectSubAccountUpdate(t *testing.T, tst *tstEngine, party, subAccount string, balance uint64) {
-	t.Helper()
-
-	// sub-account starts with zero balance
-	tst.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(getAccount(balance), nil)
-	tst.col.EXPECT().GetPartyMarginAccount(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(getAccount(balance), nil)
-
-	// account is update from party's main accounts
-	tst.col.EXPECT().SubAccountUpdate(
-		gomock.Any(),
-		party,
-		subAccount,
-		tst.assetID,
-		tst.marketID,
-		gomock.Any(),
-		gomock.Any(),
-	).Times(1).Return(&types.LedgerMovement{}, nil)
 }
 
 func expectSubAccountRelease(t *testing.T, tst *tstEngine, party, subAccount string) {
@@ -713,22 +549,24 @@ func expectSubAccountClose(t *testing.T, tst *tstEngine, party, subAccount strin
 		tst.marketID).Times(1).Return([]*types.LedgerMovement{}, nil)
 }
 
-func expectOrderSubmission(t *testing.T, tst *tstEngine, subAccount string, status types.OrderStatus, err error) {
+func expectBalanceChecks(t *testing.T, tst *tstEngine, party, subAccount string, total uint64) {
+	t.Helper()
+	tst.col.EXPECT().GetPartyMarginAccount(tst.marketID, subAccount, tst.assetID).Times(1).Return(getAccount(0), nil)
+	tst.col.EXPECT().GetPartyGeneralAccount(subAccount, tst.assetID).Times(1).Return(getAccount(0), nil)
+	tst.col.EXPECT().GetPartyGeneralAccount(party, tst.assetID).Times(1).Return(getAccount(total), nil)
+}
+
+func whenAMMIsSubmitted(t *testing.T, tst *tstEngine, submission *types.SubmitAMM) {
 	t.Helper()
 
-	conf := &types.OrderConfirmation{
-		Order: &types.Order{
-			Status: status,
-		},
-	}
-	tst.market.EXPECT().SubmitOrderWithIDGeneratorAndOrderID(
-		gomock.Any(),
-		gomock.Any(),
-		subAccount,
-		gomock.Any(),
-		gomock.Any(),
-		gomock.Any(),
-	).Times(1).Return(conf, err)
+	party := submission.Party
+	subAccount := DeriveSubAccount(party, tst.marketID, "AMMv1", 0)
+	expectBalanceChecks(t, tst, party, subAccount, submission.CommitmentAmount.Uint64())
+
+	ctx := context.Background()
+	pool, err := tst.engine.Create(ctx, submission, vgcrypto.RandomHash(), riskFactors, scalingFactors, slippage)
+	require.NoError(t, err)
+	require.NoError(t, tst.engine.Confirm(ctx, pool))
 }
 
 func getParty(t *testing.T, tst *tstEngine) (string, string) {
@@ -789,7 +627,6 @@ func getCancelSubmission(t *testing.T, party, market string, method types.AMMPoo
 type tstEngine struct {
 	engine *Engine
 	broker *bmocks.MockBroker
-	market *mocks.MockMarket
 	col    *mocks.MockCollateral
 	pos    *mocks.MockPosition
 	ctrl   *gomock.Controller
@@ -803,28 +640,20 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
 	pos := mocks.NewMockPosition(ctrl)
-	market := mocks.NewMockMarket(ctrl)
-	risk := mocks.NewMockRisk(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 
 	marketID := vgcrypto.RandomHash()
 	assetID := vgcrypto.RandomHash()
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	market.EXPECT().GetID().AnyTimes().Return(marketID)
-	market.EXPECT().GetSettlementAsset().AnyTimes().Return(assetID)
 	col.EXPECT().GetAssetQuantum(assetID).AnyTimes().Return(num.DecimalOne(), nil)
-
-	risk.EXPECT().GetRiskFactors().AnyTimes().Return(&types.RiskFactor{Market: "", Short: num.DecimalOne(), Long: num.DecimalOne()})
-	risk.EXPECT().GetScalingFactors().AnyTimes().Return(&types.ScalingFactors{InitialMargin: num.DecimalOne()})
-	risk.EXPECT().GetSlippage().AnyTimes().Return(num.DecimalOne())
 
 	teams := cmocks.NewMockTeams(ctrl)
 	balanceChecker := cmocks.NewMockAccountBalanceChecker(ctrl)
 
 	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
-	eng := New(logging.NewTestLogger(), broker, col, market, risk, pos, num.DecimalOne(), num.DecimalOne(), mat)
+	eng := New(logging.NewTestLogger(), broker, col, marketID, assetID, pos, num.DecimalOne(), num.DecimalOne(), mat)
 
 	// do an ontick to initialise the idgen
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -833,7 +662,6 @@ func getTestEngine(t *testing.T) *tstEngine {
 	return &tstEngine{
 		engine:   eng,
 		broker:   broker,
-		market:   market,
 		col:      col,
 		pos:      pos,
 		ctrl:     ctrl,

@@ -84,13 +84,28 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
 
+	asset := tradableInstrument.Instrument.Product.GetAsset()
+	exp := int(assetDecimals) - int(mkt.DecimalPlaces)
+	priceFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
+
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
+
+	var ammEngine *amm.Engine
+	if em.Amm == nil {
+		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker)
+	} else {
+		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
 	book := matching.NewCachedOrderBook(
 		log, matchingConfig, mkt.ID, as.InAuction(), peggedOrderNotify)
-	asset := tradableInstrument.Instrument.Product.GetAsset()
+	book.SetOffbookSource(ammEngine)
 
 	// this needs to stay
 	riskEngine := risk.NewEngine(log,
@@ -120,7 +135,6 @@ func NewMarketFromSnapshot(
 		broker,
 		positionFactor,
 	)
-	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
 	var feeEngine *fee.Engine
 	if em.FeesStats != nil {
@@ -141,9 +155,6 @@ func NewMarketFromSnapshot(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
-
-	exp := int(assetDecimals) - int(mkt.DecimalPlaces)
-	priceFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity
@@ -167,7 +178,7 @@ func NewMarketFromSnapshot(
 	// @TODO pass in AMM
 	marketLiquidity, err := common.NewMarketLiquidityFromSnapshot(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity, nil,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity, ammEngine,
 	)
 	if err != nil {
 		return nil, err
@@ -249,6 +260,7 @@ func NewMarketFromSnapshot(
 		partyMarginFactor:             partyMargin,
 		banking:                       banking,
 		markPriceCalculator:           markPriceCalculator,
+		amm:                           ammEngine,
 	}
 
 	markPriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
@@ -258,24 +270,8 @@ func NewMarketFromSnapshot(
 		market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 	}
 
-	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
-	if em.Amm == nil {
-		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor, positionFactor, marketActivityTracker)
-	} else {
-		market.amm, err = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor, marketActivityTracker)
-		if err != nil {
-			return nil, err
-		}
-	}
 	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor, market.amm)
 	market.liquidation = le
-	// now we can set the AMM on the market liquidity engine.
-	market.liquidity.SetAMM(market.amm)
-
-	book.SetOffbookSource(market.amm)
-
-	// now set AMM engine on liquidity market.
-	market.liquidity.SetAMM(market.amm)
 
 	for _, p := range em.Parties {
 		market.parties[p] = struct{}{}
