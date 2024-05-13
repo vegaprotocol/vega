@@ -53,10 +53,30 @@ var testnet = `{
   ]
 }`
 
+// at the moment we we use the ganache
+var mainnet = `{
+  "configs": [
+    {
+      "network_id": "1451",
+      "chain_id": "1450",
+      "collateral_bridge_contract": {
+        "address": "0x879B84eCA313D62CE4e5ED717939B42cBa9e53cb"
+      },
+      "confirmations": 3,
+      "multisig_control_contract": {
+        "address": "0xAa1eDb6C25e6B5ff2c8EdAf68757Ae557178E6eE",
+        "deployment_block_height": 0
+      },
+      "block_time": "250ms",
+      "name": "Arbitrum (Sepolia)"
+    }
+  ]
+}`
+
 var bridgeMapping = map[string]string{
 	"vega-stagnet1-202307191148":       stagnet1,
 	"vega-fairground-202305051805":     testnet,
 	"vega-mainnet-mirror-202306231148": "{}",
 	"vega-testnet-0002-v4":             "{}",
-	"vega-mainnet-0011":                "{}",
+	"vega-mainnet-0011":                mainnet,
 }
