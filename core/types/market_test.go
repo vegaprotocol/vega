@@ -41,6 +41,7 @@ var testFilter1 = &datapb.Filter{
 
 func TestMarketFromIntoProto(t *testing.T) {
 	pk := dstypes.CreateSignerFromString("pubkey", dstypes.SignerTypePubKey)
+	fPtr := false
 
 	pMarket := &vegapb.Market{
 		Id: "foo",
@@ -100,6 +101,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 					InitialMargin:     0.05,
 					CollateralRelease: 0.1,
 				},
+				FullyCollateralised: &fPtr,
 			},
 			RiskModel: &vegapb.TradableInstrument_LogNormalRiskModel{
 				LogNormalRiskModel: &vegapb.LogNormalRiskModel{
@@ -187,6 +189,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 
 func TestPerpMarketFromIntoProto(t *testing.T) {
 	pk := dstypes.CreateSignerFromString("pubkey", dstypes.SignerTypePubKey)
+	fPtr := false
 
 	pMarket := &vegapb.Market{
 		Id:       "foo",
@@ -259,6 +262,7 @@ func TestPerpMarketFromIntoProto(t *testing.T) {
 					InitialMargin:     0.05,
 					CollateralRelease: 0.1,
 				},
+				FullyCollateralised: &fPtr,
 			},
 			RiskModel: &vegapb.TradableInstrument_LogNormalRiskModel{
 				LogNormalRiskModel: &vegapb.LogNormalRiskModel{
