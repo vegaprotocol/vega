@@ -52,6 +52,7 @@ var testnet = `{
     }
   ]
 }`
+
 var validatorsTestnet = `{
   "configs": [
     {
