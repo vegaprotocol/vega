@@ -51,7 +51,7 @@ const (
 	version = "AMMv1"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/amm Collateral,Position,Market,Risk
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/amm Collateral,Position
 
 type Collateral interface {
 	GetAssetQuantum(asset string) (num.Decimal, error)
@@ -76,19 +76,6 @@ type Collateral interface {
 
 type Broker interface {
 	Send(events.Event)
-}
-
-type Market interface {
-	GetID() string
-	ClosePosition(context.Context, string) bool // return true if position was successfully closed
-	GetSettlementAsset() string
-	SubmitOrderWithIDGeneratorAndOrderID(context.Context, *types.OrderSubmission, string, common.IDGenerator, string, bool) (*types.OrderConfirmation, error)
-}
-
-type Risk interface {
-	GetRiskFactors() *types.RiskFactor
-	GetScalingFactors() *types.ScalingFactors
-	GetSlippage() num.Decimal
 }
 
 type Position interface {
@@ -134,11 +121,12 @@ type Engine struct {
 	// TODO karel - use interface for market activity tracker
 	marketActivityTracker *common.MarketActivityTracker
 
-	risk       Risk
 	collateral Collateral
 	position   Position
-	market     Market
-	idgen      *idgeneration.IDGenerator
+
+	marketID string
+	assetID  string
+	idgen    *idgeneration.IDGenerator
 
 	// gets us from the price in the submission -> price in full asset dp
 	priceFactor    num.Decimal
@@ -161,8 +149,8 @@ func New(
 	log *logging.Logger,
 	broker Broker,
 	collateral Collateral,
-	market Market,
-	risk Risk,
+	marketID string,
+	assetID string,
 	position Position,
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
@@ -171,10 +159,10 @@ func New(
 	return &Engine{
 		log:                   log,
 		broker:                broker,
-		risk:                  risk,
 		collateral:            collateral,
 		position:              position,
-		market:                market,
+		marketID:              marketID,
+		assetID:               assetID,
 		marketActivityTracker: marketActivityTracker,
 		pools:                 map[string]*Pool{},
 		poolsCpy:              []*Pool{},
@@ -190,15 +178,15 @@ func NewFromProto(
 	log *logging.Logger,
 	broker Broker,
 	collateral Collateral,
-	market Market,
-	risk Risk,
+	marketID string,
+	assetID string,
 	position Position,
 	state *v1.AmmState,
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
 ) (*Engine, error) {
-	e := New(log, broker, collateral, market, risk, position, priceFactor, positionFactor, marketActivityTracker)
+	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker)
 
 	for _, v := range state.SubAccounts {
 		e.subAccounts[v.Key] = v.Value
@@ -282,7 +270,7 @@ func (e *Engine) OnMTM(ctx context.Context) {
 func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	// seed an id-generator to create IDs for any orders generated in this block
 	_, blockHash := vgcontext.TraceIDFromContext(ctx)
-	e.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("amm-engine"+e.market.GetID()))
+	e.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("amm-engine"+e.marketID))
 
 	// any pools that for some reason have zero balance in their accounts will get stopped
 	rm := []string{}
@@ -446,13 +434,12 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 
 		// calculate the price the pool wil give for the trading volume
 		price := p.PriceForVolume(volume, agg.Side)
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("generated order at price",
-				logging.String("price", price.String()),
-				logging.Uint64("volume", volume),
-				logging.String("id", p.ID),
-			)
-		}
+		e.log.Info("generated order at price",
+			logging.String("price", price.String()),
+			logging.Uint64("volume", volume),
+			logging.String("id", p.ID),
+			logging.String("side", types.OtherSide(agg.Side).String()),
+		)
 
 		// construct the orders
 		o := &types.Order{
@@ -595,12 +582,15 @@ func (e *Engine) NotifyFinished() {
 	}
 }
 
-func (e *Engine) SubmitAMM(
+// Create takes the definition of an AMM and returns it. It is not considered a participating AMM until Confirm as been called with it.
+func (e *Engine) Create(
 	ctx context.Context,
 	submit *types.SubmitAMM,
 	deterministicID string,
-	targetPrice *num.Uint,
-) error {
+	riskFactors *types.RiskFactor,
+	scalingFactors *types.ScalingFactors,
+	slippage num.Decimal,
+) (*Pool, error) {
 	idgen := idgeneration.New(deterministicID)
 	poolID := idgen.NextID()
 
@@ -609,152 +599,122 @@ func (e *Engine) SubmitAMM(
 	if ok {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
+				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonPartyAlreadyOwnsAPool,
 			),
 		)
 
-		return ErrPartyAlreadyOwnAPool(e.market.GetID())
+		return nil, ErrPartyAlreadyOwnAPool(e.marketID)
 	}
 
-	if err := e.ensureCommitmentAmount(ctx, submit.CommitmentAmount); err != nil {
+	if err := e.ensureCommitmentAmount(ctx, submit.Party, subAccount, submit.CommitmentAmount); err != nil {
+		reason := types.AMMPoolStatusReasonCannotFillCommitment
+		if err == ErrCommitmentTooLow {
+			reason = types.AMMPoolStatusReasonCommitmentTooLow
+		}
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
+				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCommitmentTooLow,
+				types.AMMPoolStatusRejected, reason,
 			),
 		)
-		return err
+		return nil, err
 	}
 
-	_, _, err := e.collateral.CreatePartyAMMsSubAccounts(ctx, submit.Party, subAccount, e.market.GetSettlementAsset(), submit.MarketID)
+	_, _, err := e.collateral.CreatePartyAMMsSubAccounts(ctx, submit.Party, subAccount, e.assetID, submit.MarketID)
 	if err != nil {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
+				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonUnspecified,
 			),
 		)
 
-		return err
+		return nil, err
 	}
 
-	err = e.updateSubAccountBalance(
-		ctx, submit.Party, subAccount, submit.CommitmentAmount,
-	)
-	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotFillCommitment,
-			),
-		)
-
-		return err
-	}
 	pool, err := NewPool(
 		poolID,
 		subAccount,
-		e.market.GetSettlementAsset(),
+		e.assetID,
 		submit,
 		e.rooter.sqrt,
 		e.collateral,
 		e.position,
-		e.risk.GetRiskFactors(),
-		e.risk.GetScalingFactors(),
-		e.risk.GetSlippage(),
+		riskFactors,
+		scalingFactors,
+		slippage,
 		e.priceFactor,
 		e.positionFactor,
 	)
 	if err != nil {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
+				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCommitmentTooLow, // TODO Karel - check if this error is ok to return
+				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCommitmentTooLow,
 			),
 		)
 
-		return err
+		return nil, err
 	}
 
-	if targetPrice != nil {
-		if err := e.rebasePool(ctx, pool, targetPrice, submit.SlippageTolerance, idgen); err != nil {
-			if err := e.updateSubAccountBalance(ctx, submit.Party, subAccount, num.UintZero()); err != nil {
-				e.log.Panic("unable to remove sub account balances", logging.Error(err))
-			}
-
-			// couldn't rebase the pool so it gets rejected
-			e.broker.Send(
-				events.NewAMMPoolEvent(
-					ctx, submit.Party, e.market.GetID(), subAccount, poolID,
-					submit.CommitmentAmount, submit.Parameters,
-					types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotRebase,
-				),
-			)
-			return err
-		}
-	}
-	e.log.Debug("AMM added for market",
+	e.log.Debug("AMM created for market",
 		logging.String("owner", submit.Party),
-		logging.String("marketID", e.market.GetID()),
+		logging.String("marketID", e.marketID),
 		logging.String("poolID", pool.ID),
 	)
+	return pool, nil
+}
+
+// Confirm takes an AMM that was created earlier and now commits it to the engine as a functioning pool.
+func (e *Engine) Confirm(
+	ctx context.Context,
+	pool *Pool,
+) error {
+	e.log.Debug("AMM added for market",
+		logging.String("owner", pool.party),
+		logging.String("marketID", e.marketID),
+		logging.String("poolID", pool.ID),
+	)
+	pool.status = types.AMMPoolStatusActive
 	e.add(pool)
 	e.sendUpdate(ctx, pool)
 	return nil
 }
 
-func (e *Engine) AmendAMM(
+// Amend takes the details of an amendment to an AMM and returns a copy of that pool with the updated curves along with the current pool.
+// The changes are not taken place in the AMM engine until Confirm is called on the updated pool.
+func (e *Engine) Amend(
 	ctx context.Context,
 	amend *types.AmendAMM,
-	deterministicID string,
-) error {
+	riskFactors *types.RiskFactor,
+	scalingFactors *types.ScalingFactors,
+	slippage num.Decimal,
+) (*Pool, *Pool, error) {
 	pool, ok := e.pools[amend.Party]
 	if !ok {
-		return ErrNoPoolMatchingParty
+		return nil, nil, ErrNoPoolMatchingParty
 	}
 
 	if amend.CommitmentAmount != nil {
-		if err := e.ensureCommitmentAmount(ctx, amend.CommitmentAmount); err != nil {
-			return err
-		}
-
-		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, amend.CommitmentAmount); err != nil {
-			return err
+		if err := e.ensureCommitmentAmount(ctx, amend.Party, pool.SubAccount, amend.CommitmentAmount); err != nil {
+			return nil, nil, err
 		}
 	}
 
-	oldCommitment := pool.Commitment.Clone()
-	fairPrice := pool.BestPrice(nil)
-	oldParams, err := pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+	// we need to remove the existing pool from the engine so that when calculating rebasing orders we do not
+	// trade with ourselves.
+	e.remove(ctx, amend.Party)
+	updated, err := pool.Update(amend, riskFactors, scalingFactors, slippage)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	if err := e.rebasePool(ctx, pool, fairPrice, amend.SlippageTolerance, idgeneration.New(deterministicID)); err != nil {
-		// couldn't rebase the pool back to its original fair price so the amend is rejected
-		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, oldCommitment); err != nil {
-			e.log.Panic("could not revert balances are failed rebase", logging.Error(err))
-		}
-		// restore updated parameters
-		pool.Parameters = oldParams
-		// restore curves
-		if err := pool.setCurves(e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage()); err != nil {
-			e.log.Panic("could not restore curves after failed rebase", logging.Error(err))
-		}
-
-		return err
-	}
-
-	// set state to active since if it was closing in reduce-position mode it becomes alive again
-	pool.status = types.AMMPoolStatusActive
-	e.sendUpdate(ctx, pool)
-	return nil
+	return updated, pool, nil
 }
 
 func (e *Engine) CancelAMM(
@@ -805,7 +765,7 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 		}
 		p.status = types.AMMPoolStatusStopped
 		e.sendUpdate(ctx, p)
-		e.marketActivityTracker.RemoveAMMSubAccount(e.market.GetSettlementAsset(), e.market.GetID(), p.SubAccount)
+		e.marketActivityTracker.RemoveAMMSubAccount(e.assetID, e.marketID, p.SubAccount)
 	}
 	return nil
 }
@@ -813,7 +773,7 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 	e.broker.Send(
 		events.NewAMMPoolEvent(
-			ctx, pool.party, e.market.GetID(), pool.SubAccount, pool.ID,
+			ctx, pool.party, e.marketID, pool.SubAccount, pool.ID,
 			pool.Commitment, pool.Parameters,
 			pool.status, types.AMMPoolStatusReasonUnspecified,
 		),
@@ -822,13 +782,34 @@ func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 
 func (e *Engine) ensureCommitmentAmount(
 	_ context.Context,
+	party string,
+	subAccount string,
 	commitmentAmount *num.Uint,
 ) error {
-	quantum, _ := e.collateral.GetAssetQuantum(e.market.GetSettlementAsset())
+	quantum, _ := e.collateral.GetAssetQuantum(e.assetID)
 	quantumCommitment := commitmentAmount.ToDecimal().Div(quantum)
 
 	if quantumCommitment.LessThan(e.minCommitmentQuantum.ToDecimal()) {
 		return ErrCommitmentTooLow
+	}
+
+	total := num.UintZero()
+
+	// check they have enough in their accounts, sub-margin + sub-general + general >= commitment
+	if a, err := e.collateral.GetPartyMarginAccount(e.marketID, subAccount, e.assetID); err == nil {
+		total.Add(total, a.Balance)
+	}
+
+	if a, err := e.collateral.GetPartyGeneralAccount(subAccount, e.assetID); err == nil {
+		total.Add(total, a.Balance)
+	}
+
+	if a, err := e.collateral.GetPartyGeneralAccount(party, e.assetID); err == nil {
+		total.Add(total, a.Balance)
+	}
+
+	if total.LT(commitmentAmount) {
+		return fmt.Errorf("not enough collateral in general account")
 	}
 
 	return nil
@@ -864,20 +845,20 @@ func (e *Engine) releaseSubAccounts(ctx context.Context, pool *Pool, mktClose bo
 	return closeout, nil
 }
 
-func (e *Engine) updateSubAccountBalance(
+func (e *Engine) UpdateSubAccountBalance(
 	ctx context.Context,
 	party, subAccount string,
 	newCommitment *num.Uint,
-) error {
+) (*num.Uint, error) {
 	// first we get the current balance of both the margin, and general subAccount
 	subMargin, err := e.collateral.GetPartyMarginAccount(
-		e.market.GetID(), subAccount, e.market.GetSettlementAsset())
+		e.marketID, subAccount, e.assetID)
 	if err != nil {
 		// by that point the account must exist
 		e.log.Panic("no sub margin account", logging.Error(err))
 	}
 	subGeneral, err := e.collateral.GetPartyGeneralAccount(
-		subAccount, e.market.GetSettlementAsset())
+		subAccount, e.assetID)
 	if err != nil {
 		// by that point the account must exist
 		e.log.Panic("no sub general account", logging.Error(err))
@@ -897,88 +878,21 @@ func (e *Engine) updateSubAccountBalance(
 		actualAmount.Sub(currentCommitment, newCommitment)
 	} else {
 		// nothing to do
-		return nil
+		return currentCommitment, nil
 	}
 
 	ledgerMovements, err := e.collateral.SubAccountUpdate(
-		ctx, party, subAccount, e.market.GetSettlementAsset(),
-		e.market.GetID(), transferType, actualAmount,
+		ctx, party, subAccount, e.assetID,
+		e.marketID, transferType, actualAmount,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	e.broker.Send(events.NewLedgerMovements(
 		ctx, []*types.LedgerMovement{ledgerMovements}))
 
-	return nil
-}
-
-// rebasePool submits an order on behalf of the given pool to pull it fair-price towards the target.
-func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, tol num.Decimal, idgen common.IDGenerator) error {
-	if target.LT(pool.lower.low) || target.GT(pool.upper.high) {
-		return ErrRebaseTargetOutsideBounds
-	}
-
-	// get the pools current fair-price
-	fairPrice := pool.BestPrice(nil)
-	e.log.Debug("rebasing pool",
-		logging.String("id", pool.ID),
-		logging.String("fair-price", fairPrice.String()),
-		logging.String("target", target.String()),
-		logging.String("slippage", tol.String()),
-	)
-	if fairPrice.EQ(target) {
-		return nil
-	}
-
-	// calculate slippage as a factor of the mark-price so we can allow for a trades at prices +/- either side of the mark price, depending on side
-	slippage, _ := num.UintFromDecimal(target.ToDecimal().Mul(tol))
-
-	// this is the order the pool will submit to rebase itself such that its fair-price is roughly the mark price
-	order := &types.OrderSubmission{
-		MarketID:    pool.market,
-		Price:       num.UintZero(),
-		TimeInForce: types.OrderTimeInForceFOK,
-		Type:        types.OrderTypeLimit,
-		Reference:   fmt.Sprintf("amm-rebase-%s", pool.ID),
-	}
-
-	if target.GT(fairPrice) {
-		// pool base price is lower than market price, it will need to sell to lower its fair-price
-		order.Side = types.SideSell
-		order.Price.Sub(target, slippage)
-	} else {
-		order.Side = types.SideBuy
-		order.Price.Add(target, slippage)
-	}
-
-	// ask the pool for the volume it would need to shift to get its price to target
-	// the order side is the side of the order that will trade with it, so needs to be the opposite
-	order.Size = pool.TradableVolumeInRange(types.OtherSide(order.Side), fairPrice, target)
-	if order.Size == 0 {
-		// fair-price is so close to target price that the volume to shift it is too small, but thats ok
-		return nil
-	}
-
-	// need to scale make to market precision here because thats what SubmitOrderWithIDGeneratorAndOrderID expects
-	order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Div(e.priceFactor))
-
-	e.log.Debug("submitting order to rebase after scale",
-		logging.Uint64("size", order.Size),
-		logging.String("price", order.Price.String()),
-		logging.String("side", order.Side.String()),
-	)
-
-	conf, err := e.market.SubmitOrderWithIDGeneratorAndOrderID(ctx, order, pool.SubAccount, idgen, idgen.NextID(), true)
-	if err != nil {
-		return fmt.Errorf("rebasing trade failed: %w", err)
-	}
-
-	if conf.Order.Status != types.OrderStatusFilled {
-		return ErrRebaseOrderDidNotTrade
-	}
-	return nil
+	return currentCommitment, nil
 }
 
 func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
@@ -1001,7 +915,7 @@ func (e *Engine) add(p *Pool) {
 	e.pools[p.party] = p
 	e.poolsCpy = append(e.poolsCpy, p)
 	e.subAccounts[p.SubAccount] = p.party
-	e.marketActivityTracker.AddAMMSubAccount(e.market.GetSettlementAsset(), e.market.GetID(), p.SubAccount)
+	e.marketActivityTracker.AddAMMSubAccount(e.assetID, e.marketID, p.SubAccount)
 }
 
 func (e *Engine) remove(ctx context.Context, party string) {
@@ -1016,7 +930,7 @@ func (e *Engine) remove(ctx context.Context, party string) {
 	delete(e.pools, party)
 	delete(e.subAccounts, pool.SubAccount)
 	e.sendUpdate(ctx, pool)
-	e.marketActivityTracker.RemoveAMMSubAccount(e.market.GetSettlementAsset(), e.market.GetID(), pool.SubAccount)
+	e.marketActivityTracker.RemoveAMMSubAccount(e.assetID, e.marketID, pool.SubAccount)
 }
 
 func DeriveSubAccount(

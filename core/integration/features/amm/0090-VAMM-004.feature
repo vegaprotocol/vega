@@ -61,7 +61,7 @@ Feature: Test vAMM submission works as expected (invalid submission)
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
-      | vamm1  | USD   | 100    |
+      | vamm1  | USD   | 100000 |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -91,42 +91,42 @@ Feature: Test vAMM submission works as expected (invalid submission)
     # Try all submissions from AC's 0090-VAMM-001 through 0090-VAMM-003, add some more for good measure
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | error                                    | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | not enough collateral in general account | 0.01         |
+      | vamm1 | ETH/MAR22 | 200000 | 0.1      | 100  | 90          | 110         | 4              | 4              | not enough collateral in general account | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | lower bound | lower leverage | upper bound | upper leverage | reason                               |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_REJECTED | 100  | 85          | 0.25               | 150         | 0.25               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
+      | vamm1 | ETH/MAR22 | 200000 | STATUS_REJECTED | 100  | 90          | 4              | 110         | 4              | STATUS_REASON_CANNOT_FILL_COMMITMENT |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | lower leverage | error                                    | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 90   | 85          | 0.25               | not enough collateral in general account | 0.01         |
+      | vamm1 | ETH/MAR22 | 200000   | 0.1      | 90   | 85          | 0.25               | not enough collateral in general account | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | lower bound | lower leverage | reason                               |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_REJECTED | 90   | 85          | 0.25               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
+      | vamm1 | ETH/MAR22 | 200000   | STATUS_REJECTED | 90   | 85          | 0.25               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | upper bound | upper leverage | error                                    | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 110  | 150         | 0.25               | not enough collateral in general account | 0.01         |
+      | vamm1 | ETH/MAR22 | 200000   | 0.1      | 110  | 150         | 0.25               | not enough collateral in general account | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | upper bound | upper leverage | reason                               |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_REJECTED | 110  | 150         | 0.25               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
+      | vamm1 | ETH/MAR22 | 200000   | STATUS_REJECTED | 110  | 150         | 0.25               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | lower leverage | error                                    | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.01     | 110  | 99          | 0.1                | not enough collateral in general account |  0.01        |
+      | vamm1 | ETH/MAR22 | 200000 | 0.01     | 110  | 99          | 0.1            | not enough collateral in general account |  0.01        |
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | lower bound | lower leverage | reason                               |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_REJECTED | 110  | 99          | 0.1                | STATUS_REASON_CANNOT_FILL_COMMITMENT |
+      | vamm1 | ETH/MAR22 | 200000   | STATUS_REJECTED | 110  | 99          | 0.1                | STATUS_REASON_CANNOT_FILL_COMMITMENT |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | upper bound | upper leverage | error                                    | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.01     | 90   | 101         | 0.02               | not enough collateral in general account | 0.01         |
+      | vamm1 | ETH/MAR22 | 200000   | 0.01     | 90   | 101         | 0.02               | not enough collateral in general account | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | upper bound | upper leverage | reason                               |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_REJECTED | 90   | 101         | 0.02               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
+      | vamm1 | ETH/MAR22 | 200000   | STATUS_REJECTED | 90   | 101         | 0.02               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | error                                    | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000   | 0.001    | 101  | 95          | 105         | 0.01               | 0.01               | not enough collateral in general account | 0.01         |
+      | vamm1 | ETH/MAR22 | 200000   | 0.001    | 101  | 95          | 105         | 0.01               | 0.01               | not enough collateral in general account | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | lower bound | lower leverage | upper bound | upper leverage | reason                               |
-      | vamm1 | ETH/MAR22 | 1000   | STATUS_REJECTED | 101  | 95          | 0.01               | 105         | 0.01               | STATUS_REASON_CANNOT_FILL_COMMITMENT |
+      | vamm1 | ETH/MAR22 | 200000   | STATUS_REJECTED | 101  | 95          | 0.01               | 105         | 0.01               | STATUS_REASON_CANNOT_FILL_COMMITMENT |

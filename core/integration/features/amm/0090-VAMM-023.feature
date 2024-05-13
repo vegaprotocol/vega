@@ -129,17 +129,17 @@ Feature: Test cancelled vAMM becomes active on amend.
 
     # Now amend the reduce-only vAMM submission, and check to see if its status returns back to active
     When the parties amend the following AMM:
-      | party | market id | slippage | base | lower bound | upper bound |
-      | vamm1 | ETH/MAR22 | 0.1      | 105  | 90          | 155         |
+      | party | market id | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 0.1      | 105  | 90          | 155         | 0.25           | 0.25           |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 105  | 90          | 155         | 0.25               | 0.25               |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 105  | 90          | 155         | 0.25           | 0.25               |
 
     # Now trigger a MTM settlement, this should not change anything, whereas without the amend it'd move the vAMM to the cancelled status.
     When the network moves ahead "1" blocks
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 105  | 90          | 155         | 0.25               | 0.25               |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 105  | 90          | 155         | 0.25           | 0.25           |
     And the parties should have the following account balances:
       | party     | asset | market id | general | margin | is amm |
       | vamm1     | USD   |           | 0       |        |        |

@@ -66,31 +66,6 @@ func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMMPool_Conce
 	}
 }
 
-func (p *ConcentratedLiquidityParameters) ApplyUpdate(update *ConcentratedLiquidityParameters) {
-	if update == nil {
-		return
-	}
-	if update.Base != nil {
-		p.Base = update.Base
-	}
-
-	if update.LowerBound != nil {
-		p.LowerBound = update.LowerBound
-	}
-
-	if update.UpperBound != nil {
-		p.UpperBound = update.UpperBound
-	}
-
-	if update.LeverageAtLowerBound != nil {
-		p.LeverageAtLowerBound = update.LeverageAtLowerBound
-	}
-
-	if update.LeverageAtUpperBound != nil {
-		p.LeverageAtUpperBound = update.LeverageAtUpperBound
-	}
-}
-
 func (p ConcentratedLiquidityParameters) Clone() *ConcentratedLiquidityParameters {
 	ret := &ConcentratedLiquidityParameters{}
 	if p.Base != nil {
@@ -246,7 +221,7 @@ func (a AmendAMM) IntoProto() *commandspb.AmendAMM {
 	}
 	ret.ConcentratedLiquidityParameters = &commandspb.AmendAMM_ConcentratedLiquidityParameters{}
 	if a.Parameters.Base != nil {
-		ret.ConcentratedLiquidityParameters.Base = ptr.From(a.Parameters.Base.String())
+		ret.ConcentratedLiquidityParameters.Base = a.Parameters.Base.String()
 	}
 	if a.Parameters.LowerBound != nil {
 		ret.ConcentratedLiquidityParameters.LowerBound = ptr.From(a.Parameters.LowerBound.String())
@@ -279,9 +254,7 @@ func NewAmendAMMFromProto(
 
 	//  this too, and the parameters it contains
 	if amendAMM.ConcentratedLiquidityParameters != nil {
-		if amendAMM.ConcentratedLiquidityParameters.Base != nil {
-			base, _ = num.UintFromString(*amendAMM.ConcentratedLiquidityParameters.Base, 10)
-		}
+		base, _ = num.UintFromString(amendAMM.ConcentratedLiquidityParameters.Base, 10)
 		if amendAMM.ConcentratedLiquidityParameters.LowerBound != nil {
 			lowerBound, _ = num.UintFromString(*amendAMM.ConcentratedLiquidityParameters.LowerBound, 10)
 		}

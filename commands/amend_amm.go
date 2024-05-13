@@ -68,14 +68,13 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 	}
 
 	if cmd.ConcentratedLiquidityParameters != nil {
-		if cmd.ConcentratedLiquidityParameters.Base != nil {
-			hasUpdate = true
-			if amount, _ := big.NewInt(0).SetString(*cmd.ConcentratedLiquidityParameters.Base, 10); amount == nil {
-				errs.FinalAddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrIsNotValidNumber)
-			} else if amount.Cmp(big.NewInt(0)) <= 0 {
-				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrMustBePositive)
-			}
+		hasUpdate = true
+		if amount, _ := big.NewInt(0).SetString(cmd.ConcentratedLiquidityParameters.Base, 10); amount == nil {
+			errs.FinalAddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrIsNotValidNumber)
+		} else if amount.Cmp(big.NewInt(0)) <= 0 {
+			errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrMustBePositive)
 		}
+
 		if cmd.ConcentratedLiquidityParameters.LowerBound != nil {
 			hasUpdate = true
 			if amount, _ := big.NewInt(0).SetString(*cmd.ConcentratedLiquidityParameters.LowerBound, 10); amount == nil {

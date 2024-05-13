@@ -209,10 +209,15 @@ func NewMarket(
 		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 
+	asset := tradableInstrument.Instrument.Product.GetAsset()
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
+
+	ammEngine := amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker)
+
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
 	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, auctionState.InAuction(), peggedOrderNotify)
-	asset := tradableInstrument.Instrument.Product.GetAsset()
+	book.SetOffbookSource(ammEngine)
 
 	riskEngine := risk.NewEngine(log,
 		riskConfig,
@@ -241,7 +246,6 @@ func NewMarket(
 		broker,
 		positionFactor,
 	)
-	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset, positionFactor)
 	if err != nil {
@@ -263,11 +267,10 @@ func NewMarket(
 
 	equityShares := common.NewEquityShares(num.DecimalZero())
 
-	// we can't pass in the AMM at this point
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
 		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
-		nil,
+		ammEngine,
 	)
 
 	// The market is initially created in a proposed state
@@ -338,16 +341,11 @@ func NewMarket(
 		partyMarginFactor:             map[string]num.Decimal{},
 		banking:                       banking,
 		markPriceCalculator:           common.NewCompositePriceCalculator(ctx, mkt.MarkPriceConfiguration, oracleEngine, timeService),
+		amm:                           ammEngine,
 	}
 
-	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor, positionFactor, marketActivityTracker)
 	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, positionEngine, pMonitor, market.amm)
 	market.liquidation = le
-	// now set AMM engine on liquidity market.
-	market.liquidity.SetAMM(market.amm)
-
-	// this isn't the nicest way to resolve the dependencies
-	market.matching.SetOffbookSource(market.amm)
 
 	market.markPriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 
@@ -5067,17 +5065,224 @@ func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error)
 	return m.matching.GetFillPrice(volume, side)
 }
 
-func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, deterministicID string) error {
-	target := m.getCurrentMarkPrice()
-	if m.as.InAuction() {
-		target = nil
+func (m *Market) getRebasingOrder(
+	price *num.Uint, // the best bid/ask of the market
+	side types.Side, // side the pool needs to trade as
+	slippage num.Decimal,
+	pool *amm.Pool,
+) (*types.Order, error) {
+	var volume uint64
+	fairPrice := pool.BestPrice(nil)
+	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(m.priceFactor))
+
+	var until *num.Uint
+	switch side {
+	case types.SideBuy:
+		until = fairPrice
+		slipped := price.ToDecimal().Mul(num.DecimalOne().Add(slippage))
+		if stopAt, overflow := num.UintFromDecimal(slipped); !overflow {
+			until = num.Min(until, stopAt)
+		}
+	case types.SideSell:
+		until = fairPrice
+		slipped := price.ToDecimal().Mul(num.DecimalOne().Sub(slippage)).Ceil()
+		if stopAt, overflow := num.UintFromDecimal(slipped); !overflow {
+			until = num.Max(until, stopAt)
+		}
 	}
-	err := m.amm.SubmitAMM(ctx, submit, deterministicID, target)
-	return err
+
+Walk:
+	for {
+		// get the tradable volume necessary to move the AMM's position from fair-price -> price
+		required := pool.TradableVolumeInRange(types.OtherSide(side), fairPrice, price)
+
+		// AMM is close enough to the target that is has no volume between, so we do not need to rebase
+		if required == 0 {
+			return nil, nil
+		}
+
+		if volume == 0 {
+			volume = required
+		}
+
+		// get the volume available to trade from both the orderbook and other AMM's
+		ammVolume := m.amm.GetVolumeAtPrice(price, side)
+		orderVolume := m.matching.GetVolumeAtPrice(price, types.OtherSide(side))
+
+		// there is enough volume to trade at this level, create the order that the AMM needs to submit
+		if required < orderVolume+ammVolume {
+			originalPrice, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+			return &types.Order{
+				ID:            m.idgen.NextID(),
+				MarketID:      m.GetID(),
+				Party:         pool.SubAccount,
+				Side:          side,
+				Price:         price,
+				OriginalPrice: originalPrice,
+				Size:          volume,
+				Remaining:     volume,
+				TimeInForce:   types.OrderTimeInForceIOC,
+				Type:          types.OrderTypeLimit,
+				CreatedAt:     m.timeService.GetTimeNow().UnixNano(),
+				Status:        types.OrderStatusActive,
+				Reference:     "amm-rebase" + pool.SubAccount,
+			}, nil
+		}
+
+		volume = required
+		switch side {
+		case types.SideBuy:
+			// this function will walk the price forwards through price levels until we hit the AMM's fair price or slippage price
+			// i.e 100 -> 101 -> 102
+			price = num.UintZero().Add(price, oneTick)
+			if price.GTE(until) {
+				break Walk
+			}
+		case types.SideSell:
+			// this function will walk the price backwards through price levels until we hit the AMM's fair price or slippage price
+			// i.e 100 -> 99 -> 98
+			price = num.UintZero().Sub(price, oneTick)
+			if price.LTE(until) {
+				break Walk
+			}
+		}
+	}
+
+	return nil, common.ErrAMMCannotRebase
+}
+
+// needsRebase returns whether an AMM at fair-price needs to submit a rebasing order given the current spread on the market.
+func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) {
+	if m.as.InAuction() {
+		return false, types.SideUnspecified, nil
+	}
+
+	ask, err := m.matching.GetBestAskPrice()
+	if err == nil && fairPrice.GT(ask) {
+		return true, types.SideBuy, ask
+	}
+
+	bid, err := m.matching.GetBestBidPrice()
+	if err == nil && fairPrice.LT(bid) {
+		return true, types.SideSell, bid
+	}
+	return false, types.SideUnspecified, nil
+}
+
+func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, deterministicID string) error {
+	m.idgen = idgeneration.New(deterministicID)
+	defer func() { m.idgen = nil }()
+
+	// create the AMM curves but do not confirm it with the engine
+	var order *types.Order
+	pool, err := m.amm.Create(ctx, submit, m.idgen.NextID(), m.risk.GetRiskFactors(), m.risk.GetScalingFactors(), m.risk.GetSlippage())
+	if err != nil {
+		return err
+	}
+
+	// create a rebasing order if the AMM needs it i.e its base if not within best-bid/best-ask
+	if ok, side, quote := m.needsRebase(submit.Parameters.Base); ok {
+		order, err = m.getRebasingOrder(quote, side, submit.SlippageTolerance, pool)
+		if err != nil {
+			m.broker.Send(
+				events.NewAMMPoolEvent(
+					ctx, pool.Owner(), m.GetID(), pool.SubAccount, pool.ID,
+					pool.CommitmentAmount(), pool.Parameters,
+					types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotRebase,
+				),
+			)
+			return err
+		}
+	}
+
+	_, err = m.amm.UpdateSubAccountBalance(ctx, submit.Party, pool.SubAccount, submit.CommitmentAmount)
+	if err != nil {
+		m.broker.Send(
+			events.NewAMMPoolEvent(
+				ctx, submit.Party, m.GetID(), pool.SubAccount, pool.ID,
+				submit.CommitmentAmount, submit.Parameters,
+				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotFillCommitment,
+			),
+		)
+		return err
+	}
+
+	// if a rebase is not necessary we're done, just confirm with the amm-engine
+	if order == nil {
+		return m.amm.Confirm(ctx, pool)
+	}
+
+	if conf, _, err := m.submitValidatedOrder(ctx, order); err != nil || len(conf.Trades) == 0 {
+		m.log.Error("failed to submit rebasing order",
+			logging.Order(order),
+			logging.Error(err),
+		)
+		ledgerMovements, _, _ := m.collateral.SubAccountRelease(ctx, submit.Party, pool.SubAccount, m.GetSettlementAsset(), m.GetID(), nil)
+		m.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
+		m.broker.Send(
+			events.NewAMMPoolEvent(
+				ctx, submit.Party, m.GetID(), pool.SubAccount, pool.ID,
+				submit.CommitmentAmount, submit.Parameters,
+				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotRebase,
+			),
+		)
+		return err
+	}
+
+	return m.amm.Confirm(ctx, pool)
 }
 
 func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, deterministicID string) error {
-	return m.amm.AmendAMM(ctx, amend, deterministicID)
+	m.idgen = idgeneration.New(deterministicID)
+	defer func() { m.idgen = nil }()
+
+	// get an amended AMM and the existing AMM
+	pool, existing, err := m.amm.Amend(ctx, amend, m.risk.GetRiskFactors(), m.risk.GetScalingFactors(), m.risk.GetSlippage())
+	if err != nil {
+		return err
+	}
+
+	// if we failed to rebase the amended pool be sure to reinstante the old one
+	defer func() {
+		if err != nil {
+			m.amm.Confirm(ctx, existing)
+		}
+	}()
+
+	var order *types.Order
+	if ok, side, quote := m.needsRebase(pool.BestPrice(nil)); ok {
+		order, err = m.getRebasingOrder(quote, side, amend.SlippageTolerance, pool)
+		if err != nil {
+			return err
+		}
+	}
+
+	// update commitment ready for rebasing
+	var prevCommitment *num.Uint
+	if amend.CommitmentAmount != nil {
+		prevCommitment, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.SubAccount, amend.CommitmentAmount)
+		if err != nil {
+			return err
+		}
+	}
+
+	if order == nil {
+		return m.amm.Confirm(ctx, pool)
+	}
+
+	conf, _, err := m.submitValidatedOrder(ctx, order)
+	if err != nil || len(conf.Trades) == 0 {
+		m.log.Error("failed to submit rebasing order",
+			logging.Order(order),
+			logging.Error(err),
+		)
+		if amend.CommitmentAmount != nil {
+			_, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.SubAccount, prevCommitment)
+		}
+		return err
+	}
+
+	return m.amm.Confirm(ctx, pool)
 }
 
 func (m *Market) CancelAMM(ctx context.Context, cancel *types.CancelAMM, deterministicID string) error {
