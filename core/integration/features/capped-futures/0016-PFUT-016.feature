@@ -1,4 +1,4 @@
-Feature: Pegged orders are capped to max price.
+Feature: Oracle price data within range is used to determine the mid price
 
   Background:
     Given the following assets are registered:
@@ -23,7 +23,7 @@ Feature: Pegged orders are capped to max price.
       | limits.markets.maxPeggedOrders          | 2     |
 
   @MidPrice @NoPerp @Capped
-  Scenario: Mid price works as expected
+  Scenario: 0016-PFUT-016: When a market is setup to use oracle based mark price and the value received from oracle is less than max_price then it gets used as is and mark-to-market flows are calculated according to that price.
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party1 | DAI   | 110000000 |

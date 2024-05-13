@@ -20,7 +20,7 @@ Feature: Pegged orders are capped to max price.
       | limits.markets.maxPeggedOrders          | 2     |
 
   @MidPrice @NoPerp @Capped
-  Scenario: Mid price works as expected
+  Scenario: 0016-PFUT-015: pegged orders are capped to max price.
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
       | party1 | DAI   | 110000000000 |
