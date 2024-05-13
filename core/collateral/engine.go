@@ -3767,7 +3767,7 @@ func (e *Engine) SubAccountRelease(
 	// subaccount has a position so construct a margin-update thing which we can pass to
 	// the market to closeout its position.
 	var closeout events.Margin
-	if pos.Size() != 0 {
+	if pos != nil && pos.Size() != 0 {
 		closeout = &marginUpdate{
 			MarketPosition:  pos,
 			asset:           asset,

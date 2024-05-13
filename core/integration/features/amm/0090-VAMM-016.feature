@@ -132,7 +132,7 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 10000  | 0.8      | 100  | 95          | 105         | 1.041          | 1.041          | 0.03         |
+      | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 95          | 105         | 1.041          | 1.041          | 0.03         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 95          | 105         | 1.041          | 1.041          |

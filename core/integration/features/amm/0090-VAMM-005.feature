@@ -51,114 +51,114 @@ Feature: Test vAMM submission works as expected (invalid submission)
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
-  # @VAMM
-  # Scenario: 0090-VAMM-005:  When market.amm.minCommitmentQuantum is 1000, mid price of the market 100, a user with 1000 USDT is able to create a vAMM with commitment 100, and any other combination of settings.
-  #   Given the parties deposit on asset's general account the following amount:
-  #     | party  | asset | amount |
-  #     | lp1    | USD   | 100000 |
-  #     | lp2    | USD   | 100000 |
-  #     | lp3    | USD   | 100000 |
-  #     | party1 | USD   | 100000 |
-  #     | party2 | USD   | 100000 |
-  #     | party3 | USD   | 100000 |
-  #     | vamm1  | USD   | 100000 |
-  #     | vamm2  | USD   | 100000 |
-  #     | vamm3  | USD   | 100000 |
-  #     | vamm4  | USD   | 100000 |
-  #     | vamm5  | USD   | 100000 |
-  #     | vamm6  | USD   | 100000 |
-  #     | vamm7  | USD   | 100000 |
+   @VAMM
+   Scenario: 0090-VAMM-005:  When market.amm.minCommitmentQuantum is 1000, mid price of the market 100, a user with 1000 USDT is able to create a vAMM with commitment 100, and any other combination of settings.
+     Given the parties deposit on asset's general account the following amount:
+       | party  | asset | amount |
+       | lp1    | USD   | 100000 |
+       | lp2    | USD   | 100000 |
+       | lp3    | USD   | 100000 |
+       | party1 | USD   | 100000 |
+       | party2 | USD   | 100000 |
+       | party3 | USD   | 100000 |
+       | vamm1  | USD   | 100000 |
+       | vamm2  | USD   | 100000 |
+       | vamm3  | USD   | 100000 |
+       | vamm4  | USD   | 100000 |
+       | vamm5  | USD   | 100000 |
+       | vamm6  | USD   | 100000 |
+       | vamm7  | USD   | 100000 |
 
-  #   When the parties submit the following liquidity provision:
-  #     | id   | party | market id | commitment amount | fee   | lp type    |
-  #     | lp_1 | lp1   | ETH/MAR22 | 600               | 0.02  | submission |
-  #     | lp_2 | lp2   | ETH/MAR22 | 400               | 0.015 | submission |
-  #   Then the network moves ahead "4" blocks
-  #   And the current epoch is "0"
+     When the parties submit the following liquidity provision:
+       | id   | party | market id | commitment amount | fee   | lp type    |
+       | lp_1 | lp1   | ETH/MAR22 | 600               | 0.02  | submission |
+       | lp_2 | lp2   | ETH/MAR22 | 400               | 0.015 | submission |
+     Then the network moves ahead "4" blocks
+     And the current epoch is "0"
 
-  #   And the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-  #     | party3 | ETH/MAR22 | buy  | 10     | 85    | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | party1 | ETH/MAR22 | buy  | 10     | 90    | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | party1 | ETH/MAR22 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | party2 | ETH/MAR22 | sell | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | party2 | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | party3 | ETH/MAR22 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | lp1    | ETH/MAR22 | buy  | 10     | 95    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
-  #     | lp1    | ETH/MAR22 | sell | 10     | 105   | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
-  #   When the opening auction period ends for market "ETH/MAR22"
-  #   Then the following trades should be executed:
-  #     | buyer  | price | size | seller |
-  #     | party1 | 100   | 1    | party2 |
+     And the parties place the following orders:
+       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+       | party3 | ETH/MAR22 | buy  | 10     | 85    | 0                | TYPE_LIMIT | TIF_GTC |           |
+       | party1 | ETH/MAR22 | buy  | 10     | 90    | 0                | TYPE_LIMIT | TIF_GTC |           |
+       | party1 | ETH/MAR22 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
+       | party2 | ETH/MAR22 | sell | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC |           |
+       | party2 | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
+       | party3 | ETH/MAR22 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |           |
+       | lp1    | ETH/MAR22 | buy  | 10     | 95    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+       | lp1    | ETH/MAR22 | sell | 10     | 105   | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
+     When the opening auction period ends for market "ETH/MAR22"
+     Then the following trades should be executed:
+       | buyer  | price | size | seller |
+       | party1 | 100   | 1    | party2 |
 
-  #   And the market data for the market "ETH/MAR22" should be:
-  #     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | ref price | mid price | static mid price |
-  #     | 100        | TRADING_MODE_CONTINUOUS | 3600    | 94        | 106       | 39           | 1000           | 1             | 100       | 100       | 100              |
+     And the market data for the market "ETH/MAR22" should be:
+       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+       | 100        | TRADING_MODE_CONTINUOUS | 3600    | 94        | 106       | 39           | 1000           | 1             | 100       | 100       | 100              |
 
-  #   When the parties submit the following AMM:
-  #     | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-  #     | vamm1 | ETH/MAR22 | 100000  | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
-  #   Then the AMM pool status should be:
-  #     | party | market id | amount | status        | base | lower bound | lower leverage | upper bound | upper leverage |
-  #     | vamm1 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 100  | 85          | 0.25               | 150         | 0.25               |
+     When the parties submit the following AMM:
+       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+       | vamm1 | ETH/MAR22 | 100000  | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
+     Then the AMM pool status should be:
+       | party | market id | amount | status        | base | lower bound | lower leverage | upper bound | upper leverage |
+       | vamm1 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 100  | 85          | 0.25               | 150         | 0.25               |
 
-  #   When the parties submit the following AMM:
-  #     | party | market id | amount | slippage | base | lower bound | lower leverage | error                        | proposed fee |
-  #     | vamm2 | ETH/MAR22 | 100000  | 0.1      | 90   | 85          | 0.25               | rebase target outside bounds | 0.01         |
-  #   # can't rebase because the target is 100 and thats outside of its bounds given there is no upper
-  #   Then the AMM pool status should be:
-  #     | party | market id | amount | status          | base | lower bound | lower leverage | reason                      |
-  #     | vamm2 | ETH/MAR22 | 100000  | STATUS_REJECTED | 90  | 85          | 0.25                | STATUS_REASON_CANNOT_REBASE |
+    When the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | lower leverage | error                        | proposed fee |
+      | vamm2 | ETH/MAR22 | 100000   | 0.1      | 90   | 85          | 0.25           | rebase target outside bounds | 0.01         |
+    # can't rebase because the target is 100 and thats outside of its bounds given there is no upper
+    Then the AMM pool status should be:
+      | party | market id | amount | status          | base | lower bound | lower leverage |
+      | vamm2 | ETH/MAR22 | 100000   | STATUS_ACTIVE   | 90   | 85          | 0.25           |
 
-  #   When the parties submit the following AMM:
-  #     | party | market id | amount | slippage | base | upper bound | upper leverage | error                        | proposed fee |
-  #     | vamm3 | ETH/MAR22 | 100000  | 0.1      | 110  | 150         | 0.25               | rebase target outside bounds | 0.01         |
-  #   Then the AMM pool status should be:
-  #     | party | market id | amount | status          | base | upper bound | upper leverage | reason                      |
-  #     | vamm3 | ETH/MAR22 | 100000  | STATUS_REJECTED | 110  | 150         | 0.25               | STATUS_REASON_CANNOT_REBASE |
+    When the parties submit the following AMM:
+      | party | market id | amount | slippage | base | upper bound | upper leverage | error                        | proposed fee |
+      | vamm3 | ETH/MAR22 | 100000   | 0.1      | 110  | 150         | 0.25               | rebase target outside bounds | 0.01         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status          | base | upper bound | upper leverage |
+      | vamm3 | ETH/MAR22 | 100000   | STATUS_ACTIVE   | 110  | 150         | 0.25           |
 
-  #   When the parties submit the following AMM:
-  #     | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
-  #     | vamm4 | ETH/MAR22 | 100000  | 0.1      | 105  | 99          | 0.1                | 0.01         |
-  #   Then the AMM pool status should be:
-  #     | party | market id | amount | status        | base | lower bound | lower leverage |
-  #     | vamm4 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 105  | 99          | 0.1                |
+     When the parties submit the following AMM:
+       | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
+       | vamm4 | ETH/MAR22 | 100000  | 0.1      | 105  | 99          | 0.1                | 0.01         |
+     Then the AMM pool status should be:
+       | party | market id | amount | status        | base | lower bound | lower leverage |
+       | vamm4 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 105  | 99          | 0.1                |
 
-  #   When the parties submit the following AMM:
-  #     | party | market id | amount | slippage | base | upper bound | upper leverage | proposed fee |
-  #     | vamm5 | ETH/MAR22 | 100000  | 0.1      | 99   | 101         | 0.02               |  0.01        |
-  #   Then the AMM pool status should be:
-  #     | party | market id | amount | status          | base | upper bound | upper leverage |
-  #     | vamm5 | ETH/MAR22 | 100000  | STATUS_ACTIVE   | 99  | 101          | 0.02               |
+     When the parties submit the following AMM:
+       | party | market id | amount | slippage | base | upper bound | upper leverage | proposed fee |
+       | vamm5 | ETH/MAR22 | 100000  | 0.1      | 99   | 101         | 0.02               |  0.01        |
+     Then the AMM pool status should be:
+       | party | market id | amount | status          | base | upper bound | upper leverage |
+       | vamm5 | ETH/MAR22 | 100000  | STATUS_ACTIVE   | 99  | 101          | 0.02               |
 
-  #   When the parties submit the following AMM:
-  #     | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-  #     | vamm6 | ETH/MAR22 | 100000  | 0.001    | 101  | 95          | 105         | 0.01               | 0.01               | 0.01         |
-  #   Then the AMM pool status should be:
-  #     | party | market id | amount | status        | base | lower bound | lower leverage | upper bound | upper leverage |
-  #     | vamm6 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 101  | 95          | 0.01               | 105         | 0.01               |
+     When the parties submit the following AMM:
+       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+       | vamm6 | ETH/MAR22 | 100000  | 0.001    | 101  | 95          | 105         | 0.01               | 0.01               | 0.01         |
+     Then the AMM pool status should be:
+       | party | market id | amount | status        | base | lower bound | lower leverage | upper bound | upper leverage |
+       | vamm6 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 101  | 95          | 0.01               | 105         | 0.01               |
 
-  #   When the parties submit the following AMM:
-  #     | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
-  #     | vamm7 | ETH/MAR22 | 100000  | 0.01     | 110  | 99          | 0.1                | 0.01         |
-  #   Then the AMM pool status should be:
-  #     | party | market id | amount | status          | base | lower bound | lower leverage | 
-  #     | vamm7 | ETH/MAR22 | 100000  | STATUS_ACTIVE   | 110  | 99          | 0.1                | 
+     When the parties submit the following AMM:
+       | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
+       | vamm7 | ETH/MAR22 | 100000  | 0.01     | 110  | 99          | 0.1                | 0.01         |
+     Then the AMM pool status should be:
+       | party | market id | amount | status          | base | lower bound | lower leverage | 
+       | vamm7 | ETH/MAR22 | 100000  | STATUS_ACTIVE   | 110  | 99          | 0.1                | 
 
-  #   And set the following AMM sub account aliases:
-  #     | party | market id | alias     |
-  #     | vamm1 | ETH/MAR22 | vamm1-acc |
-  #     | vamm2 | ETH/MAR22 | vamm2-acc |
-  #     | vamm3 | ETH/MAR22 | vamm3-acc |
-  #     | vamm4 | ETH/MAR22 | vamm4-acc |
-  #     | vamm5 | ETH/MAR22 | vamm5-acc |
-  #     | vamm6 | ETH/MAR22 | vamm6-acc |
-  #   And the following transfers should happen:
-  #     | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
-  #     | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-  #     | vamm2 | ACCOUNT_TYPE_GENERAL | vamm2-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-  #     | vamm3 | ACCOUNT_TYPE_GENERAL | vamm3-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-  #     | vamm4 | ACCOUNT_TYPE_GENERAL | vamm4-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-  #     | vamm5 | ACCOUNT_TYPE_GENERAL | vamm5-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-  #     | vamm6 | ACCOUNT_TYPE_GENERAL | vamm6-acc | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+     And set the following AMM sub account aliases:
+       | party | market id | alias     |
+       | vamm1 | ETH/MAR22 | vamm1-acc |
+       | vamm2 | ETH/MAR22 | vamm2-acc |
+       | vamm3 | ETH/MAR22 | vamm3-acc |
+       | vamm4 | ETH/MAR22 | vamm4-acc |
+       | vamm5 | ETH/MAR22 | vamm5-acc |
+       | vamm6 | ETH/MAR22 | vamm6-acc |
+     And the following transfers should happen:
+       | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
+       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+       | vamm2 | ACCOUNT_TYPE_GENERAL | vamm2-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+       | vamm3 | ACCOUNT_TYPE_GENERAL | vamm3-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+       | vamm4 | ACCOUNT_TYPE_GENERAL | vamm4-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+       | vamm5 | ACCOUNT_TYPE_GENERAL | vamm5-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+       | vamm6 | ACCOUNT_TYPE_GENERAL | vamm6-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 

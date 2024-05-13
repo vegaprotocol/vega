@@ -122,7 +122,7 @@ func TestCheckAmendAMM(t *testing.T) {
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					Base: ptr.From(""),
+					Base: "",
 				},
 			},
 			errStr: "amend_amm.concentrated_liquidity_parameters.base (is not a valid number)",
@@ -130,7 +130,7 @@ func TestCheckAmendAMM(t *testing.T) {
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					Base: ptr.From("abc"),
+					Base: "abc",
 				},
 			},
 			errStr: "amend_amm.concentrated_liquidity_parameters.base (is not a valid number)",
@@ -138,7 +138,7 @@ func TestCheckAmendAMM(t *testing.T) {
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					Base: ptr.From("-10"),
+					Base: "-10",
 				},
 			},
 			errStr: "amend_amm.concentrated_liquidity_parameters.base (must be positive)",
@@ -146,7 +146,7 @@ func TestCheckAmendAMM(t *testing.T) {
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					Base: ptr.From("0"),
+					Base: "0",
 				},
 			},
 			errStr: "amend_amm.concentrated_liquidity_parameters.base (must be positive)",
@@ -276,7 +276,7 @@ func TestCheckAmendAMM(t *testing.T) {
 				SlippageTolerance: "0.09",
 				CommitmentAmount:  ptr.From("10000"),
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					Base:       ptr.From("20000"),
+					Base:       "20000",
 					UpperBound: ptr.From("30000"),
 					LowerBound: ptr.From("10000"),
 				},

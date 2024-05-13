@@ -231,11 +231,10 @@ func testNearZeroCurveErrors(t *testing.T) {
 			LeverageAtUpperBound: ptr.From(num.DecimalFromFloat(50)),
 		},
 	}
-
 	// test that creating a pool with a near zero volume curve will error
 	pool, err := newBasicPoolWithSubmit(t, submit)
 	assert.Nil(t, pool)
-	assert.ErrorContains(t, err, "insufficient volume in the lower curve from high price - 1 to the end")
+	assert.ErrorContains(t, err, "insufficient commitment - less than one volume at price levels on lower curve")
 
 	// test that a pool with higher commitment amount will not error
 	submit.CommitmentAmount = num.NewUint(100000)
@@ -255,7 +254,7 @@ func testNearZeroCurveErrors(t *testing.T) {
 		&types.ScalingFactors{InitialMargin: num.DecimalFromFloat(1.25)},
 		num.DecimalZero(),
 	)
-	assert.ErrorContains(t, err, "insufficient volume in the lower curve from high price - 1 to the end")
+	assert.ErrorContains(t, err, "insufficient commitment - less than one volume at price levels on lower curve")
 
 	amend.CommitmentAmount = num.NewUint(1000000)
 	_, err = pool.Update(
@@ -268,6 +267,7 @@ func testNearZeroCurveErrors(t *testing.T) {
 }
 
 func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error) {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
 	pos := mocks.NewMockPosition(ctrl)
