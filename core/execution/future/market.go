@@ -354,6 +354,7 @@ func NewMarket(
 	if fCap := mkt.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
 		market.fCap = fCap
 		market.capMax, _ = num.UintFromDecimal(fCap.MaxPrice.ToDecimal().Mul(priceFactor))
+		market.markPriceCalculator.SetMaxPriceCap(market.capMax.Clone())
 	}
 
 	if market.IsPerp() {
