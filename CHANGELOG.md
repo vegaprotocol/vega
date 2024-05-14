@@ -18,6 +18,7 @@
 ### 🐛 Fixes
 
 - [11066](https://github.com/vegaprotocol/vega/issues/11066) - Ensure vesting statistics match vesting accounts numbers.
+- [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id. 
 
 
 ## 0.76.1
