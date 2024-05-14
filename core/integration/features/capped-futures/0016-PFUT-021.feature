@@ -50,31 +50,54 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
     And the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | lp type    |
       | lp2 | party-lp | ETH/DEC21 | 30000             | 0   | submission |
-    And the parties place the following pegged iceberg orders:
-      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | party-lp | ETH/DEC21 | 600       | 30                   | buy  | BID              | 1800   | 10     |
-      | party-lp | ETH/DEC21 | 600       | 30                   | sell | ASK              | 1800   | 10     |
+    # And the parties place the following pegged iceberg orders:
+    #   | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+    #   | party-lp | ETH/DEC21 | 600       | 30                   | buy  | BID              | 1800   | 10     |
+    #   | party-lp | ETH/DEC21 | 600       | 30                   | sell | ASK              | 1800   | 10     |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC21 | buy  | 2      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2   | ETH/DEC21 | sell | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux2   | ETH/DEC21 | sell | 2      | 1301  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party1 | ETH/DEC21 | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | party2 | ETH/DEC21 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     And the network moves ahead "2" blocks
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
+    Then the mark price should be "1000" for the market "ETH/DEC21"
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 1200   | 8800    |
+      | party1 | USD   | ETH/DEC21 | 1800   | 8200    |
       | party2 | USD   | ETH/DEC21 | 0      | 1000    |
 
     # party1 maintenance margin level: position size * average entry price
     # party2 maintenance margin level: (max price - average entry price)
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 1000        | 1100   | 1200    | 1400    | cross margin |
+      | party1 | ETH/DEC21 | 1500        | 1650   | 1800    | 2100    | cross margin |
       | party2 | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
+
+    #update mark price
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | aux1-2    |
+      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 1                | TYPE_LIMIT | TIF_GTC | aux2-2    |
+
+    And the network moves ahead "2" blocks
+    Then the mark price should be "1100" for the market "ETH/DEC21"
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC21 | 1800   | 8700    |
+      | party2 | USD   | ETH/DEC21 | 0      | 500     |
+
+    # party1 maintenance margin level: position size * average entry price
+    # party2 maintenance margin level: (max price - average entry price)
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode  |
+      | party1 | ETH/DEC21 | 1500        | 1650   | 1800    | 2100    | cross margin |
+      | party2 | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
+
 
