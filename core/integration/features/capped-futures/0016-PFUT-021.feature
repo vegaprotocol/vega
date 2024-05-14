@@ -50,10 +50,6 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
     And the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | lp type    |
       | lp2 | party-lp | ETH/DEC21 | 30000             | 0   | submission |
-    # And the parties place the following pegged iceberg orders:
-    #   | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-    #   | party-lp | ETH/DEC21 | 600       | 30                   | buy  | BID              | 1800   | 10     |
-    #   | party-lp | ETH/DEC21 | 600       | 30                   | sell | ASK              | 1800   | 10     |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -72,8 +68,8 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | party1 | USD   | ETH/DEC21 | 1800   | 8200    |
       | party2 | USD   | ETH/DEC21 | 0      | 1000    |
 
-    # party1 maintenance margin level: position size * average entry price
-    # party2 maintenance margin level: (max price - average entry price)
+    # party1 maintenance margin level: position size * average entry price = 5*1000=5000
+    # party2 maintenance margin level: position size * (max price - average entry price)=5*(1500-1000)=2500
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
       | party1 | ETH/DEC21 | 1500        | 1650   | 1800    | 2100    | cross margin |
