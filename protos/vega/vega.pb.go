@@ -464,7 +464,7 @@ const (
 	OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE OrderError = 52
 	// Order price does not respect market's required tick size
 	OrderError_ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE OrderError = 53
-	// Order price exceeds the max price of a capped future market
+	// Order price exceeds the max price of the capped future market
 	OrderError_ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE OrderError = 54
 )
 

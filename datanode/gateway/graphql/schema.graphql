@@ -4330,7 +4330,7 @@ enum OrderRejectionReason {
   "Pegged orders are not allowed for a party in isolated margin mode"
   ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
 
-  "Order price exceeds the max price of a capped future market"
+  "Order price exceeds the max price of the capped future market"
   ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE
 }
 
