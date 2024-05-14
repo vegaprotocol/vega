@@ -127,10 +127,10 @@ Feature: Settle capped futures market with a price within correct range
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
       | prices.ETH.value | 0     |
-    When the oracles broadcast data signed with "0xCAFECAFE1":
+    When the oracles broadcast data signed with "0xCAFECAFE2":
       | name             | value |
       | prices.ETH.value | 100   |
-    When the oracles broadcast data signed with "0xCAFECAFE1":
+    When the oracles broadcast data signed with "0xCAFECAFE3":
       | name             | value |
       | prices.ETH.value | 1500  |
 
@@ -138,5 +138,5 @@ Feature: Settle capped futures market with a price within correct range
   
     Then the last market state should be "STATE_SETTLED" for the market "ETH/DEC21"
     Then the last market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC22"
-    Then the last market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC23"
+    Then the last market state should be "STATE_SETTLED" for the market "ETH/DEC23"
 
