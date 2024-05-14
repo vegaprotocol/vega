@@ -34,10 +34,9 @@ Feature: Settle capped futures market with a price within correct range
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | false                | false  |
-
-
+    
   @SLABug @NoPerp @Capped
-  Scenario: 0016-PFUT-019: When `max_price` is specified and the final settlement price candidate received from the oracle is equal to `max_price` comes and market settles correctly
+  Scenario: 0016-PFUT-018: Settlement happened when market is being closed - happens when the oracle price is < max price cap, higher prices are ignored.
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -91,7 +90,7 @@ Feature: Settle capped futures market with a price within correct range
     # within the price range
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
-      | prices.ETH.value | 1500  |
+      | prices.ETH.value | 1499  |
 
     And the network moves ahead "2" blocks
     # Now the market shows as settled
