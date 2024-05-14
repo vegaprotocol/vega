@@ -3048,7 +3048,13 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// so it'll separate the positions still in distress from the
 		// which have acceptable margins
 		increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
-		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone(), increment, m.getAuctionPrice())
+		var pr *num.Uint
+		if m.capMax != nil {
+			pr = m.capMax.Clone()
+		} else {
+			pr = m.lastTradedPrice.Clone()
+		}
+		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, pr, increment, m.getAuctionPrice())
 
 		parties := make([]string, 0, len(okPos))
 		for _, v := range okPos {
@@ -3349,7 +3355,13 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		}
 	}
 
-	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPrice(), increment, m.getAuctionPrice())
+	var price *num.Uint
+	if m.capMax != nil {
+		price = m.capMax.Clone()
+	} else {
+		price = m.getCurrentMarkPrice()
+	}
+	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, price, increment, m.getAuctionPrice())
 	isolatedMarginPartiesToClose := []events.Risk{}
 	for _, evt := range isolatedEvts {
 		mrgns, err := m.risk.CheckMarginInvariants(ctx, evt, m.getMarketObservable(nil), increment, m.matching.GetOrdersPerParty(evt.Party()), m.getMarginFactor(evt.Party()))
@@ -4900,6 +4912,10 @@ func (m *Market) GetTotalOpenPositionCount() uint64 {
 
 // getMarketObservable returns current mark price once market is out of opening auction, during opening auction the indicative uncrossing price is returned.
 func (m *Market) getMarketObservable(fallbackPrice *num.Uint) *num.Uint {
+	// this is used for margin calculations, so if there's a max price, return that.
+	if m.capMax != nil {
+		return m.capMax.Clone()
+	}
 	// during opening auction we don't have a last traded price, so we use the indicative price instead
 	if m.as.IsOpeningAuction() {
 		if ip := m.matching.GetIndicativePrice(); !ip.IsZero() {
@@ -4931,6 +4947,15 @@ func (m *Market) getCurrentInternalCompositePrice() *num.Uint {
 		return num.UintZero()
 	}
 	return m.internalCompositePriceCalculator.GetPrice().Clone()
+}
+
+// getCurrentMarkPriceForMargin is the same as getCurrentMarkPrice, but adds a check for capped futures.
+// if this is called on a future with a max price, then the max price will be returned. This is useful for margin checks.
+func (m *Market) getCurrentMarkPriceForMargin() *num.Uint {
+	if m.capMax != nil {
+		return m.capMax.Clone()
+	}
+	return m.getCurrentMarkPrice()
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {

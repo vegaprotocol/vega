@@ -33,7 +33,7 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 }
 
 func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) []events.Risk {
-	price := m.getCurrentMarkPrice()
+	price := m.getCurrentMarkPriceForMargin()
 	mID := m.GetID()
 	margins := make([]events.Margin, 0, len(pos))
 	for _, p := range pos {
