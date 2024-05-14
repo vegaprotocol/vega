@@ -344,6 +344,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesUndelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
 
+	s.Step(`^the starting auction time for market "([^"]+)" is "([^"]+)"`, func(marketID, startTime string) error {
+		return steps.MarketAuctionStartTime(execsetup.executionEngine, marketID, startTime)
+	})
+	s.Step(`^the ending auction time for market "([^"]+)" is "([^"]+)"`, func(marketID, endTime string) error {
+		return steps.MarketAuctionEndTime(execsetup.executionEngine, marketID, endTime)
+	})
+
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
 		return steps.MarketOpeningAuctionPeriodEnds(execsetup.executionEngine, execsetup.timeService, execsetup.markets, marketID)
 	})
