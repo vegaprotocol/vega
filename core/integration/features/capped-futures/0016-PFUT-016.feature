@@ -29,6 +29,8 @@ Feature: Oracle price data within range is used to determine the mid price
       | party1 | DAI   | 110000000 |
       | party2 | DAI   | 110000000 |
       | party3 | DAI   | 110000000 |
+      | party4 | DAI   | 110000000 |
+      | party5 | DAI   | 110000000 |
 
     And the average block duration is "1"
 
@@ -41,12 +43,14 @@ Feature: Oracle price data within range is used to determine the mid price
       | party1 | DAI/DEC22 | 5         | 3                    | buy  | MID              | 5      | 100000 |
       | party1 | DAI/DEC22 | 5         | 3                    | sell | MID              | 5      | 100000 |
 
+    #0016-PFUT-014:When `max_price` is specified, an order with a `price > max_price` gets rejected.
     When the parties place the following orders:
-      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | party2 | DAI/DEC22 | buy  | 1      | 2500000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
-      | party2 | DAI/DEC22 | buy  | 1      | 3500000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
-      | party3 | DAI/DEC22 | sell | 1      | 3500000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |
-      | party3 | DAI/DEC22 | sell | 1      | 4500000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference | error               |
+      | party2 | DAI/DEC22 | buy  | 1      | 2500000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |                     |
+      | party2 | DAI/DEC22 | buy  | 1      | 3500000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |                     |
+      | party3 | DAI/DEC22 | sell | 1      | 3500000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |                     |
+      | party3 | DAI/DEC22 | sell | 1      | 4500000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |                     |
+      | party3 | DAI/DEC22 | sell | 1      | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  | invalid order price |
 
     And the opening auction period ends for market "DAI/DEC22"
     Then the following trades should be executed:
@@ -65,16 +69,10 @@ Feature: Oracle price data within range is used to determine the mid price
 
     When the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | party2 | DAI/DEC22 | buy  | 1      | 3200000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
-      | party3 | DAI/DEC22 | sell | 1      | 3200000 | 1                | TYPE_LIMIT | TIF_GTC | party3-1  |
+      | party4 | DAI/DEC22 | buy  | 1      | 3200000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
+      | party5 | DAI/DEC22 | sell | 1      | 3200000 | 1                | TYPE_LIMIT | TIF_GTC | party3-1  |
     When the network moves ahead "2" blocks
     Then the mark price should be "3500000" for the market "DAI/DEC22"
-
-    #MTM happens if mark price < max_price
-    And the following transfers should happen:
-      | type                   | from   | to     | from account            | to account              | market id | amount | asset |
-      | TRANSFER_TYPE_MTM_LOSS | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | DAI/DEC22 | 250000 | DAI   |
-      | TRANSFER_TYPE_MTM_WIN  | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | DAI/DEC22 | 250000 | DAI   |
 
     #0016-PFUT-017: When `max_price` set by oracle, `mark price > max_price`, then it gets ignored and mark-to-market settlement doesn't occur
     Then the oracles broadcast data with block time signed with "0xCAFECAFE1":
@@ -83,4 +81,19 @@ Feature: Oracle price data within range is used to determine the mid price
 
     When the network moves ahead "2" blocks
     Then the mark price should be "3500000" for the market "DAI/DEC22"
+
+    #0016-PFUT-016: When `max_price` set by oracle, `mark price < max_price`, then it gets used
+    Then the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value | time offset |
+      | price1.USD.value | 32000 | -1s         |
+
+    When the network moves ahead "2" blocks
+    Then the mark price should be "3200000" for the market "DAI/DEC22"
+
+    # #MTM happens if mark price < max_price
+    And the following transfers should happen:
+      | type                   | from   | to     | from account            | to account              | market id | amount | asset |
+      | TRANSFER_TYPE_MTM_LOSS | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | DAI/DEC22 | 300000 | DAI   |
+      | TRANSFER_TYPE_MTM_WIN  | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | DAI/DEC22 | 300000 | DAI   |
+
 
