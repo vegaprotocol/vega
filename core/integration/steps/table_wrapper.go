@@ -819,7 +819,7 @@ func (r RowWrapper) DurationSec(name string) time.Duration {
 	return time.Duration(n) * time.Second
 }
 
-func (r RowWrapper) MustAMMCancelationMethod(name string) types.AMMPoolCancellationMethod {
+func (r RowWrapper) MustAMMCancelationMethod(name string) types.AMMCancellationMethod {
 	cancelMethod, err := AMMCancelMethod(r.MustStr(name))
 	panicW(name, err)
 	return cancelMethod
@@ -831,34 +831,34 @@ func (r RowWrapper) MustAMMPoolStatus(name string) types.AMMPoolStatus {
 	return ps
 }
 
-func (r RowWrapper) MustPoolStatusReason(name string) types.AMMPoolStatusReason {
+func (r RowWrapper) MustPoolStatusReason(name string) types.AMMStatusReason {
 	pr, err := AMMPoolStatusReason(r.MustStr(name))
 	panicW(name, err)
 	return pr
 }
 
-func AMMCancelMethod(rawValue string) (types.AMMPoolCancellationMethod, error) {
+func AMMCancelMethod(rawValue string) (types.AMMCancellationMethod, error) {
 	ty, ok := commandspb.CancelAMM_Method_value[rawValue]
 	if !ok {
-		return types.AMMPoolCancellationMethod(ty), fmt.Errorf("invalid cancelation method: %v", rawValue)
+		return types.AMMCancellationMethod(ty), fmt.Errorf("invalid cancelation method: %v", rawValue)
 	}
-	return types.AMMPoolCancellationMethod(ty), nil
+	return types.AMMCancellationMethod(ty), nil
 }
 
 func AMMPoolStatus(rawValue string) (types.AMMPoolStatus, error) {
-	ps, ok := eventspb.AMMPool_Status_value[rawValue]
+	ps, ok := eventspb.AMM_Status_value[rawValue]
 	if !ok {
 		return types.AMMPoolStatusUnspecified, fmt.Errorf("invalid AMM pool status: %s", rawValue)
 	}
 	return types.AMMPoolStatus(ps), nil
 }
 
-func AMMPoolStatusReason(rawValue string) (types.AMMPoolStatusReason, error) {
-	pr, ok := eventspb.AMMPool_StatusReason_value[rawValue]
+func AMMPoolStatusReason(rawValue string) (types.AMMStatusReason, error) {
+	pr, ok := eventspb.AMM_StatusReason_value[rawValue]
 	if !ok {
-		return types.AMMPoolStatusReasonUnspecified, fmt.Errorf("invalid AMM pool status reason: %s", rawValue)
+		return types.AMMStatusReasonUnspecified, fmt.Errorf("invalid AMM pool status reason: %s", rawValue)
 	}
-	return types.AMMPoolStatusReason(pr), nil
+	return types.AMMStatusReason(pr), nil
 }
 
 func panicW(field string, err error) {

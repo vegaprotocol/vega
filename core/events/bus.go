@@ -274,7 +274,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED:                     TeamsStatsUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED: TimeWeightedNotionalPositionUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS:                        CancelledOrdersEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL:                                AMMPoolEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_AMM:                                     AMMPoolEvent,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -367,7 +367,7 @@ var (
 		TeamsStatsUpdatedEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED,
 		TimeWeightedNotionalPositionUpdatedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED,
 		CancelledOrdersEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS,
-		AMMPoolEvent:                             eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL,
+		AMMPoolEvent:                             eventspb.BusEventType_BUS_EVENT_TYPE_AMM,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 

@@ -33,9 +33,9 @@ type AMMPools struct {
 var ammPoolsOrdering = TableOrdering{
 	ColumnOrdering{Name: "created_at", Sorting: ASC},
 	ColumnOrdering{Name: "party_id", Sorting: DESC},
-	ColumnOrdering{Name: "sub_account", Sorting: DESC},
+	ColumnOrdering{Name: "amm_party_id", Sorting: DESC},
 	ColumnOrdering{Name: "market_id", Sorting: DESC},
-	ColumnOrdering{Name: "pool_id", Sorting: DESC},
+	ColumnOrdering{Name: "id", Sorting: DESC},
 }
 
 func NewAMMPools(connectionSource *ConnectionSource) *AMMPools {
@@ -45,14 +45,14 @@ func NewAMMPools(connectionSource *ConnectionSource) *AMMPools {
 }
 
 func (p *AMMPools) Upsert(ctx context.Context, pool entities.AMMPool) error {
-	defer metrics.StartSQLQuery("AMMPools", "UpsertAMMPool")
+	defer metrics.StartSQLQuery("AMMs", "UpsertAMM")
 	if _, err := p.Connection.Exec(ctx, `
-insert into amm_pool(party_id, market_id, pool_id, sub_account,
+insert into amms(party_id, market_id, id, amm_party_id,
 commitment, status, status_reason, 	parameters_base,
 parameters_lower_bound, parameters_upper_bound,
 parameters_leverage_at_lower_bound, parameters_leverage_at_upper_bound,
 created_at, last_updated) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-on conflict (party_id, market_id, pool_id, sub_account) do update set
+on conflict (party_id, market_id, id, amm_party_id) do update set
 	commitment=excluded.commitment,
 	status=excluded.status,
 	status_reason=excluded.status_reason,
@@ -64,8 +64,8 @@ on conflict (party_id, market_id, pool_id, sub_account) do update set
 	last_updated=excluded.last_updated;`,
 		pool.PartyID,
 		pool.MarketID,
-		pool.PoolID,
-		pool.SubAccount,
+		pool.ID,
+		pool.AmmPartyID,
 		pool.Commitment,
 		pool.Status,
 		pool.StatusReason,
@@ -91,7 +91,7 @@ func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connectio
 		whereClause string
 	)
 	whereClause, args = filter.Where(&fieldName, nextBindVar, args...)
-	query := fmt.Sprintf(`SELECT * FROM amm_pool WHERE %s`, whereClause)
+	query := fmt.Sprintf(`SELECT * FROM amms WHERE %s`, whereClause)
 	query, args, err := PaginateQuery[entities.AMMPoolCursor](query, args, ammPoolsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
@@ -101,53 +101,53 @@ func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connectio
 		return nil, pageInfo, fmt.Errorf("could not list AMM Pools: %w", err)
 	}
 
-	pools, pageInfo = entities.PageEntities[*v2.AMMPoolEdge](pools, pagination)
+	pools, pageInfo = entities.PageEntities[*v2.AMMEdge](pools, pagination)
 	return pools, pageInfo, nil
 }
 
 func (p *AMMPools) ListByMarket(ctx context.Context, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("AMMPools", "ListByMarket")
+	defer metrics.StartSQLQuery("AMMs", "ListByMarket")
 	return listBy(ctx, p.Connection, "market_id", &marketID, pagination)
 }
 
 func (p *AMMPools) ListByParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("AMMPools", "ListByParty")
+	defer metrics.StartSQLQuery("AMMs", "ListByParty")
 
 	return listBy(ctx, p.Connection, "party_id", &partyID, pagination)
 }
 
 func (p *AMMPools) ListByPool(ctx context.Context, poolID entities.AMMPoolID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("AMMPools", "ListByPool")
-	return listBy(ctx, p.Connection, "pool_id", &poolID, pagination)
+	defer metrics.StartSQLQuery("AMMs", "ListByPool")
+	return listBy(ctx, p.Connection, "id", &poolID, pagination)
 }
 
-func (p *AMMPools) ListBySubAccount(ctx context.Context, subAccount entities.AccountID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("AMMPools", "ListBySubAccount")
-	return listBy(ctx, p.Connection, "sub_account", &subAccount, pagination)
+func (p *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("AMMs", "ListByAMMParty")
+	return listBy(ctx, p.Connection, "amm_party_id", &ammPartyID, pagination)
 }
 
-func (p *AMMPools) ListByStatus(ctx context.Context, status entities.AMMPoolStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("AMMPools", "ListByStatus")
+func (p *AMMPools) ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("AMMs", "ListByStatus")
 	return listBy(ctx, p.Connection, "status", &status, pagination)
 }
 
 func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("AMMPools", "ListAll")
+	defer metrics.StartSQLQuery("AMMs", "ListAll")
 	var (
 		pools    []entities.AMMPool
 		pageInfo entities.PageInfo
 		args     []interface{}
 	)
-	query := `SELECT * FROM amm_pool`
+	query := `SELECT * FROM amms`
 	query, args, err := PaginateQuery[entities.AMMPoolCursor](query, args, ammPoolsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
 	if err := pgxscan.Select(ctx, p.Connection, &pools, query, args...); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not list AMM Pools: %w", err)
+		return nil, pageInfo, fmt.Errorf("could not list AMMs: %w", err)
 	}
 
-	pools, pageInfo = entities.PageEntities[*v2.AMMPoolEdge](pools, pagination)
+	pools, pageInfo = entities.PageEntities[*v2.AMMEdge](pools, pagination)
 	return pools, pageInfo, nil
 }

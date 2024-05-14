@@ -3656,7 +3656,7 @@ func (e *Engine) getSubAccountTransferRequest(
 	}
 
 	switch typ {
-	case types.TransferTypeAMMSubAccountLow:
+	case types.TransferTypeAMMLow:
 		// do we have enough in the general account to make the transfer?
 		if !amount.IsZero() && ownerGeneral.Balance.LT(amount) {
 			return nil, errors.New("not enough collateral in general account")
@@ -3664,7 +3664,7 @@ func (e *Engine) getSubAccountTransferRequest(
 		treq.FromAccount = []*types.Account{ownerGeneral}
 		treq.ToAccount = []*types.Account{subAccountGeneral}
 		return treq, nil
-	case types.TransferTypeAMMSubAccountHigh:
+	case types.TransferTypeAMMHigh:
 		treq.FromAccount = []*types.Account{subAccountGeneral, subAccountMargin}
 		treq.ToAccount = []*types.Account{ownerGeneral}
 		return treq, nil
@@ -3726,7 +3726,7 @@ func (e *Engine) SubAccountClosed(ctx context.Context, party, subAccount, asset,
 		Amount:      subAccountGeneral.Balance.Clone(),
 		MinAmount:   subAccountGeneral.Balance.Clone(),
 		Asset:       asset,
-		Type:        types.TransferTypeAMMSubAccountRelease,
+		Type:        types.TransferTypeAMMRelease,
 		FromAccount: []*types.Account{subAccountGeneral},
 		ToAccount:   []*types.Account{ownerGeneral},
 	}
@@ -3782,7 +3782,7 @@ func (e *Engine) SubAccountRelease(
 		Amount:      subAccountGeneral.Balance.Clone(),
 		MinAmount:   subAccountGeneral.Balance.Clone(),
 		Asset:       asset,
-		Type:        types.TransferTypeAMMSubAccountRelease,
+		Type:        types.TransferTypeAMMRelease,
 		FromAccount: []*types.Account{subAccountGeneral},
 		ToAccount:   []*types.Account{ownerGeneral},
 	}
@@ -3824,7 +3824,7 @@ func (e *Engine) SubAccountRelease(
 		Amount:      subAccountMargin.Balance.Clone(),
 		MinAmount:   subAccountMargin.Balance.Clone(),
 		Asset:       asset,
-		Type:        types.TransferTypeAMMSubAccountRelease,
+		Type:        types.TransferTypeAMMRelease,
 		FromAccount: []*types.Account{subAccountMargin},
 		ToAccount:   []*types.Account{mktInsurance},
 	}

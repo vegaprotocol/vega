@@ -1046,12 +1046,12 @@ enum TransferType {
   TRANSFER_TYPE_ISOLATED_MARGIN_LOW = 47;
   // Transfer from excess order margin account to general account.
   TRANSFER_TYPE_ISOLATED_MARGIN_HIGH = 48;
-  // Transfer from a party's general account to their AMM's sub-account.
-  TRANSFER_TYPE_AMM_SUBACCOUNT_LOW = 49;
-  // Transfer from an AMM's sub-account to their owner's general account.
-  TRANSFER_TYPE_AMM_SUBACCOUNT_HIGH = 50;
+  // Transfer from a party's general account to their AMM's general account.
+  TRANSFER_TYPE_AMM_LOW = 49;
+  // Transfer from an AMM's general account to their owner's general account.
+  TRANSFER_TYPE_AMM_HIGH = 50;
   // Transfer releasing an AMM's general account upon closure.
-  TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE = 51;
+  TRANSFER_TYPE_AMM_RELEASE = 51;
 }
 
 // Represents a financial transfer within Vega

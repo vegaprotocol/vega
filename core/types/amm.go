@@ -39,14 +39,14 @@ type ConcentratedLiquidityParameters struct {
 	LeverageAtUpperBound *num.Decimal
 }
 
-func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMMPool_ConcentratedLiquidityParameters {
-	upper, lower := "", ""
+func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMM_ConcentratedLiquidityParameters {
+	var upper, lower *string
 	if p.UpperBound != nil {
-		upper = p.UpperBound.String()
+		upper = ptr.From(p.UpperBound.String())
 	}
 
 	if p.LowerBound != nil {
-		lower = p.LowerBound.String()
+		lower = ptr.From(p.LowerBound.String())
 	}
 
 	var lowerLeverage, upperLeverage *string
@@ -57,7 +57,7 @@ func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMMPool_Conce
 	if p.LeverageAtUpperBound != nil {
 		upperLeverage = ptr.From(p.LeverageAtUpperBound.String())
 	}
-	return &eventspb.AMMPool_ConcentratedLiquidityParameters{
+	return &eventspb.AMM_ConcentratedLiquidityParameters{
 		Base:                 p.Base.String(),
 		LowerBound:           lower,
 		UpperBound:           upper,
@@ -299,7 +299,7 @@ func NewAmendAMMFromProto(
 type CancelAMM struct {
 	MarketID string
 	Party    string
-	Method   AMMPoolCancellationMethod
+	Method   AMMCancellationMethod
 }
 
 func (c CancelAMM) IntoProto() *commandspb.CancelAMM {
@@ -320,34 +320,34 @@ func NewCancelAMMFromProto(
 	}
 }
 
-type AMMPoolCancellationMethod = commandspb.CancelAMM_Method
+type AMMCancellationMethod = commandspb.CancelAMM_Method
 
 const (
-	AMMPoolCancellationMethodUnspecified AMMPoolCancellationMethod = commandspb.CancelAMM_METHOD_UNSPECIFIED
-	AMMPoolCancellationMethodImmediate                             = commandspb.CancelAMM_METHOD_IMMEDIATE
-	AMMPoolCancellationMethodReduceOnly                            = commandspb.CancelAMM_METHOD_REDUCE_ONLY
+	AMMCancellationMethodUnspecified AMMCancellationMethod = commandspb.CancelAMM_METHOD_UNSPECIFIED
+	AMMCancellationMethodImmediate                         = commandspb.CancelAMM_METHOD_IMMEDIATE
+	AMMCancellationMethodReduceOnly                        = commandspb.CancelAMM_METHOD_REDUCE_ONLY
 )
 
-type AMMPoolStatusReason = eventspb.AMMPool_StatusReason
+type AMMStatusReason = eventspb.AMM_StatusReason
 
 const (
-	AMMPoolStatusReasonUnspecified           AMMPoolStatusReason = eventspb.AMMPool_STATUS_REASON_UNSPECIFIED
-	AMMPoolStatusReasonCancelledByParty                          = eventspb.AMMPool_STATUS_REASON_CANCELLED_BY_PARTY
-	AMMPoolStatusReasonCannotFillCommitment                      = eventspb.AMMPool_STATUS_REASON_CANNOT_FILL_COMMITMENT
-	AMMPoolStatusReasonPartyAlreadyOwnsAPool                     = eventspb.AMMPool_STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL
-	AMMPoolStatusReasonPartyClosedOut                            = eventspb.AMMPool_STATUS_REASON_PARTY_CLOSED_OUT
-	AMMPoolStatusReasonMarketClosed                              = eventspb.AMMPool_STATUS_REASON_MARKET_CLOSED
-	AMMPoolStatusReasonCommitmentTooLow                          = eventspb.AMMPool_STATUS_REASON_COMMITMENT_TOO_LOW
-	AMMPoolStatusReasonCannotRebase                              = eventspb.AMMPool_STATUS_REASON_CANNOT_REBASE
+	AMMStatusReasonUnspecified           AMMStatusReason = eventspb.AMM_STATUS_REASON_UNSPECIFIED
+	AMMStatusReasonCancelledByParty                      = eventspb.AMM_STATUS_REASON_CANCELLED_BY_PARTY
+	AMMStatusReasonCannotFillCommitment                  = eventspb.AMM_STATUS_REASON_CANNOT_FILL_COMMITMENT
+	AMMStatusReasonPartyAlreadyOwnsAPool                 = eventspb.AMM_STATUS_REASON_PARTY_ALREADY_OWNS_AMM_FOR_MARKET
+	AMMStatusReasonPartyClosedOut                        = eventspb.AMM_STATUS_REASON_PARTY_CLOSED_OUT
+	AMMStatusReasonMarketClosed                          = eventspb.AMM_STATUS_REASON_MARKET_CLOSED
+	AMMStatusReasonCommitmentTooLow                      = eventspb.AMM_STATUS_REASON_COMMITMENT_TOO_LOW
+	AMMStatusReasonCannotRebase                          = eventspb.AMM_STATUS_REASON_CANNOT_REBASE
 )
 
-type AMMPoolStatus = eventspb.AMMPool_Status
+type AMMPoolStatus = eventspb.AMM_Status
 
 const (
-	AMMPoolStatusUnspecified AMMPoolStatus = eventspb.AMMPool_STATUS_UNSPECIFIED
-	AMMPoolStatusActive                    = eventspb.AMMPool_STATUS_ACTIVE
-	AMMPoolStatusRejected                  = eventspb.AMMPool_STATUS_REJECTED
-	AMMPoolStatusCancelled                 = eventspb.AMMPool_STATUS_CANCELLED
-	AMMPoolStatusStopped                   = eventspb.AMMPool_STATUS_STOPPED
-	AMMPoolStatusReduceOnly                = eventspb.AMMPool_STATUS_REDUCE_ONLY
+	AMMPoolStatusUnspecified AMMPoolStatus = eventspb.AMM_STATUS_UNSPECIFIED
+	AMMPoolStatusActive                    = eventspb.AMM_STATUS_ACTIVE
+	AMMPoolStatusRejected                  = eventspb.AMM_STATUS_REJECTED
+	AMMPoolStatusCancelled                 = eventspb.AMM_STATUS_CANCELLED
+	AMMPoolStatusStopped                   = eventspb.AMM_STATUS_STOPPED
+	AMMPoolStatusReduceOnly                = eventspb.AMM_STATUS_REDUCE_ONLY
 )

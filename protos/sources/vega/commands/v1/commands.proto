@@ -429,61 +429,61 @@ message UpdatePartyProfile {
   repeated vega.Metadata metadata = 2;
 }
 
-// Command to create an AMM pool for a given market.
+// Command to create an automated market maker for a given market.
 message SubmitAMM {
-  // The market for which to create an AMM pool.
+  // Market ID for which to create an AMM.
   string market_id = 1;
-  // Amount to be committed to the pool.
+  // Amount to be committed to the AMM.
   string commitment_amount = 2;
-  // Slippage tolerance used for rebasing position when creating/updating AMM
+  // Slippage tolerance used for rebasing the AMM if its base price crosses with existing order
   string slippage_tolerance = 3;
-  // Concentrated liquidity parameters.
+  // Concentrated liquidity parameters defining the shape of the AMM's volume curves.
   ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   string proposed_fee = 5;
   // Liquidity parameters that define the size and range of the AMM's tradeable volume.
   message ConcentratedLiquidityParameters {
-    // Upper price bound configuration for the pool. If unset, the AMM will never hold a short position.
+    // Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
     optional string upper_bound = 1;
-    // Lower price bound configuration for the pool. If unset, the AMM will never hold a long position.
+    // Price at which the AMM will stop quoting buy volume. If not supplied the AMM will never hold a long position.
     optional string lower_bound = 2;
-    // Base price bound configuration for the pool.
+    // Price that the AMM will quote as its "fair price" when its position is zero.
     string base = 3;
-    // Leverage at upper bounds. If not set the markets risk-factors will be used to calculate leverage.
+    // Leverage at upper bound. If not set the markets risk-factors will be used to calculate leverage.
     optional string leverage_at_upper_bound = 4;
-    // Leverage at lower bounds. If not set the markets risk-factors will be used to calculate leverage.
+    // Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
     optional string leverage_at_lower_bound = 5;
   }
 }
 
-// Command to create an AMM pool for a given market.
+// Command to amend an existing automated market maker on a market.
 message AmendAMM {
-  // Market ID for the AMM pool to be amended.
+  // Market ID for the AMM to be amended.
   string market_id = 1;
-  // Amount to be committed to the pool.
+  // Amount to be committed to the AMM. If not supplied the commitment will remain unchanged.
   optional string commitment_amount = 2;
   // Slippage tolerance for rebasing position when updating the AMM.
   string slippage_tolerance = 3;
-  // Concentrated liquidity parameters.
+  // Concentrated liquidity parameters defining the shape of the AMM's volume curves. If not supplied the parameters will remain unchanged.
   optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
-  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market. If not supplied the proposed fee will remain unchanged.
   optional string proposed_fee = 5;
-  // Liquidity parameters that define the size and range of the AMM's tradeable volume. If not supplied the AMM's parameters will remain unchanged.
+  // Liquidity parameters that define the size and range of the AMM's tradeable volume.
   message ConcentratedLiquidityParameters {
-    // Upper price bound configuration for the pool.
+    // Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
     optional string upper_bound = 1;
-    // Lower price bound configuration for the pool.
+    // Price at which the AMM will stop quoting buy volume. If not supplied the AMM will never hold a long position.
     optional string lower_bound = 2;
-    // Base price bound configuration for the pool.
+    // Price that the AMM will quote as its "fair price" when its position is zero.
     string base = 3;
-    // Leverage at upper bounds. If not set the markets risk-factors will be used to calculate leverage.
+    // Leverage at upper bound. If not set the markets risk-factors will be used to calculate leverage.
     optional string leverage_at_upper_bound = 4;
-    // Leverage at lower bounds. If not set the markets risk-factors will be used to calculate leverage.
+    // Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
     optional string leverage_at_lower_bound = 5;
   }
 }
 
-// Command to create an AMM pool for a given market.
+// Command to cancel an automated market maker for a given market.
 message CancelAMM {
   enum Method {
     METHOD_UNSPECIFIED = 0;

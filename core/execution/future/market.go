@@ -5115,7 +5115,7 @@ Walk:
 			return &types.Order{
 				ID:            m.idgen.NextID(),
 				MarketID:      m.GetID(),
-				Party:         pool.SubAccount,
+				Party:         pool.AMMParty,
 				Side:          side,
 				Price:         price,
 				OriginalPrice: originalPrice,
@@ -5125,7 +5125,7 @@ Walk:
 				Type:          types.OrderTypeLimit,
 				CreatedAt:     m.timeService.GetTimeNow().UnixNano(),
 				Status:        types.OrderStatusActive,
-				Reference:     "amm-rebase" + pool.SubAccount,
+				Reference:     "amm-rebase" + pool.AMMParty,
 			}, nil
 		}
 
@@ -5186,22 +5186,22 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 		if err != nil {
 			m.broker.Send(
 				events.NewAMMPoolEvent(
-					ctx, pool.Owner(), m.GetID(), pool.SubAccount, pool.ID,
+					ctx, pool.Owner(), m.GetID(), pool.AMMParty, pool.ID,
 					pool.CommitmentAmount(), pool.Parameters,
-					types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotRebase,
+					types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
 				),
 			)
 			return err
 		}
 	}
 
-	_, err = m.amm.UpdateSubAccountBalance(ctx, submit.Party, pool.SubAccount, submit.CommitmentAmount)
+	_, err = m.amm.UpdateSubAccountBalance(ctx, submit.Party, pool.AMMParty, submit.CommitmentAmount)
 	if err != nil {
 		m.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, m.GetID(), pool.SubAccount, pool.ID,
+				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotFillCommitment,
+				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotFillCommitment,
 			),
 		)
 		return err
@@ -5217,13 +5217,13 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 			logging.Order(order),
 			logging.Error(err),
 		)
-		ledgerMovements, _, _ := m.collateral.SubAccountRelease(ctx, submit.Party, pool.SubAccount, m.GetSettlementAsset(), m.GetID(), nil)
+		ledgerMovements, _, _ := m.collateral.SubAccountRelease(ctx, submit.Party, pool.AMMParty, m.GetSettlementAsset(), m.GetID(), nil)
 		m.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
 		m.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, m.GetID(), pool.SubAccount, pool.ID,
+				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotRebase,
+				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
 			),
 		)
 		return err
@@ -5260,7 +5260,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	// update commitment ready for rebasing
 	var prevCommitment *num.Uint
 	if amend.CommitmentAmount != nil {
-		prevCommitment, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.SubAccount, amend.CommitmentAmount)
+		prevCommitment, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.AMMParty, amend.CommitmentAmount)
 		if err != nil {
 			return err
 		}
@@ -5277,7 +5277,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 			logging.Error(err),
 		)
 		if amend.CommitmentAmount != nil {
-			_, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.SubAccount, prevCommitment)
+			_, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.AMMParty, prevCommitment)
 		}
 		return err
 	}

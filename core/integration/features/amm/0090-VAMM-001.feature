@@ -100,4 +100,4 @@ Feature: Test vAMM submission works as expected
       | vamm1 | ETH/MAR22 | vamm1-acc |
     And the following transfers should happen:
       | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |

@@ -561,7 +561,7 @@ message PartyMarginFactor {
 
 message AmmState {
   repeated StringMapEntry sqrter = 1;
-  repeated StringMapEntry sub_accounts = 2;
+  repeated StringMapEntry amm_party_ids = 2;
   repeated PoolMapEntry pools = 3;
 }
 
@@ -576,14 +576,14 @@ message PoolMapEntry {
 
   message Pool {
     string id = 1;
-    string sub_account = 2;
+    string amm_party_id = 2;
     string commitment = 3;
-    vega.events.v1.AMMPool.ConcentratedLiquidityParameters parameters = 4;
+    vega.events.v1.AMM.ConcentratedLiquidityParameters parameters = 4;
     string asset = 5;
     string market = 6;
     Curve lower = 7;
     Curve upper = 8;
-    vega.events.v1.AMMPool.Status status = 9;
+    vega.events.v1.AMM.Status status = 9;
   }
 
   string party = 1;

@@ -25,24 +25,24 @@ import (
 
 type AMMPool struct {
 	*Base
-	pool *eventspb.AMMPool
+	pool *eventspb.AMM
 }
 
 func NewAMMPoolEvent(
 	ctx context.Context,
-	party, market, subAccount, poolID string,
+	party, market, ammParty, poolID string,
 	commitment *num.Uint,
 	p *types.ConcentratedLiquidityParameters,
 	status types.AMMPoolStatus,
-	statusReason types.AMMPoolStatusReason,
+	statusReason types.AMMStatusReason,
 ) *AMMPool {
 	order := &AMMPool{
 		Base: newBase(ctx, AMMPoolEvent),
-		pool: &eventspb.AMMPool{
+		pool: &eventspb.AMM{
+			Id:           poolID,
 			PartyId:      party,
 			MarketId:     market,
-			PoolId:       poolID,
-			SubAccount:   subAccount,
+			AmmPartyId:   ammParty,
 			Commitment:   commitment.String(),
 			Parameters:   p.ToProtoEvent(),
 			Status:       status,
@@ -65,18 +65,18 @@ func (p AMMPool) MarketID() string {
 	return p.pool.MarketId
 }
 
-func (p *AMMPool) AMMPool() *eventspb.AMMPool {
+func (p *AMMPool) AMMPool() *eventspb.AMM {
 	return p.pool
 }
 
-func (p AMMPool) Proto() eventspb.AMMPool {
+func (p AMMPool) Proto() eventspb.AMM {
 	return *p.pool
 }
 
 func (p AMMPool) StreamMessage() *eventspb.BusEvent {
 	busEvent := newBusEventFromBase(p.Base)
-	busEvent.Event = &eventspb.BusEvent_AmmPool{
-		AmmPool: p.pool,
+	busEvent.Event = &eventspb.BusEvent_Amm{
+		Amm: p.pool,
 	}
 
 	return busEvent
@@ -85,7 +85,7 @@ func (p AMMPool) StreamMessage() *eventspb.BusEvent {
 func AMMPoolEventFromStream(ctx context.Context, be *eventspb.BusEvent) *AMMPool {
 	pool := &AMMPool{
 		Base: newBaseFromBusEvent(ctx, AMMPoolEvent, be),
-		pool: be.GetAmmPool(),
+		pool: be.GetAmm(),
 	}
 	return pool
 }

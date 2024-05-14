@@ -367,7 +367,7 @@ func testClosingReduceOnlyPool(t *testing.T) {
 	ensurePosition(t, tst.pos, 0, num.UintZero())
 	ensurePosition(t, tst.pos, 0, num.UintZero())
 	expectSubAccountRelease(t, tst, party, subAccount)
-	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodReduceOnly)
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMCancellationMethodReduceOnly)
 	mevt, err := tst.engine.CancelAMM(ctx, cancel)
 	require.NoError(t, err)
 	assert.Nil(t, mevt) // no closeout necessary so not event
@@ -388,7 +388,7 @@ func testClosingPoolImmediate(t *testing.T) {
 	// pool has a position but gets closed anyway
 	ensurePosition(t, tst.pos, 12, num.UintZero())
 	expectSubAccountRelease(t, tst, party, subAccount)
-	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodImmediate)
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMCancellationMethodImmediate)
 	mevt, err := tst.engine.CancelAMM(ctx, cancel)
 	require.NoError(t, err)
 	assert.Nil(t, mevt) // no closeout necessary so not event
@@ -407,7 +407,7 @@ func testAmendMakesClosingPoolActive(t *testing.T) {
 
 	// pool position is non-zero so it''l hang around
 	ensurePosition(t, tst.pos, 12, num.UintZero())
-	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodReduceOnly)
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMCancellationMethodReduceOnly)
 	closeout, err := tst.engine.CancelAMM(ctx, cancel)
 	require.NoError(t, err)
 	assert.Nil(t, closeout)
@@ -438,7 +438,7 @@ func testClosingPoolRemovedWhenPositionZero(t *testing.T) {
 
 	// pool position is non-zero so it''l hang around
 	ensurePosition(t, tst.pos, 12, num.UintZero())
-	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodReduceOnly)
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMCancellationMethodReduceOnly)
 	closeout, err := tst.engine.CancelAMM(ctx, cancel)
 	require.NoError(t, err)
 	assert.Nil(t, closeout)
@@ -560,7 +560,7 @@ func whenAMMIsSubmitted(t *testing.T, tst *tstEngine, submission *types.SubmitAM
 	t.Helper()
 
 	party := submission.Party
-	subAccount := DeriveSubAccount(party, tst.marketID, "AMMv1", 0)
+	subAccount := DeriveAMMParty(party, tst.marketID, "AMMv1", 0)
 	expectBalanceChecks(t, tst, party, subAccount, submission.CommitmentAmount.Uint64())
 
 	ctx := context.Background()
@@ -573,7 +573,7 @@ func getParty(t *testing.T, tst *tstEngine) (string, string) {
 	t.Helper()
 
 	party := vgcrypto.RandomHash()
-	subAccount := DeriveSubAccount(party, tst.marketID, "AMMv1", 0)
+	subAccount := DeriveAMMParty(party, tst.marketID, "AMMv1", 0)
 	return party, subAccount
 }
 
@@ -615,7 +615,7 @@ func getPoolAmendment(t *testing.T, party, market string) *types.AmendAMM {
 	}
 }
 
-func getCancelSubmission(t *testing.T, party, market string, method types.AMMPoolCancellationMethod) *types.CancelAMM {
+func getCancelSubmission(t *testing.T, party, market string, method types.AMMCancellationMethod) *types.CancelAMM {
 	t.Helper()
 	return &types.CancelAMM{
 		MarketID: market,

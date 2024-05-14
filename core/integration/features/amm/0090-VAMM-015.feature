@@ -111,7 +111,7 @@ Feature: Ensure the vAMM contributes to fee factor setting
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
     When the network moves ahead "4" blocks
     And the liquidity fee factor should be "0.03" for the market "ETH/MAR22"

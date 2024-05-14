@@ -155,10 +155,10 @@ Feature: Test vAMM submission works as expected (invalid submission)
        | vamm6 | ETH/MAR22 | vamm6-acc |
      And the following transfers should happen:
        | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
-       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-       | vamm2 | ACCOUNT_TYPE_GENERAL | vamm2-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-       | vamm3 | ACCOUNT_TYPE_GENERAL | vamm3-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-       | vamm4 | ACCOUNT_TYPE_GENERAL | vamm4-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-       | vamm5 | ACCOUNT_TYPE_GENERAL | vamm5-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
-       | vamm6 | ACCOUNT_TYPE_GENERAL | vamm6-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+       | vamm2 | ACCOUNT_TYPE_GENERAL | vamm2-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+       | vamm3 | ACCOUNT_TYPE_GENERAL | vamm3-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+       | vamm4 | ACCOUNT_TYPE_GENERAL | vamm4-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+       | vamm5 | ACCOUNT_TYPE_GENERAL | vamm5-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+       | vamm6 | ACCOUNT_TYPE_GENERAL | vamm6-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 

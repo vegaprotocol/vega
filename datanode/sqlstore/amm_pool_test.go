@@ -42,23 +42,23 @@ func TestAMMPool_Upsert(t *testing.T) {
 	partyID := entities.PartyID(GenerateID())
 	marketID := entities.MarketID(GenerateID())
 	poolID := entities.AMMPoolID(GenerateID())
-	subAccount := entities.AccountID(GenerateID())
+	ammPartyID := entities.PartyID(GenerateID())
 
 	t.Run("Upsert statuses", func(t *testing.T) {
 		upsertTests := []struct {
-			Status entities.AMMPoolStatus
-			Reason entities.AMMPoolStatusReason
+			Status entities.AMMStatus
+			Reason entities.AMMStatusReason
 		}{
-			{entities.AMMPoolStatusActive, entities.AMMPoolStatusReasonUnspecified},
-			{entities.AMMPoolStatusStopped, entities.AMMPoolStatusReasonUnspecified},
-			{entities.AMMPoolStatusCancelled, entities.AMMPoolStatusReasonUnspecified},
-			{entities.AMMPoolStatusRejected, entities.AMMPoolStatusReasonCancelledByParty},
-			{entities.AMMPoolStatusRejected, entities.AMMPoolStatusReasonCannotRebase},
-			{entities.AMMPoolStatusRejected, entities.AMMPoolStatusReasonMarketClosed},
-			{entities.AMMPoolStatusRejected, entities.AMMPoolStatusReasonCannotFillCommitment},
-			{entities.AMMPoolStatusRejected, entities.AMMPoolStatusReasonCommitmentTooLow},
-			{entities.AMMPoolStatusRejected, entities.AMMPoolStatusReasonPartyAlreadyOwnsAPool},
-			{entities.AMMPoolStatusRejected, entities.AMMPoolStatusReasonPartyClosedOut},
+			{entities.AMMStatusActive, entities.AMMStatusReasonUnspecified},
+			{entities.AMMStatusStopped, entities.AMMStatusReasonUnspecified},
+			{entities.AMMStatusCancelled, entities.AMMStatusReasonUnspecified},
+			{entities.AMMStatusRejected, entities.AMMStatusReasonCancelledByParty},
+			{entities.AMMStatusRejected, entities.AMMStatusReasonCannotRebase},
+			{entities.AMMStatusRejected, entities.AMMStatusReasonMarketClosed},
+			{entities.AMMStatusRejected, entities.AMMStatusReasonCannotFillCommitment},
+			{entities.AMMStatusRejected, entities.AMMStatusReasonCommitmentTooLow},
+			{entities.AMMStatusRejected, entities.AMMStatusReasonPartyAlreadyOwnsAPool},
+			{entities.AMMStatusRejected, entities.AMMStatusReasonPartyClosedOut},
 		}
 
 		upsertTime := block.VegaTime
@@ -67,14 +67,14 @@ func TestAMMPool_Upsert(t *testing.T) {
 			pool := entities.AMMPool{
 				PartyID:                        partyID,
 				MarketID:                       marketID,
-				PoolID:                         poolID,
-				SubAccount:                     subAccount,
+				ID:                             poolID,
+				AmmPartyID:                     ammPartyID,
 				Commitment:                     num.DecimalFromInt64(100),
 				Status:                         test.Status,
 				StatusReason:                   test.Reason,
 				ParametersBase:                 num.DecimalFromInt64(100),
-				ParametersLowerBound:           num.DecimalFromInt64(100),
-				ParametersUpperBound:           num.DecimalFromInt64(100),
+				ParametersLowerBound:           ptr.From(num.DecimalFromInt64(100)),
+				ParametersUpperBound:           ptr.From(num.DecimalFromInt64(100)),
 				ParametersLeverageAtLowerBound: ptr.From(num.DecimalFromInt64(100)),
 				ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
 				CreatedAt:                      block.VegaTime,
@@ -86,8 +86,8 @@ func TestAMMPool_Upsert(t *testing.T) {
 				ctx,
 				connectionSource.Connection,
 				&upserted,
-				`SELECT * FROM amm_pool WHERE party_id = $1 AND market_id = $2 AND pool_id = $3 AND sub_account = $4`,
-				partyID, marketID, poolID, subAccount))
+				`SELECT * FROM amms WHERE party_id = $1 AND market_id = $2 AND id = $3 AND amm_party_id = $4`,
+				partyID, marketID, poolID, ammPartyID))
 			assert.Equal(t, pool, upserted)
 		}
 	})
@@ -104,14 +104,14 @@ func TestAMMPool_Upsert(t *testing.T) {
 			pool := entities.AMMPool{
 				PartyID:                        partyID,
 				MarketID:                       marketID,
-				PoolID:                         poolID,
-				SubAccount:                     subAccount,
+				ID:                             poolID,
+				AmmPartyID:                     ammPartyID,
 				Commitment:                     amount,
-				Status:                         entities.AMMPoolStatusActive,
-				StatusReason:                   entities.AMMPoolStatusReasonUnspecified,
+				Status:                         entities.AMMStatusActive,
+				StatusReason:                   entities.AMMStatusReasonUnspecified,
 				ParametersBase:                 amount,
-				ParametersLowerBound:           amount,
-				ParametersUpperBound:           amount,
+				ParametersLowerBound:           ptr.From(amount),
+				ParametersUpperBound:           ptr.From(amount),
 				ParametersLeverageAtLowerBound: ptr.From(amount),
 				ParametersLeverageAtUpperBound: ptr.From(amount),
 				CreatedAt:                      block.VegaTime,
@@ -123,8 +123,8 @@ func TestAMMPool_Upsert(t *testing.T) {
 				ctx,
 				connectionSource.Connection,
 				&upserted,
-				`SELECT * FROM amm_pool WHERE party_id = $1 AND market_id = $2 AND pool_id = $3 AND sub_account = $4`,
-				partyID, marketID, poolID, subAccount))
+				`SELECT * FROM amms WHERE party_id = $1 AND market_id = $2 AND id = $3 AND amm_party_id = $4`,
+				partyID, marketID, poolID, ammPartyID))
 			assert.Equal(t, pool, upserted)
 		}
 	})
@@ -135,14 +135,14 @@ func TestAMMPool_Upsert(t *testing.T) {
 		pool := entities.AMMPool{
 			PartyID:                        partyID,
 			MarketID:                       marketID,
-			PoolID:                         poolID,
-			SubAccount:                     subAccount,
+			ID:                             poolID,
+			AmmPartyID:                     ammPartyID,
 			Commitment:                     num.DecimalFromInt64(100),
-			Status:                         entities.AMMPoolStatusActive,
-			StatusReason:                   entities.AMMPoolStatusReasonUnspecified,
+			Status:                         entities.AMMStatusActive,
+			StatusReason:                   entities.AMMStatusReasonUnspecified,
 			ParametersBase:                 num.DecimalFromInt64(1800),
-			ParametersLowerBound:           num.DecimalFromInt64(2000),
-			ParametersUpperBound:           num.DecimalFromInt64(2200),
+			ParametersLowerBound:           ptr.From(num.DecimalFromInt64(2000)),
+			ParametersUpperBound:           ptr.From(num.DecimalFromInt64(2200)),
 			ParametersLeverageAtLowerBound: nil,
 			ParametersLeverageAtUpperBound: nil,
 			CreatedAt:                      block.VegaTime,
@@ -154,15 +154,15 @@ func TestAMMPool_Upsert(t *testing.T) {
 			ctx,
 			connectionSource.Connection,
 			&upserted,
-			`SELECT * FROM amm_pool WHERE party_id = $1 AND market_id = $2 AND pool_id = $3 AND sub_account = $4`,
-			partyID, marketID, poolID, subAccount))
+			`SELECT * FROM amms WHERE party_id = $1 AND market_id = $2 AND id = $3 AND amm_party_id = $4`,
+			partyID, marketID, poolID, ammPartyID))
 		assert.Equal(t, pool, upserted)
 	})
 }
 
 type partyAccounts struct {
-	PartyID      entities.PartyID
-	SubAccountID entities.AccountID
+	PartyID    entities.PartyID
+	AMMPartyID entities.PartyID
 }
 
 func setupAMMPoolsTest(ctx context.Context, t *testing.T) (
@@ -170,7 +170,7 @@ func setupAMMPoolsTest(ctx context.Context, t *testing.T) (
 ) {
 	t.Helper()
 	const (
-		partyCount  = 5 // every party will have a sub account associated for AMM and this sub account underlies all the AMM pools that are created
+		partyCount  = 5 // every party will have a derived-party associated for AMM and this derived-party underlies all the AMM pools that are created
 		marketCount = 10
 		poolCount   = 10
 	)
@@ -187,32 +187,32 @@ func setupAMMPoolsTest(ctx context.Context, t *testing.T) (
 
 	for i := 0; i < partyCount; i++ {
 		partyID := entities.PartyID(GenerateID())
-		subAccount := entities.AccountID(GenerateID())
+		ammPartyID := entities.PartyID(GenerateID())
 
-		parties = append(parties, partyAccounts{PartyID: partyID, SubAccountID: subAccount})
+		parties = append(parties, partyAccounts{PartyID: partyID, AMMPartyID: ammPartyID})
 		for j := 0; j < marketCount; j++ {
 			marketID := entities.MarketID(GenerateID())
 			markets = append(markets, marketID)
 			for k := 0; k < poolCount; k++ {
 				poolID := entities.AMMPoolID(GenerateID())
 				poolIDs = append(poolIDs, poolID)
-				status := entities.AMMPoolStatusActive
-				statusReason := entities.AMMPoolStatusReasonUnspecified
+				status := entities.AMMStatusActive
+				statusReason := entities.AMMStatusReasonUnspecified
 				if (i+j+k)%2 == 0 {
-					status = entities.AMMPoolStatusStopped
-					statusReason = entities.AMMPoolStatusReasonCancelledByParty
+					status = entities.AMMStatusStopped
+					statusReason = entities.AMMStatusReasonCancelledByParty
 				}
 				pool := entities.AMMPool{
 					PartyID:                        partyID,
 					MarketID:                       marketID,
-					PoolID:                         poolID,
-					SubAccount:                     subAccount,
+					ID:                             poolID,
+					AmmPartyID:                     ammPartyID,
 					Commitment:                     num.DecimalFromInt64(100),
 					Status:                         status,
 					StatusReason:                   statusReason,
 					ParametersBase:                 num.DecimalFromInt64(100),
-					ParametersLowerBound:           num.DecimalFromInt64(100),
-					ParametersUpperBound:           num.DecimalFromInt64(100),
+					ParametersLowerBound:           ptr.From(num.DecimalFromInt64(100)),
+					ParametersUpperBound:           ptr.From(num.DecimalFromInt64(100)),
 					ParametersLeverageAtLowerBound: ptr.From(num.DecimalFromInt64(100)),
 					ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
 					CreatedAt:                      block.VegaTime,
@@ -233,9 +233,9 @@ func orderPools(pools []entities.AMMPool) []entities.AMMPool {
 	sort.Slice(pools, func(i, j int) bool {
 		return pools[i].CreatedAt.After(pools[j].CreatedAt) ||
 			(pools[i].CreatedAt == pools[j].CreatedAt && pools[i].PartyID < pools[j].PartyID) ||
-			(pools[i].CreatedAt == pools[j].CreatedAt && pools[i].PartyID == pools[j].PartyID && pools[i].SubAccount < pools[j].SubAccount) ||
-			(pools[i].CreatedAt == pools[j].CreatedAt && pools[i].PartyID == pools[j].PartyID && pools[i].SubAccount == pools[j].SubAccount && pools[i].MarketID < pools[j].MarketID) ||
-			(pools[i].CreatedAt == pools[j].CreatedAt && pools[i].PartyID == pools[j].PartyID && pools[i].SubAccount == pools[j].SubAccount && pools[i].MarketID == pools[j].MarketID && pools[i].PoolID <= pools[j].PoolID)
+			(pools[i].CreatedAt == pools[j].CreatedAt && pools[i].PartyID == pools[j].PartyID && pools[i].AmmPartyID < pools[j].AmmPartyID) ||
+			(pools[i].CreatedAt == pools[j].CreatedAt && pools[i].PartyID == pools[j].PartyID && pools[i].AmmPartyID == pools[j].AmmPartyID && pools[i].MarketID < pools[j].MarketID) ||
+			(pools[i].CreatedAt == pools[j].CreatedAt && pools[i].PartyID == pools[j].PartyID && pools[i].AmmPartyID == pools[j].AmmPartyID && pools[i].MarketID == pools[j].MarketID && pools[i].ID <= pools[j].ID)
 	})
 
 	return pools
@@ -561,7 +561,7 @@ func TestAMMPools_ListByPool(t *testing.T) {
 	t.Run("Should return the pool if the pool ID exists", func(t *testing.T) {
 		pa := poolIDs[r.Intn(n)]
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.PoolID == pa
+			return pool.ID == pa
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
@@ -590,11 +590,11 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		// Randomly pick a sub account
 		party := parties[r.Intn(n)]
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.SubAccount == party.SubAccountID
+			return pool.AmmPartyID == party.AMMPartyID
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.SubAccountID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, len(want), len(listedPools))
 		assert.Equal(t, want, listedPools)
@@ -610,11 +610,11 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		// Randomly pick a sub account
 		party := parties[r.Intn(n)]
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.SubAccount == party.SubAccountID
+			return pool.AmmPartyID == party.AMMPartyID
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.SubAccountID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[:5], listedPools)
@@ -630,11 +630,11 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		// Randomly pick a sub account
 		party := parties[r.Intn(n)]
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.SubAccount == party.SubAccountID
+			return pool.AmmPartyID == party.AMMPartyID
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.SubAccountID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[len(want)-5:], listedPools)
@@ -650,11 +650,11 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		// Randomly pick a sub account
 		party := parties[r.Intn(n)]
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.SubAccount == party.SubAccountID
+			return pool.AmmPartyID == party.AMMPartyID
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.SubAccountID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[11:16], listedPools)
@@ -670,11 +670,11 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		// Randomly pick a sub account
 		party := parties[r.Intn(n)]
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.SubAccount == party.SubAccountID
+			return pool.AmmPartyID == party.AMMPartyID
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.SubAccountID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[5:10], listedPools)
@@ -694,11 +694,11 @@ func TestAMMPools_ListByStatus(t *testing.T) {
 
 	t.Run("Should return all pools if no pagination is provided", func(t *testing.T) {
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.Status == entities.AMMPoolStatusActive
+			return pool.Status == entities.AMMStatusActive
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMPoolStatusActive, pagination)
+		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMStatusActive, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, len(want), len(listedPools))
 		assert.Equal(t, want, listedPools)
@@ -712,11 +712,11 @@ func TestAMMPools_ListByStatus(t *testing.T) {
 
 	t.Run("Should return the first page of pools", func(t *testing.T) {
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.Status == entities.AMMPoolStatusActive
+			return pool.Status == entities.AMMStatusActive
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMPoolStatusActive, pagination)
+		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMStatusActive, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[:5], listedPools)
@@ -730,11 +730,11 @@ func TestAMMPools_ListByStatus(t *testing.T) {
 
 	t.Run("Should return the last page of pools", func(t *testing.T) {
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.Status == entities.AMMPoolStatusActive
+			return pool.Status == entities.AMMStatusActive
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMPoolStatusActive, pagination)
+		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMStatusActive, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[len(want)-5:], listedPools)
@@ -748,11 +748,11 @@ func TestAMMPools_ListByStatus(t *testing.T) {
 
 	t.Run("Should return the requested page when paging forward", func(t *testing.T) {
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.Status == entities.AMMPoolStatusActive
+			return pool.Status == entities.AMMStatusActive
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMPoolStatusActive, pagination)
+		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMStatusActive, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[11:16], listedPools)
@@ -766,11 +766,11 @@ func TestAMMPools_ListByStatus(t *testing.T) {
 
 	t.Run("Should return the request page when paging backward", func(t *testing.T) {
 		want := filterPools(pools, func(pool entities.AMMPool) bool {
-			return pool.Status == entities.AMMPoolStatusActive
+			return pool.Status == entities.AMMStatusActive
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMPoolStatusActive, pagination)
+		listedPools, pageInfo, err := ps.ListByStatus(ctx, entities.AMMStatusActive, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[5:10], listedPools)
