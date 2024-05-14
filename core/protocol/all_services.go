@@ -892,6 +892,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.banking.OnTransferFeeFactorUpdate,
 		},
 		{
+			Param:   netparams.RewardsUpdateFrequency,
+			Watcher: svcs.banking.OnRewardsUpdateFrequencyUpdate,
+		},
+		{
 			Param:   netparams.TransferFeeMaxQuantumAmount,
 			Watcher: svcs.banking.OnMaxQuantumAmountUpdate,
 		},

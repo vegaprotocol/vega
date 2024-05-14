@@ -131,6 +131,7 @@ type TradingDataServiceV2 struct {
 	gamesService                  *service.Games
 	marginModesService            *service.MarginModes
 	twNotionalPositionService     *service.TimeWeightedNotionalPosition
+	gameScoreService              *service.GameScore
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -284,6 +285,94 @@ func (t *TradingDataServiceV2) ListFundingPayments(ctx context.Context, req *v2.
 
 	return &v2.ListFundingPaymentsResponse{
 		FundingPayments: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListGamePartyScores(ctx context.Context, req *v2.ListGamePartyScoresRequest) (*v2.ListGamePartyScoresResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGamePartyScore")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var partyIDs []entities.PartyID
+	var teamIDs []entities.TeamID
+	var gameIDs []entities.GameID
+	if req.Filter != nil {
+		partyIDs = make([]entities.PartyID, 0, len(req.Filter.PartyIds))
+		for _, pid := range req.Filter.PartyIds {
+			partyIDs = append(partyIDs, entities.PartyID(pid))
+		}
+		teamIDs = make([]entities.TeamID, 0, len(req.Filter.TeamIds))
+		for _, tid := range req.Filter.TeamIds {
+			teamIDs = append(teamIDs, entities.TeamID(tid))
+		}
+
+		gameIDs = make([]entities.GameID, 0, len(req.Filter.GameIds))
+		for _, gid := range req.Filter.GameIds {
+			gameIDs = append(gameIDs, entities.GameID(gid))
+		}
+	}
+
+	partyScores, pageInfo, err := t.gameScoreService.ListPartyScores(
+		ctx, gameIDs, partyIDs, teamIDs, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.GamePartyScoresEdge](partyScores)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.GamePartyScoresConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListGamePartyScoresResponse{
+		PartyScores: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListGameTeamScores(ctx context.Context, req *v2.ListGameTeamScoresRequest) (*v2.ListGameTeamScoresResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGameTeamScores")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+	var teamIDs []entities.TeamID
+	var gameIDs []entities.GameID
+	if req.Filter != nil {
+		teamIDs = make([]entities.TeamID, 0, len(req.Filter.TeamIds))
+		for _, tid := range req.Filter.TeamIds {
+			teamIDs = append(teamIDs, entities.TeamID(tid))
+		}
+
+		gameIDs = make([]entities.GameID, 0, len(req.Filter.GameIds))
+		for _, gid := range req.Filter.GameIds {
+			gameIDs = append(gameIDs, entities.GameID(gid))
+		}
+	}
+
+	teamScores, pageInfo, err := t.gameScoreService.ListTeamScores(
+		ctx, gameIDs, teamIDs, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.GameTeamScoresEdge](teamScores)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.GameTeamScoresConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListGameTeamScoresResponse{
+		TeamScores: connection,
 	}, nil
 }
 

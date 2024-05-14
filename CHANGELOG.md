@@ -12,7 +12,7 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11209](https://github.com/vegaprotocol/vega/issues/11209) - Publish ongoing games data.
 
 ### 🐛 Fixes
 

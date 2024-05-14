@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -120,6 +121,7 @@ func (e *Engine) serialiseRecurringTransfers() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadBankingRecurringTransfers{
 			BankingRecurringTransfers: e.getRecurringTransfers(),
+			NextMetricUpdate:          e.nextMetricUpdate,
 		},
 	}
 
@@ -314,7 +316,7 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	case *types.PayloadBankingAssetActions:
 		return nil, e.restoreAssetActions(pl.BankingAssetActions, p)
 	case *types.PayloadBankingRecurringTransfers:
-		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, p)
+		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, pl.NextMetricUpdate, p)
 	case *types.PayloadBankingScheduledTransfers:
 		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers, p)
 	case *types.PayloadBankingRecurringGovernanceTransfers:
@@ -332,12 +334,12 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	}
 }
 
-func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *checkpoint.RecurringTransfers, p *types.Payload) error {
+func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *checkpoint.RecurringTransfers, nextMetricUpdate time.Time, p *types.Payload) error {
 	var err error
 	// ignore events here as we don't need to send them
 	_ = e.loadRecurringTransfers(ctx, transfers)
 	e.bss.serialisedRecurringTransfers, err = proto.Marshal(p.IntoProto())
-
+	e.nextMetricUpdate = nextMetricUpdate
 	return err
 }
 

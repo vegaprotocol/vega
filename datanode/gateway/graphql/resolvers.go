@@ -669,6 +669,14 @@ func (r *VegaResolverRoot) TimeWeightedNotionalPosition() TimeWeightedNotionalPo
 	return (*timeWeightedNotionalPositionResolver)(r)
 }
 
+func (r *VegaResolverRoot) GamePartyScore() GamePartyScoreResolver {
+	return (*gamePartyScoresResolver)(r)
+}
+
+func (r *VegaResolverRoot) GameTeamScore() GameTeamScoreResolver {
+	return (*gameTeamScoresResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -807,6 +815,37 @@ func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []s
 		return nil, err
 	}
 	return res.Profiles, nil
+}
+
+func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GamePartyScoreFilter, pagination *v2.Pagination) (*v2.GamePartyScoresConnection, error) {
+	req := v2.ListGamePartyScoresRequest{
+		Filter: &v2.GamePartyScoresFilter{
+			GameIds:  filter.GameIds,
+			TeamIds:  filter.TeamIds,
+			PartyIds: filter.PartyIds,
+		},
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.ListGamePartyScores(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.PartyScores, nil
+}
+
+func (r *myQueryResolver) GameTeamScores(ctx context.Context, filter *GameTeamScoreFilter, pagination *v2.Pagination) (*v2.GameTeamScoresConnection, error) {
+	req := v2.ListGameTeamScoresRequest{
+		Filter: &v2.GameTeamScoresFilter{
+			GameIds: filter.GameIds,
+			TeamIds: filter.TeamIds,
+		},
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.ListGameTeamScores(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.TeamScores, nil
 }
 
 func (r *myQueryResolver) PartyMarginModes(ctx context.Context, marketID *string, partyID *string, pagination *v2.Pagination) (*v2.PartyMarginModesConnection, error) {

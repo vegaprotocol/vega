@@ -1734,6 +1734,18 @@ func (mr *MockBankingMockRecorder) NewGovernanceTransfer(arg0, arg1, arg2, arg3 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).NewGovernanceTransfer), arg0, arg1, arg2, arg3)
 }
 
+// OnBlockEnd mocks base method.
+func (m *MockBanking) OnBlockEnd(arg0 context.Context, arg1 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnBlockEnd", arg0, arg1)
+}
+
+// OnBlockEnd indicates an expected call of OnBlockEnd.
+func (mr *MockBankingMockRecorder) OnBlockEnd(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnBlockEnd", reflect.TypeOf((*MockBanking)(nil).OnBlockEnd), arg0, arg1)
+}
+
 // TransferFunds mocks base method.
 func (m *MockBanking) TransferFunds(arg0 context.Context, arg1 *types.TransferFunds) error {
 	m.ctrl.T.Helper()

@@ -1136,6 +1136,51 @@ message TeamMemberStats {
   string notional_volume = 2;
 }
 
+// Scores per party per game with eligibility context.
+message GamePartyScore {
+  // Game ID.
+  string game_id = 1;
+  // The party ID.
+  string party = 2;
+  // Team the party belongs to. Unset if the party is not part of a team.
+  optional string team_id = 3;
+  // Epoch when these scores were generated.
+  int64 epoch = 4;
+  // Timestamp in Unix nanoseconds when these scores were generated.
+  int64 time = 5;
+  // Party's current score in the game.
+  string score = 6;
+  // Party's current staking balance. Only populated if the game has a requirement for it.
+  string staking_balance = 7;
+  // Party's current open volume. Only populated if the game has a requirement for it.
+  string open_volume = 8;
+  // Total fees paid by the party during the relevant period.
+  string total_fees_paid = 9;
+  // If the party is eligible for a reward for this game based on the current information.
+  bool is_eligible = 10;
+  // If the party is a member of a team, this is their relative position in the sorting order of the team.
+  // Empty if not a team, or if the party is not eligible.
+  optional uint64 rank = 11;
+}
+
+message GameTeamScore {
+  // Game ID.
+  string game_id = 1;
+  // Team ID
+  string team_id = 2;
+  // Epoch when these scores were generated.
+  int64 epoch = 3;
+  // Timestamp in Unix nanoseconds when these scores were generated.
+  int64 time = 4;
+  // Team's current collective score in the game.
+  string score = 5;
+}
+
+message GameScores {
+  repeated GameTeamScore team_scores = 1;
+  repeated GamePartyScore party_scores = 2;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -1355,6 +1400,9 @@ enum BusEventType {
   // Event containing the IDs of orders cancelled by a party on a market.
   BUS_EVENT_TYPE_CANCELLED_ORDERS = 89;
 
+  // Event containing the near realtime game scores for parties and teams.
+  BUS_EVENT_TYPE_GAME_SCORES = 90;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1542,7 +1590,8 @@ message BusEvent {
     TimeWeightedNotionalPositionUpdated time_weighted_notional_position_updated = 186;
     // Event notifying of multiple orders being cancelled for a given party, on a given market.
     CancelledOrders cancelled_orders = 187;
-
+    // Event notifying on near realtime game scores for parties and teams.
+    GameScores game_scores = 188;
     // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type

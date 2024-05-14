@@ -128,6 +128,18 @@ models:
   StopOrderSizeOverrideSetting:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderSizeOverrideSetting
+  GameTeamScore:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.GameTeamScore
+  GamePartyScore:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.GamePartyScore
+  GamePartyScoreEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamePartyScoresEdge
+  GamePartyScoreConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamePartyScoresConnection
+  GameTeamScoreEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameTeamScoresEdge
+  GameTeamScoreConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameTeamScoresConnection
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   OrderUpdate:

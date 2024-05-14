@@ -212,6 +212,60 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 	}
 }
 
+func (mat *MarketActivityTracker) PublishGameMetric(ctx context.Context, dispatchStrategy []*vega.DispatchStrategy, now time.Time) {
+	m := map[string]map[string]map[string]*num.Uint{}
+
+	for asset, market := range mat.assetToMarketTrackers {
+		m[asset] = map[string]map[string]*num.Uint{}
+		for mkt, mt := range market {
+			m[asset][mkt] = mt.aggregatedFees()
+			mt.processNotionalAtMilestone(mat.epochStartTime, now)
+			mt.processPositionAtMilestone(mat.epochStartTime, now)
+			mt.processM2MAtMilestone()
+			mt.processPartyRealisedReturnAtMilestone()
+			mt.calcFeesAtMilestone()
+		}
+	}
+	mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, m)
+
+	for _, ds := range dispatchStrategy {
+		if ds.Metric == vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING || ds.Metric == vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED ||
+			ds.Metric == vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
+			continue
+		}
+		mat.publishMetricForDispatchStrategy(ctx, ds, now)
+	}
+
+	for _, market := range mat.assetToMarketTrackers {
+		for _, mt := range market {
+			mt.epochTimeWeightedNotional = mt.epochTimeWeightedNotional[:len(mt.epochTimeWeightedNotional)-1]
+			mt.epochTimeWeightedPosition = mt.epochTimeWeightedPosition[:len(mt.epochTimeWeightedPosition)-1]
+			mt.epochPartyM2M = mt.epochPartyM2M[:len(mt.epochPartyM2M)-1]
+			mt.epochPartyRealisedReturn = mt.epochPartyRealisedReturn[:len(mt.epochPartyRealisedReturn)-1]
+			mt.epochMakerFeesReceived = mt.epochMakerFeesReceived[:len(mt.epochMakerFeesReceived)-1]
+			mt.epochMakerFeesPaid = mt.epochMakerFeesPaid[:len(mt.epochMakerFeesPaid)-1]
+			mt.epochLpFees = mt.epochLpFees[:len(mt.epochLpFees)-1]
+			mt.epochTotalMakerFeesReceived = mt.epochTotalMakerFeesReceived[:len(mt.epochTotalMakerFeesReceived)-1]
+			mt.epochTotalMakerFeesPaid = mt.epochTotalMakerFeesPaid[:len(mt.epochTotalMakerFeesPaid)-1]
+			mt.epochTotalLpFees = mt.epochTotalLpFees[:len(mt.epochTotalLpFees)-1]
+		}
+	}
+	mat.takerFeesPaidInEpoch = mat.takerFeesPaidInEpoch[:len(mat.takerFeesPaidInEpoch)-1]
+	mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
+}
+
+func (mat *MarketActivityTracker) publishMetricForDispatchStrategy(ctx context.Context, ds *vega.DispatchStrategy, now time.Time) {
+	if ds.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
+		partyScores := mat.CalculateMetricForIndividuals(ctx, ds)
+		gs := events.NewPartyGameScoresEvent(ctx, int64(mat.currentEpoch), getGameID(ds), now, partyScores)
+		mat.broker.Send(gs)
+	} else {
+		teamScores, partyScores := mat.CalculateMetricForTeams(ctx, ds)
+		gs := events.NewTeamGameScoresEvent(ctx, int64(mat.currentEpoch), getGameID(ds), now, teamScores, partyScores)
+		mat.broker.Send(gs)
+	}
+}
+
 // AddValueTraded records the value of a trade done in the given market.
 func (mat *MarketActivityTracker) AddValueTraded(asset, marketID string, value *num.Uint) {
 	markets, ok := mat.assetToMarketTrackers[asset]
@@ -442,6 +496,15 @@ func (mat *MarketActivityTracker) clearDeletedMarkets() {
 	}
 }
 
+func (mt *marketTracker) calcFeesAtMilestone() {
+	mt.epochMakerFeesReceived = append(mt.epochMakerFeesReceived, mt.makerFeesReceived)
+	mt.epochMakerFeesPaid = append(mt.epochMakerFeesPaid, mt.makerFeesPaid)
+	mt.epochLpFees = append(mt.epochLpFees, mt.lpFees)
+	mt.epochTotalMakerFeesReceived = append(mt.epochTotalMakerFeesReceived, mt.totalMakerFeesReceived)
+	mt.epochTotalMakerFeesPaid = append(mt.epochTotalMakerFeesPaid, mt.totalMakerFeesPaid)
+	mt.epochTotalLpFees = append(mt.epochTotalLpFees, mt.totalLpFees)
+}
+
 // clearFeeActivity is called at the end of the epoch. It deletes markets that are pending to be removed and resets the fees paid for the epoch.
 func (mt *marketTracker) clearFeeActivity() {
 	if len(mt.epochMakerFeesReceived) == maxWindowSize {
@@ -599,12 +662,16 @@ func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) [
 	return parties
 }
 
+func getGameID(ds *vega.DispatchStrategy) string {
+	p, _ := lproto.Marshal(ds)
+	return hex.EncodeToString(crypto.Hash(p))
+}
+
 // CalculateMetricForIndividuals calculates the metric corresponding to the dispatch strategy and returns a slice of the contribution scores of the parties.
 // Markets in scope are the ones passed in the dispatch strategy if any or all available markets for the asset for metric.
 // Parties in scope depend on the `IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM` and can include all parties, only those in teams, and only those not in teams.
 func (mat *MarketActivityTracker) CalculateMetricForIndividuals(ctx context.Context, ds *vega.DispatchStrategy) []*types.PartyContributionScore {
-	p, _ := lproto.Marshal(ds)
-	hash := hex.EncodeToString(crypto.Hash(p))
+	hash := getGameID(ds)
 	if pc, ok := mat.partyContributionCache[hash]; ok {
 		return pc
 	}
@@ -612,7 +679,11 @@ func (mat *MarketActivityTracker) CalculateMetricForIndividuals(ctx context.Cont
 	parties := mat.getPartiesInScope(ds)
 	stakingRequirement, _ := num.UintFromString(ds.StakingRequirement, 10)
 	notionalRequirement, _ := num.UintFromString(ds.NotionalTimeWeightedAveragePositionRequirement, 10)
-	partyContributions := mat.calculateMetricForIndividuals(ctx, ds.AssetForMetric, parties, ds.Markets, ds.Metric, stakingRequirement, notionalRequirement, int(ds.WindowLength), hash)
+	interval := int32(1)
+	if ds.TransferInterval != nil {
+		interval = *ds.TransferInterval
+	}
+	partyContributions := mat.calculateMetricForIndividuals(ctx, ds.AssetForMetric, parties, ds.Markets, ds.Metric, stakingRequirement, notionalRequirement, int(ds.WindowLength), hash, interval)
 
 	// we do this calculation at the end of the epoch and clear it in the beginning of the next epoch, i.e. within the same block therefore it saves us
 	// redundant calculation and has no snapshot implication
@@ -623,6 +694,11 @@ func (mat *MarketActivityTracker) CalculateMetricForIndividuals(ctx context.Cont
 // CalculateMetricForTeams calculates the metric for teams and their respective team members for markets in scope of the dispatch strategy.
 func (mat *MarketActivityTracker) CalculateMetricForTeams(ctx context.Context, ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore) {
 	var teamMembers map[string][]string
+	interval := int32(1)
+	if ds.TransferInterval != nil {
+		interval = *ds.TransferInterval
+	}
+	paidFees := mat.GetLastEpochTakeFees(ds.AssetForMetric, ds.Markets, interval)
 	if tsl := len(ds.TeamScope); tsl > 0 {
 		teamMembers = make(map[string][]string, len(ds.TeamScope))
 		for _, team := range ds.TeamScope {
@@ -638,53 +714,63 @@ func (mat *MarketActivityTracker) CalculateMetricForTeams(ctx context.Context, d
 	p, _ := lproto.Marshal(ds)
 	gameID := hex.EncodeToString(crypto.Hash(p))
 
-	return mat.calculateMetricForTeams(ctx, ds.AssetForMetric, teamMembers, ds.Markets, ds.Metric, stakingRequirement, notionalRequirement, int(ds.WindowLength), topNDecimal, gameID)
+	return mat.calculateMetricForTeams(ctx, ds.AssetForMetric, teamMembers, ds.Markets, ds.Metric, stakingRequirement, notionalRequirement, int(ds.WindowLength), topNDecimal, gameID, paidFees)
 }
 
-func (mat *MarketActivityTracker) isEligibleForReward(ctx context.Context, asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, gameID string) bool {
-	if !minStakingBalanceRequired.IsZero() {
-		balance, err := mat.balanceChecker.GetAvailableBalance(party)
-		if err != nil || balance.LT(minStakingBalanceRequired) {
-			return false
+func (mat *MarketActivityTracker) isEligibleForReward(ctx context.Context, asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, gameID string) (bool, *num.Uint, *num.Uint) {
+	eligiblByBalance := true
+	eligibleByNotional := true
+	var balance, notional *num.Uint
+	var err error
+
+	balance, err = mat.balanceChecker.GetAvailableBalance(party)
+	if err != nil || balance.LT(minStakingBalanceRequired) {
+		eligiblByBalance = false
+		if balance == nil {
+			balance = num.UintZero()
 		}
 	}
-	if !notionalTimeWeightedAveragePositionRequired.IsZero() {
-		notional := mat.getTWNotionalPosition(asset, party, markets)
-		mat.broker.Send(events.NewTimeWeightedNotionalPositionUpdated(ctx, mat.currentEpoch, asset, party, gameID, notional.String()))
-		if notional.LT(notionalTimeWeightedAveragePositionRequired) {
-			return false
-		}
+
+	notional = mat.getTWNotionalPosition(asset, party, markets)
+	mat.broker.Send(events.NewTimeWeightedNotionalPositionUpdated(ctx, mat.currentEpoch, asset, party, gameID, notional.String()))
+	if notional.LT(notionalTimeWeightedAveragePositionRequired) {
+		eligibleByNotional = false
 	}
-	return true
+
+	isEligible := (eligiblByBalance || minStakingBalanceRequired.IsZero()) && (eligibleByNotional || notionalTimeWeightedAveragePositionRequired.IsZero())
+	return isEligible, balance, notional
 }
 
-func (mat *MarketActivityTracker) calculateMetricForIndividuals(ctx context.Context, asset string, parties []string, markets []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, gameID string) []*types.PartyContributionScore {
+func (mat *MarketActivityTracker) calculateMetricForIndividuals(ctx context.Context, asset string, parties []string, markets []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, gameID string, interval int32) []*types.PartyContributionScore {
 	ret := make([]*types.PartyContributionScore, 0, len(parties))
+	paidFees := mat.GetLastEpochTakeFees(asset, markets, interval)
 	for _, party := range parties {
-		if !mat.isEligibleForReward(ctx, asset, party, markets, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID) {
+		eligible, balance, notional := mat.isEligibleForReward(ctx, asset, party, markets, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID)
+		if !eligible {
+			ret = append(ret, &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: eligible, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
 			continue
 		}
 		score, ok := mat.calculateMetricForParty(asset, party, markets, metric, windowSize)
 		if !ok {
+			ret = append(ret, &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: false, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
 			continue
 		}
-		ret = append(ret, &types.PartyContributionScore{Party: party, Score: score})
+		ret = append(ret, &types.PartyContributionScore{Party: party, Score: score, IsEligible: true, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
 	}
 	return ret
 }
 
 // CalculateMetricForTeams returns a slice of metrics for the team and a slice of metrics for each team member.
-func (mat *MarketActivityTracker) calculateMetricForTeams(ctx context.Context, asset string, teams map[string][]string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, topN num.Decimal, gameID string) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore) {
+func (mat *MarketActivityTracker) calculateMetricForTeams(ctx context.Context, asset string, teams map[string][]string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, topN num.Decimal, gameID string, paidFees map[string]*num.Uint) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore) {
 	teamScores := make([]*types.PartyContributionScore, 0, len(teams))
 	teamKeys := make([]string, 0, len(teams))
 	for k := range teams {
 		teamKeys = append(teamKeys, k)
 	}
 	sort.Strings(teamKeys)
-
 	ps := make(map[string][]*types.PartyContributionScore, len(teamScores))
 	for _, t := range teamKeys {
-		ts, teamMemberScores := mat.calculateMetricForTeam(ctx, asset, teams[t], marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, gameID)
+		ts, teamMemberScores := mat.calculateMetricForTeam(ctx, asset, teams[t], marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, gameID, paidFees)
 		if ts.IsZero() {
 			continue
 		}
@@ -696,8 +782,8 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(ctx context.Context, a
 }
 
 // calculateMetricForTeam returns the metric score for team and a slice of the score for each of its members.
-func (mat *MarketActivityTracker) calculateMetricForTeam(ctx context.Context, asset string, parties []string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, topN num.Decimal, gameID string) (num.Decimal, []*types.PartyContributionScore) {
-	return calculateMetricForTeamUtil(ctx, asset, parties, marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, mat.isEligibleForReward, mat.calculateMetricForParty, gameID)
+func (mat *MarketActivityTracker) calculateMetricForTeam(ctx context.Context, asset string, parties []string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, topN num.Decimal, gameID string, paidFees map[string]*num.Uint) (num.Decimal, []*types.PartyContributionScore) {
+	return calculateMetricForTeamUtil(ctx, asset, parties, marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, mat.isEligibleForReward, mat.calculateMetricForParty, gameID, paidFees)
 }
 
 func calculateMetricForTeamUtil(ctx context.Context,
@@ -709,17 +795,24 @@ func calculateMetricForTeamUtil(ctx context.Context,
 	notionalTimeWeightedAveragePositionRequired *num.Uint,
 	windowSize int,
 	topN num.Decimal,
-	isEligibleForReward func(ctx context.Context, asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, gameID string) bool,
+	isEligibleForReward func(ctx context.Context, asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, gameID string) (bool, *num.Uint, *num.Uint),
 	calculateMetricForParty func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) (num.Decimal, bool),
 	gameID string,
+	paidFees map[string]*num.Uint,
 ) (num.Decimal, []*types.PartyContributionScore) {
 	teamPartyScores := []*types.PartyContributionScore{}
+	eligibleTeamPartyScores := []*types.PartyContributionScore{}
 	for _, party := range parties {
-		if !isEligibleForReward(ctx, asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID) {
+		eligible, balance, notional := isEligibleForReward(ctx, asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID)
+		if !eligible {
+			teamPartyScores = append(teamPartyScores, &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: eligible, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
 			continue
 		}
 		if score, ok := calculateMetricForParty(asset, party, marketsInScope, metric, windowSize); ok {
-			teamPartyScores = append(teamPartyScores, &types.PartyContributionScore{Party: party, Score: score})
+			teamPartyScores = append(teamPartyScores, &types.PartyContributionScore{Party: party, Score: score, IsEligible: eligible, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
+			eligibleTeamPartyScores = append(eligibleTeamPartyScores, &types.PartyContributionScore{Party: party, Score: score, IsEligible: eligible, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
+		} else {
+			teamPartyScores = append(teamPartyScores, &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: false, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
 		}
 	}
 
@@ -727,17 +820,29 @@ func calculateMetricForTeamUtil(ctx context.Context,
 		return num.DecimalZero(), []*types.PartyContributionScore{}
 	}
 
+	sort.Slice(eligibleTeamPartyScores, func(i, j int) bool {
+		return eligibleTeamPartyScores[i].Score.GreaterThan(eligibleTeamPartyScores[j].Score)
+	})
+
 	sort.Slice(teamPartyScores, func(i, j int) bool {
 		return teamPartyScores[i].Score.GreaterThan(teamPartyScores[j].Score)
 	})
+
+	lastUsed := int64(1)
+	for _, tps := range teamPartyScores {
+		if tps.IsEligible {
+			tps.RankingIndex = lastUsed
+			lastUsed += 1
+		}
+	}
 
 	maxIndex := int(topN.Mul(num.DecimalFromInt64(int64(len(parties)))).IntPart())
 	// ensure non-zero, otherwise we have a divide-by-zero panic on our hands
 	if maxIndex == 0 {
 		maxIndex = 1
 	}
-	if len(teamPartyScores) < maxIndex {
-		maxIndex = len(teamPartyScores)
+	if len(eligibleTeamPartyScores) < maxIndex {
+		maxIndex = len(eligibleTeamPartyScores)
 	}
 	if maxIndex == 0 {
 		return num.DecimalZero(), teamPartyScores
@@ -745,7 +850,7 @@ func calculateMetricForTeamUtil(ctx context.Context,
 
 	total := num.DecimalZero()
 	for i := 0; i < maxIndex; i++ {
-		total = total.Add(teamPartyScores[i].Score)
+		total = total.Add(eligibleTeamPartyScores[i].Score)
 	}
 
 	return total.Div(num.DecimalFromInt64(int64(maxIndex))), teamPartyScores
@@ -975,6 +1080,18 @@ func updateNotional(n *twNotional, notional *num.Uint, t, tn int64, time time.Ti
 	n.t = time
 }
 
+func calcNotionalAt(n *twNotional, t, tn int64) *num.Uint {
+	tnOverT := num.UintZero()
+	tnOverTComp := uScalingFactor.Clone()
+	if t != 0 {
+		tnOverT = num.NewUint(uint64(tn / t))
+		tnOverTComp = tnOverTComp.Sub(tnOverTComp, tnOverT)
+	}
+	p1 := num.UintZero().Mul(n.currentEpochTWNotional, tnOverTComp)
+	p2 := num.UintZero().Mul(n.notional, tnOverT)
+	return num.UintZero().Div(p1.AddSum(p2), uScalingFactor)
+}
+
 // recordNotional tracks the time weighted average notional for the party per market.
 // notional = abs(position) x price / position_factor
 // price in asset decimals.
@@ -1003,6 +1120,16 @@ func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, end
 	}
 	if len(mt.epochTimeWeightedNotional) == maxWindowSize {
 		mt.epochTimeWeightedNotional = mt.epochTimeWeightedNotional[1:]
+	}
+	mt.epochTimeWeightedNotional = append(mt.epochTimeWeightedNotional, m)
+}
+
+func (mt *marketTracker) processNotionalAtMilestone(epochStartTime time.Time, milestoneTime time.Time) {
+	t := int64(milestoneTime.Sub(epochStartTime).Seconds())
+	m := make(map[string]*num.Uint, len(mt.twNotional))
+	for party, twNotional := range mt.twNotional {
+		tn := int64(milestoneTime.Sub(twNotional.t).Seconds()) * scalingFactor
+		m[party] = calcNotionalAt(twNotional, t, tn)
 	}
 	mt.epochTimeWeightedNotional = append(mt.epochTimeWeightedNotional, m)
 }
@@ -1036,6 +1163,14 @@ func updatePosition(toi *twPosition, scaledAbsPos uint64, t, tn int64, time time
 	toi.currentEpochTWPosition = (toi.currentEpochTWPosition*(u64ScalingFactor-tnOverT) + (toi.position * tnOverT)) / u64ScalingFactor
 	toi.position = scaledAbsPos
 	toi.t = time
+}
+
+func calculatePositionAt(toi *twPosition, t, tn int64) uint64 {
+	tnOverT := uint64(0)
+	if t != 0 {
+		tnOverT = uint64(tn / t)
+	}
+	return (toi.currentEpochTWPosition*(u64ScalingFactor-tnOverT) + (toi.position * tnOverT)) / u64ScalingFactor
 }
 
 // recordPosition records the current position of a party and the time of change. If there is a previous position then it is time weight updated with respect to the time
@@ -1083,6 +1218,16 @@ func (mt *marketTracker) processPositionEndOfEpoch(epochStartTime time.Time, end
 			delete(mt.twPosition, p)
 		}
 	}
+}
+
+func (mt *marketTracker) processPositionAtMilestone(epochStartTime time.Time, milestoneTime time.Time) {
+	t := int64(milestoneTime.Sub(epochStartTime).Seconds())
+	m := make(map[string]uint64, len(mt.twPosition))
+	for party, toi := range mt.twPosition {
+		tn := int64(milestoneTime.Sub(toi.t).Seconds()) * scalingFactor
+		m[party] = calculatePositionAt(toi, t, tn)
+	}
+	mt.epochTimeWeightedPosition = append(mt.epochTimeWeightedPosition, m)
 }
 
 // //// return metric //////
@@ -1144,6 +1289,25 @@ func (mt *marketTracker) processM2MEndOfEpoch() {
 	mt.epochPartyM2M = append(mt.epochPartyM2M, m)
 }
 
+func (mt *marketTracker) processM2MAtMilestone() {
+	m := map[string]num.Decimal{}
+	for party, m2m := range mt.partyM2M {
+		if _, ok := mt.twPosition[party]; !ok {
+			continue
+		}
+		p := mt.epochTimeWeightedPosition[len(mt.epochTimeWeightedPosition)-1][party]
+
+		var v num.Decimal
+		if p == 0 {
+			v = num.DecimalZero()
+		} else {
+			v = m2m.Div(num.DecimalFromInt64(int64(p)).Div(dScalingFactor))
+		}
+		m[party] = v
+	}
+	mt.epochPartyM2M = append(mt.epochPartyM2M, m)
+}
+
 // processPartyRealisedReturnOfEpoch is called at the end of the epoch to reset the running total for the next epoch and record the total m2m in the ended epoch.
 func (mt *marketTracker) processPartyRealisedReturnOfEpoch() {
 	m := map[string]num.Decimal{}
@@ -1155,6 +1319,14 @@ func (mt *marketTracker) processPartyRealisedReturnOfEpoch() {
 	}
 	mt.epochPartyRealisedReturn = append(mt.epochPartyRealisedReturn, m)
 	mt.partyRealisedReturn = map[string]decimal.Decimal{}
+}
+
+func (mt *marketTracker) processPartyRealisedReturnAtMilestone() {
+	m := map[string]num.Decimal{}
+	for party, realised := range mt.partyRealisedReturn {
+		m[party] = realised
+	}
+	mt.epochPartyRealisedReturn = append(mt.epochPartyRealisedReturn, m)
 }
 
 // getReturns returns a slice of the total of the party's return by epoch in the given window.

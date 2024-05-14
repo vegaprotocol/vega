@@ -554,6 +554,18 @@ func (mr *MockMarketActivityTrackerMockRecorder) MarketTrackedForAsset(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketTrackedForAsset", reflect.TypeOf((*MockMarketActivityTracker)(nil).MarketTrackedForAsset), arg0, arg1)
 }
 
+// PublishGameMetric mocks base method.
+func (m *MockMarketActivityTracker) PublishGameMetric(arg0 context.Context, arg1 []*vega.DispatchStrategy, arg2 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishGameMetric", arg0, arg1, arg2)
+}
+
+// PublishGameMetric indicates an expected call of PublishGameMetric.
+func (mr *MockMarketActivityTrackerMockRecorder) PublishGameMetric(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishGameMetric", reflect.TypeOf((*MockMarketActivityTracker)(nil).PublishGameMetric), arg0, arg1, arg2)
+}
+
 // TeamStatsForMarkets mocks base method.
 func (m *MockMarketActivityTracker) TeamStatsForMarkets(arg0, arg1 []string) map[string]map[string]*num.Uint {
 	m.ctrl.T.Helper()

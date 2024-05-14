@@ -62,6 +62,14 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of stop orders that match the given filters
 	ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error)
+	// List game team scores
+	//
+	// Get a list of team scores for the given filters
+	ListGameTeamScores(ctx context.Context, in *ListGameTeamScoresRequest, opts ...grpc.CallOption) (*ListGameTeamScoresResponse, error)
+	// List game party scores
+	//
+	// Get a list of party scores for the given filters
+	ListGamePartyScores(ctx context.Context, in *ListGamePartyScoresRequest, opts ...grpc.CallOption) (*ListGamePartyScoresResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: List positions
 	//
@@ -759,6 +767,24 @@ func (c *tradingDataServiceClient) GetStopOrder(ctx context.Context, in *GetStop
 func (c *tradingDataServiceClient) ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error) {
 	out := new(ListStopOrdersResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListStopOrders", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListGameTeamScores(ctx context.Context, in *ListGameTeamScoresRequest, opts ...grpc.CallOption) (*ListGameTeamScoresResponse, error) {
+	out := new(ListGameTeamScoresResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGameTeamScores", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListGamePartyScores(ctx context.Context, in *ListGamePartyScoresRequest, opts ...grpc.CallOption) (*ListGamePartyScoresResponse, error) {
+	out := new(ListGamePartyScoresResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGamePartyScores", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2163,6 +2189,14 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of stop orders that match the given filters
 	ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error)
+	// List game team scores
+	//
+	// Get a list of team scores for the given filters
+	ListGameTeamScores(context.Context, *ListGameTeamScoresRequest) (*ListGameTeamScoresResponse, error)
+	// List game party scores
+	//
+	// Get a list of party scores for the given filters
+	ListGamePartyScores(context.Context, *ListGamePartyScoresRequest) (*ListGamePartyScoresResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: List positions
 	//
@@ -2763,6 +2797,12 @@ func (UnimplementedTradingDataServiceServer) GetStopOrder(context.Context, *GetS
 func (UnimplementedTradingDataServiceServer) ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListStopOrders not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListGameTeamScores(context.Context, *ListGameTeamScoresRequest) (*ListGameTeamScoresResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGameTeamScores not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListGamePartyScores(context.Context, *ListGamePartyScoresRequest) (*ListGamePartyScoresResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGamePartyScores not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPositions not implemented")
 }
@@ -3276,6 +3316,42 @@ func _TradingDataService_ListStopOrders_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListStopOrders(ctx, req.(*ListStopOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListGameTeamScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGameTeamScoresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListGameTeamScores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListGameTeamScores",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListGameTeamScores(ctx, req.(*ListGameTeamScoresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListGamePartyScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGamePartyScoresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListGamePartyScores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListGamePartyScores",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListGamePartyScores(ctx, req.(*ListGamePartyScoresRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5380,6 +5456,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListStopOrders",
 			Handler:    _TradingDataService_ListStopOrders_Handler,
+		},
+		{
+			MethodName: "ListGameTeamScores",
+			Handler:    _TradingDataService_ListGameTeamScores_Handler,
+		},
+		{
+			MethodName: "ListGamePartyScores",
+			Handler:    _TradingDataService_ListGamePartyScores_Handler,
 		},
 		{
 			MethodName: "ListPositions",
