@@ -131,9 +131,9 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 }
 
 func (os *Order) cancelled(ctx context.Context, co CancelledOrdersEvent, seqNum uint64) error {
-	allIDs := co.OrderIDs()
-	ids := make([]string, 0, len(allIDs))
-	orders := make([]entities.Order, 0, len(allIDs))
+	allIds := co.OrderIDs()
+	ids := make([]string, 0, len(allIds))
+	orders := make([]entities.Order, 0, len(allIds))
 	for _, id := range allIds {
 		k := entities.OrderID(id)
 		if o, ok := os.cache[k]; ok {
