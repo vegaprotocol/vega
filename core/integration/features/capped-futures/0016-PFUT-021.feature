@@ -68,10 +68,14 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | party1 | USD   | ETH/DEC21 | 1800   | 8200    |
       | party2 | USD   | ETH/DEC21 | 0      | 1000    |
 
+    #order margin for aux1: limit price * size = 999*2=1998
+    #order margin for aux2: (max price - limit price) * size = (1500-1000)*2=1000
     # party1 maintenance margin level: position size * average entry price = 5*1000=5000
     # party2 maintenance margin level: position size * (max price - average entry price)=5*(1500-1000)=2500
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
+      | aux1   | ETH/DEC21 | 600         | 660    | 720     | 840     | cross margin |
+      | aux2   | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
       | party1 | ETH/DEC21 | 1500        | 1650   | 1800    | 2100    | cross margin |
       | party2 | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
 
