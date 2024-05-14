@@ -94,7 +94,7 @@ Feature: Test vAMM cancellation by abandoning.
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
 
   @VAMM
@@ -153,6 +153,6 @@ Feature: Test vAMM cancellation by abandoning.
       | vamm1    | USD   |           | 925595  |        |        |
     And the following transfers should happen:
        | from     | from account         | to    | to account             | market id | amount | asset | is amm | type                                 |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL   | ETH/MAR22 | 25595  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN  |       | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 74548  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+       | vamm1-id | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL   | ETH/MAR22 | 25595  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+       | vamm1-id | ACCOUNT_TYPE_MARGIN  |       | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 74548  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
 

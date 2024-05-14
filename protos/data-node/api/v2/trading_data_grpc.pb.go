@@ -570,10 +570,10 @@ type TradingDataServiceClient interface {
 	// If no epoch is specified, the final time weighted notional position from the end of the most recently completed epoch is returned.
 	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
 	GetTimeWeightedNotionalPosition(ctx context.Context, in *GetTimeWeightedNotionalPositionRequest, opts ...grpc.CallOption) (*GetTimeWeightedNotionalPositionResponse, error)
-	// List AMM Pools
+	// List AMMs
 	//
-	// Get a list of AMM pools or filter by market ID, party ID or pool ID
-	ListAMMPools(ctx context.Context, in *ListAMMPoolsRequest, opts ...grpc.CallOption) (*ListAMMPoolsResponse, error)
+	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	ListAMMs(ctx context.Context, in *ListAMMsRequest, opts ...grpc.CallOption) (*ListAMMsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2109,9 +2109,9 @@ func (c *tradingDataServiceClient) GetTimeWeightedNotionalPosition(ctx context.C
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) ListAMMPools(ctx context.Context, in *ListAMMPoolsRequest, opts ...grpc.CallOption) (*ListAMMPoolsResponse, error) {
-	out := new(ListAMMPoolsResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAMMPools", in, out, opts...)
+func (c *tradingDataServiceClient) ListAMMs(ctx context.Context, in *ListAMMsRequest, opts ...grpc.CallOption) (*ListAMMsResponse, error) {
+	out := new(ListAMMsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAMMs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2710,10 +2710,10 @@ type TradingDataServiceServer interface {
 	// If no epoch is specified, the final time weighted notional position from the end of the most recently completed epoch is returned.
 	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
 	GetTimeWeightedNotionalPosition(context.Context, *GetTimeWeightedNotionalPositionRequest) (*GetTimeWeightedNotionalPositionResponse, error)
-	// List AMM Pools
+	// List AMMs
 	//
-	// Get a list of AMM pools or filter by market ID, party ID or pool ID
-	ListAMMPools(context.Context, *ListAMMPoolsRequest) (*ListAMMPoolsResponse, error)
+	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	ListAMMs(context.Context, *ListAMMsRequest) (*ListAMMsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -3150,8 +3150,8 @@ func (UnimplementedTradingDataServiceServer) ListPartyMarginModes(context.Contex
 func (UnimplementedTradingDataServiceServer) GetTimeWeightedNotionalPosition(context.Context, *GetTimeWeightedNotionalPositionRequest) (*GetTimeWeightedNotionalPositionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTimeWeightedNotionalPosition not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ListAMMPools(context.Context, *ListAMMPoolsRequest) (*ListAMMPoolsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListAMMPools not implemented")
+func (UnimplementedTradingDataServiceServer) ListAMMs(context.Context, *ListAMMsRequest) (*ListAMMsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAMMs not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -5403,20 +5403,20 @@ func _TradingDataService_GetTimeWeightedNotionalPosition_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_ListAMMPools_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListAMMPoolsRequest)
+func _TradingDataService_ListAMMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAMMsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).ListAMMPools(ctx, in)
+		return srv.(TradingDataServiceServer).ListAMMs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/ListAMMPools",
+		FullMethod: "/datanode.api.v2.TradingDataService/ListAMMs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).ListAMMPools(ctx, req.(*ListAMMPoolsRequest))
+		return srv.(TradingDataServiceServer).ListAMMs(ctx, req.(*ListAMMsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5888,8 +5888,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_GetTimeWeightedNotionalPosition_Handler,
 		},
 		{
-			MethodName: "ListAMMPools",
-			Handler:    _TradingDataService_ListAMMPools_Handler,
+			MethodName: "ListAMMs",
+			Handler:    _TradingDataService_ListAMMs_Handler,
 		},
 		{
 			MethodName: "Ping",

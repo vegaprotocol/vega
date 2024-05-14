@@ -94,7 +94,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
 
   @VAMM
@@ -223,7 +223,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
        |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 40     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
        |          | ACCOUNT_TYPE_SETTLEMENT | vamm1-id | ACCOUNT_TYPE_MARGIN  | ETH/MAR22 | 500    | USD   | true   | TRANSFER_TYPE_MTM_WIN                |
        | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 18530  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 96580  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 96580  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 996580  |        |        |
@@ -354,7 +354,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
        |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 40     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
        |          | ACCOUNT_TYPE_SETTLEMENT | vamm1-id | ACCOUNT_TYPE_MARGIN  | ETH/MAR22 | 500    | USD   | true   | TRANSFER_TYPE_MTM_WIN                |
        | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 18530  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 96580  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 96580  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 996580  |        |        |

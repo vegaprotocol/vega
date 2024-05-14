@@ -2332,19 +2332,19 @@ func (x *UpdatePartyProfile) GetMetadata() []*vega.Metadata {
 	return nil
 }
 
-// Command to create an AMM pool for a given market.
+// Command to create an automated market maker for a given market.
 type SubmitAMM struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The market for which to create an AMM pool.
+	// Market ID for which to create an AMM.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Amount to be committed to the pool.
+	// Amount to be committed to the AMM.
 	CommitmentAmount string `protobuf:"bytes,2,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"`
-	// Slippage tolerance used for rebasing position when creating/updating AMM
+	// Slippage tolerance used for rebasing the AMM if its base price crosses with existing order
 	SlippageTolerance string `protobuf:"bytes,3,opt,name=slippage_tolerance,json=slippageTolerance,proto3" json:"slippage_tolerance,omitempty"`
-	// Concentrated liquidity parameters.
+	// Concentrated liquidity parameters defining the shape of the AMM's volume curves.
 	ConcentratedLiquidityParameters *SubmitAMM_ConcentratedLiquidityParameters `protobuf:"bytes,4,opt,name=concentrated_liquidity_parameters,json=concentratedLiquidityParameters,proto3" json:"concentrated_liquidity_parameters,omitempty"`
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
 	ProposedFee string `protobuf:"bytes,5,opt,name=proposed_fee,json=proposedFee,proto3" json:"proposed_fee,omitempty"`
@@ -2417,21 +2417,21 @@ func (x *SubmitAMM) GetProposedFee() string {
 	return ""
 }
 
-// Command to create an AMM pool for a given market.
+// Command to amend an existing automated market maker on a market.
 type AmendAMM struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID for the AMM pool to be amended.
+	// Market ID for the AMM to be amended.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Amount to be committed to the pool.
+	// Amount to be committed to the AMM. If not supplied the commitment will remain unchanged.
 	CommitmentAmount *string `protobuf:"bytes,2,opt,name=commitment_amount,json=commitmentAmount,proto3,oneof" json:"commitment_amount,omitempty"`
 	// Slippage tolerance for rebasing position when updating the AMM.
 	SlippageTolerance string `protobuf:"bytes,3,opt,name=slippage_tolerance,json=slippageTolerance,proto3" json:"slippage_tolerance,omitempty"`
-	// Concentrated liquidity parameters.
+	// Concentrated liquidity parameters defining the shape of the AMM's volume curves. If not supplied the parameters will remain unchanged.
 	ConcentratedLiquidityParameters *AmendAMM_ConcentratedLiquidityParameters `protobuf:"bytes,4,opt,name=concentrated_liquidity_parameters,json=concentratedLiquidityParameters,proto3,oneof" json:"concentrated_liquidity_parameters,omitempty"`
-	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market. If not supplied the proposed fee will remain unchanged.
 	ProposedFee *string `protobuf:"bytes,5,opt,name=proposed_fee,json=proposedFee,proto3,oneof" json:"proposed_fee,omitempty"`
 }
 
@@ -2502,7 +2502,7 @@ func (x *AmendAMM) GetProposedFee() string {
 	return ""
 }
 
-// Command to create an AMM pool for a given market.
+// Command to cancel an automated market maker for a given market.
 type CancelAMM struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2739,15 +2739,15 @@ type SubmitAMM_ConcentratedLiquidityParameters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Upper price bound configuration for the pool. If unset, the AMM will never hold a short position.
+	// Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
 	UpperBound *string `protobuf:"bytes,1,opt,name=upper_bound,json=upperBound,proto3,oneof" json:"upper_bound,omitempty"`
-	// Lower price bound configuration for the pool. If unset, the AMM will never hold a long position.
+	// Price at which the AMM will stop quoting buy volume. If not supplied the AMM will never hold a long position.
 	LowerBound *string `protobuf:"bytes,2,opt,name=lower_bound,json=lowerBound,proto3,oneof" json:"lower_bound,omitempty"`
-	// Base price bound configuration for the pool.
+	// Price that the AMM will quote as its "fair price" when its position is zero.
 	Base string `protobuf:"bytes,3,opt,name=base,proto3" json:"base,omitempty"`
-	// Leverage at upper bounds. If not set the markets risk-factors will be used to calculate leverage.
+	// Leverage at upper bound. If not set the markets risk-factors will be used to calculate leverage.
 	LeverageAtUpperBound *string `protobuf:"bytes,4,opt,name=leverage_at_upper_bound,json=leverageAtUpperBound,proto3,oneof" json:"leverage_at_upper_bound,omitempty"`
-	// Leverage at lower bounds. If not set the markets risk-factors will be used to calculate leverage.
+	// Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
 	LeverageAtLowerBound *string `protobuf:"bytes,5,opt,name=leverage_at_lower_bound,json=leverageAtLowerBound,proto3,oneof" json:"leverage_at_lower_bound,omitempty"`
 }
 
@@ -2818,21 +2818,21 @@ func (x *SubmitAMM_ConcentratedLiquidityParameters) GetLeverageAtLowerBound() st
 	return ""
 }
 
-// Liquidity parameters that define the size and range of the AMM's tradeable volume. If not supplied the AMM's parameters will remain unchanged.
+// Liquidity parameters that define the size and range of the AMM's tradeable volume.
 type AmendAMM_ConcentratedLiquidityParameters struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Upper price bound configuration for the pool.
+	// Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
 	UpperBound *string `protobuf:"bytes,1,opt,name=upper_bound,json=upperBound,proto3,oneof" json:"upper_bound,omitempty"`
-	// Lower price bound configuration for the pool.
+	// Price at which the AMM will stop quoting buy volume. If not supplied the AMM will never hold a long position.
 	LowerBound *string `protobuf:"bytes,2,opt,name=lower_bound,json=lowerBound,proto3,oneof" json:"lower_bound,omitempty"`
-	// Base price bound configuration for the pool.
+	// Price that the AMM will quote as its "fair price" when its position is zero.
 	Base string `protobuf:"bytes,3,opt,name=base,proto3" json:"base,omitempty"`
-	// Leverage at upper bounds. If not set the markets risk-factors will be used to calculate leverage.
+	// Leverage at upper bound. If not set the markets risk-factors will be used to calculate leverage.
 	LeverageAtUpperBound *string `protobuf:"bytes,4,opt,name=leverage_at_upper_bound,json=leverageAtUpperBound,proto3,oneof" json:"leverage_at_upper_bound,omitempty"`
-	// Leverage at lower bounds. If not set the markets risk-factors will be used to calculate leverage.
+	// Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
 	LeverageAtLowerBound *string `protobuf:"bytes,5,opt,name=leverage_at_lower_bound,json=leverageAtLowerBound,proto3,oneof" json:"leverage_at_lower_bound,omitempty"`
 }
 

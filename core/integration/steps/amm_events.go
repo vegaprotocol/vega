@@ -77,7 +77,7 @@ func ExpectToSeeAMMEvents(broker *stubs.BrokerStub, table *godog.Table) error {
 	return nil
 }
 
-func SetAMMSubAccountAlias(broker *stubs.BrokerStub, exec Execution, table *godog.Table) error {
+func SetAMMPartyAlias(broker *stubs.BrokerStub, exec Execution, table *godog.Table) error {
 	// get the most recent event by market and party
 	recent := broker.GetLastAMMPoolEvents()
 	for _, r := range parseAMMAccountAlias(table) {
@@ -93,8 +93,8 @@ func SetAMMSubAccountAlias(broker *stubs.BrokerStub, exec Execution, table *godo
 		if !ok {
 			return fmt.Errorf("no AMM event found for party %s in market %s", pID, mID)
 		}
-		acc := pEvt.AMMPool().SubAccount
-		exec.SetAMMSubAccountIDAlias(row.alias(), acc)
+		pid := pEvt.AMMPool().AmmPartyId
+		exec.SetAMMSubAccountIDAlias(row.alias(), pid)
 	}
 	return nil
 }
@@ -157,7 +157,7 @@ func logEvents(log *logging.Logger, evts []*events.AMMPool) {
 			continue
 		}
 
-		var lowerLeverage, upperLeverage string
+		var lowerLeverage, upperLeverage, lowerBound, upperBound string
 		if pool.Parameters.LeverageAtLowerBound != nil {
 			lowerLeverage = *pool.Parameters.LeverageAtLowerBound
 		}
@@ -165,11 +165,18 @@ func logEvents(log *logging.Logger, evts []*events.AMMPool) {
 			upperLeverage = *pool.Parameters.LeverageAtUpperBound
 		}
 
+		if pool.Parameters.UpperBound != nil {
+			upperBound = *pool.Parameters.UpperBound
+		}
+		if pool.Parameters.LowerBound != nil {
+			lowerBound = *pool.Parameters.LowerBound
+		}
+
 		log.Info(fmt.Sprintf(
 			"AMM Party: %s on Market: %s - Amount: %s\nStatus: %s, Reason: %s\n Base: %s, Bounds: %s-%s, Leverages: %s-%s",
 			pool.PartyId, pool.MarketId, pool.Commitment,
 			pool.Status.String(), pool.StatusReason.String(),
-			pool.Parameters.Base, pool.Parameters.LowerBound, pool.Parameters.UpperBound,
+			pool.Parameters.Base, lowerBound, upperBound,
 			lowerLeverage, upperLeverage,
 		))
 	}
@@ -199,13 +206,18 @@ func (a ammEvtRow) matchesEvt(e *events.AMMPool) error {
 
 	checks := map[string]string{
 		"base":           pool.Parameters.Base,
-		"lower bound":    pool.Parameters.LowerBound,
-		"upper bound":    pool.Parameters.UpperBound,
+		"lower bound":    ptr.UnBox(pool.Parameters.LowerBound),
+		"upper bound":    ptr.UnBox(pool.Parameters.UpperBound),
 		"lower leverage": ptr.UnBox(pool.Parameters.LeverageAtLowerBound),
 		"upper leverage": ptr.UnBox(pool.Parameters.LeverageAtUpperBound),
 	}
+
 	for name, val := range checks {
 		if !a.r.HasColumn(name) {
+			if val != "" {
+				got = append(got, name, "", val)
+				return fmt.Errorf(eFmt+" expected %s %s - instead got %s", got...)
+			}
 			continue
 		}
 		if exp := a.r.MustStr(name); val != exp {
@@ -230,9 +242,9 @@ func (a ammEvtRow) status() types.AMMPoolStatus {
 	return a.r.MustAMMPoolStatus("status")
 }
 
-func (a ammEvtRow) reason() (types.AMMPoolStatusReason, bool) {
+func (a ammEvtRow) reason() (types.AMMStatusReason, bool) {
 	if !a.r.HasColumn("reason") {
-		return types.AMMPoolStatusReasonUnspecified, false
+		return types.AMMStatusReasonUnspecified, false
 	}
 	sr := a.r.MustPoolStatusReason("reason")
 	return sr, true

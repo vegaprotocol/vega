@@ -1065,34 +1065,34 @@ func (m *MarginMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
-type AMMPoolStatus eventspb.AMMPool_Status
+type AMMStatus eventspb.AMM_Status
 
 const (
-	AMMPoolStatusUnspecified = AMMPoolStatus(eventspb.AMMPool_STATUS_UNSPECIFIED)
-	AMMPoolStatusActive      = AMMPoolStatus(eventspb.AMMPool_STATUS_ACTIVE)
-	AMMPoolStatusRejected    = AMMPoolStatus(eventspb.AMMPool_STATUS_REJECTED)
-	AMMPoolStatusCancelled   = AMMPoolStatus(eventspb.AMMPool_STATUS_CANCELLED)
-	AMMPoolStatusStopped     = AMMPoolStatus(eventspb.AMMPool_STATUS_STOPPED)
+	AMMStatusUnspecified = AMMStatus(eventspb.AMM_STATUS_UNSPECIFIED)
+	AMMStatusActive      = AMMStatus(eventspb.AMM_STATUS_ACTIVE)
+	AMMStatusRejected    = AMMStatus(eventspb.AMM_STATUS_REJECTED)
+	AMMStatusCancelled   = AMMStatus(eventspb.AMM_STATUS_CANCELLED)
+	AMMStatusStopped     = AMMStatus(eventspb.AMM_STATUS_STOPPED)
 )
 
-func (s AMMPoolStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	status, ok := eventspb.AMMPool_Status_name[int32(s)]
+func (s AMMStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := eventspb.AMM_Status_name[int32(s)]
 	if !ok {
 		return buf, fmt.Errorf("unknown AMM pool status: %v", s)
 	}
 	return append(buf, []byte(status)...), nil
 }
 
-func (s *AMMPoolStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
-	val, ok := eventspb.AMMPool_Status_value[string(src)]
+func (s *AMMStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.AMM_Status_value[string(src)]
 	if !ok {
 		return fmt.Errorf("unknown AMM pool status: %s", src)
 	}
-	*s = AMMPoolStatus(val)
+	*s = AMMStatus(val)
 	return nil
 }
 
-func (s *AMMPoolStatus) Where(fieldName *string, nextBindVar func(args *[]any, arg any) string, args ...any) (string, []any) {
+func (s *AMMStatus) Where(fieldName *string, nextBindVar func(args *[]any, arg any) string, args ...any) (string, []any) {
 	if fieldName == nil {
 		return fmt.Sprintf("status = %s", nextBindVar(&args, s)), args
 	}
@@ -1100,33 +1100,33 @@ func (s *AMMPoolStatus) Where(fieldName *string, nextBindVar func(args *[]any, a
 	return fmt.Sprintf("%s = %s", *fieldName, nextBindVar(&args, s)), args
 }
 
-type AMMPoolStatusReason eventspb.AMMPool_StatusReason
+type AMMStatusReason eventspb.AMM_StatusReason
 
 const (
-	AMMPoolStatusReasonUnspecified           = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_UNSPECIFIED)
-	AMMPoolStatusReasonCancelledByParty      = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_CANCELLED_BY_PARTY)
-	AMMPoolStatusReasonCannotFillCommitment  = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_CANNOT_FILL_COMMITMENT)
-	AMMPoolStatusReasonPartyAlreadyOwnsAPool = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL)
-	AMMPoolStatusReasonPartyClosedOut        = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_PARTY_CLOSED_OUT)
-	AMMPoolStatusReasonMarketClosed          = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_MARKET_CLOSED)
-	AMMPoolStatusReasonCommitmentTooLow      = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_COMMITMENT_TOO_LOW)
-	AMMPoolStatusReasonCannotRebase          = AMMPoolStatusReason(eventspb.AMMPool_STATUS_REASON_CANNOT_REBASE)
+	AMMStatusReasonUnspecified           = AMMStatusReason(eventspb.AMM_STATUS_REASON_UNSPECIFIED)
+	AMMStatusReasonCancelledByParty      = AMMStatusReason(eventspb.AMM_STATUS_REASON_CANCELLED_BY_PARTY)
+	AMMStatusReasonCannotFillCommitment  = AMMStatusReason(eventspb.AMM_STATUS_REASON_CANNOT_FILL_COMMITMENT)
+	AMMStatusReasonPartyAlreadyOwnsAPool = AMMStatusReason(eventspb.AMM_STATUS_REASON_PARTY_ALREADY_OWNS_AMM_FOR_MARKET)
+	AMMStatusReasonPartyClosedOut        = AMMStatusReason(eventspb.AMM_STATUS_REASON_PARTY_CLOSED_OUT)
+	AMMStatusReasonMarketClosed          = AMMStatusReason(eventspb.AMM_STATUS_REASON_MARKET_CLOSED)
+	AMMStatusReasonCommitmentTooLow      = AMMStatusReason(eventspb.AMM_STATUS_REASON_COMMITMENT_TOO_LOW)
+	AMMStatusReasonCannotRebase          = AMMStatusReason(eventspb.AMM_STATUS_REASON_CANNOT_REBASE)
 )
 
-func (s AMMPoolStatusReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	status, ok := eventspb.AMMPool_StatusReason_name[int32(s)]
+func (s AMMStatusReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := eventspb.AMM_StatusReason_name[int32(s)]
 	if !ok {
 		return buf, fmt.Errorf("unknown AMM pool status reason: %v", s)
 	}
 	return append(buf, []byte(status)...), nil
 }
 
-func (s *AMMPoolStatusReason) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
-	val, ok := eventspb.AMMPool_StatusReason_value[string(src)]
+func (s *AMMStatusReason) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.AMM_StatusReason_value[string(src)]
 	if !ok {
 		return fmt.Errorf("unknown AMM pool status reason: %s", src)
 	}
-	*s = AMMPoolStatusReason(val)
+	*s = AMMStatusReason(val)
 	return nil
 }
 

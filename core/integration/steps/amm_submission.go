@@ -263,9 +263,9 @@ func (a ammRow) upperLeverage() *num.Decimal {
 	return ptr.From(a.r.MustDecimal("upper leverage"))
 }
 
-func (a ammRow) method() types.AMMPoolCancellationMethod {
+func (a ammRow) method() types.AMMCancellationMethod {
 	if !a.r.HasColumn("method") {
-		return types.AMMPoolCancellationMethodUnspecified
+		return types.AMMCancellationMethodUnspecified
 	}
 	return a.r.MustAMMCancelationMethod("method")
 }

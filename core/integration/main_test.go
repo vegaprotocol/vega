@@ -612,7 +612,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.ExpectToSeeAMMEvents(execsetup.broker, table)
 	})
 	s.Step(`^set the following AMM sub account aliases:$`, func(table *godog.Table) error {
-		return steps.SetAMMSubAccountAlias(execsetup.broker, execsetup.executionEngine, table)
+		return steps.SetAMMPartyAlias(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^parties have the following AMM account balances:$`, func(table *godog.Table) error {
 		return steps.PartiesHaveTheFollowingAMMBalances(execsetup.broker, execsetup.executionEngine, table)

@@ -804,23 +804,23 @@ func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, asse
 	return res.TimeWeightedNotionalPosition, nil
 }
 
-func (r *myQueryResolver) AmmPools(ctx context.Context, partyID *string, marketID *string, poolID *string,
-	subAccount *string, status *v1.AMMPool_Status, pagination *v2.Pagination,
-) (*v2.AMMPoolsConnection, error) {
-	req := &v2.ListAMMPoolsRequest{
+func (r *myQueryResolver) Amms(ctx context.Context, partyID *string, marketID *string, id *string,
+	ammPartyID *string, status *v1.AMM_Status, pagination *v2.Pagination,
+) (*v2.AMMConnection, error) {
+	req := &v2.ListAMMsRequest{
+		Id:         id,
 		PartyId:    partyID,
 		MarketId:   marketID,
-		PoolId:     poolID,
-		SubAccount: subAccount,
+		AmmPartyId: ammPartyID,
 		Status:     status,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.ListAMMPools(ctx, req)
+	res, err := r.tradingDataClientV2.ListAMMs(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return res.AmmPools, nil
+	return res.Amms, nil
 }
 
 func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []string, pagination *v2.Pagination) (*v2.PartiesProfilesConnection, error) {

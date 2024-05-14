@@ -1545,7 +1545,7 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 
 const ammVersion = "AMMv1"
 
-func deriveSubAccount(
+func deriveAMMParty(
 	party, market, version string,
 	index uint64,
 ) string {
@@ -1553,9 +1553,9 @@ func deriveSubAccount(
 	return hex.EncodeToString(hash)
 }
 
-func (t *TradingDataServiceV2) getSubaccounts(ctx context.Context, party string, market *string) ([]string, error) {
+func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, party string, market *string) ([]string, error) {
 	if market != nil && len(*market) > 0 {
-		return []string{deriveSubAccount(party, *market, ammVersion, 0)}, nil
+		return []string{deriveAMMParty(party, *market, ammVersion, 0)}, nil
 	}
 
 	// get a list of all markets to generate all potential
@@ -1567,7 +1567,7 @@ func (t *TradingDataServiceV2) getSubaccounts(ctx context.Context, party string,
 
 	subs := make([]string, 0, len(markets))
 	for _, v := range markets {
-		subs = append(subs, deriveSubAccount(party, v.ID.String(), ammVersion, 0))
+		subs = append(subs, deriveAMMParty(party, v.ID.String(), ammVersion, 0))
 	}
 
 	return subs, nil
@@ -1579,36 +1579,36 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	// handle subaccounts
+	// handle derived parties
 	includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties)
 	if includeDerivedParties && (req.PartyId == nil || len(*req.PartyId) <= 0) {
-		return formatE(newInvalidArgumentError("includeSubaccount requires a partyId"))
+		return formatE(newInvalidArgumentError("includeDerivedParties requires a partyId"))
 	}
 
-	subaccounts := []string{}
+	derivedParties := []string{}
 	if req.PartyId != nil && len(*req.PartyId) > 0 {
 		if includeDerivedParties {
-			subs, err := t.getSubaccounts(ctx, *req.PartyId, req.MarketId)
+			subs, err := t.getDerivedParties(ctx, *req.PartyId, req.MarketId)
 			if err != nil {
 				return formatE(err)
 			}
 
-			subaccounts = append(subaccounts, subs...)
+			derivedParties = append(derivedParties, subs...)
 		}
 	}
 
-	if err := t.sendPositionsSnapshot(ctx, req, srv, subaccounts); err != nil {
+	if err := t.sendPositionsSnapshot(ctx, req, srv, derivedParties); err != nil {
 		if !errors.Is(err, entities.ErrNotFound) {
 			return formatE(ErrPositionServiceSendSnapshot, err)
 		}
 	}
 
-	// add the party to the subaccounts
-	if len(subaccounts) > 0 {
-		subaccounts = append(subaccounts, *req.PartyId)
+	// add the party to the derived parties
+	if len(derivedParties) > 0 {
+		derivedParties = append(derivedParties, *req.PartyId)
 	}
 
-	positionsChan, ref := t.positionService.ObserveMany(ctx, t.config.StreamRetries, ptr.UnBox(req.MarketId), subaccounts...)
+	positionsChan, ref := t.positionService.ObserveMany(ctx, t.config.StreamRetries, ptr.UnBox(req.MarketId), derivedParties...)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -1633,7 +1633,7 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	})
 }
 
-func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer, subaccounts []string) error {
+func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer, derivedParties []string) error {
 	var (
 		positions []entities.Position
 		err       error
@@ -1672,8 +1672,8 @@ func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		}
 	}
 
-	// finally handle subaccount
-	for _, v := range subaccounts {
+	// finally handle derived parties
+	for _, v := range derivedParties {
 		if req.MarketId != nil {
 			position, err := t.positionService.GetByMarketAndParty(ctx, *req.MarketId, v)
 			if err != nil {
@@ -1683,11 +1683,11 @@ func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 			continue
 		}
 
-		subaccountPositions, err := t.positionService.GetByParty(ctx, entities.PartyID(v))
+		derivedPartyPositions, err := t.positionService.GetByParty(ctx, entities.PartyID(v))
 		if err != nil {
 			return errors.Wrap(err, "getting initial positions by party")
 		}
-		positions = append(positions, subaccountPositions...)
+		positions = append(positions, derivedPartyPositions...)
 	}
 
 	protos := make([]*vega.Position, len(positions))
@@ -5409,7 +5409,7 @@ func (t *TradingDataServiceV2) GetTimeWeightedNotionalPosition(ctx context.Conte
 	}, nil
 }
 
-func (t *TradingDataServiceV2) ListAMMPools(ctx context.Context, req *v2.ListAMMPoolsRequest) (*v2.ListAMMPoolsResponse, error) {
+func (t *TradingDataServiceV2) ListAMMPools(ctx context.Context, req *v2.ListAMMsRequest) (*v2.ListAMMsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAMMPools")()
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -5426,12 +5426,12 @@ func (t *TradingDataServiceV2) ListAMMPools(ctx context.Context, req *v2.ListAMM
 		pools, pageInfo, err = t.ammPoolService.ListByParty(ctx, entities.PartyID(*req.PartyId), pagination)
 	} else if req.MarketId != nil {
 		pools, pageInfo, err = t.ammPoolService.ListByMarket(ctx, entities.MarketID(*req.MarketId), pagination)
-	} else if req.PoolId != nil {
-		pools, pageInfo, err = t.ammPoolService.ListByPool(ctx, entities.AMMPoolID(*req.PoolId), pagination)
-	} else if req.SubAccount != nil {
-		pools, pageInfo, err = t.ammPoolService.ListBySubAccount(ctx, entities.AccountID(*req.SubAccount), pagination)
+	} else if req.Id != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByPool(ctx, entities.AMMPoolID(*req.Id), pagination)
+	} else if req.AmmPartyId != nil {
+		pools, pageInfo, err = t.ammPoolService.ListBySubAccount(ctx, entities.PartyID(*req.AmmPartyId), pagination)
 	} else if req.Status != nil {
-		pools, pageInfo, err = t.ammPoolService.ListByStatus(ctx, entities.AMMPoolStatus(*req.Status), pagination)
+		pools, pageInfo, err = t.ammPoolService.ListByStatus(ctx, entities.AMMStatus(*req.Status), pagination)
 	} else {
 		pools, pageInfo, err = t.ammPoolService.ListAll(ctx, pagination)
 	}
@@ -5440,13 +5440,13 @@ func (t *TradingDataServiceV2) ListAMMPools(ctx context.Context, req *v2.ListAMM
 		return nil, formatE(ErrListAMMPools, err)
 	}
 
-	edges, err := makeEdges[*v2.AMMPoolEdge](pools)
+	edges, err := makeEdges[*v2.AMMEdge](pools)
 	if err != nil {
 		return nil, formatE(err)
 	}
 
-	return &v2.ListAMMPoolsResponse{
-		AmmPools: &v2.AMMPoolsConnection{
+	return &v2.ListAMMsResponse{
+		Amms: &v2.AMMConnection{
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
 		},

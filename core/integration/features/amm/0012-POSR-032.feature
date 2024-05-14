@@ -121,7 +121,7 @@ Feature: A network disposal order which crosses with volume implied by an vAMM s
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount  | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
   @VAMM
   Scenario: the distressed party uncrosses with the vAMM orders

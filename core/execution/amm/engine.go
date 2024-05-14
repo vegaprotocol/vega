@@ -139,8 +139,8 @@ type Engine struct {
 	// sqrt calculator with cache
 	rooter *Sqrter
 
-	// a mapping of all sub accounts to the party owning them.
-	subAccounts map[string]string
+	// a mapping of all amm-party-ids to the party owning them.
+	ammParties map[string]string
 
 	minCommitmentQuantum *num.Uint
 }
@@ -166,7 +166,7 @@ func New(
 		marketActivityTracker: marketActivityTracker,
 		pools:                 map[string]*Pool{},
 		poolsCpy:              []*Pool{},
-		subAccounts:           map[string]string{},
+		ammParties:            map[string]string{},
 		minCommitmentQuantum:  num.UintZero(),
 		rooter:                &Sqrter{cache: map[string]num.Decimal{}},
 		priceFactor:           priceFactor,
@@ -188,8 +188,8 @@ func NewFromProto(
 ) (*Engine, error) {
 	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker)
 
-	for _, v := range state.SubAccounts {
-		e.subAccounts[v.Key] = v.Value
+	for _, v := range state.AmmPartyIds {
+		e.ammParties[v.Key] = v.Value
 	}
 
 	// TODO consider whether we want the cache in the snapshot, it might be pretty large/slow and I'm not sure what we gain
@@ -211,7 +211,7 @@ func NewFromProto(
 func (e *Engine) IntoProto() *v1.AmmState {
 	state := &v1.AmmState{
 		Sqrter:      make([]*v1.StringMapEntry, 0, len(e.rooter.cache)),
-		SubAccounts: make([]*v1.StringMapEntry, 0, len(e.subAccounts)),
+		AmmPartyIds: make([]*v1.StringMapEntry, 0, len(e.ammParties)),
 		Pools:       make([]*v1.PoolMapEntry, 0, len(e.pools)),
 	}
 
@@ -223,17 +223,17 @@ func (e *Engine) IntoProto() *v1.AmmState {
 	}
 	sort.Slice(state.Sqrter, func(i, j int) bool { return state.Sqrter[i].Key < state.Sqrter[j].Key })
 
-	for k, v := range e.subAccounts {
-		state.SubAccounts = append(state.SubAccounts, &v1.StringMapEntry{
+	for k, v := range e.ammParties {
+		state.AmmPartyIds = append(state.AmmPartyIds, &v1.StringMapEntry{
 			Key:   k,
 			Value: v,
 		})
 	}
-	sort.Slice(state.SubAccounts, func(i, j int) bool { return state.SubAccounts[i].Key < state.SubAccounts[j].Key })
+	sort.Slice(state.AmmPartyIds, func(i, j int) bool { return state.AmmPartyIds[i].Key < state.AmmPartyIds[j].Key })
 
 	for _, v := range e.poolsCpy {
 		state.Pools = append(state.Pools, &v1.PoolMapEntry{
-			Party: v.party,
+			Party: v.owner,
 			Pool:  v.IntoProto(),
 		})
 	}
@@ -260,7 +260,7 @@ func (e *Engine) OnMTM(ctx context.Context) {
 			e.log.Error("unable to release subaccount balance", logging.Error(err))
 		}
 		p.status = types.AMMPoolStatusCancelled
-		rm = append(rm, p.party)
+		rm = append(rm, p.owner)
 	}
 	for _, party := range rm {
 		e.remove(ctx, party)
@@ -277,7 +277,7 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	for _, p := range e.poolsCpy {
 		if p.getBalance().IsZero() {
 			p.status = types.AMMPoolStatusStopped
-			rm = append(rm, p.party)
+			rm = append(rm, p.owner)
 		}
 	}
 	for _, party := range rm {
@@ -288,14 +288,14 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 // RemoveDistressed checks if any of the closed out parties are AMM's and if so the AMM is stopped and removed.
 func (e *Engine) RemoveDistressed(ctx context.Context, closed []events.MarketPosition) {
 	for _, c := range closed {
-		owner, ok := e.subAccounts[c.Party()]
+		owner, ok := e.ammParties[c.Party()]
 		if !ok {
 			continue
 		}
 		p, ok := e.pools[owner]
 		if !ok {
-			e.log.Panic("could not find pool for subaccount, not possible",
-				logging.String("subaccount", c.Party()),
+			e.log.Panic("could not find pool for owner, not possible",
+				logging.String("owner", c.Party()),
 				logging.String("owner", owner),
 			)
 		}
@@ -304,8 +304,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, closed []events.MarketPos
 	}
 }
 
-func (e *Engine) IsPoolSubAccount(key string) bool {
-	_, yes := e.subAccounts[key]
+func (e *Engine) IsAMMPartyID(key string) bool {
+	_, yes := e.ammParties[key]
 	return yes
 }
 
@@ -445,7 +445,7 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		o := &types.Order{
 			ID:               e.idgen.NextID(),
 			MarketID:         p.market,
-			Party:            p.SubAccount,
+			Party:            p.AMMParty,
 			Size:             volume,
 			Remaining:        volume,
 			Price:            price,
@@ -454,7 +454,7 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 			Type:             types.OrderTypeMarket,
 			CreatedAt:        agg.CreatedAt,
 			Status:           types.OrderStatusFilled,
-			Reference:        "vamm-" + p.SubAccount,
+			Reference:        "vamm-" + p.AMMParty,
 			GeneratedOffbook: true,
 		}
 		o.OriginalPrice, _ = num.UintFromDecimal(o.Price.ToDecimal().Div(e.priceFactor))
@@ -594,14 +594,14 @@ func (e *Engine) Create(
 	idgen := idgeneration.New(deterministicID)
 	poolID := idgen.NextID()
 
-	subAccount := DeriveSubAccount(submit.Party, submit.MarketID, version, 0)
+	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, version, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonPartyAlreadyOwnsAPool,
+				types.AMMPoolStatusRejected, types.AMMStatusReasonPartyAlreadyOwnsAPool,
 			),
 		)
 
@@ -609,9 +609,9 @@ func (e *Engine) Create(
 	}
 
 	if err := e.ensureCommitmentAmount(ctx, submit.Party, subAccount, submit.CommitmentAmount); err != nil {
-		reason := types.AMMPoolStatusReasonCannotFillCommitment
+		reason := types.AMMStatusReasonCannotFillCommitment
 		if err == ErrCommitmentTooLow {
-			reason = types.AMMPoolStatusReasonCommitmentTooLow
+			reason = types.AMMStatusReasonCommitmentTooLow
 		}
 		e.broker.Send(
 			events.NewAMMPoolEvent(
@@ -629,7 +629,7 @@ func (e *Engine) Create(
 			events.NewAMMPoolEvent(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonUnspecified,
+				types.AMMPoolStatusRejected, types.AMMStatusReasonUnspecified,
 			),
 		)
 
@@ -655,7 +655,7 @@ func (e *Engine) Create(
 			events.NewAMMPoolEvent(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCommitmentTooLow,
+				types.AMMPoolStatusRejected, types.AMMStatusReasonCommitmentTooLow,
 			),
 		)
 
@@ -676,7 +676,7 @@ func (e *Engine) Confirm(
 	pool *Pool,
 ) error {
 	e.log.Debug("AMM added for market",
-		logging.String("owner", pool.party),
+		logging.String("owner", pool.owner),
 		logging.String("marketID", e.marketID),
 		logging.String("poolID", pool.ID),
 	)
@@ -701,7 +701,7 @@ func (e *Engine) Amend(
 	}
 
 	if amend.CommitmentAmount != nil {
-		if err := e.ensureCommitmentAmount(ctx, amend.Party, pool.SubAccount, amend.CommitmentAmount); err != nil {
+		if err := e.ensureCommitmentAmount(ctx, amend.Party, pool.AMMParty, amend.CommitmentAmount); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -726,7 +726,7 @@ func (e *Engine) CancelAMM(
 		return nil, ErrNoPoolMatchingParty
 	}
 
-	if cancel.Method == types.AMMPoolCancellationMethodReduceOnly {
+	if cancel.Method == types.AMMCancellationMethodReduceOnly {
 		// pool will now only accept trades that will reduce its position
 		pool.status = types.AMMPoolStatusReduceOnly
 		e.sendUpdate(ctx, pool)
@@ -749,7 +749,7 @@ func (e *Engine) StopPool(
 	ctx context.Context,
 	key string,
 ) error {
-	party, ok := e.subAccounts[key]
+	party, ok := e.ammParties[key]
 	if !ok {
 		return ErrNoPoolMatchingParty
 	}
@@ -765,7 +765,7 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 		}
 		p.status = types.AMMPoolStatusStopped
 		e.sendUpdate(ctx, p)
-		e.marketActivityTracker.RemoveAMMSubAccount(e.assetID, e.marketID, p.SubAccount)
+		e.marketActivityTracker.RemoveAMMParty(e.assetID, e.marketID, p.AMMParty)
 	}
 	return nil
 }
@@ -773,9 +773,9 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 	e.broker.Send(
 		events.NewAMMPoolEvent(
-			ctx, pool.party, e.marketID, pool.SubAccount, pool.ID,
+			ctx, pool.owner, e.marketID, pool.AMMParty, pool.ID,
 			pool.Commitment, pool.Parameters,
-			pool.status, types.AMMPoolStatusReasonUnspecified,
+			pool.status, types.AMMStatusReasonUnspecified,
 		),
 	)
 }
@@ -819,7 +819,7 @@ func (e *Engine) ensureCommitmentAmount(
 // owner of the pool.
 func (e *Engine) releaseSubAccounts(ctx context.Context, pool *Pool, mktClose bool) (events.Margin, error) {
 	if mktClose {
-		ledgerMovements, err := e.collateral.SubAccountClosed(ctx, pool.party, pool.SubAccount, pool.asset, pool.market)
+		ledgerMovements, err := e.collateral.SubAccountClosed(ctx, pool.owner, pool.AMMParty, pool.asset, pool.market)
 		if err != nil {
 			return nil, err
 		}
@@ -827,15 +827,15 @@ func (e *Engine) releaseSubAccounts(ctx context.Context, pool *Pool, mktClose bo
 		return nil, nil
 	}
 	var pos events.MarketPosition
-	if pp := e.position.GetPositionsByParty(pool.SubAccount); len(pp) > 0 {
+	if pp := e.position.GetPositionsByParty(pool.AMMParty); len(pp) > 0 {
 		pos = pp[0]
 	} else {
 		// if a pool is cancelled right after creation it won't have a position yet so we just make an empty one to give
 		// to collateral
-		pos = positions.NewMarketPosition(pool.SubAccount)
+		pos = positions.NewMarketPosition(pool.AMMParty)
 	}
 
-	ledgerMovements, closeout, err := e.collateral.SubAccountRelease(ctx, pool.party, pool.SubAccount, pool.asset, pool.market, pos)
+	ledgerMovements, closeout, err := e.collateral.SubAccountRelease(ctx, pool.owner, pool.AMMParty, pool.asset, pool.market, pos)
 	if err != nil {
 		return nil, err
 	}
@@ -871,10 +871,10 @@ func (e *Engine) UpdateSubAccountBalance(
 	)
 
 	if currentCommitment.LT(newCommitment) {
-		transferType = types.TransferTypeAMMSubAccountLow
+		transferType = types.TransferTypeAMMLow
 		actualAmount.Sub(newCommitment, currentCommitment)
 	} else if currentCommitment.GT(newCommitment) {
-		transferType = types.TransferTypeAMMSubAccountHigh
+		transferType = types.TransferTypeAMMHigh
 		actualAmount.Sub(currentCommitment, newCommitment)
 	} else {
 		// nothing to do
@@ -898,29 +898,29 @@ func (e *Engine) UpdateSubAccountBalance(
 func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
 	ret := make(map[string]common.AMMPool, len(e.pools))
 	for _, v := range e.pools {
-		ret[v.SubAccount] = v
+		ret[v.AMMParty] = v
 	}
 	return ret
 }
 
 func (e *Engine) GetAllSubAccounts() []string {
-	ret := make([]string, 0, len(e.subAccounts))
-	for _, subAccount := range e.subAccounts {
+	ret := make([]string, 0, len(e.ammParties))
+	for _, subAccount := range e.ammParties {
 		ret = append(ret, subAccount)
 	}
 	return ret
 }
 
 func (e *Engine) add(p *Pool) {
-	e.pools[p.party] = p
+	e.pools[p.owner] = p
 	e.poolsCpy = append(e.poolsCpy, p)
-	e.subAccounts[p.SubAccount] = p.party
-	e.marketActivityTracker.AddAMMSubAccount(e.assetID, e.marketID, p.SubAccount)
+	e.ammParties[p.AMMParty] = p.owner
+	e.marketActivityTracker.AddAMMSubAccount(e.assetID, e.marketID, p.AMMParty)
 }
 
 func (e *Engine) remove(ctx context.Context, party string) {
 	for i := range e.poolsCpy {
-		if e.poolsCpy[i].party == party {
+		if e.poolsCpy[i].owner == party {
 			e.poolsCpy = append(e.poolsCpy[:i], e.poolsCpy[i+1:]...)
 			break
 		}
@@ -928,12 +928,12 @@ func (e *Engine) remove(ctx context.Context, party string) {
 
 	pool := e.pools[party]
 	delete(e.pools, party)
-	delete(e.subAccounts, pool.SubAccount)
+	delete(e.ammParties, pool.AMMParty)
 	e.sendUpdate(ctx, pool)
-	e.marketActivityTracker.RemoveAMMSubAccount(e.assetID, e.marketID, pool.SubAccount)
+	e.marketActivityTracker.RemoveAMMParty(e.assetID, e.marketID, pool.AMMParty)
 }
 
-func DeriveSubAccount(
+func DeriveAMMParty(
 	party, market, version string,
 	index uint64,
 ) string {

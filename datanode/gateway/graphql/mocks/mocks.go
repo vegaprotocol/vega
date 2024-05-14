@@ -1220,24 +1220,24 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) Info(arg0, arg1 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).Info), varargs...)
 }
 
-// ListAMMPools mocks base method.
-func (m *MockTradingDataServiceClientV2) ListAMMPools(arg0 context.Context, arg1 *v2.ListAMMPoolsRequest, arg2 ...grpc.CallOption) (*v2.ListAMMPoolsResponse, error) {
+// ListAMMs mocks base method.
+func (m *MockTradingDataServiceClientV2) ListAMMs(arg0 context.Context, arg1 *v2.ListAMMsRequest, arg2 ...grpc.CallOption) (*v2.ListAMMsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "ListAMMPools", varargs...)
-	ret0, _ := ret[0].(*v2.ListAMMPoolsResponse)
+	ret := m.ctrl.Call(m, "ListAMMs", varargs...)
+	ret0, _ := ret[0].(*v2.ListAMMsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListAMMPools indicates an expected call of ListAMMPools.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ListAMMPools(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// ListAMMs indicates an expected call of ListAMMs.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListAMMs(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAMMPools", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAMMPools), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAMMs", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAMMs), varargs...)
 }
 
 // ListAccounts mocks base method.

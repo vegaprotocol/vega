@@ -276,7 +276,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED: TimeWeightedNotionalPositionUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS:                        CancelledOrdersEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_GAME_SCORES:                             GameScoresEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL:                                AMMPoolEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_AMM:                                     AMMPoolEvent,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -370,7 +370,7 @@ var (
 		TimeWeightedNotionalPositionUpdatedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED,
 		CancelledOrdersEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS,
 		GameScoresEvent:                          eventspb.BusEventType_BUS_EVENT_TYPE_GAME_SCORES,
-		AMMPoolEvent:                             eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL,
+		AMMPoolEvent:                             eventspb.BusEventType_BUS_EVENT_TYPE_AMM,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 

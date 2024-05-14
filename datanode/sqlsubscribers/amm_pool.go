@@ -26,7 +26,7 @@ import (
 
 type AMMPoolEvent interface {
 	events.Event
-	AMMPool() *eventspb.AMMPool
+	AMMPool() *eventspb.AMM
 }
 
 type AMMPoolStore interface {

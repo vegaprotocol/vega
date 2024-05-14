@@ -287,13 +287,13 @@ func (mat *MarketActivityTracker) AddAMMSubAccount(asset, marketID, subAccount s
 	markets[marketID].ammPartiesCache[subAccount] = struct{}{}
 }
 
-// RemoveAMMSubAccount removes sub account entries for AMM in given market.
-func (mat *MarketActivityTracker) RemoveAMMSubAccount(asset, marketID, subAccount string) {
+// RemoveAMMParty removes amm party entries for AMM in given market.
+func (mat *MarketActivityTracker) RemoveAMMParty(asset, marketID, ammParty string) {
 	markets, ok := mat.assetToMarketTrackers[asset]
 	if !ok || markets[marketID] == nil {
 		return
 	}
-	delete(markets[marketID].ammPartiesCache, subAccount)
+	delete(markets[marketID].ammPartiesCache, ammParty)
 }
 
 // GetMarketsWithEligibleProposer gets all the markets within the given asset (or just all the markets in scope passed as a parameter) that

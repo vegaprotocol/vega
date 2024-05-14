@@ -62,14 +62,14 @@ func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
 
 type Pool struct {
 	ID          string
-	SubAccount  string
+	AMMParty    string
 	Commitment  *num.Uint
 	ProposedFee num.Decimal
 	Parameters  *types.ConcentratedLiquidityParameters
 
 	asset          string
 	market         string
-	party          string
+	owner          string
 	collateral     Collateral
 	position       Position
 	priceFactor    num.Decimal
@@ -97,7 +97,7 @@ type Pool struct {
 
 func NewPool(
 	id,
-	subAccount,
+	ammParty,
 	asset string,
 	submit *types.SubmitAMM,
 	sqrt sqrtFn,
@@ -112,12 +112,12 @@ func NewPool(
 	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(priceFactor))
 	pool := &Pool{
 		ID:             id,
-		SubAccount:     subAccount,
+		AMMParty:       ammParty,
 		Commitment:     submit.CommitmentAmount,
 		ProposedFee:    submit.ProposedFee,
 		Parameters:     submit.Parameters,
 		market:         submit.MarketID,
-		party:          submit.Party,
+		owner:          submit.Party,
 		asset:          asset,
 		sqrt:           sqrt,
 		collateral:     collateral,
@@ -165,14 +165,19 @@ func NewPoolFromProto(
 		return nil, fmt.Errorf("failed to convert string to Uint: %s", state.Parameters.Base)
 	}
 
-	lower, overflow := num.UintFromString(state.Parameters.LowerBound, 10)
-	if overflow {
-		return nil, fmt.Errorf("failed to convert string to Uint: %s", state.Parameters.LowerBound)
+	var lower, upper *num.Uint
+	if state.Parameters.LowerBound != nil {
+		lower, overflow = num.UintFromString(*state.Parameters.LowerBound, 10)
+		if overflow {
+			return nil, fmt.Errorf("failed to convert string to Uint: %s", *state.Parameters.LowerBound)
+		}
 	}
 
-	upper, overflow := num.UintFromString(state.Parameters.UpperBound, 10)
-	if overflow {
-		return nil, fmt.Errorf("failed to convert string to Uint: %s", state.Parameters.UpperBound)
+	if state.Parameters.UpperBound != nil {
+		lower, overflow = num.UintFromString(*state.Parameters.UpperBound, 10)
+		if overflow {
+			return nil, fmt.Errorf("failed to convert string to Uint: %s", *state.Parameters.UpperBound)
+		}
 	}
 
 	upperCu, err := NewCurveFromProto(state.Upper)
@@ -187,7 +192,7 @@ func NewPoolFromProto(
 
 	return &Pool{
 		ID:         state.Id,
-		SubAccount: state.SubAccount,
+		AMMParty:   state.AmmPartyId,
 		Commitment: num.MustUintFromString(state.Commitment, 10),
 		Parameters: &types.ConcentratedLiquidityParameters{
 			Base:                 base,
@@ -196,7 +201,7 @@ func NewPoolFromProto(
 			LeverageAtLowerBound: lowerLeverage,
 			LeverageAtUpperBound: upperLeverage,
 		},
-		party:       party,
+		owner:       party,
 		market:      state.Market,
 		asset:       state.Asset,
 		sqrt:        sqrt,
@@ -242,7 +247,7 @@ func NewCurveFromProto(c *snapshotpb.PoolMapEntry_Curve) (*curve, error) {
 func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 	return &snapshotpb.PoolMapEntry_Pool{
 		Id:         p.ID,
-		SubAccount: p.SubAccount,
+		AmmPartyId: p.AMMParty,
 		Commitment: p.Commitment.String(),
 		Parameters: p.Parameters.ToProtoEvent(),
 		Market:     p.market,
@@ -290,13 +295,13 @@ func (p *Pool) Update(
 
 	updated := &Pool{
 		ID:             p.ID,
-		SubAccount:     p.SubAccount,
+		AMMParty:       p.AMMParty,
 		Commitment:     commitment,
 		ProposedFee:    proposedFee,
 		Parameters:     parameters,
 		asset:          p.asset,
 		market:         p.market,
-		party:          p.party,
+		owner:          p.owner,
 		collateral:     p.collateral,
 		position:       p.position,
 		priceFactor:    p.priceFactor,
@@ -593,12 +598,12 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 
 // getBalance returns the total balance of the pool i.e it's general account + it's margin account.
 func (p *Pool) getBalance() *num.Uint {
-	general, err := p.collateral.GetPartyGeneralAccount(p.SubAccount, p.asset)
+	general, err := p.collateral.GetPartyGeneralAccount(p.AMMParty, p.asset)
 	if err != nil {
 		panic("general account not created")
 	}
 
-	margin, err := p.collateral.GetPartyMarginAccount(p.market, p.SubAccount, p.asset)
+	margin, err := p.collateral.GetPartyMarginAccount(p.market, p.AMMParty, p.asset)
 	if err != nil {
 		panic("margin account not created")
 	}
@@ -616,7 +621,7 @@ func (p *Pool) setEphemeralPosition() {
 		size: 0,
 	}
 
-	if pos := p.position.GetPositionsByParty(p.SubAccount); len(pos) != 0 {
+	if pos := p.position.GetPositionsByParty(p.AMMParty); len(pos) != 0 {
 		p.eph.size = pos[0].Size()
 	}
 }
@@ -642,7 +647,7 @@ func (p *Pool) getPosition() int64 {
 		return p.eph.size
 	}
 
-	if pos := p.position.GetPositionsByParty(p.SubAccount); len(pos) != 0 {
+	if pos := p.position.GetPositionsByParty(p.AMMParty); len(pos) != 0 {
 		return pos[0].Size()
 	}
 	return 0
@@ -796,7 +801,7 @@ func (p *Pool) CommitmentAmount() *num.Uint {
 }
 
 func (p *Pool) Owner() string {
-	return p.party
+	return p.owner
 }
 
 func (p *Pool) closing() bool {

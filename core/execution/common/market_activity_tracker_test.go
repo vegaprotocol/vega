@@ -201,10 +201,10 @@ func TestAddRemoveAMM(t *testing.T) {
 
 	require.Equal(t, map[string]struct{}{"sub1": {}, "sub2": {}}, tracker.GetAllAMMParties("asset1", nil))
 
-	tracker.RemoveAMMSubAccount("asset1", "market1", "sub2")
+	tracker.RemoveAMMParty("asset1", "market1", "sub2")
 	require.Equal(t, map[string]struct{}{"sub1": {}}, tracker.GetAllAMMParties("asset1", nil))
 
-	tracker.RemoveAMMSubAccount("asset1", "market1", "sub1")
+	tracker.RemoveAMMParty("asset1", "market1", "sub1")
 	require.Equal(t, map[string]struct{}{}, tracker.GetAllAMMParties("asset1", nil))
 }
 

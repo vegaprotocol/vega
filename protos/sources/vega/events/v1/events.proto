@@ -31,15 +31,15 @@ message TimeWeightedNotionalPositionUpdated {
   string time_weighted_notional_position = 5;
 }
 
-message AMMPool {
-  // Owner of the AMM.
-  string party_id = 1;
-  // Market ID that the AMM provides liquidity for.
-  string market_id = 2;
+message AMM {
   // ID of the AMM.
-  string pool_id = 3;
+  string id = 1;
+  // Party ID of the owner of the AMM.
+  string party_id = 2;
+  // Market ID that the AMM provides liquidity for.
+  string market_id = 3;
   // Party ID that the AMM operates as.
-  string sub_account = 4;
+  string amm_party_id = 4;
   // Amount committed to the AMM.
   string commitment = 5;
   // Liquidity parameters that define the size and range of the AMM's tradeable volume.
@@ -51,7 +51,7 @@ message AMMPool {
 
   enum Status {
     STATUS_UNSPECIFIED = 0;
-    // AMM is active on the market and can be traded against.
+    // AMM is active on the market and is posting tradable volume.
     STATUS_ACTIVE = 1;
     // AMM submission was rejected.
     STATUS_REJECTED = 2;
@@ -65,30 +65,30 @@ message AMMPool {
 
   enum StatusReason {
     STATUS_REASON_UNSPECIFIED = 0;
-    // AMM was cancelled by the owner of the AMM.
+    // AMM was cancelled by its owner.
     STATUS_REASON_CANCELLED_BY_PARTY = 1;
     // Party does not have enough funds in their general account to meet the AMM's commitment.
     STATUS_REASON_CANNOT_FILL_COMMITMENT = 2;
     // Party already has an AMM operating on this market and cannot create another one.
-    STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL = 3;
+    STATUS_REASON_PARTY_ALREADY_OWNS_AMM_FOR_MARKET = 3;
     // AMM was liquidated and stopped by the network.
     STATUS_REASON_PARTY_CLOSED_OUT = 4;
     // AMM was stopped by the network because the market it operated in was closed.
     STATUS_REASON_MARKET_CLOSED = 5;
-    // Party does not have enough funds in their general account to meet the AMM's commitment.
+    // Commitment amount was below the network wide minimum, or its price bounds are too wide, such that the volume is spread thinly creating zero-volume price-levels.
     STATUS_REASON_COMMITMENT_TOO_LOW = 6;
-    // AMM was unable to rebase its fair-price such that it does no enter crossed.
+    // AMM was unable to rebase its fair-price such that it does not cross with existing orders.
     STATUS_REASON_CANNOT_REBASE = 7;
   }
 
   // Liquidity parameters that define the range and shape of the AMM's curve.
   message ConcentratedLiquidityParameters {
-    // Base price bound configuration for the pool.
+    // Base price bound configuration for the AMM.
     string base = 1;
-    // Upper price bound configuration for the pool. If unset, the AMM will never hold a short position.
-    string lower_bound = 2;
-    // Lower price bound configuration for the pool. If unset, the AMM will never hold a long position.
-    string upper_bound = 3;
+    // Upper price bound configuration for the AMM. If unset, the AMM will never hold a short position.
+    optional string lower_bound = 2;
+    // Lower price bound configuration for the AMM. If unset, the AMM will never hold a long position.
+    optional string upper_bound = 3;
     // Leverage at upper bounds.
     optional string leverage_at_upper_bound = 4;
     // Leverage at lower bounds.
@@ -1471,8 +1471,8 @@ enum BusEventType {
   // Event containing the near realtime game scores for parties and teams.
   BUS_EVENT_TYPE_GAME_SCORES = 90;
 
-  // Event use to notify for a amm pool update.
-  BUS_EVENT_TYPE_AMM_POOL = 91;
+  // Event use to notify for an AMM update.
+  BUS_EVENT_TYPE_AMM = 91;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -1663,8 +1663,8 @@ message BusEvent {
     CancelledOrders cancelled_orders = 187;
     // Event notifying on near realtime game scores for parties and teams.
     GameScores game_scores = 188;
-    // Event notifying of an amm pool update.
-    AMMPool amm_pool = 189;
+    // Event notifying of AMM updates.
+    AMM amm = 189;
 
     // Market tick events
     MarketEvent market = 1001;
