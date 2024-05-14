@@ -251,6 +251,32 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 	return ret
 }
 
+// GetBounds returns a list of valid price ranges per price monitoring trigger. Note these are subject to change as the time progresses.
+func (e *Engine) GetBounds() []*types.PriceMonitoringBounds {
+	priceRanges := e.getCurrentPriceRanges(false)
+	ret := make([]*types.PriceMonitoringBounds, 0, len(priceRanges))
+	for ind, pr := range priceRanges {
+		ret = append(ret,
+			&types.PriceMonitoringBounds{
+				MinValidPrice:  pr.MinPrice.Representation(),
+				MaxValidPrice:  pr.MaxPrice.Representation(),
+				Trigger:        e.bounds[ind].Trigger,
+				ReferencePrice: pr.ReferencePrice,
+				Active:         e.bounds[ind].Active,
+			})
+	}
+
+	sort.SliceStable(ret,
+		func(i, j int) bool {
+			if ret[i].Trigger.Horizon == ret[j].Trigger.Horizon {
+				return ret[i].Trigger.Probability.LessThan(ret[j].Trigger.Probability)
+			}
+			return ret[i].Trigger.Horizon < ret[j].Trigger.Horizon
+		})
+
+	return ret
+}
+
 func (e *Engine) OnTimeUpdate(now time.Time) {
 	e.recordTimeChange(now)
 }

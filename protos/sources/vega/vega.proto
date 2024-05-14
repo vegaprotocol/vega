@@ -1415,6 +1415,8 @@ message PriceMonitoringBounds {
   PriceMonitoringTrigger trigger = 3;
   // Reference price used to calculate the valid price range. This field is an unsigned integer scaled to the market's decimal places.
   string reference_price = 4;
+  // Has this bound been triggered yet or is it still active.
+  bool active = 5;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf

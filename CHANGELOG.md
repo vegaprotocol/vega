@@ -13,6 +13,7 @@
 ### 🛠 Improvements
 
 - [11209](https://github.com/vegaprotocol/vega/issues/11209) - Publish ongoing games data.
+- [11196](https://github.com/vegaprotocol/vega/issues/11196) - Add an active field in the price monitoring bounds payload.
 
 ### 🐛 Fixes
 
@@ -109,6 +110,7 @@
 - [11205](https://github.com/vegaprotocol/vega/issues/11205) - Evaluate transfer interval correctly.
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Add transfer ID to recurring governance transfer ledger entries.
 - [11221](https://github.com/vegaprotocol/vega/issues/11221) - Fix for `totalRewardsEarned` being twice the `rewardEarned`.
+
 
 ## 0.75.0
 

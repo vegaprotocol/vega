@@ -52,6 +52,7 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, price *num.Uint, persistent bool, recordInHistory bool) bool
 	ResetPriceHistory(price *num.Uint)
 	GetCurrentBounds() []*types.PriceMonitoringBounds
+	GetBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 	// Snapshot
