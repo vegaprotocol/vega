@@ -1,6 +1,11 @@
 Feature: Oracle price data within range is used to determine the mid price
 
   Background:
+    Given the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 1s    |
+      | market.auction.minimumDuration          | 1     |
+      | limits.markets.maxPeggedOrders          | 2     |
     Given the following assets are registered:
       | id  | decimal places |
       | DAI | 2              |
@@ -16,11 +21,6 @@ Feature: Oracle price data within range is used to determine the mid price
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      | max price cap | binary | fully collateralised | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance | oracle1 |
       | DAI/DEC22 | DAI        | DAI   | lqm-params           | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 0.25                   | 0                         | default-futures | 4500000       | false  | false                | weight     | 1            | 1           | 0           | 0,0,1,0        | 0s,0s,10s,0s               | oracle1 |
-    And the following network parameters are set:
-      | name                                    | value |
-      | market.auction.minimumDuration          | 1     |
-      | network.markPriceUpdateMaximumFrequency | 1s    |
-      | limits.markets.maxPeggedOrders          | 2     |
 
   @MidPrice @NoPerp @Capped
   Scenario: 0016-PFUT-016: When a market is setup to use oracle based mark price and the value received from oracle is less than max_price then it gets used as is and mark-to-market flows are calculated according to that price.
@@ -68,7 +68,7 @@ Feature: Oracle price data within range is used to determine the mid price
       | party2 | DAI/DEC22 | buy  | 1      | 3200000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
       | party3 | DAI/DEC22 | sell | 1      | 3200000 | 1                | TYPE_LIMIT | TIF_GTC | party3-1  |
     When the network moves ahead "2" blocks
-     Then the mark price should be "3500000" for the market "DAI/DEC22"
+    Then the mark price should be "3500000" for the market "DAI/DEC22"
 
     #MTM happens if mark price < max_price
     And the following transfers should happen:
@@ -76,9 +76,11 @@ Feature: Oracle price data within range is used to determine the mid price
       | TRANSFER_TYPE_MTM_LOSS | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | DAI/DEC22 | 250000 | DAI   |
       | TRANSFER_TYPE_MTM_WIN  | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | DAI/DEC22 | 250000 | DAI   |
 
+    #0016-PFUT-017: When `max_price` set by oracle, `mark price > max_price`, then it gets ignored and mark-to-market settlement doesn't occur
     Then the oracles broadcast data with block time signed with "0xCAFECAFE1":
-      | name             | value   | time offset |
-      | price1.USD.value | 3300000 | -1s         |
+      | name             | value  | time offset |
+      | price1.USD.value | 330000 | -1s         |
 
-    When the network moves ahead "3" blocks
+    When the network moves ahead "2" blocks
     Then the mark price should be "3500000" for the market "DAI/DEC22"
+
