@@ -781,11 +781,11 @@ func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 }
 
 func (r RowWrapper) MustDuration(name string) time.Duration {
-	return time.Duration(r.MustU64(name))
+	return time.Duration(r.MustI64(name))
 }
 
 func (r RowWrapper) Duration(name string) time.Duration {
-	return time.Duration(r.U64(name))
+	return time.Duration(r.I64(name))
 }
 
 func (r RowWrapper) MustDurationStr(name string) time.Duration {
@@ -796,7 +796,7 @@ func (r RowWrapper) MustDurationStr(name string) time.Duration {
 }
 
 func (r RowWrapper) MustDurationSec(name string) time.Duration {
-	n := r.MustU64(name)
+	n := r.MustI64(name)
 	if n == 0 {
 		return 0
 	}
@@ -812,7 +812,7 @@ func (r RowWrapper) MustDurationSec2(name string) time.Duration {
 }
 
 func (r RowWrapper) DurationSec(name string) time.Duration {
-	n := r.U64(name)
+	n := r.I64(name)
 	if n == 0 {
 		return 0
 	}
