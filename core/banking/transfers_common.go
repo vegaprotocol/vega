@@ -95,7 +95,7 @@ func (e *Engine) CheckTransfer(t *types.TransferBase) error {
 		return err
 	}
 
-	if err = e.ensureFeeForTransferFunds(a, t.Amount, t.From, t.FromAccountType, t.FromSubAccount, t.To); err != nil {
+	if err = e.ensureFeeForTransferFunds(a, t.Amount, t.From, t.FromAccountType, t.FromDerivedKey, t.To); err != nil {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
 	return nil
@@ -152,8 +152,8 @@ func (e *Engine) processTransfer(
 	reference string,
 	transferID string,
 	epoch uint64,
-	// optional from sub account transfer
-	fromSubAccount *string,
+	// optional from derived key transfer
+	fromDerivedKey *string,
 	// optional oneoff transfer
 	// in case we need to schedule the delivery
 	oneoff *types.OneOffTransfer,
@@ -162,15 +162,15 @@ func (e *Engine) processTransfer(
 
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
-	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(ctx, assetType, amount, from, fromAcc, fromSubAccount, to)
+	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(ctx, assetType, amount, from, fromAcc, fromDerivedKey, to)
 	if err != nil {
 		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
 	feeTransferAccountType := []types.AccountType{fromAcc}
 
 	// transfer from sub account to owners general account
-	if fromSubAccount != nil {
-		from = *fromSubAccount
+	if fromDerivedKey != nil {
+		from = *fromDerivedKey
 	}
 
 	fromTransfer, toTransfer := e.makeTransfers(from, to, assetType.ID, "", toMarket, amount, &transferID)
@@ -262,13 +262,13 @@ func (e *Engine) makeFeeTransferForFundsTransfer(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
-	fromSubAccount *string,
+	fromDerivedKey *string,
 	to string,
 ) (*types.Transfer, *num.Uint, error) {
 	theoreticalFee := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, to)
 	feeAmount, discountAmount := e.ApplyFeeDiscount(ctx, asset.ID, from, theoreticalFee)
 
-	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, fromSubAccount, feeAmount); err != nil {
+	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, fromDerivedKey, feeAmount); err != nil {
 		return nil, nil, err
 	}
 
@@ -298,13 +298,13 @@ func (e *Engine) ensureFeeForTransferFunds(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
-	fromSubAccount *string,
+	fromDerivedKey *string,
 	to string,
 ) error {
 	assetType := asset.ToAssetType()
 	theoreticalFee := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, to)
 	feeAmount, _ := e.EstimateFeeDiscount(assetType.ID, from, theoreticalFee)
-	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, fromSubAccount, feeAmount)
+	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, fromDerivedKey, feeAmount)
 }
 
 func (e *Engine) ensureEnoughFundsForTransfer(
@@ -312,7 +312,7 @@ func (e *Engine) ensureEnoughFundsForTransfer(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
-	fromSubAccount *string,
+	fromDerivedKey *string,
 	feeAmount *num.Uint,
 ) error {
 	var (
@@ -328,8 +328,8 @@ func (e *Engine) ensureEnoughFundsForTransfer(
 		}
 	case types.AccountTypeVestedRewards:
 		// sending from sub account to owners general account
-		if fromSubAccount != nil {
-			from = *fromSubAccount
+		if fromDerivedKey != nil {
+			from = *fromDerivedKey
 		}
 		account, err = e.col.GetPartyVestedRewardAccount(from, asset.ID)
 		if err != nil {

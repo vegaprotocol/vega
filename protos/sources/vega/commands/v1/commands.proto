@@ -304,11 +304,11 @@ message Transfer {
   string amount = 5;
   // Reference to be attached to the transfer.
   string reference = 6;
-  // Optional derived subaccount key from which assets are transferred. 
-  // The submitter of the transaction must be the owner of this derived subaccount key.
+  // Optional derived key from which assets are transferred. 
+  // The submitter of the transaction must be the owner of this derived key.
   // If provided, the 'from_account_type' must be REWARDS_VESTED, and the asset in this account 
   // must match the asset specified in the transfer.
-  optional string from_sub_account = 7;
+  optional string from = 7;
 
   // Specific details of the transfer.
   oneof kind {

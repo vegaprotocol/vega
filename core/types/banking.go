@@ -48,7 +48,7 @@ var (
 	ErrMissingTransferKind           = errors.New("missing transfer kind")
 	ErrCannotTransferZeroFunds       = errors.New("cannot transfer zero funds")
 	ErrInvalidFromAccount            = errors.New("invalid from account")
-	ErrInvalidFromSubAccount         = errors.New("invalid from sub account")
+	ErrInvalidFromDerivedKey         = errors.New("invalid from derived key")
 	ErrInvalidToAccount              = errors.New("invalid to account")
 	ErrUnsupportedFromAccountType    = errors.New("unsupported from account type")
 	ErrUnsupportedToAccountType      = errors.New("unsupported to account type")
@@ -69,7 +69,7 @@ const (
 type TransferBase struct {
 	ID              string
 	From            string
-	FromSubAccount  *string
+	FromDerivedKey  *string
 	FromAccountType AccountType
 	To              string
 	ToAccountType   AccountType
@@ -93,10 +93,10 @@ func (t *TransferBase) IsValid() error {
 		return ErrCannotTransferZeroFunds
 	}
 
-	// check for sub account transfer
-	if t.FromSubAccount != nil {
-		if !vgcrypto.IsValidVegaPubKey(*t.FromSubAccount) {
-			return ErrInvalidFromSubAccount
+	// check for derived account transfer
+	if t.FromDerivedKey != nil {
+		if !vgcrypto.IsValidVegaPubKey(*t.FromDerivedKey) {
+			return ErrInvalidFromDerivedKey
 		}
 
 		if t.FromAccountType != AccountTypeVestedRewards {
@@ -393,8 +393,8 @@ func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, e
 		Status:          TransferStatusPending,
 	}
 
-	if tf.FromSubAccount != nil {
-		tb.FromSubAccount = tf.FromSubAccount
+	if tf.From != nil {
+		tb.FromDerivedKey = tf.From
 	}
 
 	return tb, nil

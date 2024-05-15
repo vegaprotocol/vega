@@ -1386,7 +1386,7 @@ func TestTransferFunds(t *testing.T) {
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				FromSubAccount:  toPointer("sub_account"),
+				From:            toPointer("derived_key"),
 				Kind: &commandspb.Transfer_OneOff{
 					OneOff: &commandspb.OneOffTransfer{},
 				},
@@ -1395,13 +1395,13 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.from_sub_account (should be a valid vega public key)",
+			errString: "transfer.from (should be a valid vega public key)",
 		},
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				FromSubAccount:  toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
+				From:            toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
 				Kind: &commandspb.Transfer_OneOff{
 					OneOff: &commandspb.OneOffTransfer{},
 				},
@@ -1410,13 +1410,13 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.from_sub_account (from_sub_account can only be set for vested rewards)",
+			errString: "transfer.from (from can only be set for vested rewards)",
 		},
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
-				FromSubAccount:  toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
+				From:            toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
 				Kind: &commandspb.Transfer_OneOff{
 					OneOff: &commandspb.OneOffTransfer{},
 				},
@@ -1425,13 +1425,13 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.from_sub_account (from_sub_account can only be set when transferring to general account)",
+			errString: "transfer.from (from can only be set when transferring to general account)",
 		},
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				FromSubAccount:  toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
+				From:            toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
 				Kind: &commandspb.Transfer_OneOff{
 					OneOff: &commandspb.OneOffTransfer{},
 				},
