@@ -267,7 +267,6 @@ func NewMarketFromSnapshot(
 	if fCap := mkt.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
 		market.fCap = fCap
 		market.capMax, _ = num.UintFromDecimal(fCap.MaxPrice.ToDecimal().Mul(priceFactor))
-		markPriceCalculator.SetPriceCap(market.capMax.Clone())
 	}
 
 	if em.InternalCompositePriceCalculator != nil {

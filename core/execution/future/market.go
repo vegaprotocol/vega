@@ -354,7 +354,6 @@ func NewMarket(
 	if fCap := mkt.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
 		market.fCap = fCap
 		market.capMax, _ = num.UintFromDecimal(fCap.MaxPrice.ToDecimal().Mul(priceFactor))
-		market.markPriceCalculator.SetPriceCap(market.capMax.Clone())
 	}
 
 	if market.IsPerp() {
@@ -1155,12 +1154,17 @@ func (m *Market) BlockEnd(ctx context.Context) {
 
 		if !m.as.InAuction() && (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentMarkPrice().IsZero() {
-			m.confirmMTM(ctx, false)
-			closedPositions := m.position.GetClosedPositions()
-			if len(closedPositions) > 0 {
-				m.releaseExcessMargin(ctx, closedPositions...)
-				// also remove all stop orders
-				m.removeAllStopOrders(ctx, closedPositions...)
+			if m.confirmMTM(ctx, false) {
+				closedPositions := m.position.GetClosedPositions()
+				if len(closedPositions) > 0 {
+					m.releaseExcessMargin(ctx, closedPositions...)
+					// also remove all stop orders
+					m.removeAllStopOrders(ctx, closedPositions...)
+				}
+			} else {
+				// do not increment the next MTM time to now + delta
+				// this ensures we try to perform the MTM settlement ASAP.
+				m.nextMTM = t
 			}
 		}
 	}
@@ -1737,9 +1741,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		// now that we've left the auction and all the orders have been unparked,
 		// we can mark all positions using the margin calculation method appropriate
 		// for non-auction mode and carry out any closeouts if need be
-		m.confirmMTM(ctx, false)
-		// set next MTM
-		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
+		if m.confirmMTM(ctx, false) {
+			// set next MTM
+			m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
+		}
 		// we have just left auction, check the network position, dispose of volume if possible
 		m.checkNetwork(ctx, now)
 	}
@@ -2825,9 +2830,14 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	return orderUpdates
 }
 
-func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
+// confirmMTM returns false if the MTM settlement was skipped due to price cap.
+func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) bool {
 	// now let's get the transfers for MTM settlement
 	mp := m.getCurrentMarkPrice()
+	// if this is a capped market with a max price, skip MTM until the mark price is within the [0,max_price] range.
+	if m.capMax != nil && m.capMax.LT(mp) {
+		return false
+	}
 	m.liquidation.UpdateMarkPrice(mp.Clone())
 	evts := m.position.UpdateMarkPrice(mp)
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
@@ -2851,6 +2861,7 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 
 	// tell the AMM engine we've MTM'd so any closing pool's can be cancelled
 	m.amm.OnMTM(ctx)
+	return true
 }
 
 func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk, isolatedMargin []events.Risk) []*types.Order {
@@ -4759,6 +4770,10 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 // NB this must be called with the lock already acquired.
 func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	if m.closed {
+		return
+	}
+	if m.capMax != nil && m.capMax.LT(settlementDataInAsset) {
+		// we cannot perform the final settlement because the settlement price is out of the [0, max_price] range
 		return
 	}
 
