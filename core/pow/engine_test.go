@@ -232,7 +232,7 @@ func TestDeliverTxDuplciateNonce(t *testing.T) {
 	require.Equal(t, 2, len(e.heightToNonceRef[100]))
 
 	// check the maps are purged when we leave scope
-	e.BeginBlock(104, crypto.RandomHash(), []abci.Tx{})
+	e.BeginBlock(105, crypto.RandomHash(), []abci.Tx{})
 	require.Equal(t, 0, len(e.seenTid))
 	require.Equal(t, 0, len(e.heightToTid))
 	require.Equal(t, 0, len(e.heightToNonceRef))
