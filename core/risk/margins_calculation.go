@@ -85,11 +85,6 @@ func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, _ 
 		riskiestLng = openVolume
 		riskiestSht = openVolume
 	)
-	// if withPotential {
-	// calculate both long and short riskiest positions
-	// riskiestLng = riskiestLng.Add(num.DecimalFromInt64(m.Buy()).Div(e.positionFactor))
-	// riskiestSht = riskiestSht.Sub(num.DecimalFromInt64(m.Sell()).Div(e.positionFactor))
-	// }
 	// the party has no open positions that we need to calculate margin for
 	if riskiestLng.IsZero() && riskiestSht.IsZero() && !withPotential {
 		return &types.MarginLevels{
