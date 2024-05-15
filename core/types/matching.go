@@ -930,6 +930,7 @@ const (
 	OrderErrorIsolatedMarginCheckFailed              OrderError = proto.OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
 	OrderErrorPeggedOrdersNotAllowedInIsolatedMargin OrderError = proto.OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
 	OrderErrorPriceNotInTickSize                     OrderError = proto.OrderError_ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE
+	OrderErrorPriceLTEMaxPrice                       OrderError = proto.OrderError_ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE
 )
 
 var (

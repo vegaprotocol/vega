@@ -102,6 +102,26 @@ func testSubmittingProposalForInvalidCappedMarketFails(t *testing.T) {
 	// then
 	require.Error(t, err)
 	require.Nil(t, toSubmit)
+
+	// another failed scenario is when the max price doesn't respect the tick size
+	proposal = eng.newProposalForCapped(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true, &types.FutureCap{
+		MaxPrice:            num.NewUint(1234),
+		Binary:              true,
+		FullyCollateralised: true,
+	})
+	nmp := proposal.Terms.GetNewMarket()
+	nmp.Changes.TickSize = num.NewUint(10)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err = eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	require.Nil(t, toSubmit)
 }
 
 func testSubmittingProposalForNewCappedMarketSucceeds(t *testing.T) {
@@ -121,6 +141,28 @@ func testSubmittingProposalForNewCappedMarketSucceeds(t *testing.T) {
 
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	require.NotNil(t, toSubmit.NewMarket().Market())
+
+	// same as above, but with a tick size that is non-zero
+	proposal = eng.newProposalForCapped(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true, &types.FutureCap{
+		MaxPrice:            num.NewUint(1000),
+		Binary:              true,
+		FullyCollateralised: true,
+	})
+	nmp := proposal.Terms.GetNewMarket()
+	nmp.Changes.TickSize = num.NewUint(10)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+
+	// when
+	toSubmit, err = eng.submitProposal(t, proposal)
 
 	// then
 	require.NoError(t, err)

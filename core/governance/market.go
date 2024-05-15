@@ -421,7 +421,7 @@ func validateSpot(spot *types.SpotProduct, decimals uint64, positionDecimals int
 	return validateAssetBasic(spot.BaseAsset, assets, positionDecimals, deepCheck)
 }
 
-func validateFuture(future *types.FutureProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
+func validateFuture(future *types.FutureProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, evmChainIDs []uint64, tickSize *num.Uint) (types.ProposalError, error) {
 	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
 	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
 
@@ -524,20 +524,30 @@ func validateFuture(future *types.FutureProduct, decimals uint64, positionDecima
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
 	}
-	if err := validateFutureCap(future.Cap); err != nil {
+	if err := validateFutureCap(future.Cap, tickSize); err != nil {
 		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid capped future configuration: %w", err)
 	}
 
 	return validateAsset(future.SettlementAsset, decimals, positionDecimals, assets, deepCheck)
 }
 
-func validateFutureCap(fCap *types.FutureCap) error {
+func validateFutureCap(fCap *types.FutureCap, tickSize *num.Uint) error {
 	if fCap == nil {
 		return nil
 	}
 	if fCap.MaxPrice.IsZero() {
 		return ErrMaxPriceInvalid
 	}
+	// tick size of nil, zero, or one are fine for this check
+	mod := num.UintOne()
+	if tickSize == nil || tickSize.LTE(mod) {
+		return nil
+	}
+	// if maxPrice % tickSize != 0, the max price is invalid
+	if !mod.Mod(fCap.MaxPrice, tickSize).IsZero() {
+		return ErrMaxPriceInvalid
+	}
+
 	return nil
 }
 
@@ -647,12 +657,12 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, positionDecimals 
 	return validateAsset(perps.SettlementAsset, decimals, positionDecimals, assets, deepCheck)
 }
 
-func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, evmChainIDs []uint64) (types.ProposalError, error) {
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, evmChainIDs []uint64, tickSize *num.Uint) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
-		return validateFuture(product.Future, decimals, positionDecimals, assets, et, deepCheck, evmChainIDs)
+		return validateFuture(product.Future, decimals, positionDecimals, assets, et, deepCheck, evmChainIDs, tickSize)
 	case *types.InstrumentConfigurationPerps:
 		return validatePerps(product.Perps, decimals, positionDecimals, assets, et, *currentTime, deepCheck, evmChainIDs)
 	case *types.InstrumentConfigurationSpot:
@@ -810,7 +820,7 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.PriceDecimalPlaces, terms.Changes.SizeDecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.PriceDecimalPlaces, terms.Changes.SizeDecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp), terms.Changes.TickSize); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
@@ -842,7 +852,7 @@ func validateNewMarketChange(
 	restore bool,
 ) (types.ProposalError, error) {
 	// in all cases, the instrument must be specified and validated, successor markets included.
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, terms.Changes.PositionDecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), getEVMChainIDs(netp)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, terms.Changes.PositionDecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), getEVMChainIDs(netp), terms.Changes.TickSize); err != nil {
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets

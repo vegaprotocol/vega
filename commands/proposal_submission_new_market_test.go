@@ -893,6 +893,7 @@ func testNewCappedMarketWithMaxPriceSucceeds(t *testing.T) {
 								},
 							},
 						},
+						TickSize: "10", // ensure tick size is fine, too
 					},
 				},
 			},
@@ -900,25 +901,27 @@ func testNewCappedMarketWithMaxPriceSucceeds(t *testing.T) {
 	})
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMaxPriceMustRespectTickSize)
 }
 
 func testNewCappedMarketWithoutMaxPriceFails(t *testing.T) {
 	fCap := &vegapb.FutureCap{
 		MaxPrice: "",
 	}
+	nmConf := &vegapb.NewMarketConfiguration{
+		Instrument: &vegapb.InstrumentConfiguration{
+			Product: &vegapb.InstrumentConfiguration_Future{
+				Future: &vegapb.FutureProduct{
+					Cap: fCap,
+				},
+			},
+		},
+	}
 	cmd := &commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
 			Change: &vegapb.ProposalTerms_NewMarket{
 				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Future{
-								Future: &vegapb.FutureProduct{
-									Cap: fCap,
-								},
-							},
-						},
-					},
+					Changes: nmConf,
 				},
 			},
 		},
@@ -926,9 +929,15 @@ func testNewCappedMarketWithoutMaxPriceFails(t *testing.T) {
 	// submit with empty string:
 	err := checkProposalSubmission(cmd)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMaxPriceMustRespectTickSize)
 	fCap.MaxPrice = "foobar" // invalid input
 	err = checkProposalSubmission(cmd)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
+	// submit with invalid value relative to tick size
+	fCap.MaxPrice = "123"
+	nmConf.TickSize = "10"
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMaxPriceMustRespectTickSize)
 }
 
 func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
