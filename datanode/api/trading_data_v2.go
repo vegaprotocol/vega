@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/rand"
@@ -132,6 +133,7 @@ type TradingDataServiceV2 struct {
 	marginModesService            *service.MarginModes
 	twNotionalPositionService     *service.TimeWeightedNotionalPosition
 	gameScoreService              *service.GameScore
+	ammPoolService                *service.AMMPools
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -1541,19 +1543,72 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 	}, nil
 }
 
+const ammVersion = "AMMv1"
+
+func deriveAMMParty(
+	party, market, version string,
+	index uint64,
+) string {
+	hash := crypto.Hash([]byte(fmt.Sprintf("%v%v%v%v", version, market, party, index)))
+	return hex.EncodeToString(hash)
+}
+
+func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, party string, market *string) ([]string, error) {
+	if market != nil && len(*market) > 0 {
+		return []string{deriveAMMParty(party, *market, ammVersion, 0)}, nil
+	}
+
+	// get a list of all markets to generate all potential
+	// sub accounts for the party
+	markets, _, err := t.MarketsService.GetAllPaged(ctx, "", entities.DefaultCursorPagination(true), false)
+	if err != nil {
+		return nil, err
+	}
+
+	subs := make([]string, 0, len(markets))
+	for _, v := range markets {
+		subs = append(subs, deriveAMMParty(party, v.ID.String(), ammVersion, 0))
+	}
+
+	return subs, nil
+}
+
 // ObservePositions subscribes to a stream of Positions.
 func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	if err := t.sendPositionsSnapshot(ctx, req, srv); err != nil {
+	// handle derived parties
+	includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties)
+	if includeDerivedParties && (req.PartyId == nil || len(*req.PartyId) <= 0) {
+		return formatE(newInvalidArgumentError("includeDerivedParties requires a partyId"))
+	}
+
+	derivedParties := []string{}
+	if req.PartyId != nil && len(*req.PartyId) > 0 {
+		if includeDerivedParties {
+			subs, err := t.getDerivedParties(ctx, *req.PartyId, req.MarketId)
+			if err != nil {
+				return formatE(err)
+			}
+
+			derivedParties = append(derivedParties, subs...)
+		}
+	}
+
+	if err := t.sendPositionsSnapshot(ctx, req, srv, derivedParties); err != nil {
 		if !errors.Is(err, entities.ErrNotFound) {
 			return formatE(ErrPositionServiceSendSnapshot, err)
 		}
 	}
 
-	positionsChan, ref := t.positionService.Observe(ctx, t.config.StreamRetries, ptr.UnBox(req.PartyId), ptr.UnBox(req.MarketId))
+	// add the party to the derived parties
+	if len(derivedParties) > 0 {
+		derivedParties = append(derivedParties, *req.PartyId)
+	}
+
+	positionsChan, ref := t.positionService.ObserveMany(ctx, t.config.StreamRetries, ptr.UnBox(req.MarketId), derivedParties...)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -1578,7 +1633,7 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	})
 }
 
-func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
+func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer, derivedParties []string) error {
 	var (
 		positions []entities.Position
 		err       error
@@ -1615,6 +1670,24 @@ func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		if err != nil {
 			return errors.Wrap(err, "getting initial positions by party")
 		}
+	}
+
+	// finally handle derived parties
+	for _, v := range derivedParties {
+		if req.MarketId != nil {
+			position, err := t.positionService.GetByMarketAndParty(ctx, *req.MarketId, v)
+			if err != nil {
+				return errors.Wrap(err, "getting initial positions by market+party")
+			}
+			positions = append(positions, position)
+			continue
+		}
+
+		derivedPartyPositions, err := t.positionService.GetByParty(ctx, entities.PartyID(v))
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by party")
+		}
+		positions = append(positions, derivedPartyPositions...)
 	}
 
 	protos := make([]*vega.Position, len(positions))
@@ -5333,5 +5406,49 @@ func (t *TradingDataServiceV2) GetTimeWeightedNotionalPosition(ctx context.Conte
 
 	return &v2.GetTimeWeightedNotionalPositionResponse{
 		TimeWeightedNotionalPosition: pos.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsRequest) (*v2.ListAMMsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListAMMs")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var (
+		pools    []entities.AMMPool
+		pageInfo entities.PageInfo
+	)
+
+	if req.PartyId != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByParty(ctx, entities.PartyID(*req.PartyId), pagination)
+	} else if req.MarketId != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByMarket(ctx, entities.MarketID(*req.MarketId), pagination)
+	} else if req.Id != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByPool(ctx, entities.AMMPoolID(*req.Id), pagination)
+	} else if req.AmmPartyId != nil {
+		pools, pageInfo, err = t.ammPoolService.ListBySubAccount(ctx, entities.PartyID(*req.AmmPartyId), pagination)
+	} else if req.Status != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByStatus(ctx, entities.AMMStatus(*req.Status), pagination)
+	} else {
+		pools, pageInfo, err = t.ammPoolService.ListAll(ctx, pagination)
+	}
+
+	if err != nil {
+		return nil, formatE(ErrListAMMPools, err)
+	}
+
+	edges, err := makeEdges[*v2.AMMEdge](pools)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListAMMsResponse{
+		Amms: &v2.AMMConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }

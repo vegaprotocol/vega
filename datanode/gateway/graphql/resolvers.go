@@ -804,6 +804,25 @@ func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, asse
 	return res.TimeWeightedNotionalPosition, nil
 }
 
+func (r *myQueryResolver) Amms(ctx context.Context, partyID *string, marketID *string, id *string,
+	ammPartyID *string, status *v1.AMM_Status, pagination *v2.Pagination,
+) (*v2.AMMConnection, error) {
+	req := &v2.ListAMMsRequest{
+		Id:         id,
+		PartyId:    partyID,
+		MarketId:   marketID,
+		AmmPartyId: ammPartyID,
+		Status:     status,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListAMMs(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Amms, nil
+}
+
 func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []string, pagination *v2.Pagination) (*v2.PartiesProfilesConnection, error) {
 	req := v2.ListPartiesProfilesRequest{
 		Parties:    ids,
@@ -3449,10 +3468,11 @@ func (r *mySubscriptionResolver) TradesStream(ctx context.Context, filter Trades
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan []*vegapb.Position, error) {
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string, includeDerivedParties *bool) (<-chan []*vegapb.Position, error) {
 	req := &v2.ObservePositionsRequest{
-		PartyId:  party,
-		MarketId: market,
+		PartyId:               party,
+		MarketId:              market,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	stream, err := r.tradingDataClientV2.ObservePositions(ctx, req)
 	if err != nil {

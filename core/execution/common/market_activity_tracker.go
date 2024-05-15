@@ -94,6 +94,8 @@ type marketTracker struct {
 	proposer        string
 	readyToDelete   bool
 	allPartiesCache map[string]struct{}
+	// keys of automated market makers
+	ammPartiesCache map[string]struct{}
 }
 
 // MarketActivityTracker tracks how much fees are paid and received for a market by parties by epoch.
@@ -203,6 +205,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		epochTimeWeightedPosition:   []map[string]uint64{},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
+		ammPartiesCache:             map[string]struct{}{},
 	}
 
 	if ok {
@@ -273,6 +276,24 @@ func (mat *MarketActivityTracker) AddValueTraded(asset, marketID string, value *
 		return
 	}
 	markets[marketID].valueTraded.AddSum(value)
+}
+
+// AddAMMSubAccount records sub account entries for AMM in given market.
+func (mat *MarketActivityTracker) AddAMMSubAccount(asset, marketID, subAccount string) {
+	markets, ok := mat.assetToMarketTrackers[asset]
+	if !ok || markets[marketID] == nil {
+		return
+	}
+	markets[marketID].ammPartiesCache[subAccount] = struct{}{}
+}
+
+// RemoveAMMParty removes amm party entries for AMM in given market.
+func (mat *MarketActivityTracker) RemoveAMMParty(asset, marketID, ammParty string) {
+	markets, ok := mat.assetToMarketTrackers[asset]
+	if !ok || markets[marketID] == nil {
+		return
+	}
+	delete(markets[marketID].ammPartiesCache, ammParty)
 }
 
 // GetMarketsWithEligibleProposer gets all the markets within the given asset (or just all the markets in scope passed as a parameter) that
@@ -625,7 +646,11 @@ func (mat *MarketActivityTracker) RecordFundingPayment(asset, party, market stri
 	}
 }
 
-func (mat *MarketActivityTracker) getAllParties(asset string, mkts []string) map[string]struct{} {
+func (mat *MarketActivityTracker) filterParties(
+	asset string,
+	mkts []string,
+	cacheFilter func(*marketTracker) map[string]struct{},
+) map[string]struct{} {
 	parties := map[string]struct{}{}
 	includedMarkets := mkts
 	if len(mkts) == 0 {
@@ -641,13 +666,25 @@ func (mat *MarketActivityTracker) getAllParties(asset string, mkts []string) map
 			if !ok {
 				continue
 			}
-			mktParties := mt.allPartiesCache
+			mktParties := cacheFilter(mt)
 			for k := range mktParties {
 				parties[k] = struct{}{}
 			}
 		}
 	}
 	return parties
+}
+
+func (mat *MarketActivityTracker) getAllParties(asset string, mkts []string) map[string]struct{} {
+	return mat.filterParties(asset, mkts, func(mt *marketTracker) map[string]struct{} {
+		return mt.allPartiesCache
+	})
+}
+
+func (mat *MarketActivityTracker) GetAllAMMParties(asset string, mkts []string) map[string]struct{} {
+	return mat.filterParties(asset, mkts, func(mt *marketTracker) map[string]struct{} {
+		return mt.ammPartiesCache
+	})
 }
 
 func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) []string {
@@ -658,6 +695,8 @@ func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) [
 		parties = sortedK(mat.getAllParties(ds.AssetForMetric, ds.Markets))
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM {
 		parties = sortedK(excludePartiesInTeams(mat.getAllParties(ds.AssetForMetric, ds.Markets), mat.teams.GetAllPartiesInTeams(mat.minEpochsInTeamForRewardEligibility)))
+	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_AMM {
+		parties = sortedK(mat.GetAllAMMParties(ds.AssetForMetric, ds.Markets))
 	}
 	return parties
 }

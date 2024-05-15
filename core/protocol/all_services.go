@@ -1033,6 +1033,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.limits.OnLimitsProposePerpsMarketEnabledFromUpdate,
 		},
 		{
+			Param:   netparams.AMMMarketTradingEnabled,
+			Watcher: svcs.limits.OnLimitsProposeAMMEnabledUpdate,
+		},
+		{
 			Param:   netparams.LimitsProposeAssetEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeAssetEnabledFromUpdate,
 		},
@@ -1107,6 +1111,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.RewardsActivityStreakInactivityLimit,
 			Watcher: svcs.activityStreak.OnRewardsActivityStreakInactivityLimit,
+		},
+		{
+			Param:   netparams.MarketAMMMinCommitmentQuantum,
+			Watcher: svcs.executionEngine.OnMarketAMMMinCommitmentQuantum,
+		},
+		{
+			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,
+			Watcher: svcs.executionEngine.OnMarketLiquidityEquityLikeShareFeeFractionUpdate,
 		},
 	}
 

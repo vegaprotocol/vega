@@ -180,6 +180,34 @@ func TestRemoveMarket(t *testing.T) {
 	require.Equal(t, "market2", tracker.GetAllMarketIDs()[0])
 }
 
+func TestAddRemoveAMM(t *testing.T) {
+	epochService := &TestEpochEngine{}
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+	tracker.MarketProposed("asset1", "market1", "me")
+	tracker.MarketProposed("asset1", "market2", "me2")
+	require.Equal(t, 2, len(tracker.GetAllMarketIDs()))
+	require.Equal(t, "market1", tracker.GetAllMarketIDs()[0])
+	require.Equal(t, "market2", tracker.GetAllMarketIDs()[1])
+
+	tracker.AddAMMSubAccount("asset1", "market1", "sub1")
+	tracker.AddAMMSubAccount("asset1", "market1", "sub2")
+
+	require.Equal(t, map[string]struct{}{"sub1": {}, "sub2": {}}, tracker.GetAllAMMParties("asset1", nil))
+
+	tracker.RemoveAMMParty("asset1", "market1", "sub2")
+	require.Equal(t, map[string]struct{}{"sub1": {}}, tracker.GetAllAMMParties("asset1", nil))
+
+	tracker.RemoveAMMParty("asset1", "market1", "sub1")
+	require.Equal(t, map[string]struct{}{}, tracker.GetAllAMMParties("asset1", nil))
+}
+
 func TestGetScores(t *testing.T) {
 	ctx := context.Background()
 	epochService := &TestEpochEngine{}
@@ -377,6 +405,8 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 
 	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 
+	tracker.AddAMMSubAccount("asset1", "market1", "party1")
+
 	// update with a few transfers
 	transfersM1 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
@@ -422,6 +452,17 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	require.Equal(t, "0.2", scores[0].Score.String())
 	require.Equal(t, "party2", scores[1].Party)
 	require.Equal(t, "0.8", scores[1].Score.String())
+
+	// looking across all markets in asset 1 with window length 1 and AMM scope:
+	// party1: 800
+	// partt2: 3200
+	// total = 4000
+	// party1 = 800/4000 = 0.2
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_AMM, WindowLength: 1})
+	require.Equal(t, 1, len(scores))
+
+	require.Equal(t, "party1", scores[0].Party)
+	require.Equal(t, "0.2", scores[0].Score.String())
 
 	// now look only on market 1:
 	// party1 = 800/2500 = 0.32

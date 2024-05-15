@@ -1065,6 +1065,71 @@ func (m *MarginMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
+type AMMStatus eventspb.AMM_Status
+
+const (
+	AMMStatusUnspecified = AMMStatus(eventspb.AMM_STATUS_UNSPECIFIED)
+	AMMStatusActive      = AMMStatus(eventspb.AMM_STATUS_ACTIVE)
+	AMMStatusRejected    = AMMStatus(eventspb.AMM_STATUS_REJECTED)
+	AMMStatusCancelled   = AMMStatus(eventspb.AMM_STATUS_CANCELLED)
+	AMMStatusStopped     = AMMStatus(eventspb.AMM_STATUS_STOPPED)
+)
+
+func (s AMMStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := eventspb.AMM_Status_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown AMM pool status: %v", s)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *AMMStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.AMM_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown AMM pool status: %s", src)
+	}
+	*s = AMMStatus(val)
+	return nil
+}
+
+func (s *AMMStatus) Where(fieldName *string, nextBindVar func(args *[]any, arg any) string, args ...any) (string, []any) {
+	if fieldName == nil {
+		return fmt.Sprintf("status = %s", nextBindVar(&args, s)), args
+	}
+
+	return fmt.Sprintf("%s = %s", *fieldName, nextBindVar(&args, s)), args
+}
+
+type AMMStatusReason eventspb.AMM_StatusReason
+
+const (
+	AMMStatusReasonUnspecified           = AMMStatusReason(eventspb.AMM_STATUS_REASON_UNSPECIFIED)
+	AMMStatusReasonCancelledByParty      = AMMStatusReason(eventspb.AMM_STATUS_REASON_CANCELLED_BY_PARTY)
+	AMMStatusReasonCannotFillCommitment  = AMMStatusReason(eventspb.AMM_STATUS_REASON_CANNOT_FILL_COMMITMENT)
+	AMMStatusReasonPartyAlreadyOwnsAPool = AMMStatusReason(eventspb.AMM_STATUS_REASON_PARTY_ALREADY_OWNS_AMM_FOR_MARKET)
+	AMMStatusReasonPartyClosedOut        = AMMStatusReason(eventspb.AMM_STATUS_REASON_PARTY_CLOSED_OUT)
+	AMMStatusReasonMarketClosed          = AMMStatusReason(eventspb.AMM_STATUS_REASON_MARKET_CLOSED)
+	AMMStatusReasonCommitmentTooLow      = AMMStatusReason(eventspb.AMM_STATUS_REASON_COMMITMENT_TOO_LOW)
+	AMMStatusReasonCannotRebase          = AMMStatusReason(eventspb.AMM_STATUS_REASON_CANNOT_REBASE)
+)
+
+func (s AMMStatusReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := eventspb.AMM_StatusReason_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown AMM pool status reason: %v", s)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *AMMStatusReason) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.AMM_StatusReason_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown AMM pool status reason: %s", src)
+	}
+	*s = AMMStatusReason(val)
+	return nil
+}
+
 type ProtoEnum interface {
 	GetEnums() map[int32]string
 }

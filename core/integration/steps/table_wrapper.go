@@ -27,7 +27,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v16"
@@ -286,7 +288,7 @@ func (r RowWrapper) U64(name string) uint64 {
 }
 
 func U64(value string) (uint64, error) {
-	return strconv.ParseUint(value, 10, 0)
+	return strconv.ParseUint(value, 10, 64)
 }
 
 func (r RowWrapper) MustU32(name string) uint32 {
@@ -779,11 +781,11 @@ func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 }
 
 func (r RowWrapper) MustDuration(name string) time.Duration {
-	return time.Duration(r.MustU64(name))
+	return time.Duration(r.MustI64(name))
 }
 
 func (r RowWrapper) Duration(name string) time.Duration {
-	return time.Duration(r.U64(name))
+	return time.Duration(r.I64(name))
 }
 
 func (r RowWrapper) MustDurationStr(name string) time.Duration {
@@ -794,7 +796,7 @@ func (r RowWrapper) MustDurationStr(name string) time.Duration {
 }
 
 func (r RowWrapper) MustDurationSec(name string) time.Duration {
-	n := r.MustU64(name)
+	n := r.MustI64(name)
 	if n == 0 {
 		return 0
 	}
@@ -810,11 +812,53 @@ func (r RowWrapper) MustDurationSec2(name string) time.Duration {
 }
 
 func (r RowWrapper) DurationSec(name string) time.Duration {
-	n := r.U64(name)
+	n := r.I64(name)
 	if n == 0 {
 		return 0
 	}
 	return time.Duration(n) * time.Second
+}
+
+func (r RowWrapper) MustAMMCancelationMethod(name string) types.AMMCancellationMethod {
+	cancelMethod, err := AMMCancelMethod(r.MustStr(name))
+	panicW(name, err)
+	return cancelMethod
+}
+
+func (r RowWrapper) MustAMMPoolStatus(name string) types.AMMPoolStatus {
+	ps, err := AMMPoolStatus(r.MustStr(name))
+	panicW(name, err)
+	return ps
+}
+
+func (r RowWrapper) MustPoolStatusReason(name string) types.AMMStatusReason {
+	pr, err := AMMPoolStatusReason(r.MustStr(name))
+	panicW(name, err)
+	return pr
+}
+
+func AMMCancelMethod(rawValue string) (types.AMMCancellationMethod, error) {
+	ty, ok := commandspb.CancelAMM_Method_value[rawValue]
+	if !ok {
+		return types.AMMCancellationMethod(ty), fmt.Errorf("invalid cancelation method: %v", rawValue)
+	}
+	return types.AMMCancellationMethod(ty), nil
+}
+
+func AMMPoolStatus(rawValue string) (types.AMMPoolStatus, error) {
+	ps, ok := eventspb.AMM_Status_value[rawValue]
+	if !ok {
+		return types.AMMPoolStatusUnspecified, fmt.Errorf("invalid AMM pool status: %s", rawValue)
+	}
+	return types.AMMPoolStatus(ps), nil
+}
+
+func AMMPoolStatusReason(rawValue string) (types.AMMStatusReason, error) {
+	pr, ok := eventspb.AMM_StatusReason_value[rawValue]
+	if !ok {
+		return types.AMMStatusReasonUnspecified, fmt.Errorf("invalid AMM pool status reason: %s", rawValue)
+	}
+	return types.AMMStatusReason(pr), nil
 }
 
 func panicW(field string, err error) {

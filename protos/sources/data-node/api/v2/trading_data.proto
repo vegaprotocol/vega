@@ -951,6 +951,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
   }
 
+  // List AMMs
+  //
+  // Get a list of AMM or filter by market ID, party ID or AMM ID
+  rpc ListAMMs(ListAMMsRequest) returns (ListAMMsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMs"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -1517,6 +1524,9 @@ message ObservePositionsRequest {
   optional string party_id = 1;
   // Restrict position updates to those related to the given markets.
   optional string market_id = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 3;
 }
 
 // Response received from a positions subscription request
@@ -4931,4 +4941,40 @@ message GetTimeWeightedNotionalPositionRequest {
 message GetTimeWeightedNotionalPositionResponse {
   // Time weighted notional position for the party and asset.
   TimeWeightedNotionalPosition time_weighted_notional_position = 1;
+}
+
+message ListAMMsRequest {
+  // AMM ID to filter for. If party ID or market ID is provided, the ID filter is ignored.
+  optional string id = 1;
+  // Party ID to filter for.
+  optional string party_id = 2;
+  // Market ID to filter for. If party ID is provided, the market filter is ignored
+  optional string market_id = 3;
+  // Party's underlying AMM sub-account to filter for. A party's AMM sub-account will remain the
+  // same regardless of the AMM.
+  optional string amm_party_id = 4;
+  // Filter for AMMs with the given status. This filter will be ignored if any of the other
+  // filters have been set.
+  optional vega.events.v1.AMM.Status status = 5;
+  // Pagination controls.
+  optional Pagination pagination = 6;
+}
+
+message ListAMMsResponse {
+  // Page of AMM data and corresponding page information.
+  AMMConnection amms = 1;
+}
+
+message AMMConnection {
+  // Page of AMM data and the corresponding cursors.
+  repeated AMMEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message AMMEdge {
+  // AMM pool data.
+  vega.events.v1.AMM node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
 }

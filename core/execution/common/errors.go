@@ -83,4 +83,5 @@ var (
 	ErrStopOrderNotAllowedSameExpiry = errors.New("stop order OCOs must not have the same expiry time")
 	// ErrStopOrderSizeOverrideNotSupportedForSpots is returned when a stop order is received with size override for a spot product.
 	ErrStopOrderSizeOverrideNotSupportedForSpots = errors.New("stop order size override is not supported for spot product")
+	ErrAMMCannotRebase                           = errors.New("not enough liquidity for AMM to rebase")
 )

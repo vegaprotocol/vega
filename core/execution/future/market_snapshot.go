@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/execution/amm"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -83,13 +84,28 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
 
+	asset := tradableInstrument.Instrument.Product.GetAsset()
+	exp := int(assetDecimals) - int(mkt.DecimalPlaces)
+	priceFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
+
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
+
+	var ammEngine *amm.Engine
+	if em.Amm == nil {
+		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker)
+	} else {
+		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
 	book := matching.NewCachedOrderBook(
 		log, matchingConfig, mkt.ID, as.InAuction(), peggedOrderNotify)
-	asset := tradableInstrument.Instrument.Product.GetAsset()
+	book.SetOffbookSource(ammEngine)
 
 	// this needs to stay
 	riskEngine := risk.NewEngine(log,
@@ -119,7 +135,6 @@ func NewMarketFromSnapshot(
 		broker,
 		positionFactor,
 	)
-	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
 	var feeEngine *fee.Engine
 	if em.FeesStats != nil {
@@ -141,9 +156,6 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	exp := int(assetDecimals) - int(mkt.DecimalPlaces)
-	priceFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
-
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity
 	if !(mkt.LiquiditySLAParams != nil) {
@@ -162,10 +174,15 @@ func NewMarketFromSnapshot(
 		}
 	}
 
-	marketLiquidity := common.NewMarketLiquidityFromSnapshot(
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	// @TODO pass in AMM
+	marketLiquidity, err := common.NewMarketLiquidityFromSnapshot(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, em.MarketLiquidity, ammEngine,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -190,7 +207,6 @@ func NewMarketFromSnapshot(
 		// @TODO check for migration from v0.75.8, strictly speaking, not doing so should have the same effect, though...
 		mkt.LiquidationStrategy.DisposalSlippage = mkt.LiquiditySLAParams.PriceRange
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor)
 
 	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
 	for _, pmf := range em.PartyMarginFactors {
@@ -242,9 +258,9 @@ func NewMarketFromSnapshot(
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
 		partyMarginFactor:             partyMargin,
-		liquidation:                   le,
 		banking:                       banking,
 		markPriceCalculator:           markPriceCalculator,
+		amm:                           ammEngine,
 	}
 
 	markPriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
@@ -253,6 +269,9 @@ func NewMarketFromSnapshot(
 		market.internalCompositePriceCalculator = common.NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.InternalCompositePriceCalculator)
 		market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 	}
+
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor, market.amm)
+	market.liquidation = le
 
 	for _, p := range em.Parties {
 		market.parties[p] = struct{}{}
@@ -350,6 +369,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		FeesStats:                      m.fee.GetState(assetQuantum),
 		PartyMarginFactors:             partyMarginFactors,
 		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
+		Amm:                            m.amm.IntoProto(),
 		MarketLiquidity:                m.liquidity.GetState(),
 	}
 	if m.perp && m.internalCompositePriceCalculator != nil {

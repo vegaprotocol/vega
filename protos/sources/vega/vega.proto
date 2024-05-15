@@ -1046,6 +1046,12 @@ enum TransferType {
   TRANSFER_TYPE_ISOLATED_MARGIN_LOW = 47;
   // Transfer from excess order margin account to general account.
   TRANSFER_TYPE_ISOLATED_MARGIN_HIGH = 48;
+  // Transfer from a party's general account to their AMM's general account.
+  TRANSFER_TYPE_AMM_LOW = 49;
+  // Transfer from an AMM's general account to their owner's general account.
+  TRANSFER_TYPE_AMM_HIGH = 50;
+  // Transfer releasing an AMM's general account upon closure.
+  TRANSFER_TYPE_AMM_RELEASE = 51;
 }
 
 // Represents a financial transfer within Vega
@@ -1100,6 +1106,8 @@ enum IndividualScope {
   INDIVIDUAL_SCOPE_IN_TEAM = 2;
   // All parties that are not part of a team are within the scope of this reward.
   INDIVIDUAL_SCOPE_NOT_IN_TEAM = 3;
+  // All keys representing AMMs are within the scope of this reward.
+  INDIVIDUAL_SCOPE_AMM = 4;
 }
 
 enum DistributionStrategy {
@@ -1459,6 +1467,8 @@ message NetworkLimits {
   bool can_propose_spot_market = 10;
   // Are perpetual market proposals allowed at this point in time.
   bool can_propose_perpetual_market = 11;
+  // Can parties use AMM related transactions.
+  bool can_use_amm = 12;
 }
 
 // Represents a liquidity order

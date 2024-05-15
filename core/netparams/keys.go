@@ -18,6 +18,7 @@ package netparams
 const (
 	SpotMarketTradingEnabled  = "limits.markets.proposeSpotEnabled"
 	PerpsMarketTradingEnabled = "limits.markets.proposePerpetualEnabled"
+	AMMMarketTradingEnabled   = "limits.markets.ammPoolEnabled"
 	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
 	MarketMarginScalingFactors        = "market.margin.scalingFactors"
@@ -46,6 +47,7 @@ const (
 	MarketLiquiditySLANonPerformanceBondPenaltySlope = "market.liquidity.sla.nonPerformanceBondPenaltySlope"
 	MarketLiquidityStakeToCCYVolume                  = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeCalculationTimeStep   = "market.liquidity.providersFeeCalculationTimeStep"
+	MarketLiquidityEquityLikeShareFeeFraction        = "market.liquidity.equityLikeShareFeeFraction"
 
 	RewardAsset = "reward.asset"
 
@@ -260,6 +262,8 @@ const (
 	RewardsActivityStreakInactivityLimit       = "rewards.activityStreak.inactivityLimit"
 	RewardsActivityStreakMinQuantumOpenVolume  = "rewards.activityStreak.minQuantumOpenVolume"
 	RewardsActivityStreakMinQuantumTradeVolume = "rewards.activityStreak.minQuantumTradeVolume"
+
+	MarketAMMMinCommitmentQuantum = "market.amm.minCommitmentQuantum"
 )
 
 var Deprecated = map[string]struct{}{
@@ -275,6 +279,7 @@ var AllKeys = map[string]struct{}{
 	RewardsUpdateFrequency:                                       {},
 	SpamProtectionMaxUpdatePartyProfile:                          {},
 	SpamProtectionUpdateProfileMinFunds:                          {},
+	MarketAMMMinCommitmentQuantum:                                {},
 	GovernanceProposalVolumeDiscountProgramMinClose:              {},
 	GovernanceProposalVolumeDiscountProgramMaxClose:              {},
 	GovernanceProposalVolumeDiscountProgramMinEnact:              {},
@@ -294,6 +299,7 @@ var AllKeys = map[string]struct{}{
 	RewardsVestingBaseRate:                                       {},
 	SpotMarketTradingEnabled:                                     {},
 	PerpsMarketTradingEnabled:                                    {},
+	AMMMarketTradingEnabled:                                      {},
 	EthereumOraclesEnabled:                                       {},
 	MaxPeggedOrders:                                              {},
 	MaxGasPerBlock:                                               {},
@@ -313,6 +319,7 @@ var AllKeys = map[string]struct{}{
 	MarketLiquiditySLANonPerformanceBondPenaltyMax:               {},
 	MarketLiquidityStakeToCCYVolume:                              {},
 	MarketLiquidityProvidersFeeCalculationTimeStep:               {},
+	MarketLiquidityEquityLikeShareFeeFraction:                    {},
 	MarketTargetStakeTimeWindow:                                  {},
 	MarketTargetStakeScalingFactor:                               {},
 	MarketPriceMonitoringDefaultParameters:                       {},

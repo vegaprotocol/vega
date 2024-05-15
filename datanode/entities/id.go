@@ -107,3 +107,10 @@ func (id ID[T]) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
 func (id *ID[T]) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
 	return id.SetBytes(src)
 }
+
+func (id *ID[T]) Where(fieldName *string, nextBindVar func(args *[]any, arg any) string, args ...any) (string, []any) {
+	if fieldName == nil {
+		return fmt.Sprintf("id = %s", nextBindVar(&args, id)), args
+	}
+	return fmt.Sprintf("%s = %s", *fieldName, nextBindVar(&args, id)), args
+}

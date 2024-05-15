@@ -120,6 +120,8 @@ type Subscription {
     partyId: ID
     "ID of the market from which you want position updates"
     marketId: ID
+    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): [PositionUpdate!]!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
@@ -583,6 +585,25 @@ input RewardSummaryFilter {
 
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
+  amms(
+    "AMM ID to filter for. Party ID and Market ID filters must not be set if used."
+    id: ID
+    "Party ID to filter for. If provided any other filters will be ignored."
+    partyId: ID
+    "Market ID to filter for. Must be provided as the only filter if used."
+    marketId: ID
+    
+    """
+    Party's underlying AMM sub-account to filter for. A party will only ever have one AMM sub-account regardless of how many AMMs they have created.
+    This filter is ignored if party ID, market ID, or AMM ID is set.
+    """
+    ammPartyId: ID
+    "AMM status to filter for. This filter is ignored if any of the other filters are set."
+    status: AMMStatus
+    "Optional pagination information"
+    pagination: Pagination
+  ): AMMConnection!
+
   "An asset which is used in the vega network"
   asset("ID of the asset" id: ID!): Asset
 
@@ -1449,6 +1470,8 @@ enum IndividualScope {
   INDIVIDUAL_SCOPE_IN_TEAM
   "All parties that are not part of a team are within the scope of this reward"
   INDIVIDUAL_SCOPE_NOT_IN_TEAM
+  "All keys representing AMMs are within the scope of this reward"
+  INDIVIDUAL_SCOPE_AMM
 }
 
 enum DistributionStrategy {
@@ -4536,6 +4559,12 @@ enum TransferType {
   TRANSFER_TYPE_ORDER_MARGIN_HIGH
   "Funds moved from order margin account to margin account."
   TRANSFER_TYPE_ISOLATED_MARGIN_LOW
+  "Transfer from a party's general account to their AMM's general account."
+  TRANSFER_TYPE_AMM_LOW
+  "Transfer from an AMM's general account to their owner's general account."
+  TRANSFER_TYPE_AMM_HIGH
+  "Transfer releasing an AMM's general account upon closure."
+  TRANSFER_TYPE_AMM_RELEASE
 }
 
 union ProductConfiguration = FutureProduct | SpotProduct | PerpetualProduct
@@ -7459,3 +7488,84 @@ type GamePartyScore {
   rank: Int 
 }
   
+"Connection type for retrieving AMM information"
+type AMMConnection {
+  "Page of AMMs for the connection"
+  edges: [AMMEdge]
+  "Current page information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the AMM and cursor information returned by an AMMConnection"
+type AMMEdge {
+  "AMM information"
+  node: AMM!
+  "Cursor identifying the AMM"
+  cursor: String!
+}
+
+type AMM {
+  "AMM ID"
+  id: ID!
+  "Party ID of the AMM creator"
+  partyId: ID!
+  "Market ID of the AMM"
+  marketId: ID!
+  "Party ID the AMM operates as"
+  ammPartyId: String!
+  "Amount committed to the AMM"
+  commitment: String!
+  "Parameters for the liquidity provision"
+  parameters: ConcentratedLiquidityParameters!
+  "Status of the AMM"
+  status: AMMStatus!
+  "Reason for status if applicable"
+  statusReason: AMMStatusReason!
+}
+
+type ConcentratedLiquidityParameters {
+  "Base amount"
+  base: String!
+  "Lower bound"
+  lowerBound: String!
+  "Upper bound"
+  upperBound: String!
+  "Margin ratio at the upper bound"
+  leverageAtUpperBound: String!
+  "Margin ratio at the lower bound"
+  leverageAtLowerBound: String!
+}
+
+enum AMMStatus {
+  "Status has not been specified"
+  STATUS_UNSPECIFIED
+  "The AMM is active on the market and is posting tradable volume"
+  STATUS_ACTIVE
+  "The AMM submission was rejected"
+  STATUS_REJECTED
+  "The AMM has been cancelled by the owner and is no longer trading"
+  STATUS_CANCELLED
+  "The AMM has been stopped by the network and is no longer trading"
+  STATUS_STOPPED
+  "AMM will only trade such that it will reduce its position"
+  STATUS_REDUCE_ONLY
+}
+
+enum AMMStatusReason {
+  "Status has no reason specified"
+  STATUS_REASON_UNSPECIFIED
+  "The AMM was cancelled by it's owner"
+  STATUS_REASON_CANCELLED_BY_PARTY
+  "The party does not have enough funds in their general account to meet the AMM's commitment"
+  STATUS_REASON_CANNOT_FILL_COMMITMENT
+  "The party already has an AMM operating on this market and cannot create another one"
+  STATUS_REASON_PARTY_ALREADY_OWNS_AMM_FOR_MARKET
+  "The AMM was liquidated and stopped by the network"
+  STATUS_REASON_PARTY_CLOSED_OUT
+  "The AMM was stopped by the network because the market it operated in was closed"
+  STATUS_REASON_MARKET_CLOSED
+  "Commitment amount was below the network wide minimum, or its price bounds are too wide that the volume is spread thinly creating zero-volume price-levels"
+  STATUS_REASON_COMMITMENT_TOO_LOW
+  "The AMM was unable to rebase its fair-price such that it does not cross with existing orders"
+  STATUS_REASON_CANNOT_REBASE
+}

@@ -126,8 +126,10 @@ func NewMarketFromSnapshot(
 		}
 	}
 
-	marketLiquidity := common.NewMarketLiquidityFromSnapshot(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, em.MarketLiquidity)
-
+	marketLiquidity, err := common.NewMarketLiquidityFromSnapshot(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, em.MarketLiquidity, nil)
+	if err != nil {
+		return nil, err
+	}
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
 	if em.StopOrders != nil {
