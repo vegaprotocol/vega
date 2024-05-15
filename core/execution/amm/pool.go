@@ -572,6 +572,17 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 		st, nd = nd, st
 	}
 
+	fp := p.fairPrice()
+	if side == types.SideSell {
+		// want all buy volume so everything below fair price
+		nd = num.Min(fp, nd)
+	}
+
+	if side == types.SideBuy {
+		// want all sell volume so everything above fair price
+		st = num.Max(fp, st)
+	}
+
 	var other *curve
 	var volume uint64
 	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in

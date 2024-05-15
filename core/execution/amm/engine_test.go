@@ -265,10 +265,10 @@ func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
 
 	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
 	assert.Equal(t, "2124", orders[3].Price.String())
-	assert.Equal(t, "2125", orders[4].Price.String())
+	assert.Equal(t, "2124", orders[4].Price.String())
 
 	// third round, 1 orders moving the last pool to its boundary
-	assert.Equal(t, "2175", orders[5].Price.String())
+	assert.Equal(t, "2174", orders[5].Price.String())
 }
 
 func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
@@ -333,7 +333,7 @@ func testBestPricesAndVolume(t *testing.T) {
 		whenAMMIsSubmitted(t, tst, submit)
 	}
 
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(9).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).AnyTimes().Return(
 		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
 	)
 
@@ -344,9 +344,6 @@ func testBestPricesAndVolume(t *testing.T) {
 	assert.Equal(t, 35781, int(avolume))
 
 	// test GetVolumeAtPrice returns the same volume given best bid/ask
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(6 * 2).Return(
-		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
-	)
 	bvAt := tst.engine.GetVolumeAtPrice(bid, types.SideSell)
 	assert.Equal(t, bvolume, bvAt)
 	avAt := tst.engine.GetVolumeAtPrice(ask, types.SideBuy)
