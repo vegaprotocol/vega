@@ -80,7 +80,7 @@ func VolumeDiscountProgram(
 		if row.closingTimestamp() == 0 {
 			vdp.EndOfProgramTimestamp = time.Time{}
 		} else {
-			vdp.EndOfProgramTimestamp = time.Unix(int64(row.closingTimestamp()), 0)
+			vdp.EndOfProgramTimestamp = time.Unix(row.closingTimestamp(), 0)
 		}
 		tierName := row.tiers()
 		if tier := tiers[tierName]; tier != nil {
@@ -112,8 +112,8 @@ func (r volumeDiscountRow) tiers() string {
 	return r.row.MustStr("tiers")
 }
 
-func (r volumeDiscountRow) closingTimestamp() uint64 {
-	return r.row.MustU64("closing timestamp")
+func (r volumeDiscountRow) closingTimestamp() int64 {
+	return r.row.MustI64("closing timestamp")
 }
 
 func (r volumeDiscountRow) windowLength() uint64 {
