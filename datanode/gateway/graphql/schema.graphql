@@ -2117,6 +2117,16 @@ type EthereumEvent {
 
 union Oracle = EthereumEvent
 
+"Capped future configuration"
+type FutureCap {
+  "The max price cap for a future"
+  maxPrice: String!
+  "True for options market"
+  binarySettlement: Boolean
+  "True if parties are fully collateralised on this market"
+  fullyCollateralised: Boolean
+}
+
 "A Future product"
 type Future {
   "The name of the asset (string)"
@@ -2133,6 +2143,9 @@ type Future {
 
   "The binding between the data source specification and the settlement data"
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
+
+  "If set, the market is a capped future"
+  cap: FutureCap
 }
 
 "Spot FX product"
@@ -4598,6 +4611,9 @@ type FutureProduct {
   used as settlement data.
   """
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
+
+  "If set, the product belongs to a capped future"
+  cap: FutureCap
 }
 
 type SpotProduct {
