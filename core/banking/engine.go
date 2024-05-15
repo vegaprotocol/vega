@@ -210,6 +210,9 @@ type Engine struct {
 
 	metricUpdateFrequency time.Duration
 	nextMetricUpdate      time.Time
+
+	// transient cache used to market a dispatch strategy as checked for eligibility for this round so we don't check again.
+	dispatchRequiredCache map[string]bool
 }
 
 type withdrawalRef struct {
@@ -275,6 +278,7 @@ func New(log *logging.Logger,
 		pendingPerAssetAndPartyFeeDiscountUpdates: map[string]map[string]*num.Uint{},
 		primaryBridgeView:                         primaryBridgeView,
 		secondaryBridgeView:                       secondaryBridgeView,
+		dispatchRequiredCache:                     map[string]bool{},
 	}
 }
 
@@ -347,6 +351,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		e.distributeRecurringGovernanceTransfers(ctx)
 		e.applyPendingFeeDiscountsUpdates(ctx)
 		e.sendTeamsStats(ctx, ep.Seq)
+		e.dispatchRequiredCache = map[string]bool{}
 		// as the metrics are going to be published here, we want to progress the next update.
 		e.nextMetricUpdate = e.timeService.GetTimeNow().Add(e.metricUpdateFrequency)
 	default:

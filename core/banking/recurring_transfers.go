@@ -185,6 +185,11 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 // NB2: for validator ranking this will always return true as it is assumed that for the network to resume there must always be
 // a validator with non zero ranking.
 func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrategy) bool {
+	required, ok := e.dispatchRequiredCache[e.hashDispatchStrategy(ds)]
+	if ok {
+		return required
+	}
+	defer func() { e.dispatchRequiredCache[e.hashDispatchStrategy(ds)] = required }()
 	switch ds.Metric {
 	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
@@ -210,17 +215,21 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 					break
 				}
 			}
-			return hasNonZeroMetric || (hasEligibleParties && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
+			required = hasNonZeroMetric || (hasEligibleParties && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
+			return required
 		} else {
 			tcs, pcs := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
 			gs := events.NewTeamGameScoresEvent(ctx, int64(e.currentEpoch), e.hashDispatchStrategy(ds), e.timeService.GetTimeNow(), tcs, pcs)
 			e.broker.Send(gs)
-			return len(tcs) > 0
+			required = len(tcs) > 0
+			return required
 		}
 	case vegapb.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING:
-		return true
+		required = true
+		return required
 	}
-	return false
+	required = false
+	return required
 }
 
 func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint64) {
