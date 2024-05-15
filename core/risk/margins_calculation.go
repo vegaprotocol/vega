@@ -46,6 +46,19 @@ func scalingFactorsUintFromDecimals(sf *types.ScalingFactors) *scalingFactorsUin
 	}
 }
 
+func newMarginLevelsFull(maintenance num.Decimal) *types.MarginLevels {
+	maint, _ := num.UintFromDecimal(maintenance.Ceil())
+	return &types.MarginLevels{
+		MaintenanceMargin:      maint,
+		SearchLevel:            maint.Clone(),
+		InitialMargin:          maint.Clone(),
+		CollateralReleaseLevel: maint.Clone(),
+		OrderMargin:            num.UintZero(),
+		MarginMode:             types.MarginModeCrossMargin,
+		MarginFactor:           num.DecimalZero(),
+	}
+}
+
 func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint) *types.MarginLevels {
 	umaintenance, _ := num.UintFromDecimal(maintenance.Ceil())
 	return &types.MarginLevels{
@@ -59,24 +72,26 @@ func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint
 	}
 }
 
-func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, rf types.RiskFactor, withPotential bool) *types.MarginLevels {
+func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, _ types.RiskFactor, withPotential bool) *types.MarginLevels {
 	var (
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal
 	)
 	// convert volumn to a decimal number from a * 10^pdp
 	openVolume := num.DecimalFromInt64(m.Size()).Div(e.positionFactor)
+	aep := m.AverageEntryPrice().ToDecimal()
+	base := price.ToDecimal()
 	var (
 		riskiestLng = openVolume
 		riskiestSht = openVolume
 	)
-	if withPotential {
-		// calculate both long and short riskiest positions
-		riskiestLng = riskiestLng.Add(num.DecimalFromInt64(m.Buy()).Div(e.positionFactor))
-		riskiestSht = riskiestSht.Sub(num.DecimalFromInt64(m.Sell()).Div(e.positionFactor))
-	}
+	// if withPotential {
+	// calculate both long and short riskiest positions
+	// riskiestLng = riskiestLng.Add(num.DecimalFromInt64(m.Buy()).Div(e.positionFactor))
+	// riskiestSht = riskiestSht.Sub(num.DecimalFromInt64(m.Sell()).Div(e.positionFactor))
+	// }
 	// the party has no open positions that we need to calculate margin for
-	if riskiestLng.IsZero() && riskiestSht.IsZero() {
+	if riskiestLng.IsZero() && riskiestSht.IsZero() && !withPotential {
 		return &types.MarginLevels{
 			MaintenanceMargin:      num.UintZero(),
 			SearchLevel:            num.UintZero(),
@@ -87,21 +102,40 @@ func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, rf
 			MarginFactor:           num.DecimalZero(),
 		}
 	}
-	base := price.ToDecimal()
 	if riskiestLng.IsPositive() {
-		marginMaintenanceLng = riskiestLng.Mul(base).Mul(rf.Long)
+		marginMaintenanceLng = riskiestLng.Mul(aep)
+	} else {
+		// even our riskies position is short, get the sell AEP
+		marginMaintenanceLng = riskiestLng.Mul(base.Sub(aep)).Abs()
 	}
 	if riskiestSht.IsNegative() {
-		marginMaintenanceSht = riskiestSht.Mul(base).Mul(rf.Short)
+		marginMaintenanceSht = riskiestSht.Mul(base.Sub(aep)).Abs()
+	} else {
+		// even the shortest position is long, get buy AEP
+		marginMaintenanceSht = riskiestSht.Mul(aep)
+	}
+	if withPotential {
+		// add margins required to cover the buy and sell orders
+		longSize := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
+		// size * order price
+		longMargin := longSize.Mul(m.VWBuy().ToDecimal())
+		// add limit price * size to the margin required
+		shortSize := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor).Abs()
+		// size * (max price - order price)
+		shortMargin := shortSize.Mul(base.Sub(m.VWSell().ToDecimal()))
+		marginMaintenanceLng = marginMaintenanceLng.Add(longMargin)
+		marginMaintenanceSht = marginMaintenanceSht.Add(shortMargin)
+	}
+	// now get the max margin required
+	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) {
+		return newMarginLevelsFull(marginMaintenanceLng)
+	}
+	// if short margin level > 0
+	if !marginMaintenanceSht.IsZero() {
+		return newMarginLevelsFull(marginMaintenanceSht)
 	}
 
-	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) && marginMaintenanceLng.IsPositive() {
-		return newMarginLevels(marginMaintenanceLng, e.scalingFactorsUint)
-	}
-	if marginMaintenanceSht.IsPositive() {
-		return newMarginLevels(marginMaintenanceSht, e.scalingFactorsUint)
-	}
-
+	// long margin level <= short, and short is zero, so no margin required.
 	return &types.MarginLevels{
 		MaintenanceMargin:      num.UintZero(),
 		SearchLevel:            num.UintZero(),

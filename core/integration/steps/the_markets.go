@@ -653,6 +653,12 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	tip := m.TradableInstrument.IntoProto()
 	if row.IsCapped() {
 		tip.MarginCalculator.FullyCollateralised = ptr.From(pCap.FullyCollateralised)
+		// scaling factors should be irrelevant
+		tip.MarginCalculator.ScalingFactors = &proto.ScalingFactors{
+			SearchLevel:       1.0,
+			InitialMargin:     1.0,
+			CollateralRelease: 1.0,
+		}
 	}
 	err = config.RiskModels.LoadModel(row.riskModel(), tip)
 	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
