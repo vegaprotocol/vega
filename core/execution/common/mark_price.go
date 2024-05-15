@@ -44,6 +44,8 @@ type CompositePriceCalculator struct {
 	priceSources []*num.Uint
 	oracles      []*products.CompositePriceOracle
 	scalingFunc  func(context.Context, *num.Numeric, int64) *num.Uint
+	// only set if the price calculator is used by a capped future market
+	priceCap *num.Uint
 }
 
 const (
@@ -145,6 +147,10 @@ func NewCompositePriceCalculator(ctx context.Context, config *types.CompositePri
 	return mpc
 }
 
+func (mpc *CompositePriceCalculator) SetPriceCap(pCap *num.Uint) {
+	mpc.priceCap = pCap
+}
+
 func (mpc *CompositePriceCalculator) UpdateConfig(ctx context.Context, oe OracleEngine, config *types.CompositePriceConfiguration) error {
 	// special case for only resetting the oracles
 	if mpc.oracles != nil {
@@ -222,7 +228,8 @@ func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) f
 			return err
 		}
 		p := mpc.scalingFunc(ctx, pd, mpc.oracles[oracleIndex].GetDecimals())
-		if p == nil || p.IsZero() {
+		// ignore prices that exceed the cap
+		if p == nil || p.IsZero() || (mpc.priceCap != nil && p.GT(mpc.priceCap)) {
 			return nil
 		}
 		mpc.priceSources[FirstOraclePriceIndex+oracleIndex] = p.Clone()

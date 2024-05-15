@@ -203,6 +203,8 @@ message ScalingFactors {
 message MarginCalculator {
   // Scaling factors for margin calculation.
   ScalingFactors scaling_factors = 1;
+  // If set to true, positions must be fully collateralised so there is no default risk for any party (capped futures).
+  optional bool fully_collateralised = 2;
 }
 
 // Tradable Instrument definition

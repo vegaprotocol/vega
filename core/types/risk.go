@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -184,7 +185,8 @@ func MarginCalculatorFromProto(p *proto.MarginCalculator) *MarginCalculator {
 		return nil
 	}
 	return &MarginCalculator{
-		ScalingFactors: ScalingFactorsFromProto(p.ScalingFactors),
+		ScalingFactors:      ScalingFactorsFromProto(p.ScalingFactors),
+		FullyCollateralised: ptr.UnBox(p.FullyCollateralised),
 	}
 }
 
@@ -197,12 +199,14 @@ func ScalingFactorsFromProto(p *proto.ScalingFactors) *ScalingFactors {
 }
 
 type MarginCalculator struct {
-	ScalingFactors *ScalingFactors
+	ScalingFactors      *ScalingFactors
+	FullyCollateralised bool
 }
 
 func (m MarginCalculator) DeepClone() *MarginCalculator {
 	return &MarginCalculator{
-		ScalingFactors: m.ScalingFactors.DeepClone(),
+		ScalingFactors:      m.ScalingFactors.DeepClone(),
+		FullyCollateralised: m.FullyCollateralised,
 	}
 }
 
@@ -292,14 +296,16 @@ func (r RiskFactor) String() string {
 
 func (m MarginCalculator) IntoProto() *proto.MarginCalculator {
 	return &proto.MarginCalculator{
-		ScalingFactors: m.ScalingFactors.IntoProto(),
+		ScalingFactors:      m.ScalingFactors.IntoProto(),
+		FullyCollateralised: ptr.From(m.FullyCollateralised),
 	}
 }
 
 func (m MarginCalculator) String() string {
 	return fmt.Sprintf(
-		"scalingFactors(%s)",
+		"scalingFactors(%s) fully collateralised(%T)",
 		stringer.PtrToString(m.ScalingFactors),
+		m.FullyCollateralised,
 	)
 }
 

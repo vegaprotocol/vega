@@ -167,6 +167,9 @@ type Market struct {
 	internalCompositePriceCalculator *common.CompositePriceCalculator
 
 	amm *amm.Engine
+
+	fCap   *types.FutureCap
+	capMax *num.Uint
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -348,6 +351,11 @@ func NewMarket(
 	market.liquidation = le
 
 	market.markPriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
+	if fCap := mkt.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
+		market.fCap = fCap
+		market.capMax, _ = num.UintFromDecimal(fCap.MaxPrice.ToDecimal().Mul(priceFactor))
+		market.markPriceCalculator.SetPriceCap(market.capMax.Clone())
+	}
 
 	if market.IsPerp() {
 		internalCompositePriceConfig := mkt.TradableInstrument.Instrument.GetPerps().InternalCompositePriceConfig
@@ -1406,6 +1414,9 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
 			price.Sub(price, mod)
 		}
+		if m.capMax != nil {
+			price = num.Min(price, m.capMax.Clone())
+		}
 		return price, nil
 	}
 
@@ -1418,6 +1429,9 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		price = num.UintZero().Sub(price.AddSum(m.mkt.TickSize), mod)
 	}
 
+	if m.capMax != nil {
+		price = num.Min(price, m.capMax.Clone())
+	}
 	return price, nil
 }
 
@@ -2258,6 +2272,13 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	}
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.ID = orderID
+	// check max price in case of capped market
+	if m.capMax != nil && order.Price.GT(m.capMax) {
+		order.Status = types.OrderStatusRejected
+		order.Reason = types.OrderErrorPriceLTEMaxPrice
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, common.ErrInvalidOrderPrice
+	}
 
 	if !m.canTrade() {
 		order.Status = types.OrderStatusRejected

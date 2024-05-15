@@ -59,9 +59,69 @@ func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint
 	}
 }
 
+func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, rf types.RiskFactor, withPotential bool) *types.MarginLevels {
+	var (
+		marginMaintenanceLng num.Decimal
+		marginMaintenanceSht num.Decimal
+	)
+	// convert volumn to a decimal number from a * 10^pdp
+	openVolume := num.DecimalFromInt64(m.Size()).Div(e.positionFactor)
+	var (
+		riskiestLng = openVolume
+		riskiestSht = openVolume
+	)
+	if withPotential {
+		// calculate both long and short riskiest positions
+		riskiestLng = riskiestLng.Add(num.DecimalFromInt64(m.Buy()).Div(e.positionFactor))
+		riskiestSht = riskiestSht.Sub(num.DecimalFromInt64(m.Sell()).Div(e.positionFactor))
+	}
+	// the party has no open positions that we need to calculate margin for
+	if riskiestLng.IsZero() && riskiestSht.IsZero() {
+		return &types.MarginLevels{
+			MaintenanceMargin:      num.UintZero(),
+			SearchLevel:            num.UintZero(),
+			InitialMargin:          num.UintZero(),
+			CollateralReleaseLevel: num.UintZero(),
+			OrderMargin:            num.UintZero(),
+			MarginMode:             types.MarginModeCrossMargin,
+			MarginFactor:           num.DecimalZero(),
+		}
+	}
+	base := price.ToDecimal()
+	if riskiestLng.IsPositive() {
+		marginMaintenanceLng = riskiestLng.Mul(base)
+	}
+	if riskiestSht.IsNegative() {
+		marginMaintenanceSht = riskiestSht.Mul(base)
+	}
+
+	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) && marginMaintenanceLng.IsPositive() {
+		return newMarginLevels(marginMaintenanceLng, e.scalingFactorsUint)
+	}
+	if marginMaintenanceSht.IsPositive() {
+		return newMarginLevels(marginMaintenanceSht, e.scalingFactorsUint)
+	}
+
+	return &types.MarginLevels{
+		MaintenanceMargin:      num.UintZero(),
+		SearchLevel:            num.UintZero(),
+		InitialMargin:          num.UintZero(),
+		CollateralReleaseLevel: num.UintZero(),
+		OrderMargin:            num.UintZero(),
+		MarginMode:             types.MarginModeCrossMargin,
+		MarginFactor:           num.DecimalZero(),
+	}
+}
+
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
 func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool, inc num.Decimal, auctionPrice *num.Uint) *types.MarginLevels {
+	if e.marginCalculator.FullyCollateralised {
+		if auction && auctionPrice != nil {
+			return e.calculateFullCollatMargins(m, auctionPrice, rf, withPotentialBuyAndSell)
+		}
+		return e.calculateFullCollatMargins(m, markPrice, rf, withPotentialBuyAndSell)
+	}
 	var (
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal

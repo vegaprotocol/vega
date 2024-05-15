@@ -84,4 +84,6 @@ var (
 	// ErrStopOrderSizeOverrideNotSupportedForSpots is returned when a stop order is received with size override for a spot product.
 	ErrStopOrderSizeOverrideNotSupportedForSpots = errors.New("stop order size override is not supported for spot product")
 	ErrAMMCannotRebase                           = errors.New("not enough liquidity for AMM to rebase")
+	// ErrInvalidOrderPrice is returned when an order is submitted to a capped future with a price > max price.
+	ErrInvalidOrderPrice = errors.New("invalid order price")
 )
