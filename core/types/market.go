@@ -645,6 +645,8 @@ func (i InstrumentSpot) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
+func (_ InstrumentSpot) Cap() *FutureCap { return nil }
+
 func InstrumentFutureFromProto(f *vegapb.Instrument_Future) *InstrumentFuture {
 	return &InstrumentFuture{
 		Future: FutureFromProto(f.Future),
@@ -729,15 +731,25 @@ func (i InstrumentFuture) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
+func (i InstrumentFuture) Cap() *FutureCap {
+	if i.Future.Cap == nil {
+		return nil
+	}
+	return i.Future.Cap.DeepClone()
+}
+
 func (i InstrumentPerps) iIntoProto() interface{} {
 	return i.IntoProto()
 }
+
+func (_ InstrumentPerps) Cap() *FutureCap { return nil }
 
 type iProto interface {
 	iIntoProto() interface{}
 	getAssets() ([]string, error)
 	String() string
 	Type() ProductType
+	Cap() *FutureCap
 }
 
 type Instrument struct {

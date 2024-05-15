@@ -43,7 +43,7 @@ message Future {
   // Binding between the data spec and the data source.
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
   // If set, this product represents a capped future market.
-  optional FutureCap Cap = 6;
+  optional FutureCap cap = 6;
 }
 
 message FutureCap {
