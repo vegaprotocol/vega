@@ -4990,6 +4990,9 @@ func (m *Market) GetRiskFactors() *types.RiskFactor {
 }
 
 func (m *Market) UpdateMarginMode(ctx context.Context, party string, marginMode types.MarginMode, marginFactor num.Decimal) error {
+	if m.fCap != nil && m.fCap.FullyCollateralised {
+		return common.ErrIsolatedMarginFullyCollateralised
+	}
 	if err := m.switchMarginMode(ctx, party, marginMode, marginFactor); err != nil {
 		return err
 	}

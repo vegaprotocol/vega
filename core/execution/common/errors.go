@@ -86,4 +86,6 @@ var (
 	ErrAMMCannotRebase                           = errors.New("not enough liquidity for AMM to rebase")
 	// ErrInvalidOrderPrice is returned when an order is submitted to a capped future with a price > max price.
 	ErrInvalidOrderPrice = errors.New("invalid order price")
+	// ErrIsolatedMarginFullyCollateralised is returned when a party tries to switch margin modes on a fully collateralised market.
+	ErrIsolatedMarginFullyCollateralised = errors.New("isolated margin not permitted on fully collateralised markets")
 )

@@ -93,9 +93,13 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
     # aux1: position * 1100 + 999*2 = 1100 + 1998 = 3098
     # aux2: then placing the order (max price - average order price) * 3 = (1500 - (1301 + 1301 + 1100)/3) * 3 = (1500 - 1234) * 3 = 266 * 3 = 798
     # aux2's short position and potential margins are calculated separately as 2 * (1500-1301) + 1 * (1500 - 1100) = 398 + 400 = 798
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | USD   | ETH/DEC21 | 5000   | 5500    |
       | party2 | USD   | ETH/DEC21 | 2500   | 7000    |
       | aux1   | USD   | ETH/DEC21 | 3098   | 96908   |
       | aux2   | USD   | ETH/DEC21 | 798    | 99174   |
+    # The market is fully collateralised, switching to isolated margin is not supported
+    When the parties submit update margin mode:
+      | party  | market    | margin_mode     | margin_factor | error                                                         |
+      | party1 | ETH/DEC21 | isolated margin | 0.5           | isolated margin not permitted on fully collateralised markets |
