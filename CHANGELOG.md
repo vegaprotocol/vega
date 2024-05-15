@@ -13,6 +13,7 @@
 ### 🛠 Improvements
 
 - [11209](https://github.com/vegaprotocol/vega/issues/11209) - Publish ongoing games data.
+- [11242](https://github.com/vegaprotocol/vega/issues/11242) - Add configuration to visor to help control binary retries a bit better.
 - [11196](https://github.com/vegaprotocol/vega/issues/11196) - Add an active field in the price monitoring bounds payload.
 - [11211](https://github.com/vegaprotocol/vega/issues/11211) - Liquidation engine includes `vAMM` shapes as available volume.
 - [11217](https://github.com/vegaprotocol/vega/issues/11217) - Allow market proposals to override risk factors.

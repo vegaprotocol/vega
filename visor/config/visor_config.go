@@ -128,9 +128,20 @@ type VisorConfigFile struct {
 			The `maxNumberOfFirstConnectionRetries` is only taken into account during the first start up of the Core node process - not restarts.
 		note: |
 			There is a 2 second delay between each attempt. Setting the max retry number to 5 means Visor will try to establish a connection 5 times in 10 seconds.
-		default: 10
+		default: 175000
 	*/
 	MaxNumberOfFirstConnectionRetries int `toml:"maxNumberOfFirstConnectionRetries,optional"`
+	/*
+		description: |
+			Visor communicates with the core node via RPC API.
+			This variable allows a validator to specify how many times Visor should try to establish a connection to the core node before the Visor process fails.
+			The `MaxNumberOfRestartConnectionRetries` is only taken into account after the first start up of the Core node process where it is expected that the
+			time to restart will be much shorter than when originally started.
+		note: |
+			There is a 2 second delay between each attempt. Setting the max retry number to 5 means Visor will try to establish a connection 5 times in 10 seconds.
+		default: 10
+	*/
+	MaxNumberOfRestartConnectionRetries int `toml:"maxNumberOfRestartConnectionRetries,optional"`
 	/*
 		description: |
 			Defines the maximum number of restarts in case any of
@@ -220,12 +231,13 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 		homePath:   homePath,
 		configPath: path.Join(homePath, configFileName),
 		data: &VisorConfigFile{
-			UpgradeFolders:                    map[string]string{"vX.X.X": "vX.X.X"},
-			MaxNumberOfRestarts:               3,
-			MaxNumberOfFirstConnectionRetries: 175000,
-			RestartsDelaySeconds:              5,
-			StopDelaySeconds:                  0,
-			StopSignalTimeoutSeconds:          15,
+			UpgradeFolders:                      map[string]string{"vX.X.X": "vX.X.X"},
+			MaxNumberOfRestarts:                 3,
+			MaxNumberOfFirstConnectionRetries:   175000,
+			MaxNumberOfRestartConnectionRetries: 10,
+			RestartsDelaySeconds:                5,
+			StopDelaySeconds:                    0,
+			StopSignalTimeoutSeconds:            15,
 			AutoInstall: AutoInstallConfig{
 				Enabled:               true,
 				GithubRepositoryOwner: "vegaprotocol",
@@ -365,6 +377,13 @@ func (pc *VisorConfig) MaxNumberOfFirstConnectionRetries() int {
 	defer pc.mut.RUnlock()
 
 	return pc.data.MaxNumberOfFirstConnectionRetries
+}
+
+func (pc *VisorConfig) MaxNumberOfRestartConnectionRetries() int {
+	pc.mut.RLock()
+	defer pc.mut.RUnlock()
+
+	return pc.data.MaxNumberOfRestartConnectionRetries
 }
 
 func (pc *VisorConfig) RestartsDelaySeconds() int {
