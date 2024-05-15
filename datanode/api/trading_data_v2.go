@@ -5409,8 +5409,8 @@ func (t *TradingDataServiceV2) GetTimeWeightedNotionalPosition(ctx context.Conte
 	}, nil
 }
 
-func (t *TradingDataServiceV2) ListAMMPools(ctx context.Context, req *v2.ListAMMsRequest) (*v2.ListAMMsResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("ListAMMPools")()
+func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsRequest) (*v2.ListAMMsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListAMMs")()
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
