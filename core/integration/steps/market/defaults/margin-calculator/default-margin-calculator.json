@@ -1,7 +1,7 @@
 {
   "scalingFactors": {
-    "searchLevel": 1,
-    "initialMargin": 1,
-    "collateralRelease": 1
+    "searchLevel": 1.1,
+    "initialMargin": 1.2,
+    "collateralRelease": 1.4
   }
 }
