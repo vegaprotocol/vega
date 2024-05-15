@@ -1467,7 +1467,7 @@ enum BusEventType {
 
   // Event containing the IDs of orders cancelled by a party on a market.
   BUS_EVENT_TYPE_CANCELLED_ORDERS = 89;
-  
+
   // Event containing the near realtime game scores for parties and teams.
   BUS_EVENT_TYPE_GAME_SCORES = 90;
 
