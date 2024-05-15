@@ -430,36 +430,49 @@ type Future struct {
 	DataSourceSpecForSettlementData     *datasource.Spec
 	DataSourceSpecForTradingTermination *datasource.Spec
 	DataSourceSpecBinding               *datasource.SpecBindingForFuture
+	Cap                                 *FutureCap
 }
 
 func FutureFromProto(f *vegapb.Future) *Future {
+	fCap, _ := FutureCapFromProto(f.Cap)
 	return &Future{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     datasource.SpecFromProto(f.DataSourceSpecForSettlementData),
 		DataSourceSpecForTradingTermination: datasource.SpecFromProto(f.DataSourceSpecForTradingTermination),
 		DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(f.DataSourceSpecBinding),
+		Cap:                                 fCap,
 	}
 }
 
 func (f Future) IntoProto() *vegapb.Future {
+	var fCap *vegapb.FutureCap
+	if f.Cap != nil {
+		fCap = f.Cap.IntoProto()
+	}
 	return &vegapb.Future{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
+		Cap:                                 fCap,
 	}
 }
 
 func (f Future) String() string {
+	fCap := "no"
+	if f.Cap != nil {
+		fCap = f.Cap.String()
+	}
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s)) capped(%s)",
 		f.QuoteName,
 		f.SettlementAsset,
 		stringer.PtrToString(f.DataSourceSpecForSettlementData),
 		stringer.PtrToString(f.DataSourceSpecForTradingTermination),
 		stringer.PtrToString(f.DataSourceSpecBinding),
+		fCap,
 	)
 }
 

@@ -643,6 +643,8 @@ type FutureProduct struct {
 	DataSourceSpecForTradingTermination *DataSourceDefinition `protobuf:"bytes,4,opt,name=data_source_spec_for_trading_termination,json=dataSourceSpecForTradingTermination,proto3" json:"data_source_spec_for_trading_termination,omitempty"`
 	// Binding between the data source spec and the settlement data.
 	DataSourceSpecBinding *DataSourceSpecToFutureBinding `protobuf:"bytes,5,opt,name=data_source_spec_binding,json=dataSourceSpecBinding,proto3" json:"data_source_spec_binding,omitempty"`
+	// If set, this product creates a capped future market.
+	Cap *FutureCap `protobuf:"bytes,6,opt,name=cap,proto3,oneof" json:"cap,omitempty"`
 }
 
 func (x *FutureProduct) Reset() {
@@ -708,6 +710,13 @@ func (x *FutureProduct) GetDataSourceSpecForTradingTermination() *DataSourceDefi
 func (x *FutureProduct) GetDataSourceSpecBinding() *DataSourceSpecToFutureBinding {
 	if x != nil {
 		return x.DataSourceSpecBinding
+	}
+	return nil
+}
+
+func (x *FutureProduct) GetCap() *FutureCap {
+	if x != nil {
+		return x.Cap
 	}
 	return nil
 }
@@ -4647,7 +4656,7 @@ var file_vega_governance_proto_rawDesc = []byte{
 	0x62, 0x61, 0x73, 0x65, 0x5f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x09, 0x62, 0x61, 0x73, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x71,
 	0x75, 0x6f, 0x74, 0x65, 0x5f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0a, 0x71, 0x75, 0x6f, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x22, 0x95, 0x03, 0x0a,
+	0x52, 0x0a, 0x71, 0x75, 0x6f, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x22, 0xc5, 0x03, 0x0a,
 	0x0d, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65, 0x50, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x74, 0x12, 0x29,
 	0x0a, 0x10, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x61, 0x73, 0x73,
 	0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65,
@@ -4673,7 +4682,10 @@ var file_vega_governance_proto_rawDesc = []byte{
 	0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x54, 0x6f,
 	0x46, 0x75, 0x74, 0x75, 0x72, 0x65, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x15, 0x64,
 	0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x42, 0x69, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x22, 0x8e, 0x08, 0x0a, 0x10, 0x50, 0x65, 0x72, 0x70, 0x65, 0x74, 0x75,
+	0x64, 0x69, 0x6e, 0x67, 0x12, 0x26, 0x0a, 0x03, 0x63, 0x61, 0x70, 0x18, 0x06, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x0f, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65, 0x43,
+	0x61, 0x70, 0x48, 0x00, 0x52, 0x03, 0x63, 0x61, 0x70, 0x88, 0x01, 0x01, 0x42, 0x06, 0x0a, 0x04,
+	0x5f, 0x63, 0x61, 0x70, 0x22, 0x8e, 0x08, 0x0a, 0x10, 0x50, 0x65, 0x72, 0x70, 0x65, 0x74, 0x75,
 	0x61, 0x6c, 0x50, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x74, 0x12, 0x29, 0x0a, 0x10, 0x73, 0x65, 0x74,
 	0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x41,
@@ -5797,149 +5809,151 @@ var file_vega_governance_proto_goTypes = []interface{}{
 	nil,                                       // 49: vega.GovernanceData.NoPartyEntry
 	(*DataSourceDefinition)(nil),              // 50: vega.DataSourceDefinition
 	(*DataSourceSpecToFutureBinding)(nil),     // 51: vega.DataSourceSpecToFutureBinding
-	(*DataSourceSpecToPerpetualBinding)(nil),  // 52: vega.DataSourceSpecToPerpetualBinding
-	(*CompositePriceConfiguration)(nil),       // 53: vega.CompositePriceConfiguration
-	(*PriceMonitoringParameters)(nil),         // 54: vega.PriceMonitoringParameters
-	(*TargetStakeParameters)(nil),             // 55: vega.TargetStakeParameters
-	(*SimpleModelParams)(nil),                 // 56: vega.SimpleModelParams
-	(*LogNormalRiskModel)(nil),                // 57: vega.LogNormalRiskModel
-	(*LiquiditySLAParameters)(nil),            // 58: vega.LiquiditySLAParameters
-	(*LiquidityFeeSettings)(nil),              // 59: vega.LiquidityFeeSettings
-	(*LiquidityMonitoringParameters)(nil),     // 60: vega.LiquidityMonitoringParameters
-	(*LiquidationStrategy)(nil),               // 61: vega.LiquidationStrategy
-	(*NetworkParameter)(nil),                  // 62: vega.NetworkParameter
-	(*AssetDetails)(nil),                      // 63: vega.AssetDetails
-	(*AssetDetailsUpdate)(nil),                // 64: vega.AssetDetailsUpdate
-	(*VolumeBenefitTier)(nil),                 // 65: vega.VolumeBenefitTier
-	(*BenefitTier)(nil),                       // 66: vega.BenefitTier
-	(*StakingTier)(nil),                       // 67: vega.StakingTier
-	(AccountType)(0),                          // 68: vega.AccountType
-	(*DispatchStrategy)(nil),                  // 69: vega.DispatchStrategy
+	(*FutureCap)(nil),                         // 52: vega.FutureCap
+	(*DataSourceSpecToPerpetualBinding)(nil),  // 53: vega.DataSourceSpecToPerpetualBinding
+	(*CompositePriceConfiguration)(nil),       // 54: vega.CompositePriceConfiguration
+	(*PriceMonitoringParameters)(nil),         // 55: vega.PriceMonitoringParameters
+	(*TargetStakeParameters)(nil),             // 56: vega.TargetStakeParameters
+	(*SimpleModelParams)(nil),                 // 57: vega.SimpleModelParams
+	(*LogNormalRiskModel)(nil),                // 58: vega.LogNormalRiskModel
+	(*LiquiditySLAParameters)(nil),            // 59: vega.LiquiditySLAParameters
+	(*LiquidityFeeSettings)(nil),              // 60: vega.LiquidityFeeSettings
+	(*LiquidityMonitoringParameters)(nil),     // 61: vega.LiquidityMonitoringParameters
+	(*LiquidationStrategy)(nil),               // 62: vega.LiquidationStrategy
+	(*NetworkParameter)(nil),                  // 63: vega.NetworkParameter
+	(*AssetDetails)(nil),                      // 64: vega.AssetDetails
+	(*AssetDetailsUpdate)(nil),                // 65: vega.AssetDetailsUpdate
+	(*VolumeBenefitTier)(nil),                 // 66: vega.VolumeBenefitTier
+	(*BenefitTier)(nil),                       // 67: vega.BenefitTier
+	(*StakingTier)(nil),                       // 68: vega.StakingTier
+	(AccountType)(0),                          // 69: vega.AccountType
+	(*DispatchStrategy)(nil),                  // 70: vega.DispatchStrategy
 }
 var file_vega_governance_proto_depIdxs = []int32{
 	50,  // 0: vega.FutureProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
 	50,  // 1: vega.FutureProduct.data_source_spec_for_trading_termination:type_name -> vega.DataSourceDefinition
 	51,  // 2: vega.FutureProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToFutureBinding
-	50,  // 3: vega.PerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
-	50,  // 4: vega.PerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
-	52,  // 5: vega.PerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
-	53,  // 6: vega.PerpetualProduct.internal_composite_price_configuration:type_name -> vega.CompositePriceConfiguration
-	7,   // 7: vega.InstrumentConfiguration.future:type_name -> vega.FutureProduct
-	6,   // 8: vega.InstrumentConfiguration.spot:type_name -> vega.SpotProduct
-	8,   // 9: vega.InstrumentConfiguration.perpetual:type_name -> vega.PerpetualProduct
-	9,   // 10: vega.NewSpotMarketConfiguration.instrument:type_name -> vega.InstrumentConfiguration
-	54,  // 11: vega.NewSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	55,  // 12: vega.NewSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
-	56,  // 13: vega.NewSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	57,  // 14: vega.NewSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
-	58,  // 15: vega.NewSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
-	59,  // 16: vega.NewSpotMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
-	9,   // 17: vega.NewMarketConfiguration.instrument:type_name -> vega.InstrumentConfiguration
-	54,  // 18: vega.NewMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	60,  // 19: vega.NewMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
-	56,  // 20: vega.NewMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	57,  // 21: vega.NewMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
-	13,  // 22: vega.NewMarketConfiguration.successor:type_name -> vega.SuccessorConfiguration
-	58,  // 23: vega.NewMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
-	59,  // 24: vega.NewMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
-	61,  // 25: vega.NewMarketConfiguration.liquidation_strategy:type_name -> vega.LiquidationStrategy
-	53,  // 26: vega.NewMarketConfiguration.mark_price_configuration:type_name -> vega.CompositePriceConfiguration
-	10,  // 27: vega.NewSpotMarket.changes:type_name -> vega.NewSpotMarketConfiguration
-	11,  // 28: vega.NewMarket.changes:type_name -> vega.NewMarketConfiguration
-	17,  // 29: vega.UpdateMarket.changes:type_name -> vega.UpdateMarketConfiguration
-	18,  // 30: vega.UpdateSpotMarket.changes:type_name -> vega.UpdateSpotMarketConfiguration
-	20,  // 31: vega.UpdateMarketConfiguration.instrument:type_name -> vega.UpdateInstrumentConfiguration
-	54,  // 32: vega.UpdateMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	60,  // 33: vega.UpdateMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
-	56,  // 34: vega.UpdateMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	57,  // 35: vega.UpdateMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
-	58,  // 36: vega.UpdateMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
-	59,  // 37: vega.UpdateMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
-	61,  // 38: vega.UpdateMarketConfiguration.liquidation_strategy:type_name -> vega.LiquidationStrategy
-	53,  // 39: vega.UpdateMarketConfiguration.mark_price_configuration:type_name -> vega.CompositePriceConfiguration
-	54,  // 40: vega.UpdateSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	55,  // 41: vega.UpdateSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
-	56,  // 42: vega.UpdateSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	57,  // 43: vega.UpdateSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
-	58,  // 44: vega.UpdateSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
-	59,  // 45: vega.UpdateSpotMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
-	19,  // 46: vega.UpdateSpotMarketConfiguration.instrument:type_name -> vega.UpdateSpotInstrumentConfiguration
-	21,  // 47: vega.UpdateInstrumentConfiguration.future:type_name -> vega.UpdateFutureProduct
-	22,  // 48: vega.UpdateInstrumentConfiguration.perpetual:type_name -> vega.UpdatePerpetualProduct
-	50,  // 49: vega.UpdateFutureProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
-	50,  // 50: vega.UpdateFutureProduct.data_source_spec_for_trading_termination:type_name -> vega.DataSourceDefinition
-	51,  // 51: vega.UpdateFutureProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToFutureBinding
-	50,  // 52: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
-	50,  // 53: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
-	52,  // 54: vega.UpdatePerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
-	53,  // 55: vega.UpdatePerpetualProduct.internal_composite_price_configuration:type_name -> vega.CompositePriceConfiguration
-	62,  // 56: vega.UpdateNetworkParameter.changes:type_name -> vega.NetworkParameter
-	63,  // 57: vega.NewAsset.changes:type_name -> vega.AssetDetails
-	64,  // 58: vega.UpdateAsset.changes:type_name -> vega.AssetDetailsUpdate
-	15,  // 59: vega.ProposalTerms.update_market:type_name -> vega.UpdateMarket
-	14,  // 60: vega.ProposalTerms.new_market:type_name -> vega.NewMarket
-	23,  // 61: vega.ProposalTerms.update_network_parameter:type_name -> vega.UpdateNetworkParameter
-	24,  // 62: vega.ProposalTerms.new_asset:type_name -> vega.NewAsset
-	26,  // 63: vega.ProposalTerms.new_freeform:type_name -> vega.NewFreeform
-	25,  // 64: vega.ProposalTerms.update_asset:type_name -> vega.UpdateAsset
-	12,  // 65: vega.ProposalTerms.new_spot_market:type_name -> vega.NewSpotMarket
-	16,  // 66: vega.ProposalTerms.update_spot_market:type_name -> vega.UpdateSpotMarket
-	44,  // 67: vega.ProposalTerms.new_transfer:type_name -> vega.NewTransfer
-	42,  // 68: vega.ProposalTerms.cancel_transfer:type_name -> vega.CancelTransfer
-	40,  // 69: vega.ProposalTerms.update_market_state:type_name -> vega.UpdateMarketState
-	38,  // 70: vega.ProposalTerms.update_referral_program:type_name -> vega.UpdateReferralProgram
-	36,  // 71: vega.ProposalTerms.update_volume_discount_program:type_name -> vega.UpdateVolumeDiscountProgram
-	15,  // 72: vega.BatchProposalTermsChange.update_market:type_name -> vega.UpdateMarket
-	14,  // 73: vega.BatchProposalTermsChange.new_market:type_name -> vega.NewMarket
-	23,  // 74: vega.BatchProposalTermsChange.update_network_parameter:type_name -> vega.UpdateNetworkParameter
-	26,  // 75: vega.BatchProposalTermsChange.new_freeform:type_name -> vega.NewFreeform
-	25,  // 76: vega.BatchProposalTermsChange.update_asset:type_name -> vega.UpdateAsset
-	12,  // 77: vega.BatchProposalTermsChange.new_spot_market:type_name -> vega.NewSpotMarket
-	16,  // 78: vega.BatchProposalTermsChange.update_spot_market:type_name -> vega.UpdateSpotMarket
-	44,  // 79: vega.BatchProposalTermsChange.new_transfer:type_name -> vega.NewTransfer
-	42,  // 80: vega.BatchProposalTermsChange.cancel_transfer:type_name -> vega.CancelTransfer
-	40,  // 81: vega.BatchProposalTermsChange.update_market_state:type_name -> vega.UpdateMarketState
-	38,  // 82: vega.BatchProposalTermsChange.update_referral_program:type_name -> vega.UpdateReferralProgram
-	36,  // 83: vega.BatchProposalTermsChange.update_volume_discount_program:type_name -> vega.UpdateVolumeDiscountProgram
-	24,  // 84: vega.BatchProposalTermsChange.new_asset:type_name -> vega.NewAsset
-	29,  // 85: vega.BatchProposalTerms.proposal_params:type_name -> vega.ProposalParameters
-	28,  // 86: vega.BatchProposalTerms.changes:type_name -> vega.BatchProposalTermsChange
-	33,  // 87: vega.GovernanceData.proposal:type_name -> vega.Proposal
-	34,  // 88: vega.GovernanceData.yes:type_name -> vega.Vote
-	34,  // 89: vega.GovernanceData.no:type_name -> vega.Vote
-	48,  // 90: vega.GovernanceData.yes_party:type_name -> vega.GovernanceData.YesPartyEntry
-	49,  // 91: vega.GovernanceData.no_party:type_name -> vega.GovernanceData.NoPartyEntry
-	3,   // 92: vega.GovernanceData.proposal_type:type_name -> vega.GovernanceData.Type
-	33,  // 93: vega.GovernanceData.proposals:type_name -> vega.Proposal
-	4,   // 94: vega.Proposal.state:type_name -> vega.Proposal.State
-	27,  // 95: vega.Proposal.terms:type_name -> vega.ProposalTerms
-	0,   // 96: vega.Proposal.reason:type_name -> vega.ProposalError
-	31,  // 97: vega.Proposal.rationale:type_name -> vega.ProposalRationale
-	30,  // 98: vega.Proposal.batch_terms:type_name -> vega.BatchProposalTerms
-	5,   // 99: vega.Vote.value:type_name -> vega.Vote.Value
-	35,  // 100: vega.Vote.els_per_market:type_name -> vega.VoteELSPair
-	37,  // 101: vega.UpdateVolumeDiscountProgram.changes:type_name -> vega.VolumeDiscountProgramChanges
-	65,  // 102: vega.VolumeDiscountProgramChanges.benefit_tiers:type_name -> vega.VolumeBenefitTier
-	39,  // 103: vega.UpdateReferralProgram.changes:type_name -> vega.ReferralProgramChanges
-	66,  // 104: vega.ReferralProgramChanges.benefit_tiers:type_name -> vega.BenefitTier
-	67,  // 105: vega.ReferralProgramChanges.staking_tiers:type_name -> vega.StakingTier
-	41,  // 106: vega.UpdateMarketState.changes:type_name -> vega.UpdateMarketStateConfiguration
-	1,   // 107: vega.UpdateMarketStateConfiguration.update_type:type_name -> vega.MarketStateUpdateType
-	43,  // 108: vega.CancelTransfer.changes:type_name -> vega.CancelTransferConfiguration
-	45,  // 109: vega.NewTransfer.changes:type_name -> vega.NewTransferConfiguration
-	68,  // 110: vega.NewTransferConfiguration.source_type:type_name -> vega.AccountType
-	2,   // 111: vega.NewTransferConfiguration.transfer_type:type_name -> vega.GovernanceTransferType
-	68,  // 112: vega.NewTransferConfiguration.destination_type:type_name -> vega.AccountType
-	46,  // 113: vega.NewTransferConfiguration.one_off:type_name -> vega.OneOffTransfer
-	47,  // 114: vega.NewTransferConfiguration.recurring:type_name -> vega.RecurringTransfer
-	69,  // 115: vega.RecurringTransfer.dispatch_strategy:type_name -> vega.DispatchStrategy
-	34,  // 116: vega.GovernanceData.YesPartyEntry.value:type_name -> vega.Vote
-	34,  // 117: vega.GovernanceData.NoPartyEntry.value:type_name -> vega.Vote
-	118, // [118:118] is the sub-list for method output_type
-	118, // [118:118] is the sub-list for method input_type
-	118, // [118:118] is the sub-list for extension type_name
-	118, // [118:118] is the sub-list for extension extendee
-	0,   // [0:118] is the sub-list for field type_name
+	52,  // 3: vega.FutureProduct.cap:type_name -> vega.FutureCap
+	50,  // 4: vega.PerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
+	50,  // 5: vega.PerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
+	53,  // 6: vega.PerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
+	54,  // 7: vega.PerpetualProduct.internal_composite_price_configuration:type_name -> vega.CompositePriceConfiguration
+	7,   // 8: vega.InstrumentConfiguration.future:type_name -> vega.FutureProduct
+	6,   // 9: vega.InstrumentConfiguration.spot:type_name -> vega.SpotProduct
+	8,   // 10: vega.InstrumentConfiguration.perpetual:type_name -> vega.PerpetualProduct
+	9,   // 11: vega.NewSpotMarketConfiguration.instrument:type_name -> vega.InstrumentConfiguration
+	55,  // 12: vega.NewSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	56,  // 13: vega.NewSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
+	57,  // 14: vega.NewSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	58,  // 15: vega.NewSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	59,  // 16: vega.NewSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
+	60,  // 17: vega.NewSpotMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
+	9,   // 18: vega.NewMarketConfiguration.instrument:type_name -> vega.InstrumentConfiguration
+	55,  // 19: vega.NewMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	61,  // 20: vega.NewMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
+	57,  // 21: vega.NewMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	58,  // 22: vega.NewMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	13,  // 23: vega.NewMarketConfiguration.successor:type_name -> vega.SuccessorConfiguration
+	59,  // 24: vega.NewMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
+	60,  // 25: vega.NewMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
+	62,  // 26: vega.NewMarketConfiguration.liquidation_strategy:type_name -> vega.LiquidationStrategy
+	54,  // 27: vega.NewMarketConfiguration.mark_price_configuration:type_name -> vega.CompositePriceConfiguration
+	10,  // 28: vega.NewSpotMarket.changes:type_name -> vega.NewSpotMarketConfiguration
+	11,  // 29: vega.NewMarket.changes:type_name -> vega.NewMarketConfiguration
+	17,  // 30: vega.UpdateMarket.changes:type_name -> vega.UpdateMarketConfiguration
+	18,  // 31: vega.UpdateSpotMarket.changes:type_name -> vega.UpdateSpotMarketConfiguration
+	20,  // 32: vega.UpdateMarketConfiguration.instrument:type_name -> vega.UpdateInstrumentConfiguration
+	55,  // 33: vega.UpdateMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	61,  // 34: vega.UpdateMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
+	57,  // 35: vega.UpdateMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	58,  // 36: vega.UpdateMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	59,  // 37: vega.UpdateMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
+	60,  // 38: vega.UpdateMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
+	62,  // 39: vega.UpdateMarketConfiguration.liquidation_strategy:type_name -> vega.LiquidationStrategy
+	54,  // 40: vega.UpdateMarketConfiguration.mark_price_configuration:type_name -> vega.CompositePriceConfiguration
+	55,  // 41: vega.UpdateSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	56,  // 42: vega.UpdateSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
+	57,  // 43: vega.UpdateSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	58,  // 44: vega.UpdateSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	59,  // 45: vega.UpdateSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
+	60,  // 46: vega.UpdateSpotMarketConfiguration.liquidity_fee_settings:type_name -> vega.LiquidityFeeSettings
+	19,  // 47: vega.UpdateSpotMarketConfiguration.instrument:type_name -> vega.UpdateSpotInstrumentConfiguration
+	21,  // 48: vega.UpdateInstrumentConfiguration.future:type_name -> vega.UpdateFutureProduct
+	22,  // 49: vega.UpdateInstrumentConfiguration.perpetual:type_name -> vega.UpdatePerpetualProduct
+	50,  // 50: vega.UpdateFutureProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
+	50,  // 51: vega.UpdateFutureProduct.data_source_spec_for_trading_termination:type_name -> vega.DataSourceDefinition
+	51,  // 52: vega.UpdateFutureProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToFutureBinding
+	50,  // 53: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
+	50,  // 54: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
+	53,  // 55: vega.UpdatePerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
+	54,  // 56: vega.UpdatePerpetualProduct.internal_composite_price_configuration:type_name -> vega.CompositePriceConfiguration
+	63,  // 57: vega.UpdateNetworkParameter.changes:type_name -> vega.NetworkParameter
+	64,  // 58: vega.NewAsset.changes:type_name -> vega.AssetDetails
+	65,  // 59: vega.UpdateAsset.changes:type_name -> vega.AssetDetailsUpdate
+	15,  // 60: vega.ProposalTerms.update_market:type_name -> vega.UpdateMarket
+	14,  // 61: vega.ProposalTerms.new_market:type_name -> vega.NewMarket
+	23,  // 62: vega.ProposalTerms.update_network_parameter:type_name -> vega.UpdateNetworkParameter
+	24,  // 63: vega.ProposalTerms.new_asset:type_name -> vega.NewAsset
+	26,  // 64: vega.ProposalTerms.new_freeform:type_name -> vega.NewFreeform
+	25,  // 65: vega.ProposalTerms.update_asset:type_name -> vega.UpdateAsset
+	12,  // 66: vega.ProposalTerms.new_spot_market:type_name -> vega.NewSpotMarket
+	16,  // 67: vega.ProposalTerms.update_spot_market:type_name -> vega.UpdateSpotMarket
+	44,  // 68: vega.ProposalTerms.new_transfer:type_name -> vega.NewTransfer
+	42,  // 69: vega.ProposalTerms.cancel_transfer:type_name -> vega.CancelTransfer
+	40,  // 70: vega.ProposalTerms.update_market_state:type_name -> vega.UpdateMarketState
+	38,  // 71: vega.ProposalTerms.update_referral_program:type_name -> vega.UpdateReferralProgram
+	36,  // 72: vega.ProposalTerms.update_volume_discount_program:type_name -> vega.UpdateVolumeDiscountProgram
+	15,  // 73: vega.BatchProposalTermsChange.update_market:type_name -> vega.UpdateMarket
+	14,  // 74: vega.BatchProposalTermsChange.new_market:type_name -> vega.NewMarket
+	23,  // 75: vega.BatchProposalTermsChange.update_network_parameter:type_name -> vega.UpdateNetworkParameter
+	26,  // 76: vega.BatchProposalTermsChange.new_freeform:type_name -> vega.NewFreeform
+	25,  // 77: vega.BatchProposalTermsChange.update_asset:type_name -> vega.UpdateAsset
+	12,  // 78: vega.BatchProposalTermsChange.new_spot_market:type_name -> vega.NewSpotMarket
+	16,  // 79: vega.BatchProposalTermsChange.update_spot_market:type_name -> vega.UpdateSpotMarket
+	44,  // 80: vega.BatchProposalTermsChange.new_transfer:type_name -> vega.NewTransfer
+	42,  // 81: vega.BatchProposalTermsChange.cancel_transfer:type_name -> vega.CancelTransfer
+	40,  // 82: vega.BatchProposalTermsChange.update_market_state:type_name -> vega.UpdateMarketState
+	38,  // 83: vega.BatchProposalTermsChange.update_referral_program:type_name -> vega.UpdateReferralProgram
+	36,  // 84: vega.BatchProposalTermsChange.update_volume_discount_program:type_name -> vega.UpdateVolumeDiscountProgram
+	24,  // 85: vega.BatchProposalTermsChange.new_asset:type_name -> vega.NewAsset
+	29,  // 86: vega.BatchProposalTerms.proposal_params:type_name -> vega.ProposalParameters
+	28,  // 87: vega.BatchProposalTerms.changes:type_name -> vega.BatchProposalTermsChange
+	33,  // 88: vega.GovernanceData.proposal:type_name -> vega.Proposal
+	34,  // 89: vega.GovernanceData.yes:type_name -> vega.Vote
+	34,  // 90: vega.GovernanceData.no:type_name -> vega.Vote
+	48,  // 91: vega.GovernanceData.yes_party:type_name -> vega.GovernanceData.YesPartyEntry
+	49,  // 92: vega.GovernanceData.no_party:type_name -> vega.GovernanceData.NoPartyEntry
+	3,   // 93: vega.GovernanceData.proposal_type:type_name -> vega.GovernanceData.Type
+	33,  // 94: vega.GovernanceData.proposals:type_name -> vega.Proposal
+	4,   // 95: vega.Proposal.state:type_name -> vega.Proposal.State
+	27,  // 96: vega.Proposal.terms:type_name -> vega.ProposalTerms
+	0,   // 97: vega.Proposal.reason:type_name -> vega.ProposalError
+	31,  // 98: vega.Proposal.rationale:type_name -> vega.ProposalRationale
+	30,  // 99: vega.Proposal.batch_terms:type_name -> vega.BatchProposalTerms
+	5,   // 100: vega.Vote.value:type_name -> vega.Vote.Value
+	35,  // 101: vega.Vote.els_per_market:type_name -> vega.VoteELSPair
+	37,  // 102: vega.UpdateVolumeDiscountProgram.changes:type_name -> vega.VolumeDiscountProgramChanges
+	66,  // 103: vega.VolumeDiscountProgramChanges.benefit_tiers:type_name -> vega.VolumeBenefitTier
+	39,  // 104: vega.UpdateReferralProgram.changes:type_name -> vega.ReferralProgramChanges
+	67,  // 105: vega.ReferralProgramChanges.benefit_tiers:type_name -> vega.BenefitTier
+	68,  // 106: vega.ReferralProgramChanges.staking_tiers:type_name -> vega.StakingTier
+	41,  // 107: vega.UpdateMarketState.changes:type_name -> vega.UpdateMarketStateConfiguration
+	1,   // 108: vega.UpdateMarketStateConfiguration.update_type:type_name -> vega.MarketStateUpdateType
+	43,  // 109: vega.CancelTransfer.changes:type_name -> vega.CancelTransferConfiguration
+	45,  // 110: vega.NewTransfer.changes:type_name -> vega.NewTransferConfiguration
+	69,  // 111: vega.NewTransferConfiguration.source_type:type_name -> vega.AccountType
+	2,   // 112: vega.NewTransferConfiguration.transfer_type:type_name -> vega.GovernanceTransferType
+	69,  // 113: vega.NewTransferConfiguration.destination_type:type_name -> vega.AccountType
+	46,  // 114: vega.NewTransferConfiguration.one_off:type_name -> vega.OneOffTransfer
+	47,  // 115: vega.NewTransferConfiguration.recurring:type_name -> vega.RecurringTransfer
+	70,  // 116: vega.RecurringTransfer.dispatch_strategy:type_name -> vega.DispatchStrategy
+	34,  // 117: vega.GovernanceData.YesPartyEntry.value:type_name -> vega.Vote
+	34,  // 118: vega.GovernanceData.NoPartyEntry.value:type_name -> vega.Vote
+	119, // [119:119] is the sub-list for method output_type
+	119, // [119:119] is the sub-list for method input_type
+	119, // [119:119] is the sub-list for extension type_name
+	119, // [119:119] is the sub-list for extension extendee
+	0,   // [0:119] is the sub-list for field type_name
 }
 
 func init() { file_vega_governance_proto_init() }
@@ -6457,6 +6471,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 	}
+	file_vega_governance_proto_msgTypes[1].OneofWrappers = []interface{}{}
 	file_vega_governance_proto_msgTypes[2].OneofWrappers = []interface{}{}
 	file_vega_governance_proto_msgTypes[3].OneofWrappers = []interface{}{
 		(*InstrumentConfiguration_Future)(nil),

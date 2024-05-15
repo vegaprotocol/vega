@@ -70,6 +70,7 @@ var (
 	ErrInvalidInsurancePoolFraction          = errors.New("insurnace pool fraction invalid")
 	ErrUpdateMarketDifferentProduct          = errors.New("cannot update a market to a different product type")
 	ErrInvalidEVMChainIDInEthereumOracleSpec = errors.New("invalid source chain id in ethereum oracle spec")
+	ErrMaxPriceInvalid                       = errors.New("max price for capped future must be greater than zero")
 )
 
 func assignProduct(
@@ -523,8 +524,21 @@ func validateFuture(future *types.FutureProduct, decimals uint64, positionDecima
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
 	}
+	if err := validateFutureCap(future.Cap); err != nil {
+		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid capped future configuration: %w", err)
+	}
 
 	return validateAsset(future.SettlementAsset, decimals, positionDecimals, assets, deepCheck)
+}
+
+func validateFutureCap(fCap *types.FutureCap) error {
+	if fCap == nil {
+		return nil
+	}
+	if fCap.MaxPrice.IsZero() {
+		return ErrMaxPriceInvalid
+	}
+	return nil
 }
 
 func validatePerps(perps *types.PerpsProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {

@@ -51,6 +51,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a market change with negative slippage factor fails", testNewMarketChangeSubmissionWithSlippageFactorNegativeFails)
 	t.Run("Submitting a market change with empty max slippage factor succeeds", testNewMarketChangeSubmissionWithEmptySlippageFactorPasses)
 	t.Run("Submitting a market change with too large slippage factor fails", testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails)
+	t.Run("Submitting a new capped market with max price succeeds", testNewCappedMarketWithMaxPriceSucceeds)
+	t.Run("Submitting a new capped market without max price fails", testNewCappedMarketWithoutMaxPriceFails)
 
 	t.Run("Submitting a new market without price monitoring succeeds", testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new market with price monitoring succeeds", testNewMarketChangeSubmissionWithPriceMonitoringSucceeds)
@@ -874,6 +876,59 @@ func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *t
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.0.auction_extension"), commands.ErrMustBePositive)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.1.auction_extension"), commands.ErrMustBePositive)
+}
+
+func testNewCappedMarketWithMaxPriceSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									Cap: &vegapb.FutureCap{
+										MaxPrice: "100",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+}
+
+func testNewCappedMarketWithoutMaxPriceFails(t *testing.T) {
+	fCap := &vegapb.FutureCap{
+		MaxPrice: "",
+	}
+	cmd := &commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									Cap: fCap,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// submit with empty string:
+	err := checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+	fCap.MaxPrice = "foobar" // invalid input
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
 }
 
 func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {

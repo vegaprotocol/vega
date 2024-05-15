@@ -42,6 +42,8 @@ import (
 
 func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a proposal for new market succeeds", testSubmittingProposalForNewMarketSucceeds)
+	t.Run("Submitting a proposal for new capped market succeeds", testSubmittingProposalForNewCappedMarketSucceeds)
+	t.Run("Submitting a proposal for invalid capped market fails", testSubmittingProposalForInvalidCappedMarketFails)
 	t.Run("Submitting a proposal for new perps market succeeds", testSubmittingProposalForNewPerpsMarketSucceeds)
 	t.Run("Submitting a proposal for new perps market succeeds 2", testSubmittingProposalForNewPerpsMarketWithCustomInitialTimeSucceeds)
 	t.Run("Submitting a proposal for new perps market with initial time in past fails", testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails)
@@ -77,6 +79,54 @@ func TestProposalForSuccessorMarket(t *testing.T) {
 
 	t.Run("Remove proposals for an already succeeded market", testRemoveSuccessorsForSucceeded)
 	t.Run("Remove proposals for an already succeeded market on tick", testRemoveSuccessorsForRejectedMarket)
+}
+
+func testSubmittingProposalForInvalidCappedMarketFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForCapped(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true, &types.FutureCap{
+		MaxPrice:            num.UintZero(),
+		Binary:              true,
+		FullyCollateralised: true,
+	})
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalForNewCappedMarketSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForCapped(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true, &types.FutureCap{
+		MaxPrice:            num.NewUint(1000),
+		Binary:              true,
+		FullyCollateralised: true,
+	})
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	require.NotNil(t, toSubmit.NewMarket().Market())
 }
 
 func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {

@@ -1264,6 +1264,15 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 		errs.AddForProperty("new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
+	if future.Cap != nil {
+		// convert to uint to ensure input is valid
+		if len(future.Cap.MaxPrice) == 0 {
+			errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrIsRequired)
+		} else if mp, err := num.UintFromString(future.Cap.MaxPrice, 10); err || mp.IsZero() {
+			errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrMustBePositive)
+		}
+	}
+
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "new_market.changes.instrument.product.future", true))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "new_market.changes.instrument.product.future", false))
 	errs.Merge(checkNewOracleBinding(future))
