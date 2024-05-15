@@ -247,7 +247,7 @@ func (e *Engine) calculateFeeTransferForTransfer(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
-	fromSubAccount *string,
+	fromDerivedKey *string,
 	to string,
 ) *num.Uint {
 	return calculateFeeForTransfer(
@@ -257,6 +257,7 @@ func (e *Engine) calculateFeeTransferForTransfer(
 		amount,
 		from,
 		fromAccountType,
+		fromDerivedKey,
 		to,
 	)
 }

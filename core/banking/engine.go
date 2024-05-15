@@ -83,6 +83,7 @@ type Collateral interface {
 	GovernanceTransferFunds(ctx context.Context, transfers []*types.Transfer, accountTypes []types.AccountType, references []string) ([]*types.LedgerMovement, error)
 	PropagateAssetUpdate(ctx context.Context, asset types.Asset) error
 	GetSystemAccountBalance(asset, market string, accountType types.AccountType) (*num.Uint, error)
+	IsAMMKeyOwner(owner, ammKey string) (bool, error)
 }
 
 // Witness provide foreign chain resources validations.

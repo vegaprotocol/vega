@@ -258,6 +258,21 @@ func (mr *MockCollateralMockRecorder) GovernanceTransferFunds(arg0, arg1, arg2, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GovernanceTransferFunds", reflect.TypeOf((*MockCollateral)(nil).GovernanceTransferFunds), arg0, arg1, arg2, arg3)
 }
 
+// IsAMMKeyOwner mocks base method.
+func (m *MockCollateral) IsAMMKeyOwner(arg0, arg1 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAMMKeyOwner", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsAMMKeyOwner indicates an expected call of IsAMMKeyOwner.
+func (mr *MockCollateralMockRecorder) IsAMMKeyOwner(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAMMKeyOwner", reflect.TypeOf((*MockCollateral)(nil).IsAMMKeyOwner), arg0, arg1)
+}
+
 // PropagateAssetUpdate mocks base method.
 func (m *MockCollateral) PropagateAssetUpdate(arg0 context.Context, arg1 types.Asset) error {
 	m.ctrl.T.Helper()
