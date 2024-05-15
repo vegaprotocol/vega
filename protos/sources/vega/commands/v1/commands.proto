@@ -304,9 +304,9 @@ message Transfer {
   string amount = 5;
   // Reference to be attached to the transfer.
   string reference = 6;
-  // Optional AMM key from which assets are transferred. 
+  // Optional AMM key from which assets are transferred.
   // The submitter of the transaction must be the owner of this AMM key.
-  // If provided, the 'from_account_type' must be REWARDS_VESTED, and the asset in this account 
+  // If provided, the 'from_account_type' must be REWARDS_VESTED, and the asset in this account
   // must match the asset specified in the transfer.
   optional string from = 7;
 
