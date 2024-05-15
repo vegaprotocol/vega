@@ -741,11 +741,19 @@ func (n NewMarketConfigurationLogNormal) String() string {
 }
 
 func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_LogNormal) *NewMarketConfigurationLogNormal {
+	var override *RiskFactorOverride
+	if p.LogNormal.RiskFactorOverride != nil {
+		override = &RiskFactorOverride{
+			Short: num.MustDecimalFromString(p.LogNormal.RiskFactorOverride.Short),
+			Long:  num.MustDecimalFromString(p.LogNormal.RiskFactorOverride.Long),
+		}
+	}
 	return &NewMarketConfigurationLogNormal{
 		LogNormal: &LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(p.LogNormal.RiskAversionParameter),
 			Tau:                   num.DecimalFromFloat(p.LogNormal.Tau),
 			Params:                LogNormalParamsFromProto(p.LogNormal.Params),
+			RiskFactorOverride:    override,
 		},
 	}
 }

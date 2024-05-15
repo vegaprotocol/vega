@@ -738,11 +738,20 @@ func (n UpdateMarketConfigurationLogNormal) IntoProto() *vegapb.UpdateMarketConf
 }
 
 func UpdateMarketConfigurationLogNormalFromProto(p *vegapb.UpdateMarketConfiguration_LogNormal) *UpdateMarketConfigurationLogNormal {
+	// ignore validation as it's been validated down the line
+	var override *RiskFactorOverride
+	if p.LogNormal.RiskFactorOverride != nil {
+		override = &RiskFactorOverride{
+			Short: num.MustDecimalFromString(p.LogNormal.RiskFactorOverride.Short),
+			Long:  num.MustDecimalFromString(p.LogNormal.RiskFactorOverride.Long),
+		}
+	}
 	return &UpdateMarketConfigurationLogNormal{
 		LogNormal: &LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(p.LogNormal.RiskAversionParameter),
 			Tau:                   num.DecimalFromFloat(p.LogNormal.Tau),
 			Params:                LogNormalParamsFromProto(p.LogNormal.Params),
+			RiskFactorOverride:    override,
 		},
 	}
 }

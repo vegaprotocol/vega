@@ -14,11 +14,13 @@
 
 - [11209](https://github.com/vegaprotocol/vega/issues/11209) - Publish ongoing games data.
 - [11196](https://github.com/vegaprotocol/vega/issues/11196) - Add an active field in the price monitoring bounds payload.
+- [11211](https://github.com/vegaprotocol/vega/issues/11211) - Liquidation engine includes `vAMM` shapes as available volume.
+- [11217](https://github.com/vegaprotocol/vega/issues/11217) - Allow market proposals to override risk factors.
 
 ### 🐛 Fixes
 
 - [11066](https://github.com/vegaprotocol/vega/issues/11066) - Ensure vesting statistics match vesting accounts numbers.
-- [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id. 
+- [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 
 
 ## 0.76.1
@@ -67,7 +69,6 @@
 - [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
 - [11182](https://github.com/vegaprotocol/vega/issues/11182) - Remove reduce only restriction on spot markets stop orders.
 - [11153](https://github.com/vegaprotocol/vega/issues/11153) - Add check on start-up that bridge `RPC-endpoints` are functional.
-- [11211](https://github.com/vegaprotocol/vega/issues/11211) - Liquidation engine includes `vAMM` shapes as available volume.
 
 ### 🐛 Fixes
 
