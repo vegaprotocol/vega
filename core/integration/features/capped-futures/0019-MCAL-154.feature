@@ -95,3 +95,30 @@ Feature: Margin calculation on a fully collateralised capped future
       | aux1   | ETH/DEC21 | 18          | 18     | 18      | 18      | cross margin |
       | aux2   | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
       | aux3   | ETH/DEC21 | 300         | 300    | 300     | 300     | cross margin |
+
+    #0019-MCAL-155
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux4  | ETH/DEC21 | sell | 15     | 20    | 1                | TYPE_LIMIT | TIF_GTC | aux3-1    |
+    And the network moves ahead "2" blocks
+
+    And the following trades should be executed:
+      | buyer | price | size | seller |
+      | aux3  | 30    | 10   | aux4   |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC21 | 250    | 9650    |
+      | party2 | USD   | ETH/DEC21 | 250    | 9850    |
+      | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
+      | aux3   | USD   | ETH/DEC21 | 300    | 99702   |
+      | aux4   | USD   | ETH/DEC21 | 1100   | 98892   |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode  |
+      | party1 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
+      | party2 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
+      | aux1   | ETH/DEC21 | 18          | 18     | 18      | 18      | cross margin |
+      | aux2   | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
+      | aux3   | ETH/DEC21 | 300         | 300    | 300     | 300     | cross margin |
+      | aux4   | ETH/DEC21 | 1100        | 1100   | 1100    | 1100    | cross margin |
+
