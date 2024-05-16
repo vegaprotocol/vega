@@ -35,7 +35,7 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
       | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
 
-  @SLABug @NoPerp @Capped
+  @SLABug @NoPerp @Capped @CZero
   Scenario: 0016-PFUT-023: no closeout happens when mark to market settlement is carried out at a price of `0`
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
@@ -102,8 +102,8 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2's short position and potential margins are calculated separately as 2 * (1500-1301) + 1 * (1500 - 1100) = 398 + 400 = 798
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 5000    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 7500    |
+      | party1 | USD   | ETH/DEC21 | 5000   | 0       |
+      | party2 | USD   | ETH/DEC21 | 2500   | 12500   |
       | aux1   | USD   | ETH/DEC21 | 0      | 100000  |
       | aux2   | USD   | ETH/DEC21 | 1500   | 98500   |
 

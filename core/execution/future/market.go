@@ -1158,8 +1158,9 @@ func (m *Market) BlockEnd(ctx context.Context) {
 
 		m.nextMTM = t.Add(m.mtmDelta)
 
+		// mark price mustn't be zero, except for capped futures, where a zero price may well be possible
 		if !m.as.InAuction() && (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
-			!m.getCurrentMarkPrice().IsZero() {
+			(!m.getCurrentMarkPrice().IsZero() || m.capMax != nil) {
 			if m.confirmMTM(ctx, false) {
 				closedPositions := m.position.GetClosedPositions()
 				if len(closedPositions) > 0 {
