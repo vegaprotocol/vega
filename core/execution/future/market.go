@@ -3049,7 +3049,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// which have acceptable margins
 		increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
 		var pr *num.Uint
-		if m.capMax != nil {
+		if m.capMax != nil && m.fCap.FullyCollateralised {
 			pr = m.capMax.Clone()
 		} else {
 			pr = m.lastTradedPrice.Clone()
@@ -4952,7 +4952,7 @@ func (m *Market) getCurrentInternalCompositePrice() *num.Uint {
 // getCurrentMarkPriceForMargin is the same as getCurrentMarkPrice, but adds a check for capped futures.
 // if this is called on a future with a max price, then the max price will be returned. This is useful for margin checks.
 func (m *Market) getCurrentMarkPriceForMargin() *num.Uint {
-	if m.capMax != nil {
+	if m.capMax != nil && m.fCap.FullyCollateralised {
 		return m.capMax.Clone()
 	}
 	return m.getCurrentMarkPrice()
