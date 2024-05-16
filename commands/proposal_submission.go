@@ -905,7 +905,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	}
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "new_spot_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument"))
+	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument", changes.TickSize))
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
 	errs.Merge(checkTickSize(changes.TickSize, "new_spot_market.changes"))
@@ -965,7 +965,7 @@ func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) 
 	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "new_market.changes"))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "new_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "new_market.changes.instrument"))
+	errs.Merge(checkNewInstrument(changes.Instrument, "new_market.changes.instrument", changes.TickSize))
 	errs.Merge(checkNewRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "new_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_market.changes.liquidity_fee_settings"))
@@ -1172,7 +1172,7 @@ func checkTargetStakeParams(targetStakeParameters *protoTypes.TargetStakeParamet
 	return errs
 }
 
-func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent string) Errors {
+func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent, tickSize string) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -1192,7 +1192,7 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
-		errs.Merge(checkNewFuture(product.Future))
+		errs.Merge(checkNewFuture(product.Future, tickSize))
 	case *protoTypes.InstrumentConfiguration_Perpetual:
 		errs.Merge(checkNewPerps(product.Perpetual, fmt.Sprintf("%s.product", parent)))
 	case *protoTypes.InstrumentConfiguration_Spot:
@@ -1250,7 +1250,7 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	return errs
 }
 
-func checkNewFuture(future *protoTypes.FutureProduct) Errors {
+func checkNewFuture(future *protoTypes.FutureProduct, tickSize string) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -1262,6 +1262,25 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	}
 	if len(future.QuoteName) == 0 {
 		errs.AddForProperty("new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+	}
+
+	if future.Cap != nil {
+		// convert to uint to ensure input is valid
+		if len(future.Cap.MaxPrice) == 0 {
+			errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrIsRequired)
+		} else {
+			// tick size is validated later on, ignore errors here
+			tick, _ := num.UintFromString(tickSize, 10)
+			if tick.IsZero() {
+				tick = num.UintOne()
+			}
+			mp, err := num.UintFromString(future.Cap.MaxPrice, 10)
+			if err {
+				errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrMustBePositive)
+			} else if !mp.Mod(mp, tick).IsZero() {
+				errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrMaxPriceMustRespectTickSize)
+			}
+		}
 	}
 
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "new_market.changes.instrument.product.future", true))

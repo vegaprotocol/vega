@@ -912,6 +912,10 @@ func InstrumentConfigurationFromProto(
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse trading termination data source spec: %w", err)
 		}
+		fCap, err := FutureCapFromProto(pr.Future.Cap)
+		if err != nil {
+			return nil, err
+		}
 		r.Product = &InstrumentConfigurationFuture{
 			Future: &FutureProduct{
 				SettlementAsset:                     pr.Future.SettlementAsset,
@@ -919,6 +923,7 @@ func InstrumentConfigurationFromProto(
 				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settl),
 				DataSourceSpecForTradingTermination: *datasource.NewDefinitionWith(term),
 				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+				Cap:                                 fCap,
 			},
 		}
 	case *vegapb.InstrumentConfiguration_Perpetual:
@@ -1004,42 +1009,99 @@ func InstrumentConfigurationFromProto(
 	return r, nil
 }
 
+type FutureCap struct {
+	MaxPrice            *num.Uint
+	Binary              bool
+	FullyCollateralised bool
+}
+
+func FutureCapFromProto(fc *vegapb.FutureCap) (*FutureCap, error) {
+	if fc == nil {
+		return nil, nil
+	}
+	mp, err := num.UintFromString(fc.MaxPrice, 10)
+	if err {
+		return nil, fmt.Errorf("invalid max price value")
+	}
+	return &FutureCap{
+		MaxPrice:            mp,
+		Binary:              ptr.UnBox(fc.BinarySettlement),
+		FullyCollateralised: ptr.UnBox(fc.FullyCollateralised),
+	}, nil
+}
+
+func (c FutureCap) IntoProto() *vegapb.FutureCap {
+	return &vegapb.FutureCap{
+		MaxPrice:            c.MaxPrice.String(),
+		BinarySettlement:    ptr.From(c.Binary),
+		FullyCollateralised: ptr.From(c.FullyCollateralised),
+	}
+}
+
+func (c FutureCap) DeepClone() *FutureCap {
+	return &FutureCap{
+		MaxPrice:            c.MaxPrice.Clone(),
+		Binary:              c.Binary,
+		FullyCollateralised: c.FullyCollateralised,
+	}
+}
+
+func (c FutureCap) String() string {
+	return fmt.Sprintf("max price(%s) binary(%t) fully collateralised(%t)", c.MaxPrice.String(), c.Binary, c.FullyCollateralised)
+}
+
 type FutureProduct struct {
 	SettlementAsset                     string
 	QuoteName                           string
 	DataSourceSpecForSettlementData     dsdefinition.Definition
 	DataSourceSpecForTradingTermination dsdefinition.Definition
 	DataSourceSpecBinding               *datasource.SpecBindingForFuture
+	Cap                                 *FutureCap
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
+	var fCap *vegapb.FutureCap
+	if f.Cap != nil {
+		fCap = f.Cap.IntoProto()
+	}
 	return &vegapb.FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
+		Cap:                                 fCap,
 	}
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
+	var fCap *FutureCap
+	if f.Cap != nil {
+		fCap = f.Cap.DeepClone()
+	}
 	return &FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     *f.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecForTradingTermination: *f.DataSourceSpecForTradingTermination.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
+		Cap:                                 fCap,
 	}
 }
 
 func (f FutureProduct) String() string {
+	fCap := "no"
+	if f.Cap != nil {
+		fCap = f.Cap.String()
+	}
 	return fmt.Sprintf(
-		"quote(%s) settlementAsset(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
+		"quote(%s) settlementAsset(%s) settlementData(%s) tradingTermination(%s) binding(%s) capped(%s)",
 		f.QuoteName,
 		f.SettlementAsset,
 		stringer.ObjToString(f.DataSourceSpecForSettlementData),
 		stringer.ObjToString(f.DataSourceSpecForTradingTermination),
 		stringer.PtrToString(f.DataSourceSpecBinding),
+		fCap,
 	)
 }
 

@@ -31,6 +31,7 @@ var (
 	defaultMarginCalculators         embed.FS
 	defaultMarginCalculatorFileNames = []string{
 		"defaults/margin-calculator/default-margin-calculator.json",
+		"defaults/margin-calculator/default-capped-margin-calculator.json",
 		"defaults/margin-calculator/default-overkill-margin-calculator.json",
 	}
 )

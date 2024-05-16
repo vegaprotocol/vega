@@ -42,6 +42,17 @@ message Future {
 
   // Binding between the data spec and the data source.
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
+  // If set, this product represents a capped future market.
+  optional FutureCap cap = 6;
+}
+
+message FutureCap {
+  // Set the maximum price for orders, and settlement data in market decimals.
+  string max_price = 1;
+  // If set to true, the settlement price must either be zero, or equal to the max price.
+  optional bool binary_settlement = 2;
+  // If set to true, positions must be fully collateralised so there is no default risk for any party.
+  optional bool fully_collateralised = 3;
 }
 
 // Perpetual product definition
@@ -192,6 +203,8 @@ message ScalingFactors {
 message MarginCalculator {
   // Scaling factors for margin calculation.
   ScalingFactors scaling_factors = 1;
+  // If set to true, positions must be fully collateralised so there is no default risk for any party (capped futures).
+  optional bool fully_collateralised = 2;
 }
 
 // Tradable Instrument definition

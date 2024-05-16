@@ -70,6 +70,7 @@
 - [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
 - [11182](https://github.com/vegaprotocol/vega/issues/11182) - Remove reduce only restriction on spot markets stop orders.
 - [11153](https://github.com/vegaprotocol/vega/issues/11153) - Add check on start-up that bridge `RPC-endpoints` are functional.
+- [11227](https://github.com/vegaprotocol/vega/issues/11227) - Add capped futures to `protos`.
 
 ### 🐛 Fixes
 

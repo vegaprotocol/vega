@@ -442,7 +442,11 @@ func (r RowWrapper) MustBool(name string) bool {
 }
 
 func (r RowWrapper) Bool(name string) bool {
-	b, err := Bool(r.values[name])
+	v, ok := r.values[name]
+	if !ok {
+		return false
+	}
+	b, err := Bool(v)
 	panicW(name, err)
 	return b
 }

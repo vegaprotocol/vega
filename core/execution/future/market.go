@@ -167,6 +167,9 @@ type Market struct {
 	internalCompositePriceCalculator *common.CompositePriceCalculator
 
 	amm *amm.Engine
+
+	fCap   *types.FutureCap
+	capMax *num.Uint
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -348,6 +351,11 @@ func NewMarket(
 	market.liquidation = le
 
 	market.markPriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
+	if fCap := mkt.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
+		market.fCap = fCap
+		market.capMax, _ = num.UintFromDecimal(fCap.MaxPrice.ToDecimal().Mul(priceFactor))
+		market.markPriceCalculator.SetMaxPriceCap(market.capMax.Clone())
+	}
 
 	if market.IsPerp() {
 		internalCompositePriceConfig := mkt.TradableInstrument.Instrument.GetPerps().InternalCompositePriceConfig
@@ -1147,12 +1155,17 @@ func (m *Market) BlockEnd(ctx context.Context) {
 
 		if !m.as.InAuction() && (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentMarkPrice().IsZero() {
-			m.confirmMTM(ctx, false)
-			closedPositions := m.position.GetClosedPositions()
-			if len(closedPositions) > 0 {
-				m.releaseExcessMargin(ctx, closedPositions...)
-				// also remove all stop orders
-				m.removeAllStopOrders(ctx, closedPositions...)
+			if m.confirmMTM(ctx, false) {
+				closedPositions := m.position.GetClosedPositions()
+				if len(closedPositions) > 0 {
+					m.releaseExcessMargin(ctx, closedPositions...)
+					// also remove all stop orders
+					m.removeAllStopOrders(ctx, closedPositions...)
+				}
+			} else {
+				// do not increment the next MTM time to now + delta
+				// this ensures we try to perform the MTM settlement ASAP.
+				m.nextMTM = t
 			}
 		}
 	}
@@ -1406,6 +1419,9 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
 			price.Sub(price, mod)
 		}
+		if m.capMax != nil {
+			price = num.Min(price, m.capMax.Clone())
+		}
 		return price, nil
 	}
 
@@ -1418,6 +1434,9 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		price = num.UintZero().Sub(price.AddSum(m.mkt.TickSize), mod)
 	}
 
+	if m.capMax != nil {
+		price = num.Min(price, m.capMax.Clone())
+	}
 	return price, nil
 }
 
@@ -1723,9 +1742,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		// now that we've left the auction and all the orders have been unparked,
 		// we can mark all positions using the margin calculation method appropriate
 		// for non-auction mode and carry out any closeouts if need be
-		m.confirmMTM(ctx, false)
-		// set next MTM
-		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
+		if m.confirmMTM(ctx, false) {
+			// set next MTM
+			m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
+		}
 		// we have just left auction, check the network position, dispose of volume if possible
 		m.checkNetwork(ctx, now)
 	}
@@ -2258,6 +2278,13 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	}
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.ID = orderID
+	// check max price in case of capped market
+	if m.capMax != nil && order.Price != nil && order.Price.GT(m.capMax) {
+		order.Status = types.OrderStatusRejected
+		order.Reason = types.OrderErrorPriceLTEMaxPrice
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, common.ErrInvalidOrderPrice
+	}
 
 	if !m.canTrade() {
 		order.Status = types.OrderStatusRejected
@@ -2804,9 +2831,14 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	return orderUpdates
 }
 
-func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
+// confirmMTM returns false if the MTM settlement was skipped due to price cap.
+func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) bool {
 	// now let's get the transfers for MTM settlement
 	mp := m.getCurrentMarkPrice()
+	// if this is a capped market with a max price, skip MTM until the mark price is within the [0,max_price] range.
+	if m.capMax != nil && m.capMax.LT(mp) {
+		return false
+	}
 	m.liquidation.UpdateMarkPrice(mp.Clone())
 	evts := m.position.UpdateMarkPrice(mp)
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
@@ -2830,6 +2862,7 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 
 	// tell the AMM engine we've MTM'd so any closing pool's can be cancelled
 	m.amm.OnMTM(ctx)
+	return true
 }
 
 func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk, isolatedMargin []events.Risk) []*types.Order {
@@ -3015,7 +3048,13 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// so it'll separate the positions still in distress from the
 		// which have acceptable margins
 		increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
-		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone(), increment, m.getAuctionPrice())
+		var pr *num.Uint
+		if m.capMax != nil && m.fCap.FullyCollateralised {
+			pr = m.capMax.Clone()
+		} else {
+			pr = m.lastTradedPrice.Clone()
+		}
+		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, pr, increment, m.getAuctionPrice())
 
 		parties := make([]string, 0, len(okPos))
 		for _, v := range okPos {
@@ -3316,7 +3355,13 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		}
 	}
 
-	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPrice(), increment, m.getAuctionPrice())
+	var price *num.Uint
+	if m.capMax != nil {
+		price = m.capMax.Clone()
+	} else {
+		price = m.getCurrentMarkPrice()
+	}
+	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, price, increment, m.getAuctionPrice())
 	isolatedMarginPartiesToClose := []events.Risk{}
 	for _, evt := range isolatedEvts {
 		mrgns, err := m.risk.CheckMarginInvariants(ctx, evt, m.getMarketObservable(nil), increment, m.matching.GetOrdersPerParty(evt.Party()), m.getMarginFactor(evt.Party()))
@@ -4740,6 +4785,17 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 	if m.closed {
 		return
 	}
+	if m.capMax != nil && m.capMax.LT(settlementDataInAsset) {
+		// we cannot perform the final settlement because the settlement price is out of the [0, max_price] range
+		return
+	}
+	if m.fCap != nil && m.fCap.Binary {
+		// binary settlement is either 0 or max price:
+		if !settlementDataInAsset.IsZero() && !settlementDataInAsset.EQ(m.capMax) {
+			// not zero, not max price -> no final settlement can occur yet
+			return
+		}
+	}
 
 	if m.mkt.State == types.MarketStateTradingTerminated && settlementDataInAsset != nil {
 		err := m.closeMarket(ctx, m.timeService.GetTimeNow(), finalState, settlementDataInAsset)
@@ -4856,6 +4912,10 @@ func (m *Market) GetTotalOpenPositionCount() uint64 {
 
 // getMarketObservable returns current mark price once market is out of opening auction, during opening auction the indicative uncrossing price is returned.
 func (m *Market) getMarketObservable(fallbackPrice *num.Uint) *num.Uint {
+	// this is used for margin calculations, so if there's a max price, return that.
+	if m.capMax != nil {
+		return m.capMax.Clone()
+	}
 	// during opening auction we don't have a last traded price, so we use the indicative price instead
 	if m.as.IsOpeningAuction() {
 		if ip := m.matching.GetIndicativePrice(); !ip.IsZero() {
@@ -4887,6 +4947,15 @@ func (m *Market) getCurrentInternalCompositePrice() *num.Uint {
 		return num.UintZero()
 	}
 	return m.internalCompositePriceCalculator.GetPrice().Clone()
+}
+
+// getCurrentMarkPriceForMargin is the same as getCurrentMarkPrice, but adds a check for capped futures.
+// if this is called on a future with a max price, then the max price will be returned. This is useful for margin checks.
+func (m *Market) getCurrentMarkPriceForMargin() *num.Uint {
+	if m.capMax != nil && m.fCap.FullyCollateralised {
+		return m.capMax.Clone()
+	}
+	return m.getCurrentMarkPrice()
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {
@@ -4921,6 +4990,9 @@ func (m *Market) GetRiskFactors() *types.RiskFactor {
 }
 
 func (m *Market) UpdateMarginMode(ctx context.Context, party string, marginMode types.MarginMode, marginFactor num.Decimal) error {
+	if m.fCap != nil && m.fCap.FullyCollateralised {
+		return common.ErrIsolatedMarginFullyCollateralised
+	}
 	if err := m.switchMarginMode(ctx, party, marginMode, marginFactor); err != nil {
 		return err
 	}

@@ -29,6 +29,8 @@ message FutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 4;
   // Binding between the data source spec and the settlement data.
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
+  // If set, this product creates a capped future market.
+  optional FutureCap cap = 6;
 }
 
 // Perpetual product configuration
