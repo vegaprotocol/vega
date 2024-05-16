@@ -622,11 +622,12 @@ func getCancelSubmission(t *testing.T, party, market string, method types.AMMCan
 }
 
 type tstEngine struct {
-	engine *Engine
-	broker *bmocks.MockBroker
-	col    *mocks.MockCollateral
-	pos    *mocks.MockPosition
-	ctrl   *gomock.Controller
+	engine  *Engine
+	broker  *bmocks.MockBroker
+	col     *mocks.MockCollateral
+	pos     *mocks.MockPosition
+	parties *cmocks.MockParties
+	ctrl    *gomock.Controller
 
 	marketID string
 	assetID  string
@@ -650,7 +651,10 @@ func getTestEngine(t *testing.T) *tstEngine {
 
 	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
-	eng := New(logging.NewTestLogger(), broker, col, marketID, assetID, pos, num.DecimalOne(), num.DecimalOne(), mat)
+	parties := cmocks.NewMockParties(ctrl)
+	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any()).AnyTimes()
+
+	eng := New(logging.NewTestLogger(), broker, col, marketID, assetID, pos, num.DecimalOne(), num.DecimalOne(), mat, parties)
 
 	// do an ontick to initialise the idgen
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -662,6 +666,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 		col:      col,
 		pos:      pos,
 		ctrl:     ctrl,
+		parties:  parties,
 		marketID: marketID,
 		assetID:  assetID,
 	}

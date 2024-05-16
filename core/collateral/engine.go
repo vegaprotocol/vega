@@ -123,9 +123,6 @@ type Engine struct {
 	// we'll use it only once after an upgrade
 	// to make sure asset are being created
 	ensuredAssetAccounts bool
-
-	// amm key` to party ID
-	ammKeyToParty map[string]string
 }
 
 // New instantiates a new collateral engine.
@@ -147,7 +144,6 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		vesting:                 map[string]map[string]*num.Uint{},
 		partiesAccsBalanceCache: map[string]*num.Uint{},
 		nextBalancesSnapshot:    time.Time{},
-		ammKeyToParty:           map[string]string{},
 	}
 }
 
@@ -3578,19 +3574,6 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
-func (e *Engine) IsAMMKeyOwner(owner, ammKey string) (bool, error) {
-	party, ok := e.ammKeyToParty[ammKey]
-	if !ok {
-		return false, fmt.Errorf("amm key %s does not exists", ammKey)
-	}
-
-	if party != owner {
-		return false, fmt.Errorf("party %s does not own %s", owner, ammKey)
-	}
-
-	return true, nil
-}
-
 // CreatePartyAMMSubAccounts ...
 func (e *Engine) CreatePartyAMMsSubAccounts(
 	ctx context.Context,
@@ -3610,8 +3593,6 @@ func (e *Engine) CreatePartyAMMsSubAccounts(
 	if err != nil {
 		return nil, nil, err
 	}
-
-	e.ammKeyToParty[ammKey] = party
 
 	return e.accs[generalID].Clone(), e.accs[marginID].Clone(), nil
 }

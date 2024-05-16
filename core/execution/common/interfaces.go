@@ -33,7 +33,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking,Parties
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks_amm/mocks.go -package mocks_amm code.vegaprotocol.io/vega/core/execution/common AMMPool,AMM
 
@@ -236,6 +236,10 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 
 type Banking interface {
 	RegisterTradingFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint)
+}
+
+type Parties interface {
+	AssignDeriveKey(party types.PartyID, derivedKey string)
 }
 
 type LiquidityEngine interface {

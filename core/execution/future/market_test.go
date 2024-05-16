@@ -245,11 +245,12 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(tm.ctrl)
+	parties := mocks.NewMockParties(tm.ctrl)
 
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking,
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties,
 	)
 	require.NoError(tm.t, err)
 
@@ -657,11 +658,12 @@ func getTestMarket2WithDP(
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
+	parties := mocks.NewMockParties(ctrl)
 
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}

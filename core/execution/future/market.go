@@ -195,6 +195,7 @@ func NewMarket(
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
 	banking common.Banking,
+	parties common.Parties,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -215,7 +216,7 @@ func NewMarket(
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
-	ammEngine := amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker)
+	ammEngine := amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker, parties)
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not

@@ -117,12 +117,12 @@ func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
 type Engine struct {
 	log *logging.Logger
 
-	broker Broker
-	// TODO karel - use interface for market activity tracker
+	broker                Broker
 	marketActivityTracker *common.MarketActivityTracker
 
 	collateral Collateral
 	position   Position
+	parties    common.Parties
 
 	marketID string
 	assetID  string
@@ -155,6 +155,7 @@ func New(
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
+	parties common.Parties,
 ) *Engine {
 	return &Engine{
 		log:                   log,
@@ -171,6 +172,7 @@ func New(
 		rooter:                &Sqrter{cache: map[string]num.Decimal{}},
 		priceFactor:           priceFactor,
 		positionFactor:        positionFactor,
+		parties:               parties,
 	}
 }
 
@@ -185,8 +187,9 @@ func NewFromProto(
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
+	parties common.Parties,
 ) (*Engine, error) {
-	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker)
+	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker, parties)
 
 	for _, v := range state.AmmPartyIds {
 		e.ammParties[v.Key] = v.Value
@@ -683,6 +686,7 @@ func (e *Engine) Confirm(
 	pool.status = types.AMMPoolStatusActive
 	e.add(pool)
 	e.sendUpdate(ctx, pool)
+	e.parties.AssignDeriveKey(types.PartyID(pool.owner), pool.AMMParty)
 	return nil
 }
 

@@ -38,11 +38,34 @@ type Engine struct {
 	// profiles tracks all parties profiles by party ID.
 	profiles                  map[types.PartyID]*types.PartyProfile
 	minBalanceToUpdateProfile *num.Uint
+
+	// derivedKeys tracks all derived keys assigned to a party
+	derivedKeys map[types.PartyID]map[string]struct{}
 }
 
 func (e *Engine) OnMinBalanceForUpdatePartyProfileUpdated(_ context.Context, min *num.Uint) error {
 	e.minBalanceToUpdateProfile = min.Clone()
 	return nil
+}
+
+func (e *Engine) AssignDeriveKey(party types.PartyID, derivedKey string) {
+	if _, ok := e.derivedKeys[party]; !ok {
+		e.derivedKeys[party] = map[string]struct{}{}
+	}
+	e.derivedKeys[party][derivedKey] = struct{}{}
+}
+
+func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) (bool, error) {
+	derivedKeys, ok := e.derivedKeys[party]
+	if !ok {
+		return false, fmt.Errorf("party %q does not have any derived keys", party)
+	}
+
+	if _, ok := derivedKeys[derivedKey]; !ok {
+		return false, fmt.Errorf("party %q does not own %q", party, derivedKey)
+	}
+
+	return true, nil
 }
 
 func (e *Engine) CheckSufficientBalanceToUpdateProfile(party types.PartyID, balance *num.Uint) error {

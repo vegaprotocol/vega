@@ -87,7 +87,7 @@ func (e *Engine) oneOffTransfer(
 	}
 
 	if transfer.FromDerivedKey != nil {
-		if _, err := e.col.IsAMMKeyOwner(transfer.From, *transfer.FromDerivedKey); err != nil {
+		if _, err := e.parties.CheckDerivedKeyOwnership(types.PartyID(transfer.From), *transfer.FromDerivedKey); err != nil {
 			transfer.Status = types.TransferStatusRejected
 			return err
 		}

@@ -55,6 +55,7 @@ type testEngine struct {
 	marketActivityTracker *mocks.MockMarketActivityTracker
 	ethSource             *mocks.MockEthereumEventSource
 	secondaryBridgeView   *mocks.MockERC20BridgeView
+	parties               *mocks.MockParties
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -79,7 +80,8 @@ func getTestEngine(t *testing.T) *testEngine {
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, primaryBridgeView, secondaryBridgeView, ethSource, nil)
+	parties := mocks.NewMockParties(ctrl)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, primaryBridgeView, secondaryBridgeView, ethSource, nil, parties)
 
 	require.NoError(t, eng.OnMaxQuantumAmountUpdate(context.Background(), num.DecimalOne()))
 	eng.OnPrimaryEthChainIDUpdated("1")
@@ -98,6 +100,7 @@ func getTestEngine(t *testing.T) *testEngine {
 		secondaryBridgeView:   secondaryBridgeView,
 		marketActivityTracker: marketActivityTracker,
 		ethSource:             ethSource,
+		parties:               parties,
 	}
 }
 
