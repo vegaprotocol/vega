@@ -40,7 +40,6 @@ import (
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/pow"
-	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/txn"
@@ -211,7 +210,6 @@ type App struct {
 	log            *logging.Logger
 	cancelFn       func()
 	stopBlockchain func() error
-	rates          *ratelimit.Rates
 
 	// service injection
 	assets                         Assets
@@ -306,15 +304,11 @@ func NewApp(log *logging.Logger,
 	app := &App{
 		abci: abci.New(codec),
 
-		log:            log,
-		vegaPaths:      vegaPaths,
-		cfg:            config,
-		cancelFn:       cancelFn,
-		stopBlockchain: stopBlockchain,
-		rates: ratelimit.New(
-			config.Ratelimit.Requests,
-			config.Ratelimit.PerNBlocks,
-		),
+		log:                            log,
+		vegaPaths:                      vegaPaths,
+		cfg:                            config,
+		cancelFn:                       cancelFn,
+		stopBlockchain:                 stopBlockchain,
 		assets:                         assets,
 		banking:                        banking,
 		broker:                         broker,
@@ -1048,7 +1042,6 @@ func (app *App) OnBeginBlock(blockHeight uint64, blockHash string, blockTime tim
 	app.blockCtx = ctx
 	now := blockTime
 	app.time.SetTimeNow(ctx, now)
-	app.rates.NextBlock()
 	app.currentTimestamp = app.time.GetTimeNow()
 	app.previousTimestamp = app.time.GetTimeLastBatch()
 	app.log.Debug("ABCI service BEGIN completed",
@@ -1330,10 +1323,6 @@ func (app *App) OnCheckTx(ctx context.Context, _ *tmtypes.RequestCheckTx, tx abc
 		return ctx, &resp
 	}
 
-	// Check ratelimits
-	// FIXME(): temporary disable all rate limiting
-	_, isval := app.limitPubkey(tx.PubKeyHex())
-
 	gasWanted, err := app.gastimator.CalcGasWantedForTx(tx)
 	if err != nil { // this error means the transaction couldn't be parsed
 		app.log.Error("error getting gas estimate", logging.Error(err))
@@ -1347,28 +1336,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ *tmtypes.RequestCheckTx, tx abc
 		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
 	}
 
-	if isval {
-		return ctx, &resp
-	}
-
 	return ctx, &resp
-}
-
-// limitPubkey returns whether a request should be rate limited or not.
-func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
-	// Do not rate limit validators nodes.
-	if app.top.IsValidatorVegaPubKey(pk) {
-		return false, true
-	}
-
-	key := ratelimit.Key(pk).String()
-	if !app.rates.Allow(key) {
-		app.log.Debug("Rate limit exceeded", logging.String("key", key))
-		return true, false
-	}
-
-	app.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", app.rates.Count(key)))
-	return false, false
 }
 
 func (app *App) canSubmitTx(tx abci.Tx) (err error) {
