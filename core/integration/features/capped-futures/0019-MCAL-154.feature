@@ -122,3 +122,49 @@ Feature: Margin calculation on a fully collateralised capped future
       | aux3   | ETH/DEC21 | 300         | 300    | 300     | 300     | cross margin |
       | aux4   | ETH/DEC21 | 1100        | 1100   | 1100    | 1100    | cross margin |
 
+    #0019-MCAL-156
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux4  | ETH/DEC21 | buy  | 15     | 18    | 0                | TYPE_LIMIT | TIF_GTC | aux3-1    |
+    And the network moves ahead "2" blocks
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC21 | 250    | 9650    |
+      | party2 | USD   | ETH/DEC21 | 250    | 9850    |
+      | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
+      | aux3   | USD   | ETH/DEC21 | 300    | 99702   |
+      | aux4   | USD   | ETH/DEC21 | 1100   | 98892   |
+
+    #0019-MCAL-157
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux4  | ETH/DEC21 | buy  | 30     | 16    | 0                | TYPE_LIMIT | TIF_GTC | aux3-1    |
+    And the network moves ahead "2" blocks
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC21 | 250    | 9650    |
+      | party2 | USD   | ETH/DEC21 | 250    | 9850    |
+      | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
+      | aux3   | USD   | ETH/DEC21 | 300    | 99702   |
+      | aux4   | USD   | ETH/DEC21 | 1420   | 98572   |
+
+    #0019-MCAL-158
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux3  | ETH/DEC21 | sell | 20     | 17    | 1                | TYPE_LIMIT | TIF_GTC | aux3-1    |
+    And the network moves ahead "2" blocks
+
+    And the following trades should be executed:
+      | buyer | price | size | seller |
+      | aux4  | 18    | 15   | aux3   |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC21 | 250    | 9590    |
+      | party2 | USD   | ETH/DEC21 | 250    | 9910    |
+      | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
+      | aux3   | USD   | ETH/DEC21 | 785    | 99089   |
+      | aux4   | USD   | ETH/DEC21 | 610   | 99504   |
+
