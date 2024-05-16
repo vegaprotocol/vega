@@ -42,11 +42,11 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | party    | asset | amount    |
       | party1   | USD   | 10000     |
       | party2   | USD   | 10000     |
-      | party3   | USD   | 5000      |
       | aux1     | USD   | 100000    |
       | aux2     | USD   | 100000    |
       | aux3     | USD   | 100000    |
       | aux4     | USD   | 100000    |
+      | aux5     | USD   | 100000    |
       | party-lp | USD   | 100000000 |
 
     And the parties submit the following liquidity provision:
@@ -123,7 +123,7 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
     # MTM settlement 5 long makes a profit of 2000, 5 short loses 2000
     # Now for aux1 and 2, the calculations from above still hold but more margin is required due to the open positions:
     # aux1: position * 1100 + 999*2 = 1100 + 1998 = 3098
-    # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 0
+    # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 3*(1100+1500*2)/3
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | USD   | ETH/DEC21 | 5000   | 7500    |
@@ -138,6 +138,26 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
       | aux2   | ETH/DEC21 | 402         | 402    | 402     | 402     | cross margin |
       | aux1   | ETH/DEC21 | 3098        | 3098   | 3098    | 3098    | cross margin |
+    #trade at max_price
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux4  | ETH/DEC21 | buy  | 2      | 1500  | 0                | TYPE_LIMIT | TIF_GTC | aux4-1    |
+      | aux5  | ETH/DEC21 | sell | 2      | 1500  | 1                | TYPE_LIMIT | TIF_GTC | aux5-1    |
+
+    And the network moves ahead "2" blocks
+
+    # aux5: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 0
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general |
+      | aux4  | USD   | ETH/DEC21 | 3000   | 97015   |
+      | aux5  | USD   | ETH/DEC21 | 0      | 99925   |
+
+    And the following transfers should happen:
+      | from   | to   | from account            | to account                       | market id | amount | asset |
+      | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 15     | USD   |
+      | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 60     | USD   |
+      | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | USD   |
+      | market | aux4 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 15     | USD   |
 
 
 
