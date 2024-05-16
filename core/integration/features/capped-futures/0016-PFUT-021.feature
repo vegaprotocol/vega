@@ -29,13 +29,13 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | 3600000 | 0.99        | 300               |
     And the log normal risk model named "lognormal-risk-model-1":
       | risk aversion | tau  | mu | r   | sigma |
-      | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
+      | 0.0002        | 0.01 | 0  | 0.0 | 1.2   |
 
     And the markets:
       | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
 
-  @SLABug @NoPerp @Capped
+  @SLABug @NoPerp @Capped @CMargin
   Scenario: 0016-PFUT-021: parties with open positions settling it at a price of `max_price`
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
@@ -104,7 +104,7 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
     # The market is fully collateralised, switching to isolated margin is not supported
     When the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                                                                                                                 |
-      | party1 | ETH/DEC21 | isolated margin | 0.5           | margin factor (0.5) must be greater than max(riskFactorLong (0.3368613079295405), riskFactorShort (0.4878731379586174)) + linearSlippageFactor (0.25) |
+      | party1 | ETH/DEC21 | isolated margin | 0.5           | margin factor (0.5) must be greater than max(riskFactorLong (0.3696680542085883), riskFactorShort (0.5650462045113667)) + linearSlippageFactor (0.25) |
       | party1 | ETH/DEC21 | isolated margin | 0.9           | isolated margin not permitted on fully collateralised markets                                                                                         |
 
     #update mark price to max_price
