@@ -16,6 +16,10 @@
 package bridges
 
 import (
+	"encoding/hex"
+	"fmt"
+
+	crypto "code.vegaprotocol.io/vega/libs/crypto/signature"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -164,10 +168,57 @@ func (e *ERC20MultiSigControl) AddSigner(
 	return sign(e.signer, msg)
 }
 
+func (e *ERC20MultiSigControl) VerifyRemoveSigner(
+	oldSigner, submitter string,
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	msg, err := e.buildRemoveSignerMessage(
+		oldSigner, submitter, nonce,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
+}
+
 func (e *ERC20MultiSigControl) RemoveSigner(
 	oldSigner, submitter string,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
+	msg, err := e.buildRemoveSignerMessage(
+		oldSigner, submitter, nonce,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return sign(e.signer, msg)
+}
+
+func (e *ERC20MultiSigControl) buildRemoveSignerMessage(
+	oldSigner, submitter string,
+	nonce *num.Uint,
+) ([]byte, error) {
 	typAddr, err := abi.NewType("address", "", nil)
 	if err != nil {
 		return nil, err
@@ -202,10 +253,5 @@ func (e *ERC20MultiSigControl) RemoveSigner(
 		return nil, err
 	}
 
-	msg, err := packScheme(buf, submitter, e.chainID, e.v1)
-	if err != nil {
-		return nil, err
-	}
-
-	return sign(e.signer, msg)
+	return packScheme(buf, submitter, e.chainID, e.v1)
 }
