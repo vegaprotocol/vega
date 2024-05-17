@@ -3071,7 +3071,9 @@ func (t *TradingDataServiceV2) getMarketPriceFactor(
 	// scale the price if needed
 	// price is expected in market decimal
 	priceFactor := num.NewUint(1)
+	fmt.Printf("DEBUGDANIEL : assetDecimal(%v), mktDecimal(%v)\n", asset.Decimals, mkt.DecimalPlaces)
 	if exp := asset.Decimals - mkt.DecimalPlaces; exp != 0 {
+		fmt.Printf("DEBUGDANIEL2: exp(%v)\n", asset.Decimals, exp)
 		priceFactor.Exp(num.NewUint(10), num.NewUint(uint64(exp)))
 	}
 	return priceFactor, nil
@@ -3293,6 +3295,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		}
 	}
 
+	fmt.Printf("DEBUGDANIEL0: %v\n", mkt.ToProto().String())
 	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
 	if err != nil {
 		return nil, err
