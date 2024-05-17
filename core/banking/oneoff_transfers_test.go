@@ -493,7 +493,7 @@ func testValidOneOffTransferWithFromDerivedKey(t *testing.T) {
 	}
 
 	e.col.EXPECT().GetPartyVestedRewardAccount(derivedKey, assetNameETH).Return(&vestedAccount, nil).Times(1)
-	e.parties.EXPECT().CheckDerivedKeyOwnership(types.PartyID(partyKey), derivedKey).Return(true, nil).Times(1)
+	e.parties.EXPECT().CheckDerivedKeyOwnership(types.PartyID(partyKey), derivedKey).Return(true).Times(1)
 
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
@@ -652,8 +652,8 @@ func testOneOffTransferInvalidOwnerTransfersWithFromDerivedKey(t *testing.T) {
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
 		assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 
-	e.parties.EXPECT().CheckDerivedKeyOwnership(types.PartyID(partyKey), derivedKey).Return(false, fmt.Errorf("not and amm owner")).Times(1)
+	e.parties.EXPECT().CheckDerivedKeyOwnership(types.PartyID(partyKey), derivedKey).Return(false).Times(1)
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
-	assert.Error(t, e.TransferFunds(ctx, transfer), "not and amm owner")
+	assert.ErrorContains(t, e.TransferFunds(ctx, transfer), "does not own derived key")
 }

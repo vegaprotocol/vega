@@ -121,7 +121,7 @@ type EthereumEventSource interface {
 }
 
 type Parties interface {
-	CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) (bool, error)
+	CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool
 }
 
 const (

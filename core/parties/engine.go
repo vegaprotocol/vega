@@ -38,9 +38,6 @@ type Engine struct {
 	// profiles tracks all parties profiles by party ID.
 	profiles                  map[types.PartyID]*types.PartyProfile
 	minBalanceToUpdateProfile *num.Uint
-
-	// derivedKeys tracks all derived keys assigned to a party
-	derivedKeys map[types.PartyID]map[string]struct{}
 }
 
 func (e *Engine) OnMinBalanceForUpdatePartyProfileUpdated(_ context.Context, min *num.Uint) error {
@@ -49,23 +46,24 @@ func (e *Engine) OnMinBalanceForUpdatePartyProfileUpdated(_ context.Context, min
 }
 
 func (e *Engine) AssignDeriveKey(party types.PartyID, derivedKey string) {
-	if _, ok := e.derivedKeys[party]; !ok {
-		e.derivedKeys[party] = map[string]struct{}{}
+	if _, ok := e.profiles[party]; !ok {
+		e.profiles[party] = &types.PartyProfile{
+			PartyID:     party,
+			Metadata:    map[string]string{},
+			DerivedKeys: []string{},
+		}
 	}
-	e.derivedKeys[party][derivedKey] = struct{}{}
+
+	e.profiles[party].DerivedKeys = append(e.profiles[party].DerivedKeys, derivedKey)
 }
 
-func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) (bool, error) {
-	derivedKeys, ok := e.derivedKeys[party]
+func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool {
+	partyProfile, ok := e.profiles[party]
 	if !ok {
-		return false, fmt.Errorf("party %q does not have any derived keys", party)
+		return false
 	}
 
-	if _, ok := derivedKeys[derivedKey]; !ok {
-		return false, fmt.Errorf("party %q does not own %q", party, derivedKey)
-	}
-
-	return true, nil
+	return slices.Contains(partyProfile.DerivedKeys, derivedKey)
 }
 
 func (e *Engine) CheckSufficientBalanceToUpdateProfile(party types.PartyID, balance *num.Uint) error {
@@ -83,7 +81,8 @@ func (e *Engine) UpdateProfile(ctx context.Context, partyID types.PartyID, cmd *
 	profile, exists := e.profiles[partyID]
 	if !exists {
 		profile = &types.PartyProfile{
-			PartyID: partyID,
+			PartyID:     partyID,
+			DerivedKeys: []string{},
 		}
 		e.profiles[partyID] = profile
 	}
@@ -110,6 +109,12 @@ func (e *Engine) loadPartiesFromSnapshot(partiesPayload *types.PayloadParties) {
 		profile.Metadata = map[string]string{}
 		for _, m := range profilePayload.Metadata {
 			profile.Metadata[m.Key] = m.Value
+		}
+
+		if profilePayload.DerivedKeys == nil {
+			profile.DerivedKeys = []string{}
+		} else {
+			profile.DerivedKeys = profilePayload.DerivedKeys
 		}
 
 		e.profiles[profile.PartyID] = profile

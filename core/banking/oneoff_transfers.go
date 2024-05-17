@@ -87,9 +87,9 @@ func (e *Engine) oneOffTransfer(
 	}
 
 	if transfer.FromDerivedKey != nil {
-		if _, err := e.parties.CheckDerivedKeyOwnership(types.PartyID(transfer.From), *transfer.FromDerivedKey); err != nil {
+		if ownsDerivedKey := e.parties.CheckDerivedKeyOwnership(types.PartyID(transfer.From), *transfer.FromDerivedKey); !ownsDerivedKey {
 			transfer.Status = types.TransferStatusRejected
-			return err
+			return fmt.Errorf("party %s does not own derived key %s", transfer.From, *transfer.FromDerivedKey)
 		}
 	}
 

@@ -732,12 +732,11 @@ func (m *MockParties) EXPECT() *MockPartiesMockRecorder {
 }
 
 // CheckDerivedKeyOwnership mocks base method.
-func (m *MockParties) CheckDerivedKeyOwnership(arg0 types.PartyID, arg1 string) (bool, error) {
+func (m *MockParties) CheckDerivedKeyOwnership(arg0 types.PartyID, arg1 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckDerivedKeyOwnership", arg0, arg1)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // CheckDerivedKeyOwnership indicates an expected call of CheckDerivedKeyOwnership.
