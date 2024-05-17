@@ -19,6 +19,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.76.3
+
+### 🐛 Fixes
+
+- [11284](https://github.com/vegaprotocol/vega/pull/11284) - Do not account for started block in the past block range.
+
 ## 0.76.2
 
 ### 🐛 Fixes
