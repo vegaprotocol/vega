@@ -1668,7 +1668,7 @@ type Transfer struct {
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Reference to be attached to the transfer.
 	Reference string `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Optional AMM key from which assets are transferred.
+	// AMM key from which assets are to be transferred, if applicable.
 	// The submitter of the transaction must be the owner of this AMM key.
 	// If provided, the 'from_account_type' must be REWARDS_VESTED, and the asset in this account
 	// must match the asset specified in the transfer.

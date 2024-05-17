@@ -4705,7 +4705,7 @@ message EstimateTransferFeeRequest {
   string amount = 4;
   // Asset ID for the asset associated with the transaction.
   string asset_id = 5;
-  // Optional saction must be the owner of this AMM key key from which assets are transferred.
+  // AMM public key, if assets are being transferred from an AMM key to the AMM owner's public key.
   // The `from_account` must be the owner of this AMM key.
   optional string from_amm_key = 6;
 }

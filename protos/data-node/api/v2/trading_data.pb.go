@@ -24811,7 +24811,7 @@ type EstimateTransferFeeRequest struct {
 	Amount string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Asset ID for the asset associated with the transaction.
 	AssetId string `protobuf:"bytes,5,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	// Optional saction must be the owner of this AMM key key from which assets are transferred.
+	// AMM public key, if assets are being transferred from an AMM key to the AMM owner's public key.
 	// The `from_account` must be the owner of this AMM key.
 	FromAmmKey *string `protobuf:"bytes,6,opt,name=from_amm_key,json=fromAmmKey,proto3,oneof" json:"from_amm_key,omitempty"`
 }
