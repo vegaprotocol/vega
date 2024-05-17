@@ -3038,8 +3038,8 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 	if err != nil {
 		return nil, err
 	}
-
-	return price.Mul(price, priceFactor), nil
+	price, _ = num.UintFromDecimal(price.ToDecimal().Mul(priceFactor))
+	return price, nil
 }
 
 func (t *TradingDataServiceV2) scaleDecimalFromMarketToAssetPrice(
@@ -3057,24 +3057,23 @@ func (t *TradingDataServiceV2) scaleDecimalFromAssetToMarketPrice(
 func (t *TradingDataServiceV2) getMarketPriceFactor(
 	ctx context.Context,
 	mkt entities.Market,
-) (*num.Uint, error) {
+) (num.Decimal, error) {
 	assetID, err := mkt.ToProto().GetAsset()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting asset from market")
+		return num.DecimalZero(), errors.Wrap(err, "getting asset from market")
 	}
 
 	asset, err := t.AssetService.GetByID(ctx, assetID)
 	if err != nil {
-		return nil, errors.Wrapf(ErrAssetServiceGetByID, "assetID: %s", assetID)
+		return num.DecimalZero(), errors.Wrapf(ErrAssetServiceGetByID, "assetID: %s", assetID)
 	}
 
 	// scale the price if needed
 	// price is expected in market decimal
-	priceFactor := num.NewUint(1)
-	fmt.Printf("DEBUGDANIEL : assetDecimal(%v), mktDecimal(%v)\n", asset.Decimals, mkt.DecimalPlaces)
+	priceFactor := num.DecimalOne()
+	// this could be negative, use decimal
 	if exp := asset.Decimals - mkt.DecimalPlaces; exp != 0 {
-		fmt.Printf("DEBUGDANIEL2: exp(%v)\n", asset.Decimals, exp)
-		priceFactor.Exp(num.NewUint(10), num.NewUint(uint64(exp)))
+		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 	return priceFactor, nil
 }
@@ -3301,7 +3300,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, err
 	}
 
-	dPriceFactor := priceFactor.ToDecimal()
+	dPriceFactor := priceFactor
 
 	buyOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
 	sellOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
