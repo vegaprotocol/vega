@@ -86,14 +86,22 @@ func (e *Engine) oneOffTransfer(
 		return err
 	}
 
-	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From); err != nil {
+	if transfer.FromDerivedKey != nil {
+		if ownsDerivedKey := e.parties.CheckDerivedKeyOwnership(types.PartyID(transfer.From), *transfer.FromDerivedKey); !ownsDerivedKey {
+			transfer.Status = types.TransferStatusRejected
+			return fmt.Errorf("party %s does not own derived key %s", transfer.From, *transfer.FromDerivedKey)
+		}
+	}
+
+	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From, transfer.FromDerivedKey); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
 
 	tresps, err := e.processTransfer(
 		ctx, a, transfer.From, transfer.To, "", transfer.FromAccountType,
-		transfer.ToAccountType, transfer.Amount, transfer.Reference, transfer.ID, e.currentEpoch, transfer,
+		transfer.ToAccountType, transfer.Amount, transfer.Reference, transfer.ID, e.currentEpoch, transfer.FromDerivedKey,
+		transfer,
 	)
 	if err != nil {
 		transfer.Status = types.TransferStatusRejected

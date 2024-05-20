@@ -87,7 +87,7 @@ func (e *Engine) recurringTransfer(
 		return err
 	}
 
-	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From); err != nil {
+	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From, transfer.FromDerivedKey); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
@@ -272,7 +272,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			e.log.Panic("this should never happen", logging.Error(err))
 		}
 
-		if err = e.ensureMinimalTransferAmount(a, amount, v.FromAccountType, v.From); err != nil {
+		if err = e.ensureMinimalTransferAmount(a, amount, v.FromAccountType, v.From, v.FromDerivedKey); err != nil {
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error(), e.getGameID(v)))
@@ -286,11 +286,12 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		var r []*types.LedgerMovement
 		if v.DispatchStrategy == nil {
 			resps, err = e.processTransfer(
-				ctx, a, v.From, v.To, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, v.ID, newEpoch, nil, // last is eventual oneoff, which this is not
+				ctx, a, v.From, v.To, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, v.ID, newEpoch,
+				v.FromDerivedKey, nil, // last is eventual oneoff, which this is not
 			)
 		} else {
 			// check if the amount + fees can be covered by the party issuing the transfer
-			if err = e.ensureFeeForTransferFunds(a, amount, v.From, v.FromAccountType, v.To); err == nil {
+			if err = e.ensureFeeForTransferFunds(a, amount, v.From, v.FromAccountType, v.FromDerivedKey, v.To); err == nil {
 				// NB: if the metric is market value we're going to transfer the bonus if any directly
 				// to the market account of the asset/reward type - this is similar to previous behaviour and
 				// different to how all other metric based rewards behave. The reason is that we need the context of the funder
@@ -303,7 +304,8 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 							continue
 						}
 						r, err = e.processTransfer(
-							ctx, a, v.From, v.To, fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, v.ID, newEpoch, nil, // last is eventual oneoff, which this is not
+							ctx, a, v.From, v.To, fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, v.ID,
+							newEpoch, v.FromDerivedKey, nil, // last is eventual oneoff, which this is not
 						)
 						if err != nil {
 							e.log.Error("failed to process transfer",
@@ -329,7 +331,8 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 					p, _ := proto.Marshal(v.DispatchStrategy)
 					hash := hex.EncodeToString(crypto.Hash(p))
 					r, err = e.processTransfer(
-						ctx, a, v.From, v.To, hash, v.FromAccountType, v.ToAccountType, amount, v.Reference, v.ID, newEpoch, nil, // last is eventual oneoff, which this is not
+						ctx, a, v.From, v.To, hash, v.FromAccountType, v.ToAccountType, amount, v.Reference, v.ID, newEpoch,
+						v.FromDerivedKey, nil, // last is eventual oneoff, which this is not
 					)
 					if err != nil {
 						e.log.Error("failed to process transfer", logging.Error(err))

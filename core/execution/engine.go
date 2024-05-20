@@ -86,6 +86,7 @@ type Engine struct {
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
 	banking                       common.Banking
+	parties                       common.Parties
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -198,6 +199,7 @@ func NewEngine(
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
 	banking common.Banking,
+	parties common.Parties,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -224,6 +226,7 @@ func NewEngine(
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
 		banking:                       banking,
+		parties:                       parties,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -756,6 +759,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
 		e.banking,
+		e.parties,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

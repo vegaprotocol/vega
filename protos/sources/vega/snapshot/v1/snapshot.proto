@@ -1407,6 +1407,7 @@ message PartyProfile {
   string party_id = 1;
   string alias = 2;
   repeated vega.Metadata metadata = 3;
+  repeated string derived_keys = 4;
 }
 
 message AMMValues {

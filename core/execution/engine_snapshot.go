@@ -217,6 +217,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
 		e.banking,
+		e.parties,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

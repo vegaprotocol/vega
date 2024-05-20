@@ -326,12 +326,14 @@ func newServices(
 		svcs.volumeDiscount.OnEpochRestore,
 	)
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView, svcs.secondaryBridgeView, svcs.primaryEventForwarderEngine, svcs.secondaryEventForwarderEngine)
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService,
+		svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView,
+		svcs.secondaryBridgeView, svcs.primaryEventForwarderEngine, svcs.secondaryEventForwarderEngine, svcs.partiesEngine)
 
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
-		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking,
+		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking, svcs.partiesEngine,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)

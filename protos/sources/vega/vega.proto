@@ -15,6 +15,8 @@ message PartyProfile {
   // Metadata to associate to a party, in a key/value format where the key
   // describes the type of metadata in the value field.
   repeated vega.Metadata metadata = 3;
+  // Derived keys for the party.
+  repeated string derived_keys = 4;
 }
 
 // Generic structure holding a key/value pair.

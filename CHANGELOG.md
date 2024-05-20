@@ -17,13 +17,14 @@
 - [11196](https://github.com/vegaprotocol/vega/issues/11196) - Add an active field in the price monitoring bounds payload.
 - [11211](https://github.com/vegaprotocol/vega/issues/11211) - Liquidation engine includes `vAMM` shapes as available volume.
 - [11217](https://github.com/vegaprotocol/vega/issues/11217) - Allow market proposals to override risk factors.
+- [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
 
 ### 🐛 Fixes
 
 - [11066](https://github.com/vegaprotocol/vega/issues/11066) - Ensure vesting statistics match vesting accounts numbers.
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
-- [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
+- [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 
 ## 0.76.1
 
@@ -32,8 +33,7 @@
 - [11250](https://github.com/vegaprotocol/vega/issues/11250) - Add missing dispatch strategy in transfer proposal.
 - [11252](https://github.com/vegaprotocol/vega/issues/11252) - Treat no position as zero position when calculating stop order overrides.
 - [11249](https://github.com/vegaprotocol/vega/issues/11249) - Composite mark price oracles are now deactivated when a market is rejected.
-- [11262](https://github.com/vegaprotocol/vega/pull/11262)   - Fix auction extensions after risk parameter update.
-
+- [11262](https://github.com/vegaprotocol/vega/pull/11262) - Fix auction extensions after risk parameter update.
 
 ## 0.76.0
 
@@ -116,7 +116,6 @@
 - [11205](https://github.com/vegaprotocol/vega/issues/11205) - Evaluate transfer interval correctly.
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Add transfer ID to recurring governance transfer ledger entries.
 - [11221](https://github.com/vegaprotocol/vega/issues/11221) - Fix for `totalRewardsEarned` being twice the `rewardEarned`.
-
 
 ## 0.75.0
 

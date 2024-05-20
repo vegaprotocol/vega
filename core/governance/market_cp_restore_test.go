@@ -210,8 +210,9 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	execBanking := emocks.NewMockBanking(ctrl)
+	parties := emocks.NewMockParties(ctrl)
 
-	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, referralDiscountReward, volumeDiscount, execBanking)
+	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, referralDiscountReward, volumeDiscount, execBanking, parties)
 	accounts := mocks.NewMockStakingAccounts(ctrl)
 
 	witness := mocks.NewMockWitness(ctrl)

@@ -5280,6 +5280,7 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 		accumulatedDiscount,
 		req.FromAccount,
 		req.FromAccountType,
+		req.FromAmmKey,
 		req.ToAccount,
 	)
 

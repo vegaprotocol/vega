@@ -68,6 +68,7 @@ func NewMarketFromSnapshot(
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
 	banking common.Banking,
+	parties common.Parties,
 ) (*Market, error) {
 	mkt := em.Market
 
@@ -93,9 +94,9 @@ func NewMarketFromSnapshot(
 
 	var ammEngine *amm.Engine
 	if em.Amm == nil {
-		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker)
+		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker, parties)
 	} else {
-		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker)
+		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker, parties)
 		if err != nil {
 			return nil, err
 		}

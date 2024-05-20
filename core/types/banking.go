@@ -48,6 +48,7 @@ var (
 	ErrMissingTransferKind           = errors.New("missing transfer kind")
 	ErrCannotTransferZeroFunds       = errors.New("cannot transfer zero funds")
 	ErrInvalidFromAccount            = errors.New("invalid from account")
+	ErrInvalidFromDerivedKey         = errors.New("invalid from derived key")
 	ErrInvalidToAccount              = errors.New("invalid to account")
 	ErrUnsupportedFromAccountType    = errors.New("unsupported from account type")
 	ErrUnsupportedToAccountType      = errors.New("unsupported to account type")
@@ -68,6 +69,7 @@ const (
 type TransferBase struct {
 	ID              string
 	From            string
+	FromDerivedKey  *string
 	FromAccountType AccountType
 	To              string
 	ToAccountType   AccountType
@@ -91,6 +93,22 @@ func (t *TransferBase) IsValid() error {
 		return ErrCannotTransferZeroFunds
 	}
 
+	// check for derived account transfer
+	if t.FromDerivedKey != nil {
+		if !vgcrypto.IsValidVegaPubKey(*t.FromDerivedKey) {
+			return ErrInvalidFromDerivedKey
+		}
+
+		if t.FromAccountType != AccountTypeVestedRewards {
+			return ErrUnsupportedFromAccountType
+		}
+
+		if t.ToAccountType != AccountTypeGeneral {
+			return ErrUnsupportedToAccountType
+		}
+	}
+
+	// check for any other transfers
 	switch t.FromAccountType {
 	case AccountTypeGeneral, AccountTypeVestedRewards /*, AccountTypeLockedForStaking*/ :
 		break
@@ -363,7 +381,7 @@ func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, e
 		return nil, errors.New("invalid transfer amount")
 	}
 
-	return &TransferBase{
+	tb := &TransferBase{
 		ID:              id,
 		From:            from,
 		FromAccountType: tf.FromAccountType,
@@ -373,7 +391,13 @@ func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, e
 		Amount:          amount,
 		Reference:       tf.Reference,
 		Status:          TransferStatusPending,
-	}, nil
+	}
+
+	if tf.From != nil {
+		tb.FromDerivedKey = tf.From
+	}
+
+	return tb, nil
 }
 
 func newOneOffTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {

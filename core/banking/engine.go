@@ -40,7 +40,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource,Parties
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
@@ -120,6 +120,10 @@ type EthereumEventSource interface {
 	UpdateCollateralStartingBlock(uint64)
 }
 
+type Parties interface {
+	CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool
+}
+
 const (
 	pendingState uint32 = iota
 	okState
@@ -143,6 +147,7 @@ type Engine struct {
 	notary      Notary
 	assets      Assets
 	top         Topology
+	parties     Parties
 
 	// assetActions tracks all the asset actions the engine must process on network
 	// tick.
@@ -234,6 +239,7 @@ func New(log *logging.Logger,
 	secondaryBridgeView ERC20BridgeView,
 	primaryEthEventSource EthereumEventSource,
 	secondaryEthEventSource EthereumEventSource,
+	parties Parties,
 ) (e *Engine) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -250,6 +256,7 @@ func New(log *logging.Logger,
 		top:                             top,
 		primaryEthEventSource:           primaryEthEventSource,
 		secondaryEthEventSource:         secondaryEthEventSource,
+		parties:                         parties,
 		assetActions:                    map[string]*assetAction{},
 		seenAssetActions:                treeset.NewWithStringComparator(),
 		withdrawals:                     map[string]withdrawalRef{},

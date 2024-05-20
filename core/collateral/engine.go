@@ -3577,19 +3577,19 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 // CreatePartyAMMSubAccounts ...
 func (e *Engine) CreatePartyAMMsSubAccounts(
 	ctx context.Context,
-	party, subAccount, asset, market string,
+	party, ammKey, asset, market string,
 ) (general *types.Account, margin *types.Account, err error) {
-	generalID, err := e.CreatePartyGeneralAccount(ctx, subAccount, asset)
+	generalID, err := e.CreatePartyGeneralAccount(ctx, ammKey, asset)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	marginID, err := e.CreatePartyMarginAccount(ctx, subAccount, market, asset)
+	marginID, err := e.CreatePartyMarginAccount(ctx, ammKey, market, asset)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	_, err = e.CreatePartyLiquidityFeeAccount(ctx, subAccount, market, asset)
+	_, err = e.CreatePartyLiquidityFeeAccount(ctx, ammKey, market, asset)
 	if err != nil {
 		return nil, nil, err
 	}

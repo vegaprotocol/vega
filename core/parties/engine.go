@@ -45,6 +45,27 @@ func (e *Engine) OnMinBalanceForUpdatePartyProfileUpdated(_ context.Context, min
 	return nil
 }
 
+func (e *Engine) AssignDeriveKey(party types.PartyID, derivedKey string) {
+	if _, ok := e.profiles[party]; !ok {
+		e.profiles[party] = &types.PartyProfile{
+			PartyID:     party,
+			Metadata:    map[string]string{},
+			DerivedKeys: []string{},
+		}
+	}
+
+	e.profiles[party].DerivedKeys = append(e.profiles[party].DerivedKeys, derivedKey)
+}
+
+func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool {
+	partyProfile, ok := e.profiles[party]
+	if !ok {
+		return false
+	}
+
+	return slices.Contains(partyProfile.DerivedKeys, derivedKey)
+}
+
 func (e *Engine) CheckSufficientBalanceToUpdateProfile(party types.PartyID, balance *num.Uint) error {
 	if balance.LT(e.minBalanceToUpdateProfile) {
 		return fmt.Errorf("party %q does not have sufficient balance to update profile code, required balance %s available balance %s", party, e.minBalanceToUpdateProfile.String(), balance.String())
@@ -60,7 +81,8 @@ func (e *Engine) UpdateProfile(ctx context.Context, partyID types.PartyID, cmd *
 	profile, exists := e.profiles[partyID]
 	if !exists {
 		profile = &types.PartyProfile{
-			PartyID: partyID,
+			PartyID:     partyID,
+			DerivedKeys: []string{},
 		}
 		e.profiles[partyID] = profile
 	}
@@ -87,6 +109,12 @@ func (e *Engine) loadPartiesFromSnapshot(partiesPayload *types.PayloadParties) {
 		profile.Metadata = map[string]string{}
 		for _, m := range profilePayload.Metadata {
 			profile.Metadata[m.Key] = m.Value
+		}
+
+		if profilePayload.DerivedKeys == nil {
+			profile.DerivedKeys = []string{}
+		} else {
+			profile.DerivedKeys = profilePayload.DerivedKeys
 		}
 
 		e.profiles[profile.PartyID] = profile
