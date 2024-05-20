@@ -19,6 +19,7 @@
 - [11217](https://github.com/vegaprotocol/vega/issues/11217) - Allow market proposals to override risk factors.
 - [11285](https://github.com/vegaprotocol/vega/issues/11285) - Add support for trading transaction ordering.
 - [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
+- [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
 
 ### 🐛 Fixes
 
