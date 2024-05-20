@@ -72,10 +72,29 @@ var validatorsTestnet = `{
   ]
 }`
 
+var mainnet = `{
+  "configs": [
+    {
+      "network_id": "42161",
+      "chain_id": "42161",
+      "collateral_bridge_contract": {
+        "address": "0x475B597652bCb2769949FD6787b1DC6916518407"
+      },
+      "confirmations": 3,
+      "multisig_control_contract": {
+        "address": "0x348372DE65Ca7F2567FE267ccc4D1bF6d4b71f6F",
+        "deployment_block_height": 213213613
+      },
+      "block_time": "250ms",
+      "name": "Arbitrum One"
+    }
+  ]
+}`
+
 var bridgeMapping = map[string]string{
 	"vega-stagnet1-202307191148":       stagnet1,
 	"vega-fairground-202305051805":     testnet,
 	"vega-mainnet-mirror-202306231148": "{}",
 	"vega-testnet-0002-v4":             validatorsTestnet,
-	"vega-mainnet-0011":                "{}",
+	"vega-mainnet-0011":                mainnet,
 }
