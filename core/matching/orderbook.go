@@ -567,8 +567,8 @@ func (b *OrderBook) uncrossBookSide(
 	}
 	// get price factor, if price is 10,000, but market price is 100, this is 10,000/100 -> 100
 	// so we can get the market price simply by doing price / (order.Price/ order.OriginalPrice)
-	mPrice := num.UintZero().Div(uncrossOrders[0].Price, uncrossOrders[0].OriginalPrice)
-	mPrice.Div(price, mPrice)
+	// as the asset decimals may be < market decimals, the calculation must be done in decimals.
+	mPrice, _ := num.UintFromDecimal(price.ToDecimal().Div(uncrossOrders[0].Price.ToDecimal().Div(uncrossOrders[0].OriginalPrice.ToDecimal())))
 	// Uncross each one
 	for _, order := range uncrossOrders {
 		// since all of uncrossOrders will be traded away and at the same uncrossing price
