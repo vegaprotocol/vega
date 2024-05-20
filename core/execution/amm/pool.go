@@ -529,7 +529,7 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 	return buys, sells
 }
 
-// PriceForVolume returns the price the AMM is willing to trade at to match with the given volume.
+// PriceForVolume returns the price the AMM is willing to trade at to match with the given volume of an incoming order.
 func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
 	x, y := p.virtualBalances(p.getPosition(), p.fairPrice(), side)
 
@@ -537,10 +537,15 @@ func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
 	// where y and x are the balances on either side of the pool, and dx is the change in volume
 	// then the trade price is dy/dx
 	dx := num.DecimalFromInt64(int64(volume))
+	if side == types.SideSell {
+		// if incoming order is a sell, the AMM is buying so reducing cash balance so dx is negative
+		dx = dx.Neg()
+	}
+
 	dy := x.Mul(y).Div(x.Sub(dx)).Sub(y)
 
 	// dy / dx
-	price, overflow := num.UintFromDecimal(dy.Div(dx))
+	price, overflow := num.UintFromDecimal(dy.Div(dx).Abs())
 	if overflow {
 		panic("calculated negative price")
 	}

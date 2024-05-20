@@ -404,6 +404,16 @@ func TestNotebook(t *testing.T) {
 	ensurePosition(t, p.pos, 500, lowmid.Clone())
 	fairPrice = p.pool.BestPrice(nil)
 	assert.Equal(t, "1854", fairPrice.String())
+
+	// fair price is 2000 and the AMM quotes a best-buy at 1999 so incoming SELL should have a price <= 1999
+	ensurePositionN(t, p.pos, 0, lowmid.Clone(), 2)
+	price := p.pool.PriceForVolume(100, types.SideSell)
+	assert.Equal(t, "1984", price.String())
+
+	// fair price is 2000 and the AMM quotes a best-buy at 2001 so incoming BUY should have a price >= 2001
+	ensurePositionN(t, p.pos, 0, lowmid.Clone(), 2)
+	price = p.pool.PriceForVolume(100, types.SideBuy)
+	assert.Equal(t, "2014", price.String())
 }
 
 type tstPool struct {
