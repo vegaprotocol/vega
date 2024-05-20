@@ -32,7 +32,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/vesting ActivityStreakVestingMultiplier,Assets
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/vesting ActivityStreakVestingMultiplier,Assets,Parties
 
 type Collateral interface {
 	TransferVestedRewards(ctx context.Context, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
@@ -52,6 +52,10 @@ type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 }
 
+type Parties interface {
+	RelatedKeys(key string) (*types.PartyID, []string)
+}
+
 type PartyRewards struct {
 	// the amounts per assets still being locked in the
 	// account and not available to be released
@@ -61,6 +65,11 @@ type PartyRewards struct {
 	// the current part of the vesting account
 	// per asset available for vesting
 	Vesting map[string]*num.Uint
+}
+
+type MultiplierWithQuantumBalance struct {
+	Multiplier     num.Decimal
+	QuantumBalance num.Decimal
 }
 
 type Engine struct {
@@ -78,6 +87,12 @@ type Engine struct {
 	state                map[string]*PartyRewards
 	epochSeq             uint64
 	upgradeHackActivated bool
+
+	parties Parties
+
+	// cache the reward bonus multiplier and quantum balance
+	// across all summed party-owned reward accounts (including derived keys) by party.
+	summedRewardBonusMultiplierCache map[string]MultiplierWithQuantumBalance
 }
 
 func New(
@@ -86,16 +101,19 @@ func New(
 	asvm ActivityStreakVestingMultiplier,
 	broker Broker,
 	assets Assets,
+	parties Parties,
 ) *Engine {
 	log = log.Named(namedLogger)
 
 	return &Engine{
-		log:    log,
-		c:      c,
-		asvm:   asvm,
-		broker: broker,
-		assets: assets,
-		state:  map[string]*PartyRewards{},
+		log:                              log,
+		c:                                c,
+		asvm:                             asvm,
+		broker:                           broker,
+		assets:                           assets,
+		parties:                          parties,
+		state:                            map[string]*PartyRewards{},
+		summedRewardBonusMultiplierCache: map[string]MultiplierWithQuantumBalance{},
 	}
 }
 
@@ -138,6 +156,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		e.broadcastVestingStatsUpdate(ctx, epoch.Seq)
 		e.broadcastSummary(ctx, epoch.Seq)
 		e.clearState()
+		e.clearCache()
 	}
 }
 
@@ -159,9 +178,7 @@ func (e *Engine) AddReward(
 	e.increaseLockedForAsset(party, asset, amount, lockedForEpochs)
 }
 
-func (e *Engine) GetRewardBonusMultiplier(party string) (num.Decimal, num.Decimal) {
-	quantumBalance := e.c.GetAllVestingQuantumBalance(party)
-
+func (e *Engine) rewardBonusMultiplier(quantumBalance num.Decimal) num.Decimal {
 	multiplier := num.DecimalOne()
 
 	for _, b := range e.benefitTiers {
@@ -172,7 +189,64 @@ func (e *Engine) GetRewardBonusMultiplier(party string) (num.Decimal, num.Decima
 		multiplier = b.RewardMultiplier
 	}
 
-	return quantumBalance, multiplier
+	return multiplier
+}
+
+func (e *Engine) getSummedBonusMultiplier(party string, derivedKeys []string, quantumBalance num.Decimal) MultiplierWithQuantumBalance {
+	summed := MultiplierWithQuantumBalance{QuantumBalance: quantumBalance}
+
+	for _, key := range derivedKeys {
+		quantumBalanceForKey := e.c.GetAllVestingQuantumBalance(key)
+		if quantumBalanceForKey.IsZero() {
+			continue
+		}
+
+		summed.QuantumBalance = summed.QuantumBalance.Add(quantumBalanceForKey)
+	}
+
+	summed.Multiplier = e.rewardBonusMultiplier(summed.QuantumBalance)
+
+	return summed
+}
+
+// GetRewardBonusMultiplier returns the reward bonus multiplier and quantum balance for a party.
+func (e *Engine) GetRewardBonusMultiplier(party string) (num.Decimal, num.Decimal) {
+	partyID, derivedKeys := e.parties.RelatedKeys(party)
+	if partyID != nil {
+		party = partyID.String()
+	}
+
+	quantumBalance := e.c.GetAllVestingQuantumBalance(party)
+	summed := e.getSummedBonusMultiplier(party, derivedKeys, quantumBalance)
+
+	return summed.QuantumBalance, summed.Multiplier
+}
+
+// getSingleAndSummedRewardBonusMultipliersCached returns a single and summed reward bonus multipliers and quantum balances for a party.
+// The single multiplier is calculated based on the quantum balance of the party.
+// The summed multiplier is calculated based on the quantum balance of the party and all derived keys.
+// Caches the summed multiplier and quantum balance for the party.
+func (e *Engine) getSingleAndSummedRewardBonusMultipliersCached(party string) (
+	single MultiplierWithQuantumBalance,
+	summed MultiplierWithQuantumBalance,
+) {
+	partyID, derivedKeys := e.parties.RelatedKeys(party)
+	if partyID != nil {
+		party = partyID.String()
+	}
+
+	single.QuantumBalance = e.c.GetAllVestingQuantumBalance(party)
+	single.Multiplier = e.rewardBonusMultiplier(single.QuantumBalance)
+
+	if cached, ok := e.summedRewardBonusMultiplierCache[party]; ok {
+		return single, cached
+	}
+
+	summed = e.getSummedBonusMultiplier(party, derivedKeys, single.QuantumBalance)
+
+	e.summedRewardBonusMultiplierCache[party] = summed
+
+	return single, summed
 }
 
 func (e *Engine) getPartyRewards(party string) *PartyRewards {
@@ -336,6 +410,10 @@ func (e *Engine) clearState() {
 	}
 }
 
+func (e *Engine) clearCache() {
+	e.summedRewardBonusMultiplierCache = map[string]MultiplierWithQuantumBalance{}
+}
+
 func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
 	evt := &eventspb.VestingBalancesSummary{
 		EpochSeq:              seq,
@@ -408,13 +486,16 @@ func (e *Engine) broadcastVestingStatsUpdate(ctx context.Context, seq uint64) {
 	slices.Sort(parties)
 
 	for _, party := range parties {
-		quantumBalance, multiplier := e.GetRewardBonusMultiplier(party)
+		single, summed := e.getSingleAndSummedRewardBonusMultipliersCached(party)
 		// To avoid excessively large decimals.
-		quantumBalance.Round(2)
+		single.QuantumBalance.Round(2)
+		summed.QuantumBalance.Round(2)
 		evt.Stats = append(evt.Stats, &eventspb.PartyVestingStats{
-			PartyId:               party,
-			RewardBonusMultiplier: multiplier.String(),
-			QuantumBalance:        quantumBalance.String(),
+			PartyId:                     party,
+			RewardBonusMultiplier:       single.Multiplier.String(),
+			QuantumBalance:              single.QuantumBalance.String(),
+			SummedRewardBonusMultiplier: summed.Multiplier.String(),
+			SummedQuantumBalance:        summed.QuantumBalance.String(),
 		})
 	}
 

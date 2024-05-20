@@ -55,10 +55,11 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	asvm := mocks.NewMockActivityStreakVestingMultiplier(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
+	parties := mocks.NewMockParties(ctrl)
 
 	return &testEngine{
 		Engine: vesting.New(
-			logger, col, asvm, broker, assets,
+			logger, col, asvm, broker, assets, parties,
 		),
 		ctrl:   ctrl,
 		broker: broker,
@@ -87,10 +88,11 @@ func newEngine(t *testing.T) *testSnapshotEngine {
 	asvm := mocks.NewMockActivityStreakVestingMultiplier(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
+	parties := mocks.NewMockParties(ctrl)
 
 	return &testSnapshotEngine{
 		engine: vesting.NewSnapshotEngine(
-			logging.NewTestLogger(), col, asvm, broker, assets,
+			logging.NewTestLogger(), col, asvm, broker, assets, parties,
 		),
 		ctrl:         ctrl,
 		col:          col,

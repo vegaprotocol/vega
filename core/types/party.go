@@ -37,5 +37,5 @@ type PartyProfile struct {
 	PartyID     PartyID
 	Alias       string
 	Metadata    map[string]string
-	DerivedKeys []string
+	DerivedKeys map[string]struct{}
 }
