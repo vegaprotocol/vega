@@ -160,9 +160,14 @@ func testBasicSubmitOrder(t *testing.T) {
 		Price:     num.NewUint(1900),
 	}
 
+	// fair-price is now 2020
+	bb, _, ba, _ := tst.engine.BestPricesAndVolumes()
+	assert.Equal(t, "2019", bb.String())
+	assert.Equal(t, "2021", ba.String())
+
 	orders = tst.engine.SubmitOrder(agg, num.NewUint(2020), num.NewUint(1990))
 	require.Len(t, orders, 1)
-	assert.Equal(t, "2035", orders[0].Price.String())
+	assert.Equal(t, "2004", orders[0].Price.String())
 	// note that this volume being bigger than 242367 above means we've moved back to position, then flipped
 	// sign, and took volume from the other curve.
 	assert.Equal(t, 362325, int(orders[0].Size))
@@ -189,7 +194,7 @@ func testSubmitMarketOrder(t *testing.T) {
 	ensurePosition(t, tst.pos, 0, num.NewUint(0))
 	orders := tst.engine.SubmitOrder(agg, num.NewUint(1980), num.NewUint(1990))
 	require.Len(t, orders, 1)
-	assert.Equal(t, "2005", orders[0].Price.String())
+	assert.Equal(t, "1994", orders[0].Price.String())
 	assert.Equal(t, 126420, int(orders[0].Size))
 }
 
@@ -309,16 +314,16 @@ func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
 	require.Len(t, orders, 6)
 
 	// first round, three orders moving all pool's to the upper boundary of the shortest
-	assert.Equal(t, "2053", orders[0].Price.String())
-	assert.Equal(t, "2053", orders[1].Price.String())
-	assert.Equal(t, "2053", orders[2].Price.String())
+	assert.Equal(t, "1949", orders[0].Price.String())
+	assert.Equal(t, "1949", orders[1].Price.String())
+	assert.Equal(t, "1949", orders[2].Price.String())
 
 	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
-	assert.Equal(t, "1925", orders[3].Price.String())
-	assert.Equal(t, "1925", orders[4].Price.String())
+	assert.Equal(t, "1874", orders[3].Price.String())
+	assert.Equal(t, "1874", orders[4].Price.String())
 
 	// third round, 1 orders moving the last pool to its boundary
-	assert.Equal(t, "1875", orders[5].Price.String())
+	assert.Equal(t, "1824", orders[5].Price.String())
 }
 
 func testBestPricesAndVolume(t *testing.T) {

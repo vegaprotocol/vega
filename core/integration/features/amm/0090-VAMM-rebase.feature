@@ -106,13 +106,13 @@ Feature: vAMM rebasing when created or amended
     # second AMM has its base 5 away from the first AMM so it must submit a rebasing-order 
     And the following trades should be executed:
       | buyer    | price | size | seller   | is amm |
-      | vamm1-id | 101   | 140  | vamm2-id | true   |
+      | vamm1-id | 98    | 140  | vamm2-id | true   |
     Then the network moves ahead "1" blocks
 
     # and now the mid-price has shifted lower to a value between the two AMM's bases 95 < 97 < 100
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | 
-      | 101        | TRADING_MODE_CONTINUOUS | 97        |
+      | 98         | TRADING_MODE_CONTINUOUS | 97        |
 
 
   @VAMM
@@ -167,7 +167,7 @@ Feature: vAMM rebasing when created or amended
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound |  proposed fee |
-      | vamm2 | ETH/MAR22 | 100000 | 0.05      | 100  | 95          | 105         |  0.03         |
+      | vamm2 | ETH/MAR22 | 100000 | 0.05     | 100  | 95          | 105         |  0.03         |
     Then the AMM pool status should be:
       | party | market id | amount | status         | base | lower bound | upper bound | 
       | vamm2 | ETH/MAR22 | 100000  | STATUS_ACTIVE  | 100  | 95          | 105         |
@@ -193,13 +193,13 @@ Feature: vAMM rebasing when created or amended
     # second AMM has its base 5 away from the first AMM so it must submit a rebasing-order 
     And the following trades should be executed:
       | buyer    | price | size | seller   | is amm |
-      | vamm1-id | 101   | 140  | vamm2-id | true   |
+      | vamm1-id | 98    | 140  | vamm2-id | true   |
     Then the network moves ahead "1" blocks
 
     # and now the mid-price has shifted lower to a value between the two AMM's bases 95 < 98 < 100
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | 
-      | 101        | TRADING_MODE_CONTINUOUS | 97        |
+      | 98         | TRADING_MODE_CONTINUOUS | 97        |
 
 
   @VAMM

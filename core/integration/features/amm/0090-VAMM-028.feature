@@ -257,6 +257,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | vamm2-id | -74    | -304           | 0            | true   |
       | vamm1-id | -74    | 0              | 0            | true   |
 
+  @VAMM
   Scenario: 0090-VAMM-029: The volume quoted to move from price 100 to price 90 in one step is the same as the sum of the volumes to move in 10 steps of 1.
     # Move mid price to 90 in one go. A volume of 347 is the minimum required, 346 only gets us to 91
     When the parties place the following orders:
@@ -267,13 +268,13 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 13915        | 1000           | 348           | 100       | 90        | 90               | 91               | 89             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 105   | 347  | party5 | true   |
+      | vamm1-id | 95    | 347  | party5 | true   |
     # Check vAMM position
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 1      | 5              | 0            |        |
-      | party2   | -1     | -5             | 0            |        |
+      | party1   | 1      | -5             | 0            |        |
+      | party2   | -1     | 5              | 0            |        |
       | party5   | -347   | 0              | 0            |        |
       | vamm1-id | 347    | 0              | 0            | true   |
 
@@ -287,7 +288,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 79           | 1000           | 2             | 100       | 99        | 99               | 100              | 98             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 100   | 1    | party6 | true   |
+      | vamm2-id | 99    | 1    | party6 | true   |
 
     # Move mid price to 98
     When the parties place the following orders:
@@ -298,7 +299,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 1519         | 1000           | 38            | 100       | 98        | 98               | 99               | 97             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 100    | 36   | party6 | true   |
+      | vamm2-id | 98    | 36   | party6 | true   |
 
     # Move mid price to 97
     When the parties place the following orders:
@@ -309,7 +310,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 2959         | 1000           | 74            | 100       | 97        | 97               | 98               | 96             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 98    | 36   | party6 | true   |
+      | vamm2-id | 97    | 36   | party6 | true   |
 
     # Move mid price to 96
     When the parties place the following orders:
@@ -320,7 +321,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 4478         | 1000           | 112           | 100       | 96        | 96               | 97               | 95             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 97    | 38   | party6 | true   |
+      | vamm2-id | 96    | 38   | party6 | true   |
 
     # Move mid price to 95
     When the parties place the following orders:
@@ -332,7 +333,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     And debug trades
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 96    | 37   | party6 | true   |
+      | vamm2-id | 95    | 37   | party6 | true   |
 
     # Move mid price to 94
     When the parties place the following orders:
@@ -343,7 +344,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 7517         | 1000           | 188           | 100       | 94        | 94               | 95               | 93             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 95    | 39   | party6 | true   |
+      | vamm2-id | 94    | 39   | party6 | true   |
 
     # Move mid price to 93
     When the parties place the following orders:
@@ -354,7 +355,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 9077         | 1000           | 227           | 100       | 93        | 93               | 94               | 92             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 94    | 39   | party6 | true   |
+      | vamm2-id | 93    | 39   | party6 | true   |
 
     # Move mid price to 92
     When the parties place the following orders:
@@ -365,7 +366,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 10636        | 1000           | 266           | 100       | 92        | 92               | 93               | 91             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 93    | 39   | party6 | true   |
+      | vamm2-id | 92    | 39   | party6 | true   |
 
     # Move mid price to 91
     When the parties place the following orders:
@@ -376,7 +377,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 12276        | 1000           | 307           | 100       | 91        | 91               | 92               | 90             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 92    | 41   | party6 | true   |
+      | vamm2-id | 91    | 41   | party6 | true   |
 
     # Move mid price to 90
     When the parties place the following orders:
@@ -387,16 +388,16 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 13915        | 1000           | 348           | 100       | 90        | 90               | 91               | 89             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm2-id | 91    | 41   | party6 | true   |
+      | vamm2-id | 90    | 41   | party6 | true   |
 
     # Make sure the volumes match, PnL is expected to be different
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party3   | 1      | -9             | 0            |        |
-      | party4   | -1     | 9              | 0            |        |
-      | party6   | -347   | 1390           | 0            |        |
-      | vamm2-id | 347    | -1390          | 0            | true   |
+      | party3   | 1      | -10            | 0            |        |
+      | party4   | -1     | 10             | 0            |        |
+      | party6   | -347   | 1354           | 0            |        |
+      | vamm2-id | 347    | -1354          | 0            | true   |
       | vamm1-id | 347    | 0              | 0            | true   |
 
   @VAMM
