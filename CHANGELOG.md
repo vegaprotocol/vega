@@ -24,6 +24,7 @@
 ### 🐛 Fixes
 
 - [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
+- [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
 
 
 ## 0.76.3
