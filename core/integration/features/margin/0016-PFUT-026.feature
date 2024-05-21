@@ -1,4 +1,4 @@
-Feature: Futures market can be created with a with [hardcoded risk factors](./0018-RSKM-quant_risk_models.ipynb). 
+Feature: Futures market can be created with a with [hardcoded risk factors](./0018-RSKM-quant_risk_models.ipynb).
   Background:
     # Set liquidity parameters to allow "zero" target-stake which is needed to construct the order-book defined in the ACs
     Given the following network parameters are set:
@@ -14,28 +14,28 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
       | risk aversion | tau  | mu | r   | sigma |
       | 0.0002        | 0.01 | 0  | 0.0 | 1.2   |
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | 19000         | true                 | false  |
 
   Scenario: 001 0016-PFUT-026, 0016-PFUT-028
     Given the parties deposit on asset's general account the following amount:
-      | party            | asset | amount   |
-      | buySideProvider  | USD   | 10000000 |
-      | sellSideProvider | USD   | 10000000 |
-      | aux1             | USD   | 10000000 |
-      | aux2             | USD   | 10000000 |
-      | party            | USD   | 48050    |
-      | party1           | USD   | 48050    |
+      | party            | asset | amount  |
+      | buySideProvider  | USD   | 1000000 |
+      | sellSideProvider | USD   | 1000000 |
+      | aux1             | USD   | 1000000 |
+      | aux2             | USD   | 100000  |
+      | party            | USD   | 48050   |
+      | party1           | USD   | 48050   |
     And the parties place the following orders:
-      | party            | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
-      | aux1             | ETH/FEB23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | buySideProvider  | ETH/FEB23 | buy  | 1      | 15000  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | buySideProvider  | ETH/FEB23 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | party            | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | party            | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC | party-sell  |
-      | party1           | ETH/FEB23 | sell | 3      | 16100  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | aux2             | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |             |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | aux1             | ETH/FEB23 | buy  | 10     | 14900 | 0                | TYPE_LIMIT | TIF_GTC |             |
+      | buySideProvider  | ETH/FEB23 | buy  | 1      | 15000 | 0                | TYPE_LIMIT | TIF_GTC |             |
+      | buySideProvider  | ETH/FEB23 | buy  | 3      | 15900 | 0                | TYPE_LIMIT | TIF_GTC |             |
+      | party            | ETH/FEB23 | sell | 3      | 15900 | 0                | TYPE_LIMIT | TIF_GTC |             |
+      | party            | ETH/FEB23 | sell | 3      | 15900 | 0                | TYPE_LIMIT | TIF_GTC | party-sell  |
+      | party1           | ETH/FEB23 | sell | 3      | 16100 | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | sellSideProvider | ETH/FEB23 | sell | 1      | 18100 | 0                | TYPE_LIMIT | TIF_GTC |             |
+      | aux2             | ETH/FEB23 | sell | 10     | 18200 | 0                | TYPE_LIMIT | TIF_GTC |             |
 
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
@@ -46,15 +46,15 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
 
     And the parties should have the following margin levels:
       | party | market id | maintenance |
-      | party | ETH/FEB23 | 31005       |
-      | aux1  | ETH/FEB23 | 15900       |
-      | aux2  | ETH/FEB23 | 31800       |
+      | party | ETH/FEB23 | 18600       |
+      | aux1  | ETH/FEB23 | 149000      |
+      | aux2  | ETH/FEB23 | 8000        |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | party | USD   | ETH/FEB23 | 37206  | 10844   |
-      | aux1  | USD   | ETH/FEB23 | 17880  | 9982120 |
-      | aux2  | USD   | ETH/FEB23 | 38160  | 9961840 |
+      | party | USD   | ETH/FEB23 | 18600  | 29450   |
+      | aux1  | USD   | ETH/FEB23 | 149000 | 851000  |
+      | aux2  | USD   | ETH/FEB23 | 8000   | 92000   |
 
     And the markets are updated:
       | id        | risk model             |
@@ -64,12 +64,12 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
 
     And the parties should have the following margin levels:
       | party | market id | maintenance |
-      | party | ETH/FEB23 | 31005       |
-      | aux1  | ETH/FEB23 | 15900       |
-      | aux2  | ETH/FEB23 | 31800       |
+      | party | ETH/FEB23 | 18600       |
+      | aux1  | ETH/FEB23 | 149000      |
+      | aux2  | ETH/FEB23 | 8000        |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | party | USD   | ETH/FEB23 | 37206  | 10844   |
-      | aux1  | USD   | ETH/FEB23 | 17880  | 9982120 |
-      | aux2  | USD   | ETH/FEB23 | 38160  | 9961840 |
+      | party | USD   | ETH/FEB23 | 18600  | 29450   |
+      | aux1  | USD   | ETH/FEB23 | 149000 | 851000  |
+      | aux2  | USD   | ETH/FEB23 | 8000   | 92000   |
