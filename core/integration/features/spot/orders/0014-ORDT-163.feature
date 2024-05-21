@@ -53,19 +53,16 @@ Feature: stop order in spot market
     And the mark price should be "1000" for the market "BTC/ETH"
 
   Scenario:0014-ORDT-163, 0014-ORDT-164: A wrapped buy/sell order will be rejected when triggered if the party doesn't have enough of the required quote asset to cover the order.
-    Given the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | BTC/ETH   | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | BTC/ETH   | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
     # place an order to match with the limit order then check the stop is filled
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party4 | BTC/ETH   | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | p4-sell   |
+      | party4 | BTC/ETH   | sell | 50     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | p4-sell   |
 
     # create party1 stop order
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error | reference |
-      | party1 | BTC/ETH   | buy  | 50     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | reduce | 1005             |       | stop1     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | only | ra price trigger | error | reference |
+      | party1 | BTC/ETH   | buy  | 50     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |      | 1005             |       | stop1     |
 
     # now we trade at 1005, this will breach the trigger
     When the parties place the following orders:
@@ -78,18 +75,22 @@ Feature: stop order in spot market
       | party  | market id | status           | reference |
       | party1 | BTC/ETH   | STATUS_TRIGGERED | stop1     |
 
-    Then "party1" should have general account balance of "200" for asset "ETH"
-    Then "party1" should have general account balance of "1" for asset "BTC"
-    Then "party1" should have holding account balance of "0" for asset "BTC"
+    Then "party1" should have general account balance of "100" for asset "ETH"
+    Then "party1" should have general account balance of "11" for asset "BTC"
 
-    Then the parties amend the following orders:
-      | party  | reference | price | size delta | tif     |
-      | party4 | p4-sell   | 1010  | -10        | TIF_GTC |
+    And the parties cancel the following orders:
+      | party  | reference |
+      | party4 | p4-sell   |
+
+    # place an order to match with the limit order then check the stop is filled
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party3 | BTC/ETH   | buy  | 50     | 1015  | 0                | TYPE_LIMIT | TIF_GTC | p4-sell   |
 
     # create party2 stop order
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error | reference |
-      | party2 | BTC/ETH   | sell | 50     | 1015  | 0                | TYPE_LIMIT | TIF_GTC | reduce | 1020             |       | stop2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | only | ra price trigger | error | reference |
+      | party2 | BTC/ETH   | sell | 50     | 1015  | 0                | TYPE_LIMIT | TIF_GTC |      | 1020             |       | stop2     |
 
     # now we trade at 1005, this will breach the trigger
     When the parties place the following orders:
@@ -102,7 +103,7 @@ Feature: stop order in spot market
       | party  | market id | status           | reference |
       | party2 | BTC/ETH   | STATUS_TRIGGERED | stop2     |
 
-    Then "party2" should have general account balance of "9900" for asset "ETH"
-    Then "party2" should have general account balance of "20" for asset "BTC"
+    Then "party2" should have general account balance of "10000" for asset "ETH"
+    Then "party2" should have general account balance of "10" for asset "BTC"
 
 
