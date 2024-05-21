@@ -1,0 +1,90 @@
+Feature: Spot market
+
+  Background:
+    Given time is updated to "2024-01-01T00:00:00Z"
+
+    Given the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 1s    |
+      | market.value.windowLength               | 1h    |
+      | spam.protection.max.stopOrdersPerMarket | 5     |
+
+    Given the following assets are registered:
+      | id  | decimal places |
+      | ETH | 2              |
+      | BTC | 2              |
+
+    Given the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.01      | 0.03               |
+    Given the log normal risk model named "lognormal-risk-model-1":
+      | risk aversion | tau  | mu | r   | sigma |
+      | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
+    And the price monitoring named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 360000  | 0.999       | 1                 |
+
+    And the spot markets:
+      | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | decimal places | position decimal places | sla params    |
+      | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | 2              | 2                       | default-basic |
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | ETH   | 100    |
+      | party1 | BTC   | 11     |
+      | party2 | ETH   | 10000  |
+      | party2 | BTC   | 1000   |
+      | party3 | ETH   | 10000  |
+      | party3 | BTC   | 1000   |
+      | party4 | BTC   | 1000   |
+      | party5 | BTC   | 1000   |
+    And the average block duration is "1"
+
+    # Place some orders to get out of auction
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
+      | party4 | BTC/ETH   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    And the opening auction period ends for market "BTC/ETH"
+    When the network moves ahead "1" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+    And the mark price should be "1000" for the market "BTC/ETH"
+
+  Scenario:0014-ORDT-163: A trader submitting a stop order wrapping a buy limit order will have the funds required to execute that order locked in the relevant holding account for the quote asset.
+
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | BTC/ETH   | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    # place an order to match with the limit order then check the stop is filled
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | BTC/ETH   | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    # create party1 stop order
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error | reference |
+      | party1 | BTC/ETH   | buy  | 50     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | reduce | 1005             |       | stop1     |
+
+    # now we trade at 1005, this will breach the trigger
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | BTC/ETH   | buy  | 1      | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | BTC/ETH   | sell | 1      | 1005  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # check that the order was triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | BTC/ETH   | STATUS_TRIGGERED | stop1     |
+
+
+# Then "party1" should have general account balance of "201" for asset "ETH"
+# Then "party1" should have general account balance of "1" for asset "BTC"
+# Then "party1" should have holding account balance of "0" for asset "BTC"
+
+# Then "party4" should have general account balance of "18" for asset "ETH"
+# Then "party4" should have general account balance of "988" for asset "BTC"
+# Then "party4" should have holding account balance of "5" for asset "BTC"
+
