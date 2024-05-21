@@ -40,11 +40,12 @@ import (
 type testEngine struct {
 	*vesting.Engine
 
-	ctrl   *gomock.Controller
-	col    *collateralMock
-	asvm   *mocks.MockActivityStreakVestingMultiplier
-	broker *bmocks.MockBroker
-	assets *mocks.MockAssets
+	ctrl    *gomock.Controller
+	col     *collateralMock
+	asvm    *mocks.MockActivityStreakVestingMultiplier
+	broker  *bmocks.MockBroker
+	assets  *mocks.MockAssets
+	parties *mocks.MockParties
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -61,22 +62,24 @@ func getTestEngine(t *testing.T) *testEngine {
 		Engine: vesting.New(
 			logger, col, asvm, broker, assets, parties,
 		),
-		ctrl:   ctrl,
-		broker: broker,
-		col:    col,
-		asvm:   asvm,
-		assets: assets,
+		ctrl:    ctrl,
+		broker:  broker,
+		col:     col,
+		asvm:    asvm,
+		assets:  assets,
+		parties: parties,
 	}
 }
 
 type testSnapshotEngine struct {
 	engine *vesting.SnapshotEngine
 
-	ctrl   *gomock.Controller
-	col    *collateralMock
-	asvm   *mocks.MockActivityStreakVestingMultiplier
-	broker *bmocks.MockBroker
-	assets *mocks.MockAssets
+	ctrl    *gomock.Controller
+	col     *collateralMock
+	asvm    *mocks.MockActivityStreakVestingMultiplier
+	broker  *bmocks.MockBroker
+	assets  *mocks.MockAssets
+	parties *mocks.MockParties
 
 	currentEpoch uint64
 }
@@ -99,6 +102,7 @@ func newEngine(t *testing.T) *testSnapshotEngine {
 		asvm:         asvm,
 		broker:       broker,
 		assets:       assets,
+		parties:      parties,
 		currentEpoch: 10,
 	}
 }

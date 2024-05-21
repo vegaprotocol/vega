@@ -66,6 +66,8 @@ func TestDistributeAfterDelay(t *testing.T) {
 	party := "party1"
 	vegaAsset := "VEGA"
 
+	v.parties.EXPECT().RelatedKeys(party).Return(nil, nil).AnyTimes()
+
 	v.col.InitVestedBalance(party, vegaAsset, num.NewUint(300))
 
 	epochSeq := uint64(1)
@@ -110,9 +112,11 @@ func TestDistributeAfterDelay(t *testing.T) {
 					AtEpoch: epochSeq,
 					Stats: []*eventspb.PartyVestingStats{
 						{
-							PartyId:               party,
-							RewardBonusMultiplier: "1",
-							QuantumBalance:        "300",
+							PartyId:                     party,
+							RewardBonusMultiplier:       "1",
+							QuantumBalance:              "300",
+							SummedRewardBonusMultiplier: "1",
+							SummedQuantumBalance:        "300",
 						},
 					},
 				}, e.Proto())
@@ -158,9 +162,11 @@ func TestDistributeAfterDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "390",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "390",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "390",
 					},
 				},
 			}, e.Proto())
@@ -204,9 +210,11 @@ func TestDistributeAfterDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "400",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "400",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "400",
 					},
 				},
 			}, e.Proto())
@@ -292,6 +300,8 @@ func TestDistributeWithNoDelay(t *testing.T) {
 	party := "party1"
 	vegaAsset := "VEGA"
 
+	v.parties.EXPECT().RelatedKeys(party).Return(nil, nil).AnyTimes()
+
 	v.col.InitVestedBalance(party, vegaAsset, num.NewUint(300))
 
 	epochSeq := uint64(1)
@@ -328,6 +338,8 @@ func TestDistributeWithNoDelay(t *testing.T) {
 	t.Run("First reward payment", func(t *testing.T) {
 		epochSeq += 1
 
+		v.GetRewardBonusMultiplier(party)
+
 		expectLedgerMovements(t, v)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -337,9 +349,11 @@ func TestDistributeWithNoDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "390",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "390",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "390",
 					},
 				},
 			}, e.Proto())
@@ -383,9 +397,11 @@ func TestDistributeWithNoDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "400",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "400",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "400",
 					},
 				},
 			}, e.Proto())
@@ -468,6 +484,8 @@ func TestDistributeWithStreakRate(t *testing.T) {
 	party := "party1"
 	vegaAsset := "VEGA"
 
+	v.parties.EXPECT().RelatedKeys(party).Return(nil, nil).AnyTimes()
+
 	v.col.InitVestedBalance(party, vegaAsset, num.NewUint(300))
 
 	epochSeq := uint64(1)
@@ -513,9 +531,11 @@ func TestDistributeWithStreakRate(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "399",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "399",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "399",
 					},
 				},
 			}, e.Proto())
@@ -559,9 +579,11 @@ func TestDistributeWithStreakRate(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "400",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "400",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "400",
 					},
 				},
 			}, e.Proto())
@@ -644,6 +666,8 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 	party := "party1"
 	vegaAsset := "VEGA"
 
+	v.parties.EXPECT().RelatedKeys(party).Return(nil, nil).AnyTimes()
+
 	v.col.InitVestedBalance(party, vegaAsset, num.NewUint(300))
 
 	epochSeq := uint64(1)
@@ -691,9 +715,11 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "1",
-						QuantumBalance:        "300",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "1",
+						QuantumBalance:              "300",
+						SummedRewardBonusMultiplier: "1",
+						SummedQuantumBalance:        "300",
 					},
 				},
 			}, e.Proto())
@@ -743,9 +769,11 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "390",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "390",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "390",
 					},
 				},
 			}, e.Proto())
@@ -795,9 +823,11 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "489",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "489",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "489",
 					},
 				},
 			}, e.Proto())
@@ -841,9 +871,11 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "2",
-						QuantumBalance:        "499",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "499",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "499",
 					},
 				},
 			}, e.Proto())
@@ -887,9 +919,259 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
-						PartyId:               party,
-						RewardBonusMultiplier: "3",
-						QuantumBalance:        "500",
+						PartyId:                     party,
+						RewardBonusMultiplier:       "3",
+						QuantumBalance:              "500",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "500",
+					},
+				},
+			}, e.Proto())
+		}).Times(1)
+
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingBalancesSummary)
+			require.True(t, ok, "Event should be a VestingBalancesSummary, but is %T", evt)
+			assert.Equal(t, eventspb.VestingBalancesSummary{
+				EpochSeq:              epochSeq,
+				PartiesVestingSummary: []*eventspb.PartyVestingSummary{},
+			}, e.Proto())
+		}).Times(1)
+
+		v.OnEpochEvent(ctx, types.Epoch{
+			Seq:    epochSeq,
+			Action: vegapb.EpochAction_EPOCH_ACTION_END,
+		})
+	})
+
+	t.Run("No vesting stats and summary when no reward is being vested anymore", func(t *testing.T) {
+		epochSeq += 1
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingStatsUpdated)
+			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
+			assert.Equal(t, eventspb.VestingStatsUpdated{
+				AtEpoch: epochSeq,
+				Stats:   []*eventspb.PartyVestingStats{},
+			}, e.Proto())
+		}).Times(1)
+
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingBalancesSummary)
+			require.True(t, ok, "Event should be a VestingBalancesSummary, but is %T", evt)
+			assert.Equal(t, eventspb.VestingBalancesSummary{
+				EpochSeq:              epochSeq,
+				PartiesVestingSummary: []*eventspb.PartyVestingSummary{},
+			}, e.Proto())
+		}).Times(1)
+
+		v.OnEpochEvent(ctx, types.Epoch{
+			Seq:    epochSeq,
+			Action: vegapb.EpochAction_EPOCH_ACTION_END,
+		})
+	})
+}
+
+func TestDistributeWithRelatedKeys(t *testing.T) {
+	v := getTestEngine(t)
+
+	ctx := context.Background()
+
+	// distribute 90% as the base rate,
+	// so first we distribute some, then we get under the minimum value, and all the rest
+	// is distributed
+	require.NoError(t, v.OnRewardVestingBaseRateUpdate(ctx, num.MustDecimalFromString("0.9")))
+	// this is multiplied by the quantum, so it will make it 100% of the quantum
+	require.NoError(t, v.OnRewardVestingMinimumTransferUpdate(ctx, num.MustDecimalFromString("1")))
+
+	require.NoError(t, v.OnBenefitTiersUpdate(ctx, &vegapb.VestingBenefitTiers{
+		Tiers: []*vegapb.VestingBenefitTier{
+			{
+				MinimumQuantumBalance: "200",
+				RewardMultiplier:      "1",
+			},
+			{
+				MinimumQuantumBalance: "350",
+				RewardMultiplier:      "2",
+			},
+			{
+				MinimumQuantumBalance: "500",
+				RewardMultiplier:      "3",
+			},
+		},
+	}))
+
+	// set the asvm to return always 1
+	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
+
+	// set asset to return proper quantum
+	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
+
+	party := "party1"
+	partyID := types.PartyID(party)
+	vegaAsset := "VEGA"
+	derivedKeys := []string{"derived1", "derived2", "derived3"}
+
+	v.parties.EXPECT().RelatedKeys(party).Return(&partyID, derivedKeys).AnyTimes()
+
+	v.col.InitVestedBalance(party, vegaAsset, num.NewUint(300))
+
+	for _, key := range derivedKeys {
+		v.col.InitVestedBalance(key, vegaAsset, num.NewUint(100))
+		v.parties.EXPECT().RelatedKeys(key).Return(&partyID, derivedKeys).AnyTimes()
+	}
+
+	epochSeq := uint64(1)
+
+	t.Run("No vesting stats and summary when no reward is being vested", func(t *testing.T) {
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingStatsUpdated)
+			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
+			assert.Equal(t, eventspb.VestingStatsUpdated{
+				AtEpoch: epochSeq,
+				Stats:   []*eventspb.PartyVestingStats{},
+			}, e.Proto())
+		}).Times(1)
+
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingBalancesSummary)
+			require.True(t, ok, "Event should be a VestingBalancesSummary, but is %T", evt)
+			assert.Equal(t, eventspb.VestingBalancesSummary{
+				EpochSeq:              epochSeq,
+				PartiesVestingSummary: []*eventspb.PartyVestingSummary{},
+			}, e.Proto())
+		}).Times(1)
+
+		v.OnEpochEvent(ctx, types.Epoch{
+			Action: vegapb.EpochAction_EPOCH_ACTION_END,
+			Seq:    epochSeq,
+		})
+	})
+
+	t.Run("Add a reward without epoch lock", func(t *testing.T) {
+		v.AddReward(party, vegaAsset, num.NewUint(100), 0)
+
+		for _, key := range derivedKeys {
+			v.AddReward(key, vegaAsset, num.NewUint(50), 0)
+		}
+	})
+
+	t.Run("First reward payment", func(t *testing.T) {
+		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingStatsUpdated)
+
+			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
+			assert.Equal(t, eventspb.VestingStatsUpdated{
+				AtEpoch: epochSeq,
+				Stats: []*eventspb.PartyVestingStats{
+					{
+						PartyId:                     derivedKeys[0],
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "145",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "825",
+					},
+					{
+						PartyId:                     derivedKeys[1],
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "145",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "825",
+					},
+					{
+						PartyId:                     derivedKeys[2],
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "145",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "825",
+					},
+					{
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "390",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "825",
+					},
+				},
+			}, e.Proto())
+		}).Times(1)
+
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingBalancesSummary)
+			require.True(t, ok, "Event should be a VestingBalancesSummary, but is %T", evt)
+			assert.Equal(t, eventspb.VestingBalancesSummary{
+				EpochSeq: epochSeq,
+				PartiesVestingSummary: []*eventspb.PartyVestingSummary{
+					{
+						Party:               derivedKeys[0],
+						PartyLockedBalances: []*eventspb.PartyLockedBalance{},
+						PartyVestingBalances: []*eventspb.PartyVestingBalance{
+							{
+								Asset:   vegaAsset,
+								Balance: "5",
+							},
+						},
+					},
+					{
+						Party:               derivedKeys[1],
+						PartyLockedBalances: []*eventspb.PartyLockedBalance{},
+						PartyVestingBalances: []*eventspb.PartyVestingBalance{
+							{
+								Asset:   vegaAsset,
+								Balance: "5",
+							},
+						},
+					},
+					{
+						Party:               derivedKeys[2],
+						PartyLockedBalances: []*eventspb.PartyLockedBalance{},
+						PartyVestingBalances: []*eventspb.PartyVestingBalance{
+							{
+								Asset:   vegaAsset,
+								Balance: "5",
+							},
+						},
+					},
+					{
+						Party:               party,
+						PartyLockedBalances: []*eventspb.PartyLockedBalance{},
+						PartyVestingBalances: []*eventspb.PartyVestingBalance{
+							{
+								Asset:   vegaAsset,
+								Balance: "10",
+							},
+						},
+					},
+				},
+			}, e.Proto())
+		}).Times(1)
+
+		v.OnEpochEvent(ctx, types.Epoch{
+			Seq:    epochSeq,
+			Action: vegapb.EpochAction_EPOCH_ACTION_END,
+		})
+	})
+
+	t.Run("Second reward payment", func(t *testing.T) {
+		epochSeq += 1
+
+		expectLedgerMovements(t, v)
+
+		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+			e, ok := evt.(*events.VestingStatsUpdated)
+			require.True(t, ok, "Event should be a VestingStatsUpdated, but is %T", evt)
+			assert.Equal(t, eventspb.VestingStatsUpdated{
+				AtEpoch: epochSeq,
+				Stats: []*eventspb.PartyVestingStats{
+					{
+						PartyId:                     party,
+						RewardBonusMultiplier:       "2",
+						QuantumBalance:              "400",
+						SummedRewardBonusMultiplier: "2",
+						SummedQuantumBalance:        "400",
 					},
 				},
 			}, e.Proto())
