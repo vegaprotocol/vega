@@ -819,13 +819,15 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
+	// we're converting both offset and tick size to asset decimals so we can adjust the price (in asset) directly
 	offset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
+	tickSizeInAsset, _ := num.UintFromDecimal(m.mkt.TickSize.ToDecimal().Mul(m.priceFactor))
 	if order.Side == types.SideSell {
 		price = price.AddSum(offset)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
 		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
 		// whole multiples of tick size.
-		if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
+		if mod := num.UintZero().Mod(price, tickSizeInAsset); !mod.IsZero() {
 			price.Sub(price, mod)
 		}
 		return price, nil
@@ -836,8 +838,8 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	}
 
 	price.Sub(price, offset)
-	if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
-		price = num.UintZero().Sub(price.AddSum(m.mkt.TickSize), mod)
+	if mod := num.UintZero().Mod(price, tickSizeInAsset); !mod.IsZero() {
+		price = num.UintZero().Sub(price.AddSum(tickSizeInAsset), mod)
 	}
 
 	return price, nil
@@ -971,6 +973,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 }
 
 // validateOrder checks that the order parameters are valid for the market.
+// NB: price in market, tickSize in market decimals.
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err error) {
 	defer func() {
 		if err != nil {
