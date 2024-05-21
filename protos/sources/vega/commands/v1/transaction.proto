@@ -96,6 +96,8 @@ message InputData {
     IssueSignatures issue_signatures = 2010;
     // Command to submit external oracle data.
     OracleDataSubmission oracle_data_submission = 3001;
+    // Internal transactions used to convey delayed transactions to be included in the next block.
+    DelayedTransactionsWrapper delayed_transactions_wrapper = 4000;
   }
 }
 

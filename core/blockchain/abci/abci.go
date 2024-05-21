@@ -45,6 +45,11 @@ func (app *App) InitChain(_ context.Context, req *types.RequestInitChain) (*type
 	return &types.ResponseInitChain{}, nil
 }
 
+func (app *App) GetTx(tx []byte) (Tx, error) {
+	txx, _, err := app.getTx(tx)
+	return txx, err
+}
+
 // PrepareProposal will take the given transactions from the mempool and attempts to prepare a
 // proposal from them when it's our turn to do so while keeping the size, gas, pow, and spam constraints.
 func (app *App) PrepareProposal(_ context.Context, req *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {

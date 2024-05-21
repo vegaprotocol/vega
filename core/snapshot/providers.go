@@ -22,6 +22,7 @@ import (
 // providersInCallOrder holds the providers namespace in the order in which
 // they must be called.
 var providersInCallOrder = []types.SnapshotNamespace{
+	types.TxCacheSnapshot,
 	types.EpochSnapshot,
 	types.AssetsSnapshot,  // Needs to happen before banking.
 	types.WitnessSnapshot, // Needs to happen before banking and governance.

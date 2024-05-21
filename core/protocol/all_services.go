@@ -63,6 +63,7 @@ import (
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/teams"
+	"code.vegaprotocol.io/vega/core/txcache"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
@@ -128,6 +129,7 @@ type allServices struct {
 	ethereumOraclesVerifier *ethverifier.Verifier
 
 	partiesEngine *parties.SnapshottedEngine
+	txCache       *txcache.TxCache
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -289,6 +291,7 @@ func newServices(
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
 
 	svcs.partiesEngine = parties.NewSnapshottedEngine(svcs.broker)
+	svcs.txCache = txcache.NewTxCache(svcs.commander)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts, svcs.broker)
@@ -426,6 +429,7 @@ func newServices(
 	svcs.topology.NotifyOnKeyChange(svcs.governance.ValidatorKeyChanged)
 
 	svcs.snapshotEngine.AddProviders(
+		svcs.txCache,
 		svcs.checkpoint,
 		svcs.collateral,
 		svcs.governance,

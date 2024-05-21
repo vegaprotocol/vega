@@ -94,6 +94,8 @@ const (
 	AmendAMMCommand Command = 0x65
 	// CancelAMMCommand ...
 	CancelAMMCommand Command = 0x66
+	// DelayedTransactionsWrapper ...
+	DelayedTransactionsWrapper Command = 0x67
 )
 
 var commandName = map[Command]string{
@@ -134,11 +136,12 @@ var commandName = map[Command]string{
 	SubmitAMMCommand:                   "Submit AMM",
 	AmendAMMCommand:                    "Amend AMM",
 	CancelAMMCommand:                   "Cancel AMM",
+	DelayedTransactionsWrapper:         "Delatyed Transactions Wrapper",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
+	case DelayedTransactionsWrapper, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
 		return true
 	default:
 		return false
