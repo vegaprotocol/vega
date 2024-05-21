@@ -884,7 +884,7 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 	app.log.Debug("prepareProposal called with", logging.Int("txs", len(rawTxs)), logging.Int64("max-bytes", maxBytes))
 
 	// as transactions that are wrapped for sending in the next block are not removed from the mempool
-	// to avoid adding them both from the mempool and from the the cache we need to check
+	// to avoid adding them both from the mempool and from the cache we need to check
 	// they were not in the cache.
 	// we still need to check that the transactions from previous block are passing pow and spam requirements.
 	addedFromPreviousHash := map[string]struct{}{}
