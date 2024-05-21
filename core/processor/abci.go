@@ -61,7 +61,6 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/crypto/tmhash"
 	tmtypes1 "github.com/cometbft/cometbft/proto/tendermint/types"
 	types1 "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypesint "github.com/cometbft/cometbft/types"
@@ -1030,39 +1029,15 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 	}
 	blockTxs := [][]byte{}
 	blockTxs = append(blockTxs, cancellations...) // cancellations go first
-	for i, txx := range cancellations {
-		app.log.Debug("cancellation", logging.Int("index", i), logging.String("hash", hex.EncodeToString(tmhash.Sum(txx))))
-	}
-	blockTxs = append(blockTxs, postOnly...) // then post only orders
-	for i, txx := range postOnly {
-		app.log.Debug("postOnly", logging.Int("index", i), logging.String("hash", hex.EncodeToString(tmhash.Sum(txx))))
-	}
+	blockTxs = append(blockTxs, postOnly...)      // then post only orders
 	if delayedTxs != nil {
-		app.log.Debug("adding from previous block", logging.Int("delayed", len(delayedTxs)))
-		for i, txx := range delayedTxs {
-			app.log.Debug("previous block", logging.Int("index", i), logging.String("hash", hex.EncodeToString(tmhash.Sum(txx))))
-		}
 		blockTxs = append(blockTxs, delayedTxs...) // then anything from previous block
-	} else {
-		app.log.Debug("nothing from previous block")
 	}
 	blockTxs = append(blockTxs, anythingElseFromThisBlock...) // finally anything else from this block
-	for i, txx := range anythingElseFromThisBlock {
-		app.log.Debug("anything else from this block", logging.Int("index", i), logging.String("hash", hex.EncodeToString(tmhash.Sum(txx))))
-	}
 	if len(nextBlockRtx) > 0 {
 		wrapperTx := app.txCache.NewDelayedTransaction(app.blockCtx, nextBlockRtx)
-		app.log.Debug("wrapperTx with delayed tx", logging.String("hash", hex.EncodeToString(tmhash.Sum(wrapperTx))), logging.Int("txs", len(nextBlockRtx)))
-		for i, txx := range nextBlockRtx {
-			app.log.Debug("delayed tx", logging.Int("index", i), logging.String("hash", hex.EncodeToString(tmhash.Sum(txx))))
-		}
 		blockTxs = append(blockTxs, wrapperTx)
 	}
-	app.log.Debug("block proposal")
-	for i, ttxx := range blockTxs {
-		app.log.Debug("tx", logging.Int("index", i), logging.String("hash", hex.EncodeToString(tmhash.Sum(ttxx))))
-	}
-	app.log.Debug("prepareProposal returned with", logging.Int("blockTxs", len(blockTxs)))
 	if !app.nilPow {
 		app.pow.EndPrepareProposal(validationResults)
 	}
@@ -1108,13 +1083,7 @@ func (app *App) processProposal(txs []abci.Tx) bool {
 		}
 	}
 
-	app.log.Debug("processing proposal")
-	for i, txx := range txs {
-		app.log.Debug("", logging.Int("index", i), logging.String("hash", hex.EncodeToString(txx.Hash())))
-	}
-
 	if !app.nilPow && !app.pow.ProcessProposal(txs) {
-		app.log.Debug("failed pow process proposal")
 		return false
 	}
 
@@ -2876,10 +2845,6 @@ func (app *App) handleDelayedTransactionWrapper(ctx context.Context, tx abci.Tx)
 	txs := &commandspb.DelayedTransactionsWrapper{}
 	if err := tx.Unmarshal(txs); err != nil {
 		return fmt.Errorf("could not deserialize DelayedTransactionsWrapper command: %w", err)
-	}
-	app.log.Debug("setting delayed txs cache", logging.Int("transactions", len(txs.Transactions)))
-	for i, txx := range txs.Transactions {
-		app.log.Debug("", logging.Int("index", i), logging.String("hash", hex.EncodeToString(tmhash.Sum(txx))))
 	}
 	app.txCache.SetRawTxs(txs.Transactions)
 	app.seenDelayedTxTransactions = true
