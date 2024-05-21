@@ -136,7 +136,7 @@ var commandName = map[Command]string{
 	SubmitAMMCommand:                   "Submit AMM",
 	AmendAMMCommand:                    "Amend AMM",
 	CancelAMMCommand:                   "Cancel AMM",
-	DelayedTransactionsWrapper:         "Delatyed Transactions Wrapper",
+	DelayedTransactionsWrapper:         "Delayed Transactions Wrapper",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
