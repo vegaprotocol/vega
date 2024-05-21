@@ -820,27 +820,28 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	}
 
 	// we're converting both offset and tick size to asset decimals so we can adjust the price (in asset) directly
-	offset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
-	tickSizeInAsset, _ := num.UintFromDecimal(m.mkt.TickSize.ToDecimal().Mul(m.priceFactor))
+	priceInMarket, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
 	if order.Side == types.SideSell {
-		price = price.AddSum(offset)
+		priceInMarket.AddSum(order.PeggedOrder.Offset)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
 		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
 		// whole multiples of tick size.
-		if mod := num.UintZero().Mod(price, tickSizeInAsset); !mod.IsZero() {
-			price.Sub(price, mod)
+		if mod := num.UintZero().Mod(priceInMarket, m.mkt.TickSize); !mod.IsZero() {
+			priceInMarket.Sub(priceInMarket, mod)
 		}
+		price, _ := num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 		return price, nil
 	}
 
-	if price.LTE(offset) {
+	if priceInMarket.LTE(order.PeggedOrder.Offset) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	price.Sub(price, offset)
-	if mod := num.UintZero().Mod(price, tickSizeInAsset); !mod.IsZero() {
-		price = num.UintZero().Sub(price.AddSum(tickSizeInAsset), mod)
+	priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
+	if mod := num.UintZero().Mod(priceInMarket, m.mkt.TickSize); !mod.IsZero() {
+		priceInMarket = num.UintZero().Sub(priceInMarket.AddSum(m.mkt.TickSize), mod)
 	}
+	price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 
 	return price, nil
 }
