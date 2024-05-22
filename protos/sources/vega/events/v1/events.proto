@@ -166,7 +166,7 @@ message PartyVestingStats {
   string reward_bonus_multiplier = 2;
   // The balance of the party, in quantum.
   string quantum_balance = 3;
-  // The bonus multiplier applied on the reward summed accross all derived accounts.
+  // Bonus multiplier applied on the reward, summed across all derived accounts.
   string summed_reward_bonus_multiplier = 4;
   // The balance of the party and derived keys, in quantum.
   string summed_quantum_balance = 5;

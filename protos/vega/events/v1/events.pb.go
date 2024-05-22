@@ -1550,7 +1550,7 @@ type PartyVestingStats struct {
 	RewardBonusMultiplier string `protobuf:"bytes,2,opt,name=reward_bonus_multiplier,json=rewardBonusMultiplier,proto3" json:"reward_bonus_multiplier,omitempty"`
 	// The balance of the party, in quantum.
 	QuantumBalance string `protobuf:"bytes,3,opt,name=quantum_balance,json=quantumBalance,proto3" json:"quantum_balance,omitempty"`
-	// The bonus multiplier applied on the reward summed accross all derived accounts.
+	// Bonus multiplier applied on the reward, summed across all derived accounts.
 	SummedRewardBonusMultiplier string `protobuf:"bytes,4,opt,name=summed_reward_bonus_multiplier,json=summedRewardBonusMultiplier,proto3" json:"summed_reward_bonus_multiplier,omitempty"`
 	// The balance of the party and derived keys, in quantum.
 	SummedQuantumBalance string `protobuf:"bytes,5,opt,name=summed_quantum_balance,json=summedQuantumBalance,proto3" json:"summed_quantum_balance,omitempty"`
