@@ -26,6 +26,7 @@
 - [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
+- [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units. 
 
 ## 0.76.1
 
