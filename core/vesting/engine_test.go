@@ -1069,21 +1069,21 @@ func TestDistributeWithRelatedKeys(t *testing.T) {
 				Stats: []*eventspb.PartyVestingStats{
 					{
 						PartyId:                     derivedKeys[0],
-						RewardBonusMultiplier:       "2",
+						RewardBonusMultiplier:       "1",
 						QuantumBalance:              "145",
 						SummedRewardBonusMultiplier: "3",
 						SummedQuantumBalance:        "825",
 					},
 					{
 						PartyId:                     derivedKeys[1],
-						RewardBonusMultiplier:       "2",
+						RewardBonusMultiplier:       "1",
 						QuantumBalance:              "145",
 						SummedRewardBonusMultiplier: "3",
 						SummedQuantumBalance:        "825",
 					},
 					{
 						PartyId:                     derivedKeys[2],
-						RewardBonusMultiplier:       "2",
+						RewardBonusMultiplier:       "1",
 						QuantumBalance:              "145",
 						SummedRewardBonusMultiplier: "3",
 						SummedQuantumBalance:        "825",
@@ -1167,11 +1167,32 @@ func TestDistributeWithRelatedKeys(t *testing.T) {
 				AtEpoch: epochSeq,
 				Stats: []*eventspb.PartyVestingStats{
 					{
+						PartyId:                     derivedKeys[0],
+						RewardBonusMultiplier:       "1",
+						QuantumBalance:              "150",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "850",
+					},
+					{
+						PartyId:                     derivedKeys[1],
+						RewardBonusMultiplier:       "1",
+						QuantumBalance:              "150",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "850",
+					},
+					{
+						PartyId:                     derivedKeys[2],
+						RewardBonusMultiplier:       "1",
+						QuantumBalance:              "150",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "850",
+					},
+					{
 						PartyId:                     party,
 						RewardBonusMultiplier:       "2",
 						QuantumBalance:              "400",
-						SummedRewardBonusMultiplier: "2",
-						SummedQuantumBalance:        "400",
+						SummedRewardBonusMultiplier: "3",
+						SummedQuantumBalance:        "850",
 					},
 				},
 			}, e.Proto())
@@ -1217,6 +1238,116 @@ func TestDistributeWithRelatedKeys(t *testing.T) {
 			Action: vegapb.EpochAction_EPOCH_ACTION_END,
 		})
 	})
+}
+
+func TestGetRewardBonusMultiplier(t *testing.T) {
+	v := getTestEngine(t)
+
+	ctx := context.Background()
+
+	// distribute 90% as the base rate,
+	// so first we distribute some, then we get under the minimum value, and all the rest
+	// is distributed
+	require.NoError(t, v.OnRewardVestingBaseRateUpdate(ctx, num.MustDecimalFromString("0.9")))
+	// this is multiplied by the quantum, so it will make it 100% of the quantum
+	require.NoError(t, v.OnRewardVestingMinimumTransferUpdate(ctx, num.MustDecimalFromString("1")))
+
+	require.NoError(t, v.OnBenefitTiersUpdate(ctx, &vegapb.VestingBenefitTiers{
+		Tiers: []*vegapb.VestingBenefitTier{
+			{
+				MinimumQuantumBalance: "200",
+				RewardMultiplier:      "1",
+			},
+			{
+				MinimumQuantumBalance: "500",
+				RewardMultiplier:      "2",
+			},
+			{
+				MinimumQuantumBalance: "1200",
+				RewardMultiplier:      "3",
+			},
+		},
+	}))
+
+	party := "party1"
+	partyID := types.PartyID(party)
+	vegaAsset := "VEGA"
+	derivedKeys := []string{"derived1", "derived2", "derived3", "derived4"}
+
+	v.parties.EXPECT().RelatedKeys(party).Return(&partyID, derivedKeys).AnyTimes()
+
+	v.col.InitVestedBalance(party, vegaAsset, num.NewUint(500))
+
+	for _, key := range derivedKeys {
+		v.col.InitVestedBalance(key, vegaAsset, num.NewUint(250))
+		v.parties.EXPECT().RelatedKeys(key).Return(&partyID, derivedKeys).AnyTimes()
+	}
+
+	for _, key := range append(derivedKeys, party) {
+		balance, multiplier := v.GetRewardBonusMultiplier(key)
+		require.Equal(t, num.DecimalFromInt64(1500), balance)
+		require.Equal(t, num.DecimalFromInt64(3), multiplier)
+	}
+
+	// check that we only called the GetVestingQuantumBalance once for each key
+	// later calls should be cached
+	require.Equal(t, 5, v.col.GetVestingQuantumBalanceCallCount())
+
+	v.col.ResetVestingQuantumBalanceCallCount()
+
+	single, summed := v.GetSingleAndSummedRewardBonusMultipliers(party)
+	require.Equal(t, num.DecimalFromInt64(500), single.QuantumBalance)
+	require.Equal(t, num.DecimalFromInt64(2), single.Multiplier)
+	require.Equal(t, num.DecimalFromInt64(1500), summed.QuantumBalance)
+	require.Equal(t, num.DecimalFromInt64(3), summed.Multiplier)
+
+	for _, key := range derivedKeys {
+		single, summed := v.GetSingleAndSummedRewardBonusMultipliers(key)
+		require.Equal(t, num.DecimalFromInt64(250), single.QuantumBalance)
+		require.Equal(t, num.DecimalFromInt64(1), single.Multiplier)
+		require.Equal(t, num.DecimalFromInt64(1500), summed.QuantumBalance)
+		require.Equal(t, num.DecimalFromInt64(3), summed.Multiplier)
+	}
+
+	// here we check that we just called 5 more times to re-calculate single values
+	// summed should be cached
+	require.Equal(t, 5, v.col.GetVestingQuantumBalanceCallCount())
+
+	v.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// now we simulate the end of the epoch
+	// it will reset cache for reward bonus multipliers
+	v.OnEpochEvent(ctx, types.Epoch{
+		Action: vegapb.EpochAction_EPOCH_ACTION_END,
+		Seq:    1,
+	})
+
+	v.col.ResetVestingQuantumBalanceCallCount()
+
+	for _, key := range append(derivedKeys, party) {
+		balance, multiplier := v.GetRewardBonusMultiplier(key)
+		require.Equal(t, num.DecimalFromInt64(1500), balance)
+		require.Equal(t, num.DecimalFromInt64(3), multiplier)
+	}
+
+	// now it's called 5 times again because the cache gets reset at the end of the epoch
+	require.Equal(t, 5, v.col.GetVestingQuantumBalanceCallCount())
+
+	v.OnEpochEvent(ctx, types.Epoch{
+		Action: vegapb.EpochAction_EPOCH_ACTION_END,
+		Seq:    1,
+	})
+
+	v.col.ResetVestingQuantumBalanceCallCount()
+
+	for _, key := range append(derivedKeys, party) {
+		balance, multiplier := v.GetRewardBonusMultiplier(key)
+		require.Equal(t, num.DecimalFromInt64(1500), balance)
+		require.Equal(t, num.DecimalFromInt64(3), multiplier)
+	}
+
+	// now it's called 5 times again because the cache gets reset at the end of the epoch
+	require.Equal(t, 5, v.col.GetVestingQuantumBalanceCallCount())
 }
 
 // LedgerMovements is the result of a mock, so it doesn't really make sense to

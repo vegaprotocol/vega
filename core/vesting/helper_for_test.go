@@ -108,7 +108,8 @@ func newEngine(t *testing.T) *testSnapshotEngine {
 }
 
 type collateralMock struct {
-	vestedAccountAmount map[string]map[string]*num.Uint
+	vestedAccountAmount            map[string]map[string]*num.Uint
+	vestingQuantumBalanceCallCount int
 }
 
 func (c *collateralMock) InitVestedBalance(party, asset string, balance *num.Uint) {
@@ -156,7 +157,17 @@ func (c *collateralMock) GetAllVestingQuantumBalance(party string) num.Decimal {
 		balance = balance.Add(num.DecimalFromUint(n))
 	}
 
+	c.vestingQuantumBalanceCallCount += 1
+
 	return balance
+}
+
+func (c *collateralMock) ResetVestingQuantumBalanceCallCount() {
+	c.vestingQuantumBalanceCallCount = 0
+}
+
+func (c *collateralMock) GetVestingQuantumBalanceCallCount() int {
+	return c.vestingQuantumBalanceCallCount
 }
 
 func newCollateralMock(t *testing.T) *collateralMock {

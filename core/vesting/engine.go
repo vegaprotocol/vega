@@ -68,8 +68,8 @@ type PartyRewards struct {
 }
 
 type multiplierAndQuantBalance struct {
-	multiplier     num.Decimal
-	quantumBalance num.Decimal
+	Multiplier     num.Decimal
+	QuantumBalance num.Decimal
 }
 
 type Engine struct {
@@ -202,32 +202,32 @@ func (e *Engine) getSummedBonusMultiplier(keys []string) multiplierAndQuantBalan
 			continue
 		}
 
-		summed.quantumBalance = summed.quantumBalance.Add(quantumBalanceForKey)
+		summed.QuantumBalance = summed.QuantumBalance.Add(quantumBalanceForKey)
 	}
 
-	summed.multiplier = e.rewardBonusMultiplier(summed.quantumBalance)
+	summed.Multiplier = e.rewardBonusMultiplier(summed.QuantumBalance)
 
 	return summed
 }
 
 // GetRewardBonusMultiplier returns the reward bonus multiplier and quantum balance sum for a party and it's derived keys.
 func (e *Engine) GetRewardBonusMultiplier(party string) (num.Decimal, num.Decimal) {
-	partyID, derivedKeys := e.parties.RelatedKeys(party)
-
 	owner := party
+
+	partyID, derivedKeys := e.parties.RelatedKeys(party)
 	if partyID != nil {
 		owner = partyID.String()
 	}
 
 	if cached, ok := e.summedRewardBonusMultiplierCache[owner]; ok {
-		return cached.quantumBalance, cached.multiplier
+		return cached.QuantumBalance, cached.Multiplier
 	}
 
 	summed := e.getSummedBonusMultiplier(append(derivedKeys, owner))
 
 	e.summedRewardBonusMultiplierCache[owner] = summed
 
-	return summed.quantumBalance, summed.multiplier
+	return summed.QuantumBalance, summed.Multiplier
 }
 
 // GetSingleAndSummedRewardBonusMultipliers returns a single and summed reward bonus multipliers and quantum balances for a party.
@@ -238,12 +238,14 @@ func (e *Engine) GetSingleAndSummedRewardBonusMultipliers(party string) (
 	single multiplierAndQuantBalance,
 	summed multiplierAndQuantBalance,
 ) {
+	owner := party
+
 	partyID, derivedKeys := e.parties.RelatedKeys(party)
+	if partyID != nil {
+		owner = partyID.String()
+	}
 
 	single = e.getSummedBonusMultiplier([]string{party})
-
-	// calculate with derived keys. First add the owner's quantum balance.
-	owner := partyID.String()
 
 	if cached, ok := e.summedRewardBonusMultiplierCache[owner]; ok {
 		return single, cached
@@ -495,14 +497,14 @@ func (e *Engine) broadcastVestingStatsUpdate(ctx context.Context, seq uint64) {
 	for _, party := range parties {
 		single, summed := e.GetSingleAndSummedRewardBonusMultipliers(party)
 		// To avoid excessively large decimals.
-		single.quantumBalance.Round(2)
-		summed.quantumBalance.Round(2)
+		single.QuantumBalance.Round(2)
+		summed.QuantumBalance.Round(2)
 		evt.Stats = append(evt.Stats, &eventspb.PartyVestingStats{
 			PartyId:                     party,
-			RewardBonusMultiplier:       single.multiplier.String(),
-			QuantumBalance:              single.quantumBalance.String(),
-			SummedRewardBonusMultiplier: summed.multiplier.String(),
-			SummedQuantumBalance:        summed.quantumBalance.String(),
+			RewardBonusMultiplier:       single.Multiplier.String(),
+			QuantumBalance:              single.QuantumBalance.String(),
+			SummedRewardBonusMultiplier: summed.Multiplier.String(),
+			SummedQuantumBalance:        summed.QuantumBalance.String(),
 		})
 	}
 
