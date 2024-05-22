@@ -151,6 +151,7 @@ func New(
 			svcs.ethCallEngine,
 			svcs.collateral,
 			svcs.partiesEngine,
+			svcs.txCache,
 		),
 		log:         log,
 		confWatcher: confWatcher,

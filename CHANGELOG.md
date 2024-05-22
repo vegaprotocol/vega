@@ -17,6 +17,7 @@
 - [11196](https://github.com/vegaprotocol/vega/issues/11196) - Add an active field in the price monitoring bounds payload.
 - [11211](https://github.com/vegaprotocol/vega/issues/11211) - Liquidation engine includes `vAMM` shapes as available volume.
 - [11217](https://github.com/vegaprotocol/vega/issues/11217) - Allow market proposals to override risk factors.
+- [11285](https://github.com/vegaprotocol/vega/issues/11285) - Add support for trading transaction ordering.
 - [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
 
 ### 🐛 Fixes

@@ -264,6 +264,8 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkAmendAMM(cmd.AmendAmm))
 		case *commandspb.InputData_CancelAmm:
 			errs.Merge(checkCancelAMM(cmd.CancelAmm))
+		case *commandspb.InputData_DelayedTransactionsWrapper:
+			break
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

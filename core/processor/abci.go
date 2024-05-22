@@ -192,6 +192,12 @@ type EthCallEngine interface {
 	Start()
 }
 
+type TxCache interface {
+	SetRawTxs(rtx [][]byte)
+	GetRawTxs() [][]byte
+	NewDelayedTransaction(ctx context.Context, delayed [][]byte) []byte
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -253,6 +259,9 @@ type App struct {
 	nilSpam bool
 
 	maxBatchSize atomic.Uint64
+	txCache      TxCache
+
+	seenDelayedTxTransactions bool
 }
 
 func NewApp(log *logging.Logger,
@@ -297,6 +306,7 @@ func NewApp(log *logging.Logger,
 	ethCallEngine EthCallEngine,
 	balanceChecker BalanceChecker,
 	partiesEngine PartiesEngine,
+	txCache TxCache,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -345,6 +355,7 @@ func NewApp(log *logging.Logger,
 		ethCallEngine:                  ethCallEngine,
 		balanceChecker:                 balanceChecker,
 		partiesEngine:                  partiesEngine,
+		txCache:                        txCache,
 	}
 
 	// setup handlers
@@ -527,7 +538,9 @@ func NewApp(log *logging.Logger,
 		).
 		HandleDeliverTx(txn.UpdatePartyProfileCommand,
 			app.SendTransactionResult(app.UpdatePartyProfile),
-		)
+		).
+		HandleDeliverTx(txn.DelayedTransactionsWrapper,
+			app.SendTransactionResult(app.handleDelayedTransactionWrapper))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -863,17 +876,57 @@ func (app *App) OnInitChain(req *tmtypes.RequestInitChain) (*tmtypes.ResponseIni
 // caused the party to get blocked.
 func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 	var totalBytes int64
+	validationResults := []pow.ValidationEntry{}
 
 	// internally we use this as max bytes, externally to consensus params we return max ints. This is done so that cometbft always returns to us the full mempool
 	// and we can first sort it by priority and then reap by size.
 	maxBytes := tmtypesint.DefaultBlockParams().MaxBytes * 4
 	app.log.Debug("prepareProposal called with", logging.Int("txs", len(rawTxs)), logging.Int64("max-bytes", maxBytes))
 
+	// as transactions that are wrapped for sending in the next block are not removed from the mempool
+	// to avoid adding them both from the mempool and from the cache we need to check
+	// they were not in the cache.
+	// we still need to check that the transactions from previous block are passing pow and spam requirements.
+	addedFromPreviousHash := map[string]struct{}{}
+	delayedTxs := [][]byte{}
+	for _, txx := range app.txCache.GetRawTxs() {
+		tx, err := app.abci.GetTx(txx)
+		if err != nil {
+			continue
+		}
+		if !app.nilPow {
+			vr, d := app.pow.CheckBlockTx(tx)
+			validationResults = append(validationResults, pow.ValidationEntry{Tx: tx, Difficulty: d, ValResult: vr})
+			if vr != pow.ValidationResultSuccess && vr != pow.ValidationResultValidatorCommand {
+				app.log.Debug("pow failure", logging.Int64("validation-result", int64(vr)))
+				continue
+			}
+		}
+		if !app.nilSpam {
+			err := app.spam.CheckBlockTx(tx)
+			if err != nil {
+				app.log.Debug("spam error", logging.Error(err))
+				continue
+			}
+		}
+		if err := app.canSubmitTx(tx); err != nil {
+			continue
+		}
+
+		addedFromPreviousHash[hex.EncodeToString(tx.Hash())] = struct{}{}
+		delayedTxs = append(delayedTxs, txx)
+		totalBytes += int64(len(txx))
+	}
+
 	// wrap the transaction with information about gas wanted and priority
 	wrappedTxs := make([]*TxWrapper, 0, len(txs))
 	for i, v := range txs {
 		wtx, error := app.wrapTx(v, rawTxs[i], i)
 		if error != nil {
+			continue
+		}
+		if _, ok := addedFromPreviousHash[hex.EncodeToString(wtx.tx.Hash())]; ok {
+			app.log.Debug("ignoring mempool transaction corresponding to a delayed transaction from previous block")
 			continue
 		}
 		wrappedTxs = append(wrappedTxs, wtx)
@@ -888,10 +941,12 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 	})
 
 	// add transactions to the block as long as we can without breaking size and gas limits in order of priority
-	validationResults := []pow.ValidationEntry{}
 	maxGas := app.getMaxGas()
 	totalGasWanted := uint64(0)
-	blockTxs := [][]byte{}
+	cancellations := [][]byte{}
+	postOnly := [][]byte{}
+	anythingElseFromThisBlock := [][]byte{}
+	nextBlockRtx := [][]byte{}
 
 	for _, tx := range wrappedTxs {
 		totalBytes += int64(len(tx.raw))
@@ -901,6 +956,11 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 		totalGasWanted += tx.gasWanted
 		if totalGasWanted > maxGas {
 			break
+		}
+
+		if tx.tx.Command() == txn.DelayedTransactionsWrapper {
+			app.log.Debug("delayed transaction wrapper should never be submitted into the mempool")
+			continue
 		}
 
 		if !app.nilPow {
@@ -923,10 +983,61 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 		if err := app.canSubmitTx(tx.tx); err != nil {
 			continue
 		}
-		app.log.Debug("adding tx to blockProposal", logging.String("tx-hash", hex.EncodeToString(tx.tx.Hash())), logging.String("tid", tx.tx.GetPoWTID()))
-		blockTxs = append(blockTxs, tx.raw)
+
+		switch tx.tx.Command() {
+		case txn.CancelOrderCommand, txn.CancelAMMCommand, txn.StopOrdersCancellationCommand:
+			cancellations = append(cancellations, tx.raw)
+		case txn.SubmitOrderCommand:
+			s := &commandspb.OrderSubmission{}
+			if err := tx.tx.Unmarshal(s); err != nil {
+				continue
+			}
+			if s.PostOnly {
+				postOnly = append(postOnly, tx.raw)
+			} else {
+				nextBlockRtx = append(nextBlockRtx, tx.raw)
+			}
+		case txn.AmendOrderCommand, txn.AmendAMMCommand, txn.StopOrdersSubmissionCommand:
+			nextBlockRtx = append(nextBlockRtx, tx.raw)
+		case txn.BatchMarketInstructions:
+			batch := &commandspb.BatchMarketInstructions{}
+			if err := tx.tx.Unmarshal(batch); err != nil {
+				continue
+			}
+			// if there are no amends/submissions
+			if len(batch.Amendments) == 0 && len(batch.Submissions) == 0 && len(batch.StopOrdersSubmission) == 0 {
+				cancellations = append(cancellations, tx.raw)
+			} else if len(batch.Amendments) == 0 && len(batch.StopOrdersSubmission) == 0 {
+				allPostOnly := true
+				for _, sub := range batch.Submissions {
+					if !sub.PostOnly {
+						allPostOnly = false
+						break
+					}
+				}
+				if allPostOnly {
+					postOnly = append(postOnly, tx.raw)
+				} else {
+					nextBlockRtx = append(nextBlockRtx, tx.raw)
+				}
+			} else {
+				nextBlockRtx = append(nextBlockRtx, tx.raw)
+			}
+		default:
+			anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+		}
 	}
-	app.log.Debug("prepareProposal returned with", logging.Int("blockTxs", len(blockTxs)))
+	blockTxs := [][]byte{}
+	blockTxs = append(blockTxs, cancellations...) // cancellations go first
+	blockTxs = append(blockTxs, postOnly...)      // then post only orders
+	if delayedTxs != nil {
+		blockTxs = append(blockTxs, delayedTxs...) // then anything from previous block
+	}
+	blockTxs = append(blockTxs, anythingElseFromThisBlock...) // finally anything else from this block
+	if len(nextBlockRtx) > 0 {
+		wrapperTx := app.txCache.NewDelayedTransaction(app.blockCtx, nextBlockRtx)
+		blockTxs = append(blockTxs, wrapperTx)
+	}
 	if !app.nilPow {
 		app.pow.EndPrepareProposal(validationResults)
 	}
@@ -947,6 +1058,8 @@ func (app *App) processProposal(txs []abci.Tx) bool {
 	maxGas := app.gastimator.GetMaxGas()
 	maxBytes := tmtypesint.DefaultBlockParams().MaxBytes * 4
 	size := int64(0)
+	delayedTxCount := 0
+
 	for _, tx := range txs {
 		size += int64(tx.GetLength())
 		if size > maxBytes {
@@ -959,6 +1072,14 @@ func (app *App) processProposal(txs []abci.Tx) bool {
 		totalGasWanted += int(gw)
 		if totalGasWanted > int(maxGas) {
 			return false
+		}
+		// allow only one delayed transaction wrapper in one block and its transactions must match what we expect.
+		if tx.Command() == txn.DelayedTransactionsWrapper {
+			if delayedTxCount > 0 {
+				app.log.Debug("more than one DelayedTransactionsWrapper")
+				return false
+			}
+			delayedTxCount += 1
 		}
 	}
 
@@ -982,6 +1103,11 @@ func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
+
+	if !app.seenDelayedTxTransactions {
+		app.txCache.SetRawTxs(nil)
+	}
+	app.seenDelayedTxTransactions = false
 
 	app.epoch.OnBlockEnd(app.blockCtx)
 	app.stateVar.OnBlockEnd(app.blockCtx)
@@ -2712,6 +2838,16 @@ func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("couldn't join team: %w", err)
 	}
 
+	return nil
+}
+
+func (app *App) handleDelayedTransactionWrapper(ctx context.Context, tx abci.Tx) error {
+	txs := &commandspb.DelayedTransactionsWrapper{}
+	if err := tx.Unmarshal(txs); err != nil {
+		return fmt.Errorf("could not deserialize DelayedTransactionsWrapper command: %w", err)
+	}
+	app.txCache.SetRawTxs(txs.Transactions)
+	app.seenDelayedTxTransactions = true
 	return nil
 }
 

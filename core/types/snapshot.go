@@ -102,6 +102,7 @@ const (
 	ActivityStreakSnapshot         SnapshotNamespace = "activitystreak"
 	VolumeDiscountProgramSnapshot  SnapshotNamespace = "volumeDiscountProgram"
 	LiquidationSnapshot            SnapshotNamespace = "liquidation"
+	TxCacheSnapshot                SnapshotNamespace = "txCache"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB

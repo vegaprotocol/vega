@@ -148,6 +148,7 @@ message Payload {
     EthOracleVerifierMisc eth_oracle_verifier_misc = 85;
     BankingEVMBridgeStates banking_evm_bridge_states = 86;
     EVMMultisigTopologies evm_multisig_topologies = 87;
+    TxCache tx_cache = 88;
   }
 }
 
@@ -1421,4 +1422,8 @@ message MarketLiquidity {
   string price_range = 1;
   int64 tick = 2;
   repeated AMMValues amm = 3;
+}
+
+message TxCache {
+  repeated bytes txs = 1;
 }
