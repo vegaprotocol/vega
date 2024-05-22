@@ -1604,7 +1604,7 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	}
 
 	// add the party to the derived parties
-	if len(derivedParties) > 0 {
+	if req.PartyId != nil && len(*req.PartyId) > 0 {
 		derivedParties = append(derivedParties, *req.PartyId)
 	}
 
