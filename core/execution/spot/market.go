@@ -1046,6 +1046,13 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 			}
 			return reason
 		}
+		if order.PeggedOrder.Reference == types.PeggedReferenceMid {
+			offsetInAsset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
+			tickSizeInAsset, _ := num.UintFromDecimal(m.mkt.TickSize.ToDecimal().Mul(m.priceFactor))
+			if offsetInAsset.IsZero() && tickSizeInAsset.IsZero() {
+				return fmt.Errorf("invalid offset - pegged mid will cross")
+			}
+		}
 		return m.validateTickSize(order.PeggedOrder.Offset)
 	}
 
