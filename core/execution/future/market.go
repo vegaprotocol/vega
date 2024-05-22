@@ -4652,16 +4652,21 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		var err error
-		if settlementDataInAsset != nil {
+		if settlementDataInAsset != nil && m.validateSettlementData(settlementDataInAsset) {
 			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
 		} else if m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
 			settlementDataInAsset, err = m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 			if err != nil {
 				m.log.Error(err.Error())
-			} else {
-				m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
+				return
 			}
+			if !m.validateSettlementData(settlementDataInAsset) {
+				m.log.Warn("invalid settlement data", logging.MarketID(m.GetID()))
+				m.settlementDataInMarket = nil
+				return
+			}
+			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
 		} else {
 			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
 		}
@@ -4714,6 +4719,13 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 		return
 	}
 
+	// validate the settlement data
+	if !m.validateSettlementData(settlementDataInAsset) {
+		m.log.Warn("settlement data for capped market is invalid", logging.MarketID(m.GetID()))
+		// reset settlement data, it's not valid
+		m.settlementDataInMarket = nil
+		return
+	}
 	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
 }
 
@@ -4799,13 +4811,31 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	m.checkForReferenceMoves(ctx, orderUpdates, false)
 }
 
+func (m *Market) validateSettlementData(data *num.Uint) bool {
+	if m.closed {
+		return false
+	}
+	// not capped, accept the data
+	if m.fCap == nil {
+		return true
+	}
+	// data > max
+	if m.capMax.LT(data) {
+		return false
+	}
+	// binary capped market: reject if data is not zero and not == max price.
+	if m.fCap.Binary && !data.IsZero() && !data.EQ(m.capMax) {
+		return false
+	}
+	return true
+}
+
 // NB this must be called with the lock already acquired.
 func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	if m.closed {
 		return
 	}
 	if m.capMax != nil && m.capMax.LT(settlementDataInAsset) {
-		// we cannot perform the final settlement because the settlement price is out of the [0, max_price] range
 		return
 	}
 	if m.fCap != nil && m.fCap.Binary {
@@ -4837,6 +4867,7 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
 		m.broker.Send(events.NewMarketSettled(ctx, m.GetID(), m.timeService.GetTimeNow().UnixNano(), m.lastTradedPrice, m.positionFactor))
 	}
+	return
 }
 
 func (m *Market) canTrade() bool {
