@@ -19,13 +19,18 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.76.5
+
+### 🐛 Fixes
+- [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units.
+
+
 ## 0.76.4
 
 ### 🐛 Fixes
 
 - [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
-- [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units. 
 
 
 ## 0.76.3
