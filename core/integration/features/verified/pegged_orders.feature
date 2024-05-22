@@ -1,20 +1,20 @@
 
 Feature: Pegged orders do not cross
 
-    Aiming for full coverage of edge-cases, check the following:
+  Aiming for full coverage of edge-cases, check the following:
 
   - Market decimals > asset decimals
   - Market decimals < asset decimals
 
   - For each of the above
-    - tick size cannot be expressed in asset decimals
-    - tick size can just be expressed in asset decimals
-    - tick size can be expressed in asset decimals
+  - tick size cannot be expressed in asset decimals
+  - tick size can just be expressed in asset decimals
+  - tick size can be expressed in asset decimals
 
-    - For each of the above
-      - offset cannot be expressed in asset decimals
-      - offset can just be expressed in asset decimals
-      - offset can be expressed in asset decimals
+  - For each of the above
+  - offset cannot be expressed in asset decimals
+  - offset can just be expressed in asset decimals
+  - offset can be expressed in asset decimals
 
   Background:
 
@@ -52,17 +52,17 @@ Feature: Pegged orders do not cross
     When the opening auction period ends for market "ETH.1.10/DEC21"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH.1.10/DEC21"
 
-  Examples:
-      | bo   | tick size | offset | error                              |
-      | 1010 | 1         | 1      |                                    |
-      | 1010 | 1         | 10     |                                    |
-      | 1010 | 1         | 100    |                                    |
-      | 1010 | 10        | 1      | OrderError: price not in tick size |
-      | 1010 | 10        | 10     |                                    |
-      | 1010 | 10        | 100    |                                    |
-      | 1100 | 100       | 1      | OrderError: price not in tick size |
-      | 1100 | 100       | 10     | OrderError: price not in tick size |
-      | 1100 | 100       | 100    |                                    |
+    Examples:
+      | bo   | tick size | offset | error                                  |
+      | 1010 | 1         | 1      | invalid offset - pegged mid will cross |
+      | 1010 | 1         | 10     |                                        |
+      | 1010 | 1         | 100    |                                        |
+      | 1010 | 10        | 1      | OrderError: price not in tick size     |
+      | 1010 | 10        | 10     |                                        |
+      | 1010 | 10        | 100    |                                        |
+      | 1100 | 100       | 1      | OrderError: price not in tick size     |
+      | 1100 | 100       | 10     | OrderError: price not in tick size     |
+      | 1100 | 100       | 100    |                                        |
 
 
   Scenario Outline: # Market decimals < asset decimals
@@ -83,7 +83,7 @@ Feature: Pegged orders do not cross
     When the opening auction period ends for market "ETH.1.10/DEC21"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH.1.10/DEC21"
 
-  Examples:
+    Examples:
       | bo   | tick size | offset | error                              |
       | 1001 | 1         | 1      |                                    |
       | 1001 | 1         | 10     |                                    |
