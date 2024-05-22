@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -89,7 +90,7 @@ type Teams interface {
 
 type Vesting interface {
 	AddReward(party, asset string, amount *num.Uint, lockedForEpochs uint64)
-	GetRewardBonusMultiplier(party string) (num.Decimal, num.Decimal)
+	GetSingleAndSummedRewardBonusMultipliers(party string) (vesting.MultiplierAndQuantBalance, vesting.MultiplierAndQuantBalance)
 }
 
 type ActivityStreak interface {
@@ -357,8 +358,8 @@ func (e *Engine) convertTakerFeesToRewardAsset(takerFees map[string]*num.Uint, f
 
 func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 	asMultiplier := e.activityStreak.GetRewardsDistributionMultiplier(party)
-	_, vsMultiplier := e.vesting.GetRewardBonusMultiplier(party)
-	return asMultiplier.Mul(vsMultiplier)
+	_, summed := e.vesting.GetSingleAndSummedRewardBonusMultipliers(party)
+	return asMultiplier.Mul(summed.Multiplier)
 }
 
 func filterEligible(ps []*types.PartyContributionScore) []*types.PartyContributionScore {

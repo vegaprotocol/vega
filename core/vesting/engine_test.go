@@ -338,8 +338,6 @@ func TestDistributeWithNoDelay(t *testing.T) {
 	t.Run("First reward payment", func(t *testing.T) {
 		epochSeq += 1
 
-		v.GetRewardBonusMultiplier(party)
-
 		expectLedgerMovements(t, v)
 
 		v.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
@@ -1284,33 +1282,22 @@ func TestGetRewardBonusMultiplier(t *testing.T) {
 	}
 
 	for _, key := range append(derivedKeys, party) {
-		balance, multiplier := v.GetRewardBonusMultiplier(key)
-		require.Equal(t, num.DecimalFromInt64(1500), balance)
-		require.Equal(t, num.DecimalFromInt64(3), multiplier)
+		_, summed := v.GetSingleAndSummedRewardBonusMultipliers(key)
+		require.Equal(t, num.DecimalFromInt64(1500), summed.QuantumBalance)
+		require.Equal(t, num.DecimalFromInt64(3), summed.Multiplier)
 	}
 
 	// check that we only called the GetVestingQuantumBalance once for each key
 	// later calls should be cached
 	require.Equal(t, 5, v.col.GetVestingQuantumBalanceCallCount())
 
-	v.col.ResetVestingQuantumBalanceCallCount()
-
-	single, summed := v.GetSingleAndSummedRewardBonusMultipliers(party)
-	require.Equal(t, num.DecimalFromInt64(500), single.QuantumBalance)
-	require.Equal(t, num.DecimalFromInt64(2), single.Multiplier)
-	require.Equal(t, num.DecimalFromInt64(1500), summed.QuantumBalance)
-	require.Equal(t, num.DecimalFromInt64(3), summed.Multiplier)
-
-	for _, key := range derivedKeys {
-		single, summed := v.GetSingleAndSummedRewardBonusMultipliers(key)
-		require.Equal(t, num.DecimalFromInt64(250), single.QuantumBalance)
-		require.Equal(t, num.DecimalFromInt64(1), single.Multiplier)
+	for _, key := range append(derivedKeys, party) {
+		_, summed := v.GetSingleAndSummedRewardBonusMultipliers(key)
 		require.Equal(t, num.DecimalFromInt64(1500), summed.QuantumBalance)
 		require.Equal(t, num.DecimalFromInt64(3), summed.Multiplier)
 	}
 
-	// here we check that we just called 5 more times to re-calculate single values
-	// summed should be cached
+	// all the calls above should be served from cache
 	require.Equal(t, 5, v.col.GetVestingQuantumBalanceCallCount())
 
 	v.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -1325,9 +1312,9 @@ func TestGetRewardBonusMultiplier(t *testing.T) {
 	v.col.ResetVestingQuantumBalanceCallCount()
 
 	for _, key := range append(derivedKeys, party) {
-		balance, multiplier := v.GetRewardBonusMultiplier(key)
-		require.Equal(t, num.DecimalFromInt64(1500), balance)
-		require.Equal(t, num.DecimalFromInt64(3), multiplier)
+		_, summed := v.GetSingleAndSummedRewardBonusMultipliers(key)
+		require.Equal(t, num.DecimalFromInt64(1500), summed.QuantumBalance)
+		require.Equal(t, num.DecimalFromInt64(3), summed.Multiplier)
 	}
 
 	// now it's called 5 times again because the cache gets reset at the end of the epoch
@@ -1341,9 +1328,17 @@ func TestGetRewardBonusMultiplier(t *testing.T) {
 	v.col.ResetVestingQuantumBalanceCallCount()
 
 	for _, key := range append(derivedKeys, party) {
-		balance, multiplier := v.GetRewardBonusMultiplier(key)
-		require.Equal(t, num.DecimalFromInt64(1500), balance)
-		require.Equal(t, num.DecimalFromInt64(3), multiplier)
+		single, summed := v.GetSingleAndSummedRewardBonusMultipliers(key)
+		require.Equal(t, num.DecimalFromInt64(1500), summed.QuantumBalance)
+		require.Equal(t, num.DecimalFromInt64(3), summed.Multiplier)
+
+		if key == party {
+			require.Equal(t, num.DecimalFromInt64(500), single.QuantumBalance)
+			require.Equal(t, num.DecimalFromInt64(2), single.Multiplier)
+		} else {
+			require.Equal(t, num.DecimalFromInt64(250), single.QuantumBalance)
+			require.Equal(t, num.DecimalFromInt64(1), single.Multiplier)
+		}
 	}
 
 	// now it's called 5 times again because the cache gets reset at the end of the epoch
