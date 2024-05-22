@@ -586,6 +586,7 @@ message PoolMapEntry {
     Curve lower = 7;
     Curve upper = 8;
     vega.events.v1.AMM.Status status = 9;
+    string proposed_fee = 10;
   }
 
   string party = 1;
