@@ -643,6 +643,8 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	if tickSizeChanged {
 		peggedOrders := m.matching.GetActivePeggedOrderIDs()
 		peggedOrders = append(peggedOrders, m.peggedOrders.GetParkedIDs()...)
+
+		tickSizeInAsset, _ := num.UintFromDecimal(m.mkt.TickSize.ToDecimal().Mul(m.priceFactor))
 		for _, po := range peggedOrders {
 			order, err := m.matching.GetOrderByID(po)
 			if err != nil {
@@ -651,7 +653,9 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 					continue
 				}
 			}
-			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() {
+			offsetInAsset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
+			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() ||
+				(order.PeggedOrder.Reference == types.PeggedReferenceMid && offsetInAsset.IsZero() && tickSizeInAsset.IsZero()) {
 				m.cancelOrder(ctx, order.Party, order.ID)
 			}
 		}
