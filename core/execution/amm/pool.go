@@ -190,10 +190,16 @@ func NewPoolFromProto(
 		return nil, err
 	}
 
+	proposedFee, err := num.DecimalFromString(state.ProposedFee)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Pool{
-		ID:         state.Id,
-		AMMParty:   state.AmmPartyId,
-		Commitment: num.MustUintFromString(state.Commitment, 10),
+		ID:          state.Id,
+		AMMParty:    state.AmmPartyId,
+		Commitment:  num.MustUintFromString(state.Commitment, 10),
+		ProposedFee: proposedFee,
 		Parameters: &types.ConcentratedLiquidityParameters{
 			Base:                 base,
 			LowerBound:           lower,
@@ -246,12 +252,13 @@ func NewCurveFromProto(c *snapshotpb.PoolMapEntry_Curve) (*curve, error) {
 
 func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 	return &snapshotpb.PoolMapEntry_Pool{
-		Id:         p.ID,
-		AmmPartyId: p.AMMParty,
-		Commitment: p.Commitment.String(),
-		Parameters: p.Parameters.ToProtoEvent(),
-		Market:     p.market,
-		Asset:      p.asset,
+		Id:          p.ID,
+		AmmPartyId:  p.AMMParty,
+		Commitment:  p.Commitment.String(),
+		ProposedFee: p.ProposedFee.String(),
+		Parameters:  p.Parameters.ToProtoEvent(),
+		Market:      p.market,
+		Asset:       p.asset,
 		Lower: &snapshotpb.PoolMapEntry_Curve{
 			L:     p.lower.l.String(),
 			High:  p.lower.high.String(),
