@@ -18,6 +18,15 @@
 
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
+
+## 0.76.7
+
+### 🐛 Fixes
+
+- [11275](https://github.com/vegaprotocol/vega/pull/11275) - add cache map to order `sqlsubscriber` to prevent order from not being updated in data node.
+- [11310](https://github.com/vegaprotocol/vega/pull/11310) -  handle invalid offset for pegged on market update when tick size changes.
+
+
 ## 0.76.6
 
 ### 🐛 Fixes
