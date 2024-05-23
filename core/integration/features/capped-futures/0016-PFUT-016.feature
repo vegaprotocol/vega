@@ -49,7 +49,7 @@ Feature: Oracle price data within range is used to determine the mid price
       | party2 | DAI/DEC22 | buy  | 1      | 2500000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |                     |
       | party2 | DAI/DEC22 | buy  | 1      | 3500000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |                     |
       | party3 | DAI/DEC22 | sell | 1      | 3500000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |                     |
-      | party3 | DAI/DEC22 | sell | 1      | 4500000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |                     |
+      | party3 | DAI/DEC22 | sell | 1      | 4499999 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |                     |
       | party3 | DAI/DEC22 | sell | 1      | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  | invalid order price |
 
     And the opening auction period ends for market "DAI/DEC22"
@@ -59,11 +59,12 @@ Feature: Oracle price data within range is used to determine the mid price
 
     And the market data for the market "DAI/DEC22" should be:
       | mark price | best static bid price | static mid price | best static offer price |
-      | 3500000    | 2500000               | 3500000          | 4500000                 |
+      | 3500000    | 2500000               | 3499999          | 4499999                 |
+    And debug detailed orderbook volumes for market "DAI/DEC22"
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price   | volume |
-      | sell | 3600000 | 5      |
-      | sell | 4500000 | 1      |
+      | sell | 3599999 | 5      |
+      | sell | 4499999 | 1      |
       | buy  | 3400000 | 5      |
       | buy  | 2500000 | 1      |
 

@@ -41,7 +41,7 @@ Feature: Pegged orders are capped to max price.
       | party2 | DAI/DEC22 | buy  | 1      | 800000000  | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
       | party2 | DAI/DEC22 | buy  | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
       | party3 | DAI/DEC22 | sell | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |
-      | party3 | DAI/DEC22 | sell | 1      | 4500000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |
+      | party3 | DAI/DEC22 | sell | 1      | 4499999999 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |
 
     And the opening auction period ends for market "DAI/DEC22"
     Then the following trades should be executed:
@@ -49,11 +49,11 @@ Feature: Pegged orders are capped to max price.
       | party2 | 3500000000 | 1    | party3 |
     And the market data for the market "DAI/DEC22" should be:
       | mark price | best static bid price | static mid price | best static offer price |
-      | 3500000000 | 800000000             | 2650000000       | 4500000000              |
+      | 3500000000 | 800000000             | 2649999999       | 4499999999              |
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000000 | 1      |
-      | sell | 2650000010 | 5      |
+      | sell | 4499999999 | 1      |
+      | sell | 2650000009 | 5      |
       | buy  | 2649999990 | 5      |
       | buy  | 800000000  | 1      |
     # Ensure the price cap is enforced on all orders
@@ -67,13 +67,13 @@ Feature: Pegged orders are capped to max price.
       | party2 | party2-1  |
     And the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
-      | party2 | DAI/DEC22 | buy  | 1      | 4499999999 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
+      | party2 | DAI/DEC22 | buy  | 1      | 4499999998 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
     Then the market data for the market "DAI/DEC22" should be:
       | mark price | best static bid price | static mid price | best static offer price |
-      | 3500000000 | 4499999999            | 4499999999       | 4500000000              |
+      | 3500000000 | 4499999998            | 4499999998       | 4499999999              |
     # Now the sell order should be capped to max price, buy order is offset by 10
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000000 | 6      |
-      | buy  | 4499999999 | 1      |
-      | buy  | 4499999990 | 5      |
+      | sell | 4499999999 | 6      |
+      | buy  | 4499999998 | 1      |
+      | buy  | 4499999989 | 5      |

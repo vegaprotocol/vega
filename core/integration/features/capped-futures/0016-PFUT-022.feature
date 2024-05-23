@@ -56,7 +56,7 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
       | aux1   | ETH/DEC21 | buy  | 2      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |       |
-      | aux2   | ETH/DEC21 | sell | 2      | 1500  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |       |
+      | aux2   | ETH/DEC21 | sell | 2      | 1499  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |       |
       | party1 | ETH/DEC21 | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |       |
       | party2 | ETH/DEC21 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |       |
     And the network moves ahead "2" blocks
@@ -78,7 +78,7 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
       | party  | market id | maintenance | search | initial | release | margin mode  |
       | party1 | ETH/DEC21 | 5000        | 5000   | 5000    | 5000    | cross margin |
       | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
-      | aux2   | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
+      | aux2   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
       | aux1   | ETH/DEC21 | 1998        | 1998   | 1998    | 1998    | cross margin |
 
     #update mark price
@@ -100,7 +100,7 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
       | party1 | USD   | ETH/DEC21 | 5000   | 5500    |
       | party2 | USD   | ETH/DEC21 | 2500   | 7000    |
       | aux1   | USD   | ETH/DEC21 | 3098   | 96908   |
-      | aux2   | USD   | ETH/DEC21 | 400    | 99572   |
+      | aux2   | USD   | ETH/DEC21 | 402    | 99570   |
     # The market is fully collateralised, switching to isolated margin is not supported
     When the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                                                                                                                 |
@@ -110,15 +110,15 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     #update mark price to max_price
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-      | aux3  | ETH/DEC21 | buy  | 2      | 1500  | 1                | TYPE_LIMIT | TIF_GTC | aux3-1    |       |
+      | aux3  | ETH/DEC21 | buy  | 2      | 1499  | 1                | TYPE_LIMIT | TIF_GTC | aux3-1    |       |
 
     And the following trades should be executed:
       | buyer | price | size | seller |
-      | aux3  | 1500  | 2    | aux2   |
+      | aux3  | 1499  | 2    | aux2   |
 
     And the network moves ahead "2" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
-    Then the mark price should be "1500" for the market "ETH/DEC21"
+    Then the mark price should be "1499" for the market "ETH/DEC21"
 
     # MTM settlement 5 long makes a profit of 2000, 5 short loses 2000
     # Now for aux1 and 2, the calculations from above still hold but more margin is required due to the open positions:
@@ -126,11 +126,11 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 3*(1100+1500*2)/3
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 7500    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 5000    |
-      | aux1   | USD   | ETH/DEC21 | 3098   | 97308   |
-      | aux2   | USD   | ETH/DEC21 | 402    | 99185   |
-      | aux3   | USD   | ETH/DEC21 | 3000   | 96925   |
+      | party1 | USD   | ETH/DEC21 | 5000   | 7495    |
+      | party2 | USD   | ETH/DEC21 | 2500   | 5005    |
+      | aux1   | USD   | ETH/DEC21 | 3098   | 97307   |
+      | aux2   | USD   | ETH/DEC21 | 402    | 99186   |
+      | aux3   | USD   | ETH/DEC21 | 2998   | 96927   |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
@@ -141,14 +141,14 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     #trade at max_price
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux4  | ETH/DEC21 | buy  | 2      | 1500  | 0                | TYPE_LIMIT | TIF_GTC | aux4-1    |
-      | aux5  | ETH/DEC21 | sell | 2      | 1500  | 1                | TYPE_LIMIT | TIF_GTC | aux5-1    |
+      | aux4  | ETH/DEC21 | buy  | 2      | 1499  | 0                | TYPE_LIMIT | TIF_GTC | aux4-1    |
+      | aux5  | ETH/DEC21 | sell | 2      | 1499  | 1                | TYPE_LIMIT | TIF_GTC | aux5-1    |
 
     And the network moves ahead "2" blocks
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux4  | USD   | ETH/DEC21 | 3000   | 97015   |
-      | aux5  | USD   | ETH/DEC21 | 0      | 99925   |
+      | aux4  | USD   | ETH/DEC21 | 2998   | 97017   |
+      | aux5  | USD   | ETH/DEC21 | 2      | 99923   |
     And the following transfers should happen:
       | from   | to   | from account            | to account                       | market id | amount | asset |
       | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 15     | USD   |
@@ -171,25 +171,25 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     Then the last market state should be "STATE_SETTLED" for the market "ETH/DEC21"
     And the following transfers should happen:
       | from     | to       | from account            | to account              | market id | amount | asset | type                        |
-      | aux1     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 1500   | USD   | TRANSFER_TYPE_LOSS          |
-      | aux3     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 3000   | USD   | TRANSFER_TYPE_LOSS          |
-      | aux4     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 3000   | USD   | TRANSFER_TYPE_LOSS          |
+      | aux1     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 1499   | USD   | TRANSFER_TYPE_LOSS          |
+      | aux3     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 2998   | USD   | TRANSFER_TYPE_LOSS          |
+      | aux4     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 2998   | USD   | TRANSFER_TYPE_LOSS          |
       | party1   |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 5000   | USD   | TRANSFER_TYPE_LOSS          |
-      | party1   |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 2500   | USD   | TRANSFER_TYPE_LOSS          |
-      | market   | aux2     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 4500   | USD   | TRANSFER_TYPE_WIN           |
-      | market   | aux5     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 3000   | USD   | TRANSFER_TYPE_WIN           |
-      | market   | party2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 7500   | USD   | TRANSFER_TYPE_WIN           |
-      | aux1     | aux1     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 1598   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
-      | aux2     | aux2     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 4902   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | party1   |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 2495   | USD   | TRANSFER_TYPE_LOSS          |
+      | market   | aux2     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 4497   | USD   | TRANSFER_TYPE_WIN           |
+      | market   | aux5     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 2998   | USD   | TRANSFER_TYPE_WIN           |
+      | market   | party2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 7495   | USD   | TRANSFER_TYPE_WIN           |
+      | aux1     | aux1     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 1599   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | aux2     | aux2     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 4899   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
       | aux5     | aux5     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 3000   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
-      | party2   | party2   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 10000  | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | party2   | party2   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 9995   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
       | party-lp | party-lp | ACCOUNT_TYPE_BOND       | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 30000  | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | USD   | ETH/DEC21 | 0      | 5000    |
       | party2 | USD   | ETH/DEC21 | 0      | 15000   |
       | aux1   | USD   | ETH/DEC21 | 0      | 98906   |
-      | aux2   | USD   | ETH/DEC21 | 0      | 104087  |
-      | aux3   | USD   | ETH/DEC21 | 0      | 96925   |
-      | aux4   | USD   | ETH/DEC21 | 0      | 97015   |
-      | aux5   | USD   | ETH/DEC21 | 0      | 102925  |
+      | aux2   | USD   | ETH/DEC21 | 0      | 104085  |
+      | aux3   | USD   | ETH/DEC21 | 0      | 96927   |
+      | aux4   | USD   | ETH/DEC21 | 0      | 97017   |
+      | aux5   | USD   | ETH/DEC21 | 0      | 102923  |

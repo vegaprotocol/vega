@@ -56,7 +56,7 @@ Feature: Margin calculation on a fully collateralised capped future
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
       | aux1   | ETH/DEC21 | buy  | 2      | 9     | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |       |
-      | aux2   | ETH/DEC21 | sell | 2      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |       |
+      | aux2   | ETH/DEC21 | sell | 2      | 99    | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |       |
       | party1 | ETH/DEC21 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |       |
       | party2 | ETH/DEC21 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |       |
     And the network moves ahead "2" blocks
@@ -75,7 +75,7 @@ Feature: Margin calculation on a fully collateralised capped future
       | party1 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
       | party2 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
       | aux1   | ETH/DEC21 | 18          | 18     | 18      | 18      | cross margin |
-      | aux2   | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
+      | aux2   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
 
     # The case the AC is actually about: buy 10@30
     When the parties place the following orders:
@@ -93,7 +93,7 @@ Feature: Margin calculation on a fully collateralised capped future
       | party1 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
       | party2 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
       | aux1   | ETH/DEC21 | 18          | 18     | 18      | 18      | cross margin |
-      | aux2   | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
+      | aux2   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
       | aux3   | ETH/DEC21 | 300         | 300    | 300     | 300     | cross margin |
 
     #0019-MCAL-155
@@ -118,7 +118,7 @@ Feature: Margin calculation on a fully collateralised capped future
       | party1 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
       | party2 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
       | aux1   | ETH/DEC21 | 18          | 18     | 18      | 18      | cross margin |
-      | aux2   | ETH/DEC21 | 0           | 0      | 0       | 0       | cross margin |
+      | aux2   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
       | aux3   | ETH/DEC21 | 300         | 300    | 300     | 300     | cross margin |
       | aux4   | ETH/DEC21 | 1100        | 1100   | 1100    | 1100    | cross margin |
 

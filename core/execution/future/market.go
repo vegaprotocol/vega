@@ -1429,7 +1429,11 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		price, _ := num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 
 		if m.capMax != nil {
-			price = num.Min(price, m.capMax.Clone())
+			upper := num.UintZero().Sub(m.capMax, num.UintOne())
+			price = num.Min(price, upper)
+		}
+		if price.IsZero() {
+			price = num.UintOne()
 		}
 		return price, nil
 	}
@@ -1445,7 +1449,11 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 
 	if m.capMax != nil {
-		price = num.Min(price, m.capMax.Clone())
+		upper := num.UintZero().Sub(m.capMax, num.UintOne())
+		price = num.Min(price, upper)
+	}
+	if price.IsZero() {
+		price = num.UintOne()
 	}
 	return price, nil
 }
@@ -2296,14 +2304,21 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 		m.triggerStopOrders(ctx, idgen)
 	}()
 	order := orderSubmission.IntoOrder(party)
+	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
+	order.ID = orderID
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
 		order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
+		if order.Type == types.OrderTypeLimit && order.Price.IsZero() {
+			// limit orders need to be priced > 0
+			order.Status = types.OrderStatusRejected
+			order.Reason = types.OrderErrorPriceNotInTickSize // @TODO add new error
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+			return nil, common.ErrInvalidOrderPrice
+		}
 	}
-	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
-	order.ID = orderID
 	// check max price in case of capped market
-	if m.capMax != nil && order.Price != nil && order.Price.GT(m.capMax) {
+	if m.capMax != nil && order.Price != nil && order.Price.GTE(m.capMax) {
 		order.Status = types.OrderStatusRejected
 		order.Reason = types.OrderErrorPriceLTEMaxPrice
 		m.broker.Send(events.NewOrderEvent(ctx, order))

@@ -1,8 +1,7 @@
-Feature: When max_price is specified and the market is ran in a fully-collateralised mode and it has parties with open positions settling it at a price of 0 works correctly
+Feature: Futures market can be created with a with [hardcoded risk factors](./0018-RSKM-quant_risk_models.ipynb).
 
   Background:
-    Given time is updated to "2019-11-30T00:00:00Z"
-    And the average block duration is "1"
+    Given the average block duration is "1"
 
     And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding         |
@@ -27,16 +26,18 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 3600000 | 0.99        | 300               |
+    And the simple risk model named "simple-risk-model":
+      | long | short | max move up | min move down | probability of trading |
+      | 0.1  | 0.2   | 100         | -100          | 0.2                    |
     And the log normal risk model named "lognormal-risk-model-1":
       | risk aversion | tau  | mu | r   | sigma |
       | 0.0002        | 0.01 | 0  | 0.0 | 1.2   |
-
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
-      | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | default-none     | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
+      | id        | quote name | asset | risk model        | margin calculator                | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
+      | ETH/DEC21 | ETH        | USD   | simple-risk-model | default-capped-margin-calculator | 1                | fees-config-1 | default-none     | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | false                | false  |
 
-  @SLABug @NoPerp @Capped @CZero
-  Scenario: 0016-PFUT-023: no closeout happens when mark to market settlement is carried out at a price of `0`
+  @SLABug @NoPerp @Capped @MarginCap
+  Scenario: 0016-PFUT-026, 0016-PFUT-028: Capped futures market can be created with a with [hardcoded risk factors](./0018-RSKM-quant_risk_models.ipynb).
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -66,8 +67,8 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 5000    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 7500    |
+      | party1 | USD   | ETH/DEC21 | 1750   | 8250    |
+      | party2 | USD   | ETH/DEC21 | 2250   | 7750    |
 
     #order margin for aux1: limit price * size = 999*2=1998
     #order margin for aux2: (max price - limit price) * size = (1500-1301)*2=398
@@ -77,10 +78,10 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     #aux2: potential position * (max price -  limit price) = 2 * 0 = 0
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 5000        | 5000   | 5000    | 5000    | cross margin |
-      | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
-      | aux2   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
-      | aux1   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
+      | party1 | ETH/DEC21 | 1750        | 1750   | 1750    | 1750    | cross margin |
+      | party2 | ETH/DEC21 | 2250        | 2250   | 2250    | 2250    | cross margin |
+      | aux2   | ETH/DEC21 | 400         | 400    | 400     | 400     | cross margin |
+      | aux1   | ETH/DEC21 | 200         | 200    | 200     | 200     | cross margin |
 
     #update mark price
     When the parties place the following orders:
@@ -88,8 +89,6 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
       | aux1  | ETH/DEC21 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux1-2    |
       | aux2  | ETH/DEC21 | sell | 1      | 1     | 1                | TYPE_LIMIT | TIF_GTC | aux2-2    |
 
-    And debug trades
-    And debug detailed orderbook volumes for market "ETH/DEC21"
     And the network moves ahead "2" blocks
     Then the mark price should be "1" for the market "ETH/DEC21"
 
@@ -104,10 +103,10 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2's short position and potential margins are calculated separately as 2 * (1500-1301) + 1 * (1500 - 1100) = 398 + 400 = 798
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 5       |
-      | party2 | USD   | ETH/DEC21 | 2500   | 12495   |
-      | aux1   | USD   | ETH/DEC21 | 3      | 99998   |
-      | aux2   | USD   | ETH/DEC21 | 1501   | 98497   |
+      | party1 | USD   | ETH/DEC21 | 2      | 5003    |
+      | party2 | USD   | ETH/DEC21 | 3      | 14992   |
+      | aux1   | USD   | ETH/DEC21 | 1      | 100000  |
+      | aux2   | USD   | ETH/DEC21 | 1      | 99997   |
 
     #update mark price to max_price
     When the parties place the following orders:
@@ -128,15 +127,26 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 3*(1100+1500*2)/3
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 7495    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 5005    |
-      | aux1   | USD   | ETH/DEC21 | 3      | 101496  |
-      | aux2   | USD   | ETH/DEC21 | 1503   | 97012   |
-      | aux3   | USD   | ETH/DEC21 | 2998   | 96927   |
+      | party1 | USD   | ETH/DEC21 | 2624   | 9871    |
+      | party2 | USD   | ETH/DEC21 | 3373   | 4132    |
+      | aux1   | USD   | ETH/DEC21 | 825    | 100674  |
+      | aux2   | USD   | ETH/DEC21 | 2024   | 96491   |
+      | aux3   | USD   | ETH/DEC21 | 1050   | 98875   |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 5000        | 5000   | 5000    | 5000    | cross margin |
-      | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
-      | aux2   | ETH/DEC21 | 1503        | 1503   | 1503    | 1503    | cross margin |
-      | aux1   | ETH/DEC21 | 3           | 3      | 3       | 3       | cross margin |
+      | party1 | ETH/DEC21 | 2624        | 2624   | 2624    | 2624    | cross margin |
+      | party2 | ETH/DEC21 | 3373        | 3373   | 3373    | 3373    | cross margin |
+      | aux2   | ETH/DEC21 | 2024        | 2024   | 2024    | 2024    | cross margin |
+      | aux1   | ETH/DEC21 | 825         | 825    | 825     | 825     | cross margin |
+
+    When the markets are updated:
+      | id        | risk model             |
+      | ETH/DEC21 | lognormal-risk-model-1 |
+    And the network moves ahead "2" blocks
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode  |
+      | party1 | ETH/DEC21 | 2624        | 2624   | 2624    | 2624    | cross margin |
+      | party2 | ETH/DEC21 | 3373        | 3373   | 3373    | 3373    | cross margin |
+      | aux2   | ETH/DEC21 | 2024        | 2024   | 2024    | 2024    | cross margin |
+      | aux1   | ETH/DEC21 | 825         | 825    | 825     | 825     | cross margin |
