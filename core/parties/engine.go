@@ -25,6 +25,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -50,11 +52,11 @@ func (e *Engine) AssignDeriveKey(party types.PartyID, derivedKey string) {
 		e.profiles[party] = &types.PartyProfile{
 			PartyID:     party,
 			Metadata:    map[string]string{},
-			DerivedKeys: []string{},
+			DerivedKeys: map[string]struct{}{},
 		}
 	}
 
-	e.profiles[party].DerivedKeys = append(e.profiles[party].DerivedKeys, derivedKey)
+	e.profiles[party].DerivedKeys[derivedKey] = struct{}{}
 }
 
 func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool {
@@ -63,7 +65,27 @@ func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string
 		return false
 	}
 
-	return slices.Contains(partyProfile.DerivedKeys, derivedKey)
+	_, ok = partyProfile.DerivedKeys[derivedKey]
+	return ok
+}
+
+// RelatedKeys returns all keys related to the specified key.
+// If a derived key is provided, it returns all other derived keys and the party key.
+// If a party key is provided, it returns all derived keys and the party key itself.
+// The keys will be in an indeterminate order.
+func (e *Engine) RelatedKeys(key string) (*types.PartyID, []string) {
+	profile, ok := e.profiles[types.PartyID(key)]
+	if ok {
+		return &profile.PartyID, maps.Keys(profile.DerivedKeys)
+	}
+
+	for _, profile := range e.profiles {
+		if _, ok := profile.DerivedKeys[key]; ok {
+			return &profile.PartyID, maps.Keys(profile.DerivedKeys)
+		}
+	}
+
+	return nil, nil
 }
 
 func (e *Engine) CheckSufficientBalanceToUpdateProfile(party types.PartyID, balance *num.Uint) error {
@@ -82,7 +104,7 @@ func (e *Engine) UpdateProfile(ctx context.Context, partyID types.PartyID, cmd *
 	if !exists {
 		profile = &types.PartyProfile{
 			PartyID:     partyID,
-			DerivedKeys: []string{},
+			DerivedKeys: map[string]struct{}{},
 		}
 		e.profiles[partyID] = profile
 	}
@@ -111,10 +133,9 @@ func (e *Engine) loadPartiesFromSnapshot(partiesPayload *types.PayloadParties) {
 			profile.Metadata[m.Key] = m.Value
 		}
 
-		if profilePayload.DerivedKeys == nil {
-			profile.DerivedKeys = []string{}
-		} else {
-			profile.DerivedKeys = profilePayload.DerivedKeys
+		profile.DerivedKeys = map[string]struct{}{}
+		for _, val := range profilePayload.DerivedKeys {
+			profile.DerivedKeys[val] = struct{}{}
 		}
 
 		e.profiles[profile.PartyID] = profile

@@ -40,11 +40,12 @@ import (
 type testEngine struct {
 	*vesting.Engine
 
-	ctrl   *gomock.Controller
-	col    *collateralMock
-	asvm   *mocks.MockActivityStreakVestingMultiplier
-	broker *bmocks.MockBroker
-	assets *mocks.MockAssets
+	ctrl    *gomock.Controller
+	col     *collateralMock
+	asvm    *mocks.MockActivityStreakVestingMultiplier
+	broker  *bmocks.MockBroker
+	assets  *mocks.MockAssets
+	parties *mocks.MockParties
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -55,27 +56,30 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	asvm := mocks.NewMockActivityStreakVestingMultiplier(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
+	parties := mocks.NewMockParties(ctrl)
 
 	return &testEngine{
 		Engine: vesting.New(
-			logger, col, asvm, broker, assets,
+			logger, col, asvm, broker, assets, parties,
 		),
-		ctrl:   ctrl,
-		broker: broker,
-		col:    col,
-		asvm:   asvm,
-		assets: assets,
+		ctrl:    ctrl,
+		broker:  broker,
+		col:     col,
+		asvm:    asvm,
+		assets:  assets,
+		parties: parties,
 	}
 }
 
 type testSnapshotEngine struct {
 	engine *vesting.SnapshotEngine
 
-	ctrl   *gomock.Controller
-	col    *collateralMock
-	asvm   *mocks.MockActivityStreakVestingMultiplier
-	broker *bmocks.MockBroker
-	assets *mocks.MockAssets
+	ctrl    *gomock.Controller
+	col     *collateralMock
+	asvm    *mocks.MockActivityStreakVestingMultiplier
+	broker  *bmocks.MockBroker
+	assets  *mocks.MockAssets
+	parties *mocks.MockParties
 
 	currentEpoch uint64
 }
@@ -87,22 +91,25 @@ func newEngine(t *testing.T) *testSnapshotEngine {
 	asvm := mocks.NewMockActivityStreakVestingMultiplier(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
+	parties := mocks.NewMockParties(ctrl)
 
 	return &testSnapshotEngine{
 		engine: vesting.NewSnapshotEngine(
-			logging.NewTestLogger(), col, asvm, broker, assets,
+			logging.NewTestLogger(), col, asvm, broker, assets, parties,
 		),
 		ctrl:         ctrl,
 		col:          col,
 		asvm:         asvm,
 		broker:       broker,
 		assets:       assets,
+		parties:      parties,
 		currentEpoch: 10,
 	}
 }
 
 type collateralMock struct {
-	vestedAccountAmount map[string]map[string]*num.Uint
+	vestedAccountAmount            map[string]map[string]*num.Uint
+	vestingQuantumBalanceCallCount int
 }
 
 func (c *collateralMock) InitVestedBalance(party, asset string, balance *num.Uint) {
@@ -150,7 +157,17 @@ func (c *collateralMock) GetAllVestingQuantumBalance(party string) num.Decimal {
 		balance = balance.Add(num.DecimalFromUint(n))
 	}
 
+	c.vestingQuantumBalanceCallCount += 1
+
 	return balance
+}
+
+func (c *collateralMock) ResetVestingQuantumBalanceCallCount() {
+	c.vestingQuantumBalanceCallCount = 0
+}
+
+func (c *collateralMock) GetVestingQuantumBalanceCallCount() int {
+	return c.vestingQuantumBalanceCallCount
 }
 
 func newCollateralMock(t *testing.T) *collateralMock {

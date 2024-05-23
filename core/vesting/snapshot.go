@@ -39,9 +39,10 @@ func NewSnapshotEngine(
 	asvm ActivityStreakVestingMultiplier,
 	broker Broker,
 	assets Assets,
+	parties Parties,
 ) *SnapshotEngine {
 	se := &SnapshotEngine{
-		Engine: New(log, c, asvm, broker, assets),
+		Engine: New(log, c, asvm, broker, assets, parties),
 	}
 
 	return se
