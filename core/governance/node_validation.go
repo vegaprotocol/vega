@@ -435,9 +435,9 @@ func (n *NodeValidation) restoreBatch(ctx context.Context, pProto *snapshotpb.Ba
 	nbp := &nodeBatchProposal{
 		batchProposal: &batchProposal{
 			BatchProposal: p,
-			yes:           map[string]*types.Vote{},
-			no:            map[string]*types.Vote{},
-			invalidVotes:  map[string]*types.Vote{},
+			yes:           votesAsMapFromProto(pProto.BatchProposal.Yes),
+			no:            votesAsMapFromProto(pProto.BatchProposal.No),
+			invalidVotes:  votesAsMapFromProto(pProto.BatchProposal.Invalid),
 		},
 		nodeProposals: nodeProposals,
 		state:         atomic.Uint32{},
