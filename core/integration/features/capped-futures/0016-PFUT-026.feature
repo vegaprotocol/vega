@@ -34,7 +34,7 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
       | 0.0002        | 0.01 | 0  | 0.0 | 1.2   |
     And the markets:
       | id        | quote name | asset | risk model        | margin calculator                | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
-      | ETH/DEC21 | ETH        | USD   | simple-risk-model | default-capped-margin-calculator | 1                | fees-config-1 | default-none     | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | false                | false  |
+      | ETH/DEC21 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | fees-config-1 | default-none     | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | false                | false  |
 
   @SLABug @NoPerp @Capped @MarginCap
   Scenario: 0016-PFUT-026, 0016-PFUT-028: Capped futures market can be created with a with [hardcoded risk factors](./0018-RSKM-quant_risk_models.ipynb).
@@ -67,8 +67,8 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 1750   | 8250    |
-      | party2 | USD   | ETH/DEC21 | 2250   | 7750    |
+      | party1 | USD   | ETH/DEC21 | 2100   | 7900    |
+      | party2 | USD   | ETH/DEC21 | 2700   | 7300    |
 
     #order margin for aux1: limit price * size = 999*2=1998
     #order margin for aux2: (max price - limit price) * size = (1500-1301)*2=398
@@ -78,10 +78,10 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     #aux2: potential position * (max price -  limit price) = 2 * 0 = 0
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 1750        | 1750   | 1750    | 1750    | cross margin |
-      | party2 | ETH/DEC21 | 2250        | 2250   | 2250    | 2250    | cross margin |
-      | aux2   | ETH/DEC21 | 400         | 400    | 400     | 400     | cross margin |
-      | aux1   | ETH/DEC21 | 200         | 200    | 200     | 200     | cross margin |
+      | party1 | ETH/DEC21 | 1750        | 1925   | 2100    | 2450    | cross margin |
+      | party2 | ETH/DEC21 | 2250        | 2475   | 2700    | 3150    | cross margin |
+      | aux2   | ETH/DEC21 | 400         | 440    | 480     | 560     | cross margin |
+      | aux1   | ETH/DEC21 | 200         | 220    | 240     | 280     | cross margin |
 
     #update mark price
     When the parties place the following orders:
@@ -127,18 +127,18 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 3*(1100+1500*2)/3
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 2624   | 9871    |
-      | party2 | USD   | ETH/DEC21 | 3373   | 4132    |
-      | aux1   | USD   | ETH/DEC21 | 825    | 100674  |
-      | aux2   | USD   | ETH/DEC21 | 2024   | 96491   |
-      | aux3   | USD   | ETH/DEC21 | 1050   | 98875   |
+      | party1 | USD   | ETH/DEC21 | 3150   | 9345    |
+      | party2 | USD   | ETH/DEC21 | 4050   | 3455    |
+      | aux1   | USD   | ETH/DEC21 | 990    | 100509  |
+      | aux2   | USD   | ETH/DEC21 | 2430   | 96085   |
+      | aux3   | USD   | ETH/DEC21 | 1260   | 98665   |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 2624        | 2624   | 2624    | 2624    | cross margin |
-      | party2 | ETH/DEC21 | 3373        | 3373   | 3373    | 3373    | cross margin |
-      | aux2   | ETH/DEC21 | 2024        | 2024   | 2024    | 2024    | cross margin |
-      | aux1   | ETH/DEC21 | 825         | 825    | 825     | 825     | cross margin |
+      | party1 | ETH/DEC21 | 2624        | 2886   | 3148    | 3673    | cross margin |
+      | party2 | ETH/DEC21 | 3373        | 3710   | 4047    | 4722    | cross margin |
+      | aux2   | ETH/DEC21 | 2024        | 2226   | 2428    | 2833    | cross margin |
+      | aux1   | ETH/DEC21 | 825         | 907    | 990     | 1155    | cross margin |
 
     When the markets are updated:
       | id        | risk model             |
@@ -146,7 +146,7 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     And the network moves ahead "2" blocks
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 2624        | 2624   | 2624    | 2624    | cross margin |
-      | party2 | ETH/DEC21 | 3373        | 3373   | 3373    | 3373    | cross margin |
-      | aux2   | ETH/DEC21 | 2024        | 2024   | 2024    | 2024    | cross margin |
-      | aux1   | ETH/DEC21 | 825         | 825    | 825     | 825     | cross margin |
+      | party1 | ETH/DEC21 | 2624        | 2886   | 3148    | 3673    | cross margin |
+      | party2 | ETH/DEC21 | 3373        | 3710   | 4047    | 4722    | cross margin |
+      | aux2   | ETH/DEC21 | 2024        | 2226   | 2428    | 2833    | cross margin |
+      | aux1   | ETH/DEC21 | 825         | 907    | 990     | 1155    | cross margin |
