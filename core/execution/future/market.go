@@ -2309,7 +2309,7 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
 		order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
-		if order.Type == types.OrderTypeLimit && order.Price.IsZero() {
+		if order.Type == types.OrderTypeLimit && order.PeggedOrder == nil && order.Price.IsZero() {
 			// limit orders need to be priced > 0
 			order.Status = types.OrderStatusRejected
 			order.Reason = types.OrderErrorPriceNotInTickSize // @TODO add new error

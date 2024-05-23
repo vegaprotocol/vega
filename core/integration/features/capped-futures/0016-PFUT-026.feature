@@ -143,10 +143,19 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     When the markets are updated:
       | id        | risk model             |
       | ETH/DEC21 | lognormal-risk-model-1 |
-    And the network moves ahead "2" blocks
-    Then the parties should have the following margin levels:
+    # Place a trade, but don't move mark price. This will trigger the margin to be recalculated
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux2  | ETH/DEC21 | sell | 1      | 1499  | 0                | TYPE_LIMIT | TIF_GTC | aux2-3    |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1499  | 1                | TYPE_LIMIT | TIF_GTC | aux1-3    |
+    When the network moves ahead "2" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    # Ensure the mark price is still 1499
+    And the mark price should be "1499" for the market "ETH/DEC21"
+    # Now check the margin levels
+    And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 2624        | 2886   | 3148    | 3673    | cross margin |
-      | party2 | ETH/DEC21 | 3373        | 3710   | 4047    | 4722    | cross margin |
-      | aux2   | ETH/DEC21 | 2024        | 2226   | 2428    | 2833    | cross margin |
-      | aux1   | ETH/DEC21 | 825         | 907    | 990     | 1155    | cross margin |
+      | party1 | ETH/DEC21 | 4645        | 5109   | 5574    | 6503    | cross margin |
+      | party2 | ETH/DEC21 | 6109        | 6719   | 7330    | 8552    | cross margin |
+      | aux2   | ETH/DEC21 | 4888        | 5376   | 5865    | 6843    | cross margin |
+      | aux1   | ETH/DEC21 | 2967        | 3263   | 3560    | 4153    | cross margin |
