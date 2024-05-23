@@ -1493,9 +1493,14 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
 			final = types.MarketStateCancelled
 		}
-		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
 		settlement, _ := num.UintFromDecimal(changes.SettlementPrice.ToDecimal().Mul(m.priceFactor))
+		if !m.validateSettlementData(settlement) {
+			// final settlement is not valid/impossible
+			return common.ErrSettlementDataOutOfRange
+		}
+		// in case we're in auction, uncross
+		m.uncrossOrderAtAuctionEnd(ctx)
 		m.tradingTerminatedWithFinalState(ctx, final, settlement)
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
