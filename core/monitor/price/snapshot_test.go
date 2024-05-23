@@ -319,3 +319,57 @@ func TestSerialiseBoundsDeterministically(t *testing.T) {
 		}
 	}
 }
+
+func TestSortPriceRangeCache(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		m := map[int]*types.PriceRangeCache{
+			1: {
+				Bound: &types.PriceBound{
+					Active:     true,
+					UpFactor:   num.DecimalE(),
+					DownFactor: num.DecimalFromFloat(0.5),
+					Trigger: &types.PriceMonitoringTrigger{
+						Horizon:          1,
+						HorizonDec:       num.DecimalFromFloat(2),
+						Probability:      num.DecimalFromFloat(0.5),
+						AuctionExtension: 1,
+					},
+				},
+				Range: &types.PriceRange{
+					Min: num.DecimalFromFloat(0.1),
+					Max: num.DecimalFromFloat(0.3),
+					Ref: num.DecimalFromFloat(0.5),
+				},
+			}, 2: {
+				Bound: &types.PriceBound{
+					Active:     true,
+					UpFactor:   num.DecimalE(),
+					DownFactor: num.DecimalFromFloat(0.5),
+					Trigger: &types.PriceMonitoringTrigger{
+						Horizon:          1,
+						HorizonDec:       num.DecimalFromFloat(2),
+						Probability:      num.DecimalFromFloat(0.5),
+						AuctionExtension: 1,
+					},
+				},
+				Range: &types.PriceRange{
+					Min: num.DecimalFromFloat(0.5),
+					Max: num.DecimalFromFloat(0.3),
+					Ref: num.DecimalFromFloat(0.1),
+				},
+			},
+		}
+		prc := []*types.PriceRangeCache{}
+		for _, v := range m {
+			prc = append(prc, v)
+		}
+
+		price.SortPriceRangeCache(prc)
+		require.Equal(t, "0.1", prc[0].Range.Min.String())
+		require.Equal(t, "0.3", prc[0].Range.Max.String())
+		require.Equal(t, "0.5", prc[0].Range.Ref.String())
+		require.Equal(t, "0.5", prc[1].Range.Min.String())
+		require.Equal(t, "0.3", prc[1].Range.Max.String())
+		require.Equal(t, "0.1", prc[1].Range.Ref.String())
+	}
+}

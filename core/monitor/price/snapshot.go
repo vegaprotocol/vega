@@ -161,6 +161,30 @@ func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) map[*bound]priceR
 	return priceRangesCache
 }
 
+func SortPriceRangeCache(prc []*types.PriceRangeCache) {
+	sort.SliceStable(prc, func(i, j int) bool {
+		if prc[i].Bound.Active != prc[j].Bound.Active {
+			return prc[i].Bound.Active
+		}
+		if prc[i].Bound.Equal(prc[j].Bound) {
+			if prc[i].Range.Max.Equal(prc[j].Range.Max) {
+				if prc[i].Range.Min.Equal(prc[j].Range.Min) {
+					return prc[i].Range.Ref.LessThan(prc[j].Range.Ref)
+				}
+				return prc[i].Range.Min.LessThan(prc[j].Range.Min)
+			}
+			return prc[i].Range.Max.LessThan(prc[j].Range.Max)
+		}
+		if prc[i].Bound.UpFactor.Equal(prc[j].Bound.UpFactor) {
+			if prc[i].Bound.DownFactor.Equal(prc[j].Bound.DownFactor) {
+				return prc[i].Bound.Trigger.Horizon < prc[j].Bound.Trigger.Horizon
+			}
+			return prc[j].Bound.DownFactor.LessThan(prc[i].Bound.DownFactor)
+		}
+		return prc[j].Bound.UpFactor.GreaterThan(prc[i].Bound.UpFactor)
+	})
+}
+
 // SerialisePriceranges expored for testing.
 func (e *Engine) SerialisePriceRanges() []*types.PriceRangeCache {
 	prc := make([]*types.PriceRangeCache, 0, len(e.priceRangesCache))
@@ -174,21 +198,7 @@ func (e *Engine) SerialisePriceRanges() []*types.PriceRangeCache {
 			},
 		})
 	}
-
-	sort.SliceStable(prc, func(i, j int) bool {
-		if prc[i].Bound.Active != prc[j].Bound.Active {
-			return prc[i].Bound.Active
-		}
-		if prc[i].Bound.UpFactor.Equal(prc[j].Bound.UpFactor) {
-			if prc[i].Bound.DownFactor.Equal(prc[j].Bound.DownFactor) {
-				return prc[i].Bound.Trigger.Horizon < prc[j].Bound.Trigger.Horizon
-			}
-			return prc[j].Bound.DownFactor.LessThan(prc[i].Bound.DownFactor)
-		}
-
-		return prc[j].Bound.UpFactor.GreaterThan(prc[i].Bound.UpFactor)
-	})
-
+	SortPriceRangeCache(prc)
 	return prc
 }
 

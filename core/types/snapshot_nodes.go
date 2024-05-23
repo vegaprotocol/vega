@@ -524,6 +524,10 @@ type PriceBound struct {
 	Trigger    *PriceMonitoringTrigger
 }
 
+func (pb *PriceBound) Equal(other *PriceBound) bool {
+	return pb.Active == other.Active && pb.UpFactor.Equal(other.UpFactor) && pb.DownFactor.Equal(other.DownFactor) && pb.Trigger.String() == other.Trigger.String()
+}
+
 type PriceRangeCache struct {
 	Bound *PriceBound
 	Range *PriceRange
