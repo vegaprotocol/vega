@@ -1158,8 +1158,9 @@ func (m *Market) BlockEnd(ctx context.Context) {
 
 		m.nextMTM = t.Add(m.mtmDelta)
 
+		// mark price mustn't be zero, except for capped futures, where a zero price may well be possible
 		if !m.as.InAuction() && (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
-			!m.getCurrentMarkPrice().IsZero() {
+			(!m.getCurrentMarkPrice().IsZero() || m.capMax != nil) {
 			if m.confirmMTM(ctx, false) {
 				closedPositions := m.position.GetClosedPositions()
 				if len(closedPositions) > 0 {
@@ -1428,7 +1429,11 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		price, _ := num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 
 		if m.capMax != nil {
-			price = num.Min(price, m.capMax.Clone())
+			upper := num.UintZero().Sub(m.capMax, num.UintOne())
+			price = num.Min(price, upper)
+		}
+		if price.IsZero() {
+			price = num.UintOne()
 		}
 		return price, nil
 	}
@@ -1444,7 +1449,11 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 
 	if m.capMax != nil {
-		price = num.Min(price, m.capMax.Clone())
+		upper := num.UintZero().Sub(m.capMax, num.UintOne())
+		price = num.Min(price, upper)
+	}
+	if price.IsZero() {
+		price = num.UintOne()
 	}
 	return price, nil
 }
@@ -1492,9 +1501,14 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
 			final = types.MarketStateCancelled
 		}
-		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
 		settlement, _ := num.UintFromDecimal(changes.SettlementPrice.ToDecimal().Mul(m.priceFactor))
+		if !m.validateSettlementData(settlement) {
+			// final settlement is not valid/impossible
+			return common.ErrSettlementDataOutOfRange
+		}
+		// in case we're in auction, uncross
+		m.uncrossOrderAtAuctionEnd(ctx)
 		m.tradingTerminatedWithFinalState(ctx, final, settlement)
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
@@ -2290,14 +2304,21 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 		m.triggerStopOrders(ctx, idgen)
 	}()
 	order := orderSubmission.IntoOrder(party)
+	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
+	order.ID = orderID
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
 		order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
+		if order.Type == types.OrderTypeLimit && order.PeggedOrder == nil && order.Price.IsZero() {
+			// limit orders need to be priced > 0
+			order.Status = types.OrderStatusRejected
+			order.Reason = types.OrderErrorPriceNotInTickSize // @TODO add new error
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+			return nil, common.ErrInvalidOrderPrice
+		}
 	}
-	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
-	order.ID = orderID
 	// check max price in case of capped market
-	if m.capMax != nil && order.Price != nil && order.Price.GT(m.capMax) {
+	if m.capMax != nil && order.Price != nil && order.Price.GTE(m.capMax) {
 		order.Status = types.OrderStatusRejected
 		order.Reason = types.OrderErrorPriceLTEMaxPrice
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -4651,16 +4672,21 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		var err error
-		if settlementDataInAsset != nil {
+		if settlementDataInAsset != nil && m.validateSettlementData(settlementDataInAsset) {
 			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
 		} else if m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
 			settlementDataInAsset, err = m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 			if err != nil {
 				m.log.Error(err.Error())
-			} else {
-				m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
+				return
 			}
+			if !m.validateSettlementData(settlementDataInAsset) {
+				m.log.Warn("invalid settlement data", logging.MarketID(m.GetID()))
+				m.settlementDataInMarket = nil
+				return
+			}
+			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
 		} else {
 			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
 		}
@@ -4713,6 +4739,13 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 		return
 	}
 
+	// validate the settlement data
+	if !m.validateSettlementData(settlementDataInAsset) {
+		m.log.Warn("settlement data for capped market is invalid", logging.MarketID(m.GetID()))
+		// reset settlement data, it's not valid
+		m.settlementDataInMarket = nil
+		return
+	}
 	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
 }
 
@@ -4798,13 +4831,31 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	m.checkForReferenceMoves(ctx, orderUpdates, false)
 }
 
+func (m *Market) validateSettlementData(data *num.Uint) bool {
+	if m.closed {
+		return false
+	}
+	// not capped, accept the data
+	if m.fCap == nil {
+		return true
+	}
+	// data > max
+	if m.capMax.LT(data) {
+		return false
+	}
+	// binary capped market: reject if data is not zero and not == max price.
+	if m.fCap.Binary && !data.IsZero() && !data.EQ(m.capMax) {
+		return false
+	}
+	return true
+}
+
 // NB this must be called with the lock already acquired.
 func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	if m.closed {
 		return
 	}
 	if m.capMax != nil && m.capMax.LT(settlementDataInAsset) {
-		// we cannot perform the final settlement because the settlement price is out of the [0, max_price] range
 		return
 	}
 	if m.fCap != nil && m.fCap.Binary {

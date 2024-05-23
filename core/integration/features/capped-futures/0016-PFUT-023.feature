@@ -1,4 +1,4 @@
-Feature: When `max_price` is specified and the market is ran in a fully-collateralised mode
+Feature: When max_price is specified and the market is ran in a fully-collateralised mode and it has parties with open positions settling it at a price of 0 works correctly
 
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"
@@ -32,11 +32,11 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | 0.0002        | 0.01 | 0  | 0.0 | 1.2   |
 
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
-      | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
+      | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
+      | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | default-none     | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
 
-  @SLABug @NoPerp @Capped @CMargin
-  Scenario: 0016-PFUT-021: parties with open positions settling it at a price of `max_price`
+  @SLABug @NoPerp @Capped @CZero
+  Scenario: 0016-PFUT-023: no closeout happens when mark to market settlement is carried out at a price of `0`
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -55,7 +55,7 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-      | aux1   | ETH/DEC21 | buy  | 2      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |       |
+      | aux1   | ETH/DEC21 | buy  | 2      | 1     | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |       |
       | aux2   | ETH/DEC21 | sell | 2      | 1499  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |       |
       | party1 | ETH/DEC21 | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |       |
       | party2 | ETH/DEC21 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |       |
@@ -71,41 +71,43 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
 
     #order margin for aux1: limit price * size = 999*2=1998
     #order margin for aux2: (max price - limit price) * size = (1500-1301)*2=398
-    # party1 maintenance margin level: position size * average entry price = 5*1000=5000
-    # party2 maintenance margin level: position size * (max price - average entry price)=5*(1500-1000)=2500
-    # Aux1: potential position * average price on book = 2 * 999 = 1998, but due to the MTM settlement the margin level
+    #party1 maintenance margin level: position size * average entry price = 5*1000=5000
+    #party2 maintenance margin level: position size * (max price - average entry price)=5*(1500-1000)=2500
+    #aux1: potential position * average price on book = 2 * 0 = 0
+    #aux2: potential position * (max price -  limit price) = 2 * 0 = 0
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
       | party1 | ETH/DEC21 | 5000        | 5000   | 5000    | 5000    | cross margin |
       | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
       | aux2   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
-      | aux1   | ETH/DEC21 | 1998        | 1998   | 1998    | 1998    | cross margin |
+      | aux1   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
 
     #update mark price
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | aux1-2    |
-      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 1                | TYPE_LIMIT | TIF_GTC | aux2-2    |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux1-2    |
+      | aux2  | ETH/DEC21 | sell | 1      | 1     | 1                | TYPE_LIMIT | TIF_GTC | aux2-2    |
 
+    And debug trades
+    And debug detailed orderbook volumes for market "ETH/DEC21"
     And the network moves ahead "2" blocks
-    Then the mark price should be "1100" for the market "ETH/DEC21"
+    Then the mark price should be "1" for the market "ETH/DEC21"
 
-    # MTM settlement 5 long makes a profit of 500, 5 short loses 500
+    And the following trades should be executed:
+      | buyer | price | size | seller |
+      | aux1  | 1     | 1    | aux2   |
+
+    # MTM settlement 5 long makes a loss of 5000, 5 short makes a profit of 5000
     # Now for aux1 and 2, the calculations from above still hold but more margin is required due to the open positions:
     # aux1: position * 1100 + 999*2 = 1100 + 1998 = 3098
     # aux2: then placing the order (max price - average order price) * 3 = (1500 - (1301 + 1301 + 1100)/3) * 3 = (1500 - 1234) * 3 = 266 * 3 = 798
     # aux2's short position and potential margins are calculated separately as 2 * (1500-1301) + 1 * (1500 - 1100) = 398 + 400 = 798
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 5500    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 7000    |
-      | aux1   | USD   | ETH/DEC21 | 3098   | 96908   |
-      | aux2   | USD   | ETH/DEC21 | 402    | 99570   |
-    # The market is fully collateralised, switching to isolated margin is not supported
-    When the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error                                                                                                                                                 |
-      | party1 | ETH/DEC21 | isolated margin | 0.5           | margin factor (0.5) must be greater than max(riskFactorLong (0.3696680542085883), riskFactorShort (0.5650462045113667)) + linearSlippageFactor (0.25) |
-      | party1 | ETH/DEC21 | isolated margin | 0.9           | isolated margin not permitted on fully collateralised markets                                                                                         |
+      | party1 | USD   | ETH/DEC21 | 5000   | 5       |
+      | party2 | USD   | ETH/DEC21 | 2500   | 12495   |
+      | aux1   | USD   | ETH/DEC21 | 3      | 99998   |
+      | aux2   | USD   | ETH/DEC21 | 1501   | 98497   |
 
     #update mark price to max_price
     When the parties place the following orders:
@@ -128,37 +130,13 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | party  | asset | market id | margin | general |
       | party1 | USD   | ETH/DEC21 | 5000   | 7495    |
       | party2 | USD   | ETH/DEC21 | 2500   | 5005    |
-      | aux1   | USD   | ETH/DEC21 | 3098   | 97307   |
-      | aux2   | USD   | ETH/DEC21 | 402    | 99186   |
+      | aux1   | USD   | ETH/DEC21 | 3      | 101496  |
+      | aux2   | USD   | ETH/DEC21 | 1503   | 97012   |
       | aux3   | USD   | ETH/DEC21 | 2998   | 96927   |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
       | party1 | ETH/DEC21 | 5000        | 5000   | 5000    | 5000    | cross margin |
       | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
-      | aux2   | ETH/DEC21 | 402         | 402    | 402     | 402     | cross margin |
-      | aux1   | ETH/DEC21 | 3098        | 3098   | 3098    | 3098    | cross margin |
-
-    #0016-PFUT-024: trade at max_price, no closeout for parties with short position
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux4  | ETH/DEC21 | buy  | 2      | 1499  | 0                | TYPE_LIMIT | TIF_GTC | aux4-1    |
-      | aux5  | ETH/DEC21 | sell | 2      | 1499  | 1                | TYPE_LIMIT | TIF_GTC | aux5-1    |
-
-    And the network moves ahead "2" blocks
-
-    # aux5: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 0
-    And the parties should have the following account balances:
-      | party | asset | market id | margin | general |
-      | aux1  | USD   | ETH/DEC21 | 3098   | 97307   |
-      | aux2  | USD   | ETH/DEC21 | 402    | 99186   |
-      | aux4  | USD   | ETH/DEC21 | 2998   | 97017   |
-      | aux5  | USD   | ETH/DEC21 | 2      | 99923   |
-
-    And the following transfers should happen:
-      | from   | to   | from account            | to account                       | market id | amount | asset |
-      | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 15     | USD   |
-      | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 60     | USD   |
-      | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | USD   |
-      | market | aux4 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 15     | USD   |
-
+      | aux2   | ETH/DEC21 | 1503        | 1503   | 1503    | 1503    | cross margin |
+      | aux1   | ETH/DEC21 | 3           | 3      | 3       | 3       | cross margin |

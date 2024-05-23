@@ -1,4 +1,4 @@
-Feature: When `max_price` is specified and the market is ran in a fully-collateralised mode
+Feature: When max_price is specified and the market is ran in a fully-collateralised mode and it has parties with open positions settling it at a price of 0 works correctly
 
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"
@@ -35,8 +35,8 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
 
-  @SLABug @NoPerp @Capped @CMargin
-  Scenario: 0016-PFUT-021: parties with open positions settling it at a price of `max_price`
+  @SLABug @NoPerp @Capped @CSettle
+  Scenario: 0016-PFUT-022: The sum of all final settlement cashflows equals 0 (loss socialisation does not happen). Assuming general account balances of all parties were 0 after opening the positions and all of their funds were in the margin accounts: short parties end up with balances equal to abs(position size) * max_price and long parties end up with 0 balances.
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -138,23 +138,17 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
       | aux2   | ETH/DEC21 | 402         | 402    | 402     | 402     | cross margin |
       | aux1   | ETH/DEC21 | 3098        | 3098   | 3098    | 3098    | cross margin |
-
-    #0016-PFUT-024: trade at max_price, no closeout for parties with short position
+    #trade at max_price
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux4  | ETH/DEC21 | buy  | 2      | 1499  | 0                | TYPE_LIMIT | TIF_GTC | aux4-1    |
       | aux5  | ETH/DEC21 | sell | 2      | 1499  | 1                | TYPE_LIMIT | TIF_GTC | aux5-1    |
 
     And the network moves ahead "2" blocks
-
-    # aux5: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 0
-    And the parties should have the following account balances:
+    Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux1  | USD   | ETH/DEC21 | 3098   | 97307   |
-      | aux2  | USD   | ETH/DEC21 | 402    | 99186   |
       | aux4  | USD   | ETH/DEC21 | 2998   | 97017   |
       | aux5  | USD   | ETH/DEC21 | 2      | 99923   |
-
     And the following transfers should happen:
       | from   | to   | from account            | to account                       | market id | amount | asset |
       | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 15     | USD   |
@@ -162,3 +156,40 @@ Feature: When `max_price` is specified and the market is ran in a fully-collater
       | aux5   |      | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | USD   |
       | market | aux4 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 15     | USD   |
 
+    # Terminate trading
+    When the oracles broadcast data signed with "0xCAFECAFE1":
+      | name               | value |
+      | trading.terminated | true  |
+    And the network moves ahead "2" blocks
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
+
+    # Trigger settlement at price 0.
+    When the oracles broadcast data signed with "0xCAFECAFE1":
+      | name             | value |
+      | prices.ETH.value | 0     |
+    And the network moves ahead "2" blocks
+    Then the last market state should be "STATE_SETTLED" for the market "ETH/DEC21"
+    And the following transfers should happen:
+      | from     | to       | from account            | to account              | market id | amount | asset | type                        |
+      | aux1     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 1499   | USD   | TRANSFER_TYPE_LOSS          |
+      | aux3     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 2998   | USD   | TRANSFER_TYPE_LOSS          |
+      | aux4     |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 2998   | USD   | TRANSFER_TYPE_LOSS          |
+      | party1   |          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 5000   | USD   | TRANSFER_TYPE_LOSS          |
+      | party1   |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC21 | 2495   | USD   | TRANSFER_TYPE_LOSS          |
+      | market   | aux2     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 4497   | USD   | TRANSFER_TYPE_WIN           |
+      | market   | aux5     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 2998   | USD   | TRANSFER_TYPE_WIN           |
+      | market   | party2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 7495   | USD   | TRANSFER_TYPE_WIN           |
+      | aux1     | aux1     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 1599   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | aux2     | aux2     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 4899   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | aux5     | aux5     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 3000   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | party2   | party2   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 9995   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | party-lp | party-lp | ACCOUNT_TYPE_BOND       | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 30000  | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC21 | 0      | 5000    |
+      | party2 | USD   | ETH/DEC21 | 0      | 15000   |
+      | aux1   | USD   | ETH/DEC21 | 0      | 98906   |
+      | aux2   | USD   | ETH/DEC21 | 0      | 104085  |
+      | aux3   | USD   | ETH/DEC21 | 0      | 96927   |
+      | aux4   | USD   | ETH/DEC21 | 0      | 97017   |
+      | aux5   | USD   | ETH/DEC21 | 0      | 102923  |
