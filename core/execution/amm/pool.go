@@ -174,7 +174,7 @@ func NewPoolFromProto(
 	}
 
 	if state.Parameters.UpperBound != nil {
-		lower, overflow = num.UintFromString(*state.Parameters.UpperBound, 10)
+		upper, overflow = num.UintFromString(*state.Parameters.UpperBound, 10)
 		if overflow {
 			return nil, fmt.Errorf("failed to convert string to Uint: %s", *state.Parameters.UpperBound)
 		}
@@ -271,7 +271,7 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 			High:  p.upper.high.String(),
 			Low:   p.upper.low.String(),
 			Empty: p.upper.empty,
-			Pv:    p.lower.pv.String(),
+			Pv:    p.upper.pv.String(),
 		},
 		Status: p.status,
 	}
