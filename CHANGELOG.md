@@ -30,6 +30,7 @@
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
 - [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units. 
+- [11319](https://github.com/vegaprotocol/vega/issues/11319) - Do not leak Ethereum client secrets in the logs.
 
 ## 0.76.1
 
