@@ -1123,6 +1123,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketAMMMinCommitmentQuantum,
 		},
 		{
+			Param:   netparams.MarketAMMMaxCalculationLevels,
+			Watcher: svcs.executionEngine.OnMarketAMMMaxCalculationLevels,
+		},
+		{
 			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,
 			Watcher: svcs.executionEngine.OnMarketLiquidityEquityLikeShareFeeFractionUpdate,
 		},

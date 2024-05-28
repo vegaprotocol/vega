@@ -216,3 +216,12 @@ func (b *CachedOrderBook) GetIndicativePrice() *num.Uint {
 	}
 	return price
 }
+
+func (b *CachedOrderBook) UpdateAMM(party string) {
+	if !b.auction {
+		return
+	}
+
+	b.cache.Invalidate()
+	b.OrderBook.UpdateAMM(party)
+}

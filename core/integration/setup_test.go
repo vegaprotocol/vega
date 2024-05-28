@@ -536,5 +536,9 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MarketAMMMinCommitmentQuantum,
 			Watcher: execsetup.executionEngine.OnMarketAMMMinCommitmentQuantum,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAMMMaxCalculationLevels,
+			Watcher: execsetup.executionEngine.OnMarketAMMMaxCalculationLevels,
+		},
 	)
 }

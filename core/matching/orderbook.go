@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -47,6 +48,7 @@ type OffbookSource interface {
 	BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64)
 	SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order
 	NotifyFinished()
+	OrderbookShape(st, nd *num.Uint, id *string) ([]*types.Order, []*types.Order)
 }
 
 // OrderBook represents the book holding all orders in the system.
@@ -232,6 +234,10 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 		if uo.Order.Remaining == 0 {
 			uo.Order.Status = types.OrderStatusFilled
 			b.remove(uo.Order)
+		}
+
+		if uo.Order.GeneratedOffbook {
+			uo.Order.CreatedAt = ts
 		}
 
 		uo.Order.UpdatedAt = ts
@@ -486,8 +492,15 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 		uncrossingSide = b.sell
 	}
 
+	// extract uncrossing orders from all AMMs
+	var offbookVolume uint64
+	uncrossOrders, offbookVolume = b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide)
+
+	// the remaining volume should now come from the orderbook
+	volume -= offbookVolume
+
 	// Remove all the orders from that side of the book up to the given volume
-	uncrossOrders = uncrossingSide.ExtractOrders(price, volume, false)
+	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, false)...)
 	opSide := b.getOppositeSide(uncrossSide)
 	output := make([]*types.Trade, 0, len(uncrossOrders))
 	trades, err := opSide.fakeUncrossAuction(uncrossOrders)
@@ -535,10 +548,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		return nil, nil
 	}
 
-	var (
-		uncrossOrders  []*types.Order
-		uncrossingSide *OrderBookSide
-	)
+	var uncrossingSide *OrderBookSide
 
 	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
@@ -546,8 +556,15 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		uncrossingSide = b.sell
 	}
 
+	// extract uncrossing orders from all AMMs
+	var offbookVolume uint64
+	uncrossOrders, offbookVolume := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide)
+
+	// the remaining volume should now come from the orderbook
+	volume -= offbookVolume
+
 	// Remove all the orders from that side of the book up to the given volume
-	uncrossOrders = uncrossingSide.ExtractOrders(price, volume, true)
+	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, true)...)
 	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone())
 }
 
@@ -631,10 +648,17 @@ func (b *OrderBook) BestBidPriceAndVolume() (*num.Uint, uint64, error) {
 			return price, volume, err
 		}
 
+		// no orderbook volume or AMM price is better
+		if err != nil || oPrice.GT(price) {
+			//nolint: nilerr
+			return oPrice, oVolume, nil
+		}
+
+		// AMM price equals orderbook price, combined volumes
 		if err == nil && oPrice.EQ(price) {
 			oVolume += volume
+			return oPrice, oVolume, nil
 		}
-		return oPrice, oVolume, nil
 	}
 	return price, volume, err
 }
@@ -642,18 +666,26 @@ func (b *OrderBook) BestBidPriceAndVolume() (*num.Uint, uint64, error) {
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book.
 func (b *OrderBook) BestOfferPriceAndVolume() (*num.Uint, uint64, error) {
 	price, volume, err := b.sell.BestPriceAndVolume()
+
 	if b.sell.offbook != nil {
-		_, _, oPrice, oVolume := b.sell.offbook.BestPricesAndVolumes()
+		_, _, oPrice, oVolume := b.buy.offbook.BestPricesAndVolumes()
 
 		// no off source volume, return the orderbook
 		if oVolume == 0 {
 			return price, volume, err
 		}
 
+		// no orderbook volume or AMM price is better
+		if err != nil || oPrice.LT(price) {
+			//nolint: nilerr
+			return oPrice, oVolume, nil
+		}
+
+		// AMM price equals orderbook price, combined volumes
 		if err == nil && oPrice.EQ(price) {
 			oVolume += volume
+			return oPrice, oVolume, nil
 		}
-		return oPrice, oVolume, nil
 	}
 	return price, volume, err
 }
@@ -818,6 +850,22 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	return nil
+}
+
+func (b *OrderBook) UpdateAMM(party string) {
+	if !b.auction {
+		return
+	}
+
+	ipv := b.indicativePriceAndVolume
+	ipv.removeOffbookShape(party)
+	if ipv.lastMinPrice.GT(ipv.lastMaxPrice) {
+		// region is not crossed so we won't expand just yet
+		return
+	}
+
+	ipv.addOffbookShape(ptr.From(party), ipv.lastMinPrice, ipv.lastMaxPrice)
+	ipv.needsUpdate = true
 }
 
 // GetTrades returns the trades a given order generates if we were to submit it now
@@ -1113,30 +1161,41 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 }
 
 func (b *OrderBook) GetBestBidPrice() (*num.Uint, error) {
-	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	price, _, err := b.buy.BestPriceAndVolume()
+
 	if b.buy.offbook != nil {
-		price, volume, _, _ := b.buy.offbook.BestPricesAndVolumes()
-		if volume != 0 {
-			return price, nil
+		offbook, volume, _, _ := b.buy.offbook.BestPricesAndVolumes()
+		if volume == 0 {
+			return price, err
+		}
+
+		if err != nil || offbook.GT(price) {
+			//nolint: nilerr
+			return offbook, nil
 		}
 	}
-	price, _, err := b.buy.BestPriceAndVolume()
 	return price, err
 }
 
 func (b *OrderBook) GetBestStaticBidPrice() (*num.Uint, error) {
-	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	price, err := b.buy.BestStaticPrice()
 	if b.buy.offbook != nil {
-		price, volume, _, _ := b.buy.offbook.BestPricesAndVolumes()
-		if volume != 0 {
-			return price, nil
+		offbook, volume, _, _ := b.buy.offbook.BestPricesAndVolumes()
+		if volume == 0 {
+			return price, err
+		}
+
+		if err != nil || offbook.GT(price) {
+			//nolint: nilerr
+			return offbook, nil
 		}
 	}
-	return b.buy.BestStaticPrice()
+	return price, err
 }
 
 func (b *OrderBook) GetBestStaticBidPriceAndVolume() (*num.Uint, uint64, error) {
 	price, volume, err := b.buy.BestStaticPriceAndVolume()
+
 	if b.buy.offbook != nil {
 		oPrice, oVolume, _, _ := b.buy.offbook.BestPricesAndVolumes()
 
@@ -1145,39 +1204,57 @@ func (b *OrderBook) GetBestStaticBidPriceAndVolume() (*num.Uint, uint64, error) 
 			return price, volume, err
 		}
 
+		// no orderbook volume or AMM price is better
+		if err != nil || oPrice.GT(price) {
+			//nolint: nilerr
+			return oPrice, oVolume, nil
+		}
+
+		// AMM price equals orderbook price, combined volumes
 		if err == nil && oPrice.EQ(price) {
 			oVolume += volume
+			return oPrice, oVolume, nil
 		}
-		return oPrice, oVolume, nil
 	}
 	return price, volume, err
 }
 
 func (b *OrderBook) GetBestAskPrice() (*num.Uint, error) {
-	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	price, _, err := b.sell.BestPriceAndVolume()
+
 	if b.sell.offbook != nil {
-		_, _, price, volume := b.sell.offbook.BestPricesAndVolumes()
-		if volume != 0 {
-			return price, nil
+		_, _, offbook, volume := b.sell.offbook.BestPricesAndVolumes()
+		if volume == 0 {
+			return price, err
+		}
+
+		if err != nil || offbook.LT(price) {
+			//nolint: nilerr
+			return offbook, nil
 		}
 	}
-	price, _, err := b.sell.BestPriceAndVolume()
 	return price, err
 }
 
 func (b *OrderBook) GetBestStaticAskPrice() (*num.Uint, error) {
-	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	price, err := b.sell.BestStaticPrice()
 	if b.sell.offbook != nil {
-		_, _, price, volume := b.sell.offbook.BestPricesAndVolumes()
-		if volume != 0 {
-			return price, nil
+		_, _, offbook, volume := b.sell.offbook.BestPricesAndVolumes()
+		if volume == 0 {
+			return price, err
+		}
+
+		if err != nil || offbook.LT(price) {
+			//nolint: nilerr
+			return offbook, nil
 		}
 	}
-	return b.sell.BestStaticPrice()
+	return price, err
 }
 
 func (b *OrderBook) GetBestStaticAskPriceAndVolume() (*num.Uint, uint64, error) {
 	price, volume, err := b.sell.BestStaticPriceAndVolume()
+
 	if b.sell.offbook != nil {
 		_, _, oPrice, oVolume := b.sell.offbook.BestPricesAndVolumes()
 
@@ -1186,10 +1263,17 @@ func (b *OrderBook) GetBestStaticAskPriceAndVolume() (*num.Uint, uint64, error) 
 			return price, volume, err
 		}
 
+		// no orderbook volume or AMM price is better
+		if err != nil || oPrice.LT(price) {
+			//nolint: nilerr
+			return oPrice, oVolume, nil
+		}
+
+		// AMM price equals orderbook price, combined volumes
 		if err == nil && oPrice.EQ(price) {
 			oVolume += volume
+			return oPrice, oVolume, nil
 		}
-		return oPrice, oVolume, nil
 	}
 	return price, volume, err
 }

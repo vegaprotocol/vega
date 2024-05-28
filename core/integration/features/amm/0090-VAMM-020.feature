@@ -97,7 +97,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
 
-  @VAMM2
+  @VAMM
   Scenario: 0090-VAMM-020: If a vAMM is cancelled and set in Reduce-Only mode when it is currently long, then It creates no further buy orders even if the current price is above the configured lower price. When one of it's sell orders is executed it still does not produce buy orders, and correctly quotes sell orders from a higher price. When the position reaches 0 the vAMM is closed and all funds are released to the user after the next mark to market.
     # based on 0090-VAMM-007
     When the parties place the following orders:
@@ -142,7 +142,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party4 | ETH/MAR22 | sell | 10     | 91    | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 95         | TRADING_MODE_CONTINUOUS | 65        | 65               | 91               | 40             |
+      | 95         | TRADING_MODE_CONTINUOUS | 64        | 64               | 89               | 40             |
 
     # Now start checking if the vAMM still quotes sell orders
     When the parties place the following orders:
@@ -274,7 +274,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party4 | ETH/MAR22 | sell | 10     | 91    | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 95         | TRADING_MODE_CONTINUOUS | 65        | 65               | 91               | 40             |
+      | 95         | TRADING_MODE_CONTINUOUS | 64        | 64               | 89               | 40             |
 
     # Now start checking if the vAMM still quotes sell orders
     When the parties place the following orders:

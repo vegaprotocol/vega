@@ -24,6 +24,10 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+func (m *Market) OnMarketAMMMaxCalculationLevels(ctx context.Context, c *num.Uint) {
+	m.amm.OnMaxCalculationLevelsUpdate(ctx, c)
+}
+
 func (m *Market) OnAMMMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) {
 	m.amm.OnMinCommitmentQuantumUpdate(ctx, c)
 }

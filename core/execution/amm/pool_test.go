@@ -16,6 +16,7 @@
 package amm
 
 import (
+	"strconv"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAMMPool(t *testing.T) {
@@ -35,6 +37,16 @@ func TestAMMPool(t *testing.T) {
 	t.Run("test pool logic with position factor", testPoolPositionFactor)
 	t.Run("test one sided pool", testOneSidedPool)
 	t.Run("test near zero volume curve triggers and error", testNearZeroCurveErrors)
+}
+
+func TestOrderbookShape(t *testing.T) {
+	t.Run("test orderbook shape when AMM is 0", testOrderbookShapeZeroPosition)
+	t.Run("test orderbook shape when AMM is long", testOrderbookShapeLong)
+	t.Run("test orderbook shape when AMM is short", testOrderbookShapeShort)
+	t.Run("test orderbook shape when calculations are capped", testOrderbookShapeLimited)
+	t.Run("test orderbook shape step over fair price", testOrderbookShapeStepOverFairPrice)
+	t.Run("test orderbook shape step fair price at boundary", testOrderbookShapeNoStepOverFairPrice)
+	t.Run("test orderbook shape AMM reduce only", testOrderbookShapeReduceOnly)
 }
 
 func testTradeableVolumeInRange(t *testing.T) {
@@ -290,6 +302,280 @@ func testNearZeroCurveErrors(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func testOrderbookShapeZeroPosition(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(7), num.NewUint(10), num.NewUint(13))
+	defer p.ctrl.Finish()
+
+	low := p.submission.Parameters.LowerBound
+	base := p.submission.Parameters.Base
+	high := p.submission.Parameters.UpperBound
+
+	// when range [7, 10] expect orders at prices (7, 8, 9)
+	// there will be no order at price 10 since that is the pools fair-price and it quotes +/-1 eitherside
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells := p.pool.OrderbookShape(low, base, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 7, 9)
+	assert.Equal(t, 0, len(sells))
+
+	// when range [7, 9] expect orders at prices (7, 8, 9)
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(low, num.NewUint(9), nil)
+	assertOrderPrices(t, buys, types.SideBuy, 7, 9)
+	assert.Equal(t, 0, len(sells))
+
+	// when range [10, 13] expect orders at prices (11, 12, 13)
+	// there will be no order at price 10 since that is the pools fair-price and it quotes +/-1 eitherside
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(base, high, nil)
+	assert.Equal(t, 0, len(buys))
+	assertOrderPrices(t, sells, types.SideSell, 11, 13)
+
+	// when range [11, 13] expect orders at prices (11, 12, 13)
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(num.NewUint(11), high, nil)
+	assert.Equal(t, 0, len(buys))
+	assertOrderPrices(t, sells, types.SideSell, 11, 13)
+
+	// whole range from [7, 10] will have buys (7, 8, 9) and sells (11, 12, 13)
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(low, high, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 7, 9)
+	assertOrderPrices(t, sells, types.SideSell, 11, 13)
+
+	// mid both curves spanning buys and sells, range from [8, 12] will have buys (8, 9) and sells (11, 12)
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(num.NewUint(8), num.NewUint(12), nil)
+	assertOrderPrices(t, buys, types.SideBuy, 8, 9)
+	assertOrderPrices(t, sells, types.SideSell, 11, 12)
+
+	// range (8, 8) should return a single buy order at price 8, which is a bit counter intuitive
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(num.NewUint(8), num.NewUint(8), nil)
+	assertOrderPrices(t, buys, types.SideBuy, 8, 8)
+	assert.Equal(t, 0, len(sells))
+
+	// range (10, 10) should return only the orders at the fair-price, which is 0 orders
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(num.NewUint(10), num.NewUint(10), nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 0, len(sells))
+}
+
+func testOrderbookShapeLong(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(7), num.NewUint(10), num.NewUint(13))
+	defer p.ctrl.Finish()
+
+	low := p.submission.Parameters.LowerBound
+	base := p.submission.Parameters.Base
+	high := p.submission.Parameters.UpperBound
+
+	// AMM is long and will have a fair-price of 8
+	position := int64(17980)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	require.Equal(t, "8", p.pool.BestPrice(nil).String())
+
+	// range [7, 10] with have buy order (7) and sell orders (9, 10)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells := p.pool.OrderbookShape(low, base, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 7, 7)
+	assertOrderPrices(t, sells, types.SideSell, 9, 10)
+
+	// range [10, 13] with have sell orders (10, 11, 12, 13)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(base, high, nil)
+	assert.Equal(t, 0, len(buys))
+	assertOrderPrices(t, sells, types.SideSell, 10, 13)
+
+	// whole range will have buys at (7) and sells at (9, 10, 11, 12, 13)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(low, high, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 7, 7)
+	assertOrderPrices(t, sells, types.SideSell, 9, 13)
+
+	// query at fair price returns no orders
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(num.NewUint(8), num.NewUint(8), nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 0, len(sells))
+}
+
+func testOrderbookShapeShort(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(7), num.NewUint(10), num.NewUint(13))
+	defer p.ctrl.Finish()
+
+	low := p.submission.Parameters.LowerBound
+	base := p.submission.Parameters.Base
+	high := p.submission.Parameters.UpperBound
+
+	// AMM is short and will have a fair-price of 12
+	position := int64(-20000)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	require.Equal(t, "12", p.pool.BestPrice(nil).String())
+
+	// range [7, 10] with have buy order (7,8,9,10)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells := p.pool.OrderbookShape(low, base, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 7, 10)
+	assert.Equal(t, 0, len(sells))
+
+	// range [10, 13] with have buy orders (10, 11) and sell orders (13)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(base, high, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 10, 11)
+	assertOrderPrices(t, sells, types.SideSell, 13, 13)
+
+	// whole range will have buys at (7,8,9,10,11) and sells at (13)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(low, high, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 7, 11)
+	assertOrderPrices(t, sells, types.SideSell, 13, 13)
+
+	// query at fair price returns no orders
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(num.NewUint(12), num.NewUint(12), nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 0, len(sells))
+}
+
+func testOrderbookShapeLimited(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(20), num.NewUint(40), num.NewUint(60))
+	defer p.ctrl.Finish()
+
+	low := p.submission.Parameters.LowerBound
+	base := p.submission.Parameters.Base
+	high := p.submission.Parameters.UpperBound
+
+	// position is zero but we're capping max calculations at ~10
+	position := int64(0)
+	p.pool.maxCalculationLevels = num.NewUint(10)
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells := p.pool.OrderbookShape(low, base, nil)
+	assert.Equal(t, 10, len(buys))
+	assert.Equal(t, 0, len(sells))
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(base, high, nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 10, len(sells))
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(low, high, nil)
+	assert.Equal(t, 5, len(buys))
+	assert.Equal(t, 5, len(sells))
+}
+
+func testOrderbookShapeStepOverFairPrice(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(20), num.NewUint(40), num.NewUint(60))
+	defer p.ctrl.Finish()
+
+	low := p.submission.Parameters.LowerBound
+	base := p.submission.Parameters.Base
+	high := p.submission.Parameters.UpperBound
+
+	// make levels of 10 makes the step price 2, and this position gives the pool a fair price of 25
+	// when we take the step from 24 -> 26 we want to make sure we split that order into two, so we
+	// will actually do maxCalculationLevels + 1 calculations but I think thats fine and keeps the calculations
+	// simple
+	position := int64(7000)
+	p.pool.maxCalculationLevels = num.NewUint(10)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	require.Equal(t, "25", p.pool.BestPrice(nil).String())
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells := p.pool.OrderbookShape(low, base, nil)
+	assert.Equal(t, 3, len(buys))
+	assert.Equal(t, 8, len(sells))
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(base, high, nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 11, len(sells))
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(low, high, nil)
+	assert.Equal(t, 2, len(buys))
+	assert.Equal(t, 9, len(sells))
+}
+
+func testOrderbookShapeNoStepOverFairPrice(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(20), num.NewUint(40), num.NewUint(60))
+	defer p.ctrl.Finish()
+
+	low := p.submission.Parameters.LowerBound
+	base := p.submission.Parameters.Base
+	high := p.submission.Parameters.UpperBound
+
+	position := int64(0)
+	p.pool.maxCalculationLevels = num.NewUint(6)
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells := p.pool.OrderbookShape(low, base, nil)
+	assert.Equal(t, 7, len(buys))
+	assert.Equal(t, 0, len(sells))
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(base, high, nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 7, len(sells))
+
+	ensurePosition(t, p.pos, position, num.UintZero())
+	buys, sells = p.pool.OrderbookShape(low, high, nil)
+	assert.Equal(t, 4, len(buys))
+	assert.Equal(t, 4, len(sells))
+}
+
+func testOrderbookShapeReduceOnly(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(7), num.NewUint(10), num.NewUint(13))
+	defer p.ctrl.Finish()
+
+	low := p.submission.Parameters.LowerBound
+	base := p.submission.Parameters.Base
+	high := p.submission.Parameters.UpperBound
+
+	// pool is reduce only so will not have any orders above/below fair price depending on position
+	p.pool.status = types.AMMPoolStatusReduceOnly
+
+	// AMM is position 0 it will have no orders
+	position := int64(0)
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
+	buys, sells := p.pool.OrderbookShape(low, base, nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 0, len(sells))
+
+	// AMM is long and will have a fair-price of 8 and so will only have orders from 8 -> base
+	position = int64(17980)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	require.Equal(t, "8", p.pool.BestPrice(nil).String())
+
+	// range [7, 13] will have only sellf orders (9, 10)
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
+	buys, sells = p.pool.OrderbookShape(low, high, nil)
+	assert.Equal(t, 0, len(buys))
+	assertOrderPrices(t, sells, types.SideSell, 9, 10)
+
+	// AMM is short and will have a fair-price of 12
+	position = int64(-20000)
+	ensurePosition(t, p.pos, position, num.UintZero())
+	require.Equal(t, "12", p.pool.BestPrice(nil).String())
+
+	// range [10, 13] with have buy orders (10, 11)
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
+	buys, sells = p.pool.OrderbookShape(base, high, nil)
+	assertOrderPrices(t, buys, types.SideBuy, 10, 11)
+	assert.Equal(t, 0, len(sells))
+}
+
+func assertOrderPrices(t *testing.T, orders []*types.Order, side types.Side, st, nd int) {
+	t.Helper()
+	require.Equal(t, nd-st+1, len(orders))
+	for i, o := range orders {
+		price := st + i
+		assert.Equal(t, side, o.Side)
+		assert.Equal(t, strconv.FormatInt(int64(price), 10), o.Price.String())
+	}
+}
+
 func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error) {
 	t.Helper()
 	ctrl := gomock.NewController(t)
@@ -316,6 +602,7 @@ func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error
 		num.DecimalZero(),
 		num.DecimalOne(),
 		num.DecimalOne(),
+		num.NewUint(10000),
 	)
 }
 
@@ -417,10 +704,11 @@ func TestNotebook(t *testing.T) {
 }
 
 type tstPool struct {
-	pool *Pool
-	col  *mocks.MockCollateral
-	pos  *mocks.MockPosition
-	ctrl *gomock.Controller
+	pool       *Pool
+	col        *mocks.MockCollateral
+	pos        *mocks.MockPosition
+	ctrl       *gomock.Controller
+	submission *types.SubmitAMM
 }
 
 func newTestPool(t *testing.T) *tstPool {
@@ -481,14 +769,16 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 		num.DecimalZero(),
 		num.DecimalOne(),
 		positionFactor,
+		num.NewUint(100000),
 	)
 	assert.NoError(t, err)
 
 	return &tstPool{
-		pool: pool,
-		col:  col,
-		pos:  pos,
-		ctrl: ctrl,
+		submission: submit,
+		pool:       pool,
+		col:        col,
+		pos:        pos,
+		ctrl:       ctrl,
 	}
 }
 
