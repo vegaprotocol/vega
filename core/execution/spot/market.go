@@ -3263,6 +3263,10 @@ func (m *Market) CancelAMM(context.Context, *types.CancelAMM, string) error {
 	return errors.New("unimplemented")
 }
 
+func (_ *Market) ValidateSettlementData(_ *num.Uint) bool {
+	return true
+}
+
 // IDGen is an id generator for orders.
 type IDGen interface {
 	NextID() string

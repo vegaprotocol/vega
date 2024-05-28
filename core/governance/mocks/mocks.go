@@ -157,6 +157,20 @@ func (mr *MockMarketsMockRecorder) UpdateMarket(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarket", reflect.TypeOf((*MockMarkets)(nil).UpdateMarket), arg0, arg1)
 }
 
+// ValidateSettlementData mocks base method.
+func (m *MockMarkets) ValidateSettlementData(arg0 string, arg1 *num.Uint) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateSettlementData", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ValidateSettlementData indicates an expected call of ValidateSettlementData.
+func (mr *MockMarketsMockRecorder) ValidateSettlementData(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateSettlementData", reflect.TypeOf((*MockMarkets)(nil).ValidateSettlementData), arg0, arg1)
+}
+
 // MockStakingAccounts is a mock of StakingAccounts interface.
 type MockStakingAccounts struct {
 	ctrl     *gomock.Controller

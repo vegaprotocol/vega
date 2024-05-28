@@ -52,6 +52,7 @@ var (
 	ErrParentMarketDoesNotExist                  = errors.New("market to succeed does not exist")
 	ErrParentMarketAlreadySucceeded              = errors.New("the parent market was already succeeded by a prior proposal")
 	ErrParentMarketSucceededByCompeting          = errors.New("the parent market has been succeeded by a competing propsal")
+	ErrSettlementDataOutOfRange                  = errors.New("the settlement data is invalid")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams,Banking
@@ -73,6 +74,7 @@ type Markets interface {
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	IsSucceeded(mktID string) bool
+	ValidateSettlementData(mktID string, data *num.Uint) bool
 }
 
 // StakingAccounts ...
@@ -1123,6 +1125,11 @@ func (e *Engine) validateMarketUpdateState(update *types.MarketStateUpdateConfig
 	// if the market is already terminated or not yet started or settled
 	if marketState == types.MarketStateCancelled || marketState == types.MarketStateClosed || marketState == types.MarketStateTradingTerminated || marketState == types.MarketStateSettled || marketState == types.MarketStateProposed {
 		return types.ProposalErrorInvalidMarket, ErrMarketStateUpdateNotAllowed
+	}
+
+	// in case the market is a capped future, make sure the settlement price is valid
+	if update.SettlementPrice != nil && !e.markets.ValidateSettlementData(marketID, update.SettlementPrice) {
+		return types.ProposalErrorInvalidStateUpdate, ErrSettlementDataOutOfRange
 	}
 
 	return types.ProposalErrorUnspecified, nil

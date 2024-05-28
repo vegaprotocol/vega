@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/require"
 )
@@ -102,4 +103,55 @@ func TestSubmittingProposalForUpdateMarketStateForUnknownMarketFails(t *testing.
 		require.ErrorIs(t, governance.ErrMarketDoesNotExist, err)
 		require.Nil(t, toSubmit)
 	}
+}
+
+func TestSubmittingProposalForUpdateMarketStateWithInvalidSettlementDataFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	party := eng.newValidParty("party1", 123456789)
+	price := num.NewUint(123456789)
+	eng.ensureTokenBalanceForParty(t, party.Id, 123456789)
+	proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow().Add(1*time.Hour), types.MarketStateUpdateTypeTerminate, price)
+	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.UpdateMarketState().Changes.MarketID, party.Id, 0.1)
+	mID := proposal.UpdateMarketState().Changes.MarketID
+	eng.markets.EXPECT().MarketExists(mID).Times(2).Return(true)
+	eng.markets.EXPECT().GetMarketState(mID).Times(1).Return(types.MarketStateActive, nil)
+	eng.markets.EXPECT().ValidateSettlementData(mID, price).Times(1).Return(false)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidStateUpdate)
+	toSubmit, err := eng.submitProposal(t, proposal)
+	require.Error(t, err)
+	require.Nil(t, toSubmit)
+}
+
+func TestSubmittingProposalForUpdateMarketStateWithValidSettlementDataSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	party := eng.newValidParty("party1", 123456789)
+	price := num.NewUint(123456789)
+	eng.ensureTokenBalanceForParty(t, party.Id, 123456789)
+	proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow().Add(1*time.Hour), types.MarketStateUpdateTypeTerminate, price)
+	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.UpdateMarketState().Changes.MarketID, party.Id, 0.1)
+	mID := proposal.UpdateMarketState().Changes.MarketID
+	eng.markets.EXPECT().MarketExists(mID).Times(2).Return(true)
+	eng.markets.EXPECT().GetMarketState(mID).Times(1).Return(types.MarketStateActive, nil)
+	eng.markets.EXPECT().ValidateSettlementData(mID, price).Times(1).Return(true)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+	toSubmit, err := eng.submitProposal(t, proposal)
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	require.True(t, toSubmit.Proposal().IsMarketStateUpdate())
+}
+
+func TestSubmittingProposalForUpdateMarketStateWithoutSettlementDataSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	party := eng.newValidParty("party1", 123456789)
+	eng.ensureTokenBalanceForParty(t, party.Id, 123456789)
+	proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow().Add(1*time.Hour), types.MarketStateUpdateTypeTerminate, nil)
+	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.UpdateMarketState().Changes.MarketID, party.Id, 0.1)
+	mID := proposal.UpdateMarketState().Changes.MarketID
+	eng.markets.EXPECT().MarketExists(mID).Times(2).Return(true)
+	eng.markets.EXPECT().GetMarketState(mID).Times(1).Return(types.MarketStateActive, nil)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+	toSubmit, err := eng.submitProposal(t, proposal)
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	require.True(t, toSubmit.Proposal().IsMarketStateUpdate())
 }
