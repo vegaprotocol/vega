@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/blockchain"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/cometbft/cometbft/abci/types"
 )
@@ -327,6 +328,20 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
 			Key:   "proposal",
 			Value: proposal,
+			Index: true,
+		})
+	}
+
+	var sourceChainID string
+	if m, ok := cmd.(v1.ChainEvent); ok {
+		if e, ok := m.Event.(interface{ GetChainId() string }); ok {
+			sourceChainID = e.GetChainId()
+		}
+	}
+	if len(sourceChainID) > 0 {
+		commandAttributes = append(commandAttributes, types.EventAttribute{
+			Key:   "source-chain-id",
+			Value: sourceChainID,
 			Index: true,
 		})
 	}
