@@ -20,6 +20,7 @@
 - [11285](https://github.com/vegaprotocol/vega/issues/11285) - Add support for trading transaction ordering.
 - [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
 - [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
+- [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
 
 ### 🐛 Fixes
 
