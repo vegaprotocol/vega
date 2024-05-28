@@ -1167,6 +1167,14 @@ func (e *Engine) SubmitOrder(ctx context.Context, submission *types.OrderSubmiss
 	return nil, types.ErrInvalidMarketID
 }
 
+func (e *Engine) ValidateSettlementData(mID string, data *num.Uint) bool {
+	mkt, ok := e.allMarkets[mID]
+	if !ok {
+		return false
+	}
+	return mkt.ValidateSettlementData(data)
+}
+
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error) {

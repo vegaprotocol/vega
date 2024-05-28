@@ -4831,6 +4831,12 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	m.checkForReferenceMoves(ctx, orderUpdates, false)
 }
 
+func (m *Market) ValidateSettlementData(data *num.Uint) bool {
+	// convert to asset precision
+	settlement, _ := num.UintFromDecimal(data.ToDecimal().Mul(m.priceFactor))
+	return m.validateSettlementData(settlement)
+}
+
 func (m *Market) validateSettlementData(data *num.Uint) bool {
 	if m.closed {
 		return false

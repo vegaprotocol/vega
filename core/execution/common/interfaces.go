@@ -396,6 +396,7 @@ type CommonMarket interface {
 	CancelAMM(context.Context, *types.CancelAMM, string) error
 
 	PostRestore(context.Context) error
+	ValidateSettlementData(*num.Uint) bool
 }
 
 type AccountBalanceChecker interface {

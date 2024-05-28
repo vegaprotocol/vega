@@ -102,6 +102,7 @@ func assignProduct(
 				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: datasource.SpecFromDefinition(product.Future.DataSourceSpecForTradingTermination),
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
+				Cap:                                 product.Future.Cap,
 			},
 		}
 	case *types.InstrumentConfigurationPerps:
