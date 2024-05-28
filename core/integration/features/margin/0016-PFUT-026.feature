@@ -18,7 +18,7 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | 19000         | false                | false  |
-
+  @NoPerp
   Scenario: 001 0016-PFUT-026, 0016-PFUT-028
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount  |
