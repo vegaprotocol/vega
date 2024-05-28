@@ -64,6 +64,21 @@ func (mr *MockOffbookSourceMockRecorder) NotifyFinished() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyFinished", reflect.TypeOf((*MockOffbookSource)(nil).NotifyFinished))
 }
 
+// OrderbookShape mocks base method.
+func (m *MockOffbookSource) OrderbookShape(arg0, arg1 *num.Uint, arg2 *string) ([]*types.Order, []*types.Order) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderbookShape", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]*types.Order)
+	ret1, _ := ret[1].([]*types.Order)
+	return ret0, ret1
+}
+
+// OrderbookShape indicates an expected call of OrderbookShape.
+func (mr *MockOffbookSourceMockRecorder) OrderbookShape(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderbookShape", reflect.TypeOf((*MockOffbookSource)(nil).OrderbookShape), arg0, arg1, arg2)
+}
+
 // SubmitOrder mocks base method.
 func (m *MockOffbookSource) SubmitOrder(arg0 *types.Order, arg1, arg2 *num.Uint) []*types.Order {
 	m.ctrl.T.Helper()

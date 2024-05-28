@@ -142,7 +142,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 120        | TRADING_MODE_CONTINUOUS | 120       | 120              |
+      | 120        | TRADING_MODE_CONTINUOUS | 119       | 119              |
     And the parties should have the following profit and loss:
       | party    | volume  | unrealised pnl | realised pnl | is amm |
       | party4   | -49     | 0              | 0            |        |

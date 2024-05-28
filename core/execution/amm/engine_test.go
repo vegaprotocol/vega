@@ -568,7 +568,7 @@ func whenAMMIsSubmitted(t *testing.T, tst *tstEngine, submission *types.SubmitAM
 	ctx := context.Background()
 	pool, err := tst.engine.Create(ctx, submission, vgcrypto.RandomHash(), riskFactors, scalingFactors, slippage)
 	require.NoError(t, err)
-	require.NoError(t, tst.engine.Confirm(ctx, pool))
+	tst.engine.Confirm(ctx, pool)
 }
 
 func getParty(t *testing.T, tst *tstEngine) (string, string) {

@@ -23,6 +23,7 @@ import (
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/risk"
@@ -326,7 +327,7 @@ type EquityLikeShares interface {
 }
 
 type AMMPool interface {
-	OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order)
+	OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order)
 	LiquidityFee() num.Decimal
 	CommitmentAmount() *num.Uint
 }

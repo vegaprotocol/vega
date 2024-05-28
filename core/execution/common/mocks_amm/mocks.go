@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	common "code.vegaprotocol.io/vega/core/execution/common"
+	idgeneration "code.vegaprotocol.io/vega/core/idgeneration"
 	types "code.vegaprotocol.io/vega/core/types"
 	num "code.vegaprotocol.io/vega/libs/num"
 	gomock "github.com/golang/mock/gomock"
@@ -66,18 +67,18 @@ func (mr *MockAMMPoolMockRecorder) LiquidityFee() *gomock.Call {
 }
 
 // OrderbookShape mocks base method.
-func (m *MockAMMPool) OrderbookShape(arg0, arg1 *num.Uint) ([]*types.Order, []*types.Order) {
+func (m *MockAMMPool) OrderbookShape(arg0, arg1 *num.Uint, arg2 *idgeneration.IDGenerator) ([]*types.Order, []*types.Order) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OrderbookShape", arg0, arg1)
+	ret := m.ctrl.Call(m, "OrderbookShape", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*types.Order)
 	ret1, _ := ret[1].([]*types.Order)
 	return ret0, ret1
 }
 
 // OrderbookShape indicates an expected call of OrderbookShape.
-func (mr *MockAMMPoolMockRecorder) OrderbookShape(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockAMMPoolMockRecorder) OrderbookShape(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderbookShape", reflect.TypeOf((*MockAMMPool)(nil).OrderbookShape), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderbookShape", reflect.TypeOf((*MockAMMPool)(nil).OrderbookShape), arg0, arg1, arg2)
 }
 
 // MockAMM is a mock of AMM interface.

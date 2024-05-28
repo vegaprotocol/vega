@@ -276,6 +276,43 @@ func TestCheckAmendAMM(t *testing.T) {
 				SlippageTolerance: "0.09",
 				CommitmentAmount:  ptr.From("10000"),
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					Base: "20000",
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.lower_bound (lower_bound and upper_bound cannot both be empty)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				SlippageTolerance: "0.09",
+				CommitmentAmount:  ptr.From("10000"),
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					LowerBound: ptr.From("10000"),
+					Base:       "20000",
+					UpperBound: ptr.From("15000"),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.base (should be a smaller value than upper_bound)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				SlippageTolerance: "0.09",
+				CommitmentAmount:  ptr.From("10000"),
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					LowerBound: ptr.From("25000"),
+					Base:       "20000",
+					UpperBound: ptr.From("30000"),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.base (should be a bigger value than lower_bound)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				SlippageTolerance: "0.09",
+				CommitmentAmount:  ptr.From("10000"),
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
 					Base:       "20000",
 					UpperBound: ptr.From("30000"),
 					LowerBound: ptr.From("10000"),
