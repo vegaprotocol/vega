@@ -482,7 +482,7 @@ func testOrderbookShapeStepOverFairPrice(t *testing.T) {
 	ensurePosition(t, p.pos, position, num.UintZero())
 	require.Equal(t, "25", p.pool.BestPrice(nil).String())
 
-	ensurePosition(t, p.pos, position, num.UintZero())
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
 	buys, sells := p.pool.OrderbookShape(low, base, nil)
 	assert.Equal(t, 3, len(buys))
 	assert.Equal(t, 8, len(sells))
@@ -492,7 +492,7 @@ func testOrderbookShapeStepOverFairPrice(t *testing.T) {
 	assert.Equal(t, 0, len(buys))
 	assert.Equal(t, 11, len(sells))
 
-	ensurePosition(t, p.pos, position, num.UintZero())
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
 	buys, sells = p.pool.OrderbookShape(low, high, nil)
 	assert.Equal(t, 2, len(buys))
 	assert.Equal(t, 9, len(sells))
