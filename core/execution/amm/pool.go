@@ -598,33 +598,42 @@ func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerato
 				// we are in "approximation" mode with a step bigger than a tick and have stepped over the AMM's
 				// fair-price. We need to split this step into two, a buy order from current -> fp, and a sell
 				// from fp -> next
-				volume := uint64(num.DeltaV(position, 0))
-				price := p.priceForVolumeAtPosition(volume, types.OtherSide(side), 0, fairPrice)
-				buys = append(buys, p.makeOrder(volume, price, side, idgen))
+
+				fairPosition := p.getPosition()
+				volume := uint64(num.DeltaV(position, fairPosition))
+
+				// our approximate bigger steps may be less than a price level away from the fair-price in which case
+				// the volume will be < 1 and we can just ignore an order for this segment since we are already *roughly* expanding into orders.
+				if volume != 0 {
+					price := p.priceForVolumeAtPosition(volume, types.OtherSide(side), fairPosition, fairPrice)
+					buys = append(buys, p.makeOrder(volume, price, side, idgen))
+				}
 
 				// we've step through fair-price now so orders will becomes sells
 				side = types.SideSell
 				current = fairPrice
-				position = 0
+				position = fairPosition
 			}
 
 			nextPosition := cu.positionAtPrice(p.sqrt, num.Min(next, cu.high))
 			volume := uint64(num.DeltaV(position, nextPosition))
 
-			if side == types.SideBuy {
-				price := current
-				if approx {
-					price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), nextPosition, next)
+			if volume != 0 {
+				if side == types.SideBuy {
+					price := current
+					if approx {
+						price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), nextPosition, next)
+					}
+					order := p.makeOrder(volume, price, side, idgen)
+					buys = append(buys, order)
+				} else {
+					price := next
+					if approx {
+						price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), position, current)
+					}
+					order := p.makeOrder(volume, price, side, idgen)
+					sells = append(sells, order)
 				}
-				order := p.makeOrder(volume, price, side, idgen)
-				buys = append(buys, order)
-			} else {
-				price := next
-				if approx {
-					price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), position, current)
-				}
-				order := p.makeOrder(volume, price, side, idgen)
-				sells = append(sells, order)
 			}
 
 			// if we're calculating buys and we hit fair price, switch to sells
@@ -655,6 +664,10 @@ func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
 // priceForVolumeAtPosition returns the price the AMM is willing to trade at to match with the given volume if its position and fair-price
 // are as given.
 func (p *Pool) priceForVolumeAtPosition(volume uint64, side types.Side, pos int64, fp *num.Uint) *num.Uint {
+	if volume == 0 {
+		panic("cannot calculate price for zero volume trade")
+	}
+
 	x, y := p.virtualBalances(pos, fp, side)
 
 	// dy = x*y / (x - dx) - y
