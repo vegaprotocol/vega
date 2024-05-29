@@ -33,7 +33,7 @@ func newAMMState(count int64) *AMMState {
 		stake:    num.DecimalZero(),
 		score:    num.DecimalZero(),
 		lastTick: count - 1,
-		ltD:      num.DecimalZero(),
+		ltD:      num.DecimalFromInt64(count - 1),
 	}
 }
 
