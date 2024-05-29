@@ -129,11 +129,6 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 			b.peggedOrders.Add(pid)
 		}
 	}
-
-	// If we are in an auction we need to build the IP&V structure
-	if b.auction {
-		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
-	}
 	return nil, nil
 }
 
