@@ -32,19 +32,32 @@ type AccountBalance struct {
 	VegaTime time.Time
 }
 
-func (ab AccountBalance) ToProto() *v2.AccountBalance {
+func (ab AccountBalance) ToProto(parentPartyID *string) *v2.AccountBalance {
 	return &v2.AccountBalance{
-		Owner:    ab.PartyID.String(),
-		Balance:  ab.Balance.String(),
-		Asset:    ab.AssetID.String(),
-		MarketId: ab.MarketID.String(),
-		Type:     ab.Account.Type,
+		Owner:         ab.PartyID.String(),
+		Balance:       ab.Balance.String(),
+		Asset:         ab.AssetID.String(),
+		MarketId:      ab.MarketID.String(),
+		Type:          ab.Account.Type,
+		ParentPartyId: parentPartyID,
 	}
 }
 
-func (ab AccountBalance) ToProtoEdge(_ ...any) (*v2.AccountEdge, error) {
+func (ab AccountBalance) ToProtoEdge(args ...any) (*v2.AccountEdge, error) {
+	var parentPartyID *string
+	if len(args) > 1 {
+		perPartyDerivedKey, ok := args[0].(map[string]string)
+		if !ok {
+			return nil, fmt.Errorf("expected argument of type map[string]string, got %T", args[0])
+		}
+
+		if party, isDerivedKey := perPartyDerivedKey[ab.PartyID.String()]; isDerivedKey {
+			parentPartyID = &party
+		}
+	}
+
 	return &v2.AccountEdge{
-		Node:   ab.ToProto(),
+		Node:   ab.ToProto(parentPartyID),
 		Cursor: ab.Cursor().Encode(),
 	}, nil
 }

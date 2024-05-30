@@ -25,6 +25,7 @@ import (
 	"math"
 	"math/rand"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -58,6 +59,7 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -387,6 +389,8 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
+	var partyPerDerivedKey map[string]string
+
 	if req.Filter != nil {
 		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
 		if err := marketIDs.Ensure(); err != nil {
@@ -398,7 +402,13 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		if err := partyIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
-		req.Filter.PartyIds = partyIDs
+
+		partyPerDerivedKey, err = t.getDerivedParties(ctx, partyIDs, req.Filter.MarketIds)
+		if err != nil {
+			return nil, formatE(err)
+		}
+
+		req.Filter.PartyIds = append(partyIDs, maps.Keys(partyPerDerivedKey)...)
 	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)
@@ -411,7 +421,7 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		return nil, formatE(ErrAccountServiceListAccounts, err)
 	}
 
-	edges, err := makeEdges[*v2.AccountEdge](accountBalances)
+	edges, err := makeEdges[*v2.AccountEdge](accountBalances, partyPerDerivedKey)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -432,11 +442,17 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	partyPerDerivedKey, err := t.getDerivedParties(ctx, []string{req.PartyId}, []string{req.MarketId})
+	if err != nil {
+		return formatE(err)
+	}
+
 	// First get the 'initial image' of accounts matching the request and send those
-	if err := t.sendAccountsSnapshot(ctx, req, srv); err != nil {
+	if err := t.sendAccountsSnapshot(ctx, req, srv, partyPerDerivedKey); err != nil {
 		return formatE(ErrFailedToSendSnapshot, err)
 	}
 
+	// TODO Karel
 	accountsChan, ref := t.accountService.ObserveAccountBalances(
 		ctx, t.config.StreamRetries, req.MarketId, req.PartyId, req.Asset, req.Type)
 
@@ -447,7 +463,12 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
 		protos := make([]*v2.AccountBalance, len(accounts))
 		for i := 0; i < len(accounts); i++ {
-			protos[i] = accounts[i].ToProto()
+			var parentPartyID *string
+			if party, ok := partyPerDerivedKey[accounts[i].PartyID.String()]; ok {
+				parentPartyID = &party
+			}
+
+			protos[i] = accounts[i].ToProto(parentPartyID)
 		}
 		batches := batch(protos, snapshotPageSize)
 
@@ -464,7 +485,11 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	})
 }
 
-func (t *TradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2.ObserveAccountsRequest, srv v2.TradingDataService_ObserveAccountsServer) error {
+func (t *TradingDataServiceV2) sendAccountsSnapshot(ctx context.Context,
+	req *v2.ObserveAccountsRequest,
+	srv v2.TradingDataService_ObserveAccountsServer,
+	partyPerDerivedKey map[string]string,
+) error {
 	filter := entities.AccountFilter{}
 	if req.Asset != "" {
 		filter.AssetID = entities.AssetID(req.Asset)
@@ -490,7 +515,12 @@ func (t *TradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 
 	protos := make([]*v2.AccountBalance, len(accounts))
 	for i := 0; i < len(accounts); i++ {
-		protos[i] = accounts[i].ToProto()
+		var parentPartyID *string
+		if party, ok := partyPerDerivedKey[accounts[i].PartyID.String()]; ok {
+			parentPartyID = &party
+		}
+
+		protos[i] = accounts[i].ToProto(parentPartyID)
 	}
 
 	batches := batch(protos, snapshotPageSize)
@@ -1553,9 +1583,17 @@ func deriveAMMParty(
 	return hex.EncodeToString(hash)
 }
 
-func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, party string, market *string) ([]string, error) {
-	if market != nil && len(*market) > 0 {
-		return []string{deriveAMMParty(party, *market, ammVersion, 0)}, nil
+func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, partyIDs []string, marketIDs []string) (map[string]string, error) {
+	partyPerDerivedKey := map[string]string{}
+
+	if len(marketIDs) != 0 {
+		for _, marketID := range marketIDs {
+			for _, partyID := range partyIDs {
+				partyPerDerivedKey[deriveAMMParty(partyID, marketID, ammVersion, 0)] = partyID
+			}
+		}
+
+		return partyPerDerivedKey, nil
 	}
 
 	// get a list of all markets to generate all potential
@@ -1565,12 +1603,13 @@ func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, party stri
 		return nil, err
 	}
 
-	subs := make([]string, 0, len(markets))
-	for _, v := range markets {
-		subs = append(subs, deriveAMMParty(party, v.ID.String(), ammVersion, 0))
+	for _, market := range markets {
+		for _, partyID := range partyIDs {
+			partyPerDerivedKey[deriveAMMParty(partyID, market.ID.String(), ammVersion, 0)] = partyID
+		}
 	}
 
-	return subs, nil
+	return partyPerDerivedKey, nil
 }
 
 // ObservePositions subscribes to a stream of Positions.
@@ -1588,12 +1627,20 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	derivedParties := []string{}
 	if req.PartyId != nil && len(*req.PartyId) > 0 {
 		if includeDerivedParties {
-			subs, err := t.getDerivedParties(ctx, *req.PartyId, req.MarketId)
+			partyIDs := []string{*req.PartyId}
+
+			var marketIDs []string
+			if req.MarketId != nil && len(*req.MarketId) > 0 {
+				marketIDs = []string{*req.MarketId}
+			}
+
+			partyPerDerivedKey, err := t.getDerivedParties(ctx, partyIDs, marketIDs)
 			if err != nil {
 				return formatE(err)
 			}
 
-			derivedParties = append(derivedParties, subs...)
+			derivedParties = maps.Keys(partyPerDerivedKey)
+			slices.Sort(derivedParties)
 		}
 	}
 
