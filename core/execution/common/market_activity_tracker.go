@@ -946,7 +946,15 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 				total = total.Add(t)
 			}
 		case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
+			println("calculateMetricForParty return volatility for", party)
 			r, ok := marketTracker.getReturns(party, windowSize)
+			for i, rr := range r {
+				rrStr := "nil"
+				if rr != nil {
+					rrStr = rr.String()
+				}
+				println("return for", party, "index", i, "=", rrStr)
+			}
 			if !ok {
 				continue
 			}
@@ -997,13 +1005,16 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 		filteredReturns := []num.Decimal{}
 		for _, d := range returns {
 			if d != nil {
+				println("adding return in window for party", party, d.String())
 				filteredReturns = append(filteredReturns, *d)
 			}
 		}
 		if len(filteredReturns) < 2 {
+			println("there are less than 2 returns for party", party)
 			return num.DecimalZero(), false
 		}
 		variance, _ := num.Variance(filteredReturns)
+		println("variance for party", party, variance.String())
 		if !variance.IsZero() {
 			return num.DecimalOne().Div(variance), found
 		}
