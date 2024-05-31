@@ -790,6 +790,7 @@ func (mat *MarketActivityTracker) calculateMetricForIndividuals(ctx context.Cont
 			continue
 		}
 		score, ok := mat.calculateMetricForParty(asset, party, markets, metric, windowSize)
+		println("calculated score for party", party, metric.String(), score.String(), ok)
 		if !ok {
 			ret = append(ret, &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: false, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
 			continue
@@ -1014,7 +1015,7 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 			return num.DecimalZero(), false
 		}
 		variance, _ := num.Variance(filteredReturns)
-		println("variance for party", party, variance.String())
+		println("variance for party", party, variance.String(), "found", found)
 		if !variance.IsZero() {
 			return num.DecimalOne().Div(variance), found
 		}
