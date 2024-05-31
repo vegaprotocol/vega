@@ -84,6 +84,7 @@ type Market struct {
 
 	lastTradedPrice *num.Uint
 	priceFactor     num.Decimal
+	assetFactor     num.Decimal
 
 	// own engines
 	matching                      *matching.CachedOrderBook
@@ -212,6 +213,7 @@ func NewMarket(
 	if exp := int(assetDecimals) - int(mkt.DecimalPlaces); exp != 0 {
 		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
+	assetFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(assetDecimals)))
 
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
@@ -334,6 +336,7 @@ func NewMarket(
 		stateVarEngine:                stateVarEngine,
 		marketActivityTracker:         marketActivityTracker,
 		priceFactor:                   priceFactor,
+		assetFactor:                   assetFactor,
 		positionFactor:                positionFactor,
 		nextMTM:                       time.Time{}, // default to zero time
 		maxStopOrdersPerParties:       num.UintZero(),
@@ -1310,7 +1313,7 @@ func (m *Market) recordPositionActivity(t *types.Transfer) {
 	}
 	if t.Type == types.TransferTypeMTMWin || t.Type == types.TransferTypeMTMLoss ||
 		t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
-		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, m.mkt.ID, amt)
+		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, m.mkt.ID, amt.Div(m.assetFactor))
 	}
 	if t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
 		m.marketActivityTracker.RecordFundingPayment(m.settlementAsset, t.Owner, m.mkt.ID, amt)
