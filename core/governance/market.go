@@ -415,7 +415,19 @@ func validateAsset(assetID string, decimals uint64, positionDecimals int64, asse
 }
 
 func validateSpot(spot *types.SpotProduct, decimals uint64, positionDecimals int64, assets Assets, deepCheck bool) (types.ProposalError, error) {
-	propError, err := validateAssetBasic(spot.QuoteAsset, assets, int64(decimals), deepCheck)
+	// first validate pair, ensure base decimals <= quote asset (ie USDT/ETH is fine, ETH/USDT is not)
+	// base, err := assets.Get(spot.BaseAsset)
+	// if err != nil {
+	// 	return types.ProposalErrorInvalidAsset, err
+	// }
+	// quote, err := assets.Get(spot.QuoteAsset)
+	// if err != nil {
+	// 	return types.ProposalErrorInvalidAsset, err
+	// }
+	// if base.DecimalPlaces() > quote.DecimalPlaces() {
+	// 	return types.ProposalErrorInvalidSpot, errors.New("base asset decimals must be less than or equal to the quote asset decimals")
+	// }
+	propError, err := validateAsset(spot.QuoteAsset, decimals, positionDecimals, assets, deepCheck)
 	if err != nil {
 		return propError, err
 	}
