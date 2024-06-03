@@ -220,6 +220,10 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (int64, error) {
 // if removeOrders is set to True then the relevant orders also get removed.
 func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrders bool) []*types.Order {
 	extractedOrders := []*types.Order{}
+	if volume == 0 {
+		return extractedOrders
+	}
+
 	var (
 		totalVolume uint64
 		checkPrice  func(*num.Uint) bool
