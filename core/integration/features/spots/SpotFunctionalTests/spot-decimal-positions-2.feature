@@ -2,7 +2,7 @@ Feature: Simple Spot Order between two parties match successfully
   Background:
     Given the following assets are registered:
       | id  | decimal places |
-      | ETH | 3              |
+      | ETH | 5              |
       | BTC | 5              |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -22,7 +22,7 @@ Feature: Simple Spot Order between two parties match successfully
       | limits.markets.maxPeggedOrders          | 4     |
       | referralProgram.minStakedVegaTokens     | 0     |
 
-  @SDP2
+  @SDP
   Scenario Outline: Simple Spot Order matches with counter party using different combinations of decimal places.
 
     Given the spot markets:
@@ -42,7 +42,7 @@ Feature: Simple Spot Order between two parties match successfully
       | party2 | BTC/ETH   | sell | <volume> | <price> | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1111 |
 
     Then "party2" should have holding account balance of "100000" for asset "BTC"
-    And "party1" should have holding account balance of "10000" for asset "ETH"
+    And "party1" should have holding account balance of "1000000" for asset "ETH"
 
     And the orders should have the following states:
       | party  | market id | side | volume   | remaining | price   | status        |
@@ -75,14 +75,16 @@ Feature: Simple Spot Order between two parties match successfully
       | party4 | ACCOUNT_TYPE_GENERAL    |        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | <liquidity fee> | ETH   | TRANSFER_TYPE_LIQUIDITY_FEE_PAY      |
       |        | ACCOUNT_TYPE_FEES_MAKER | party3 | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | <receive fee>   | ETH   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
     Examples:
-      | ETH decimals | BTC decimals | volume | price | mark price | volume2 | price2 | mark price 2 | maker fee | infra fee | liquidity fee | receive fee |
-      | 2            | 1            | 10     | 1000  | 1000       | 1       | 110    | 110          | 1         | 1         | 0             | 1           |
-      | 3            | 5            | 100000 | 10000 | 10000      | 10000   | 1100   | 1100         | 1         | 1         | 0             | 1           |
-      | 1            | 2            | 100    | 100   | 100        | 10      | 11     | 11           | 1         | 1         | 0             | 1           |
-      | 0            | 5            | 100000 | 10    | 10         | 10000   | 1      | 1            | 1         | 1         | 0             | 1           |
-      | 0            | 0            | 1      | 10    | 10         | 1       | 11     | 11           | 11        | 22        | 0             | 11          |
-      | 3            | 0            | 1      | 10000 | 10000      | 1       | 11000  | 11000        | 11        | 22        | 0             | 11          |
-      | 3            | 5            | 100000 | 10000 | 10000      | 100000  | 11000  | 11000        | 11        | 22        | 0             | 11          |
-      | 0            | 0            | 1      | 10    | 10         | 2       | 11     | 11           | 22        | 44        | 0             | 22          |
-      | 3            | 0            | 1      | 10000 | 10000      | 2       | 11000  | 11000        | 22        | 44        | 0             | 22          |
-      #| 3            | 3            | 1000   | 10000 | 10000      | 1       | 1      | 1            | 0         | 0         | 0             | 0           |
+      | ETH decimals | BTC decimals | volume | price   | mark price | volume2 | price2      | mark price 2 | maker fee | infra fee | liquidity fee | receive fee |
+      | 2            | 1            | 10     | 1000    | 1000       | 1       | 110         | 110          | 11        | 22        | 0             | 11          |
+      | 3            | 5            | 100000 | 10000   | 10000      | 10000   | 1100        | 1100         | 11        | 22        | 0             | 11          |
+      | 1            | 2            | 100    | 100     | 100        | 10      | 11          | 11           | 11        | 22        | 0             | 11          |
+      | 0            | 5            | 100000 | 10      | 10         | 10000   | 1           | 1            | 10        | 20        | 0             | 10          |
+      | 0            | 0            | 1      | 10      | 10         | 1       | 11          | 11           | 1100      | 2200      | 0             | 1100        |
+      | 3            | 0            | 1      | 10000   | 10000      | 1       | 11000       | 11000        | 1100      | 2200      | 0             | 1100        |
+      | 3            | 5            | 100000 | 10000   | 10000      | 100000  | 11000       | 11000        | 1100      | 2200      | 0             | 1100        |
+      | 0            | 0            | 1      | 10      | 10         | 2       | 11          | 11           | 2200      | 4400      | 0             | 2200        |
+      | 3            | 0            | 1      | 10000   | 10000      | 2       | 11000       | 11000        | 2200      | 4400      | 0             | 2200        |
+      | 1            | 4            | 10000  | 100     | 100        | 2       | 1           | 1            | 1         | 1         | 0             | 1           |
+      | 0            | 5            | 100000 | 10      | 10         | 2       | 1           | 1            | 1         | 1         | 0             | 1           |
+      | 5            | 5            | 100000 | 1000000 | 1000000    | 1       | 10000000000 | 10000000000  | 100       | 200       | 0             | 100         |
