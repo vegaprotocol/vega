@@ -67,24 +67,30 @@ Feature: Simple Spot Order between two parties match successfully
       | buyer  | price    | size      | seller |
       | party3 | <price2> | <volume2> | party4 |
     And the mark price should be "<mark price 2>" for the market "BTC/ETH"
-    Then debug transfers
     And the following transfers should happen:
       | from   | from account            | to     | to account                       | market id | amount          | asset | type                                 |
       | party4 | ACCOUNT_TYPE_GENERAL    |        | ACCOUNT_TYPE_FEES_MAKER          | BTC/ETH   | <maker fee>     | ETH   | TRANSFER_TYPE_MAKER_FEE_PAY          |
       | party4 | ACCOUNT_TYPE_GENERAL    |        | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | <infra fee>     | ETH   | TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY |
       | party4 | ACCOUNT_TYPE_GENERAL    |        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | <liquidity fee> | ETH   | TRANSFER_TYPE_LIQUIDITY_FEE_PAY      |
       |        | ACCOUNT_TYPE_FEES_MAKER | party3 | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | <receive fee>   | ETH   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
+    # A bunch of possible position/market decimal combinations possible
     Examples:
-      | ETH decimals | BTC decimals | volume | price   | mark price | volume2 | price2      | mark price 2 | maker fee | infra fee | liquidity fee | receive fee |
-      | 2            | 1            | 10     | 1000    | 1000       | 1       | 110         | 110          | 11        | 22        | 0             | 11          |
-      | 3            | 5            | 100000 | 10000   | 10000      | 10000   | 1100        | 1100         | 11        | 22        | 0             | 11          |
-      | 1            | 2            | 100    | 100     | 100        | 10      | 11          | 11           | 11        | 22        | 0             | 11          |
-      | 0            | 5            | 100000 | 10      | 10         | 10000   | 1           | 1            | 10        | 20        | 0             | 10          |
-      | 0            | 0            | 1      | 10      | 10         | 1       | 11          | 11           | 1100      | 2200      | 0             | 1100        |
-      | 3            | 0            | 1      | 10000   | 10000      | 1       | 11000       | 11000        | 1100      | 2200      | 0             | 1100        |
-      | 3            | 5            | 100000 | 10000   | 10000      | 100000  | 11000       | 11000        | 1100      | 2200      | 0             | 1100        |
-      | 0            | 0            | 1      | 10      | 10         | 2       | 11          | 11           | 2200      | 4400      | 0             | 2200        |
-      | 3            | 0            | 1      | 10000   | 10000      | 2       | 11000       | 11000        | 2200      | 4400      | 0             | 2200        |
-      | 1            | 4            | 10000  | 100     | 100        | 2       | 1           | 1            | 1         | 1         | 0             | 1           |
-      | 0            | 5            | 100000 | 10      | 10         | 2       | 1           | 1            | 1         | 1         | 0             | 1           |
-      | 5            | 5            | 100000 | 1000000 | 1000000    | 1       | 10000000000 | 10000000000  | 100       | 200       | 0             | 100         |
+      | ETH decimals | BTC decimals | volume | price   | mark price | volume2 | price2 | mark price 2 | maker fee | infra fee | liquidity fee | receive fee |
+      | 1            | 2            | 100    | 100     | 100        | 10      | 11     | 11           | 11        | 22        | 0             | 11          |
+      | 2            | 1            | 10     | 1000    | 1000       | 1       | 110    | 110          | 11        | 22        | 0             | 11          |
+      | 3            | 2            | 100    | 10000   | 10000      | 10      | 11000  | 11000        | 110       | 220       | 0             | 110         |
+      | 4            | 1            | 10     | 100000  | 100000     | 1       | 110000 | 110000       | 110       | 220       | 0             | 110         |
+      | 5            | 0            | 1      | 1000000 | 1000000    | 1       | 100000 | 100000       | 100       | 200       | 0             | 100         |
+      | 0            | 0            | 1      | 10      | 10         | 1       | 11     | 11           | 1100      | 2200      | 0             | 1100        |
+      | 0            | 5            | 100000 | 10      | 10         | 10000   | 1      | 1            | 10        | 20        | 0             | 10          |
+      | 1            | 4            | 10000  | 100     | 100        | 1000    | 110    | 110          | 110       | 220       | 0             | 110         |
+      | 2            | 3            | 1000   | 1000    | 1000       | 100     | 1100   | 1100         | 110       | 220       | 0             | 110         |
+      | 3            | 2            | 100    | 10000   | 10000      | 10      | 11000  | 11000        | 110       | 220       | 0             | 110         |
+      | 4            | 1            | 10     | 100000  | 100000     | 10      | 11000  | 11000        | 110       | 220       | 0             | 110         |
+      | 2            | 0            | 1      | 1000    | 1000       | 1       | 110    | 110          | 110       | 220       | 0             | 110         |
+      | 3            | 0            | 1      | 10000   | 10000      | 1       | 11000  | 11000        | 1100      | 2200      | 0             | 1100        |
+      | 3            | 3            | 1000   | 10000   | 10000      | 1000    | 11000  | 11000        | 1100      | 2200      | 0             | 1100        |
+      | 0            | 0            | 1      | 10      | 10         | 2       | 11     | 11           | 2200      | 4400      | 0             | 2200        |
+      | 3            | 0            | 1      | 10000   | 10000      | 2       | 11000  | 11000        | 2200      | 4400      | 0             | 2200        |
+      | 0            | 5            | 100000 | 10      | 10         | 2       | 1      | 1            | 1         | 1         | 0             | 1           |
+      | 1            | 1            | 10     | 100     | 100        | 1       | 110    | 110          | 110       | 220       | 0             | 110         |
