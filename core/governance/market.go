@@ -415,7 +415,7 @@ func validateAsset(assetID string, decimals uint64, positionDecimals int64, asse
 }
 
 func validateSpot(_ *types.SpotProduct, _ uint64, _ int64, _ Assets, _ bool) (types.ProposalError, error) {
-	return nil, nil
+	return types.ProposalErrorUnspecified, nil
 }
 
 func validateSpotDisabled(spot *types.SpotProduct, decimals uint64, positionDecimals int64, assets Assets, deepCheck bool) (types.ProposalError, error) {
