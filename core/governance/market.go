@@ -414,12 +414,8 @@ func validateAsset(assetID string, decimals uint64, positionDecimals int64, asse
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateSpot(_ *types.SpotProduct, _ uint64, _ int64, _ Assets, _ bool) (types.ProposalError, error) {
-	return types.ProposalErrorUnspecified, nil
-}
-
-func validateSpotDisabled(spot *types.SpotProduct, decimals uint64, positionDecimals int64, assets Assets, deepCheck bool) (types.ProposalError, error) {
-	propError, err := validateAsset(spot.QuoteAsset, decimals, positionDecimals, assets, deepCheck)
+func validateSpot(spot *types.SpotProduct, decimals uint64, positionDecimals int64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+	propError, err := validateAssetBasic(spot.QuoteAsset, assets, int64(decimals), deepCheck)
 	if err != nil {
 		return propError, err
 	}
