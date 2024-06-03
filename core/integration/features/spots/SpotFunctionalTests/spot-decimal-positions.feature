@@ -67,13 +67,13 @@ Feature: Simple Spot Order between two parties match successfully
       | buyer  | price    | size      | seller |
       | party3 | <price2> | <volume2> | party4 |
     And the mark price should be "<mark price 2>" for the market "BTC/ETH"
+    #Then debug transfers
     And the following transfers should happen:
       | from   | from account            | to     | to account                       | market id | amount          | asset | type                                 |
       | party4 | ACCOUNT_TYPE_GENERAL    |        | ACCOUNT_TYPE_FEES_MAKER          | BTC/ETH   | <maker fee>     | ETH   | TRANSFER_TYPE_MAKER_FEE_PAY          |
       | party4 | ACCOUNT_TYPE_GENERAL    |        | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | <infra fee>     | ETH   | TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY |
       | party4 | ACCOUNT_TYPE_GENERAL    |        | ACCOUNT_TYPE_FEES_LIQUIDITY      | BTC/ETH   | <liquidity fee> | ETH   | TRANSFER_TYPE_LIQUIDITY_FEE_PAY      |
       |        | ACCOUNT_TYPE_FEES_MAKER | party3 | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | <receive fee>   | ETH   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-    #Then debug transfers
     Examples:
       | ETH decimals | BTC decimals | volume | price | mark price | volume2 | price2 | mark price 2 | maker fee | infra fee | liquidity fee | receive fee |
       | 2            | 1            | 10     | 1000  | 1000       | 1       | 110    | 110          | 1         | 1         | 0             | 1           |
@@ -82,3 +82,7 @@ Feature: Simple Spot Order between two parties match successfully
       | 0            | 5            | 100000 | 10    | 10         | 10000   | 1      | 1            | 1         | 1         | 0             | 1           |
       | 0            | 0            | 1      | 10    | 10         | 1       | 11     | 11           | 11        | 22        | 0             | 11          |
       | 3            | 0            | 1      | 10000 | 10000      | 1       | 11000  | 11000        | 11        | 22        | 0             | 11          |
+      | 3            | 5            | 100000 | 10000 | 10000      | 100000  | 11000  | 11000        | 11        | 22        | 0             | 11          |
+      | 0            | 0            | 1      | 10    | 10         | 2       | 11     | 11           | 22        | 44        | 0             | 22          |
+      | 3            | 0            | 1      | 10000 | 10000      | 2       | 11000  | 11000        | 22        | 44        | 0             | 22          |
+      #| 3            | 5            | 100000 | 10000 | 10000      | 10      | 10000  | 10000        | 0         | 0         | 0             | 0           |
