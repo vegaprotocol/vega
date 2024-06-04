@@ -25,7 +25,8 @@ import (
 )
 
 type AccountStore interface {
-	GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error)
+	// Use get by raw ID to avoid using the AccountID type because mockgen does not support it
+	GetByRawID(ctx context.Context, id string) (entities.Account, error)
 	GetAll(ctx context.Context) ([]entities.Account, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Account, error)
 	Obtain(ctx context.Context, a *entities.Account) error
@@ -55,7 +56,7 @@ func NewAccount(aStore AccountStore, bStore BalanceStore, log *logging.Logger) *
 }
 
 func (a *Account) GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error) {
-	return a.aStore.GetByID(ctx, id)
+	return a.aStore.GetByRawID(ctx, id.String())
 }
 
 func (a *Account) GetAll(ctx context.Context) ([]entities.Account, error) {

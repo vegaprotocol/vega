@@ -5,11 +5,12 @@
 package mocks
 
 import (
-	time "time"
-	entities "code.vegaprotocol.io/vega/datanode/entities"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
+
+	entities "code.vegaprotocol.io/vega/datanode/entities"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockOrderStore is a mock of OrderStore interface.
@@ -510,19 +511,19 @@ func (mr *MockAccountStoreMockRecorder) GetBalancesByTxHash(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalancesByTxHash", reflect.TypeOf((*MockAccountStore)(nil).GetBalancesByTxHash), arg0, arg1)
 }
 
-// GetByID mocks base method.
-func (m *MockAccountStore) GetByID(arg0 context.Context, arg1 entities.AccountID) (entities.Account, error) {
+// GetByRawID mocks base method.
+func (m *MockAccountStore) GetByRawID(arg0 context.Context, arg1 string) (entities.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByRawID", arg0, arg1)
 	ret0, _ := ret[0].(entities.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID.
-func (mr *MockAccountStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
+// GetByRawID indicates an expected call of GetByRawID.
+func (mr *MockAccountStoreMockRecorder) GetByRawID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockAccountStore)(nil).GetByID), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByRawID", reflect.TypeOf((*MockAccountStore)(nil).GetByRawID), arg0, arg1)
 }
 
 // GetByTxHash mocks base method.

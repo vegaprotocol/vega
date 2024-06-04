@@ -66,6 +66,10 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 	return err
 }
 
+func (as *Accounts) GetByRawID(ctx context.Context, accountID string) (entities.Account, error) {
+	return as.GetByID(ctx, entities.AccountID(accountID))
+}
+
 func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (entities.Account, error) {
 	if account, ok := as.getAccountFromCache(accountID); ok {
 		return account, nil
