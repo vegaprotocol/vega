@@ -76,3 +76,7 @@ func (lp *LiquidityProvision) consume(ctx context.Context, event LiquidityProvis
 	err = lp.store.Upsert(ctx, entity)
 	return errors.Wrap(err, "adding liquidity provision to store")
 }
+
+func (lp *LiquidityProvision) Name() string {
+	return "LiquidityProvision"
+}

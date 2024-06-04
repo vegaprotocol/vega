@@ -74,3 +74,7 @@ func (gs *GameScore) consume(ctx context.Context, event GameScoreEvent) error {
 	}
 	return nil
 }
+
+func (gs *GameScore) Name() string {
+	return "GameScore"
+}

@@ -70,3 +70,7 @@ func (ds *Delegation) consume(ctx context.Context, event DelegationBalanceEvent)
 
 	return nil
 }
+
+func (ds *Delegation) Name() string {
+	return "Delegation"
+}

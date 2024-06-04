@@ -105,3 +105,7 @@ func (rf *Transfer) handleDiscount(ctx context.Context, e TransferFeesDiscountUp
 	discount := entities.TransferFeesDiscountFromProto(&tf, rf.vegaTime)
 	return errors.Wrap(rf.store.UpsertFeesDiscount(ctx, discount), "inserting transfer fee discount update into SQL store failed")
 }
+
+func (rf *Transfer) Name() string {
+	return "Transfer"
+}
