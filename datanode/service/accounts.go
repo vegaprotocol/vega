@@ -95,18 +95,24 @@ func (a *Account) Flush(ctx context.Context) error {
 	return nil
 }
 
+func (a *Account) Unsubscribe(ctx context.Context, ref uint64) error {
+	return a.bObserver.Unsubscribe(ctx, ref)
+}
+
 func (a *Account) QueryAggregatedBalances(ctx context.Context, filter entities.AccountFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
 	return a.bStore.Query(ctx, filter, dateRange, pagination)
 }
 
 func (a *Account) ObserveAccountBalances(ctx context.Context, retries int, marketID string,
-	partyID string, asset string, ty vega.AccountType,
+	asset string, ty vega.AccountType, partyIDs map[string]string,
 ) (accountCh <-chan []entities.AccountBalance, ref uint64) {
 	ch, ref := a.bObserver.Observe(ctx,
 		retries,
 		func(ab entities.AccountBalance) bool {
+			_, partyOK := partyIDs[ab.PartyID.String()]
+
 			return (len(marketID) == 0 || marketID == ab.MarketID.String()) &&
-				(len(partyID) == 0 || partyID == ab.PartyID.String()) &&
+				(partyOK) &&
 				(len(asset) == 0 || asset == ab.AssetID.String()) &&
 				(ty == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED || ty == ab.Type)
 		})

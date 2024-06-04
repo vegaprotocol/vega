@@ -48,7 +48,7 @@ var (
 )
 
 const (
-	version = "AMMv1"
+	V1 = "AMMv1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/amm Collateral,Position
@@ -599,7 +599,7 @@ func (e *Engine) Create(
 	idgen := idgeneration.New(deterministicID)
 	poolID := idgen.NextID()
 
-	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, version, 0)
+	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, V1, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
 		e.broker.Send(
