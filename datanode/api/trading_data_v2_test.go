@@ -42,6 +42,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	"golang.org/x/exp/maps"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -932,14 +933,14 @@ func TestObserveAccountBalances(t *testing.T) {
 
 	ctx := context.Background()
 
+	req := &v2.ObserveAccountsRequest{
+		MarketId: "a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea",
+		PartyId:  "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+		Asset:    "asset1",
+	}
+
 	// without derived keys
 	{
-		req := &v2.ObserveAccountsRequest{
-			MarketId: "a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea",
-			PartyId:  "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
-			Asset:    "asset1",
-		}
-
 		expect := []entities.AccountBalance{
 			{
 				Account: &entities.Account{
@@ -987,10 +988,10 @@ func TestObserveAccountBalances(t *testing.T) {
 					require.Equal(t, expect[0].ToProto(), res.Snapshot.Accounts[0])
 				case *v2.ObserveAccountsResponse_Updates:
 					require.Equal(t, len(expect[1:]), len(res.Updates.Accounts))
-					require.Equal(t, expect[0].ToProto().Owner, res.Updates.Accounts[0].Owner)
-					// require.Equal(t, expect[0].ToProto().Type, res.Updates.Accounts[0].Type)
-					require.Equal(t, expect[1].ToProto().Owner, res.Updates.Accounts[1].Owner)
-					// require.Equal(t, expect[1].ToProto().Type, res.Updates.Accounts[1].Type)
+					require.Equal(t, expect[1].ToProto().Owner, res.Updates.Accounts[0].Owner)
+					require.Equal(t, expect[1].ToProto().Type, res.Updates.Accounts[0].Type)
+					require.Equal(t, expect[2].ToProto().Owner, res.Updates.Accounts[1].Owner)
+					require.Equal(t, expect[2].ToProto().Type, res.Updates.Accounts[1].Type)
 					cancel()
 				default:
 					t.Fatalf("unexpected response type: %T", oar.Response)
@@ -1011,72 +1012,94 @@ func TestObserveAccountBalances(t *testing.T) {
 		wg.Wait()
 	}
 
-	// // now test with derived keys
-	// {
+	// now test with derived keys
+	{
+		req.IncludeDerivedParties = ptr.From(true)
 
-	// 	req.IncludeDerivedParties = ptr.From(true)
+		expect := []entities.AccountBalance{
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_MARGIN,
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_BOND,
+				},
+			},
+		}
 
-	// 	expect := []entities.AccountBalance{
-	// 		{
-	// 			Account: &entities.Account{
-	// 				PartyID: "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
-	// 				AssetID: "asset1",
-	// 			},
-	// 		},
-	// 		{
-	// 			Account: &entities.Account{
-	// 				PartyID: "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
-	// 				AssetID: "asset1",
-	// 			},
-	// 		},
-	// 	}
+		partyPerDerivedKey := map[string]string{
+			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba": req.PartyId,
+		}
 
-	// 	partyPerDerivedKey := map[string]string{
-	// 		"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba": "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
-	// 		"79b3aaa5ff0933408cf8f1bcb0b1006cd7bc259d76d400721744e8edc12f2929": "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
-	// 		"35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b": "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
-	// 		"161c1c424215cff4f32154871c225dc9760bcac1d4d6783deeaacf7f8b6861ab": "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
-	// 	}
+		for derivedKey := range partyPerDerivedKey {
+			expect = append(expect, entities.AccountBalance{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(derivedKey),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				},
+			})
+		}
+		balanceStore.EXPECT().Flush(gomock.Any()).Return(expect[3:], nil).Times(1)
 
-	// 	for derivedKey := range partyPerDerivedKey {
-	// 		expect = append(expect, entities.AccountBalance{
-	// 			Account: &entities.Account{
-	// 				PartyID: entities.PartyID(derivedKey),
-	// 				AssetID: "asset1",
-	// 			},
-	// 		})
-	// 	}
+		accountFilter := entities.AccountFilter{
+			AssetID:   "asset1",
+			PartyIDs:  entities.NewPartyIDSlice(append(maps.Keys(partyPerDerivedKey), req.PartyId)...),
+			MarketIDs: entities.NewMarketIDSlice(req.MarketId),
+		}
 
-	// 	accountStore.EXPECT().QueryBalances(gomock.Any(), gomock.Any(), gomock.Any()).
-	// 		Do(func(ctx context.Context, filter entities.AccountFilter, pageInfo entities.CursorPagination) {
-	// 			var expectPartyIDs []string
-	// 			for _, e := range expect {
-	// 				expectPartyIDs = append(expectPartyIDs, e.PartyID.String())
-	// 			}
+		accountStore.EXPECT().QueryBalances(gomock.Any(), accountFilter, gomock.Any()).Times(1).Return(expect[:3], entities.PageInfo{}, nil)
 
-	// 			var gotPartyIDs []string
-	// 			for _, p := range filter.PartyIDs {
-	// 				gotPartyIDs = append(gotPartyIDs, p.String())
-	// 			}
+		srvCtx, cancel := context.WithCancel(ctx)
+		res := mockObserveAccountServer{
+			mockServerStream: mockServerStream{ctx: srvCtx},
+			send: func(oar *v2.ObserveAccountsResponse) error {
+				switch res := oar.Response.(type) {
+				case *v2.ObserveAccountsResponse_Snapshot:
+					require.Len(t, res.Snapshot.Accounts, 3)
+					require.Equal(t, expect[0].ToProto(), res.Snapshot.Accounts[0])
+					require.Equal(t, expect[1].ToProto(), res.Snapshot.Accounts[1])
+					require.Equal(t, expect[2].ToProto(), res.Snapshot.Accounts[2])
+				case *v2.ObserveAccountsResponse_Updates:
+					require.Equal(t, len(expect[3:]), len(res.Updates.Accounts))
+					require.Equal(t, expect[3].ToProto().Owner, res.Updates.Accounts[0].Owner)
+					require.Equal(t, expect[3].ToProto().Type, res.Updates.Accounts[0].Type)
+					cancel()
+				default:
+					t.Fatalf("unexpected response type: %T", oar.Response)
+				}
+				return nil
+			}}
 
-	// 			slices.Sort(expectPartyIDs)
-	// 			slices.Sort(gotPartyIDs)
-	// 			require.Zero(t, slices.Compare(expectPartyIDs, gotPartyIDs))
-	// 		}).Times(1).Return(expect, entities.PageInfo{}, nil)
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			apiService.ObserveAccounts(req, res)
+		}()
 
-	// 	resp, err := apiService.ListAccounts(ctx, req)
-	// 	require.NoError(t, err)
-	// 	require.Len(t, resp.Accounts.Edges, 6)
-
-	// 	for i := range expect {
-	// 		require.Equal(t, expect[i].ToProto().Owner, resp.Accounts.Edges[i].Node.Owner)
-
-	// 		if party, ok := partyPerDerivedKey[expect[i].PartyID.String()]; ok {
-	// 			require.NotNil(t, resp.Accounts.Edges[i].Node.ParentPartyId)
-	// 			require.Equal(t, party, *resp.Accounts.Edges[i].Node.ParentPartyId)
-	// 		}
-	// 	}
-	// }
+		time.Sleep(1 * time.Second)
+		err := apiService.AccountService.Flush(ctx)
+		require.NoError(t, err)
+		wg.Wait()
+	}
 }
 
 //nolint:unparam
