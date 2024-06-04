@@ -2634,6 +2634,8 @@ type Market {
     partyId: ID
     "Pagination information"
     pagination: Pagination
+    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): AccountsConnection
 
   tradesConnection(
