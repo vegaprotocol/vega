@@ -417,7 +417,6 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 
 			req.Filter.PartyIds = append(req.Filter.PartyIds, maps.Keys(partyPerDerivedKey)...)
 		}
-
 	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)

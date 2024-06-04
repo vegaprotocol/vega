@@ -42,11 +42,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"golang.org/x/exp/maps"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 	"google.golang.org/genproto/googleapis/api/httpbody"
 	"google.golang.org/grpc/metadata"
 )
@@ -854,7 +854,6 @@ func TestListAccounts(t *testing.T) {
 
 	// now test with derived keys
 	{
-
 		req.IncludeDerivedParties = ptr.From(true)
 
 		expect := []entities.AccountBalance{
@@ -997,7 +996,8 @@ func TestObserveAccountBalances(t *testing.T) {
 					t.Fatalf("unexpected response type: %T", oar.Response)
 				}
 				return nil
-			}}
+			},
+		}
 
 		wg := sync.WaitGroup{}
 		wg.Add(1)
@@ -1086,7 +1086,8 @@ func TestObserveAccountBalances(t *testing.T) {
 					t.Fatalf("unexpected response type: %T", oar.Response)
 				}
 				return nil
-			}}
+			},
+		}
 
 		wg := sync.WaitGroup{}
 		wg.Add(1)
