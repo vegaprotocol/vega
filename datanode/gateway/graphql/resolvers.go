@@ -837,11 +837,21 @@ func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []s
 }
 
 func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GamePartyScoreFilter, pagination *v2.Pagination) (*v2.GamePartyScoresConnection, error) {
+	gameIds := []string{}
+	teamIds := []string{}
+	partyIds := []string{}
+
+	if filter != nil {
+		gameIds = filter.GameIds
+		teamIds = filter.TeamIds
+		partyIds = filter.PartyIds
+	}
+
 	req := v2.ListGamePartyScoresRequest{
 		Filter: &v2.GamePartyScoresFilter{
-			GameIds:  filter.GameIds,
-			TeamIds:  filter.TeamIds,
-			PartyIds: filter.PartyIds,
+			GameIds:  gameIds,
+			TeamIds:  teamIds,
+			PartyIds: partyIds,
 		},
 		Pagination: pagination,
 	}
@@ -853,10 +863,18 @@ func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GameParty
 }
 
 func (r *myQueryResolver) GameTeamScores(ctx context.Context, filter *GameTeamScoreFilter, pagination *v2.Pagination) (*v2.GameTeamScoresConnection, error) {
+	gameIds := []string{}
+	teamIds := []string{}
+
+	if filter != nil {
+		gameIds = filter.GameIds
+		teamIds = filter.TeamIds
+	}
+
 	req := v2.ListGameTeamScoresRequest{
 		Filter: &v2.GameTeamScoresFilter{
-			GameIds: filter.GameIds,
-			TeamIds: filter.TeamIds,
+			GameIds: gameIds,
+			TeamIds: teamIds,
 		},
 		Pagination: pagination,
 	}
