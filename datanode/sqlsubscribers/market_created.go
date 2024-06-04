@@ -62,3 +62,7 @@ func (m *MarketCreated) consume(ctx context.Context, event MarketCreatedEvent) e
 
 	return errors.Wrap(m.store.Upsert(ctx, record), "inserting market to SQL store failed:%w")
 }
+
+func (m *MarketCreated) Name() string {
+	return "MarketCreated"
+}

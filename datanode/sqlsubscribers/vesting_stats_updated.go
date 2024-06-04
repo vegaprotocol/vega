@@ -68,3 +68,7 @@ func (pas *VestingStatsUpdated) consumeVestingStatsUpdatedEvent(ctx context.Cont
 
 	return errors.Wrap(pas.store.Add(ctx, stats), "could not add vesting stats to the store")
 }
+
+func (pas *VestingStatsUpdated) Name() string {
+	return "VestingStatsUpdated"
+}

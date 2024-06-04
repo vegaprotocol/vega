@@ -72,3 +72,7 @@ func (ts *TradeSubscriber) addTrade(t *types.Trade, txHash entities.TxHash, vega
 
 	return errors.Wrap(ts.store.Add(trade), "adding trade to store")
 }
+
+func (ts *TradeSubscriber) Name() string {
+	return "TradeSubscriber"
+}

@@ -69,3 +69,7 @@ func (n *Checkpoint) consume(ctx context.Context, event CheckpointEvent) error {
 
 	return nil
 }
+
+func (n *Checkpoint) Name() string {
+	return "Checkpoint"
+}

@@ -65,3 +65,7 @@ func (p *AMMPools) consume(ctx context.Context, pe AMMPoolEvent) error {
 
 	return nil
 }
+
+func (p *AMMPools) Name() string {
+	return "AMMPools"
+}

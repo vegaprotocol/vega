@@ -63,3 +63,7 @@ func (r *FeesStats) Push(ctx context.Context, evt events.Event) error {
 func (r *FeesStats) consumeFeesStatsEvent(ctx context.Context, e FeesStatsEvent) error {
 	return r.store.AddFeesStats(ctx, entities.FeesStatsFromProto(e.FeesStats(), r.vegaTime))
 }
+
+func (r *FeesStats) Name() string {
+	return "FeesStats"
+}

@@ -59,3 +59,7 @@ func (od *OracleSpec) consume(ctx context.Context, event OracleSpecEvent) error 
 
 	return errors.Wrap(od.store.Upsert(ctx, entity), "inserting oracle spec to SQL store failed")
 }
+
+func (od *OracleSpec) Name() string {
+	return "OracleSpec"
+}

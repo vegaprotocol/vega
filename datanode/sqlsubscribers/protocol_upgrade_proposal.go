@@ -63,3 +63,7 @@ func (ps *ProtocolUpgrade) consume(ctx context.Context, event ProtocolUpgradePro
 
 	return nil
 }
+
+func (ps *ProtocolUpgrade) Name() string {
+	return "ProtocolUpgrade"
+}

@@ -68,3 +68,7 @@ func (rs *Reward) consume(ctx context.Context, event RewardPayoutEvent) error {
 
 	return errors.Wrap(rs.store.Add(ctx, reward), "error adding reward payout")
 }
+
+func (rs *Reward) Name() string {
+	return "Reward"
+}
