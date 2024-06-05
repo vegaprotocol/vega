@@ -1139,6 +1139,9 @@ message AccountBalance {
   string market_id = 5;
   // Account type of this account.
   vega.AccountType type = 6;
+  // Parent party ID of the account.
+  // This field is optional and is used in cases where the account is derived from another party's account.
+  optional string parent_party_id = 7;
 }
 
 // Request that is sent when listing accounts.
@@ -1147,6 +1150,9 @@ message ListAccountsRequest {
   AccountFilter filter = 1;
   // Optional pagination control.
   optional Pagination pagination = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 3;
 }
 
 // Response that is received from listing accounts query.
@@ -1181,6 +1187,9 @@ message ObserveAccountsRequest {
   string asset = 3;
   // Account type to subscribe to, required field.
   vega.AccountType type = 4;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 5;
 }
 
 // Response that is received when subscribing to a stream of accounts.

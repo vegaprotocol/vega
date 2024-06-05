@@ -2505,7 +2505,7 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *vegapb
 	return res.Positions, nil
 }
 
-func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.Party, marketID *string, asset *string, accType *vegapb.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error) {
+func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.Party, marketID *string, asset *string, accType *vegapb.AccountType, pagination *v2.Pagination, includeDerivedParties *bool) (*v2.AccountsConnection, error) {
 	if party == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -2546,7 +2546,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.
 		AccountTypes: accountTypes,
 	}
 
-	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination}
+	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination, IncludeDerivedParties: includeDerivedParties}
 	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
 	if err != nil {
 		r.log.Error("unable to get Party account",
@@ -3251,7 +3251,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vegapb.AccountType) (<-chan []*v2.AccountBalance, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vegapb.AccountType, includeDerivedParties *bool) (<-chan []*v2.AccountBalance, error) {
 	var (
 		mkt, pty, ast string
 		ty            vegapb.AccountType
@@ -3275,10 +3275,11 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	req := &v2.ObserveAccountsRequest{
-		Asset:    ast,
-		MarketId: mkt,
-		PartyId:  pty,
-		Type:     ty,
+		Asset:                 ast,
+		MarketId:              mkt,
+		PartyId:               pty,
+		Type:                  ty,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	stream, err := r.tradingDataClientV2.ObserveAccounts(ctx, req)
 	if err != nil {

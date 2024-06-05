@@ -521,7 +521,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		partyService:                  g.partyService,
 		riskService:                   g.riskService,
 		positionService:               g.positionService,
-		accountService:                g.accountService,
+		AccountService:                g.accountService,
 		rewardService:                 g.rewardService,
 		depositService:                g.depositService,
 		withdrawalService:             g.withdrawalService,

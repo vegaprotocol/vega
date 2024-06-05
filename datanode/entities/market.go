@@ -35,6 +35,14 @@ type _Market struct{}
 
 type MarketID = ID[_Market]
 
+func NewMarketIDSlice(ids ...string) []MarketID {
+	res := make([]MarketID, 0, len(ids))
+	for _, v := range ids {
+		res = append(res, MarketID(v))
+	}
+	return res
+}
+
 type Market struct {
 	ID                            MarketID
 	TxHash                        TxHash
