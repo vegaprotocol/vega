@@ -900,13 +900,20 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 	// the funding payment is the difference between the two, the sign representing the direction of cash flow
 	fundingPayment := num.DecimalFromUint(internalTWAP).Sub(num.DecimalFromUint(externalTWAP))
 
+	delta := t - p.startedAt
 	// apply interest-rates if necessary
 	if !p.p.InterestRate.IsZero() {
-		delta := t - p.startedAt
 		if p.log.GetLevel() == logging.DebugLevel {
 			p.log.Debug("applying interest-rate with clamping", logging.String("funding-payment", fundingPayment.String()), logging.Int64("delta", delta))
 		}
 		fundingPayment = fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
+	}
+
+	// scale funding payment by fraction of funding period spent outside of auction
+	timeSpentInAuction := p.auctions.timeSpent(p.startedAt, t)
+	if timeSpentInAuction > 0 && delta > 0 {
+		scaling := (delta - timeSpentInAuction) / delta
+		fundingPayment = fundingPayment.Mul(num.DecimalFromInt64(scaling))
 	}
 
 	// apply funding scaling factor
