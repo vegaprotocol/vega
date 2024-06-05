@@ -60,18 +60,22 @@ func TestVestingStats(t *testing.T) {
 			VegaTime: now,
 			PartyVestingStats: []*entities.PartyVestingStats{
 				{
-					PartyID:               entities.PartyID(party1),
-					RewardBonusMultiplier: num.MustDecimalFromString("0.5"),
-					QuantumBalance:        num.MustDecimalFromString("10001"),
-					VegaTime:              now,
-					AtEpoch:               1,
+					PartyID:                     entities.PartyID(party1),
+					RewardBonusMultiplier:       num.MustDecimalFromString("0.5"),
+					QuantumBalance:              num.MustDecimalFromString("10001"),
+					SummedRewardBonusMultiplier: num.MustDecimalFromString("0.5"),
+					SummedQuantumBalance:        num.MustDecimalFromString("10001"),
+					VegaTime:                    now,
+					AtEpoch:                     1,
 				},
 				{
-					PartyID:               entities.PartyID(party2),
-					RewardBonusMultiplier: num.MustDecimalFromString("1.5"),
-					QuantumBalance:        num.MustDecimalFromString("20001"),
-					VegaTime:              now,
-					AtEpoch:               1,
+					PartyID:                     entities.PartyID(party2),
+					RewardBonusMultiplier:       num.MustDecimalFromString("1.5"),
+					QuantumBalance:              num.MustDecimalFromString("20001"),
+					SummedRewardBonusMultiplier: num.MustDecimalFromString("1.5"),
+					SummedQuantumBalance:        num.MustDecimalFromString("20001"),
+					VegaTime:                    now,
+					AtEpoch:                     1,
 				},
 			},
 		}
@@ -84,11 +88,6 @@ func TestVestingStats(t *testing.T) {
 		pvs2, err := vs.GetByPartyID(ctx, party2)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[1], pvs2)
-		parties, err := vs.GetPartiesByID(ctx, []string{party1, party2})
-		require.NoError(t, err)
-		require.Len(t, parties, 2)
-		require.Equal(t, *w.PartyVestingStats[0], parties[0])
-		require.Equal(t, *w.PartyVestingStats[1], parties[1])
 	})
 
 	now = now.Add(24 * time.Hour).Truncate(time.Millisecond)
@@ -99,18 +98,22 @@ func TestVestingStats(t *testing.T) {
 			VegaTime: now,
 			PartyVestingStats: []*entities.PartyVestingStats{
 				{
-					PartyID:               entities.PartyID(party1),
-					RewardBonusMultiplier: num.MustDecimalFromString("1"),
-					QuantumBalance:        num.MustDecimalFromString("12001"),
-					VegaTime:              now,
-					AtEpoch:               2,
+					PartyID:                     entities.PartyID(party1),
+					RewardBonusMultiplier:       num.MustDecimalFromString("1"),
+					QuantumBalance:              num.MustDecimalFromString("12001"),
+					SummedRewardBonusMultiplier: num.MustDecimalFromString("1"),
+					SummedQuantumBalance:        num.MustDecimalFromString("12001"),
+					VegaTime:                    now,
+					AtEpoch:                     2,
 				},
 				{
-					PartyID:               entities.PartyID(party2),
-					RewardBonusMultiplier: num.MustDecimalFromString("2"),
-					QuantumBalance:        num.MustDecimalFromString("30001"),
-					VegaTime:              now,
-					AtEpoch:               2,
+					PartyID:                     entities.PartyID(party2),
+					RewardBonusMultiplier:       num.MustDecimalFromString("2"),
+					QuantumBalance:              num.MustDecimalFromString("30001"),
+					SummedRewardBonusMultiplier: num.MustDecimalFromString("2"),
+					SummedQuantumBalance:        num.MustDecimalFromString("30001"),
+					VegaTime:                    now,
+					AtEpoch:                     2,
 				},
 			},
 		}
@@ -123,13 +126,5 @@ func TestVestingStats(t *testing.T) {
 		pvs2, err := vs.GetByPartyID(ctx, party2)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[1], pvs2)
-		parties, err := vs.GetPartiesByID(ctx, []string{party1})
-		require.NoError(t, err)
-		require.Len(t, parties, 1)
-		require.Equal(t, *w.PartyVestingStats[0], parties[0])
-		parties, err = vs.GetPartiesByID(ctx, []string{party2})
-		require.NoError(t, err)
-		require.Len(t, parties, 1)
-		require.Equal(t, *w.PartyVestingStats[1], parties[0])
 	})
 }

@@ -17,7 +17,6 @@ package sqlstore
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
@@ -43,13 +42,16 @@ func (vs *VestingStats) Add(ctx context.Context, stats *entities.VestingStatsUpd
 
 	for _, v := range stats.PartyVestingStats {
 		_, err := vs.Connection.Exec(ctx,
-			`INSERT INTO party_vesting_stats(party_id, at_epoch, reward_bonus_multiplier, quantum_balance, vega_time)
-         VALUES ($1, $2, $3, $4, $5)
+			`INSERT INTO party_vesting_stats(party_id, at_epoch, reward_bonus_multiplier, quantum_balance,
+				summed_reward_bonus_multiplier, summed_quantum_balance, vega_time)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (vega_time, party_id) DO NOTHING`,
 			v.PartyID,
 			stats.AtEpoch,
 			v.RewardBonusMultiplier,
 			v.QuantumBalance,
+			v.SummedRewardBonusMultiplier,
+			v.SummedQuantumBalance,
 			stats.VegaTime,
 		)
 		if err != nil {
@@ -67,25 +69,10 @@ func (vs *VestingStats) GetByPartyID(
 
 	pvs := entities.PartyVestingStats{}
 	err := pgxscan.Get(ctx, vs.Connection, &pvs,
-		`SELECT party_id, at_epoch, reward_bonus_multiplier, quantum_balance, vega_time
+		`SELECT party_id, at_epoch, reward_bonus_multiplier, quantum_balance,
+		summed_reward_bonus_multiplier, summed_quantum_balance, vega_time
 		 FROM party_vesting_stats_current WHERE party_id=$1`,
 		entities.PartyID(id))
-
-	return pvs, vs.wrapE(err)
-}
-
-func (vs *VestingStats) GetPartiesByID(
-	ctx context.Context, ids []string,
-) ([]entities.PartyVestingStats, error) {
-	defer metrics.StartSQLQuery("Parties", "GetByID")()
-
-	args, partiesList := prepareInClauseList[entities.PartyID](ids)
-
-	query := fmt.Sprintf(`SELECT party_id, at_epoch, reward_bonus_multiplier, quantum_balance, vega_time
-	FROM party_vesting_stats_current WHERE party_id IN (%s)`, partiesList)
-
-	pvs := []entities.PartyVestingStats{}
-	err := pgxscan.Select(ctx, vs.Connection, &pvs, query, args...)
 
 	return pvs, vs.wrapE(err)
 }

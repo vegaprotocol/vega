@@ -150,28 +150,32 @@ func (t *TradingDataServiceV2) GetPartyVestingStats(
 		return nil, formatE(ErrInvalidPartyID)
 	}
 
-	partyPerDerivedKey := map[string]string{}
-	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		partyPerDerivedKeyUpdate, err := t.getDerivedParties(ctx, []string{req.PartyId}, nil)
-		if err != nil {
-			return nil, formatE(err)
-		}
-
-		partyPerDerivedKey = partyPerDerivedKeyUpdate
-	}
-
-	// TODO karel - hack the response as well
-	stats, err := t.vestingStats.GetPartiesByID(ctx, req.PartyId)
+	stats, err := t.vestingStats.GetByPartyID(ctx, req.PartyId)
 	if err != nil {
 		return nil, formatE(err)
 	}
 
-	return &v2.GetPartyVestingStatsResponse{
+	res := &v2.GetPartyVestingStatsResponse{
 		PartyId:               stats.PartyID.String(),
 		EpochSeq:              stats.AtEpoch,
 		RewardBonusMultiplier: stats.RewardBonusMultiplier.String(),
 		QuantumBalance:        stats.QuantumBalance.String(),
-	}, nil
+	}
+
+	// set minimum values if the summed values are zero
+	if stats.SummedRewardBonusMultiplier.IsZero() {
+		res.SummedRewardBonusMultiplier = res.RewardBonusMultiplier
+	} else {
+		res.SummedRewardBonusMultiplier = stats.SummedRewardBonusMultiplier.String()
+	}
+
+	if stats.SummedQuantumBalance.IsZero() {
+		res.SummedQuantumBalance = res.QuantumBalance
+	} else {
+		res.SummedQuantumBalance = stats.SummedQuantumBalance.String()
+	}
+
+	return res, nil
 }
 
 func (t *TradingDataServiceV2) GetVestingBalancesSummary(
