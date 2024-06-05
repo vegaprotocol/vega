@@ -17,7 +17,6 @@ package sqlstore
 
 import (
 	"context"
-	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -75,17 +74,4 @@ func (vs *VestingStats) GetByPartyID(
 		entities.PartyID(id))
 
 	return pvs, vs.wrapE(err)
-}
-
-func prepareInClauseList[A any, T entities.ID[A]](ids []string) ([]interface{}, string) {
-	var args []interface{}
-	var list strings.Builder
-	for i, id := range ids {
-		if i > 0 {
-			list.WriteString(",")
-		}
-
-		list.WriteString(nextBindVar(&args, T(id)))
-	}
-	return args, list.String()
 }
