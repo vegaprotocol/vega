@@ -175,7 +175,7 @@ func (rs *Rewards) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]e
 }
 
 func (rs *Rewards) GetByCursor(ctx context.Context,
-	partyIDHex *string,
+	partyIDs []string,
 	assetIDHex *string,
 	fromEpoch *uint64,
 	toEpoch *uint64,
@@ -191,7 +191,7 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	)
 	SELECT * from cte_rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch)
+	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch)
 
 	query, args, err := PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
@@ -209,12 +209,13 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 }
 
 func (rs *Rewards) GetSummaries(ctx context.Context,
-	partyIDHex *string, assetIDHex *string,
+	partyIDs []string, assetIDHex *string,
 ) ([]entities.RewardSummary, error) {
 	query := `SELECT party_id, asset_id, SUM(amount) AS amount FROM rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil, nil, nil)
+	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, nil, nil, nil, nil)
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
+	fmt.Println("query", query)
 
 	summaries := []entities.RewardSummary{}
 	defer metrics.StartSQLQuery("Rewards", "GetSummaries")()
@@ -257,12 +258,13 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 
 // -------------------------------------------- Utility Methods
 
-func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
+func addRewardWhereClause(query string, args []interface{}, partyIDs []string, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
 	predicates := []string{}
 
-	if partyIDHex != nil && *partyIDHex != "" {
-		partyID := entities.PartyID(*partyIDHex)
-		predicates = append(predicates, fmt.Sprintf("party_id = %s", nextBindVar(&args, partyID)))
+	if len(partyIDs) > 0 {
+		inArgs, inList := prepareInClauseList[entities.PartyID](partyIDs)
+		args = append(args, inArgs...)
+		predicates = append(predicates, fmt.Sprintf("party_id IN (%s)", inList))
 	}
 
 	if assetIDHex != nil && *assetIDHex != "" {
@@ -293,6 +295,19 @@ func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDH
 	}
 
 	return query, args
+}
+
+func prepareInClauseList[A any, T entities.ID[A]](ids []string) ([]interface{}, string) {
+	var args []interface{}
+	var list strings.Builder
+	for i, id := range ids {
+		if i > 0 {
+			list.WriteString(",")
+		}
+
+		list.WriteString(nextBindVar(&args, T(id)))
+	}
+	return args, list.String()
 }
 
 // FilterRewardsQuery returns a WHERE part of the query and args for filtering the rewards table.
