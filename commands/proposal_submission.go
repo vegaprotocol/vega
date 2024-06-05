@@ -697,6 +697,14 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 			return errs.FinalAddForProperty("new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
 		}
 
+		if f, ok := big.NewFloat(0).SetString(recurring.Factor); !ok {
+			errs.AddForProperty("new_transfer.changes.recurring.factor", ErrNotAValidFloat)
+		} else {
+			if f.Cmp(big.NewFloat(0)) <= 0 {
+				errs.AddForProperty("new_transfer.changes.recurring.factor", ErrMustBePositive)
+			}
+		}
+
 		if recurring.DispatchStrategy != nil {
 			if len(changes.Destination) > 0 {
 				errs.AddForProperty("new_transfer.changes.destination", ErrIsNotValid)

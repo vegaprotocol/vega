@@ -32,6 +32,7 @@
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
 - [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units.
 - [11319](https://github.com/vegaprotocol/vega/issues/11319) - Do not leak Ethereum client secrets in the logs.
+- [11336](https://github.com/vegaprotocol/vega/issues/11336) - Add support for decay factor in governance recurring transfers and report the proposal amount rather than 0 when the proposal gets enacted. 
 
 ## 0.76.1
 

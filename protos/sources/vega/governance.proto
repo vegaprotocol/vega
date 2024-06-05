@@ -847,4 +847,7 @@ message RecurringTransfer {
   optional uint64 end_epoch = 2;
   // Optional parameter defining how a transfer is dispatched.
   optional vega.DispatchStrategy dispatch_strategy = 3;
+  // Factor that the initial transfer amount is multiplied by for each epoch that it is executed.
+  // For example if the initial transfer amount is 1000 and the factor is 0.5, then the amounts transferred per epoch will be 1000, 500, 250, 125, etc.
+  string factor = 4;
 }

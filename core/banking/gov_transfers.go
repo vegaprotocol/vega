@@ -67,13 +67,13 @@ func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context, now
 	for _, t := range timepoints {
 		transfers := e.scheduledGovernanceTransfers[t]
 		for _, gTransfer := range transfers {
-			amt, err := e.processGovernanceTransfer(ctx, gTransfer)
+			_, err := e.processGovernanceTransfer(ctx, gTransfer)
 			if err != nil {
 				gTransfer.Status = types.TransferStatusStopped
-				e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amt, err.Error(), e.getGovGameID(gTransfer)))
+				e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, gTransfer.Config.MaxAmount, err.Error(), e.getGovGameID(gTransfer)))
 			} else {
 				gTransfer.Status = types.TransferStatusDone
-				e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amt, e.getGovGameID(gTransfer)))
+				e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, gTransfer.Config.MaxAmount, e.getGovGameID(gTransfer)))
 			}
 		}
 		delete(e.scheduledGovernanceTransfers, t)
@@ -104,19 +104,18 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		if err != nil {
 			e.log.Error("error calculating transfer amount for governance transfer", logging.Error(err))
 			gTransfer.Status = types.TransferStatusStopped
-			transfersDone = append(transfersDone, events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amount, err.Error(), e.getGovGameID(gTransfer)))
+			transfersDone = append(transfersDone, events.NewGovTransferFundsEventWithReason(ctx, gTransfer, gTransfer.Config.MaxAmount, err.Error(), e.getGovGameID(gTransfer)))
 			doneIDs = append(doneIDs, gTransfer.ID)
 			continue
 		}
 
 		if gTransfer.Config.RecurringTransferConfig.EndEpoch != nil && *gTransfer.Config.RecurringTransferConfig.EndEpoch == e.currentEpoch {
 			gTransfer.Status = types.TransferStatusDone
-			transfersDone = append(transfersDone, events.NewGovTransferFundsEvent(ctx, gTransfer, amount, e.getGovGameID(gTransfer)))
+			transfersDone = append(transfersDone, events.NewGovTransferFundsEvent(ctx, gTransfer, gTransfer.Config.MaxAmount, e.getGovGameID(gTransfer)))
 			doneIDs = append(doneIDs, gTransfer.ID)
 			e.log.Info("recurrent transfer is done", logging.String("transfer ID", gTransfer.ID))
 			continue
 		}
-		e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount, e.getGovGameID(gTransfer)))
 	}
 
 	if len(transfersDone) > 0 {
@@ -148,14 +147,13 @@ func (e *Engine) deleteGovTransfer(ID string) {
 
 func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string, config *types.NewTransferConfiguration) error {
 	var err error
-	var amount *num.Uint
 	var gTransfer *types.GovernanceTransfer
 
 	defer func() {
 		if err != nil {
-			e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amount, err.Error(), e.getGovGameID(gTransfer)))
+			e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, gTransfer.Config.MaxAmount, err.Error(), e.getGovGameID(gTransfer)))
 		} else {
-			e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount, e.getGovGameID(gTransfer)))
+			e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, gTransfer.Config.MaxAmount, e.getGovGameID(gTransfer)))
 		}
 	}()
 	now := e.timeService.GetTimeNow()
@@ -169,7 +167,7 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 	if config.Kind == types.TransferKindOneOff {
 		// one off governance transfer to be executed straight away
 		if config.OneOffTransferConfig.DeliverOn == 0 || config.OneOffTransferConfig.DeliverOn < now.UnixNano() {
-			amount, err = e.processGovernanceTransfer(ctx, gTransfer)
+			_, err = e.processGovernanceTransfer(ctx, gTransfer)
 			if err != nil {
 				gTransfer.Status = types.TransferStatusRejected
 				return err
@@ -182,16 +180,23 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 			e.scheduledGovernanceTransfers[config.OneOffTransferConfig.DeliverOn] = []*types.GovernanceTransfer{}
 		}
 		e.scheduledGovernanceTransfers[config.OneOffTransferConfig.DeliverOn] = append(e.scheduledGovernanceTransfers[config.OneOffTransferConfig.DeliverOn], gTransfer)
-		amount = num.UintZero()
 		gTransfer.Status = types.TransferStatusPending
 		return nil
 	}
 	// recurring governance transfer
-	amount = num.UintZero()
 	e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, gTransfer)
 	e.recurringGovernanceTransfersMap[ID] = gTransfer
 	e.registerDispatchStrategy(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
 	return nil
+}
+
+func CalculateDecayedAmount(initialAmount *num.Uint, startEpoch, currentEpoch uint64, decayFactor string) *num.Uint {
+	if len(decayFactor) == 0 {
+		return initialAmount
+	}
+	factor := num.MustDecimalFromString(decayFactor)
+	amount, _ := num.UintFromDecimal(initialAmount.ToDecimal().Mul(factor.Pow(num.NewUint(currentEpoch).ToDecimal().Sub(num.NewUint(startEpoch).ToDecimal()))))
+	return amount
 }
 
 // processGovernanceTransfer process a governance transfer and emit ledger movement events.
@@ -199,7 +204,12 @@ func (e *Engine) processGovernanceTransfer(
 	ctx context.Context,
 	gTransfer *types.GovernanceTransfer,
 ) (*num.Uint, error) {
-	transferAmount, err := e.CalculateGovernanceTransferAmount(gTransfer.Config.Asset, gTransfer.Config.Source, gTransfer.Config.SourceType, gTransfer.Config.FractionOfBalance, gTransfer.Config.MaxAmount, gTransfer.Config.TransferType)
+	amount := gTransfer.Config.MaxAmount
+	if gTransfer.Config.RecurringTransferConfig != nil {
+		amount = CalculateDecayedAmount(amount, gTransfer.Config.RecurringTransferConfig.StartEpoch, e.currentEpoch, gTransfer.Config.RecurringTransferConfig.Factor)
+	}
+
+	transferAmount, err := e.CalculateGovernanceTransferAmount(gTransfer.Config.Asset, gTransfer.Config.Source, gTransfer.Config.SourceType, gTransfer.Config.FractionOfBalance, amount, gTransfer.Config.TransferType)
 	if err != nil {
 		e.log.Error("failed to calculate amount for governance transfer", logging.String("proposal", gTransfer.ID), logging.String("error", err.Error()))
 		return num.UintZero(), err

@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -87,4 +88,13 @@ func TestCalculateGovernanceTransferAmount(t *testing.T) {
 	balance, err = e.CalculateGovernanceTransferAmount("asset", "", vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, num.DecimalFromFloat(0.2), num.NewUint(400000), vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_BEST_EFFORT)
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(50000), balance)
+}
+
+func TestCalculateDecayedAmount(t *testing.T) {
+	// no decay
+	require.Equal(t, num.NewUint(1000), banking.CalculateDecayedAmount(num.NewUint(1000), 1, 10, ""))
+	// 0.5 decay, after one epoch
+	require.Equal(t, num.NewUint(500), banking.CalculateDecayedAmount(num.NewUint(1000), 1, 2, "0.5"))
+	// 0.5 decay, after two epochs
+	require.Equal(t, num.NewUint(250), banking.CalculateDecayedAmount(num.NewUint(1000), 1, 3, "0.5"))
 }

@@ -201,6 +201,7 @@ func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason, gameID *string)
 				StartEpoch:       g.Config.RecurringTransferConfig.StartEpoch,
 				EndEpoch:         g.Config.RecurringTransferConfig.EndEpoch,
 				DispatchStrategy: g.Config.RecurringTransferConfig.DispatchStrategy,
+				Factor:           g.Config.RecurringTransferConfig.Factor,
 			},
 		}
 	}

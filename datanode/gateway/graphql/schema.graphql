@@ -1416,6 +1416,8 @@ type RecurringGovernanceTransfer {
   endEpoch: Int
   "An optional dispatch strategy for the recurring transfer"
   dispatchStrategy: DispatchStrategy
+  "The factor of the initial amount to be distributed"
+  factor: String 
 }
 
 "The specific details for a one-off transfer"
