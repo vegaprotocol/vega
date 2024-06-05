@@ -514,7 +514,8 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 }
 
 // fakeUncrossAuction returns hypothetical trades if the order book side were to be uncrossed with the agg orders supplied, wash trades are allowed.
-func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trade, error) {
+func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order, bound *num.Uint) ([]*types.Trade, error) {
+	defer s.uncrossFinished()
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
 	// also it will allow us to reduce allocations
@@ -536,9 +537,24 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trad
 		trades  []*types.Trade
 		lvl     *PriceLevel
 		err     error
+		fake    *types.Order
 	)
 
-	fake := orders[iOrder].Clone()
+	for ; iOrder < len(orders); iOrder++ {
+		fake = orders[iOrder].Clone()
+		ntrades, _ = s.uncrossOffbook(len(s.levels), fake, bound, false)
+		trades = append(trades, ntrades...)
+
+		// no more to trade in this pre-orderbook region for AMM's, we now need to move to orderbook
+		if fake.Remaining != 0 {
+			break
+		}
+	}
+
+	if iOrder >= nOrders {
+		return trades, nil
+	}
+
 	for idx := len(s.levels) - 1; idx >= 0; idx-- {
 		// since all of uncrossOrders will be traded away and at the same uncrossing price
 		// iceberg orders are sent in as their full value instead of refreshing at each step
@@ -547,12 +563,14 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trad
 			fake.IcebergOrder.ReservedRemaining = 0
 		}
 
+		haveOffbookVolume := true
+
 		// clone price level
 		lvl = clonePriceLevel(s.levels[idx])
-		for lvl.volume > 0 {
+		for lvl.volume > 0 || haveOffbookVolume {
 			// not a market order && buy side price is too low => continue
 			if fake.Type != types.OrderTypeMarket && checkPrice(lvl.price, fake) {
-				continue
+				break
 			}
 
 			_, ntrades, _, err = lvl.uncross(fake, false)
@@ -560,6 +578,18 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trad
 				return nil, err
 			}
 			trades = append(trades, ntrades...)
+
+			if fake.Remaining != 0 {
+				ntrades, _ := s.uncrossOffbook(idx, fake, bound, true)
+				trades = append(trades, ntrades...)
+
+				// if we couldn't consume the whole order with this AMM volume in this region
+				// we need to move onto the next orderbook price level
+				if fake.Remaining != 0 {
+					haveOffbookVolume = false
+				}
+			}
+
 			if fake.Remaining == 0 {
 				iOrder++
 				if iOrder >= nOrders {

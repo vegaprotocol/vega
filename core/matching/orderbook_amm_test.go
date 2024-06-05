@@ -248,6 +248,97 @@ func TestAMMOnlyBestPrices(t *testing.T) {
 	assert.Equal(t, uint64(10), volume)
 }
 
+func TestIndicativeTradesAMMOnly(t *testing.T) {
+	tst := getTestOrderBookWithAMM(t)
+	defer tst.ctrl.Finish()
+	tst.obs.EXPECT().NotifyFinished().Times(1)
+
+	expectCrossedAMMs(t, tst, 100, 150)
+	tst.book.EnterAuction()
+
+	ret := []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+		func(o *types.Order, _, _ *num.Uint) []*types.Order {
+			o.Remaining = 0
+			return ret
+		},
+	)
+
+	trades, err := tst.book.GetIndicativeTrades()
+	require.NoError(t, err)
+	assert.Equal(t, 26, len(trades))
+}
+
+func TestIndicativeTradesAMMOrderbookNotCrosses(t *testing.T) {
+	tst := getTestOrderBookWithAMM(t)
+	defer tst.ctrl.Finish()
+	tst.obs.EXPECT().NotifyFinished().Times(1)
+
+	expectCrossedAMMs(t, tst, 100, 150)
+	tst.book.EnterAuction()
+
+	// submit an order each side outside of the crossed region
+	o := createOrder(t, tst, 10, num.NewUint(90))
+	o.Side = types.SideBuy
+	_, err := tst.book.SubmitOrder(o)
+	require.NoError(t, err)
+
+	o = createOrder(t, tst, 10, num.NewUint(160))
+	o.Side = types.SideSell
+	_, err = tst.book.SubmitOrder(o)
+	require.NoError(t, err)
+
+	ret := []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(26).DoAndReturn(
+		func(o *types.Order, _, _ *num.Uint) []*types.Order {
+			o.Remaining = 0
+			return ret
+		},
+	)
+
+	trades, err := tst.book.GetIndicativeTrades()
+	require.NoError(t, err)
+	assert.Equal(t, 26, len(trades))
+}
+
+func TestIndicativeTradesAMMCrossedOrders(t *testing.T) {
+	tst := getTestOrderBookWithAMM(t)
+	defer tst.ctrl.Finish()
+	tst.obs.EXPECT().NotifyFinished().Times(1)
+
+	expectCrossedAMMs(t, tst, 100, 150)
+	tst.book.EnterAuction()
+
+	// submit an order each side outside of the crossed region
+	o := createOrder(t, tst, 10, num.NewUint(110))
+	o.Side = types.SideBuy
+	_, err := tst.book.SubmitOrder(o)
+	require.NoError(t, err)
+
+	o = createOrder(t, tst, 5, num.NewUint(125))
+	o.Side = types.SideSell
+	_, err = tst.book.SubmitOrder(o)
+	require.NoError(t, err)
+
+	o = createOrder(t, tst, 5, num.NewUint(126))
+	o.Side = types.SideSell
+	_, err = tst.book.SubmitOrder(o)
+	require.NoError(t, err)
+
+	ret := []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(ret)
+
+	ret = []*types.Order{createOrder(t, tst, 5, num.NewUint(100))}
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(ret)
+
+	ret = []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(23).Return(ret)
+
+	trades, err := tst.book.GetIndicativeTrades()
+	require.NoError(t, err)
+	assert.Equal(t, 27, len(trades))
+}
+
 func assertConf(t *testing.T, conf *types.OrderConfirmation, n int, size uint64) {
 	t.Helper()
 	assert.Len(t, conf.PassiveOrdersAffected, n)
@@ -262,6 +353,16 @@ func expectOffbookOrders(t *testing.T, tst *tstOrderbook, price, first, last *nu
 	t.Helper()
 	generated := createGeneratedOrders(t, tst, price)
 	tst.obs.EXPECT().SubmitOrder(gomock.Any(), first, last).Times(1).Return(generated)
+}
+
+func expectCrossedAMMs(t *testing.T, tst *tstOrderbook, min, max int) {
+	t.Helper()
+	tst.obs.EXPECT().BestPricesAndVolumes().Return(num.NewUint(uint64(max)), uint64(10), num.NewUint(uint64(min)), uint64(10)).AnyTimes()
+
+	orders1 := createOrderbookShape(t, tst, min, max, types.SideBuy, "A")
+	orders2 := createOrderbookShape(t, tst, min, max, types.SideSell, "B")
+
+	tst.obs.EXPECT().OrderbookShape(gomock.Any(), gomock.Any(), gomock.Any()).Return(orders1, orders2)
 }
 
 type tstOrderbook struct {
@@ -315,6 +416,20 @@ func createPriceLevels(t *testing.T, tst *tstOrderbook, size uint64, levels ...*
 		require.NoError(t, err)
 		require.Len(t, conf.Trades, 0)
 	}
+}
+
+func createOrderbookShape(t *testing.T, tst *tstOrderbook, from, to int, side types.Side, party string) []*types.Order {
+	t.Helper()
+
+	orders := []*types.Order{}
+	for i := from; i <= to; i++ {
+		o := createOrder(t, tst, 10, num.NewUint(uint64(i)))
+		o.GeneratedOffbook = true
+		o.Side = side
+		o.Party = party
+		orders = append(orders, o)
+	}
+	return orders
 }
 
 func getTestOrderBookWithAMM(t *testing.T) *tstOrderbook {
