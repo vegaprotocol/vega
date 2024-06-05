@@ -1140,7 +1140,7 @@ message AccountBalance {
   // Account type of this account.
   vega.AccountType type = 6;
   // Parent party ID of the account.
-  // This field is optional and is used in cases where the account is owned by a derived key.
+  // This field is optional and is used in cases where the account is derived from another party's account.
   optional string parent_party_id = 7;
 }
 

@@ -896,7 +896,7 @@ type AccountBalance struct {
 	// Account type of this account.
 	Type vega.AccountType `protobuf:"varint,6,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 	// Parent party ID of the account.
-	// This field is optional and is used in cases where the account is owned by a derived key.
+	// This field is optional and is used in cases where the account is derived from another party's account.
 	ParentPartyId *string `protobuf:"bytes,7,opt,name=parent_party_id,json=parentPartyId,proto3,oneof" json:"parent_party_id,omitempty"`
 }
 
