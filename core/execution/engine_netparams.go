@@ -504,6 +504,7 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
+	mkt.OnMinimalHoldingQuantumMultipleUpdate(e.minHoldingQuantumMultiplier)
 
 	e.propagateSLANetParams(ctx, mkt, isRestore)
 
@@ -562,6 +563,7 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
+	mkt.OnMinimalMarginQuantumMultipleUpdate(e.minMaintenanceMarginQuantumMultiplier)
 
 	mkt.OnAMMMinCommitmentQuantumUpdate(ctx, e.npv.ammCommitmentQuantum)
 	mkt.OnMarketAMMMaxCalculationLevels(ctx, e.npv.ammCalculationLevels)

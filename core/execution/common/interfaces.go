@@ -191,6 +191,8 @@ type Collateral interface {
 	GetLiquidityFeesBonusDistributionAccount(marketID, asset string) (*types.Account, error)
 	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
+	CheckOrderSpam(party, market string, assets []string) error
+	CheckOrderSpamAllMarkets(party string) error
 
 	// amm stuff
 	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)
@@ -340,6 +342,7 @@ type AMM interface {
 type CommonMarket interface {
 	GetID() string
 	Hash() []byte
+	GetAssets() []string
 	Reject(context.Context) error
 	GetMarketData() types.MarketData
 	StartOpeningAuction(context.Context) error

@@ -55,12 +55,16 @@ func (e *Engine) startRiskFactorsCalculation(eventID string, endOfCalcCallback s
 
 // CalculateRiskFactorsForTest is a hack for testing for setting directly the risk factors for a market.
 func (e *Engine) CalculateRiskFactorsForTest() {
+	e.cfgMu.Lock()
+	defer e.cfgMu.Unlock()
 	e.factors = e.model.CalculateRiskFactors()
 	e.factors.Market = e.mktID
 }
 
 // updateRiskFactor sets the risk factor value to that of the decimal consensus value.
 func (e *Engine) updateRiskFactor(ctx context.Context, res statevar.StateVariableResult) error {
+	e.cfgMu.Lock()
+	defer e.cfgMu.Unlock()
 	e.factors = res.(*types.RiskFactor)
 	e.factors.Market = e.mktID
 	e.riskFactorsInitialised = true
@@ -71,5 +75,7 @@ func (e *Engine) updateRiskFactor(ctx context.Context, res statevar.StateVariabl
 }
 
 func (e *Engine) IsRiskFactorInitialised() bool {
+	e.cfgMu.RLock()
+	defer e.cfgMu.RUnlock()
 	return e.riskFactorsInitialised
 }

@@ -390,6 +390,34 @@ func (mr *MockExecutionEngineMockRecorder) CancelStopOrders(arg0, arg1, arg2, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelStopOrders", reflect.TypeOf((*MockExecutionEngine)(nil).CancelStopOrders), arg0, arg1, arg2, arg3)
 }
 
+// CheckCanSubmitOrderOrLiquidityCommitment mocks base method.
+func (m *MockExecutionEngine) CheckCanSubmitOrderOrLiquidityCommitment(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckCanSubmitOrderOrLiquidityCommitment", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckCanSubmitOrderOrLiquidityCommitment indicates an expected call of CheckCanSubmitOrderOrLiquidityCommitment.
+func (mr *MockExecutionEngineMockRecorder) CheckCanSubmitOrderOrLiquidityCommitment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCanSubmitOrderOrLiquidityCommitment", reflect.TypeOf((*MockExecutionEngine)(nil).CheckCanSubmitOrderOrLiquidityCommitment), arg0, arg1)
+}
+
+// CheckOrderSubmissionForSpam mocks base method.
+func (m *MockExecutionEngine) CheckOrderSubmissionForSpam(arg0 *types.OrderSubmission, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckOrderSubmissionForSpam", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckOrderSubmissionForSpam indicates an expected call of CheckOrderSubmissionForSpam.
+func (mr *MockExecutionEngineMockRecorder) CheckOrderSubmissionForSpam(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckOrderSubmissionForSpam", reflect.TypeOf((*MockExecutionEngine)(nil).CheckOrderSubmissionForSpam), arg0, arg1)
+}
+
 // Hash mocks base method.
 func (m *MockExecutionEngine) Hash() []byte {
 	m.ctrl.T.Helper()
