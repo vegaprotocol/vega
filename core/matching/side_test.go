@@ -594,7 +594,7 @@ func TestFakeUncrossAuction(t *testing.T) {
 
 	orders := []*types.Order{order1, order2}
 
-	fakeTrades, err := buySide.fakeUncrossAuction(orders)
+	fakeTrades, err := buySide.fakeUncrossAuction(orders, nil)
 	assert.Len(t, fakeTrades, 6)
 	assert.NoError(t, err)
 

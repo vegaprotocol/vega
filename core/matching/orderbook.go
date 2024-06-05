@@ -484,12 +484,16 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	var (
 		uncrossOrders  []*types.Order
 		uncrossingSide *OrderBookSide
+		uncrossBound   *num.Uint
 	)
 
+	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
 	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
+		uncrossBound = min
 	} else {
 		uncrossingSide = b.sell
+		uncrossBound = max
 	}
 
 	// extract uncrossing orders from all AMMs
@@ -503,7 +507,7 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, false)...)
 	opSide := b.getOppositeSide(uncrossSide)
 	output := make([]*types.Trade, 0, len(uncrossOrders))
-	trades, err := opSide.fakeUncrossAuction(uncrossOrders)
+	trades, err := opSide.fakeUncrossAuction(uncrossOrders, uncrossBound)
 	if err != nil {
 		return nil, err
 	}
@@ -548,12 +552,18 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		return nil, nil
 	}
 
-	var uncrossingSide *OrderBookSide
+	var (
+		uncrossingSide *OrderBookSide
+		uncrossBound   *num.Uint
+	)
 
+	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
 	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
+		uncrossBound = min
 	} else {
 		uncrossingSide = b.sell
+		uncrossBound = max
 	}
 
 	// extract uncrossing orders from all AMMs
@@ -565,7 +575,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 
 	// Remove all the orders from that side of the book up to the given volume
 	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, true)...)
-	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone())
+	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone(), uncrossBound)
 }
 
 // Takes extracted order from a side of the book, and uncross them
@@ -573,7 +583,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 func (b *OrderBook) uncrossBookSide(
 	uncrossOrders []*types.Order,
 	opSide *OrderBookSide,
-	price *num.Uint,
+	price, uncrossBound *num.Uint,
 ) ([]*types.OrderConfirmation, error) {
 	var (
 		uncrossedOrder *types.OrderConfirmation
@@ -596,7 +606,7 @@ func (b *OrderBook) uncrossBookSide(
 		}
 
 		// try to get the market price value from the order
-		trades, affectedOrders, _, err := opSide.uncross(order, false, nil)
+		trades, affectedOrders, _, err := opSide.uncross(order, false, uncrossBound)
 		if err != nil {
 			return nil, err
 		}

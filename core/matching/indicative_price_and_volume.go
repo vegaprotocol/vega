@@ -80,12 +80,20 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 	}
 
 	if buy.offbook != nil {
-		bb, _, ba, _ := buy.offbook.BestPricesAndVolumes()
-		if bb != nil {
-			bestBid = num.Max(bestBid, bb)
+		ask, _, bid, _ := buy.offbook.BestPricesAndVolumes()
+		if bid != nil {
+			if bestBid.IsZero() {
+				bestBid = bid
+			} else {
+				bestBid = num.Max(bestBid, bid)
+			}
 		}
-		if ba != nil {
-			bestAsk = num.Min(bestAsk, ba)
+		if ask != nil {
+			if bestAsk.IsZero() {
+				bestAsk = ask
+			} else {
+				bestAsk = num.Min(bestAsk, ask)
+			}
 		}
 	}
 
@@ -320,6 +328,19 @@ func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice *nu
 	}
 
 	return ipv.levels[maxPricePos : minPricePos+1]
+}
+
+func (ipv *IndicativePriceAndVolume) GetCrossedRegion() (*num.Uint, *num.Uint) {
+	min := ipv.lastMinPrice
+	if min != nil {
+		min = min.Clone()
+	}
+
+	max := ipv.lastMaxPrice
+	if max != nil {
+		max = max.Clone()
+	}
+	return min, max
 }
 
 func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice *num.Uint) ([]CumulativeVolumeLevel, uint64) {
