@@ -83,13 +83,13 @@ Feature: vAMM rebasing when created or amended
 
     Then the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound  | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000  | 0.05     | 100  | 90          | 110         | 0.03         |
+      | vamm1 | ETH/MAR22 | 100000  | 0.05    | 100  | 90          | 110          | 0.03         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | 
-      | vamm1 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 100  | 90          | 110         | 
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 90          | 110         | 
 
   @VAMM
-  Scenario: a vAMM submits a rebasing order to SELL when its base is lower than an existing AMM's
+  Scenario: a vAMM submits a rebasing order to SELL when its base is lower than an existing AMM's (0090-VAMM-033)
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound |  proposed fee |
@@ -135,7 +135,7 @@ Feature: vAMM rebasing when created or amended
       | vamm2 | ETH/MAR22 | 100000  | STATUS_REJECTED | 105  | 100         | 110         | STATUS_REASON_CANNOT_REBASE   |
 
   @VAMM
-  Scenario: a vAMM submits a rebasing order to BUY when its base is lower than an existing AMM's
+  Scenario: a vAMM submits a rebasing order to BUY when its base is lower than an existing AMM's (0090-VAMM-033)
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound |  proposed fee |
@@ -240,3 +240,33 @@ Feature: vAMM rebasing when created or amended
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | 
       | 101        | TRADING_MODE_CONTINUOUS | 104       |
+
+
+@VAMM
+  Scenario: One AMM exists and another on is submitted such that their ranges are disjoint and cross entirely (0090-VAMM-034)
+
+    When the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound |  proposed fee |
+      | vamm2 | ETH/MAR22 | 100000 | 0.50     | 200  | 195         | 205         |  0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount  | status         | base | lower bound | upper bound | 
+      | vamm2 | ETH/MAR22 | 100000  | STATUS_ACTIVE  | 200  | 195          | 205         |
+    
+    And set the following AMM sub account aliases:
+      | party | market id | alias     |
+      | vamm1 | ETH/MAR22 | vamm1-id |
+      | vamm2 | ETH/MAR22 | vamm2-id |
+
+    Then the network moves ahead "1" blocks
+
+    # second AMM has its base 5 away from the first AMM so it must submit a rebasing-order 
+    And the following trades should be executed:
+      | buyer    | price | size | seller   | is amm |
+      | vamm2-id | 102   | 262  | vamm1-id | true   |
+
+    Then the network moves ahead "1" blocks
+
+    # and now the mid-price has shifted lower to a value between the two AMM's bases 100 < 104 < 105
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | mid price | 
+      | 102        | TRADING_MODE_CONTINUOUS | 107       |

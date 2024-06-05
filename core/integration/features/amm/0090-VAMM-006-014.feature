@@ -133,7 +133,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party4   | -350   | 0              | 0            |        |
       | vamm1-id | 350    | 0              | 0            | true   |
 
-  @VAMM2
+  @VAMM
   Scenario: 0090-VAMM-008: If other traders trade to move the market mid price to 150 the vAMM will post no further sell orders above this price, and the vAMM's position notional value will be equal to 4x its total account balance.
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
