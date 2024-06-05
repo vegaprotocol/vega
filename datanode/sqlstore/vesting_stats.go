@@ -17,6 +17,8 @@ package sqlstore
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -70,4 +72,33 @@ func (vs *VestingStats) GetByPartyID(
 		entities.PartyID(id))
 
 	return pvs, vs.wrapE(err)
+}
+
+func (vs *VestingStats) GetPartiesByID(
+	ctx context.Context, ids []string,
+) ([]entities.PartyVestingStats, error) {
+	defer metrics.StartSQLQuery("Parties", "GetByID")()
+
+	args, partiesList := prepareInClauseList[entities.PartyID](ids)
+
+	query := fmt.Sprintf(`SELECT party_id, at_epoch, reward_bonus_multiplier, quantum_balance, vega_time
+	FROM party_vesting_stats_current WHERE party_id IN (%s)`, partiesList)
+
+	pvs := []entities.PartyVestingStats{}
+	err := pgxscan.Select(ctx, vs.Connection, &pvs, query, args...)
+
+	return pvs, vs.wrapE(err)
+}
+
+func prepareInClauseList[A any, T entities.ID[A]](ids []string) ([]interface{}, string) {
+	var args []interface{}
+	var list strings.Builder
+	for i, id := range ids {
+		if i > 0 {
+			list.WriteString(",")
+		}
+
+		list.WriteString(nextBindVar(&args, T(id)))
+	}
+	return args, list.String()
 }

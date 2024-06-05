@@ -150,7 +150,18 @@ func (t *TradingDataServiceV2) GetPartyVestingStats(
 		return nil, formatE(ErrInvalidPartyID)
 	}
 
-	stats, err := t.vestingStats.GetByPartyID(ctx, req.PartyId)
+	partyPerDerivedKey := map[string]string{}
+	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
+		partyPerDerivedKeyUpdate, err := t.getDerivedParties(ctx, []string{req.PartyId}, nil)
+		if err != nil {
+			return nil, formatE(err)
+		}
+
+		partyPerDerivedKey = partyPerDerivedKeyUpdate
+	}
+
+	// TODO karel - hack the response as well
+	stats, err := t.vestingStats.GetPartiesByID(ctx, req.PartyId)
 	if err != nil {
 		return nil, formatE(err)
 	}
