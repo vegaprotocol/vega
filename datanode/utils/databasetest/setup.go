@@ -42,7 +42,7 @@ var (
 	postgresServerTimeout = time.Second * 10
 )
 
-func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, *bytes.Buffer),
+func TestMain(m *testing.M, mainCtx context.Context, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, *bytes.Buffer),
 	postgresRuntimePath string, sqlFs fs.FS,
 ) int {
 	testDBSocketDir := filepath.Join(postgresRuntimePath)
@@ -50,8 +50,6 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 	testDBHost := ""
 	sqlConfig := NewTestConfig(testDBPort, testDBHost, testDBSocketDir)
 
-	mainCtx, cfunc := context.WithCancel(context.Background())
-	defer cfunc()
 	if sqlTestsEnabled {
 		log := logging.NewTestLogger()
 

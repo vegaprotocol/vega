@@ -129,7 +129,7 @@ func (s *ConnectionSource) WithTransaction(ctx context.Context) (context.Context
 	}
 
 	if err != nil {
-		return ctx, errors.Errorf("failed to start transaction:%s", err)
+		return ctx, errors.Wrapf(err, "failed to start transaction:%s", err)
 	}
 
 	return context.WithValue(ctx, transactionContextKey{}, tx), nil

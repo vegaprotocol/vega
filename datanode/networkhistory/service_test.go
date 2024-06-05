@@ -144,7 +144,7 @@ func TestMain(t *testing.M) {
 		}
 	}()
 
-	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
+	exitCode := databasetest.TestMain(t, outerCtx, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
 		pgLog *bytes.Buffer,
 	) {
 		sqlConfig = config
@@ -203,7 +203,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		preUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		preUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -260,7 +260,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		postUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		postUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
