@@ -48,7 +48,7 @@ var (
 )
 
 const (
-	version = "AMMv1"
+	V1 = "AMMv1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/amm Collateral,Position
@@ -333,21 +333,26 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 		// get the volume on the buy side by simulating an incoming sell order
 		bid := num.UintZero().Sub(fp, pool.oneTick)
 		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
-		if bestBid == nil || bid.GT(bestBid) {
-			bestBid = bid
-			bestBidVolume = volume
-		} else if bid.EQ(bestBid) {
-			bestBidVolume += volume
+
+		if volume != 0 {
+			if bestBid == nil || bid.GT(bestBid) {
+				bestBid = bid
+				bestBidVolume = volume
+			} else if bid.EQ(bestBid) {
+				bestBidVolume += volume
+			}
 		}
 
 		// get the volume on the sell side by simulating an incoming buy order
 		ask := num.UintZero().Add(fp, pool.oneTick)
 		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
-		if bestAsk == nil || ask.LT(bestAsk) {
-			bestAsk = ask
-			bestAskVolume = volume
-		} else if ask.EQ(bestAsk) {
-			bestAskVolume += volume
+		if volume != 0 {
+			if bestAsk == nil || ask.LT(bestAsk) {
+				bestAsk = ask
+				bestAskVolume = volume
+			} else if ask.EQ(bestAsk) {
+				bestAskVolume += volume
+			}
 		}
 	}
 	return bestBid, bestBidVolume, bestAsk, bestAskVolume
@@ -388,14 +393,14 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		}
 
 		if agg.Side == types.SideBuy {
-			if price.GTE(outer) || (agg.Type != types.OrderTypeMarket && price.GT(agg.Price)) {
+			if price.GT(outer) || (agg.Type != types.OrderTypeMarket && price.GT(agg.Price)) {
 				// either fair price is out of bounds, or is selling at higher than incoming buy
 				continue
 			}
 		}
 
 		if agg.Side == types.SideSell {
-			if price.LTE(outer) || (agg.Type != types.OrderTypeMarket && price.LT(agg.Price)) {
+			if price.LT(outer) || (agg.Type != types.OrderTypeMarket && price.LT(agg.Price)) {
 				// either fair price is out of bounds, or is buying at lower than incoming sell
 				continue
 			}
@@ -599,7 +604,7 @@ func (e *Engine) Create(
 	idgen := idgeneration.New(deterministicID)
 	poolID := idgen.NextID()
 
-	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, version, 0)
+	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, V1, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
 		e.broker.Send(

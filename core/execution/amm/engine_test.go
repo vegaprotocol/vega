@@ -49,6 +49,7 @@ func TestSubmitAMM(t *testing.T) {
 
 func TestAMMTrading(t *testing.T) {
 	t.Run("test basic submit order", testBasicSubmitOrder)
+	t.Run("test submit order at best price", testSubmitOrderAtBestPrice)
 	t.Run("test submit market order", testSubmitMarketOrder)
 	t.Run("test submit order pro rata", testSubmitOrderProRata)
 	t.Run("test best prices and volume", testBestPricesAndVolume)
@@ -171,6 +172,48 @@ func testBasicSubmitOrder(t *testing.T) {
 	// note that this volume being bigger than 242367 above means we've moved back to position, then flipped
 	// sign, and took volume from the other curve.
 	assert.Equal(t, 362325, int(orders[0].Size))
+}
+
+func testSubmitOrderAtBestPrice(t *testing.T) {
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	whenAMMIsSubmitted(t, tst, submit)
+
+	// AMM has fair-price of 2000 so is willing to sell at 2001, send an incoming buy order at 2001
+	agg := &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideBuy,
+		Price:     num.NewUint(2001),
+		Type:      types.OrderTypeLimit,
+	}
+
+	ensurePosition(t, tst.pos, 0, num.NewUint(0))
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(2001))
+	require.Len(t, orders, 1)
+	assert.Equal(t, "2000", orders[0].Price.String())
+	assert.Equal(t, 11927, int(orders[0].Size))
+
+	bb, _, ba, _ := tst.engine.BestPricesAndVolumes()
+	assert.Equal(t, "2002", ba.String())
+	assert.Equal(t, "2000", bb.String())
+
+	// now trade back with a price of 2000
+	agg = &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideSell,
+		Price:     num.NewUint(2000),
+		Type:      types.OrderTypeLimit,
+	}
+	orders = tst.engine.SubmitOrder(agg, num.NewUint(2001), num.NewUint(2000))
+	require.Len(t, orders, 1)
+	assert.Equal(t, "2000", orders[0].Price.String())
+	assert.Equal(t, 11927, int(orders[0].Size))
 }
 
 func testSubmitMarketOrder(t *testing.T) {

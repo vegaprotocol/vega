@@ -21,6 +21,7 @@
 - [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
 - [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
 - [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
+- [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
 
 ### 🐛 Fixes
 
@@ -29,7 +30,7 @@
 - [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
-- [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units. 
+- [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units.
 - [11319](https://github.com/vegaprotocol/vega/issues/11319) - Do not leak Ethereum client secrets in the logs.
 
 ## 0.76.1
