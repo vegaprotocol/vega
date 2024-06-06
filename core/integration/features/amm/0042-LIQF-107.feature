@@ -111,8 +111,10 @@ Feature: Test vAMM implied commitment is working as expected
     Then the network moves ahead "1" epochs
 
     And the following transfers should happen:
-      | type                                   | from   | to     | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | vamm1  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | vamm2  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm1  | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm2  | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
+      | type                                   | from                                                             | to     | from account                   | to account                     | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 914     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | party2                                                           | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 21     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm1  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm2  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
+      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm1                                                            | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
+      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm2                                                            | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
