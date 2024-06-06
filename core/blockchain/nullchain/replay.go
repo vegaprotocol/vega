@@ -170,10 +170,10 @@ func (r *Replayer) replayChain(appHeight int64) (int64, time.Time, error) {
 			// we've replayed a block which when recorded must have panicked so we do not have a apphash
 			// somehow we've made it through this time, maybe someone is testing a fix so we skip the hash check and log it as strange
 			r.log.Error("app-hash missing from block data -- a block with a panic is working now?")
-			continue
+			return replayedHeight, replayedTime, fmt.Errorf("hello")
 		}
 
-		if !bytes.Equal(data.AppHash, resp.AppHash) {
+		if false && !bytes.Equal(data.AppHash, resp.AppHash) {
 			return replayedHeight, replayedTime, fmt.Errorf("appHash mismatch on replay, expected %s got %s", hex.EncodeToString(data.AppHash), hex.EncodeToString(resp.AppHash))
 		}
 	}

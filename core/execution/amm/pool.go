@@ -24,6 +24,18 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
+var (
+	usecache  = true
+	prevalues = true
+)
+
+type volumeCache struct {
+	bid *num.Uint
+	ask *num.Uint
+	bv  uint64
+	av  uint64
+}
+
 // ephemeralPosition keeps track of the pools position as if its generated orders had traded.
 type ephemeralPosition struct {
 	size int64
@@ -40,6 +52,9 @@ type curve struct {
 	// note that this equals Vega's position at the boundary only in the lower curve, since Vega position == curve-position
 	// in the upper curve Vega's position == 0 => position of `pv`` in curve-position, Vega's position pv => 0 in curve-position
 	pv num.Decimal
+
+	lDivSqrtPu num.Decimal
+	sqrtPuDivL num.Decimal
 }
 
 func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
@@ -108,6 +123,9 @@ type Pool struct {
 
 	maxCalculationLevels *num.Uint // maximum number of price levels the AMM will be expanded into
 	oneTick              *num.Uint // one price tick
+
+	fpCache map[int64]*num.Uint
+	vcache  map[int64]*volumeCache
 }
 
 func NewPool(
@@ -143,6 +161,8 @@ func NewPool(
 		oneTick:              oneTick,
 		status:               types.AMMPoolStatusActive,
 		maxCalculationLevels: maxCalculationLevels,
+		fpCache:              map[int64]*num.Uint{},
+		vcache:               map[int64]*volumeCache{},
 	}
 	err := pool.setCurves(rf, sf, linearSlippage)
 	if err != nil {
@@ -335,6 +355,8 @@ func (p *Pool) Update(
 		sqrt:                 p.sqrt,
 		oneTick:              p.oneTick,
 		maxCalculationLevels: p.maxCalculationLevels,
+		fpCache:              map[int64]*num.Uint{},
+		vcache:               map[int64]*volumeCache{},
 	}
 	if err := updated.setCurves(rf, sf, linearSlippage); err != nil {
 		return nil, err
@@ -423,14 +445,20 @@ func generateCurve(
 
 	// now we scale theoretical position by position factor so that is it feeds through into all subsequent equations
 	pv = pv.Mul(positionFactor)
+	l := pv.Mul(lu)
+
+	lDivSqrtPu := l.Div(sqrt(high))
+	sqrtPuDivL := sqrt(high).Div(l)
 
 	// and finally calculate L = pv * Lu
 	return &curve{
-		l:       pv.Mul(lu),
-		low:     low,
-		high:    high,
-		pv:      pv,
-		isLower: isLower,
+		l:          l,
+		low:        low,
+		high:       high,
+		pv:         pv,
+		isLower:    isLower,
+		lDivSqrtPu: lDivSqrtPu,
+		sqrtPuDivL: sqrtPuDivL,
 	}
 }
 
@@ -883,6 +911,10 @@ func (p *Pool) fairPrice() *num.Uint {
 		return p.lower.high.Clone()
 	}
 
+	if fp, ok := p.fpCache[pos]; ok {
+		return fp.Clone()
+	}
+
 	cu := p.lower
 	pv := num.DecimalFromInt64(pos)
 	if pos < 0 {
@@ -891,10 +923,14 @@ func (p *Pool) fairPrice() *num.Uint {
 		pv = cu.pv.Add(pv)
 	}
 
-	l := cu.l
-
 	// pv * sqrt(pu) * (1/L) + 1
-	denom := pv.Mul(p.sqrt(cu.high)).Div(l).Add(num.DecimalOne())
+
+	tt := cu.sqrtPuDivL
+	if !prevalues {
+		tt = p.sqrt(cu.high).Div(cu.l)
+	}
+
+	denom := pv.Mul(tt).Add(num.DecimalOne())
 
 	// sqrt(fp) = sqrt(pu) / denom
 	sqrtPf := p.sqrt(cu.high).Div(denom)
@@ -912,12 +948,15 @@ func (p *Pool) fairPrice() *num.Uint {
 	}
 
 	fairPrice, _ := num.UintFromDecimal(fp)
+	if usecache {
+		p.fpCache[pos] = fairPrice.Clone()
+	}
 	return fairPrice
 }
 
 // virtualBalancesShort returns the pools x, y balances when the pool has a negative position
 //
-// x = P + Pv + L / sqrt(pl)
+// x = P + Pv + L / sqrt(pu)
 // y = L * sqrt(fair-price).
 func (p *Pool) virtualBalancesShort(pos int64, fp *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.upper
@@ -933,10 +972,14 @@ func (p *Pool) virtualBalancesShort(pos int64, fp *num.Uint) (num.Decimal, num.D
 	// Pv
 	term2x := cu.pv
 
-	// L / sqrt(pl)
-	term3x := cu.l.Div(p.sqrt(cu.high))
+	// L / sqrt(pu)
+	//term3x := cu.l.Div(p.sqrt(cu.high))
+	term3x := cu.lDivSqrtPu
+	if !prevalues {
+		term3x = cu.l.Div(p.sqrt(cu.high))
+	}
 
-	// x = P + (cc * rf / pu) + (L / sqrt(pl))
+	// x = P + (cc * rf / pu) + (L / sqrt(pu))
 	x := term2x.Add(term3x).Add(term1x)
 
 	// now lets get y
@@ -962,7 +1005,11 @@ func (p *Pool) virtualBalancesLong(pos int64, fp *num.Uint) (num.Decimal, num.De
 	term1x := num.DecimalFromInt64(pos)
 
 	// L / sqrt(pu)
-	term2x := cu.l.Div(p.sqrt(cu.high))
+	//term2x := cu.l.Div(p.sqrt(cu.high))
+	term2x := cu.lDivSqrtPu
+	if !prevalues {
+		term2x = cu.l.Div(p.sqrt(cu.high))
+	}
 
 	// x = P + (L / sqrt(pu))
 	x := term1x.Add(term2x)
@@ -1004,6 +1051,35 @@ func (p *Pool) BestPrice(order *types.Order) *num.Uint {
 	default:
 		panic("should never reach here")
 	}
+}
+
+// BestPrice returns the price that the pool is willing to trade for the given order side.
+func (p *Pool) BestPriceVolumes(order *types.Order) (*num.Uint, *num.Uint, uint64, uint64) {
+
+	pos := p.getPosition()
+	if cache, ok := p.vcache[pos]; ok {
+		return cache.bid.Clone(), cache.ask.Clone(), cache.bv, cache.av
+	}
+
+	fp := p.BestPrice(nil)
+
+	// get the volume on the buy side by simulating an incoming sell order
+	bid := num.UintZero().Sub(fp, p.oneTick)
+	bidVolume := p.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
+
+	// get the volume on the sell side by simulating an incoming buy order
+	ask := num.UintZero().Add(fp, p.oneTick)
+	askVolume := p.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
+
+	p.vcache[pos] = &volumeCache{
+		bid: bid.Clone(),
+		ask: ask.Clone(),
+		bv:  bidVolume,
+		av:  askVolume,
+	}
+
+	return bid, ask, bidVolume, askVolume
+
 }
 
 func (p *Pool) LiquidityFee() num.Decimal {

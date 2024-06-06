@@ -328,30 +328,25 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		fp := pool.BestPrice(nil)
+		bid, ask, bv, av := pool.BestPriceVolumes(nil)
 
 		// get the volume on the buy side by simulating an incoming sell order
-		bid := num.UintZero().Sub(fp, pool.oneTick)
-		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
-
-		if volume != 0 {
+		if bv != 0 {
 			if bestBid == nil || bid.GT(bestBid) {
 				bestBid = bid
-				bestBidVolume = volume
+				bestBidVolume = bv
 			} else if bid.EQ(bestBid) {
-				bestBidVolume += volume
+				bestBidVolume += bv
 			}
 		}
 
 		// get the volume on the sell side by simulating an incoming buy order
-		ask := num.UintZero().Add(fp, pool.oneTick)
-		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
-		if volume != 0 {
+		if av != 0 {
 			if bestAsk == nil || ask.LT(bestAsk) {
 				bestAsk = ask
-				bestAskVolume = volume
+				bestAskVolume = av
 			} else if ask.EQ(bestAsk) {
-				bestAskVolume += volume
+				bestAskVolume += av
 			}
 		}
 	}
