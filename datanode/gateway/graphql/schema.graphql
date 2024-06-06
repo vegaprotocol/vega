@@ -3051,6 +3051,10 @@ type PartyVestingStats {
   rewardBonusMultiplier: String!
   "The balance of the party, in quantum."
   quantumBalance: String!
+  "Bonus multiplier applied on the reward, summed across all derived accounts."
+  summedRewardBonusMultiplier: String
+  "The balance of the party and derived keys, in quantum."
+  summedQuantumBalance: String
 }
 
 """
@@ -3734,6 +3738,8 @@ type AccountBalance {
   market: Market
   "Owner of the account"
   party: Party
+  "Parent party ID of the account. Used in cases where the account is derived from another party's account."
+  parentPartyId: Party
 }
 
 "An account record"
