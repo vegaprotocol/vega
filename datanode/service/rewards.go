@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-type rewardStore interface {
+type RewardStore interface {
 	Add(ctx context.Context, r entities.Reward) error
 	GetAll(ctx context.Context) ([]entities.Reward, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Reward, error)
@@ -32,10 +32,10 @@ type rewardStore interface {
 }
 
 type Reward struct {
-	store rewardStore
+	store RewardStore
 }
 
-func NewReward(store rewardStore, log *logging.Logger) *Reward {
+func NewReward(store RewardStore, log *logging.Logger) *Reward {
 	return &Reward{
 		store: store,
 	}

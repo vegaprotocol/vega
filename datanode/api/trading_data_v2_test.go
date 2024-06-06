@@ -1103,6 +1103,222 @@ func TestObserveAccountBalances(t *testing.T) {
 	}
 }
 
+func TestListRewards(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	marketStore := smocks.NewMockMarketStore(ctrl)
+	rewardStore := smocks.NewMockRewardStore(ctrl)
+
+	apiService := api.TradingDataServiceV2{
+		MarketsService: service.NewMarkets(marketStore),
+		RewardService:  service.NewReward(rewardStore, logging.NewTestLogger()),
+	}
+
+	ctx := context.Background()
+
+	req := &v2.ListRewardsRequest{
+		PartyId: "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+	}
+
+	// without derived keys
+	{
+		expect := []entities.Reward{
+			{
+				PartyID: entities.PartyID(req.PartyId),
+			},
+		}
+
+		pagination := entities.DefaultCursorPagination(true)
+
+		rewardStore.EXPECT().GetByCursor(ctx,
+			[]string{req.PartyId}, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId).
+			Times(1).Return(expect, entities.PageInfo{}, nil)
+
+		resp, err := apiService.ListRewards(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Rewards.Edges, 1)
+		require.Equal(t, expect[0].ToProto().PartyId, resp.Rewards.Edges[0].Node.PartyId)
+	}
+
+	// now test with derived keys
+	{
+		req.IncludeDerivedParties = ptr.From(true)
+
+		expect := []entities.Reward{
+			{
+				PartyID: entities.PartyID(req.PartyId),
+			},
+			{
+				PartyID: entities.PartyID("653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba"),
+			},
+			{
+				PartyID: entities.PartyID("35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b"),
+			},
+		}
+
+		pagination := entities.DefaultCursorPagination(true)
+
+		markets := []entities.Market{
+			{
+				ID: entities.MarketID("a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea"),
+			},
+			{
+				ID: entities.MarketID("af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"),
+			},
+		}
+
+		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Times(1).Return(markets, entities.PageInfo{}, nil)
+
+		rewardStore.EXPECT().GetByCursor(ctx, []string{expect[0].PartyID.String(), expect[1].PartyID.String(), expect[2].PartyID.String()},
+			req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId).Times(1).Return(expect, entities.PageInfo{}, nil)
+
+		resp, err := apiService.ListRewards(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Rewards.Edges, 3)
+		require.Equal(t, expect[0].ToProto().PartyId, resp.Rewards.Edges[0].Node.PartyId)
+		require.Equal(t, expect[1].ToProto().PartyId, resp.Rewards.Edges[1].Node.PartyId)
+		require.Equal(t, expect[2].ToProto().PartyId, resp.Rewards.Edges[2].Node.PartyId)
+	}
+}
+
+func TestListRewardSummaries(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	marketStore := smocks.NewMockMarketStore(ctrl)
+	rewardStore := smocks.NewMockRewardStore(ctrl)
+
+	apiService := api.TradingDataServiceV2{
+		MarketsService: service.NewMarkets(marketStore),
+		RewardService:  service.NewReward(rewardStore, logging.NewTestLogger()),
+	}
+
+	ctx := context.Background()
+
+	t.Run("without party id", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			AssetId: ptr.From("asset1"),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID("random-party"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+		}
+
+		rewardStore.EXPECT().GetSummaries(ctx, []string{}, req.AssetId).
+			Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 1)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+	})
+
+	t.Run("with derived keys without party", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			AssetId:               ptr.From("asset1"),
+			IncludeDerivedParties: ptr.From(true),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID("random-party"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+		}
+
+		rewardStore.EXPECT().GetSummaries(ctx, []string{}, req.AssetId).
+			Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 1)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+	})
+
+	t.Run("without derived keys with party", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			PartyId: ptr.From("90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d"),
+			AssetId: ptr.From("asset1"),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID(*req.PartyId),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+		}
+
+		rewardStore.EXPECT().GetSummaries(ctx, []string{*req.PartyId}, req.AssetId).
+			Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 1)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+	})
+
+	t.Run("with derived keys and party", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			PartyId:               ptr.From("90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d"),
+			AssetId:               ptr.From("asset1"),
+			IncludeDerivedParties: ptr.From(true),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID(*req.PartyId),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+			{
+				PartyID: entities.PartyID("653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(150),
+			},
+			{
+				PartyID: entities.PartyID("35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(130),
+			},
+		}
+
+		markets := []entities.Market{
+			{
+				ID: entities.MarketID("a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea"),
+			},
+			{
+				ID: entities.MarketID("af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"),
+			},
+		}
+
+		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Times(1).Return(markets, entities.PageInfo{}, nil)
+
+		rewardStore.EXPECT().GetSummaries(ctx, gomock.Any(), req.AssetId).
+			Do(func(_ context.Context, gotPartyIDs []string, _ *string) {
+				var expectPartyIDs []string
+				for _, e := range expect {
+					expectPartyIDs = append(expectPartyIDs, e.PartyID.String())
+				}
+
+				slices.Sort(expectPartyIDs)
+				slices.Sort(gotPartyIDs)
+				require.Zero(t, slices.Compare(expectPartyIDs, gotPartyIDs))
+			}).Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 3)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+		require.Equal(t, expect[1].ToProto(), resp.Summaries[1])
+		require.Equal(t, expect[2].ToProto(), resp.Summaries[2])
+	})
+}
+
 //nolint:unparam
 func floatToStringWithDp(value float64, dp int) string {
 	return fmt.Sprintf("%f", value*math.Pow10(dp))
