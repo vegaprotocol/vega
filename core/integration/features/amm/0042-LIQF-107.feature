@@ -89,19 +89,27 @@ Feature: Test vAMM implied commitment is working as expected
       | party | market id | amount | status        | base | lower bound | upper bound |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 95          | 105         |
 
+
   @VAMM
   Scenario: 0042-LIQF-107: a vAMM which was active on the market throughout the epoch but with an active range which never overlapped with the SLA range is counted with an implied commitment of `0`.
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee | error |
-      | vamm2 | ETH/MAR22 | 100000 | 0.5      | 120  | 110         | 130         | 0.03         | a     |
+      | vamm2 | ETH/MAR22 | 100000 | 0.5      | 120  | 110         | 130         | 0.03         |       |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound |
       | vamm2 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 120  | 110         | 130         |
+    Then the network moves ahead "1" blocks
+
+    And the following trades should be executed:
+      | buyer                                                            | price | size | seller                                                           |
+      | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | 448   | 102  | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
       | vamm2 | ETH/MAR22 | vamm2-id |
+
+    Then debug trades
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -112,7 +120,7 @@ Feature: Test vAMM implied commitment is working as expected
 
     And the following transfers should happen:
       | type                                   | from                                                             | to     | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 914     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 914    | USD   |
       | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | party2                                                           | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 21     | USD   |
       | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm1  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
       | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm2  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
