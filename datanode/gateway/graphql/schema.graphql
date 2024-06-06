@@ -2999,15 +2999,15 @@ type Party {
     teamId: ID
     "Optionally filter for rewards earned for the given game ID"
     gameId: ID
-    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    "Whether to return rewards for all derived parties from AMMs for the given party. If used, party ID is required"
     includeDerivedParties: Boolean
   ): RewardsConnection
 
   "Return net reward information"
   rewardSummaries(
-    "An asset ID (optional)"
+    "Restrict the reward summary to rewards paid in the given assets."
     assetId: ID
-    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    "Whether to return rewards for all derived parties from AMMs for the given party. If used, party ID is required"
     includeDerivedParties: Boolean
   ): [RewardSummary]
 
