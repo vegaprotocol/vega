@@ -47,6 +47,7 @@ func TestOrderbookShape(t *testing.T) {
 	t.Run("test orderbook shape step over fair price", testOrderbookShapeStepOverFairPrice)
 	t.Run("test orderbook shape step fair price at boundary", testOrderbookShapeNoStepOverFairPrice)
 	t.Run("test orderbook shape AMM reduce only", testOrderbookShapeReduceOnly)
+	t.Run("test orderbook shape boundary order when approx", testOrderbookShapeBoundaryOrder)
 }
 
 func testTradeableVolumeInRange(t *testing.T) {
@@ -451,18 +452,18 @@ func testOrderbookShapeLimited(t *testing.T) {
 
 	ensurePosition(t, p.pos, position, num.UintZero())
 	buys, sells := p.pool.OrderbookShape(low, base, nil)
-	assert.Equal(t, 10, len(buys))
+	assert.Equal(t, 11, len(buys))
 	assert.Equal(t, 0, len(sells))
 
 	ensurePosition(t, p.pos, position, num.UintZero())
 	buys, sells = p.pool.OrderbookShape(base, high, nil)
 	assert.Equal(t, 0, len(buys))
-	assert.Equal(t, 10, len(sells))
+	assert.Equal(t, 11, len(sells))
 
 	ensurePosition(t, p.pos, position, num.UintZero())
 	buys, sells = p.pool.OrderbookShape(low, high, nil)
-	assert.Equal(t, 5, len(buys))
-	assert.Equal(t, 5, len(sells))
+	assert.Equal(t, 6, len(buys))
+	assert.Equal(t, 6, len(sells))
 }
 
 func testOrderbookShapeStepOverFairPrice(t *testing.T) {
@@ -477,25 +478,25 @@ func testOrderbookShapeStepOverFairPrice(t *testing.T) {
 	// when we take the step from 24 -> 26 we want to make sure we split that order into two, so we
 	// will actually do maxCalculationLevels + 1 calculations but I think thats fine and keeps the calculations
 	// simple
-	position := int64(7000)
+	position := int64(6000)
 	p.pool.maxCalculationLevels = num.NewUint(10)
 	ensurePosition(t, p.pos, position, num.UintZero())
-	require.Equal(t, "25", p.pool.BestPrice(nil).String())
+	require.Equal(t, "26", p.pool.BestPrice(nil).String())
 
 	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
 	buys, sells := p.pool.OrderbookShape(low, base, nil)
-	assert.Equal(t, 3, len(buys))
+	assert.Equal(t, 4, len(buys))
 	assert.Equal(t, 8, len(sells))
 
 	ensurePosition(t, p.pos, position, num.UintZero())
 	buys, sells = p.pool.OrderbookShape(base, high, nil)
 	assert.Equal(t, 0, len(buys))
-	assert.Equal(t, 11, len(sells))
+	assert.Equal(t, 12, len(sells))
 
 	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
 	buys, sells = p.pool.OrderbookShape(low, high, nil)
-	assert.Equal(t, 2, len(buys))
-	assert.Equal(t, 9, len(sells))
+	assert.Equal(t, 3, len(buys))
+	assert.Equal(t, 10, len(sells))
 }
 
 func testOrderbookShapeNoStepOverFairPrice(t *testing.T) {
@@ -564,6 +565,29 @@ func testOrderbookShapeReduceOnly(t *testing.T) {
 	buys, sells = p.pool.OrderbookShape(base, high, nil)
 	assertOrderPrices(t, buys, types.SideBuy, 10, 11)
 	assert.Equal(t, 0, len(sells))
+}
+
+func testOrderbookShapeBoundaryOrder(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(100), num.NewUint(200), num.NewUint(300))
+	defer p.ctrl.Finish()
+
+	midlow := num.NewUint(150)
+	midhigh := num.NewUint(250)
+
+	position := int64(0)
+	ensurePositionN(t, p.pos, position, num.UintZero(), 1)
+
+	// limit the number of orders in the expansion
+	p.pool.maxCalculationLevels = num.NewUint(5)
+
+	buys, sells := p.pool.OrderbookShape(midlow, midhigh, nil)
+	assert.Equal(t, 4, len(buys))
+	assert.Equal(t, 4, len(sells))
+
+	// we're in approximate mode but we still require an exact order at the boundaries of the shape range
+	// check that the price for the first by is midlow, and the last sell is midhigh
+	assert.Equal(t, midlow.String(), buys[0].Price.String())
+	assert.Equal(t, midhigh.String(), sells[(len(sells)-1)].Price.String())
 }
 
 func assertOrderPrices(t *testing.T, orders []*types.Order, side types.Side, st, nd int) {
