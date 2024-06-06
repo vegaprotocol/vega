@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -91,8 +93,7 @@ func assertRewardsMatch(t *testing.T, expected, actual []entities.Reward) {
 }
 
 func TestRewards(t *testing.T) {
-	ctx := context.Background()
-	// ctx := tempTransaction(t)
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
@@ -108,6 +109,7 @@ func TestRewards(t *testing.T) {
 	party1 := addTestParty(t, ctx, ps, block)
 	party2 := addTestParty(t, ctx, ps, block)
 
+	party1ID := party1.ID.String()
 	party2ID := party2.ID.String()
 	asset2ID := asset2.ID.String()
 
@@ -134,13 +136,35 @@ func TestRewards(t *testing.T) {
 	})
 
 	t.Run("GetSummary", func(t *testing.T) {
-		expected := []entities.RewardSummary{{
-			AssetID: asset2.ID,
-			PartyID: party2.ID,
-			Amount:  decimal.NewFromInt(200),
-		}}
-		actual, err := rs.GetSummaries(ctx, []string{party2ID, party2ID}, &asset2ID)
-		fmt.Println(actual)
+		expected := []entities.RewardSummary{
+			{
+				AssetID: asset2.ID,
+				PartyID: party1.ID,
+				Amount:  decimal.NewFromInt(100),
+			},
+			{
+				AssetID: asset2.ID,
+				PartyID: party2.ID,
+				Amount:  decimal.NewFromInt(200),
+			},
+		}
+
+		slices.SortFunc(expected, func(i, j entities.RewardSummary) int {
+			return strings.Compare(i.PartyID.String(), j.PartyID.String())
+		})
+
+		actual, err := rs.GetSummaries(ctx, []string{party1ID, party2ID}, &asset2ID)
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("GetByCursor", func(t *testing.T) {
+		expected := []entities.Reward{reward2, reward4, reward5}
+
+		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+		require.NoError(t, err)
+
+		actual, _, err := rs.GetByCursor(ctx, []string{party1ID, party2ID}, &asset2ID, nil, nil, pagination, nil, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})

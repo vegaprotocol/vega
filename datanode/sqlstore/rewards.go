@@ -214,8 +214,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 	query := `SELECT party_id, asset_id, SUM(amount) AS amount FROM rewards`
 	args := []interface{}{}
 	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, nil, nil, nil, nil)
-	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
-	fmt.Println("query", query)
+	query = fmt.Sprintf("%s GROUP BY party_id, asset_id ORDER BY party_id", query)
 
 	summaries := []entities.RewardSummary{}
 	defer metrics.StartSQLQuery("Rewards", "GetSummaries")()
