@@ -280,7 +280,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 		FractionOfBalance:       num.DecimalFromFloat(0.1),
 		Kind:                    types.TransferKindRecurring,
 		OneOffTransferConfig:    nil,
-		RecurringTransferConfig: &vega.RecurringTransfer{StartEpoch: 1, EndEpoch: &endEpoch},
+		RecurringTransferConfig: &vega.RecurringTransfer{StartEpoch: 1, EndEpoch: &endEpoch, Factor: "1"},
 	}
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -309,7 +309,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 0, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
-	e2.broker.EXPECT().Send(gomock.Any()).Times(3)
+	e2.broker.EXPECT().Send(gomock.Any()).Times(2)
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 
