@@ -11537,7 +11537,7 @@ type ListRewardSummariesRequest struct {
 	AssetId *string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Whether to return all derived parties from AMMs for the given party.
+	// Whether to return rewards for all derived parties from AMMs for the given party.
 	// If used, party ID is required.
 	IncludeDerivedParties *bool `protobuf:"varint,8,opt,name=include_derived_parties,json=includeDerivedParties,proto3,oneof" json:"include_derived_parties,omitempty"`
 }
