@@ -3969,6 +3969,13 @@ func (r *myAccountResolver) Party(ctx context.Context, acc *v2.AccountBalance) (
 	return getParty(ctx, r.log, r.r.clt2, acc.Owner)
 }
 
+func (r *myAccountResolver) ParentPartyID(ctx context.Context, acc *v2.AccountBalance) (*vegapb.Party, error) {
+	if acc.ParentPartyId == nil || *acc.ParentPartyId == "" {
+		return nil, nil
+	}
+	return getParty(ctx, r.log, r.r.clt2, *acc.ParentPartyId)
+}
+
 func (r *myAccountResolver) Asset(ctx context.Context, obj *v2.AccountBalance) (*vegapb.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }

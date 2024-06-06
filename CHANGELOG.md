@@ -23,6 +23,7 @@
 - [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
 - [10634](https://github.com/vegaprotocol/vega/issues/10634) - Add spam checks for orders/liquidity provision
 - [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
+- [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
 
 ### 🐛 Fixes
 

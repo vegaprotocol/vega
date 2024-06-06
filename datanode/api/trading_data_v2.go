@@ -155,12 +155,27 @@ func (t *TradingDataServiceV2) GetPartyVestingStats(
 		return nil, formatE(err)
 	}
 
-	return &v2.GetPartyVestingStatsResponse{
+	res := &v2.GetPartyVestingStatsResponse{
 		PartyId:               stats.PartyID.String(),
 		EpochSeq:              stats.AtEpoch,
 		RewardBonusMultiplier: stats.RewardBonusMultiplier.String(),
 		QuantumBalance:        stats.QuantumBalance.String(),
-	}, nil
+	}
+
+	// set minimum values if the summed values are zero
+	if stats.SummedRewardBonusMultiplier.IsZero() {
+		res.SummedRewardBonusMultiplier = res.RewardBonusMultiplier
+	} else {
+		res.SummedRewardBonusMultiplier = stats.SummedRewardBonusMultiplier.String()
+	}
+
+	if stats.SummedQuantumBalance.IsZero() {
+		res.SummedQuantumBalance = res.QuantumBalance
+	} else {
+		res.SummedQuantumBalance = stats.SummedQuantumBalance.String()
+	}
+
+	return res, nil
 }
 
 func (t *TradingDataServiceV2) GetVestingBalancesSummary(
