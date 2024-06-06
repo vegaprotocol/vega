@@ -1099,6 +1099,10 @@ message GetPartyVestingStatsResponse {
   uint64 epoch_seq = 3;
   // The balance of the party, in quantum.
   string quantum_balance = 4;
+  // Bonus multiplier applied on the reward, summed across all derived accounts.
+  string summed_reward_bonus_multiplier = 5;
+  // The balance of the party and derived keys, in quantum.
+  string summed_quantum_balance = 6;
 }
 
 // Request sent to list the vesting and locked balances for a party

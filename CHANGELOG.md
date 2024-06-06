@@ -22,6 +22,7 @@
 - [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
 - [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
 - [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
+- [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
 
 ### 🐛 Fixes
 
