@@ -3736,7 +3736,7 @@ type AccountBalance {
   market: Market
   "Owner of the account"
   party: Party
-  "Parent party ID of the account. Optional is used in cases where the account is derived from another party's account."
+  "Parent party ID of the account. Used in cases where the account is derived from another party's account."
   parentPartyId: Party
 }
 
