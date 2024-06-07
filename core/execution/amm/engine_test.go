@@ -60,7 +60,8 @@ func TestAMMTrading(t *testing.T) {
 
 func TestAmendAMM(t *testing.T) {
 	t.Run("test amend AMM which doesn't exist", testAmendAMMWhichDoesntExist)
-	t.Run("test amend AMM with sparse amend", TestAmendAMMSparse)
+	t.Run("test amend AMM with sparse amend", testAmendAMMSparse)
+	t.Run("test amend AMM insufficient commitment", testAmendInsufficientCommitment)
 }
 
 func TestClosingAMM(t *testing.T) {
@@ -103,7 +104,7 @@ func testAmendAMMWhichDoesntExist(t *testing.T) {
 	require.ErrorIs(t, err, ErrNoPoolMatchingParty)
 }
 
-func TestAmendAMMSparse(t *testing.T) {
+func testAmendAMMSparse(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -127,6 +128,33 @@ func TestAmendAMMSparse(t *testing.T) {
 	require.NoError(t, err)
 
 	tst.engine.Confirm(ctx, updated)
+}
+
+func testAmendInsufficientCommitment(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+	expectSubaccountCreation(t, tst, party, subAccount)
+	whenAMMIsSubmitted(t, tst, submit)
+
+	poolID := tst.engine.poolsCpy[0].ID
+
+	amend := getPoolAmendment(t, party, tst.marketID)
+	// no amend to the commitment amount
+	amend.CommitmentAmount = nil
+
+	// amend to super wide bounds so that the commitment is too thin to support the AMM
+	amend.Parameters.Base.AddSum(num.UintOne())
+	amend.Parameters.UpperBound.AddSum(num.NewUint(1000000))
+	amend.Parameters.LowerBound.AddSum(num.UintOne())
+
+	_, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
+	require.ErrorContains(t, err, "insufficient commitment")
+
+	// check that the original pool still exists
+	assert.Equal(t, poolID, tst.engine.poolsCpy[0].ID)
 }
 
 func testBasicSubmitOrder(t *testing.T) {

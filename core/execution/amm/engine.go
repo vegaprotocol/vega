@@ -720,13 +720,15 @@ func (e *Engine) Amend(
 		}
 	}
 
-	// we need to remove the existing pool from the engine so that when calculating rebasing orders we do not
-	// trade with ourselves.
-	e.remove(ctx, amend.Party)
 	updated, err := pool.Update(amend, riskFactors, scalingFactors, slippage)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// we need to remove the existing pool from the engine so that when calculating rebasing orders we do not
+	// trade with ourselves.
+	e.remove(ctx, amend.Party)
+
 	e.log.Debug("AMM amended",
 		logging.String("owner", amend.Party),
 		logging.String("marketID", e.marketID),

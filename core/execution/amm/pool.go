@@ -891,6 +891,10 @@ func (p *Pool) fairPrice() *num.Uint {
 		pv = cu.pv.Add(pv)
 	}
 
+	if cu.empty {
+		panic("should not be calculating fair-price on empty-curve side")
+	}
+
 	l := cu.l
 
 	// pv * sqrt(pu) * (1/L) + 1
