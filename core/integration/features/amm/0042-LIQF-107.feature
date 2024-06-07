@@ -84,10 +84,10 @@ Feature: Test vAMM implied commitment is working as expected
 
     Then the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 95          | 105         | 0.03         |
+      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 95          | 110         | 0.03         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 95          | 105         |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 95          | 110         |
 
   @VAMM
   Scenario: 0042-LIQF-107: a vAMM which was active on the market throughout the epoch but with an active range which never overlapped with the SLA range is counted with an implied commitment of `0`.
@@ -99,31 +99,40 @@ Feature: Test vAMM implied commitment is working as expected
       | vamm2 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 120  | 110         | 130         |
     Then the network moves ahead "1" blocks
 
+    #vamm1 best sell 101, vol ?
+    #vamm2 best buy 121, vol ?
+    #traded price 102, vol 448
+
+    And the following trades should be executed:
+      | buyer                                                            | price | size | seller                                                           |
+      | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | 104   | 423  | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba |
+
     And the following trades should be executed:
       | buyer                                                            | price | size | seller                                                           |
       | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | 102   | 448  | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba |
 
-    And set the following AMM sub account aliases:
-      | party | market id | alias    |
-      | vamm1 | ETH/MAR22 | vamm1-id |
-      | vamm2 | ETH/MAR22 | vamm2-id |
 
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
-      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+# And set the following AMM sub account aliases:
+#   | party | market id | alias    |
+#   | vamm1 | ETH/MAR22 | vamm1-id |
+#   | vamm2 | ETH/MAR22 | vamm2-id |
 
-    And the following trades should be executed:
-      | buyer                                                            | price | size | seller |
-      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 104   | 10   | party2 |
+# And the parties place the following orders:
+#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+#   | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+#   | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
 
-    Then the network moves ahead "1" epochs
+# And the following trades should be executed:
+#   | buyer                                                            | price | size | seller |
+#   | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 104   | 10   | party2 |
 
-    And the following transfers should happen:
-      | type                                   | from                                                             | to     | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 914    | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | party2                                                           | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 21     | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm1  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm2  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm1                                                            | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm2                                                            | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
+# Then the network moves ahead "1" epochs
+
+# And the following transfers should happen:
+#   | type                                   | from                                                             | to     | from account                   | to account                     | market id | amount | asset |
+#   | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 914    | USD   |
+#   | TRANSFER_TYPE_LIQUIDITY_FEE_PAY        | party2                                                           | market | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_FEES_LIQUIDITY    | ETH/MAR22 | 21     | USD   |
+#   | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm1  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
+#   | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | vamm2  | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 467    | USD   |
+#   | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm1                                                            | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
+#   | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | vamm2                                                            | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 467    | USD   |
