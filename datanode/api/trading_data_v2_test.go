@@ -1169,8 +1169,16 @@ func TestListRewards(t *testing.T) {
 		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Times(1).Return(markets, entities.PageInfo{}, nil)
 
-		rewardStore.EXPECT().GetByCursor(ctx, []string{expect[0].PartyID.String(), expect[1].PartyID.String(), expect[2].PartyID.String()},
-			req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId).Times(1).Return(expect, entities.PageInfo{}, nil)
+		rewardStore.EXPECT().GetByCursor(ctx, gomock.Any(), req.AssetId, req.FromEpoch, req.ToEpoch,
+			pagination, req.TeamId, req.GameId).
+			Do(func(_ context.Context, gotPartyIDs []string, _ *string, _, _ *uint64, _ entities.CursorPagination, _, _ *string) {
+				expectPartyIDs := []string{expect[0].PartyID.String(), expect[1].PartyID.String(), expect[2].PartyID.String()}
+
+				slices.Sort(expectPartyIDs)
+				slices.Sort(gotPartyIDs)
+				require.Zero(t, slices.Compare(expectPartyIDs, gotPartyIDs))
+			}).
+			Times(1).Return(expect, entities.PageInfo{}, nil)
 
 		resp, err := apiService.ListRewards(ctx, req)
 		require.NoError(t, err)
