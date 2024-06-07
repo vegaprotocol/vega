@@ -71,7 +71,7 @@ func (app *App) PrepareProposal(_ context.Context, req *types.RequestPrepareProp
 	}
 
 	// let the application decide on the order and the number of transactions it wants to pick up for this block
-	res := &types.ResponsePrepareProposal{Txs: app.OnPrepareProposal(txs, rawTxs)}
+	res := &types.ResponsePrepareProposal{Txs: app.OnPrepareProposal(uint64(req.Height), txs, rawTxs)}
 	return res, nil
 }
 
@@ -94,7 +94,7 @@ func (app *App) ProcessProposal(_ context.Context, req *types.RequestProcessProp
 		txs = append(txs, tx)
 	}
 	// let the application verify the block
-	if !app.OnProcessProposal(txs) {
+	if !app.OnProcessProposal(uint64(req.Height), txs) {
 		return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
 	}
 	return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_ACCEPT}, nil

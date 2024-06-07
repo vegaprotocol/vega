@@ -507,4 +507,5 @@ message CancelAMM {
 // Internal transactions used to convey delayed transactions to be included in the next block.
 message DelayedTransactionsWrapper {
   repeated bytes transactions = 1;
+  uint64 height = 2;
 }

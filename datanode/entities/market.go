@@ -70,6 +70,7 @@ type Market struct {
 	LiquidationStrategy    LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *decimal.Decimal
+	EnableTXReordering     bool
 }
 
 type MarketCursor struct {
@@ -213,6 +214,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        mpc,
 		TickSize:                      &tickSize,
+		EnableTXReordering:            market.EnableTransactionReordering,
 	}, nil
 }
 
@@ -279,6 +281,7 @@ func (m Market) ToProto() *vega.Market {
 		LiquidationStrategy:           m.LiquidationStrategy.IntoProto(),
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.CompositePriceConfiguration,
 		TickSize:                      m.TickSize.String(),
+		EnableTransactionReordering:   m.EnableTXReordering,
 	}
 }
 

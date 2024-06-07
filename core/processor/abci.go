@@ -193,9 +193,11 @@ type EthCallEngine interface {
 }
 
 type TxCache interface {
-	SetRawTxs(rtx [][]byte)
-	GetRawTxs() [][]byte
-	NewDelayedTransaction(ctx context.Context, delayed [][]byte) []byte
+	SetRawTxs(rtx [][]byte, height uint64)
+	GetRawTxs(height uint64) [][]byte
+	NewDelayedTransaction(ctx context.Context, delayed [][]byte, height uint64) []byte
+	IsDelayRequired(marketID string) bool
+	IsDelayRequiredAnyMarket() bool
 }
 
 type App struct {
@@ -260,8 +262,6 @@ type App struct {
 
 	maxBatchSize atomic.Uint64
 	txCache      TxCache
-
-	seenDelayedTxTransactions bool
 }
 
 func NewApp(log *logging.Logger,
@@ -874,7 +874,7 @@ func (app *App) OnInitChain(req *tmtypes.RequestInitChain) (*tmtypes.ResponseIni
 // 4. we never add transactions failing spam checks
 // therefore a block generated with this method will never contain any transactions that would violate spam/pow constraints that would have previously
 // caused the party to get blocked.
-func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
+func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [][]byte {
 	var totalBytes int64
 	validationResults := []pow.ValidationEntry{}
 
@@ -889,7 +889,7 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 	// we still need to check that the transactions from previous block are passing pow and spam requirements.
 	addedFromPreviousHash := map[string]struct{}{}
 	delayedTxs := [][]byte{}
-	for _, txx := range app.txCache.GetRawTxs() {
+	for _, txx := range app.txCache.GetRawTxs(height) {
 		tx, err := app.abci.GetTx(txx)
 		if err != nil {
 			continue
@@ -985,8 +985,54 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 		}
 
 		switch tx.tx.Command() {
-		case txn.CancelOrderCommand, txn.CancelAMMCommand, txn.StopOrdersCancellationCommand:
-			cancellations = append(cancellations, tx.raw)
+		case txn.CancelOrderCommand:
+			s := &commandspb.OrderCancellation{}
+			if err := tx.tx.Unmarshal(s); err != nil {
+				continue
+			}
+			if len(s.MarketId) > 0 {
+				if app.txCache.IsDelayRequired(s.MarketId) {
+					cancellations = append(cancellations, tx.raw)
+				} else {
+					anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+				}
+			} else if app.txCache.IsDelayRequiredAnyMarket() {
+				cancellations = append(cancellations, tx.raw)
+			} else {
+				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+			}
+		case txn.CancelAMMCommand:
+			s := &commandspb.CancelAMM{}
+			if err := tx.tx.Unmarshal(s); err != nil {
+				continue
+			}
+			if len(s.MarketId) > 0 {
+				if app.txCache.IsDelayRequired(s.MarketId) {
+					cancellations = append(cancellations, tx.raw)
+				} else {
+					anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+				}
+			} else if app.txCache.IsDelayRequiredAnyMarket() {
+				cancellations = append(cancellations, tx.raw)
+			} else {
+				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+			}
+		case txn.StopOrdersCancellationCommand:
+			s := commandspb.StopOrdersCancellation{}
+			if err := tx.tx.Unmarshal(s); err != nil {
+				continue
+			}
+			if s.MarketId != nil {
+				if app.txCache.IsDelayRequired(*s.MarketId) {
+					cancellations = append(cancellations, tx.raw)
+				} else {
+					anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+				}
+			} else if app.txCache.IsDelayRequiredAnyMarket() {
+				cancellations = append(cancellations, tx.raw)
+			} else {
+				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+			}
 		case txn.SubmitOrderCommand:
 			s := &commandspb.OrderSubmission{}
 			if err := tx.tx.Unmarshal(s); err != nil {
@@ -994,14 +1040,107 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 			}
 			if s.PostOnly {
 				postOnly = append(postOnly, tx.raw)
-			} else {
+			} else if app.txCache.IsDelayRequired(s.MarketId) {
 				nextBlockRtx = append(nextBlockRtx, tx.raw)
+			} else {
+				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
 			}
-		case txn.AmendOrderCommand, txn.AmendAMMCommand, txn.StopOrdersSubmissionCommand:
-			nextBlockRtx = append(nextBlockRtx, tx.raw)
+		case txn.AmendOrderCommand:
+			s := &commandspb.OrderAmendment{}
+			if err := tx.tx.Unmarshal(s); err != nil {
+				continue
+			}
+			if app.txCache.IsDelayRequired(s.MarketId) {
+				nextBlockRtx = append(nextBlockRtx, tx.raw)
+			} else {
+				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+			}
+		case txn.AmendAMMCommand:
+			s := &commandspb.AmendAMM{}
+			if err := tx.tx.Unmarshal(s); err != nil {
+				continue
+			}
+			if app.txCache.IsDelayRequired(s.MarketId) {
+				nextBlockRtx = append(nextBlockRtx, tx.raw)
+			} else {
+				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+			}
+		case txn.StopOrdersSubmissionCommand:
+			s := &commandspb.StopOrdersSubmission{}
+			if err := tx.tx.Unmarshal(s); err != nil {
+				continue
+			}
+			if s.RisesAbove != nil && s.FallsBelow == nil {
+				if app.txCache.IsDelayRequired(s.RisesAbove.OrderSubmission.MarketId) {
+					nextBlockRtx = append(nextBlockRtx, tx.raw)
+				} else {
+					anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+				}
+			} else if s.FallsBelow != nil && s.RisesAbove == nil {
+				if app.txCache.IsDelayRequired(s.FallsBelow.OrderSubmission.MarketId) {
+					nextBlockRtx = append(nextBlockRtx, tx.raw)
+				} else {
+					anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+				}
+			} else if s.FallsBelow != nil && s.RisesAbove != nil {
+				if app.txCache.IsDelayRequired(s.FallsBelow.OrderSubmission.MarketId) || app.txCache.IsDelayRequired(s.RisesAbove.OrderSubmission.MarketId) {
+					nextBlockRtx = append(nextBlockRtx, tx.raw)
+				} else {
+					anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
+				}
+			}
 		case txn.BatchMarketInstructions:
 			batch := &commandspb.BatchMarketInstructions{}
 			if err := tx.tx.Unmarshal(batch); err != nil {
+				continue
+			}
+			someMarketRequiresDelay := false
+			for _, s := range batch.Submissions {
+				if app.txCache.IsDelayRequired(s.MarketId) {
+					someMarketRequiresDelay = true
+					break
+				}
+			}
+			if !someMarketRequiresDelay {
+				for _, s := range batch.Amendments {
+					if app.txCache.IsDelayRequired(s.MarketId) {
+						someMarketRequiresDelay = true
+						break
+					}
+				}
+			}
+			if !someMarketRequiresDelay {
+				for _, s := range batch.Cancellations {
+					if len(s.MarketId) != 0 && app.txCache.IsDelayRequired(s.MarketId) {
+						someMarketRequiresDelay = true
+						break
+					}
+				}
+			}
+			if !someMarketRequiresDelay {
+				for _, s := range batch.StopOrdersSubmission {
+					if s.FallsBelow != nil && app.txCache.IsDelayRequired(s.FallsBelow.OrderSubmission.MarketId) {
+						someMarketRequiresDelay = true
+						break
+					}
+					if !someMarketRequiresDelay {
+						if s.RisesAbove != nil && app.txCache.IsDelayRequired(s.RisesAbove.OrderSubmission.MarketId) {
+							someMarketRequiresDelay = true
+							break
+						}
+					}
+				}
+			}
+			if !someMarketRequiresDelay {
+				for _, s := range batch.StopOrdersCancellation {
+					if app.txCache.IsDelayRequired(*s.MarketId) {
+						someMarketRequiresDelay = true
+						break
+					}
+				}
+			}
+			if !someMarketRequiresDelay {
+				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
 				continue
 			}
 			// if there are no amends/submissions
@@ -1035,7 +1174,7 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 	}
 	blockTxs = append(blockTxs, anythingElseFromThisBlock...) // finally anything else from this block
 	if len(nextBlockRtx) > 0 {
-		wrapperTx := app.txCache.NewDelayedTransaction(app.blockCtx, nextBlockRtx)
+		wrapperTx := app.txCache.NewDelayedTransaction(app.blockCtx, nextBlockRtx, height)
 		blockTxs = append(blockTxs, wrapperTx)
 	}
 	if !app.nilPow {
@@ -1053,12 +1192,22 @@ func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
 // 1. no violations of pow and spam
 // 2. max gas limit is not exceeded
 // 3. (soft) max bytes is not exceeded.
-func (app *App) processProposal(txs []abci.Tx) bool {
+func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 	totalGasWanted := 0
 	maxGas := app.gastimator.GetMaxGas()
 	maxBytes := tmtypesint.DefaultBlockParams().MaxBytes * 4
 	size := int64(0)
 	delayedTxCount := 0
+
+	expectedDelayedAtHeight := app.txCache.GetRawTxs(height)
+	expectedDelayedTxs := make(map[string]struct{}, len(expectedDelayedAtHeight))
+	for _, tx := range expectedDelayedAtHeight {
+		txx, err := app.abci.GetTx(tx)
+		if err == nil {
+			expectedDelayedTxs[hex.EncodeToString(txx.Hash())] = struct{}{}
+		}
+	}
+	foundDelayedTxs := make(map[string]struct{}, len(expectedDelayedAtHeight))
 
 	for _, tx := range txs {
 		size += int64(tx.GetLength())
@@ -1081,6 +1230,13 @@ func (app *App) processProposal(txs []abci.Tx) bool {
 			}
 			delayedTxCount += 1
 		}
+		if _, ok := expectedDelayedTxs[hex.EncodeToString(tx.Hash())]; ok {
+			foundDelayedTxs[hex.EncodeToString(tx.Hash())] = struct{}{}
+		}
+	}
+
+	if len(foundDelayedTxs) != len(expectedDelayedAtHeight) {
+		return false
 	}
 
 	if !app.nilPow && !app.pow.ProcessProposal(txs) {
@@ -1103,11 +1259,6 @@ func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
-
-	if !app.seenDelayedTxTransactions {
-		app.txCache.SetRawTxs(nil)
-	}
-	app.seenDelayedTxTransactions = false
 
 	app.epoch.OnBlockEnd(app.blockCtx)
 	app.stateVar.OnBlockEnd(app.blockCtx)
@@ -1137,6 +1288,8 @@ func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1
 func (app *App) OnBeginBlock(blockHeight uint64, blockHash string, blockTime time.Time, proposer string, txs []abci.Tx) context.Context {
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", blockHeight), logging.Time("time", blockTime), logging.String("blockHash", blockHash))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
+
+	app.txCache.SetRawTxs(nil, blockHeight)
 
 	ctx := vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, blockHash), blockHeight)
 	if app.protocolUpgradeService.CoreReadyForUpgrade() {
@@ -2846,8 +2999,7 @@ func (app *App) handleDelayedTransactionWrapper(ctx context.Context, tx abci.Tx)
 	if err := tx.Unmarshal(txs); err != nil {
 		return fmt.Errorf("could not deserialize DelayedTransactionsWrapper command: %w", err)
 	}
-	app.txCache.SetRawTxs(txs.Transactions)
-	app.seenDelayedTxTransactions = true
+	app.txCache.SetRawTxs(txs.Transactions, txs.Height)
 	return nil
 }
 
