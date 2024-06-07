@@ -48,7 +48,6 @@ Feature: Test vAMM implied commitment is working as expected
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
-    # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 1000000 |
@@ -86,10 +85,10 @@ Feature: Test vAMM implied commitment is working as expected
   Scenario: 0042-LIQF-108: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided across the epoch, and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `100`.
     Then the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 95          | 110         | 0.03         |
+      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 98          | 102         | 0.03         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 95          | 110         |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 98          | 102         |
     Then the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
