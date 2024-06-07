@@ -522,7 +522,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		riskService:                   g.riskService,
 		positionService:               g.positionService,
 		AccountService:                g.accountService,
-		rewardService:                 g.rewardService,
+		RewardService:                 g.rewardService,
 		depositService:                g.depositService,
 		withdrawalService:             g.withdrawalService,
 		oracleSpecService:             g.oracleSpecService,

@@ -93,7 +93,7 @@ type TradingDataServiceV2 struct {
 	riskService                   *service.Risk
 	positionService               *service.Position
 	AccountService                *service.Account
-	rewardService                 *service.Reward
+	RewardService                 *service.Reward
 	depositService                *service.Deposit
 	withdrawalService             *service.Withdrawal
 	oracleSpecService             *service.OracleSpec
@@ -1608,6 +1608,10 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, partyIDs []string, marketIDs []string) (map[string]string, error) {
 	partyPerDerivedKey := map[string]string{}
 
+	if len(partyIDs) == 0 {
+		return partyPerDerivedKey, nil
+	}
+
 	if len(marketIDs) != 0 {
 		for _, marketID := range marketIDs {
 			for _, partyID := range partyIDs {
@@ -1918,7 +1922,17 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
+	partyIDs := []string{req.PartyId}
+	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
+		partyPerDerivedKey, err := t.getDerivedParties(ctx, []string{req.PartyId}, nil)
+		if err != nil {
+			return nil, formatE(err)
+		}
+
+		partyIDs = append(partyIDs, maps.Keys(partyPerDerivedKey)...)
+	}
+
+	rewards, pageInfo, err := t.RewardService.GetByCursor(ctx, partyIDs, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
 	if err != nil {
 		return nil, formatE(ErrGetRewards, err)
 	}
@@ -1942,7 +1956,21 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 func (t *TradingDataServiceV2) ListRewardSummaries(ctx context.Context, req *v2.ListRewardSummariesRequest) (*v2.ListRewardSummariesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListRewardSummariesV2")()
 
-	summaries, err := t.rewardService.GetSummaries(ctx, req.PartyId, req.AssetId)
+	partyIDs := []string{}
+	if req.PartyId != nil {
+		partyIDs = []string{*req.PartyId}
+	}
+
+	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
+		partyPerDerivedKey, err := t.getDerivedParties(ctx, partyIDs, nil)
+		if err != nil {
+			return nil, formatE(err)
+		}
+
+		partyIDs = append(partyIDs, maps.Keys(partyPerDerivedKey)...)
+	}
+
+	summaries, err := t.RewardService.GetSummaries(ctx, partyIDs, req.AssetId)
 	if err != nil {
 		return nil, formatE(ErrSummaryServiceGet, err)
 	}
@@ -1968,7 +1996,7 @@ func (t *TradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, req
 	}
 
 	filter := entities.RewardSummaryFilterFromProto(req.Filter)
-	summaries, pageInfo, err := t.rewardService.GetEpochRewardSummaries(ctx, filter, pagination)
+	summaries, pageInfo, err := t.RewardService.GetEpochRewardSummaries(ctx, filter, pagination)
 	if err != nil {
 		return nil, formatE(ErrSummaryServiceGet, err)
 	}
@@ -4499,7 +4527,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.partyService.GetByTxHash, ErrPartyServiceGetByTxHash)
 
 	rewards := queryProtoEntities[*vega.Reward](ctx, eg, txHash,
-		t.rewardService.GetByTxHash, ErrRewardsGetByTxHash)
+		t.RewardService.GetByTxHash, ErrRewardsGetByTxHash)
 
 	deposits := queryProtoEntities[*vega.Deposit](ctx, eg, txHash,
 		t.depositService.GetByTxHash, ErrDepositsGetByTxHash)

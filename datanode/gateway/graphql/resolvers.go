@@ -2241,7 +2241,7 @@ func (r *myPartyResolver) TransfersConnection(
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
-	fromEpoch *int, toEpoch *int, teamID, gameID *string,
+	fromEpoch *int, toEpoch *int, teamID, gameID *string, includeDerivedParties *bool,
 ) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
@@ -2261,13 +2261,14 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 	}
 
 	req := v2.ListRewardsRequest{
-		PartyId:    party.Id,
-		AssetId:    assetID,
-		Pagination: pagination,
-		FromEpoch:  from,
-		ToEpoch:    to,
-		TeamId:     teamID,
-		GameId:     gameID,
+		PartyId:               party.Id,
+		AssetId:               assetID,
+		Pagination:            pagination,
+		FromEpoch:             from,
+		ToEpoch:               to,
+		TeamId:                teamID,
+		GameId:                gameID,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
@@ -2281,6 +2282,7 @@ func (r *myPartyResolver) RewardSummaries(
 	ctx context.Context,
 	party *vegapb.Party,
 	asset *string,
+	includeDerivedParties *bool,
 ) ([]*vegapb.RewardSummary, error) {
 	var assetID string
 	if asset != nil {
@@ -2288,8 +2290,9 @@ func (r *myPartyResolver) RewardSummaries(
 	}
 
 	req := &v2.ListRewardSummariesRequest{
-		PartyId: &party.Id,
-		AssetId: &assetID,
+		PartyId:               &party.Id,
+		AssetId:               &assetID,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 
 	resp, err := r.tradingDataClientV2.ListRewardSummaries(ctx, req)

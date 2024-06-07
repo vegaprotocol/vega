@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -107,6 +109,7 @@ func TestRewards(t *testing.T) {
 	party1 := addTestParty(t, ctx, ps, block)
 	party2 := addTestParty(t, ctx, ps, block)
 
+	party1ID := party1.ID.String()
 	party2ID := party2.ID.String()
 	asset2ID := asset2.ID.String()
 
@@ -133,12 +136,35 @@ func TestRewards(t *testing.T) {
 	})
 
 	t.Run("GetSummary", func(t *testing.T) {
-		expected := []entities.RewardSummary{{
-			AssetID: asset2.ID,
-			PartyID: party2.ID,
-			Amount:  decimal.NewFromInt(200),
-		}}
-		actual, err := rs.GetSummaries(ctx, &party2ID, &asset2ID)
+		expected := []entities.RewardSummary{
+			{
+				AssetID: asset2.ID,
+				PartyID: party1.ID,
+				Amount:  decimal.NewFromInt(100),
+			},
+			{
+				AssetID: asset2.ID,
+				PartyID: party2.ID,
+				Amount:  decimal.NewFromInt(200),
+			},
+		}
+
+		slices.SortFunc(expected, func(i, j entities.RewardSummary) int {
+			return strings.Compare(i.PartyID.String(), j.PartyID.String())
+		})
+
+		actual, err := rs.GetSummaries(ctx, []string{party1ID, party2ID}, &asset2ID)
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("GetByCursor", func(t *testing.T) {
+		expected := []entities.Reward{reward2, reward4, reward5}
+
+		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+		require.NoError(t, err)
+
+		actual, _, err := rs.GetByCursor(ctx, []string{party1ID, party2ID}, &asset2ID, nil, nil, pagination, nil, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
@@ -490,7 +516,7 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, int64(637), got[0].EpochID)
@@ -514,7 +540,7 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(637), got[0].EpochID)
@@ -538,7 +564,7 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(757), got[0].EpochID)
@@ -564,7 +590,7 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(737), got[0].EpochID)
@@ -589,7 +615,7 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 	before := entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 757}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(741), got[0].EpochID)
@@ -612,7 +638,7 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, int64(1027), got[0].EpochID)
@@ -636,7 +662,7 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(1027), got[0].EpochID)
@@ -660,7 +686,7 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(643), got[0].EpochID)
@@ -686,7 +712,7 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(747), got[0].EpochID)
@@ -711,7 +737,7 @@ func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
 	before := entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 643}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
+	got, pageInfo, err := rs.GetByCursor(ctx, []string{partyID}, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(744), got[0].EpochID)
@@ -1194,7 +1220,7 @@ func TestRewardFilterByTeamIDAndGameID(t *testing.T) {
 		partyID := parties[i]
 		page := entities.DefaultCursorPagination(true)
 		// get the rewards for that party
-		got, _, err := stores.rewards.GetByCursor(ctx, ptr.From(partyID.String()), nil, nil, nil, page, nil, nil)
+		got, _, err := stores.rewards.GetByCursor(ctx, []string{partyID.String()}, nil, nil, nil, page, nil, nil)
 		require.NoError(t, err)
 		want := filterRewardsByParty(rewards, partyID)
 		// we don't care about the ordering as other tests already validate that, we just want to make sure we have all the rewards for the party
@@ -1215,7 +1241,7 @@ func TestRewardFilterByTeamIDAndGameID(t *testing.T) {
 		i = r.Intn(len(teams[teamID]))
 		party := teams[teamID][i]
 		page := entities.DefaultCursorPagination(true)
-		got, _, err := stores.rewards.GetByCursor(ctx, ptr.From(party.ID.String()), nil, nil, nil, page, ptr.From(teamID), nil)
+		got, _, err := stores.rewards.GetByCursor(ctx, []string{party.ID.String()}, nil, nil, nil, page, ptr.From(teamID), nil)
 		require.NoError(t, err)
 		want := filterRewardsByParty(filterRewardsByTeam(rewards, entities.TeamID(teamID)), party.ID)
 		assert.ElementsMatchf(t, want, got, "got: %v, want: %v", got, want)
