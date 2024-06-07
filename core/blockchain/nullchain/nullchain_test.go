@@ -322,6 +322,15 @@ func getTestUnstartedNullChain(t *testing.T, txnPerBlock uint64, d time.Duration
 	n.SetABCIApp(app)
 	require.NotNil(t, n)
 
+	app.EXPECT().PrepareProposal(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, req *abci.RequestPrepareProposal) (*abci.ResponsePrepareProposal, error) {
+			ret := &abci.ResponsePrepareProposal{
+				Txs: req.Txs,
+			}
+			return ret, nil
+		},
+	).AnyTimes()
+
 	return &testNullBlockChain{
 		chain: n,
 		ctrl:  ctrl,
