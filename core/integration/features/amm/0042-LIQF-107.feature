@@ -89,7 +89,6 @@ Feature: Test vAMM implied commitment is working as expected
       | party | market id | amount | status        | base | lower bound | upper bound |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 95          | 105         |
 
-
   @VAMM
   Scenario: 0042-LIQF-107: a vAMM which was active on the market throughout the epoch but with an active range which never overlapped with the SLA range is counted with an implied commitment of `0`.
     When the parties submit the following AMM:
@@ -102,19 +101,21 @@ Feature: Test vAMM implied commitment is working as expected
 
     And the following trades should be executed:
       | buyer                                                            | price | size | seller                                                           |
-      | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | 448   | 102  | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba |
+      | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | 102   | 448  | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
       | vamm2 | ETH/MAR22 | vamm2-id |
 
-    Then debug trades
-
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
       | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    And the following trades should be executed:
+      | buyer                                                            | price | size | seller |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 104   | 10   | party2 |
 
     Then the network moves ahead "1" epochs
 
