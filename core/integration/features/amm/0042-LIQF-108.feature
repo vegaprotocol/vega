@@ -83,28 +83,28 @@ Feature: Test vAMM implied commitment is working as expected
     And the current epoch is "0"
 
   @VAMM
-  Scenario: 0042-LIQF-107: a vAMM which was active on the market throughout the epoch but with an active range which never overlapped with the SLA range is counted with an implied commitment of `0`.
-    When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee | error |
-      | vamm2 | ETH/MAR22 | 100000 | 0.5      | 120  | 110         | 130         | 0.03         |       |
+  Scenario: 0042-LIQF-108: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided across the epoch, and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `100`.
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 95          | 110         | 0.03         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound |
-      | vamm2 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 120  | 110         | 130         |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 95          | 110         |
     Then the network moves ahead "1" blocks
-   
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
       | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
 
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 100   | 10   | party2 |
+
     Then the network moves ahead "1" epochs
-    And the following trades should be executed:
-      | buyer                                                            | price | size | seller |
-      | 4582953f1f1dd07603befe97994d6414c0ebb53c7d52c29e866bb3e85d7b30b4 | 119   | 10   | party2 |
 
     And the following transfers should happen:
       | type                                   | from   | to     | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 12     | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 12     | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 12     | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 12     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 10     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 10     | USD   |
+      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 10     | USD   |
+      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 10     | USD   |
