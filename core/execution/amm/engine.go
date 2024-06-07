@@ -89,6 +89,10 @@ type Sqrter struct {
 	cache map[string]num.Decimal
 }
 
+func NewSqrter() *Sqrter {
+	return &Sqrter{cache: map[string]num.Decimal{}}
+}
+
 // sqrt calculates the square root of the uint and caches it.
 func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
 	if r, ok := s.cache[u.String()]; ok {
