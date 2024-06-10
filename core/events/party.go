@@ -23,6 +23,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
@@ -103,10 +104,7 @@ func NewPartyProfileUpdatedEvent(ctx context.Context, p *types.PartyProfile) *Pa
 		return strings.Compare(a.Key, b.Key)
 	})
 
-	derivedKeys := make([]string, 0, len(p.DerivedKeys))
-	for k := range p.DerivedKeys {
-		derivedKeys = append(derivedKeys, k)
-	}
+	derivedKeys := maps.Keys(p.DerivedKeys)
 
 	slices.SortStableFunc(derivedKeys, func(a, b string) int {
 		return strings.Compare(a, b)

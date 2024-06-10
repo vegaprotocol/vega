@@ -57,6 +57,8 @@ func (e *Engine) AssignDeriveKey(party types.PartyID, derivedKey string) {
 	}
 
 	e.profiles[party].DerivedKeys[derivedKey] = struct{}{}
+
+	e.notifyProfileUpdate(context.Background(), e.profiles[party])
 }
 
 func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool {
