@@ -129,6 +129,11 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 			b.peggedOrders.Add(pid)
 		}
 	}
+
+	if b.auction {
+		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
+	}
+
 	return nil, nil
 }
 

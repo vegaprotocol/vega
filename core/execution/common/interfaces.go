@@ -358,6 +358,7 @@ type CommonMarket interface {
 	BeginBlock(context.Context)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 	GetFillPrice(volume uint64, side types.Side) (*num.Uint, error)
+	Mkt() *types.Market
 
 	IsOpeningAuction() bool
 

@@ -36,8 +36,8 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.DelegationSnapshot,
 	types.FloatingPointConsensusSnapshot, // Shouldn't matter but maybe best before the markets are restored.
 	types.ExecutionSnapshot,              // Creates the markets, returns matching and positions engines for state providers.
-	types.MatchingSnapshot,               // Requires markets.
 	types.PositionsSnapshot,              // Requires markets.
+	types.MatchingSnapshot,               // Requires markets, and positions so that AMM's evaluate properly
 	types.SettlementSnapshot,             // Requires markets.
 	types.LiquidationSnapshot,            // Requires markets.
 	types.HoldingAccountTrackerSnapshot,
