@@ -156,8 +156,6 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 	}
 	// ensure this is set correctly
 	mkt.SetNextMTM(nextMTM)
-
-	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
 }
 
@@ -241,8 +239,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	// ensure this is set correctly
 	mkt.SetNextMTM(nextMTM)
 	mkt.SetNextInternalCompositePriceCalc(nextInternalCompositePriceCalc)
-
-	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
 }
 
@@ -404,6 +400,9 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
 		}
+
+		// let the core state API know about the markets
+		e.publishNewMarketInfos(ctx, m.GetMarketData(), *m.Mkt())
 	}
 	// use the time as restored by the snapshot
 	t := e.timeService.GetTimeNow()
