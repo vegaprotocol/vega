@@ -66,7 +66,7 @@ func (ls *Ledger) Flush(ctx context.Context) ([]entities.LedgerEntry, error) {
 
 	ls.pending = nil
 
-	return ls.batcher.Flush(ctx, ls.Connection)
+	return ls.batcher.Flush(ctx, ls.ConnectionSource)
 }
 
 func (ls *Ledger) Add(le entities.LedgerEntry) error {
@@ -78,7 +78,7 @@ func (ls *Ledger) GetByLedgerEntryTime(ctx context.Context, ledgerEntryTime time
 	defer metrics.StartSQLQuery("Ledger", "GetByID")()
 	le := entities.LedgerEntry{}
 
-	return le, ls.wrapE(pgxscan.Get(ctx, ls.Connection, &le,
+	return le, ls.wrapE(pgxscan.Get(ctx, ls.ConnectionSource, &le,
 		`SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type, account_from_balance, account_to_balance
 		 FROM ledger WHERE ledger_entry_time =$1`,
 		ledgerEntryTime))
@@ -87,7 +87,7 @@ func (ls *Ledger) GetByLedgerEntryTime(ctx context.Context, ledgerEntryTime time
 func (ls *Ledger) GetAll(ctx context.Context) ([]entities.LedgerEntry, error) {
 	defer metrics.StartSQLQuery("Ledger", "GetAll")()
 	ledgerEntries := []entities.LedgerEntry{}
-	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
+	err := pgxscan.Select(ctx, ls.ConnectionSource, &ledgerEntries, `
 		SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type, account_from_balance, account_to_balance
 		FROM ledger`)
 	return ledgerEntries, err
@@ -97,7 +97,7 @@ func (ls *Ledger) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	ledgerEntries := []entities.LedgerEntry{}
 	defer metrics.StartSQLQuery("Ledger", "GetByTxHash")()
 
-	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
+	err := pgxscan.Select(ctx, ls.ConnectionSource, &ledgerEntries, `
 		SELECT ledger_entry_time, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type, account_from_balance, account_to_balance
 		FROM ledger WHERE tx_hash=$1`,
 		txHash,
@@ -206,7 +206,7 @@ func (ls *Ledger) Query(
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, ls.Connection, &entries, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, ls.ConnectionSource, &entries, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -345,7 +345,7 @@ func (ls *Ledger) Export(
 
 	query = fmt.Sprintf("copy (%s ORDER BY l.ledger_entry_time) to STDOUT (FORMAT csv, HEADER)", query)
 
-	tag, err := ls.Connection.CopyTo(ctx, writer, query, args...)
+	tag, err := ls.CopyTo(ctx, writer, query, args...)
 	if err != nil {
 		return fmt.Errorf("copying to stdout: %w", err)
 	}

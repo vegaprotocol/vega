@@ -56,7 +56,7 @@ func NewGameScores(connectionSource *ConnectionSource) *GameScores {
 
 func (gs *GameScores) AddPartyScore(ctx context.Context, r entities.GamePartyScore) error {
 	defer metrics.StartSQLQuery("GameScores", "AddPartyScores")()
-	_, err := gs.Connection.Exec(ctx,
+	_, err := gs.Exec(ctx,
 		`INSERT INTO game_party_scores(
 			game_id,
 			team_id,
@@ -78,7 +78,7 @@ func (gs *GameScores) AddPartyScore(ctx context.Context, r entities.GamePartySco
 
 func (gs *GameScores) AddTeamScore(ctx context.Context, r entities.GameTeamScore) error {
 	defer metrics.StartSQLQuery("GameScores", "AddPartyScores")()
-	_, err := gs.Connection.Exec(ctx,
+	_, err := gs.Exec(ctx,
 		`INSERT INTO game_team_scores(
 			game_id,
 			team_id,
@@ -159,7 +159,7 @@ func (gs *GameScores) ListPartyScores(
 	sPgs := []scannedPartyGameScore{}
 	defer metrics.StartSQLQuery("GameScores", "ListPartyScores")()
 
-	if err = pgxscan.Select(ctx, gs.Connection, &sPgs, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, gs.ConnectionSource, &sPgs, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying game party scores: %w", err)
 	}
 
@@ -315,7 +315,7 @@ func (gs *GameScores) ListTeamScores(
 	tgs := []entities.GameTeamScore{}
 	defer metrics.StartSQLQuery("GameScores", "ListTeamScores")()
 
-	if err = pgxscan.Select(ctx, gs.Connection, &tgs, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, gs.ConnectionSource, &tgs, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying game team scores: %w", err)
 	}
 

@@ -42,7 +42,7 @@ func NewBalances(connectionSource *ConnectionSource) *Balances {
 
 func (bs *Balances) Flush(ctx context.Context) ([]entities.AccountBalance, error) {
 	defer metrics.StartSQLQuery("Balances", "Flush")()
-	return bs.batcher.Flush(ctx, bs.Connection)
+	return bs.batcher.Flush(ctx, bs.ConnectionSource)
 }
 
 // Add inserts a row to the balance table. If there's already a balance for this
@@ -99,7 +99,7 @@ func (bs *Balances) Query(ctx context.Context, filter entities.AccountFilter, da
 	}
 
 	defer metrics.StartSQLQuery("Balances", "Query")()
-	rows, err := bs.Connection.Query(ctx, query, args...)
+	rows, err := bs.ConnectionSource.Query(ctx, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying balances: %w", err)
 	}

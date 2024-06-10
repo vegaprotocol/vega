@@ -63,7 +63,7 @@ func NewReferralSets(connectionSource *ConnectionSource) *ReferralSets {
 
 func (rs *ReferralSets) AddReferralSet(ctx context.Context, referralSet *entities.ReferralSet) error {
 	defer metrics.StartSQLQuery("ReferralSets", "AddReferralSet")()
-	_, err := rs.Connection.Exec(
+	_, err := rs.Exec(
 		ctx,
 		"INSERT INTO referral_sets(id, referrer, created_at, updated_at, vega_time) VALUES ($1, $2, $3, $4, $5)",
 		referralSet.ID,
@@ -78,7 +78,7 @@ func (rs *ReferralSets) AddReferralSet(ctx context.Context, referralSet *entitie
 
 func (rs *ReferralSets) RefereeJoinedReferralSet(ctx context.Context, referee *entities.ReferralSetReferee) error {
 	defer metrics.StartSQLQuery("ReferralSets", "AddReferralSetReferee")()
-	_, err := rs.Connection.Exec(
+	_, err := rs.Exec(
 		ctx,
 		"INSERT INTO referral_set_referees(referral_set_id, referee, joined_at, at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5)",
 		referee.ReferralSetID,
@@ -127,7 +127,7 @@ FROM referral_sets
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, rs.Connection, &sets, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, rs.ConnectionSource, &sets, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -144,7 +144,7 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 		refereesStats = []*eventspb.RefereeStats{}
 	}
 
-	_, err := rs.Connection.Exec(
+	_, err := rs.Exec(
 		ctx,
 		`INSERT INTO referral_set_stats(
 			   set_id,
@@ -227,7 +227,7 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, rs.Connection, &stats, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, rs.ConnectionSource, &stats, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -273,7 +273,7 @@ func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSet
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, rs.Connection, &referees, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, rs.ConnectionSource, &referees, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 

@@ -60,7 +60,7 @@ func (ml *MarginLevels) Add(marginLevel entities.MarginLevels) error {
 
 func (ml *MarginLevels) Flush(ctx context.Context) ([]entities.MarginLevels, error) {
 	defer metrics.StartSQLQuery("MarginLevels", "Flush")()
-	return ml.batcher.Flush(ctx, ml.Connection)
+	return ml.batcher.Flush(ctx, ml.ConnectionSource)
 }
 
 func buildAccountWhereClause(partyID, marketID string) (string, []interface{}) {
@@ -108,7 +108,7 @@ func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Cont
 	}
 	var marginLevels []entities.MarginLevels
 
-	if err = pgxscan.Select(ctx, ml.Connection, &marginLevels, query, bindVars...); err != nil {
+	if err = pgxscan.Select(ctx, ml.ConnectionSource, &marginLevels, query, bindVars...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 
@@ -120,7 +120,7 @@ func (ml *MarginLevels) GetByTxHash(ctx context.Context, txHash entities.TxHash)
 	var marginLevels []entities.MarginLevels
 	query := fmt.Sprintf(`SELECT %s FROM margin_levels WHERE tx_hash = $1`, sqlMarginLevelColumns)
 
-	if err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, txHash); err != nil {
+	if err := pgxscan.Select(ctx, ml.ConnectionSource, &marginLevels, query, txHash); err != nil {
 		return nil, err
 	}
 

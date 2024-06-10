@@ -59,7 +59,7 @@ func (so *StopOrders) Add(o entities.StopOrder) error {
 
 func (so *StopOrders) Flush(ctx context.Context) ([]entities.StopOrder, error) {
 	defer metrics.StartSQLQuery("StopOrders", "Flush")()
-	return so.batcher.Flush(ctx, so.Connection)
+	return so.batcher.Flush(ctx, so.ConnectionSource)
 }
 
 func (so *StopOrders) GetStopOrder(ctx context.Context, orderID string) (entities.StopOrder, error) {
@@ -68,7 +68,7 @@ func (so *StopOrders) GetStopOrder(ctx context.Context, orderID string) (entitie
 	id := entities.StopOrderID(orderID)
 	defer metrics.StartSQLQuery("StopOrders", "GetStopOrder")()
 	query := `select * from stop_orders_current_desc where id=$1`
-	err = pgxscan.Get(ctx, so.Connection, &order, query, id)
+	err = pgxscan.Get(ctx, so.ConnectionSource, &order, query, id)
 
 	return order, so.wrapE(err)
 }
@@ -115,7 +115,7 @@ func (so *StopOrders) queryWithPagination(ctx context.Context, query string, p e
 		return orders, pageInfo, err
 	}
 
-	err = pgxscan.Select(ctx, so.Connection, &orders, query, args...)
+	err = pgxscan.Select(ctx, so.ConnectionSource, &orders, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying stop orders: %w", err)
 	}

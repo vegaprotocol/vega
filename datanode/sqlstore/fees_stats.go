@@ -56,7 +56,7 @@ func NewFeesStats(src *ConnectionSource) *FeesStats {
 func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStats) error {
 	defer metrics.StartSQLQuery("FeesStats", "AddFeesStats")()
 
-	if _, err := rfs.Connection.Exec(
+	if _, err := rfs.Exec(
 		ctx,
 		`INSERT INTO fees_stats(
 			   market_id,
@@ -89,7 +89,7 @@ func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStat
 	for _, s := range partiesStats {
 		batcher.Add(s)
 	}
-	if _, err := batcher.Flush(ctx, rfs.Connection); err != nil {
+	if _, err := batcher.Flush(ctx, rfs.ConnectionSource); err != nil {
 		return err
 	}
 
@@ -130,7 +130,7 @@ func (rfs *FeesStats) StatsForParty(ctx context.Context, partyID entities.PartyI
 	)
 
 	var rows []feesStatsForPartyRow
-	if err := pgxscan.Select(ctx, rfs.Connection, &rows, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, rfs.ConnectionSource, &rows, query, args...); err != nil {
 		return nil, err
 	}
 
@@ -189,7 +189,7 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 
 	query = fmt.Sprintf("%s order by market_id, asset_id, epoch_seq desc", query)
 
-	if err = pgxscan.Select(ctx, rfs.Connection, &stats, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, rfs.ConnectionSource, &stats, query, args...); err != nil {
 		return nil, err
 	}
 

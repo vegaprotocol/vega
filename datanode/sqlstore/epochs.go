@@ -37,7 +37,7 @@ func NewEpochs(connectionSource *ConnectionSource) *Epochs {
 
 func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
 	defer metrics.StartSQLQuery("Epochs", "Add")()
-	_, err := es.Connection.Exec(ctx,
+	_, err := es.Exec(ctx,
 		`INSERT INTO epochs(
 			id,
 			start_time,
@@ -60,7 +60,7 @@ func (es *Epochs) GetAll(ctx context.Context) ([]entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "GetAll")()
 	epochs := []entities.Epoch{}
 	query := `SELECT * FROM current_epochs order by id, vega_time desc;`
-	err := pgxscan.Select(ctx, es.Connection, &epochs, query)
+	err := pgxscan.Select(ctx, es.ConnectionSource, &epochs, query)
 	return epochs, err
 }
 
@@ -69,7 +69,7 @@ func (es *Epochs) Get(ctx context.Context, ID uint64) (entities.Epoch, error) {
 	query := `SELECT * FROM current_epochs WHERE id = $1;`
 
 	epoch := entities.Epoch{}
-	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query, ID))
+	return epoch, es.wrapE(pgxscan.Get(ctx, es.ConnectionSource, &epoch, query, ID))
 }
 
 func (es *Epochs) GetByBlock(ctx context.Context, height uint64) (entities.Epoch, error) {
@@ -77,7 +77,7 @@ func (es *Epochs) GetByBlock(ctx context.Context, height uint64) (entities.Epoch
 	query := `SELECT * FROM current_epochs WHERE first_block <= $1 AND (last_block > $1 or last_block is NULL) ORDER BY id, vega_time desc;`
 
 	epoch := entities.Epoch{}
-	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query, height))
+	return epoch, es.wrapE(pgxscan.Get(ctx, es.ConnectionSource, &epoch, query, height))
 }
 
 func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
@@ -85,5 +85,5 @@ func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
 
 	epoch := entities.Epoch{}
 	defer metrics.StartSQLQuery("Epochs", "GetCurrent")()
-	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query))
+	return epoch, es.wrapE(pgxscan.Get(ctx, es.ConnectionSource, &epoch, query))
 }

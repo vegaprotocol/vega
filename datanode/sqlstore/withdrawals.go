@@ -62,7 +62,7 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 			ext=EXCLUDED.ext,
 			tx_hash=EXCLUDED.tx_hash`
 
-	if _, err := w.Connection.Exec(ctx, query,
+	if _, err := w.Exec(ctx, query,
 		withdrawal.ID,
 		withdrawal.PartyID,
 		withdrawal.Amount,
@@ -92,7 +92,7 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 		where id = $1
 		order by id, vega_time desc`
 
-	return withdrawal, w.wrapE(pgxscan.Get(ctx, w.Connection, &withdrawal, query, entities.WithdrawalID(withdrawalID)))
+	return withdrawal, w.wrapE(pgxscan.Get(ctx, w.ConnectionSource, &withdrawal, query, entities.WithdrawalID(withdrawalID)))
 }
 
 func (w *Withdrawals) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Withdrawal, error) {
@@ -104,7 +104,7 @@ func (w *Withdrawals) GetByTxHash(ctx context.Context, txHash entities.TxHash) (
 				ext, tx_hash, vega_time
 		FROM withdrawals WHERE tx_hash = $1`
 
-	err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, txHash)
+	err := pgxscan.Select(ctx, w.ConnectionSource, &withdrawals, query, txHash)
 	if err != nil {
 		return nil, w.wrapE(err)
 	}
@@ -137,7 +137,7 @@ func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, pagi
 	}
 
 	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
-	if err = pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, w.ConnectionSource, &withdrawals, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get withdrawals by party: %w", err)
 	}
 

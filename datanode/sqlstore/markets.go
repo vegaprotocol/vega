@@ -135,7 +135,7 @@ set
 	enable_tx_reordering=EXCLUDED.enable_tx_reordering;`, sqlMarketsColumns)
 
 	defer metrics.StartSQLQuery("Markets", "Upsert")()
-	if _, err := m.Connection.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
+	if _, err := m.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces, market.LpPriceRange,
 		market.LinearSlippageFactor, market.QuadraticSlippageFactor, market.ParentMarketID, market.InsurancePoolFraction,
@@ -189,7 +189,7 @@ order by id, vega_time desc
 `, getSelect())
 
 	defer metrics.StartSQLQuery("Markets", "GetByID")()
-	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.MarketID(marketID))
+	err := pgxscan.Get(ctx, m.ConnectionSource, &market, query, entities.MarketID(marketID))
 
 	if err == nil {
 		m.cache[marketID] = market
@@ -203,7 +203,7 @@ func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 
 	var markets []entities.Market
 	query := fmt.Sprintf(`%s where tx_hash = $1`, getSelect())
-	err := pgxscan.Select(ctx, m.Connection, &markets, query, txHash)
+	err := pgxscan.Select(ctx, m.ConnectionSource, &markets, query, txHash)
 
 	if err == nil {
 		m.cacheLock.Lock()
@@ -259,7 +259,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 		return markets, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &markets, query, args...); err != nil {
 		return markets, pageInfo, err
 	}
 
@@ -311,7 +311,7 @@ left join lineage s on l.successor_market_id = s.parent_id
 
 	query = fmt.Sprintf("%s %s", preQuery, query)
 
-	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &markets, query, args...); err != nil {
 		return nil, entities.PageInfo{}, m.wrapE(err)
 	}
 
@@ -330,7 +330,7 @@ left join lineage s on l.successor_market_id = s.parent_id
 
 	proposalsQuery := fmt.Sprintf(`select * from proposals_current where terms->'newMarket'->'changes'->'successor'->>'parentMarketId' in ('%s') order by vega_time, id`, strings.Join(parentMarketList, "', '"))
 
-	if err = pgxscan.Select(ctx, m.Connection, &proposals, proposalsQuery); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &proposals, proposalsQuery); err != nil {
 		return nil, entities.PageInfo{}, m.wrapE(err)
 	}
 

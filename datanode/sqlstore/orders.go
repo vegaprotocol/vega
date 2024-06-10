@@ -68,7 +68,7 @@ func NewOrders(connectionSource *ConnectionSource) *Orders {
 
 func (os *Orders) Flush(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "Flush")()
-	return os.batcher.Flush(ctx, os.Connection)
+	return os.batcher.Flush(ctx, os.ConnectionSource)
 }
 
 // Add inserts an order update row into the database if a row for this (block time, order id, version)
@@ -85,7 +85,7 @@ func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetAll")()
 	orders := []entities.Order{}
 	query := fmt.Sprintf("SELECT %s FROM orders", sqlOrderColumns)
-	err := pgxscan.Select(ctx, os.Connection, &orders, query)
+	err := pgxscan.Select(ctx, os.ConnectionSource, &orders, query)
 	return orders, err
 }
 
@@ -98,10 +98,10 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 	defer metrics.StartSQLQuery("Orders", "GetByOrderID")()
 	if version != nil && *version > 0 {
 		query := fmt.Sprintf("SELECT %s FROM orders_current_versions WHERE id=$1 and version=$2", sqlOrderColumns)
-		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID, version)
+		err = pgxscan.Get(ctx, os.ConnectionSource, &order, query, orderID, version)
 	} else {
 		query := fmt.Sprintf("SELECT %s FROM orders_current_desc WHERE id=$1", sqlOrderColumns)
-		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
+		err = pgxscan.Get(ctx, os.ConnectionSource, &order, query, orderID)
 	}
 
 	return order, os.wrapE(err)
@@ -135,7 +135,7 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	// so this is a more optimal way of querying the data.
 	query := fmt.Sprintf(`SELECT %s from orders_live WHERE market_id=$1 AND id IN (%s) order by id`, sqlOrderColumns, strings.Join(in, ", "))
 	orders := make([]entities.Order, 0, len(orderIDs))
-	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
+	err := pgxscan.Select(ctx, os.ConnectionSource, &orders, query, bind...)
 
 	return orders, os.wrapE(err)
 }
@@ -146,7 +146,7 @@ func (os *Orders) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	orders := []entities.Order{}
 	query := fmt.Sprintf(`SELECT %s FROM orders WHERE tx_hash=$1`, sqlOrderColumns)
 
-	err := pgxscan.Select(ctx, os.Connection, &orders, query, txHash)
+	err := pgxscan.Select(ctx, os.ConnectionSource, &orders, query, txHash)
 	if err != nil {
 		return nil, fmt.Errorf("querying orders: %w", err)
 	}
@@ -172,7 +172,7 @@ func (os *Orders) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 
 func (os *Orders) queryOrders(ctx context.Context, query string, args []interface{}) ([]entities.Order, error) {
 	orders := []entities.Order{}
-	err := pgxscan.Select(ctx, os.Connection, &orders, query, args...)
+	err := pgxscan.Select(ctx, os.ConnectionSource, &orders, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying orders: %w", err)
 	}
@@ -207,7 +207,7 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 	if err != nil {
 		return orders, pageInfo, err
 	}
-	err = pgxscan.Select(ctx, os.Connection, &orders, query, args...)
+	err = pgxscan.Select(ctx, os.ConnectionSource, &orders, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying orders: %w", err)
 	}
