@@ -44,9 +44,17 @@ Feature: vAMM rebasing when created or amended
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0.5         | 0.6                          | 1                             | 1.0                    |
 
+    And the oracle spec for settlement data filtering data from "0xCAFECAFE19" named "termination-oracle":
+      | property         | type         | binding         | decimals |
+      | prices.ETH.value | TYPE_INTEGER | settlement data | 0        |
+
+    And the oracle spec for trading termination filtering data from "0xCAFECAFE19" named "termination-oracle":
+      | property           | type         | binding             |
+      | trading.terminated | TYPE_BOOLEAN | trading termination |
+
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | termination-oracle     | 1e0                    | 0                         | SLA-22     |
 
     # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
@@ -60,6 +68,7 @@ Feature: vAMM rebasing when created or amended
       | party4 | USD   | 1000000 |
       | party5 | USD   | 1000000 |
       | vamm1  | USD   | 1000000 |
+      | vamm2  | USD   | 1000000 |
 
 
     And the parties place the following orders:
@@ -162,5 +171,30 @@ Feature: vAMM rebasing when created or amended
       | party2    | 100   | 50   | party1    | true   |
       | vamm1-id  | 99    | 103  | party1    | true   |
       | party2    | 99    | 47   | party1    | true   |
+
+
+  @VAMM
+  Scenario: AMM's cannot be submitted/amended/cancelled when a market is terminated
+  
+      When the oracles broadcast data signed with "0xCAFECAFE19":
+      | name               | value |
+      | trading.terminated | true  |
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | trading mode            |
+      | TRADING_MODE_NO_TRADING |
+
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee | error               |
+      | vamm2 | ETH/MAR22 | 100000  | 0.05    | 100  | 95          | 105         | 0.03         | trading not allowed |
+
+    Then the parties amend the following AMM:
+       | party  | market id | amount | slippage | base | lower bound | upper bound | upper leverage | error               |
+       | vamm1  | ETH/MAR22 | 20000  | 0.15     | 1010 | 910         | 1110        | 0.2            | trading not allowed |
+
+    Then the parties cancel the following AMM:
+       | party  | market id | method           | error               |
+       | party1 | ETH/MAR22 | METHOD_IMMEDIATE | trading not allowed |
+
     
    
