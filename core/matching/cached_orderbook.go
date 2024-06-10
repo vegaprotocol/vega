@@ -49,24 +49,13 @@ func (b *CachedOrderBook) LoadState(ctx context.Context, payload *types.Payload)
 		return providers, err
 	}
 
-	return providers, err
-}
-
-func (b *CachedOrderBook) OnStateLoaded(ctx context.Context) error {
-	// when a market is restored we call `GetMarketData` which fills this cache based on an unrestored orderbook,
-	// now we have restored we need to recalculate.
-	b.cache.Invalidate()
-
-	// if we are in an auction we need to build the IP&V structure.
-	// note that we need to do this after the positions engine has been restored since only then can the AMM's be at their true fair-price.
 	if b.auction {
-		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
-
+		b.cache.Invalidate()
 		b.log.Info("restoring orderbook cache for", logging.String("marketID", b.marketID))
 		b.GetIndicativePriceAndVolume()
 	}
 
-	return nil
+	return providers, err
 }
 
 func (b *CachedOrderBook) EnterAuction() []*types.Order {
