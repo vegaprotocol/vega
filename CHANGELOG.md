@@ -24,6 +24,7 @@
 - [10634](https://github.com/vegaprotocol/vega/issues/10634) - Add spam checks for orders/liquidity provision
 - [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
 - [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
+- [11266](https://github.com/vegaprotocol/vega/issues/11266) - Include derived parties rewards API
 
 ### 🐛 Fixes
 
