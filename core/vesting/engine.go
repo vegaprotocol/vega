@@ -212,9 +212,6 @@ func (e *Engine) GetSingleAndSummedRewardBonusMultipliers(party string) (Multipl
 		single, foundSingle := e.rewardBonusMultiplierCache[key]
 		if !foundSingle {
 			quantumBalanceForKey := e.c.GetAllVestingQuantumBalance(key)
-			if quantumBalanceForKey.IsZero() {
-				continue
-			}
 
 			single.QuantumBalance = quantumBalanceForKey
 			single.Multiplier = e.rewardBonusMultiplier(quantumBalanceForKey)

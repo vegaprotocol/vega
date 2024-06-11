@@ -2681,15 +2681,15 @@ func (m *MockParties) EXPECT() *MockPartiesMockRecorder {
 }
 
 // AssignDeriveKey mocks base method.
-func (m *MockParties) AssignDeriveKey(arg0 types.PartyID, arg1 string) {
+func (m *MockParties) AssignDeriveKey(arg0 context.Context, arg1 types.PartyID, arg2 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AssignDeriveKey", arg0, arg1)
+	m.ctrl.Call(m, "AssignDeriveKey", arg0, arg1, arg2)
 }
 
 // AssignDeriveKey indicates an expected call of AssignDeriveKey.
-func (mr *MockPartiesMockRecorder) AssignDeriveKey(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPartiesMockRecorder) AssignDeriveKey(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignDeriveKey", reflect.TypeOf((*MockParties)(nil).AssignDeriveKey), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignDeriveKey", reflect.TypeOf((*MockParties)(nil).AssignDeriveKey), arg0, arg1, arg2)
 }
 
 // MockDelayTransactionsTarget is a mock of DelayTransactionsTarget interface.

@@ -114,8 +114,8 @@ func TestAssigningDerivedKeys(t *testing.T) {
 	require.False(t, te.engine.CheckDerivedKeyOwnership(party1, "derivedKey1"))
 
 	// Assigning derived keys create profile if it doesn't exist
-	te.engine.AssignDeriveKey(party1, "derivedKey1")
-	te.engine.AssignDeriveKey(party1, "derivedKey2")
+	te.engine.AssignDeriveKey(ctx, party1, "derivedKey1")
+	te.engine.AssignDeriveKey(ctx, party1, "derivedKey2")
 
 	require.True(t, te.engine.CheckDerivedKeyOwnership(party1, "derivedKey1"))
 	require.True(t, te.engine.CheckDerivedKeyOwnership(party1, "derivedKey2"))
@@ -162,7 +162,7 @@ func TestAssigningDerivedKeys(t *testing.T) {
 	}))
 
 	// Assign key for party 2
-	te.engine.AssignDeriveKey(party2, "derivedKey3")
+	te.engine.AssignDeriveKey(ctx, party2, "derivedKey3")
 
 	// Attempt using alias from party 2.
 	require.Error(t, te.engine.UpdateProfile(ctx, party1, &commandspb.UpdatePartyProfile{
