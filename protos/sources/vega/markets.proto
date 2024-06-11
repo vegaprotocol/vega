@@ -410,6 +410,8 @@ message Market {
   CompositePriceConfiguration mark_price_configuration = 20;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 21;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 22;
 }
 
 // Time stamps for important times about creating, enacting etc the market

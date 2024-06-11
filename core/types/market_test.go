@@ -176,7 +176,8 @@ func TestMarketFromIntoProto(t *testing.T) {
 			SourceWeights:            []string{"0.2", "0.3", "0.4", "0.5"},
 			SourceStalenessTolerance: []string{"3h0m0s", "2s", "24h0m0s", "1h25m0s"},
 		},
-		TickSize: "1",
+		TickSize:                    "1",
+		EnableTransactionReordering: true,
 	}
 
 	domain, err := types.MarketFromProto(pMarket)

@@ -71,6 +71,10 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+type DummyDelayTarget struct{}
+
+func (*DummyDelayTarget) MarketDelayRequiredUpdated(marketID string, required bool) {}
+
 type DummyASVM struct{}
 
 func (DummyASVM) GetRewardsVestingMultiplier(_ string) num.Decimal {
@@ -211,6 +215,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.volumeDiscountProgram,
 			execsetup.banking,
 			execsetup.profilesEngine,
+			&DummyDelayTarget{},
 		),
 		execsetup.broker,
 	)

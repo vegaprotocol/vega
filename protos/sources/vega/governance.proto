@@ -107,6 +107,8 @@ message NewSpotMarketConfiguration {
   LiquidityFeeSettings liquidity_fee_settings = 8;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 9;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 10;
 }
 
 // Configuration for a new futures market on Vega
@@ -150,6 +152,8 @@ message NewMarketConfiguration {
   CompositePriceConfiguration mark_price_configuration = 15;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 16;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 17;
 }
 
 // New spot market on Vega
@@ -223,6 +227,8 @@ message UpdateMarketConfiguration {
   CompositePriceConfiguration mark_price_configuration = 11;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 12;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 13;
 }
 
 // Configuration to update a spot market on Vega
@@ -248,6 +254,8 @@ message UpdateSpotMarketConfiguration {
   string tick_size = 6;
   // Specifies the name and code of the spot instrument.
   UpdateSpotInstrumentConfiguration instrument = 7;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 8;
 }
 
 message UpdateSpotInstrumentConfiguration {

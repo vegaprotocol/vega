@@ -119,6 +119,8 @@ type Engine struct {
 	minHoldingQuantumMultiplier           num.Decimal
 
 	lock sync.RWMutex
+
+	delayTransactionsTarget common.DelayTransactionsTarget
 }
 
 // NewEngine takes stores and engines and returns
@@ -137,6 +139,7 @@ func NewEngine(
 	volumeDiscountService fee.VolumeDiscountService,
 	banking common.Banking,
 	parties common.Parties,
+	delayTransactionsTarget common.DelayTransactionsTarget,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -164,6 +167,7 @@ func NewEngine(
 		volumeDiscountService:         volumeDiscountService,
 		banking:                       banking,
 		parties:                       parties,
+		delayTransactionsTarget:       delayTransactionsTarget,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -566,6 +570,7 @@ func (e *Engine) UpdateSpotMarket(ctx context.Context, marketConfig *types.Marke
 	if err := mkt.Update(ctx, marketConfig); err != nil {
 		return err
 	}
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.publishUpdateMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return nil
 }
@@ -623,6 +628,7 @@ func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) e
 	if err := mkt.Update(ctx, marketConfig, e.oracle); err != nil {
 		return err
 	}
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.publishUpdateMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return nil
 }
@@ -707,6 +713,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 	}
 
 	e.lock.Lock()
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.futureMarkets[marketConfig.ID] = mkt
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
@@ -787,6 +794,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		return err
 	}
 	e.lock.Lock()
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.spotMarkets[marketConfig.ID] = mkt
 	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt

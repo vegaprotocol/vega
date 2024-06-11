@@ -52,6 +52,8 @@ const (
 	MarketLiquidityProvidersFeeCalculationTimeStep   = "market.liquidity.providersFeeCalculationTimeStep"
 	MarketLiquidityEquityLikeShareFeeFraction        = "market.liquidity.equityLikeShareFeeFraction"
 
+	MarketAggressiveOrderBlockDelay = "market.aggressiveOrderBlockDelay"
+
 	RewardAsset = "reward.asset"
 
 	// market proposal parameters.
@@ -311,6 +313,7 @@ var AllKeys = map[string]struct{}{
 	DefaultGas:                                                   {},
 	MinBlockCapacity:                                             {},
 	RewardMarketCreationQuantumMultiple:                          {},
+	MarketAggressiveOrderBlockDelay:                              {},
 	MarketMarginScalingFactors:                                   {},
 	MarketFeeFactorsMakerFee:                                     {},
 	MarketFeeFactorsInfrastructureFee:                            {},

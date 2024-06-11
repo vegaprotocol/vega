@@ -2730,6 +2730,9 @@ type Market {
 
   "The market minimum tick size"
   tickSize: String!
+  
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 """
@@ -4806,6 +4809,8 @@ type NewMarket {
   markPriceConfiguration: CompositePriceConfiguration!
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 type CompositePriceConfiguration {
@@ -4869,6 +4874,8 @@ type UpdateMarketConfiguration {
   markPriceConfiguration: CompositePriceConfiguration
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 type UpdateInstrumentConfiguration {
@@ -5098,6 +5105,8 @@ type NewSpotMarket {
   liquidityFeeSettings: LiquidityFeeSettings
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 "Update an existing spot market on Vega"
@@ -5132,6 +5141,8 @@ type UpdateSpotMarketConfiguration {
   liquidityFeeSettings: LiquidityFeeSettings
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 type LiquiditySLAParameters {

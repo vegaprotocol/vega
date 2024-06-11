@@ -18,10 +18,12 @@ package txcache
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -29,17 +31,49 @@ import (
 
 func NewTxCache(commander *nodewallets.Commander) *TxCache {
 	return &TxCache{
-		commander: commander,
+		commander:             commander,
+		marketToDelayRequired: map[string]bool{},
 	}
 }
 
 type TxCache struct {
-	commander *nodewallets.Commander
-	rtxs      [][]byte
+	commander   *nodewallets.Commander
+	heightToTxs map[uint64][][]byte
+	// network param
+	numBlocksToDelay uint64
+	// no need to include is snapshot - is updated when markets are created/updated/loaded from snapshot
+	marketToDelayRequired map[string]bool
 }
 
-func (t *TxCache) NewDelayedTransaction(ctx context.Context, delayed [][]byte) []byte {
-	payload := &commandspb.DelayedTransactionsWrapper{Transactions: delayed}
+// MarketDelayRequiredUpdated is called when the market configuration is created/updated with support for
+// transaction reordering.
+func (t *TxCache) MarketDelayRequiredUpdated(marketID string, required bool) {
+	t.marketToDelayRequired[marketID] = required
+}
+
+// IsDelayRequired returns true if the market supports transaction reordering.
+func (t *TxCache) IsDelayRequired(marketID string) bool {
+	delay, ok := t.marketToDelayRequired[marketID]
+	return ok && delay
+}
+
+// IsDelayRequiredAnyMarket returns true of there is any market that supports transaction reordering.
+func (t *TxCache) IsDelayRequiredAnyMarket() bool {
+	return len(t.marketToDelayRequired) > 0
+}
+
+// OnNumBlocksToDelayUpdated is called when the network parameter for the number of blocks to delay
+// transactions is updated.
+func (t *TxCache) OnNumBlocksToDelayUpdated(_ context.Context, blocks *num.Uint) error {
+	t.numBlocksToDelay = blocks.Uint64()
+	return nil
+}
+
+// NewDelayedTransaction creates a new delayed transaction with a target block height being the current
+// block being proposed + the configured network param indicating the target delay.
+func (t *TxCache) NewDelayedTransaction(ctx context.Context, delayed [][]byte, currentHeight uint64) []byte {
+	height := currentHeight + t.numBlocksToDelay
+	payload := &commandspb.DelayedTransactionsWrapper{Transactions: delayed, Height: height}
 	tx, err := t.commander.NewTransaction(ctx, txn.DelayedTransactionsWrapper, payload)
 	if err != nil {
 		panic(err.Error())
@@ -47,12 +81,16 @@ func (t *TxCache) NewDelayedTransaction(ctx context.Context, delayed [][]byte) [
 	return tx
 }
 
-func (t *TxCache) SetRawTxs(rtx [][]byte) {
-	t.rtxs = rtx
+func (t *TxCache) SetRawTxs(rtx [][]byte, height uint64) {
+	if rtx == nil {
+		delete(t.heightToTxs, height)
+	} else {
+		t.heightToTxs[height] = rtx
+	}
 }
 
-func (t *TxCache) GetRawTxs() [][]byte {
-	return t.rtxs
+func (t *TxCache) GetRawTxs(height uint64) [][]byte {
+	return t.heightToTxs[height]
 }
 
 func (t *TxCache) Namespace() types.SnapshotNamespace {
@@ -64,10 +102,21 @@ func (t *TxCache) Keys() []string {
 }
 
 func (t *TxCache) GetState(k string) ([]byte, []types.StateProvider, error) {
+	delays := make([]*snapshotpb.DelayedTx, 0, len(t.heightToTxs))
+	for delay, txs := range t.heightToTxs {
+		delays = append(delays, &snapshotpb.DelayedTx{
+			Height: delay,
+			Tx:     txs,
+		})
+	}
+	sort.Slice(delays, func(i, j int) bool {
+		return delays[i].Height < delays[j].Height
+	})
+
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_TxCache{
 			TxCache: &snapshotpb.TxCache{
-				Txs: t.rtxs,
+				Txs: delays,
 			},
 		},
 	}
@@ -86,7 +135,10 @@ func (t *TxCache) LoadState(_ context.Context, p *types.Payload) ([]types.StateP
 
 	switch data := p.Data.(type) {
 	case *types.PayloadTxCache:
-		t.rtxs = data.TxCache.Txs
+		t.heightToTxs = map[uint64][][]byte{}
+		for _, tx := range data.TxCache.Txs {
+			t.heightToTxs[tx.Height] = tx.Tx
+		}
 		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType

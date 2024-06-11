@@ -130,17 +130,19 @@ type UpdateSpotMarketConfiguration struct {
 	TickSize                  *num.Uint
 	Instrument                *InstrumentConfiguration
 	LiquidityFeeSettings      *LiquidityFeeSettings
+	EnableTxReordering        bool
 }
 
 func (n UpdateSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s) tickSize(%s)",
+		"metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s) tickSize(%s) enableTxReordering(%v)",
 		MetadataList(n.Metadata).String(),
 		stringer.PtrToString(n.PriceMonitoringParameters),
 		stringer.PtrToString(n.TargetStakeParameters),
 		stringer.ObjToString(n.RiskParameters),
 		stringer.PtrToString(n.SLAParams),
 		num.UintToString(n.TickSize),
+		n.EnableTxReordering,
 	)
 }
 
@@ -153,6 +155,7 @@ func (n UpdateSpotMarketConfiguration) DeepClone() *UpdateSpotMarketConfiguratio
 			Code: n.Instrument.Code,
 			Name: n.Instrument.Name,
 		},
+		EnableTxReordering: n.EnableTxReordering,
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.PriceMonitoringParameters != nil {
@@ -197,7 +200,8 @@ func (n UpdateSpotMarketConfiguration) IntoProto() *vegapb.UpdateSpotMarketConfi
 			Code: n.Instrument.Code,
 			Name: n.Instrument.Name,
 		},
-		LiquidityFeeSettings: liquidityFeeSettings,
+		LiquidityFeeSettings:        liquidityFeeSettings,
+		EnableTransactionReordering: n.EnableTxReordering,
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateSpotMarketConfiguration_Simple:
@@ -235,6 +239,7 @@ func UpdateSpotMarketConfigurationFromProto(p *vegapb.UpdateSpotMarketConfigurat
 			Name: p.Instrument.Name,
 			Code: p.Instrument.Code,
 		},
+		EnableTxReordering: p.EnableTransactionReordering,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
