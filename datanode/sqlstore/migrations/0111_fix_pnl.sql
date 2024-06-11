@@ -20,7 +20,7 @@ SET loss = updated_pnl.correct_loss,
     realised_pnl = updated_pnl.correct_pnl,
     pending_realised_pnl = updated_pnl.correct_ppnl
 FROM updated_pnl
-WHERE pu.party_id = updated_pnl.pid AND pu.market_id = updated_pnl.mid
+WHERE pu.party_id = updated_pnl.pid AND pu.market_id = updated_pnl.mid;
 
 -- +goose Down
 -- nothing
