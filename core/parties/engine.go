@@ -50,17 +50,13 @@ func (e *Engine) OnMinBalanceForUpdatePartyProfileUpdated(_ context.Context, min
 func (e *Engine) AssignDeriveKey(ctx context.Context, party types.PartyID, derivedKey string) {
 	if _, ok := e.profiles[party]; !ok {
 		e.profiles[party] = &types.PartyProfile{
-			PartyID: party,
-			// alias cannot be empty
-			Alias:       party.String(),
+			PartyID:     party,
 			Metadata:    map[string]string{},
 			DerivedKeys: map[string]struct{}{},
 		}
 	}
 
 	e.profiles[party].DerivedKeys[derivedKey] = struct{}{}
-
-	e.notifyProfileUpdate(ctx, e.profiles[party])
 }
 
 func (e *Engine) CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool {
