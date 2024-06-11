@@ -1,8 +1,7 @@
 package amm
 
 import (
-	"fmt"
-
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
@@ -16,40 +15,69 @@ type EstimatorMetrics struct {
 }
 
 func EstimateBounds(
-	basePrice, upperPrice, lowerPrice *num.Uint, leverageUpper, leverageLower *num.Decimal, commitment *num.Uint,
+	basePrice, upperPrice, lowerPrice *num.Uint, leverageUpper, leverageLower num.Decimal, commitment *num.Uint,
 ) EstimatorMetrics {
+	// FS = market sided risk factor
+	rfs := &types.RiskFactor{
+		Short: num.DecimalOne(),
+		Long:  num.DecimalOne(),
+	}
+	// FL = market's linear slippage
+	linearSlippage := num.DecimalOne()
+	// Fi = market's initial margin factor
+	sfs := &types.ScalingFactors{
+		InitialMargin: num.DecimalOne(),
+	}
+
 	sqrter := NewSqrter()
-	lu := liquidityUnit(sqrter, upperPrice, lowerPrice)
-	aep := averageEntryPrice(sqrter, lu, upperPrice)
+	luUpperRange := LiquidityUnit(sqrter, upperPrice, basePrice)
+	luLowerRange := LiquidityUnit(sqrter, basePrice, lowerPrice)
 
-	fmt.Println("lu", lu, aep)
+	aepUpperRange := AverageEntryPrice(sqrter, luUpperRange, upperPrice)
+	aepLowerRange := AverageEntryPrice(sqrter, luLowerRange, basePrice)
 
-	return EstimatorMetrics{}
-}
+	rfShortUpper := RiskFactor(leverageUpper, rfs.Short, linearSlippage, sfs.InitialMargin)
+	rfLongLower := RiskFactor(leverageLower, rfs.Long, linearSlippage, sfs.InitialMargin)
 
-// Rf = min(Lb, 1 / (Fs + Fl) * Fi)
-func riskFactor(sqrter *Sqrter, lu num.Decimal, upperPrice, lowerPrice *num.Uint) num.Decimal {
-	return lu
-}
+	commitmentDecimal := commitment.ToDecimal()
 
-// Pa = Lu * sqrt(pu) * (1 - Lu / (Lu + sqrt(pu)))
-func averageEntryPrice(sqrter *Sqrter, lu num.Decimal, upperPrice *num.Uint) num.Decimal {
-	upperSquared := sqrter.sqrt(upperPrice)
-	// (1 - Lu / (Lu + sqrt(pu)))
-	oneSubLuDivLuWithUpSquared := num.DecimalOne().Sub(lu).Div(
-		lu.Add(upperSquared),
-	)
+	positionSizeAtUpperBound := PositionAtBound(rfShortUpper, commitmentDecimal, basePrice.ToDecimal(), aepUpperRange)
+	positionSizeAtLowerBound := PositionAtBound(rfLongLower, commitmentDecimal, lowerPrice.ToDecimal(), aepLowerRange)
 
-	// Lu * sqrt(pu) * (1 - Lu/(Lu+sqrt(pu)))
-	return lu.Mul(upperSquared).Mul(oneSubLuDivLuWithUpSquared)
+	return EstimatorMetrics{
+		PositionSizeAtUpperBound: positionSizeAtUpperBound,
+		PositionSizeAtLowerBound: positionSizeAtLowerBound,
+	}
 }
 
 // Lu = (sqrt(pu) * sqrt(pl)) / (sqrt(pu) - sqrt(pl))
-func liquidityUnit(sqrter *Sqrter, upperPrice, lowerPrice *num.Uint) num.Decimal {
-	upperSquared := sqrter.sqrt(upperPrice)
-	lowerSquared := sqrter.sqrt(lowerPrice)
+func LiquidityUnit(sqrter *Sqrter, pu, pl *num.Uint) num.Decimal {
+	sqrtPu := sqrter.sqrt(pu)
+	sqrtPl := sqrter.sqrt(pl)
 
-	return upperSquared.Mul(lowerSquared).Div(
-		upperSquared.Sub(lowerSquared),
+	return sqrtPu.Mul(sqrtPl).Div(sqrtPu.Sub(sqrtPl))
+}
+
+// Rf = min(Lb, 1 / (Fs + Fl) * Fi)
+func RiskFactor(lb, fs, fl, fi num.Decimal) num.Decimal {
+	b := num.DecimalOne().Div(fs.Add(fl).Mul(fi))
+	return num.MinD(lb, b)
+}
+
+// Pa = Lu * sqrt(pu) * (1 - (Lu / (Lu + sqrt(pu))))
+func AverageEntryPrice(sqrter *Sqrter, lu num.Decimal, pu *num.Uint) num.Decimal {
+	sqrtPu := sqrter.sqrt(pu)
+	// (1 - Lu / (Lu + sqrt(pu)))
+	oneSubLuDivLuWithUpSquared := num.DecimalOne().Sub(lu.Div(lu.Add(sqrtPu)))
+	return lu.Mul(sqrtPu).Mul(oneSubLuDivLuWithUpSquared)
+}
+
+// Pvl = rf * b / (pl * (1 - rf) + rf * pa)
+func PositionAtBound(rf, b, pl, pa num.Decimal) num.Decimal {
+	oneSubRf := num.DecimalOne().Sub(rf)
+	rfMulPa := rf.Mul(pa)
+
+	return rf.Mul(b).Div(
+		pl.Mul(oneSubRf).Add(rfMulPa),
 	)
 }
