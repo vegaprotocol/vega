@@ -80,7 +80,7 @@ http:
     - selector: datanode.api.v2.TradingDataService.GetPartyActivityStreak
       get: "/api/v2/party/activity/streak/{party_id}"
     - selector: datanode.api.v2.TradingDataService.GetPartyVestingStats
-      get: "/api/v2/"party/vesting/stats/{party_id}"
+      get: "/api/v2/party/vesting/stats/{party_id}"
     - selector: datanode.api.v2.TradingDataService.GetParty
       get: "/api/v2/party/{party_id}"
     - selector: datanode.api.v2.TradingDataService.ListParties
