@@ -242,7 +242,7 @@ type Banking interface {
 }
 
 type Parties interface {
-	AssignDeriveKey(party types.PartyID, derivedKey string)
+	AssignDeriveKey(ctx context.Context, party types.PartyID, derivedKey string)
 }
 
 type LiquidityEngine interface {

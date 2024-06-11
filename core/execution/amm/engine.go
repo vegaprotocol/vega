@@ -697,7 +697,7 @@ func (e *Engine) Confirm(
 
 	e.add(pool)
 	e.sendUpdate(ctx, pool)
-	e.parties.AssignDeriveKey(types.PartyID(pool.owner), pool.AMMParty)
+	e.parties.AssignDeriveKey(ctx, types.PartyID(pool.owner), pool.AMMParty)
 }
 
 // Amend takes the details of an amendment to an AMM and returns a copy of that pool with the updated curves along with the current pool.

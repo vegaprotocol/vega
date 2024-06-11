@@ -728,7 +728,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
 	parties := cmocks.NewMockParties(ctrl)
-	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any()).AnyTimes()
+	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	eng := New(logging.NewTestLogger(), broker, col, marketID, assetID, pos, num.DecimalOne(), num.DecimalOne(), mat, parties)
 

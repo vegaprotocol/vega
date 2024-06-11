@@ -151,6 +151,7 @@ func (e *Engine) OnRewardVestingMinimumTransferUpdate(_ context.Context, minimum
 
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
+		e.clearMultiplierCache()
 		e.moveLocked()
 		e.distributeVested(ctx)
 		e.broadcastVestingStatsUpdate(ctx, epoch.Seq)
@@ -212,9 +213,6 @@ func (e *Engine) GetSingleAndSummedRewardBonusMultipliers(party string) (Multipl
 		single, foundSingle := e.rewardBonusMultiplierCache[key]
 		if !foundSingle {
 			quantumBalanceForKey := e.c.GetAllVestingQuantumBalance(key)
-			if quantumBalanceForKey.IsZero() {
-				continue
-			}
 
 			single.QuantumBalance = quantumBalanceForKey
 			single.Multiplier = e.rewardBonusMultiplier(quantumBalanceForKey)

@@ -22,7 +22,7 @@
 - [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
 - [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
 - [10634](https://github.com/vegaprotocol/vega/issues/10634) - Add spam checks for orders/liquidity provision
-- [11337](https://github.com/vegaprotocol/vega/issues/11337) - Enhance transaction reordering with per market control and configurable delay. 
+- [11337](https://github.com/vegaprotocol/vega/issues/11337) - Enhance transaction reordering with per market control and configurable delay.
 - [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
 - [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
 - [11266](https://github.com/vegaprotocol/vega/issues/11266) - Include derived parties rewards API
@@ -36,6 +36,8 @@
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
 - [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units.
 - [11319](https://github.com/vegaprotocol/vega/issues/11319) - Do not leak Ethereum client secrets in the logs.
+- [11336](https://github.com/vegaprotocol/vega/issues/11336) - Add support for decay factor in governance recurring transfers and report the proposal amount rather than 0 when the proposal gets enacted.
+- [11368](https://github.com/vegaprotocol/vega/issues/11368) - Add support for update vesting stats in REST API and fix summing the quantum balance for vesting stats.
 
 ## 0.76.1
 
