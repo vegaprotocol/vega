@@ -5423,6 +5423,10 @@ func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) 
 }
 
 func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, deterministicID string) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -5492,6 +5496,10 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 }
 
 func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, deterministicID string) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -5549,6 +5557,10 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 }
 
 func (m *Market) CancelAMM(ctx context.Context, cancel *types.CancelAMM, deterministicID string) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
 	ammParty, err := m.amm.GetAMMParty(cancel.Party)
 	if err != nil {
 		return err
