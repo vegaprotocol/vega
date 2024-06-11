@@ -151,6 +151,7 @@ func (e *Engine) OnRewardVestingMinimumTransferUpdate(_ context.Context, minimum
 
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
+		e.clearMultiplierCache()
 		e.moveLocked()
 		e.distributeVested(ctx)
 		e.broadcastVestingStatsUpdate(ctx, epoch.Seq)
