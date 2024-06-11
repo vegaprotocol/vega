@@ -64,6 +64,11 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 }
 
+func (m *Market) OnMinimalMarginQuantumMultipleUpdate(multiplier num.Decimal) error {
+	m.minMaintenanceMarginQuantumMultiplier = multiplier
+	return nil
+}
+
 func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
 	m.marketValueWindowLength = d
 }

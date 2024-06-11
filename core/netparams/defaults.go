@@ -67,6 +67,9 @@ var (
 
 func defaultNetParams() map[string]value {
 	m := map[string]value{
+		MinimalMarginQuantumMultiple:  NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+		MinimalHoldingQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+
 		// spots
 		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("1"),
 

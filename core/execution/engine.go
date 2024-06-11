@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -113,7 +114,11 @@ type Engine struct {
 	isSuccessor     map[string]string
 	successorWindow time.Duration
 	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
-	skipRestoreSuccessors map[string]struct{}
+	skipRestoreSuccessors                 map[string]struct{}
+	minMaintenanceMarginQuantumMultiplier num.Decimal
+	minHoldingQuantumMultiplier           num.Decimal
+
+	lock sync.RWMutex
 
 	delayTransactionsTarget common.DelayTransactionsTarget
 }
@@ -706,12 +711,14 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		)
 		return err
 	}
+
+	e.lock.Lock()
 	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.futureMarkets[marketConfig.ID] = mkt
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
-
+	e.lock.Unlock()
 	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt, false)
 }
 
@@ -786,12 +793,13 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		)
 		return err
 	}
+	e.lock.Lock()
 	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.spotMarkets[marketConfig.ID] = mkt
 	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
-
+	e.lock.Unlock()
 	e.collateral.CreateSpotMarketAccounts(ctx, marketConfig.ID, quoteAsset)
 
 	if err := e.propagateSpotInitialNetParams(ctx, mkt, false); err != nil {
@@ -803,6 +811,8 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 
 func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	delete(e.allMarkets, mktID)
 	for i, mkt := range e.allMarketsCpy {
 		if mkt.GetID() == mktID {
@@ -1482,6 +1492,48 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 	}
 
 	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
+}
+
+func (e *Engine) OnMinimalMarginQuantumMultipleUpdate(_ context.Context, multiplier num.Decimal) error {
+	e.minMaintenanceMarginQuantumMultiplier = multiplier
+	for _, mkt := range e.futureMarketsCpy {
+		mkt.OnMinimalMarginQuantumMultipleUpdate(multiplier)
+	}
+	return nil
+}
+
+func (e *Engine) OnMinimalHoldingQuantumMultipleUpdate(_ context.Context, multiplier num.Decimal) error {
+	e.minHoldingQuantumMultiplier = multiplier
+	for _, mkt := range e.spotMarketsCpy {
+		mkt.OnMinimalHoldingQuantumMultipleUpdate(multiplier)
+	}
+	return nil
+}
+
+func (e *Engine) CheckCanSubmitOrderOrLiquidityCommitment(party, market string) error {
+	if len(market) == 0 {
+		return e.collateral.CheckOrderSpamAllMarkets(party)
+	}
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	mkt, ok := e.allMarkets[market]
+	if !ok {
+		return fmt.Errorf("market does not exist")
+	}
+	assets := mkt.GetAssets()
+	return e.collateral.CheckOrderSpam(party, market, assets)
+}
+
+func (e *Engine) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string) error {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	if mkt := e.allMarkets[orderSubmission.MarketID]; mkt == nil {
+		return types.ErrInvalidMarketID
+	}
+	if ftr := e.futureMarkets[orderSubmission.MarketID]; ftr != nil {
+		return ftr.CheckOrderSubmissionForSpam(orderSubmission, party, e.minMaintenanceMarginQuantumMultiplier)
+	}
+	return e.spotMarkets[orderSubmission.MarketID].CheckOrderSubmissionForSpam(orderSubmission, party, e.minHoldingQuantumMultiplier)
 }
 
 func (e *Engine) GetFillPriceForMarket(marketID string, volume uint64, side types.Side) (*num.Uint, error) {

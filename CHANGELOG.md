@@ -21,6 +21,7 @@
 - [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
 - [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
 - [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
+- [10634](https://github.com/vegaprotocol/vega/issues/10634) - Add spam checks for orders/liquidity provision
 - [11337](https://github.com/vegaprotocol/vega/issues/11337) - Enhance transaction reordering with per market control and configurable delay. 
 - [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
 - [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API

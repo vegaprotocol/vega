@@ -251,6 +251,34 @@ func (mr *MockCollateralMockRecorder) CanCoverBond(arg0, arg1, arg2, arg3 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanCoverBond", reflect.TypeOf((*MockCollateral)(nil).CanCoverBond), arg0, arg1, arg2, arg3)
 }
 
+// CheckOrderSpam mocks base method.
+func (m *MockCollateral) CheckOrderSpam(arg0, arg1 string, arg2 []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckOrderSpam", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckOrderSpam indicates an expected call of CheckOrderSpam.
+func (mr *MockCollateralMockRecorder) CheckOrderSpam(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckOrderSpam", reflect.TypeOf((*MockCollateral)(nil).CheckOrderSpam), arg0, arg1, arg2)
+}
+
+// CheckOrderSpamAllMarkets mocks base method.
+func (m *MockCollateral) CheckOrderSpamAllMarkets(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckOrderSpamAllMarkets", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckOrderSpamAllMarkets indicates an expected call of CheckOrderSpamAllMarkets.
+func (mr *MockCollateralMockRecorder) CheckOrderSpamAllMarkets(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckOrderSpamAllMarkets", reflect.TypeOf((*MockCollateral)(nil).CheckOrderSpamAllMarkets), arg0)
+}
+
 // ClearInsurancepool mocks base method.
 func (m *MockCollateral) ClearInsurancepool(arg0 context.Context, arg1, arg2 string, arg3 bool) ([]*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()

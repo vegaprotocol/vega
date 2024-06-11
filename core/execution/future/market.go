@@ -80,7 +80,8 @@ type Market struct {
 	closingAt   time.Time
 	timeService common.TimeService
 
-	mu sync.Mutex
+	mu            sync.RWMutex
+	markPriceLock sync.RWMutex
 
 	lastTradedPrice *num.Uint
 	priceFactor     num.Decimal
@@ -123,9 +124,10 @@ type Market struct {
 	lastMidBuyPrice  *num.Uint
 	lastMidSellPrice *num.Uint
 
-	bondPenaltyFactor       num.Decimal
-	lastMarketValueProxy    num.Decimal
-	marketValueWindowLength time.Duration
+	bondPenaltyFactor                     num.Decimal
+	lastMarketValueProxy                  num.Decimal
+	marketValueWindowLength               time.Duration
+	minMaintenanceMarginQuantumMultiplier num.Decimal
 
 	// Liquidity Fee
 	feeSplitter  *common.FeeSplitter
@@ -536,6 +538,10 @@ func (m *Market) BeginBlock(ctx context.Context) {
 	if err != nil {
 		m.log.Panic("failed to get bonus distribution account", logging.Error(err))
 	}
+}
+
+func (m *Market) GetAssets() []string {
+	return []string{m.settlementAsset}
 }
 
 // GetPartiesStats is called at the end of the epoch, only once to
@@ -1133,7 +1139,8 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	// if it's time for mtm, let's do it
 	if (m.nextMTM.IsZero() || !m.nextMTM.After(t)) && !m.as.InAuction() {
 		prevMarkPrice := m.markPriceCalculator.GetPrice()
-		if _, err := m.markPriceCalculator.CalculateMarkPrice(
+		m.markPriceLock.Lock()
+		_, err := m.markPriceCalculator.CalculateMarkPrice(
 			ctx,
 			m.pMonitor,
 			m.as,
@@ -1144,7 +1151,9 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.mkt.LinearSlippageFactor,
 			m.risk.GetRiskFactors().Short,
 			m.risk.GetRiskFactors().Long,
-			true, false); err != nil {
+			true, false)
+		m.markPriceLock.Unlock()
+		if err != nil {
 			// start the  monitoring auction if required
 			if m.as.AuctionStart() {
 				m.enterAuction(ctx)
@@ -1158,7 +1167,6 @@ func (m *Market) BlockEnd(ctx context.Context) {
 				m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
 			}
 		}
-
 		m.nextMTM = t.Add(m.mtmDelta)
 
 		// mark price mustn't be zero, except for capped futures, where a zero price may well be possible
@@ -1714,6 +1722,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	t := m.timeService.GetTimeNow().UnixNano()
 
 	m.markPriceCalculator.SetBookPriceAtTimeT(m.lastTradedPrice, t)
+	m.markPriceLock.Lock()
 	if _, err := m.markPriceCalculator.CalculateMarkPrice(
 		ctx,
 		m.pMonitor,
@@ -1736,7 +1745,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			m.enterAuction(ctx)
 		}
 	}
-
+	m.markPriceLock.Unlock()
 	if wasOpeningAuction && !m.as.IsOpeningAuction() && m.getCurrentMarkPrice().IsZero() {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 		m.pMonitor.ResetPriceHistory(m.lastTradedPrice)
@@ -3818,6 +3827,10 @@ func (m *Market) amendOrder(
 		return nil, nil, err
 	}
 
+	if err := m.checkOrderAmendForSpam(amendedOrder); err != nil {
+		return nil, nil, err
+	}
+
 	if orderAmendment.Price != nil && amendedOrder.OriginalPrice != nil {
 		if err = m.validateTickSize(amendedOrder.OriginalPrice); err != nil {
 			return nil, nil, err
@@ -4089,7 +4102,6 @@ func (m *Market) validateOrderAmendment(
 		// We cannot amend from a GFA/GFN orders
 		return types.OrderErrorCannotAmendFromGFAOrGFN
 	}
-
 	if order.PeggedOrder == nil {
 		// We cannot change a pegged orders details on a non pegged order
 		if amendment.PeggedOffset != nil ||
@@ -4630,6 +4642,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 			}()
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
+			m.markPriceLock.Lock()
 			m.markPriceCalculator.CalculateMarkPrice(
 				ctx,
 				m.pMonitor,
@@ -4643,6 +4656,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				m.risk.GetRiskFactors().Long,
 				false,
 				false)
+			m.markPriceLock.Unlock()
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(
@@ -5045,6 +5059,8 @@ func (m *Market) getCurrentMarkPriceForMargin() *num.Uint {
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {
+	m.markPriceLock.RLock()
+	defer m.markPriceLock.RUnlock()
 	if m.markPriceCalculator.GetPrice() == nil {
 		return num.UintZero()
 	}
@@ -5225,6 +5241,77 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 	}
 
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
+}
+
+func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+	rf := num.DecimalOne()
+
+	factor := m.mkt.LinearSlippageFactor
+	if m.risk.IsRiskFactorInitialised() {
+		if order.Side == types.SideBuy {
+			rf = m.risk.GetRiskFactors().Long
+		} else {
+			rf = m.risk.GetRiskFactors().Short
+		}
+	}
+	var price *num.Uint
+	if order.PeggedOrder == nil {
+		price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
+	} else {
+		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		if order.Side == types.SideBuy {
+			priceInMarket.AddSum(order.PeggedOrder.Offset)
+		} else {
+			priceInMarket = priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
+		}
+		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	}
+	margins := num.UintZero().Mul(price, num.NewUint(order.TrueRemaining())).ToDecimal().Div(m.positionFactor)
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
+	if err != nil {
+		return err
+	}
+	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(m.minMaintenanceMarginQuantumMultiplier.Mul(assetQuantum)) {
+		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
+	}
+	return nil
+}
+
+func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	rf := num.DecimalOne()
+
+	factor := m.mkt.LinearSlippageFactor
+	if m.risk.IsRiskFactorInitialised() {
+		if orderSubmission.Side == types.SideBuy {
+			rf = m.risk.GetRiskFactors().Long
+		} else {
+			rf = m.risk.GetRiskFactors().Short
+		}
+	}
+
+	var price *num.Uint
+	if orderSubmission.PeggedOrder == nil {
+		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
+	} else {
+		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		if orderSubmission.Side == types.SideBuy {
+			priceInMarket.AddSum(orderSubmission.PeggedOrder.Offset)
+		} else {
+			priceInMarket = priceInMarket.Sub(priceInMarket, orderSubmission.PeggedOrder.Offset)
+		}
+		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	}
+
+	margins := num.UintZero().Mul(price, num.NewUint(orderSubmission.Size)).ToDecimal().Div(m.positionFactor)
+
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
+	if err != nil {
+		return err
+	}
+	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
+		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
+	}
+	return nil
 }
 
 func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {

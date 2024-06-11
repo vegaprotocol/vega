@@ -70,7 +70,8 @@ type Market struct {
 	closingAt   time.Time
 	timeService common.TimeService
 
-	mu sync.Mutex
+	mu            sync.RWMutex
+	markPriceLock sync.RWMutex
 
 	lastTradedPrice *num.Uint
 	markPrice       *num.Uint
@@ -109,8 +110,9 @@ type Market struct {
 	lastMidBuyPrice  *num.Uint
 	lastMidSellPrice *num.Uint
 
-	lastMarketValueProxy    num.Decimal
-	marketValueWindowLength time.Duration
+	lastMarketValueProxy        num.Decimal
+	marketValueWindowLength     time.Duration
+	minHoldingQuantumMultiplier num.Decimal
 
 	// Liquidity Fee
 	feeSplitter                *common.FeeSplitter
@@ -261,6 +263,10 @@ func NewMarket(
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	return market, nil
+}
+
+func (m *Market) GetAssets() []string {
+	return []string{m.baseAsset, m.quoteAsset}
 }
 
 func (m *Market) IsOpeningAuction() bool {
@@ -676,7 +682,9 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	if !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
 		m.pMonitor.CheckPrice(ctx, m.as, mp, true, true)
 		if !m.as.InAuction() && !m.as.AuctionStart() {
+			m.markPriceLock.Lock()
 			m.markPrice = mp
+			m.markPriceLock.Unlock()
 			m.lastTradedPrice = mp.Clone()
 			m.hasTraded = false
 		}
@@ -963,7 +971,9 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 	previousMarkPrice := m.getCurrentMarkPrice()
 	// set the mark price here so that margins checks for special orders use the correct value
+	m.markPriceLock.Lock()
 	m.markPrice = m.getLastTradedPrice()
+	m.markPriceLock.Unlock()
 
 	m.checkForReferenceMoves(ctx, true)
 	if !m.as.InAuction() {
@@ -972,7 +982,9 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
 	} else {
 		// revert to old mark price if we're not leaving the auction after all
+		m.markPriceLock.Lock()
 		m.markPrice = previousMarkPrice
+		m.markPriceLock.Unlock()
 	}
 }
 
@@ -2050,6 +2062,10 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, nil, err
 	}
 
+	if err := m.checkOrderAmendForSpam(amendedOrder); err != nil {
+		return nil, nil, err
+	}
+
 	if orderAmendment.Price != nil && amendedOrder.OriginalPrice != nil {
 		if err = m.validateTickSize(amendedOrder.OriginalPrice); err != nil {
 			return nil, nil, err
@@ -2827,6 +2843,8 @@ func (m *Market) GetTotalLPShapeCount() uint64 {
 
 // getCurrentMarkPrice returns the current mark price.
 func (m *Market) getCurrentMarkPrice() *num.Uint {
+	m.markPriceLock.RLock()
+	defer m.markPriceLock.RUnlock()
 	if m.markPrice == nil {
 		return num.UintZero()
 	}
@@ -3193,7 +3211,9 @@ func scaleQuoteQuantityToAssetDP(sizeUint uint64, priceInAssetDP *num.Uint, posi
 // closeSpotMarket terminates a market - this can be triggered only via governance.
 func (m *Market) closeSpotMarket(ctx context.Context) {
 	if m.mkt.State != types.MarketStatePending {
+		m.markPriceLock.Lock()
 		m.markPrice = m.lastTradedPrice
+		m.markPriceLock.Unlock()
 		if err := m.closeMarket(ctx); err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
@@ -3263,11 +3283,67 @@ func (m *Market) CancelAMM(context.Context, *types.CancelAMM, string) error {
 	return errors.New("unimplemented")
 }
 
-func (_ *Market) ValidateSettlementData(_ *num.Uint) bool {
+func (m *Market) ValidateSettlementData(_ *num.Uint) bool {
 	return true
 }
 
 // IDGen is an id generator for orders.
 type IDGen interface {
 	NextID() string
+}
+
+func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.quoteAsset)
+	if err != nil {
+		return err
+	}
+
+	var price *num.Uint
+	if order.PeggedOrder == nil {
+		price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
+	} else {
+		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		if order.Side == types.SideBuy {
+			priceInMarket.AddSum(order.PeggedOrder.Offset)
+		} else {
+			priceInMarket = priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
+		}
+		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	}
+
+	minQuantum := assetQuantum.Mul(m.minHoldingQuantumMultiplier)
+	value := num.UintZero().Mul(num.NewUint(order.Size), price).ToDecimal()
+	value = value.Div(m.positionFactor).Div(assetQuantum)
+	if value.LessThan(minQuantum.Mul(assetQuantum)) {
+		return fmt.Errorf("order value is less than minimum holding requirement for spam")
+	}
+	return nil
+}
+
+func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.quoteAsset)
+	if err != nil {
+		return err
+	}
+
+	var price *num.Uint
+	if orderSubmission.PeggedOrder == nil {
+		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
+	} else {
+		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		if orderSubmission.Side == types.SideBuy {
+			priceInMarket.AddSum(orderSubmission.PeggedOrder.Offset)
+		} else {
+			priceInMarket = priceInMarket.Sub(priceInMarket, orderSubmission.PeggedOrder.Offset)
+		}
+		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	}
+
+	minQuantum := assetQuantum.Mul(quantumMultiplier)
+	value := num.UintZero().Mul(num.NewUint(orderSubmission.Size), price).ToDecimal()
+	value = value.Div(m.positionFactor).Div(assetQuantum)
+	if value.LessThan(minQuantum.Mul(assetQuantum)) {
+		return fmt.Errorf("order value is less than minimum holding requirement for spam")
+	}
+	return nil
 }

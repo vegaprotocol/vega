@@ -391,12 +391,20 @@ func NewApp(log *logging.Logger,
 		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
 		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode).
 		HandleCheckTx(txn.CreateReferralSetCommand, app.CheckCreateOrUpdateReferralSet).
-		HandleCheckTx(txn.UpdateReferralSetCommand, app.CheckCreateOrUpdateReferralSet)
+		HandleCheckTx(txn.UpdateReferralSetCommand, app.CheckCreateOrUpdateReferralSet).
+		HandleCheckTx(txn.SubmitOrderCommand, app.CheckOrderSubmissionForSpam).
+		HandleCheckTx(txn.LiquidityProvisionCommand, app.CheckLPSubmissionForSpam).
+		HandleCheckTx(txn.AmendLiquidityProvisionCommand, app.CheckLPAmendForSpam).
+		HandleCheckTx(txn.SubmitAMMCommand, app.CheckSubmitAmmForSpam).
+		HandleCheckTx(txn.AmendAMMCommand, app.CheckAmendAmmForSpam).
+		HandleCheckTx(txn.AmendOrderCommand, app.CheckAmendOrderForSpam).
+		HandleCheckTx(txn.CancelOrderCommand, app.CheckCancelOrderForSpam).
+		HandleCheckTx(txn.CancelAMMCommand, app.CheckCancelAmmForSpam).
+		HandleCheckTx(txn.CancelLiquidityProvisionCommand, app.CheckCancelLPForSpam)
 
-	app.abci.
-		// node commands
-		HandleDeliverTx(txn.NodeSignatureCommand,
-			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+	// node commands
+	app.abci.HandleDeliverTx(txn.NodeSignatureCommand,
+		app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -1806,6 +1814,27 @@ func (app *App) CheckBatchMarketInstructions(_ context.Context, tx abci.Tx) erro
 		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
 	}
 
+	for _, s := range bmi.Submissions {
+		if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), s.MarketId); err != nil {
+			return err
+		}
+
+		os, err := types.NewOrderSubmissionFromProto(s)
+		if err != nil {
+			return err
+		}
+
+		if err := app.exec.CheckOrderSubmissionForSpam(os, tx.Party()); err != nil {
+			return err
+		}
+	}
+
+	for _, s := range bmi.Amendments {
+		if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), s.MarketId); err != nil {
+			return err
+		}
+		// TODO add amend checks
+	}
 	return nil
 }
 
@@ -2094,6 +2123,113 @@ func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx, id string) erro
 		return err
 	}
 	return app.handleCheckpoint(snap)
+}
+
+func (app *App) CheckCancelOrderForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.OrderCancellation{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckCancelAmmForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.CancelAMM{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckCancelLPForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.LiquidityProvisionCancellation{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckAmendOrderForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.OrderAmendment{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckAmendAmmForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.AmendAMM{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckSubmitAmmForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.SubmitAMM{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckLPSubmissionForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.LiquidityProvisionSubmission{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckLPAmendForSpam(_ context.Context, tx abci.Tx) error {
+	sub := &commandspb.LiquidityProvisionAmendment{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckOrderSubmissionForSpam(_ context.Context, tx abci.Tx) error {
+	s := &commandspb.OrderSubmission{}
+	if err := tx.Unmarshal(s); err != nil {
+		return err
+	}
+
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), s.MarketId); err != nil {
+		return err
+	}
+
+	// Convert from proto to domain type
+	os, err := types.NewOrderSubmissionFromProto(s)
+	if err != nil {
+		return err
+	}
+
+	return app.exec.CheckOrderSubmissionForSpam(os, tx.Party())
 }
 
 func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {

@@ -72,7 +72,7 @@ var defaultCollateralAssets = []types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
 			Symbol:  "ETH",
-			Quantum: num.DecimalZero(),
+			Quantum: num.DecimalOne(),
 		},
 	},
 	{
@@ -81,7 +81,7 @@ var defaultCollateralAssets = []types.Asset{
 			Name:     "VOTE",
 			Symbol:   "VOTE",
 			Decimals: 5,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -602,7 +602,7 @@ func getTestMarket2WithDP(
 		Details: &types.AssetDetails{
 			Symbol:   "ETH",
 			Decimals: 0, // no decimals
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 		},
 	})
 	require.NoError(t, err)
@@ -620,7 +620,7 @@ func getTestMarket2WithDP(
 			Name:     "VOTE",
 			Symbol:   "VOTE",
 			Decimals: 5,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},

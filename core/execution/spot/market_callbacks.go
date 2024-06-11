@@ -24,6 +24,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+func (m *Market) OnMinimalHoldingQuantumMultipleUpdate(multiplier num.Decimal) error {
+	m.minHoldingQuantumMultiplier = multiplier
+	return nil
+}
+
 func (m *Market) OnMarketMinLpStakeQuantumMultipleUpdate(_ context.Context, d num.Decimal) {
 	m.minLPStakeQuantumMultiple = d
 	m.liquidity.OnMinLPStakeQuantumMultiple((d))
