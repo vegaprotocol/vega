@@ -337,6 +337,7 @@ func newServices(
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
 		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking, svcs.partiesEngine,
+		svcs.txCache,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
@@ -588,6 +589,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	spamWatchers := []netparams.WatchParam{}
 	if svcs.spam != nil {
 		spamWatchers = []netparams.WatchParam{
+			{
+				Param:   netparams.MarketAggressiveOrderBlockDelay,
+				Watcher: svcs.txCache.OnNumBlocksToDelayUpdated,
+			},
 			{
 				Param:   netparams.SpamProtectionMaxVotes,
 				Watcher: svcs.spam.OnMaxVotesChanged,

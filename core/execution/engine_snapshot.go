@@ -146,7 +146,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 		)
 		return nil, err
 	}
-
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.spotMarkets[marketConfig.ID] = mkt
 	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
@@ -228,6 +228,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		mkt.SetSucceeded()
 	}
 
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.futureMarkets[marketConfig.ID] = mkt
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt

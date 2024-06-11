@@ -34,7 +34,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking,Parties
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking,Parties,DelayTransactionsTarget
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks_amm/mocks.go -package mocks_amm code.vegaprotocol.io/vega/core/execution/common AMMPool,AMM
 
@@ -409,4 +409,8 @@ type Teams interface {
 	GetTeamMembers(team string, minEpochsInTeam uint64) []string
 	GetAllPartiesInTeams(minEpochsInTeam uint64) []string
 	GetAllTeamsWithParties(minEpochsInTeam uint64) map[string][]string
+}
+
+type DelayTransactionsTarget interface {
+	MarketDelayRequiredUpdated(marketID string, required bool)
 }

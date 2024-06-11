@@ -83,6 +83,7 @@ func defaultNetParams() map[string]value {
 		MarketAMMMaxCalculationLevels: NewUint(gteU1).Mutable(true).MustUpdate("1000"),
 
 		// markets
+		MarketAggressiveOrderBlockDelay:           NewUint(gteU0).Mutable(true).MustUpdate("1"),
 		MarketMarginScalingFactors:                NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
 		MarketFeeFactorsInfrastructureFee:         NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),

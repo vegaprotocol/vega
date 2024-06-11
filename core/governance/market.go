@@ -280,6 +280,7 @@ func buildMarketFromProposal(
 		LiquidationStrategy:           lstrat,
 		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
 		TickSize:                      definition.Changes.TickSize,
+		EnableTxReordering:            definition.Changes.EnableTxReordering,
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {
@@ -359,6 +360,7 @@ func buildSpotMarketFromProposal(
 		LiquiditySLAParams:            definition.Changes.SLAParams,
 		MarkPriceConfiguration:        defaultMarkPriceConfig,
 		TickSize:                      definition.Changes.TickSize,
+		EnableTxReordering:            definition.Changes.EnableTxReordering,
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err

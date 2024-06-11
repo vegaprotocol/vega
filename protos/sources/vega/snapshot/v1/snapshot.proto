@@ -1425,6 +1425,11 @@ message MarketLiquidity {
   repeated AMMValues amm = 3;
 }
 
+message DelayedTx {
+  repeated bytes tx = 1;
+  uint64 height = 2;
+}
+
 message TxCache {
-  repeated bytes txs = 1;
+  repeated DelayedTx txs = 1;
 }

@@ -25,6 +25,10 @@ import (
 
 type updateMarketConfigurationResolver VegaResolverRoot
 
+func (r *updateMarketConfigurationResolver) EnableTxReordering(ctx context.Context, obj *vega.UpdateMarketConfiguration) (bool, error) {
+	return obj.EnableTransactionReordering, nil
+}
+
 func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 	obj *vega.UpdateMarketConfiguration,
 ) (*UpdateInstrumentConfiguration, error) {

@@ -27,6 +27,10 @@ import (
 
 type myMarketResolver VegaResolverRoot
 
+func (r *myMarketResolver) EnableTxReordering(ctx context.Context, obj *types.Market) (bool, error) {
+	return obj.EnableTransactionReordering, nil
+}
+
 func (r *myMarketResolver) LiquidityProvisionsConnection(
 	ctx context.Context,
 	market *types.Market,

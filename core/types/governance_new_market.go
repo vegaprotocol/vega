@@ -412,6 +412,7 @@ type NewMarketConfiguration struct {
 	LiquidationStrategy    *LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *num.Uint
+	EnableTxReordering     bool
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -459,6 +460,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      n.TickSize.String(),
+		EnableTransactionReordering:   n.EnableTxReordering,
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -480,6 +482,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 		TickSize:                n.TickSize.Clone(),
+		EnableTxReordering:      n.EnableTxReordering,
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -512,7 +515,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 
 func (n NewMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), CompositePriceConfiguration(%s), TickSize(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), CompositePriceConfiguration(%s), TickSize(%s), EnableTxReordering(%v)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -524,6 +527,7 @@ func (n NewMarketConfiguration) String() string {
 		n.QuadraticSlippageFactor.String(),
 		stringer.PtrToString(n.MarkPriceConfiguration),
 		num.UintToString(n.TickSize),
+		n.EnableTxReordering,
 	)
 }
 
@@ -627,6 +631,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        markPriceConfig,
 		TickSize:                      tickSize,
+		EnableTxReordering:            p.EnableTransactionReordering,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

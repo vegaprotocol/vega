@@ -49,8 +49,8 @@ type Codec interface {
 
 // ABCI hooks.
 type (
-	PrepareProposalHandler    func(txs []Tx, raWtxs [][]byte) [][]byte
-	ProcessProposalHandler    func(txs []Tx) bool
+	PrepareProposalHandler    func(height uint64, txs []Tx, raWtxs [][]byte) [][]byte
+	ProcessProposalHandler    func(height uint64, txs []Tx) bool
 	OnInitChainHandler        func(*types.RequestInitChain) (*types.ResponseInitChain, error)
 	OnBeginBlockHandler       func(uint64, string, time.Time, string, []Tx) context.Context
 	OnEndBlockHandler         func(blockHeight uint64) (types.ValidatorUpdates, types1.ConsensusParams)
