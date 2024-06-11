@@ -252,7 +252,7 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
       | 107        | TRADING_MODE_CONTINUOUS | 100        | 100               | 160              | 40             |
 
-  @VAMM2
+  @VAMM
   Scenario: 0090-VAMM-021: Same as the test above, only this time, the final order that closes the vAMM position is bigger than the remaining volume, so we check if the vAMM is cancelled instead of going long.
      # based on 0090-VAMM-008: vAMM creates a position, has some general balance left in general and margin accounts.
     When the parties place the following orders:
