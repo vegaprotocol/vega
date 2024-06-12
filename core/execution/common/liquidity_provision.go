@@ -356,6 +356,7 @@ func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Tim
 				Fee:  num.DecimalZero(),
 				Bond: num.DecimalZero(),
 			}
+			penalties.AllPartiesHaveFullFeePenalty = false
 		}
 	}
 

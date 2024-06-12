@@ -102,11 +102,11 @@ Feature: Test vAMM implied commitment is working as expected
     Then the network moves ahead "1" epochs
 
     And the following transfers should happen:
-      | type                                   | from   | to     | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 10     | USD   |
+      | type                                       | from   | to     | from account                   | to account                                     | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE       | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 10     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE       | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 10     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 10     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 10     | USD   |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -120,10 +120,10 @@ Feature: Test vAMM implied commitment is working as expected
     Then the network moves ahead "1" epochs
 
     And the following transfers should happen:
-      | type                                   | from                                                             | to                                                               | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 3      | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | lp2                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 3      | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1                                                              | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp2                                                              | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 8      | USD   |
+      | type                                            | from      | to                                                               | from account                   | to account                      | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE            | market    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES  | ETH/MAR22 | 0      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE            | market    | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES  | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE            | market    | lp2                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES  | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE  | market    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL         | ETH/MAR22 | 16      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT      | lp1       | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION         | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT      | lp2       | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION         | ETH/MAR22 | 8      | USD   |
