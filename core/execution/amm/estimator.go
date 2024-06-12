@@ -20,7 +20,7 @@ func init() {
 	sqrter = NewSqrter()
 }
 
-func EstimateBounds(
+func Estimate(
 	lowerPrice, basePrice, upperPrice *num.Uint,
 	leverageLower, leverageUpper num.Decimal,
 	balance *num.Uint,
@@ -28,12 +28,12 @@ func EstimateBounds(
 	riskFactorShort, riskFactorLong decimal.Decimal,
 ) EstimatorMetrics {
 	// test liquidity unit
-	unitLower := LiquidityUnit(sqrter, basePrice, lowerPrice)
-	unitUpper := LiquidityUnit(sqrter, upperPrice, basePrice)
+	unitLower := LiquidityUnit(basePrice, lowerPrice)
+	unitUpper := LiquidityUnit(upperPrice, basePrice)
 
 	// test average entry price
-	avgEntryLower := AverageEntryPrice(sqrter, unitLower, basePrice)
-	avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
+	avgEntryLower := AverageEntryPrice(unitLower, basePrice)
+	avgEntryUpper := AverageEntryPrice(unitUpper, upperPrice)
 
 	// test risk factor
 	riskFactorLower := RiskFactor(leverageLower, riskFactorLong, linearSlippageFactor, initialMargin)
@@ -56,8 +56,8 @@ func EstimateBounds(
 	liquidationPriceAtUpper := LiquidationPrice(balanceD, lossUpper, boundPosUpper, upperPriceD, linearSlippageFactor, riskFactorShort)
 
 	return EstimatorMetrics{
-		PositionSizeAtUpperBound:     liquidationPriceAtUpper,
-		PositionSizeAtLowerBound:     liquidationPriceAtLower,
+		PositionSizeAtUpperBound:     boundPosUpper,
+		PositionSizeAtLowerBound:     boundPosLower,
 		LossOnCommitmentAtUpperBound: lossUpper,
 		LossOnCommitmentAtLowerBound: lossLower,
 		LiquidationPriceAtUpperBound: liquidationPriceAtUpper,
@@ -66,7 +66,7 @@ func EstimateBounds(
 }
 
 // Lu = (sqrt(pu) * sqrt(pl)) / (sqrt(pu) - sqrt(pl))
-func LiquidityUnit(sqrter *Sqrter, pu, pl *num.Uint) num.Decimal {
+func LiquidityUnit(pu, pl *num.Uint) num.Decimal {
 	sqrtPu := sqrter.sqrt(pu)
 	sqrtPl := sqrter.sqrt(pl)
 
@@ -80,7 +80,7 @@ func RiskFactor(lb, fs, fl, fi num.Decimal) num.Decimal {
 }
 
 // Pa = Lu * sqrt(pu) * (1 - (Lu / (Lu + sqrt(pu))))
-func AverageEntryPrice(sqrter *Sqrter, lu num.Decimal, pu *num.Uint) num.Decimal {
+func AverageEntryPrice(lu num.Decimal, pu *num.Uint) num.Decimal {
 	sqrtPu := sqrter.sqrt(pu)
 	// (1 - Lu / (Lu + sqrt(pu)))
 	oneSubLuDivLuWithUpSquared := num.DecimalOne().Sub(lu.Div(lu.Add(sqrtPu)))
