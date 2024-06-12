@@ -5,8 +5,8 @@ WITH updated_pnl AS (
 		pc.realised_pnl - ph.realised_pnl as correct_pnl,
 		pc.pending_realised_pnl - ph.pending_realised_pnl as correct_ppnl,
 	pc.pending_open_volume
-	FROM public.positions_current AS pc
-	JOIN public.positions AS ph
+	FROM positions_current AS pc
+	JOIN positions AS ph
 		ON pc.party_id = ph.party_id
 		AND pc.market_id = ph.market_id
 	WHERE pc.party_id IN ('\x947a700141e3d175304ee176d0beecf9ee9f462e09330e33c386952caf21f679', '\x15a8f372e255c6fa596a0b3acd62bc3be63b65188c23d33fc350f38ef52902e3', '\xaa1ce33b0b31a2e0f0a947ba83f64fa4a7e5d977fffb82c278c3b33fb0498113', '\x6527ffdd223ef2b4695ad90d832adc5493e9b8e25ad3185e67d873767f1f275e')
