@@ -95,7 +95,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli/v2 v2.27.1
 	github.com/vegaprotocol/go-slip10 v0.1.0
-	github.com/vektah/gqlparser/v2 v2.5.11
+	github.com/vektah/gqlparser/v2 v2.5.14
 	github.com/wk8/go-ordered-map/v2 v2.0.0
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.18.0
