@@ -180,6 +180,28 @@ func prepopoulatePartyScores(t *testing.T, ctx context.Context, gs *gameScoresTe
 			IsEligible:     true,
 			VegaTime:       now,
 		},
+		{
+			GameID:         "FFFF",
+			EpochID:        2,
+			PartyID:        "FFFA",
+			Score:          num.DecimalFromFloat(0.8),
+			StakingBalance: num.DecimalFromInt64(6),
+			OpenVolume:     num.DecimalFromInt64(3),
+			TotalFeesPaid:  num.DecimalFromInt64(1),
+			IsEligible:     true,
+			VegaTime:       now.Add(1 * time.Second),
+		},
+		{
+			GameID:         "FFFF",
+			EpochID:        2,
+			PartyID:        "FFFA",
+			Score:          num.DecimalFromFloat(0.7),
+			StakingBalance: num.DecimalFromInt64(9),
+			OpenVolume:     num.DecimalFromInt64(8),
+			TotalFeesPaid:  num.DecimalFromInt64(7),
+			IsEligible:     true,
+			VegaTime:       now.Add(2 * time.Second),
+		},
 	}
 	for _, gps1 := range gps {
 		require.NoError(t, gs.gs.AddPartyScore(ctx, gps1))
@@ -200,16 +222,17 @@ func TestListPartyScoresNoFilters(t *testing.T) {
 	now := time.Now()
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	partyScores := prepopoulatePartyScores(t, ctx, store, now)
-	scores, _, err := store.gs.ListPartyScores(ctx, nil, nil, nil, pagination)
+	scores, _, err := store.gs.ListPartyScores(ctx, nil, nil, nil, nil, nil, pagination)
 	require.NoError(t, err)
-	require.Equal(t, len(partyScores), len(scores))
+	// as we're not filtering by epochs we're getting the current scores so that's equal to all the ones from epoch 1 (which are all distinct)
+	require.Equal(t, len(partyScores)-2, len(scores))
 
 	// now insert a fresh score for an existing party for the same game
 	now = now.Add(time.Hour)
 	partyScores[0].VegaTime = now
 	partyScores[0].Score = num.DecimalE()
 	require.NoError(t, store.gs.AddPartyScore(ctx, partyScores[0]))
-	require.Equal(t, len(partyScores), len(scores))
+	require.Equal(t, len(partyScores)-2, len(scores))
 }
 
 func TestListPartyScoresPartyFilters(t *testing.T) {
@@ -218,11 +241,11 @@ func TestListPartyScoresPartyFilters(t *testing.T) {
 	now := time.Now()
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	prepopoulatePartyScores(t, ctx, store, now)
-	scores, _, err := store.gs.ListPartyScores(ctx, nil, []entities.PartyID{"FFFD"}, nil, pagination)
+	scores, _, err := store.gs.ListPartyScores(ctx, nil, []entities.PartyID{"FFFD"}, nil, nil, nil, pagination)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(scores))
 
-	scores, _, err = store.gs.ListPartyScores(ctx, nil, []entities.PartyID{"FFFD", "FFFE"}, nil, pagination)
+	scores, _, err = store.gs.ListPartyScores(ctx, nil, []entities.PartyID{"FFFD", "FFFE"}, nil, nil, nil, pagination)
 	require.NoError(t, err)
 	require.Equal(t, 4, len(scores))
 }
@@ -233,13 +256,13 @@ func TestListPartyScoresGameFilters(t *testing.T) {
 	now := time.Now()
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	ps := prepopoulatePartyScores(t, ctx, store, now)
-	scores, _, err := store.gs.ListPartyScores(ctx, []entities.GameID{"EEFF"}, nil, nil, pagination)
+	scores, _, err := store.gs.ListPartyScores(ctx, []entities.GameID{"EEFF"}, nil, nil, nil, nil, pagination)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(scores))
 
-	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF", "EEEE"}, nil, nil, pagination)
+	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF", "EEEE"}, nil, nil, nil, nil, pagination)
 	require.NoError(t, err)
-	require.Equal(t, len(ps)-1, len(scores))
+	require.Equal(t, len(ps)-3, len(scores))
 }
 
 func TestListPartyScoresTeamFilters(t *testing.T) {
@@ -248,10 +271,10 @@ func TestListPartyScoresTeamFilters(t *testing.T) {
 	now := time.Now()
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	prepopoulatePartyScores(t, ctx, store, now)
-	scores, _, err := store.gs.ListPartyScores(ctx, nil, nil, []entities.TeamID{"AAAA"}, pagination)
+	scores, _, err := store.gs.ListPartyScores(ctx, nil, nil, []entities.TeamID{"AAAA"}, nil, nil, pagination)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(scores))
-	scores, _, err = store.gs.ListPartyScores(ctx, nil, nil, []entities.TeamID{"AAAA", "BBBB"}, pagination)
+	scores, _, err = store.gs.ListPartyScores(ctx, nil, nil, []entities.TeamID{"AAAA", "BBBB"}, nil, nil, pagination)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(scores))
 }
@@ -264,11 +287,102 @@ func TestListPartyScoresAllFilters(t *testing.T) {
 	prepopoulatePartyScores(t, ctx, store, now)
 
 	// all filters populated
-	scores, _, err := store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFB"}, []entities.TeamID{"CCCC"}, pagination)
+	scores, _, err := store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFB"}, []entities.TeamID{"CCCC"}, nil, nil, pagination)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, num.DecimalFromFloat(0.4), scores[0].Score)
 	require.Equal(t, num.DecimalFromInt64(11111), scores[0].StakingBalance)
 	require.Equal(t, num.DecimalFromInt64(22222), scores[0].OpenVolume)
 	require.Equal(t, num.DecimalFromInt64(33333), scores[0].TotalFeesPaid)
+}
+
+func TestListPartyScoresEpochFilter(t *testing.T) {
+	ctx := tempTransaction(t)
+	store := newGameScoresTestStore(t)
+	now := time.Now()
+	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	prepopoulatePartyScores(t, ctx, store, now)
+
+	// all filters populated
+	from := uint64(1)
+	to := uint64(2)
+	// provide to and from
+	scores, _, err := store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFA"}, nil, &from, &to, pagination)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(scores))
+	require.Equal(t, num.DecimalFromFloat(0.5), scores[0].Score)
+	require.Equal(t, num.DecimalFromInt64(2), scores[0].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(0), scores[0].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(4), scores[0].TotalFeesPaid)
+	require.Equal(t, num.DecimalFromFloat(0.7), scores[1].Score)
+	require.Equal(t, num.DecimalFromInt64(9), scores[1].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(8), scores[1].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(7), scores[1].TotalFeesPaid)
+
+	// do not provide from, expect the same result as we should get basically all epochs
+	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFA"}, nil, nil, &to, pagination)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(scores))
+	require.Equal(t, num.DecimalFromFloat(0.5), scores[0].Score)
+	require.Equal(t, num.DecimalFromInt64(2), scores[0].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(0), scores[0].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(4), scores[0].TotalFeesPaid)
+	require.Equal(t, num.DecimalFromFloat(0.7), scores[1].Score)
+	require.Equal(t, num.DecimalFromInt64(9), scores[1].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(8), scores[1].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(7), scores[1].TotalFeesPaid)
+
+	// do not provide to, expect the same result as we should get basically all epochs
+	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFA"}, nil, &from, nil, pagination)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(scores))
+	require.Equal(t, num.DecimalFromFloat(0.5), scores[0].Score)
+	require.Equal(t, num.DecimalFromInt64(2), scores[0].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(0), scores[0].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(4), scores[0].TotalFeesPaid)
+	require.Equal(t, num.DecimalFromFloat(0.7), scores[1].Score)
+	require.Equal(t, num.DecimalFromInt64(9), scores[1].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(8), scores[1].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(7), scores[1].TotalFeesPaid)
+
+	// set from to the second (and last) epoch
+	from = 2
+	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFA"}, nil, &from, nil, pagination)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, num.DecimalFromFloat(0.7), scores[0].Score)
+	require.Equal(t, num.DecimalFromInt64(9), scores[0].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(8), scores[0].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(7), scores[0].TotalFeesPaid)
+
+	// set to to 1 so we get only the first epoch
+	to = 1
+	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFA"}, nil, nil, &to, pagination)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, num.DecimalFromFloat(0.5), scores[0].Score)
+	require.Equal(t, num.DecimalFromInt64(2), scores[0].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(0), scores[0].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(4), scores[0].TotalFeesPaid)
+
+	// now set both to and from to 1
+	to = 1
+	from = 1
+	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFA"}, nil, &from, &to, pagination)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, num.DecimalFromFloat(0.5), scores[0].Score)
+	require.Equal(t, num.DecimalFromInt64(2), scores[0].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(0), scores[0].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(4), scores[0].TotalFeesPaid)
+
+	// and to 2
+	to = 2
+	from = 2
+	scores, _, err = store.gs.ListPartyScores(ctx, []entities.GameID{"FFFF"}, []entities.PartyID{"FFFA"}, nil, &from, &to, pagination)
+	require.NoError(t, err)
+	require.Equal(t, num.DecimalFromFloat(0.7), scores[0].Score)
+	require.Equal(t, num.DecimalFromInt64(9), scores[0].StakingBalance)
+	require.Equal(t, num.DecimalFromInt64(8), scores[0].OpenVolume)
+	require.Equal(t, num.DecimalFromInt64(7), scores[0].TotalFeesPaid)
 }
