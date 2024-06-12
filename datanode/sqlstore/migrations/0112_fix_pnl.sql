@@ -1,10 +1,10 @@
 -- +goose Up
 
 WITH updated_pnl AS (
-    SELECT DISTINCT ON (pc.party_id) pc.party_id AS pid, pc.market_id AS mid, pc.loss - ph.loss AS correct_loss, pc.loss_socialisation_amount - ph.loss_socialisation_amount as correct_loss_soc,
-		pc.realised_pnl - ph.realised_pnl as correct_pnl,
-		pc.pending_realised_pnl - ph.pending_realised_pnl as correct_ppnl,
-	pc.pending_open_volume
+    SELECT DISTINCT ON (pc.party_id) pc.party_id AS pid, pc.market_id AS mid, pc.loss - ph.loss AS correct_loss, pc.loss_socialisation_amount - ph.loss_socialisation_amount AS correct_loss_soc,
+		pc.realised_pnl - ph.realised_pnl AS correct_pnl,
+		pc.pending_realised_pnl - ph.pending_realised_pnl AS correct_ppnl,
+		pc.adjustment - ph.adjustment AS correct_adj
 	FROM positions_current AS pc
 	JOIN positions AS ph
 		ON pc.party_id = ph.party_id
@@ -14,13 +14,14 @@ WITH updated_pnl AS (
 		AND pc.market_id = '\xe63a37edae8b74599d976f5dedbf3316af82579447f7a08ae0495a021fd44d13'
 	ORDER BY pc.party_id, ph.vega_time ASC
 )
-UPDATE positions_current pu
+UPDATE positions_current
 SET loss = updated_pnl.correct_loss,
     loss_socialisation_amount = updated_pnl.correct_loss_soc,
     realised_pnl = updated_pnl.correct_pnl,
-    pending_realised_pnl = updated_pnl.correct_ppnl
+    pending_realised_pnl = updated_pnl.correct_ppnl,
+	adjustment = updated_pnl.correct_adj
 FROM updated_pnl
-WHERE pu.party_id = updated_pnl.pid AND pu.market_id = updated_pnl.mid;
+WHERE party_id = updated_pnl.pid AND market_id = updated_pnl.mid;
 
 -- +goose Down
 -- nothing
