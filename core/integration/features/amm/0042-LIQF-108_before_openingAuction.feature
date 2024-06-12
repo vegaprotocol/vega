@@ -17,7 +17,7 @@ Feature: Test vAMM implied commitment is working as expected
       | market.value.windowLength                           | 60s   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 6     |
-      | market.auction.minimumDuration                      | 1     |
+      | market.auction.minimumDuration                      | 15    |
       | market.fee.factors.infrastructureFee                | 0.001 |
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
@@ -28,7 +28,7 @@ Feature: Test vAMM implied commitment is working as expected
       | market.liquidity.successorLaunchWindowLength        | 1h    |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0     |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
-      | validators.epoch.length                             | 10s   |
+      | validators.epoch.length                             | 10s    |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.25  |
     #risk factor short:3.5569036
@@ -80,18 +80,21 @@ Feature: Test vAMM implied commitment is working as expected
       | party2 | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
       | lp1    | ETH/MAR22 | sell | 20     | 160   | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
 
+    # enter new epoch while in opening auction
+    Then the network moves ahead "14" blocks
+    And the current epoch is "1"
+    
     When the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 100   | 1    | party2 |
 
     Then the network moves ahead "1" blocks
-    And the current epoch is "0"
+    And the current epoch is "1"
 
   @VAMM
   Scenario: 0042-LIQF-108_before_openingAuction : A vAMM which was active on the market during opening auction, vAMM should be getting LP fee in the same way as normal LPs 
 
-    Then the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
@@ -100,14 +103,14 @@ Feature: Test vAMM implied commitment is working as expected
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 100   | 10   | party2 |
-
     Then the network moves ahead "1" epochs
+    And the current epoch is "2"
 
     And the following transfers should happen:
-      | type                                   | from   | to     | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 10     | USD   |
+      | type                                   | from   | to                                                                  | from account                   | to account                     | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp1                                                                 | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp2                                                                 | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 3      | USD   |
+
 
    
