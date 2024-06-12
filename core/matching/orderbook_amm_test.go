@@ -339,6 +339,18 @@ func TestIndicativeTradesAMMCrossedOrders(t *testing.T) {
 	assert.Equal(t, 27, len(trades))
 }
 
+func TestUncrossedBookDoesNotExpandAMMs(t *testing.T) {
+	tst := getTestOrderBookWithAMM(t)
+	defer tst.ctrl.Finish()
+
+	// AMM with buy at 99 and SELL at 101
+	tst.obs.EXPECT().BestPricesAndVolumes().Return(num.NewUint(uint64(99)), uint64(10), num.NewUint(uint64(101)), uint64(10)).AnyTimes()
+
+	// enter auction when not crossed we should not try to expand AMM's
+	tst.book.EnterAuction()
+	assert.Equal(t, "0", tst.book.GetIndicativePrice().String())
+}
+
 func assertConf(t *testing.T, conf *types.OrderConfirmation, n int, size uint64) {
 	t.Helper()
 	assert.Len(t, conf.PassiveOrdersAffected, n)

@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/execution/spot"
@@ -401,8 +402,10 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 			return err
 		}
 
-		// let the core state API know about the markets
-		e.publishNewMarketInfos(ctx, m.GetMarketData(), *m.Mkt())
+		// let the core state API know about the market, but not the market data since that will get sent on the very next tick
+		// if we sent it now it will create market-data from the core state at the *end* of the block when it was originally
+		// created from core-state at the *start* of the block.
+		e.broker.Send(events.NewMarketCreatedEvent(ctx, *m.Mkt()))
 	}
 	// use the time as restored by the snapshot
 	t := e.timeService.GetTimeNow()
