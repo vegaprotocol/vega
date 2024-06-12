@@ -16,8 +16,9 @@ import (
 )
 
 type ConnectionSource struct {
-	pool *pgxpool.Pool
-	log  *logging.Logger
+	pool   *pgxpool.Pool
+	log    *logging.Logger
+	isTest bool
 }
 
 type wrappedTx struct {
@@ -36,7 +37,6 @@ type (
 )
 
 func NewTransactionalConnectionSource(ctx context.Context, log *logging.Logger, connConfig ConnectionConfig) (*ConnectionSource, error) {
-	// func NewConnSource(ctx context.Context, log *logging.Logger, connConfig ConnectionConfig) (*ConnectionSource, error) {
 	pool, err := CreateConnectionPool(ctx, connConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection pool: %w", err)
@@ -45,6 +45,10 @@ func NewTransactionalConnectionSource(ctx context.Context, log *logging.Logger, 
 		pool: pool,
 		log:  log.Named("connection-source"),
 	}, nil
+}
+
+func (c *ConnectionSource) ToggleTest() {
+	c.isTest = true
 }
 
 func (c *ConnectionSource) WithConnection(ctx context.Context) (context.Context, error) {
@@ -141,6 +145,10 @@ func (c *ConnectionSource) Commit(ctx context.Context) error {
 }
 
 func (c *ConnectionSource) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	// this is nasty, but required for the API tests currently.
+	if c.isTest && c.pool == nil {
+		return nil, pgx.ErrNoRows
+	}
 	if tx, ok := ctx.Value(txKey{}).(*wrappedTx); ok {
 		return tx.tx.Query(ctx, sql, args...)
 	}
@@ -191,6 +199,10 @@ func (c *ConnectionSource) CopyFrom(ctx context.Context, tableName pgx.Identifie
 }
 
 func (c *ConnectionSource) CopyTo(ctx context.Context, w io.Writer, sql string, args ...any) (pgconn.CommandTag, error) {
+	// this is nasty, but required for the API tests currently.
+	if c.isTest && c.pool == nil {
+		return pgconn.CommandTag{}, nil
+	}
 	var err error
 	sql, err = SanitizeSql(sql, args...)
 	if err != nil {
