@@ -51,8 +51,7 @@ func testUpsertShouldAddNewInBlock(t *testing.T) {
 	bs, sl := setupStakeLinkingTest(t)
 
 	var rowCount int
-	conn := connectionSource.Connection
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
+	assert.NoError(t, connectionSource.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, ctx, bs)
@@ -63,7 +62,7 @@ func testUpsertShouldAddNewInBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoError(t, sl.Upsert(ctx, data))
 
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
+	assert.NoError(t, connectionSource.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
 }
 
@@ -71,9 +70,8 @@ func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
 	ctx := tempTransaction(t)
 
 	bs, sl := setupStakeLinkingTest(t)
-	conn := connectionSource.Connection
 	var rowCount int
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
+	assert.NoError(t, connectionSource.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, ctx, bs)
@@ -85,7 +83,7 @@ func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
 		assert.NoError(t, sl.Upsert(ctx, data))
 	}
 
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
+	assert.NoError(t, connectionSource.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 2, rowCount)
 }
 
@@ -93,10 +91,9 @@ func testGetStake(t *testing.T) {
 	ctx := tempTransaction(t)
 
 	bs, sl := setupStakeLinkingTest(t)
-	conn := connectionSource.Connection
 
 	var rowCount int
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
+	assert.NoError(t, connectionSource.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, ctx, bs)
@@ -108,7 +105,7 @@ func testGetStake(t *testing.T) {
 		assert.NoError(t, sl.Upsert(ctx, data))
 	}
 
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
+	assert.NoError(t, connectionSource.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 2, rowCount)
 
 	partyID := entities.PartyID("cafed00d")
@@ -505,7 +502,7 @@ func testStakeLinkingTypeEnum(t *testing.T) {
 
 			var got entities.StakeLinking
 
-			require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM stake_linking where tx_hash = $1", data.TxHash))
+			require.NoError(t, pgxscan.Get(ctx, connectionSource, &got, "SELECT * FROM stake_linking where tx_hash = $1", data.TxHash))
 			assert.Equal(t, data.StakeLinkingType, got.StakeLinkingType)
 		})
 	}

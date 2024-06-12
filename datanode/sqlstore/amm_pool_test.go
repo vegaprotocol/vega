@@ -84,7 +84,7 @@ func TestAMMPool_Upsert(t *testing.T) {
 			var upserted entities.AMMPool
 			require.NoError(t, pgxscan.Get(
 				ctx,
-				connectionSource.Connection,
+				connectionSource,
 				&upserted,
 				`SELECT * FROM amms WHERE party_id = $1 AND market_id = $2 AND id = $3 AND amm_party_id = $4`,
 				partyID, marketID, poolID, ammPartyID))
@@ -121,7 +121,7 @@ func TestAMMPool_Upsert(t *testing.T) {
 			var upserted entities.AMMPool
 			require.NoError(t, pgxscan.Get(
 				ctx,
-				connectionSource.Connection,
+				connectionSource,
 				&upserted,
 				`SELECT * FROM amms WHERE party_id = $1 AND market_id = $2 AND id = $3 AND amm_party_id = $4`,
 				partyID, marketID, poolID, ammPartyID))
@@ -152,7 +152,7 @@ func TestAMMPool_Upsert(t *testing.T) {
 		var upserted entities.AMMPool
 		require.NoError(t, pgxscan.Get(
 			ctx,
-			connectionSource.Connection,
+			connectionSource,
 			&upserted,
 			`SELECT * FROM amms WHERE party_id = $1 AND market_id = $2 AND id = $3 AND amm_party_id = $4`,
 			partyID, marketID, poolID, ammPartyID))

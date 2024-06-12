@@ -120,10 +120,17 @@ func TestAssetCache(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, asset2, fetched)
 
-	// Commit the transaction and fetch the asset, we should get the asset with the new symbol
+	// Commit the sub-transaction and fetch the asset, we should not yet get the asset with the new symbol
 	err = connectionSource.Commit(txCtx)
 	require.NoError(t, err)
 	fetched, err = as.GetByID(ctx, string(asset.ID))
+	require.NoError(t, err)
+	assert.Equal(t, asset2, fetched)
+
+	// now commit the main transaction, then we should get the new symbol
+	err = connectionSource.Commit(ctx)
+	require.NoError(t, err)
+	fetched, err = as.GetByID(context.Background(), string(asset.ID))
 	require.NoError(t, err)
 	assert.Equal(t, asset3, fetched)
 }

@@ -930,7 +930,7 @@ func TestRewardsGameTotals(t *testing.T) {
 		},
 	}
 	for _, team := range teams {
-		_, err := connectionSource.Connection.Exec(ctx,
+		_, err := connectionSource.Exec(ctx,
 			`INSERT INTO teams (id, referrer, name, team_url, avatar_url, closed, created_at_epoch, created_at, vega_time)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 			team.ID, team.Referrer, team.Name, team.TeamURL, team.AvatarURL, team.Closed, team.CreatedAtEpoch, team.CreatedAt, team.VegaTime)
@@ -961,7 +961,7 @@ func TestRewardsGameTotals(t *testing.T) {
 		},
 	}
 	for _, member := range teamMembers {
-		_, err := connectionSource.Connection.Exec(ctx,
+		_, err := connectionSource.Exec(ctx,
 			`INSERT INTO team_members (team_id, party_id, joined_at_epoch, joined_at, vega_time)
 		VALUES ($1, $2, $3, $4, $5)`,
 			member.TeamID, member.PartyID, member.JoinedAtEpoch, member.JoinedAt, member.VegaTime)
@@ -1001,7 +1001,7 @@ func TestRewardsGameTotals(t *testing.T) {
 		},
 	}
 	for _, total := range existingTotals {
-		_, err := connectionSource.Connection.Exec(ctx,
+		_, err := connectionSource.Exec(ctx,
 			`INSERT INTO game_reward_totals (game_id, party_id, asset_id, market_id, epoch_id, team_id, total_rewards, total_rewards_quantum)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 			total.GameID, total.PartyID, total.AssetID, total.MarketID, total.EpochID, total.TeamID, total.TotalRewards, total.TotalRewardsQuantum)
@@ -1149,7 +1149,7 @@ func TestRewardsGameTotals(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		var totals []entities.RewardTotals
-		require.NoError(t, pgxscan.Select(ctx, connectionSource.Connection, &totals,
+		require.NoError(t, pgxscan.Select(ctx, connectionSource, &totals,
 			`SELECT * FROM game_reward_totals WHERE game_id = $1 AND party_id = $2 AND epoch_id = $3`,
 			tc.game_id, tc.party_id, tc.epoch_id))
 		assert.Equal(t, 1, len(totals))

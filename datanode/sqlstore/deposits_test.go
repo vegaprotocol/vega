@@ -76,7 +76,7 @@ func setupDepositStoreTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.Deposits,
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ds := sqlstore.NewDeposits(connectionSource)
-	return bs, ds, connectionSource.Connection
+	return bs, ds, connectionSource
 }
 
 func testAddDepositForNewBlock(t *testing.T) {

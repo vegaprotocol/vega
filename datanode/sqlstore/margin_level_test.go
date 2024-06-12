@@ -91,7 +91,7 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 	accountStore := sqlstore.NewAccounts(connectionSource)
 	ml := sqlstore.NewMarginLevels(connectionSource)
 
-	return testBlockSource, ml, accountStore, connectionSource.Connection
+	return testBlockSource, ml, accountStore, connectionSource
 }
 
 func testInsertMarginLevels(t *testing.T) {

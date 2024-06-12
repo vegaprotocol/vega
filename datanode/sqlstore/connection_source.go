@@ -94,10 +94,6 @@ func registerNumericType(poolConfig *pgxpool.Config) {
 	}
 }
 
-type delegatingConnection struct {
-	pool *pgxpool.Pool
-}
-
 func CreateConnectionPool(ctx context.Context, conf ConnectionConfig) (*pgxpool.Pool, error) {
 	poolConfig, err := conf.GetPoolConfig()
 	if err != nil {
