@@ -36,13 +36,15 @@ type GameScores struct {
 }
 
 var gamesTeamOrderding = TableOrdering{
-	ColumnOrdering{Name: "game_id", Sorting: ASC},
-	ColumnOrdering{Name: "team_id", Sorting: ASC},
+	ColumnOrdering{Name: "t1.game_id", Sorting: ASC},
+	ColumnOrdering{Name: "t1.epoch_id", Sorting: DESC},
+	ColumnOrdering{Name: "t1.team_id", Sorting: ASC},
 }
 
 var gamesPartyOrderding = TableOrdering{
-	ColumnOrdering{Name: "game_id", Sorting: ASC},
-	ColumnOrdering{Name: "party_id", Sorting: ASC},
+	ColumnOrdering{Name: "t1.game_id", Sorting: ASC},
+	ColumnOrdering{Name: "t1.epoch_id", Sorting: DESC},
+	ColumnOrdering{Name: "t1.party_id", Sorting: ASC},
 }
 
 func NewGameScores(connectionSource *ConnectionSource) *GameScores {
@@ -113,15 +115,41 @@ func (gs *GameScores) ListPartyScores(
 	gameIDs []entities.GameID,
 	partyIDs []entities.PartyID,
 	teamIDs []entities.TeamID,
+	epochFromID *uint64,
+	epochToID *uint64,
 	pagination entities.CursorPagination,
 ) ([]entities.GamePartyScore, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	where, args, err := filterPartyQuery(gameIDs, partyIDs, teamIDs)
+	where, args, err := filterPartyQuery(gameIDs, partyIDs, teamIDs, epochFromID, epochToID)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	query := `SELECT * FROM game_party_scores_current `
+	query := `SELECT t1.* FROM game_party_scores_current t1`
+	if epochFromID != nil || epochToID != nil {
+		var epochWhere string
+		if epochFromID != nil && epochToID == nil {
+			epochWhere = fmt.Sprintf("epoch_id >= %d", *epochFromID)
+		} else if epochFromID == nil && epochToID != nil {
+			epochWhere = fmt.Sprintf("epoch_id <= %d", *epochToID)
+		} else {
+			epochWhere = fmt.Sprintf("epoch_id >= %d and epoch_id <= %d", *epochFromID, *epochToID)
+		}
+		query = `SELECT t1.* FROM game_party_scores t1 
+				 JOIN (
+					SELECT
+						party_id,
+						epoch_id,
+						MAX(vega_time) AS latest_time
+					FROM
+						game_party_scores
+					WHERE ` + epochWhere + `						
+					GROUP BY
+						party_id,
+						epoch_id
+				) t2 ON t1.party_id = t2.party_id AND t1.epoch_id = t2.epoch_id AND t1.vega_time = t2.latest_time 
+		`
+	}
 	query = fmt.Sprintf("%s %s", query, where)
 	query, args, err = PaginateQuery[entities.PartyGameScoreCursor](query, args, gamesPartyOrderding, pagination)
 	if err != nil {
@@ -140,7 +168,7 @@ func (gs *GameScores) ListPartyScores(
 	return ret, pageInfo, nil
 }
 
-func filterPartyQuery(gameIDs []entities.GameID, partyIDs []entities.PartyID, teamIDs []entities.TeamID) (string, []any, error) {
+func filterPartyQuery(gameIDs []entities.GameID, partyIDs []entities.PartyID, teamIDs []entities.TeamID, epochFromID, epochToID *uint64) (string, []any, error) {
 	var (
 		args       []any
 		conditions []string
@@ -155,7 +183,15 @@ func filterPartyQuery(gameIDs []entities.GameID, partyIDs []entities.PartyID, te
 			}
 			gids[i] = bytes
 		}
-		conditions = append(conditions, fmt.Sprintf("game_id = ANY(%s)", nextBindVar(&args, gids)))
+		conditions = append(conditions, fmt.Sprintf("t1.game_id = ANY(%s)", nextBindVar(&args, gids)))
+	}
+
+	if epochFromID != nil {
+		conditions = append(conditions, fmt.Sprintf("t1.epoch_id >= %s", nextBindVar(&args, epochFromID)))
+	}
+
+	if epochToID != nil {
+		conditions = append(conditions, fmt.Sprintf("t1.epoch_id <= %s", nextBindVar(&args, epochToID)))
 	}
 
 	if len(partyIDs) > 0 {
@@ -167,7 +203,7 @@ func filterPartyQuery(gameIDs []entities.GameID, partyIDs []entities.PartyID, te
 			}
 			pids[i] = bytes
 		}
-		conditions = append(conditions, fmt.Sprintf("party_id = ANY(%s)", nextBindVar(&args, pids)))
+		conditions = append(conditions, fmt.Sprintf("t1.party_id = ANY(%s)", nextBindVar(&args, pids)))
 	}
 
 	if len(teamIDs) > 0 {
@@ -179,7 +215,7 @@ func filterPartyQuery(gameIDs []entities.GameID, partyIDs []entities.PartyID, te
 			}
 			tids[i] = bytes
 		}
-		conditions = append(conditions, fmt.Sprintf("team_id = ANY(%s)", nextBindVar(&args, tids)))
+		conditions = append(conditions, fmt.Sprintf("t1.team_id = ANY(%s)", nextBindVar(&args, tids)))
 	}
 
 	whereClause := strings.Join(conditions, " AND ")
@@ -189,11 +225,19 @@ func filterPartyQuery(gameIDs []entities.GameID, partyIDs []entities.PartyID, te
 	return "", args, nil
 }
 
-func filterTeamQuery(gameIDs []entities.GameID, teamIDs []entities.TeamID) (string, []any, error) {
+func filterTeamQuery(gameIDs []entities.GameID, teamIDs []entities.TeamID, epochFromID, epochToID *uint64) (string, []any, error) {
 	var (
 		args       []any
 		conditions []string
 	)
+
+	if epochFromID != nil {
+		conditions = append(conditions, fmt.Sprintf("t1.epoch_id >= %s", nextBindVar(&args, epochFromID)))
+	}
+
+	if epochToID != nil {
+		conditions = append(conditions, fmt.Sprintf("t1.epoch_id <= %s", nextBindVar(&args, epochToID)))
+	}
 
 	if len(gameIDs) > 0 {
 		gids := make([][]byte, len(gameIDs))
@@ -204,7 +248,7 @@ func filterTeamQuery(gameIDs []entities.GameID, teamIDs []entities.TeamID) (stri
 			}
 			gids[i] = bytes
 		}
-		conditions = append(conditions, fmt.Sprintf("game_id = ANY(%s)", nextBindVar(&args, gids)))
+		conditions = append(conditions, fmt.Sprintf("t1.game_id = ANY(%s)", nextBindVar(&args, gids)))
 	}
 	if len(teamIDs) > 0 {
 		tids := make([][]byte, len(teamIDs))
@@ -215,7 +259,7 @@ func filterTeamQuery(gameIDs []entities.GameID, teamIDs []entities.TeamID) (stri
 			}
 			tids[i] = bytes
 		}
-		conditions = append(conditions, fmt.Sprintf("team_id = ANY(%s)", nextBindVar(&args, tids)))
+		conditions = append(conditions, fmt.Sprintf("t1.team_id = ANY(%s)", nextBindVar(&args, tids)))
 	}
 	if len(conditions) > 0 {
 		return " WHERE " + strings.Join(conditions, " AND "), args, nil
@@ -227,15 +271,41 @@ func (gs *GameScores) ListTeamScores(
 	ctx context.Context,
 	gameIDs []entities.GameID,
 	teamIDs []entities.TeamID,
+	epochFromID *uint64,
+	epochToID *uint64,
 	pagination entities.CursorPagination,
 ) ([]entities.GameTeamScore, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	where, args, err := filterTeamQuery(gameIDs, teamIDs)
+	where, args, err := filterTeamQuery(gameIDs, teamIDs, epochFromID, epochToID)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	query := `SELECT * FROM game_team_scores_current `
+	query := `select t1.* from game_team_scores_current t1`
+	if epochFromID != nil || epochToID != nil {
+		var epochWhere string
+		if epochFromID != nil && epochToID == nil {
+			epochWhere = fmt.Sprintf("epoch_id >= %d", *epochFromID)
+		} else if epochFromID == nil && epochToID != nil {
+			epochWhere = fmt.Sprintf("epoch_id <= %d", *epochToID)
+		} else {
+			epochWhere = fmt.Sprintf("epoch_id >= %d and epoch_id <= %d", *epochFromID, *epochToID)
+		}
+		query = `SELECT t1.* FROM game_team_scores t1 
+				 JOIN (
+					SELECT
+						party_id,
+						epoch_id,
+						MAX(vega_time) AS latest_time
+					FROM
+						game_team_scores
+					WHERE ` + epochWhere + `						
+					GROUP BY
+						party,
+						epoch
+				) t2 ON t1.party_id = t2.party_id AND t1.epoch_id = t2.epoch_id AND t1.vega_time = t2.latest_time 
+		`
+	}
 	query = fmt.Sprintf("%s %s", query, where)
 	query, args, err = PaginateQuery[entities.TeamGameScoreCursor](query, args, gamesTeamOrderding, pagination)
 	if err != nil {

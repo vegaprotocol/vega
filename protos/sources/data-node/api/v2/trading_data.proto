@@ -1363,6 +1363,10 @@ message GameTeamScoresFilter {
   repeated string game_ids = 1;
   // Restrict game scores to those for the given teams.
   repeated string team_ids = 2;
+  // Restrict game scores to those from a given epoch.
+  optional uint64 epoch_from = 3;
+  // Restrict game scores to those up to a given epoch.
+  optional uint64 epoch_to = 4;
 }
 
 // Response received from the query for getting a list of game scores for teams.
@@ -1401,6 +1405,10 @@ message GamePartyScoresFilter {
   repeated string team_ids = 2;
   // Restrict game scores to those relating to the given parties.
   repeated string party_ids = 3;
+  // Restrict game scores to those from a given epoch.
+  optional uint64 epoch_from = 4;
+  // Restrict game scores to those up to a given epoch.
+  optional uint64 epoch_to = 5;
 }
 
 // Response received from the query for getting a list of game scores for teams.
