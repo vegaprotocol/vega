@@ -42,7 +42,7 @@ Feature: Test vAMM implied commitment is working as expected
 
     And the liquidity sla params named "SLA-22":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
-      | 0.05        | 0.6                          | 1                             | 1.0                    |
+      | 0.05        | 1                            | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -78,8 +78,8 @@ Feature: Test vAMM implied commitment is working as expected
       | buyer  | price | size | seller |
       | party1 | 100   | 1    | party2 |
 
-    Then the network moves ahead "1" blocks
-    And the current epoch is "0"
+    Then the network moves ahead "1" epochs
+    And the current epoch is "1"
 
   @VAMM
   Scenario: 0042-LIQF-108: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided across the epoch, and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `100`.
@@ -89,7 +89,7 @@ Feature: Test vAMM implied commitment is working as expected
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 98          | 102         |
-    Then the network moves ahead "1" blocks
+    # Then the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
@@ -100,6 +100,7 @@ Feature: Test vAMM implied commitment is working as expected
       | party1 | 100   | 10   | party2 |
 
     Then the network moves ahead "1" epochs
+    And the current epoch is "2"
 
     And the following transfers should happen:
       | type                                       | from   | to     | from account                   | to account                                     | market id | amount | asset |
@@ -118,12 +119,37 @@ Feature: Test vAMM implied commitment is working as expected
       | party1 | 100   | 10   | party2 |
 
     Then the network moves ahead "1" epochs
+    And the current epoch is "3"
 
     And the following transfers should happen:
-      | type                                            | from      | to                                                               | from account                   | to account                      | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE            | market    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES  | ETH/MAR22 | 0      | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE            | market    | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES  | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE            | market    | lp2                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES  | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE  | market    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL         | ETH/MAR22 | 16      | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT      | lp1       | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION         | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT      | lp2       | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION         | ETH/MAR22 | 8      | USD   |
+      | type                                           | from   | to                                                               | from account                                   | to account                                     | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 3      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp2                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE | market | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL                           | ETH/MAR22 | 16     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT     | lp1    | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT     | lp2    | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 8      | USD   |
+
+    # And the current epoch is "3"
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    #0042-LIQF-110: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided for half the epoch, and then is cancelled for the second half of the epoch, and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `50`.
+    Then the network moves ahead "5" blocks
+    And the current epoch is "3"
+    When the parties cancel the following AMM:
+      | party | market id | method           |
+      | vamm1 | ETH/MAR22 | METHOD_IMMEDIATE |
+
+    Then the network moves ahead "7" blocks
+    And the following transfers should happen:
+      | type                                   | from                                                             | to     | from account                   | to account                     | market id | amount | asset |
+      | TRANSFER_TYPE_AMM_RELEASE              | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | vamm1  | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_GENERAL           | ETH/MAR22 | 100019 | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1                                                              | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 8      | USD   |
+      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1                                                              | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 8      | USD   |
+
+
