@@ -15,6 +15,11 @@ func TestEstimateBounds(t *testing.T) {
 	leverageAtUpper := num.NewDecimalFromFloat(1.00)
 	leverageAtLower := num.NewDecimalFromFloat(5.00)
 
+	shortRiskFactor := num.NewDecimalFromFloat(0.01)
+	longRiskFactor := num.NewDecimalFromFloat(0.01)
+	linearSlippage := num.NewDecimalFromFloat(0.05)
+	initialMargin := num.DecimalOne()
+
 	sqrter := NewSqrter()
 
 	// test liquidity unit
@@ -31,21 +36,31 @@ func TestEstimateBounds(t *testing.T) {
 	assert.Equal(t, num.DecimalFromFloat(1140.175).String(), avgEntryUpper.Round(3).String())
 
 	// test risk factor
-	zeroPointZeroFive := num.NewDecimalFromFloat(0.05)
-	one := num.DecimalOne()
-
-	riskFactorLower := RiskFactor(leverageAtLower, zeroPointZeroFive, zeroPointZeroFive, one)
-	riskFactorUpper := RiskFactor(leverageAtUpper, zeroPointZeroFive, zeroPointZeroFive, one)
+	riskFactorLower := RiskFactor(leverageAtLower, longRiskFactor, linearSlippage, initialMargin)
+	riskFactorUpper := RiskFactor(leverageAtUpper, shortRiskFactor, linearSlippage, initialMargin)
 	assert.Equal(t, leverageAtLower.String(), riskFactorLower.String())
 	assert.Equal(t, leverageAtUpper.String(), riskFactorUpper.String())
 
-	lowerBoundPos := PositionAtBound(riskFactorLower, balance.ToDecimal(), lowerPrice.ToDecimal(), avgEntryLower)
-	upperBoundPos := PositionAtBound(riskFactorUpper, balance.ToDecimal(), upperPrice.ToDecimal(), avgEntryUpper)
+	lowerPriceD := lowerPrice.ToDecimal()
+	upperPriceD := upperPrice.ToDecimal()
+
+	// test position at bounds
+	lowerBoundPos := PositionAtLowerBound(riskFactorLower, balance.ToDecimal(), lowerPriceD, avgEntryLower)
+	upperBoundPos := PositionAtUpperBound(riskFactorUpper, balance.ToDecimal(), upperPriceD, avgEntryUpper)
 	assert.Equal(t, num.DecimalFromFloat(0.437).String(), lowerBoundPos.Round(3).String())
-	// TODO: Tom needs to clarify the formula for upper bound position
 	assert.Equal(t, num.DecimalFromFloat(-0.069).String(), upperBoundPos.Round(3).String())
 
-	// out := EstimateBounds(basePrice, upperPrice, lowerPrice, leverageAtUpper, leverageAtLower, balance)
-	// assert.Equal(t, num.DecimalFromFloat(-0.166).String(), out.PositionSizeAtUpperBound.String())
-	// assert.Equal(t, num.DecimalFromFloat(0.201).String(), out.PositionSizeAtLowerBound.String())
+	// test loss on commitment
+	lossAtLower := LossOnCommitment(avgEntryLower, lowerPriceD, lowerBoundPos)
+	lossAtUpper := LossOnCommitment(avgEntryUpper, upperPriceD, upperBoundPos)
+	assert.Equal(t, num.DecimalFromFloat(21.28852368).String(), lossAtLower.Round(8).String())
+	assert.Equal(t, num.DecimalFromFloat(10.94820416).String(), lossAtUpper.Round(8).String())
+
+	linearSlippageFactor := num.DecimalZero()
+
+	// test liquidation price
+	liquidationPriceAtLower := LiquidationPrice(balance.ToDecimal(), lossAtLower, lowerBoundPos, lowerPriceD, linearSlippageFactor, longRiskFactor)
+	liquidationPriceAtUpper := LiquidationPrice(balance.ToDecimal(), lossAtUpper, upperBoundPos, upperPriceD, linearSlippageFactor, shortRiskFactor)
+	assert.Equal(t, num.DecimalFromFloat(727.2727273).String(), liquidationPriceAtLower.Round(7).String())
+	assert.Equal(t, num.DecimalFromFloat(2574.257426).String(), liquidationPriceAtUpper.Round(6).String())
 }

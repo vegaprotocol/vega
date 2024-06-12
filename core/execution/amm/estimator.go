@@ -1,52 +1,67 @@
 package amm
 
 import (
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"github.com/shopspring/decimal"
 )
 
 type EstimatorMetrics struct {
-	LossOnCommitmentAtUpperBound num.Decimal
-	LossOnCommitmentAtLowerBound num.Decimal
 	PositionSizeAtUpperBound     num.Decimal
 	PositionSizeAtLowerBound     num.Decimal
+	LossOnCommitmentAtUpperBound num.Decimal
+	LossOnCommitmentAtLowerBound num.Decimal
 	LiquidationPriceAtUpperBound num.Decimal
 	LiquidationPriceAtLowerBound num.Decimal
 }
 
+var sqrter *Sqrter
+
+func init() {
+	sqrter = NewSqrter()
+}
+
 func EstimateBounds(
-	basePrice, upperPrice, lowerPrice *num.Uint, leverageUpper, leverageLower num.Decimal, commitment *num.Uint,
+	lowerPrice, basePrice, upperPrice *num.Uint,
+	leverageLower, leverageUpper num.Decimal,
+	balance *num.Uint,
+	linearSlippageFactor, initialMargin decimal.Decimal,
+	riskFactorShort, riskFactorLong decimal.Decimal,
 ) EstimatorMetrics {
-	// FS = market sided risk factor
-	rfs := &types.RiskFactor{
-		Short: num.DecimalOne(),
-		Long:  num.DecimalOne(),
-	}
-	// FL = market's linear slippage
-	linearSlippage := num.DecimalOne()
-	// Fi = market's initial margin factor
-	sfs := &types.ScalingFactors{
-		InitialMargin: num.DecimalOne(),
-	}
+	// test liquidity unit
+	unitLower := LiquidityUnit(sqrter, basePrice, lowerPrice)
+	unitUpper := LiquidityUnit(sqrter, upperPrice, basePrice)
 
-	sqrter := NewSqrter()
-	luUpperRange := LiquidityUnit(sqrter, upperPrice, basePrice)
-	luLowerRange := LiquidityUnit(sqrter, basePrice, lowerPrice)
+	// test average entry price
+	avgEntryLower := AverageEntryPrice(sqrter, unitLower, basePrice)
+	avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
 
-	aepUpperRange := AverageEntryPrice(sqrter, luUpperRange, upperPrice)
-	aepLowerRange := AverageEntryPrice(sqrter, luLowerRange, basePrice)
+	// test risk factor
+	riskFactorLower := RiskFactor(leverageLower, riskFactorLong, linearSlippageFactor, initialMargin)
+	riskFactorUpper := RiskFactor(leverageUpper, riskFactorShort, linearSlippageFactor, initialMargin)
 
-	rfShortUpper := RiskFactor(leverageUpper, rfs.Short, linearSlippage, sfs.InitialMargin)
-	rfLongLower := RiskFactor(leverageLower, rfs.Long, linearSlippage, sfs.InitialMargin)
+	lowerPriceD := lowerPrice.ToDecimal()
+	upperPriceD := upperPrice.ToDecimal()
+	balanceD := balance.ToDecimal()
 
-	commitmentDecimal := commitment.ToDecimal()
+	// test position at bounds
+	boundPosLower := PositionAtLowerBound(riskFactorLower, balanceD, lowerPriceD, avgEntryLower)
+	boundPosUpper := PositionAtUpperBound(riskFactorUpper, balanceD, upperPriceD, avgEntryUpper)
 
-	positionSizeAtUpperBound := PositionAtBound(rfShortUpper, commitmentDecimal, basePrice.ToDecimal(), aepUpperRange)
-	positionSizeAtLowerBound := PositionAtBound(rfLongLower, commitmentDecimal, lowerPrice.ToDecimal(), aepLowerRange)
+	// test loss on commitment
+	lossLower := LossOnCommitment(avgEntryLower, lowerPriceD, boundPosLower)
+	lossUpper := LossOnCommitment(avgEntryUpper, upperPriceD, boundPosUpper)
+
+	// test liquidation price
+	liquidationPriceAtLower := LiquidationPrice(balanceD, lossLower, boundPosLower, lowerPriceD, linearSlippageFactor, riskFactorLong)
+	liquidationPriceAtUpper := LiquidationPrice(balanceD, lossUpper, boundPosUpper, upperPriceD, linearSlippageFactor, riskFactorShort)
 
 	return EstimatorMetrics{
-		PositionSizeAtUpperBound: positionSizeAtUpperBound,
-		PositionSizeAtLowerBound: positionSizeAtLowerBound,
+		PositionSizeAtUpperBound:     liquidationPriceAtUpper,
+		PositionSizeAtLowerBound:     liquidationPriceAtLower,
+		LossOnCommitmentAtUpperBound: lossUpper,
+		LossOnCommitmentAtLowerBound: lossLower,
+		LiquidationPriceAtUpperBound: liquidationPriceAtUpper,
+		LiquidationPriceAtLowerBound: liquidationPriceAtLower,
 	}
 }
 
@@ -73,11 +88,33 @@ func AverageEntryPrice(sqrter *Sqrter, lu num.Decimal, pu *num.Uint) num.Decimal
 }
 
 // Pvl = rf * b / (pl * (1 - rf) + rf * pa)
-func PositionAtBound(rf, b, pl, pa num.Decimal) num.Decimal {
+func PositionAtLowerBound(rf, b, pl, pa num.Decimal) num.Decimal {
 	oneSubRf := num.DecimalOne().Sub(rf)
 	rfMulPa := rf.Mul(pa)
 
 	return rf.Mul(b).Div(
 		pl.Mul(oneSubRf).Add(rfMulPa),
+	)
+}
+
+// Pvl = -rf * b / (pl * (1 + rf) - rf * pa)
+func PositionAtUpperBound(rf, b, pl, pa num.Decimal) num.Decimal {
+	onePlusRf := num.DecimalOne().Add(rf)
+	rfMulPa := rf.Mul(pa)
+
+	return rf.Neg().Mul(b).Div(
+		pl.Mul(onePlusRf).Sub(rfMulPa),
+	)
+}
+
+// lc = |pa - pb * pB|
+func LossOnCommitment(pa, pb, pB num.Decimal) num.Decimal {
+	return pa.Sub(pb).Mul(pB).Abs()
+}
+
+// Pliq = (b - lc - Pb * pb) / (|Pb| * (fl + mr) - Pb)
+func LiquidationPrice(b, lc, pB, pb, fl, mr num.Decimal) num.Decimal {
+	return b.Sub(lc).Sub(pB.Mul(pb)).Div(
+		pB.Abs().Mul(fl.Add(mr)).Sub(pB),
 	)
 }
