@@ -56,11 +56,6 @@ func NewFeesStats(src *ConnectionSource) *FeesStats {
 func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStats) error {
 	defer metrics.StartSQLQuery("FeesStats", "AddFeesStats")()
 
-	ctx, err := rfs.WithTransaction(ctx)
-	if err != nil {
-		return fmt.Errorf("could not initialise transaction: %w", err)
-	}
-
 	if _, err := rfs.Connection.Exec(
 		ctx,
 		`INSERT INTO fees_stats(
@@ -86,24 +81,16 @@ func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStat
 		stats.MakerFeesGenerated,
 		stats.VegaTime,
 	); err != nil {
-		_ = rfs.Rollback(ctx)
 		return fmt.Errorf("could not execute insertion in `fees_stats`: %w", err)
 	}
 
-	partiesStats := computePartiesStats(stats)
-
 	batcher := NewListBatcher[*feesStatsForPartyRow]("fees_stats_by_party", feesStatsByPartyColumn)
+	partiesStats := computePartiesStats(stats)
 	for _, s := range partiesStats {
 		batcher.Add(s)
 	}
-
 	if _, err := batcher.Flush(ctx, rfs.Connection); err != nil {
-		_ = rfs.Rollback(ctx)
-		return fmt.Errorf("could not flush the batch insertion in `fees_stats_by_party`: %w", err)
-	}
-
-	if err := rfs.Commit(ctx); err != nil {
-		return fmt.Errorf("an error occurred during transactions commit: %w", err)
+		return err
 	}
 
 	return nil

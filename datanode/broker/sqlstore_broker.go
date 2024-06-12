@@ -126,7 +126,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		return err
 	}
 
-	dbContext, err := b.transactionManager.WithConnection(context.Background())
+	dbContext, err := b.transactionManager.WithConnection(ctx)
 	if err != nil {
 		return err
 	}

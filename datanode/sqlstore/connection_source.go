@@ -66,8 +66,8 @@ type (
 	connectionContextKey  struct{}
 )
 
-func NewTransactionalConnectionSource(log *logging.Logger, connConfig ConnectionConfig) (*ConnectionSource, error) {
-	pool, err := CreateConnectionPool(connConfig)
+func NewTransactionalConnectionSource(ctx context.Context, log *logging.Logger, connConfig ConnectionConfig) (*ConnectionSource, error) {
+	pool, err := CreateConnectionPool(ctx, connConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}
@@ -320,18 +320,18 @@ func (t *delegatingConnection) CopyTo(ctx context.Context, w io.Writer, sql stri
 	return conn.Conn().PgConn().CopyTo(ctx, w, sql)
 }
 
-func CreateConnectionPool(conf ConnectionConfig) (*pgxpool.Pool, error) {
+func CreateConnectionPool(ctx context.Context, conf ConnectionConfig) (*pgxpool.Pool, error) {
 	poolConfig, err := conf.GetPoolConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pool config: %w", err)
 	}
 
-	setMaxPoolSize(context.Background(), poolConfig, conf)
+	setMaxPoolSize(ctx, poolConfig, conf)
 	registerNumericType(poolConfig)
 
 	poolConfig.MinConns = conf.MinConnPoolSize
 
-	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
+	pool, err := pgxpool.ConnectConfig(ctx, poolConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}

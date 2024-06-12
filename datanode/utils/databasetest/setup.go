@@ -50,6 +50,8 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 	testDBHost := ""
 	sqlConfig := NewTestConfig(testDBPort, testDBHost, testDBSocketDir)
 
+	mainCtx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	if sqlTestsEnabled {
 		log := logging.NewTestLogger()
 
@@ -70,7 +72,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		log.Infof("Test DB Port: %d", testDBPort)
 
 		// Make sure the database has started before we run the tests.
-		ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
+		ctx, cancel := context.WithTimeout(mainCtx, postgresServerTimeout)
 
 		op := func() error {
 			connStr := sqlConfig.ConnectionConfig.GetConnectionString()
@@ -88,7 +90,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		}
 
 		cancel()
-		connectionSource, err := sqlstore.NewTransactionalConnectionSource(log, sqlConfig.ConnectionConfig)
+		connectionSource, err := sqlstore.NewTransactionalConnectionSource(mainCtx, log, sqlConfig.ConnectionConfig)
 		if err != nil {
 			panic(err)
 		}

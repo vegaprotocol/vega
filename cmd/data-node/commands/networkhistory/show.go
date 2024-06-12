@@ -81,6 +81,8 @@ func (o *showOutput) printHuman(allSegments bool) {
 }
 
 func (cmd *showCmd) Execute(_ []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.WarnLevel
 	cfg.Environment = "custom"
@@ -111,7 +113,7 @@ func (cmd *showCmd) Execute(_ []string) error {
 	}
 	defer func() { _ = conn.Close() }()
 
-	response, err := client.ListAllNetworkHistorySegments(context.Background(), &v2.ListAllNetworkHistorySegmentsRequest{})
+	response, err := client.ListAllNetworkHistorySegments(ctx, &v2.ListAllNetworkHistorySegmentsRequest{})
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to list all network history segments", err)
 		os.Exit(1)
@@ -127,13 +129,13 @@ func (cmd *showCmd) Execute(_ []string) error {
 	segments := segment.Segments[*v2.HistorySegment](response.Segments)
 	output.ContiguousHistories = segments.AllContigousHistories()
 
-	pool, err := getCommandConnPool(cmd.Config.SQLStore.ConnectionConfig)
+	pool, err := getCommandConnPool(ctx, cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get command conn pool", err)
 	}
 	defer pool.Close()
 
-	span, err := sqlstore.GetDatanodeBlockSpan(context.Background(), pool)
+	span, err := sqlstore.GetDatanodeBlockSpan(ctx, pool)
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get datanode block span", err)
 		os.Exit(1)
@@ -156,10 +158,10 @@ func (cmd *showCmd) Execute(_ []string) error {
 	return nil
 }
 
-func getCommandConnPool(conf sqlstore.ConnectionConfig) (*pgxpool.Pool, error) {
+func getCommandConnPool(ctx context.Context, conf sqlstore.ConnectionConfig) (*pgxpool.Pool, error) {
 	conf.MaxConnPoolSize = 3
 
-	connPool, err := sqlstore.CreateConnectionPool(conf)
+	connPool, err := sqlstore.CreateConnectionPool(ctx, conf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}

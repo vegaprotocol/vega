@@ -91,18 +91,22 @@ func TestMain(m *testing.M) {
 	}
 
 	cancel()
-	connectionSource, err = sqlstore.NewTransactionalConnectionSource(log, sqlConfig.ConnectionConfig)
+	ctx, cancel = context.WithCancel(context.Background())
+	connectionSource, err = sqlstore.NewTransactionalConnectionSource(ctx, log, sqlConfig.ConnectionConfig)
 	if err != nil {
+		cancel()
 		panic(err)
 	}
 	defer embeddedPostgres.Stop()
 
 	if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(log, sqlConfig.ConnectionConfig, store.EmbedMigrations, false); err != nil {
 		log.Errorf("failed to wipe database and migrate schema, dumping postgres log:\n %s", postgresLog.String())
+		cancel()
 		panic(err)
 	}
 
 	code := m.Run()
+	cancel()
 	os.Exit(code)
 }
 
