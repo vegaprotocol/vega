@@ -80,7 +80,7 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 	}
 
 	if buy.offbook != nil {
-		ask, _, bid, _ := buy.offbook.BestPricesAndVolumes()
+		bid, _, ask, _ := buy.offbook.BestPricesAndVolumes()
 		if bid != nil {
 			if bestBid.IsZero() {
 				bestBid = bid
@@ -100,11 +100,17 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 	ipv := IndicativePriceAndVolume{
 		levels:       []ipvPriceLevel{},
 		log:          log,
-		lastMinPrice: bestBid,
-		lastMaxPrice: bestAsk,
+		lastMinPrice: num.UintZero(),
+		lastMaxPrice: num.UintZero(),
 		needsUpdate:  true,
 		offbook:      buy.offbook,
 		generated:    map[string]*ipvGeneratedOffbook{},
+	}
+
+	// if they are crossed set the last min/max values otherwise leave as zero
+	if bestAsk.LTE(bestBid) {
+		ipv.lastMinPrice = bestAsk
+		ipv.lastMaxPrice = bestBid
 	}
 
 	ipv.buildInitialCumulativeLevels(buy, sell)
@@ -116,13 +122,14 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 }
 
 func (ipv *IndicativePriceAndVolume) buildInitialOffbookShape(offbook OffbookSource, mplm map[num.Uint]ipvPriceLevel) {
-	if ipv.lastMinPrice.GT(ipv.lastMaxPrice) {
+	min, max := ipv.lastMinPrice, ipv.lastMaxPrice
+	if min.IsZero() || max.IsZero() || min.GT(max) {
 		// region is not crossed so we won't expand just yet
 		return
 	}
 
 	// expand all AMM's into orders within the crossed region and add them to the price-level cache
-	buys, sells := offbook.OrderbookShape(ipv.lastMinPrice, ipv.lastMaxPrice, nil)
+	buys, sells := offbook.OrderbookShape(min, max, nil)
 
 	for _, o := range buys {
 		mpl, ok := mplm[*o.Price]

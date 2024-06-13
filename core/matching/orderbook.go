@@ -869,7 +869,9 @@ func (b *OrderBook) UpdateAMM(party string) {
 
 	ipv := b.indicativePriceAndVolume
 	ipv.removeOffbookShape(party)
-	if ipv.lastMinPrice.GT(ipv.lastMaxPrice) {
+
+	min, max := ipv.lastMinPrice, ipv.lastMaxPrice
+	if min.IsZero() || max.IsZero() || min.GT(max) {
 		// region is not crossed so we won't expand just yet
 		return
 	}
