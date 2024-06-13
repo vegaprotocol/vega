@@ -6086,6 +6086,10 @@ input GameTeamScoreFilter {
   gameIds: [ID!]
   "Zero or more team IDs to filter by"
   teamIds: [ID!]
+  "Optional 'from epoch' ID for scores epoch interval"
+  epochFrom: Int
+  "Optional 'to epoch' ID for scores epoch interval"
+  epochTo: Int
 }
 
 input GamePartyScoreFilter {
@@ -6095,6 +6099,10 @@ input GamePartyScoreFilter {
   teamIds: [ID!]
   "Zero or more party IDs to filter by"
   partyIds: [ID!]
+  "Optional 'from epoch' ID for scores epoch interval"
+  epochFrom: Int
+  "Optional 'to epoch' ID for scores epoch interval"
+  epochTo: Int
 }
 
 input OrderByPartyIdsFilter {

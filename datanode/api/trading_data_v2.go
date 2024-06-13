@@ -321,6 +321,8 @@ func (t *TradingDataServiceV2) ListGamePartyScores(ctx context.Context, req *v2.
 	var partyIDs []entities.PartyID
 	var teamIDs []entities.TeamID
 	var gameIDs []entities.GameID
+	var epochFromID *uint64
+	var epochToID *uint64
 	if req.Filter != nil {
 		partyIDs = make([]entities.PartyID, 0, len(req.Filter.PartyIds))
 		for _, pid := range req.Filter.PartyIds {
@@ -335,10 +337,12 @@ func (t *TradingDataServiceV2) ListGamePartyScores(ctx context.Context, req *v2.
 		for _, gid := range req.Filter.GameIds {
 			gameIDs = append(gameIDs, entities.GameID(gid))
 		}
+		epochFromID = req.Filter.EpochFrom
+		epochToID = req.Filter.EpochTo
 	}
 
 	partyScores, pageInfo, err := t.gameScoreService.ListPartyScores(
-		ctx, gameIDs, partyIDs, teamIDs, pagination)
+		ctx, gameIDs, partyIDs, teamIDs, epochFromID, epochToID, pagination)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -366,6 +370,8 @@ func (t *TradingDataServiceV2) ListGameTeamScores(ctx context.Context, req *v2.L
 	}
 	var teamIDs []entities.TeamID
 	var gameIDs []entities.GameID
+	var epochFromID *uint64
+	var epochToID *uint64
 	if req.Filter != nil {
 		teamIDs = make([]entities.TeamID, 0, len(req.Filter.TeamIds))
 		for _, tid := range req.Filter.TeamIds {
@@ -376,10 +382,12 @@ func (t *TradingDataServiceV2) ListGameTeamScores(ctx context.Context, req *v2.L
 		for _, gid := range req.Filter.GameIds {
 			gameIDs = append(gameIDs, entities.GameID(gid))
 		}
+		epochFromID = req.Filter.EpochFrom
+		epochToID = req.Filter.EpochTo
 	}
 
 	teamScores, pageInfo, err := t.gameScoreService.ListTeamScores(
-		ctx, gameIDs, teamIDs, pagination)
+		ctx, gameIDs, teamIDs, epochFromID, epochToID, pagination)
 	if err != nil {
 		return nil, formatE(err)
 	}
