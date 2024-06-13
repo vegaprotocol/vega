@@ -33,6 +33,7 @@ func NewTxCache(commander *nodewallets.Commander) *TxCache {
 	return &TxCache{
 		commander:             commander,
 		marketToDelayRequired: map[string]bool{},
+		heightToTxs:           map[uint64][][]byte{},
 	}
 }
 
