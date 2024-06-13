@@ -260,21 +260,23 @@ service TradingDataService {
 
   // List candle data
   //
-  // Get a list of candle data for a given candle ID. Candle IDs can be obtained by calling list-candle-intervals
+  // Get a list of candle data for a given candle ID.
+  // A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
   rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
 
   // Observe candle data
   //
-  // Subscribe to a stream of candle updates
+  // Subscribe to a stream of candle updates given a candle ID.
+  // A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
   rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
 
   // List candle intervals
   //
-  // Get a list of all available intervals for a given market along with the corresponding candle ID
+  // Get a list of all available candle intervals for a given market along with the corresponding candle ID.
   rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
