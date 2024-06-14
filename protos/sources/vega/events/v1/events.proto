@@ -48,6 +48,8 @@ message AMM {
   Status status = 7;
   // Reason for the AMM's current status.
   StatusReason status_reason = 8;
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
+  string proposed_fee = 9;
 
   enum Status {
     STATUS_UNSPECIFIED = 0;

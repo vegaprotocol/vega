@@ -5446,6 +5446,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 					ctx, pool.Owner(), m.GetID(), pool.AMMParty, pool.ID,
 					pool.CommitmentAmount(), pool.Parameters,
 					types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
+					pool.ProposedFee,
 				),
 			)
 			return err
@@ -5459,6 +5460,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotFillCommitment,
+				pool.ProposedFee,
 			),
 		)
 		return err
@@ -5483,6 +5485,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
+				pool.ProposedFee,
 			),
 		)
 		return err

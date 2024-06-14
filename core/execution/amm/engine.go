@@ -612,6 +612,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonPartyAlreadyOwnsAPool,
+				submit.ProposedFee,
 			),
 		)
 
@@ -628,6 +629,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, reason,
+				submit.ProposedFee,
 			),
 		)
 		return nil, err
@@ -640,6 +642,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonUnspecified,
+				submit.ProposedFee,
 			),
 		)
 
@@ -667,6 +670,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCommitmentTooLow,
+				submit.ProposedFee,
 			),
 		)
 
@@ -801,6 +805,7 @@ func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 			ctx, pool.owner, e.marketID, pool.AMMParty, pool.ID,
 			pool.Commitment, pool.Parameters,
 			pool.status, types.AMMStatusReasonUnspecified,
+			pool.ProposedFee,
 		),
 	)
 }

@@ -43,6 +43,7 @@ type AMMPool struct {
 	ParametersUpperBound           *num.Decimal
 	ParametersLeverageAtLowerBound *num.Decimal
 	ParametersLeverageAtUpperBound *num.Decimal
+	ProposedFee                    *num.Decimal
 	CreatedAt                      time.Time
 	LastUpdated                    time.Time
 }
@@ -61,7 +62,7 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		parametersBase,
 		commitment num.Decimal
 		parametersLowerBound,
-		parametersUpperBound *num.Decimal
+		parametersUpperBound, fee *num.Decimal
 		err error
 	)
 	partyID := PartyID(pool.PartyId)
@@ -117,6 +118,14 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		upperLeverage = &v
 	}
 
+	if len(pool.ProposedFee) > 0 {
+		fd, err := num.DecimalFromString(pool.ProposedFee)
+		if err != nil {
+			return AMMPool{}, err
+		}
+		fee = &fd
+	}
+
 	return AMMPool{
 		PartyID:                        partyID,
 		MarketID:                       marketID,
@@ -130,6 +139,7 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		ParametersUpperBound:           parametersUpperBound,
 		ParametersLeverageAtLowerBound: lowerLeverage,
 		ParametersLeverageAtUpperBound: upperLeverage,
+		ProposedFee:                    fee,
 		CreatedAt:                      vegaTime,
 		LastUpdated:                    vegaTime,
 	}, nil
@@ -137,6 +147,7 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 
 func (p AMMPool) ToProto() *eventspb.AMM {
 	var lowerBound, upperBound, lowerLeverage, upperLeverage *string
+	var fee string
 
 	if p.ParametersLowerBound != nil {
 		lowerBound = ptr.From(p.ParametersLowerBound.String())
@@ -153,6 +164,9 @@ func (p AMMPool) ToProto() *eventspb.AMM {
 	if p.ParametersLeverageAtUpperBound != nil {
 		upperLeverage = ptr.From(p.ParametersLeverageAtUpperBound.String())
 	}
+	if p.ProposedFee != nil {
+		fee = p.ProposedFee.String()
+	}
 
 	return &eventspb.AMM{
 		PartyId:      p.PartyID.String(),
@@ -162,6 +176,7 @@ func (p AMMPool) ToProto() *eventspb.AMM {
 		Commitment:   p.Commitment.String(),
 		Status:       eventspb.AMM_Status(p.Status),
 		StatusReason: eventspb.AMM_StatusReason(p.StatusReason),
+		ProposedFee:  fee,
 		Parameters: &eventspb.AMM_ConcentratedLiquidityParameters{
 			Base:                 p.ParametersBase.String(),
 			LowerBound:           lowerBound,

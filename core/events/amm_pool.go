@@ -35,8 +35,9 @@ func NewAMMPoolEvent(
 	p *types.ConcentratedLiquidityParameters,
 	status types.AMMPoolStatus,
 	statusReason types.AMMStatusReason,
+	fees num.Decimal,
 ) *AMMPool {
-	order := &AMMPool{
+	return &AMMPool{
 		Base: newBase(ctx, AMMPoolEvent),
 		pool: &eventspb.AMM{
 			Id:           poolID,
@@ -47,10 +48,9 @@ func NewAMMPoolEvent(
 			Parameters:   p.ToProtoEvent(),
 			Status:       status,
 			StatusReason: statusReason,
+			ProposedFee:  fees.String(),
 		},
 	}
-	// set to original order price
-	return order
 }
 
 func (p AMMPool) IsParty(id string) bool {

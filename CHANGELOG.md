@@ -27,6 +27,7 @@
 - [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
 - [11266](https://github.com/vegaprotocol/vega/issues/11266) - Include derived parties rewards API
 - [11357](https://github.com/vegaprotocol/vega/issues/11357) - Support historical game scores
+- [11023](https://github.com/vegaprotocol/vega/issues/11023) - Add proposed fees to `vAMM` data.
 
 ### 🐛 Fixes
 

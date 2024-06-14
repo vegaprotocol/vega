@@ -7593,6 +7593,8 @@ type AMM {
   status: AMMStatus!
   "Reason for status if applicable"
   statusReason: AMMStatusReason!
+  "Proposed fee"
+  proposedFee: String
 }
 
 type ConcentratedLiquidityParameters {
