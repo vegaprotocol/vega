@@ -31,6 +31,7 @@ Feature: Test vAMM implied commitment is working as expected
       | validators.epoch.length                             | 10s   |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.25  |
+      | market.liquidity.providersFeeCalculationTimeStep    | 9s    |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the following assets are registered:
@@ -63,8 +64,8 @@ Feature: Test vAMM implied commitment is working as expected
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type    |
-      | lp_1 | lp1   | ETH/MAR22 | 100000            | 0.02 | submission |
-      | lp_2 | lp2   | ETH/MAR22 | 100000            | 0.02 | submission |
+      | lp_1 | lp1   | ETH/MAR22 | 10000            | 0.02 | submission |
+      | lp_2 | lp2   | ETH/MAR22 | 10000            | 0.02 | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -84,11 +85,16 @@ Feature: Test vAMM implied commitment is working as expected
   @VAMM
   Scenario: 0042-LIQF-108: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided across the epoch, and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `100`.
     Then the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 98          | 102         | 0.03         |
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee | 
+      | vamm1 | ETH/MAR22 | 10000 | 0.05      | 100  | 98          | 102         | 0.03         | 
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 98          | 102         |
+      | vamm1 | ETH/MAR22 | 10000 | STATUS_ACTIVE  | 100  | 98          | 102         | 
+
+    And set the following AMM sub account aliases:
+      | party | market id | alias      |
+      | vamm1 | ETH/MAR22 | vamm-party |
+
     # Then the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -103,25 +109,6 @@ Feature: Test vAMM implied commitment is working as expected
     And the current epoch is "2"
 
     And the following transfers should happen:
-      | type                                       | from   | to     | from account                   | to account                                     | market id | amount | asset |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE       | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE       | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 10     | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 10     | USD   |
-
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
-      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
-
-    Then the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party1 | 100   | 10   | party2 |
-
-    Then the network moves ahead "1" epochs
-    And the current epoch is "3"
-
-    And the following transfers should happen:
       | type                                           | from   | to                                                               | from account                                   | to account                                     | market id | amount | asset |
       | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 3      | USD   |
       | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 8      | USD   |
@@ -130,26 +117,114 @@ Feature: Test vAMM implied commitment is working as expected
       | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT     | lp1    | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 8      | USD   |
       | TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT     | lp2    | market                                                           | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 8      | USD   |
 
-    # And the current epoch is "3"
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    | party                                                            | equity like share  | virtual stake         | average entry valuation |
+    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                  | 4669.0000000000000000 | 24669                   |
+
+  @VAMM
+  Scenario: 0042-LIQF-110: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided for half the epoch, because it was submitted half way through an epoch, and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `50`.
+
+    # move ahead half an epoch then submit the AMM
+    Then the network moves ahead "5" blocks
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 98          | 102         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 98          | 102         |
+
+
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
       | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
 
-    #0042-LIQF-110: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided for half the epoch, and then is cancelled for the second half of the epoch, and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `50`.
-    Then the network moves ahead "5" blocks
-    And the current epoch is "3"
-    When the parties cancel the following AMM:
-      | party | market id | method           |
-      | vamm1 | ETH/MAR22 | METHOD_IMMEDIATE |
-
+    # epoch ends and AMM should get fewer fees than the above test because its ELS is less
     Then the network moves ahead "7" blocks
     And the following transfers should happen:
-      | type                                   | from                                                             | to     | from account                   | to account                     | market id | amount | asset |
-      | TRANSFER_TYPE_AMM_RELEASE              | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | vamm1  | ACCOUNT_TYPE_GENERAL           | ACCOUNT_TYPE_GENERAL           | ETH/MAR22 | 100019 | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market                                                           | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1                                                              | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 8      | USD   |
-      | TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY | lp1                                                              | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 8      | USD   |
+      | type                                           | from   | to                                                               | from account                                   | to account                                     | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 0      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 9      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp2                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 9      | USD   |
+
+    # virtual stake is HALF what it was in the above test since the AMM was only active for half the epoch
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    | party                                                            | equity like share  | virtual stake         | average entry valuation |
+    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                  | 2334.0000000000000000 | 22334                   |
 
 
+  @VAMM
+  Scenario: LP fee for AMM based solely on liquidity score
+
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.liquidity.equityLikeShareFeeFraction         | 0     |
+
+
+    # submit an AMM
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 98          | 102         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 98          | 102         |
+
+     Then the network moves ahead "1" blocks
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "1" epochs
+    And the following transfers should happen:
+      | type                                           | from   | to                                                               | from account                                   | to account                                     | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 6      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 6      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp2                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 6      | USD   |
+
+
+  @VAMM
+  Scenario: LP fee for AMM based solely on liquidity score when AMM cancels half way through an epoch
+
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.liquidity.equityLikeShareFeeFraction         | 0     |
+
+    # submit an AMM
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 98          | 102         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 98          | 102         |
+
+     Then the network moves ahead "5" blocks
+     When the parties cancel the following AMM:
+     | party  | market id | method           |
+     | vamm1 | ETH/MAR22 | METHOD_IMMEDIATE |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    # epoch ends and AMM should get fewer fees than the above test because its ELS is less
+    Then the network moves ahead "7" blocks
+    And the following transfers should happen:
+      | type                                           | from   | to                                                               | from account                                   | to account                                     | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 5      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp1                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 7      | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE           | market | lp2                                                              | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 7      | USD   |
+
+    # and at the next epoch it should be 0 fees because its fully cancelled
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "1" epochs
+    And the following transfers should happen:
+      | type                                   | from   | to    | from account                           | to account                       | market id | amount | asset |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp1   | ACCOUNT_TYPE_FEES_LIQUIDITY            | ACCOUNT_TYPE_LP_LIQUIDITY_FEES   | ETH/MAR22 | 10     | USD   |
+      | TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE   | market | lp2   | ACCOUNT_TYPE_FEES_LIQUIDITY            | ACCOUNT_TYPE_LP_LIQUIDITY_FEES   | ETH/MAR22 | 10     | USD   |

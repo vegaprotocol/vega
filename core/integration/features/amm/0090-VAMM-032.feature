@@ -157,8 +157,8 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW             |
       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_LOSS                   |
       | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1380   | USD   | true   | TRANSFER_TYPE_LOSS                   |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 28202  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 28204  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
-      | vamm1    | USD   |           | 28202   |        |        |
+      | vamm1    | USD   |           | 28204   |        |        |
       | vamm1-id | USD   | ETH/MAR22 | 0       | 0      | true   |

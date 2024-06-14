@@ -316,11 +316,6 @@ func (e *Engine) RemoveDistressed(ctx context.Context, closed []events.MarketPos
 	}
 }
 
-func (e *Engine) IsAMMPartyID(key string) bool {
-	_, yes := e.ammParties[key]
-	return yes
-}
-
 // BestPricesAndVolumes returns the best bid/ask and their volumes across all the registered AMM's.
 func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 	var bestBid, bestAsk *num.Uint
@@ -918,14 +913,6 @@ func (e *Engine) UpdateSubAccountBalance(
 	return currentCommitment, nil
 }
 
-func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
-	ret := make(map[string]common.AMMPool, len(e.pools))
-	for _, v := range e.pools {
-		ret[v.AMMParty] = v
-	}
-	return ret
-}
-
 // OrderbookShape expands all registered AMM's into orders between the given prices. If `ammParty` is supplied then just the pool
 // with that party id is expanded.
 func (e *Engine) OrderbookShape(st, nd *num.Uint, ammParty *string) ([]*types.Order, []*types.Order) {
@@ -956,6 +943,14 @@ func (e *Engine) OrderbookShape(st, nd *num.Uint, ammParty *string) ([]*types.Or
 	return p.OrderbookShape(st, nd, e.idgen)
 }
 
+func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
+	ret := make(map[string]common.AMMPool, len(e.pools))
+	for _, v := range e.pools {
+		ret[v.AMMParty] = v
+	}
+	return ret
+}
+
 func (e *Engine) GetAllSubAccounts() []string {
 	ret := make([]string, 0, len(e.ammParties))
 	for _, subAccount := range e.ammParties {
@@ -970,6 +965,12 @@ func (e *Engine) GetAMMParty(party string) (string, error) {
 		return p.AMMParty, nil
 	}
 	return "", ErrNoPoolMatchingParty
+}
+
+// IsAMMPartyID returns whether the given key is the key of AMM registered with the engine.
+func (e *Engine) IsAMMPartyID(key string) bool {
+	_, yes := e.ammParties[key]
+	return yes
 }
 
 func (e *Engine) add(p *Pool) {

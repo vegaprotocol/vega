@@ -17,7 +17,7 @@ Feature: Test vAMM implied commitment is working as expected
       | market.value.windowLength                           | 60s   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 6     |
-      | market.auction.minimumDuration                      | 15    |
+      | market.auction.minimumDuration                      | 2     |
       | market.fee.factors.infrastructureFee                | 0.001 |
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
@@ -80,17 +80,13 @@ Feature: Test vAMM implied commitment is working as expected
       | party2 | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
       | lp1    | ETH/MAR22 | sell | 20     | 160   | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
 
-    # enter new epoch while in opening auction
-    Then the network moves ahead "14" blocks
-    And the current epoch is "1"
-    
     When the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 100   | 1    | party2 |
 
     Then the network moves ahead "1" blocks
-    And the current epoch is "1"
+    And the current epoch is "0"
 
   @VAMM
   Scenario: 0042-LIQF-108_before_openingAuction : A vAMM which was active on the market during opening auction, vAMM should be getting LP fee in the same way as normal LPs 
@@ -104,7 +100,7 @@ Feature: Test vAMM implied commitment is working as expected
       | buyer  | price | size | seller |
       | party1 | 100   | 10   | party2 |
     Then the network moves ahead "1" epochs
-    And the current epoch is "2"
+    And the current epoch is "1"
 
     And the following transfers should happen:
       | type                                   | from   | to                                                                  | from account                   | to account                     | market id | amount | asset |
