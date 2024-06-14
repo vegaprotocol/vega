@@ -47,7 +47,7 @@ func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (resource_id, sig) DO NOTHING`
 
-	if _, err := n.Connection.Exec(ctx, query,
+	if _, err := n.Exec(ctx, query,
 		ns.ResourceID,
 		ns.Sig,
 		ns.Kind,
@@ -84,7 +84,7 @@ func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination enti
 		return ns, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, n.Connection, &ns, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, n.ConnectionSource, &ns, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get node signatures for resource: %w", err)
 	}
 
@@ -98,7 +98,7 @@ func (n *Notary) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]ent
 	var ns []entities.NodeSignature
 	query := "SELECT resource_id, sig, kind, tx_hash, vega_time FROM node_signatures WHERE tx_hash=$1"
 
-	if err := pgxscan.Select(ctx, n.Connection, &ns, query, txHash); err != nil {
+	if err := pgxscan.Select(ctx, n.ConnectionSource, &ns, query, txHash); err != nil {
 		return nil, fmt.Errorf("could not get node signatures for tx hash: %w", err)
 	}
 

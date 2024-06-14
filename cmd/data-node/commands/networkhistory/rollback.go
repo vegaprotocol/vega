@@ -76,7 +76,7 @@ func (cmd *rollbackCmd) Execute(args []string) error {
 		return fmt.Errorf("failed to kill all connections to database: %w", err)
 	}
 
-	connPool, err := getCommandConnPool(cmd.Config.SQLStore.ConnectionConfig)
+	connPool, err := getCommandConnPool(ctx, cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to get command connection pool: %w", err)
 	}

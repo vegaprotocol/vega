@@ -120,7 +120,7 @@ func TestAssetCache(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, asset2, fetched)
 
-	// Commit the transaction and fetch the asset, we should get the asset with the new symbol
+	// after commit, the new asset should be there already
 	err = connectionSource.Commit(txCtx)
 	require.NoError(t, err)
 	fetched, err = as.GetByID(ctx, string(asset.ID))

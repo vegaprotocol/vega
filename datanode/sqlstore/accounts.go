@@ -52,7 +52,7 @@ func NewAccounts(connectionSource *ConnectionSource) *Accounts {
 func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 	defer metrics.StartSQLQuery("Accounts", "Add")()
 
-	err := as.Connection.QueryRow(ctx,
+	err := as.QueryRow(ctx,
 		`INSERT INTO accounts(id, party_id, asset_id, market_id, type, tx_hash, vega_time)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id`,
@@ -87,7 +87,7 @@ func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (
 	a := entities.Account{}
 	defer metrics.StartSQLQuery("Accounts", "GetByID")()
 
-	if err := pgxscan.Get(ctx, as.Connection, &a,
+	if err := pgxscan.Get(ctx, as.ConnectionSource, &a,
 		`SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
 		 FROM accounts WHERE id=$1`,
 		accountID,
@@ -102,7 +102,7 @@ func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (
 func (as *Accounts) GetAll(ctx context.Context) ([]entities.Account, error) {
 	accounts := []entities.Account{}
 	defer metrics.StartSQLQuery("Accounts", "GetAll")()
-	err := pgxscan.Select(ctx, as.Connection, &accounts, `
+	err := pgxscan.Select(ctx, as.ConnectionSource, &accounts, `
 		SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
 		FROM accounts`)
 	return accounts, err
@@ -114,7 +114,7 @@ func (as *Accounts) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]
 
 	err := pgxscan.Select(
 		ctx,
-		as.Connection,
+		as.ConnectionSource,
 		&accounts,
 		`SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time FROM accounts WHERE tx_hash=$1`,
 		txHash,
@@ -160,7 +160,7 @@ func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
 	batch.Queue(insertQuery, accountID, a.PartyID, a.AssetID, a.MarketID, a.Type, a.TxHash, a.VegaTime)
 	batch.Queue(selectQuery, a.PartyID, a.AssetID, a.MarketID, a.Type)
 	defer metrics.StartSQLQuery("Accounts", "Obtain")()
-	results := as.Connection.SendBatch(ctx, &batch)
+	results := as.SendBatch(ctx, &batch)
 	defer results.Close()
 
 	if _, err := results.Exec(); err != nil {
@@ -204,7 +204,7 @@ func (as *Accounts) Query(ctx context.Context, filter entities.AccountFilter) ([
 	accs := []entities.Account{}
 
 	defer metrics.StartSQLQuery("Accounts", "Query")()
-	rows, err := as.Connection.Query(ctx, query, args...)
+	rows, err := as.ConnectionSource.Query(ctx, query, args...)
 	if err != nil {
 		return accs, fmt.Errorf("querying accounts: %w", err)
 	}
@@ -234,7 +234,7 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 	defer metrics.StartSQLQuery("Accounts", "QueryBalances")()
 
 	accountBalances := make([]entities.AccountBalance, 0)
-	rows, err := as.Connection.Query(ctx, query, args...)
+	rows, err := as.ConnectionSource.Query(ctx, query, args...)
 	if err != nil {
 		return accountBalances, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
 	}
@@ -254,7 +254,7 @@ func (as *Accounts) GetBalancesByTxHash(ctx context.Context, txHash entities.TxH
 
 	err := pgxscan.Select(
 		ctx,
-		as.Connection,
+		as.ConnectionSource,
 		&balances,
 		fmt.Sprintf("%s WHERE balances.tx_hash=$1", accountBalancesQuery()),
 		txHash,

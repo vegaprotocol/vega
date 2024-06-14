@@ -126,7 +126,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		return err
 	}
 
-	dbContext, err := b.transactionManager.WithConnection(context.Background())
+	dbContext, err := b.transactionManager.WithConnection(ctx)
 	if err != nil {
 		return err
 	}
@@ -228,14 +228,6 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	betweenBlocks := false
 	refreshMaterializedViews := false
 	for {
-		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
-		// the number of things we'll keep trying to handle after we are cancelled.
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-
 		blockTimer.stopTimer()
 		select {
 		case <-ctx.Done():

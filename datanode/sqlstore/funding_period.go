@@ -51,7 +51,7 @@ func NewFundingPeriods(connectionSource *ConnectionSource) *FundingPeriods {
 
 func (fp *FundingPeriods) AddFundingPeriod(ctx context.Context, period *entities.FundingPeriod) error {
 	defer metrics.StartSQLQuery("FundingPeriods", "AddFundingPeriod")()
-	_, err := fp.Connection.Exec(ctx,
+	_, err := fp.Exec(ctx,
 		`insert into funding_period(market_id, funding_period_seq, start_time, end_time, funding_payment, funding_rate,
                            external_twap, internal_twap, vega_time, tx_hash)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict (market_id, funding_period_seq) do update
@@ -71,7 +71,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict (market_id, funding
 func (fp *FundingPeriods) AddDataPoint(ctx context.Context, dataPoint *entities.FundingPeriodDataPoint) error {
 	defer metrics.StartSQLQuery("FundingPeriodDataPoint", "AddDataPoint")()
 
-	_, err := fp.Connection.Exec(ctx,
+	_, err := fp.Exec(ctx,
 		`insert into funding_period_data_points(market_id, funding_period_seq, data_point_type, price, timestamp, twap, vega_time, tx_hash)
 values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (market_id, funding_period_seq, data_point_type, vega_time) do update
 	set price = EXCLUDED.price, twap = EXCLUDED.twap, timestamp = EXCLUDED.timestamp, tx_hash = EXCLUDED.tx_hash`,
@@ -103,7 +103,7 @@ func (fp *FundingPeriods) ListFundingPeriods(ctx context.Context, marketID entit
 		return periods, pageInfo, err
 	}
 
-	err = pgxscan.Select(ctx, fp.Connection, &periods, query, args...)
+	err = pgxscan.Select(ctx, fp.ConnectionSource, &periods, query, args...)
 	if err != nil {
 		return periods, pageInfo, err
 	}
@@ -142,7 +142,7 @@ func (fp *FundingPeriods) ListFundingPeriodDataPoints(ctx context.Context, marke
 		return dataPoints, pageInfo, err
 	}
 
-	err = pgxscan.Select(ctx, fp.Connection, &dataPoints, query, args...)
+	err = pgxscan.Select(ctx, fp.ConnectionSource, &dataPoints, query, args...)
 	if err != nil {
 		return dataPoints, pageInfo, err
 	}

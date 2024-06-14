@@ -144,13 +144,13 @@ func TestMain(t *testing.M) {
 		}
 	}()
 
-	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
+	exitCode := databasetest.TestMain(t, outerCtx, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
 		pgLog *bytes.Buffer,
 	) {
 		sqlConfig = config
 		log.Infof("DB Connection String: ", sqlConfig.ConnectionConfig.GetConnectionString())
 
-		pool, err := sqlstore.CreateConnectionPool(sqlConfig.ConnectionConfig)
+		pool, err := sqlstore.CreateConnectionPool(outerCtx, sqlConfig.ConnectionConfig)
 		if err != nil {
 			panic(fmt.Errorf("failed to create connection pool: %w", err))
 		}
@@ -203,7 +203,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		preUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		preUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -260,7 +260,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		postUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		postUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -862,7 +862,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	assert.Equal(t, int64(2001), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(3000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -951,7 +951,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -1054,7 +1054,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -1310,7 +1310,7 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string,
 		lastCommittedBlockHeight int64, snapshotTaken bool), evtSource eventSource, protocolUpdateHandler ProtocolUpgradeHandler,
 ) (sqlStoreBroker, error) {
-	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), testDbConfig.ConnectionConfig)
+	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), testDbConfig.ConnectionConfig)
 	if err != nil {
 		return nil, err
 	}

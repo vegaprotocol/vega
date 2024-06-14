@@ -37,7 +37,7 @@ func NewPartyVestingBalances(connectionSource *ConnectionSource) *PartyVestingBa
 
 func (plb *PartyVestingBalance) Add(ctx context.Context, balance entities.PartyVestingBalance) error {
 	defer metrics.StartSQLQuery("PartyVestingBalance", "Add")()
-	_, err := plb.Connection.Exec(ctx,
+	_, err := plb.Exec(ctx,
 		`INSERT INTO party_vesting_balances(party_id, asset_id, at_epoch, balance, vega_time)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (vega_time, party_id, asset_id) DO NOTHING`,
@@ -84,7 +84,7 @@ func (plb *PartyVestingBalance) Get(
 	query = fmt.Sprintf("%s %s", query, whereClause)
 
 	var balances []entities.PartyVestingBalance
-	if err := pgxscan.Select(ctx, plb.Connection, &balances, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, plb.ConnectionSource, &balances, query, args...); err != nil {
 		return balances, err
 	}
 

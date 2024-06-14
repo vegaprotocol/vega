@@ -96,7 +96,7 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				game_id=excluded.game_id
 				;`
 
-	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.TxHash, transfer.VegaTime, transfer.FromAccountID, transfer.ToAccountID,
+	if _, err := t.Exec(ctx, query, transfer.ID, transfer.TxHash, transfer.VegaTime, transfer.FromAccountID, transfer.ToAccountID,
 		transfer.AssetID, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
 		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor, transfer.DispatchStrategy, transfer.Reason, transfer.GameID); err != nil {
 		return fmt.Errorf("could not insert transfer into database: %w", err)
@@ -114,7 +114,7 @@ func (t *Transfers) UpsertFees(ctx context.Context, tf *entities.TransferFees) e
 				vega_time,
 				discount_applied
 			) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (vega_time, transfer_id) DO NOTHING;` // conflicts may occur on checkpoint restore.
-	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Amount, tf.EpochSeq, tf.VegaTime, tf.DiscountApplied); err != nil {
+	if _, err := t.Exec(ctx, query, tf.TransferID, tf.Amount, tf.EpochSeq, tf.VegaTime, tf.DiscountApplied); err != nil {
 		return err
 	}
 	return nil
@@ -200,7 +200,7 @@ func (t *Transfers) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]
 	var transfers []entities.Transfer
 	query := "SELECT * FROM transfers WHERE tx_hash = $1 ORDER BY id"
 
-	if err := pgxscan.Select(ctx, t.Connection, &transfers, query, txHash); err != nil {
+	if err := pgxscan.Select(ctx, t.ConnectionSource, &transfers, query, txHash); err != nil {
 		return nil, fmt.Errorf("could not get transfers by transaction hash: %w", err)
 	}
 	return transfers, nil
@@ -210,7 +210,7 @@ func (t *Transfers) GetByID(ctx context.Context, id string) (entities.TransferDe
 	var tr entities.Transfer
 	query := `SELECT * FROM transfers_current WHERE id=$1`
 
-	if err := pgxscan.Get(ctx, t.Connection, &tr, query, entities.TransferID(id)); err != nil {
+	if err := pgxscan.Get(ctx, t.ConnectionSource, &tr, query, entities.TransferID(id)); err != nil {
 		return entities.TransferDetails{}, t.wrapE(err)
 	}
 
@@ -271,7 +271,7 @@ func (t *Transfers) UpsertFeesDiscount(ctx context.Context, tfd *entities.Transf
 				epoch_seq,
 				vega_time
 			) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (vega_time, party_id, asset_id) DO NOTHING ;` // conflicts may occur on checkpoint restore.
-	if _, err := t.Connection.Exec(ctx, query, tfd.PartyID, tfd.AssetID, tfd.Amount, tfd.EpochSeq, tfd.VegaTime); err != nil {
+	if _, err := t.Exec(ctx, query, tfd.PartyID, tfd.AssetID, tfd.Amount, tfd.EpochSeq, tfd.VegaTime); err != nil {
 		return err
 	}
 	return nil
@@ -289,7 +289,7 @@ func (t *Transfers) GetCurrentTransferFeeDiscount(
 		WHERE party_id = $1 AND asset_id = $2
 		ORDER BY vega_time DESC LIMIT 1`
 
-	if err := pgxscan.Get(ctx, t.Connection, &tfd, query, partyID, assetID); err != nil {
+	if err := pgxscan.Get(ctx, t.ConnectionSource, &tfd, query, partyID, assetID); err != nil {
 		return &entities.TransferFeesDiscount{}, t.wrapE(err)
 	}
 
@@ -387,7 +387,7 @@ func (t *Transfers) selectTransfers(ctx context.Context, pagination entities.Cur
 	}
 
 	var transfers []entities.Transfer
-	err = pgxscan.Select(ctx, t.Connection, &transfers, query, args...)
+	err = pgxscan.Select(ctx, t.ConnectionSource, &transfers, query, args...)
 	if err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("could not get transfers: %w", err)
 	}
@@ -404,7 +404,7 @@ func (t *Transfers) getTransferDetails(ctx context.Context, transfers []entities
 		detail := entities.TransferDetails{
 			Transfer: tr,
 		}
-		rows, err := t.Connection.Query(ctx, query, tr.ID)
+		rows, err := t.Query(ctx, query, tr.ID)
 		if errors.Is(err, pgx.ErrNoRows) {
 			details = append(details, detail)
 			if rows != nil {

@@ -43,7 +43,7 @@ type MarginModes struct {
 
 func (t *MarginModes) UpdatePartyMarginMode(ctx context.Context, update entities.PartyMarginMode) error {
 	defer metrics.StartSQLQuery("MarginModes", "UpdatePartyMarginMode")()
-	if _, err := t.Connection.Exec(
+	if _, err := t.Exec(
 		ctx,
 		`INSERT INTO party_margin_modes(market_id, party_id, margin_mode, margin_factor, min_theoretical_margin_factor, max_theoretical_leverage, at_epoch)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -95,7 +95,7 @@ func (t *MarginModes) ListPartyMarginModes(ctx context.Context, pagination entit
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, t.Connection, &modes, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, t.ConnectionSource, &modes, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 

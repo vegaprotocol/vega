@@ -40,7 +40,7 @@ func (vs *VestingStats) Add(ctx context.Context, stats *entities.VestingStatsUpd
 	defer metrics.StartSQLQuery("PartyVestingStats", "Add")()
 
 	for _, v := range stats.PartyVestingStats {
-		_, err := vs.Connection.Exec(ctx,
+		_, err := vs.Exec(ctx,
 			`INSERT INTO party_vesting_stats(party_id, at_epoch, reward_bonus_multiplier, quantum_balance,
 				summed_reward_bonus_multiplier, summed_quantum_balance, vega_time)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -67,7 +67,7 @@ func (vs *VestingStats) GetByPartyID(
 	defer metrics.StartSQLQuery("Parties", "GetByID")()
 
 	pvs := entities.PartyVestingStats{}
-	err := pgxscan.Get(ctx, vs.Connection, &pvs,
+	err := pgxscan.Get(ctx, vs.ConnectionSource, &pvs,
 		`SELECT party_id, at_epoch, reward_bonus_multiplier, quantum_balance,
 		summed_reward_bonus_multiplier, summed_quantum_balance, vega_time
 		 FROM party_vesting_stats_current WHERE party_id=$1`,

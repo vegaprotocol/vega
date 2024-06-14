@@ -52,7 +52,7 @@ func NewParties(connectionSource *ConnectionSource) *Parties {
 // bus, but nonetheless is necessary.
 func (ps *Parties) Initialise(ctx context.Context) {
 	defer metrics.StartSQLQuery("Parties", "Initialise")()
-	_, err := ps.Connection.Exec(ctx,
+	_, err := ps.Exec(ctx,
 		`INSERT INTO parties(id, tx_hash, alias) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
 		entities.PartyID("network"), entities.TxHash("01"), "network")
 	if err != nil {
@@ -62,7 +62,7 @@ func (ps *Parties) Initialise(ctx context.Context) {
 
 func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
 	defer metrics.StartSQLQuery("Parties", "Add")()
-	_, err := ps.Connection.Exec(ctx,
+	_, err := ps.Exec(ctx,
 		`INSERT INTO parties(id, tx_hash, vega_time)
 		 VALUES ($1, $2, $3)
 		 ON CONFLICT (id) DO NOTHING`,
@@ -75,7 +75,7 @@ func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
 
 func (ps *Parties) UpdateProfile(ctx context.Context, p *entities.PartyProfile) error {
 	defer metrics.StartSQLQuery("Parties", "Add")()
-	_, err := ps.Connection.Exec(ctx,
+	_, err := ps.Exec(ctx,
 		`UPDATE parties SET alias = $1, metadata = $2  WHERE id = $3`,
 		p.Alias,
 		p.Metadata,
@@ -113,7 +113,7 @@ func (ps *Parties) ListProfiles(ctx context.Context, ids []string, pagination en
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, ps.Connection, &profiles, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, ps.ConnectionSource, &profiles, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -124,7 +124,7 @@ func (ps *Parties) ListProfiles(ctx context.Context, ids []string, pagination en
 func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, error) {
 	a := entities.Party{}
 	defer metrics.StartSQLQuery("Parties", "GetByID")()
-	err := pgxscan.Get(ctx, ps.Connection, &a,
+	err := pgxscan.Get(ctx, ps.ConnectionSource, &a,
 		`SELECT id, tx_hash, vega_time
 		 FROM parties WHERE id=$1`,
 		entities.PartyID(id))
@@ -136,7 +136,7 @@ func (ps *Parties) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]e
 	defer metrics.StartSQLQuery("Parties", "GetByTxHash")()
 
 	var parties []entities.Party
-	err := pgxscan.Select(ctx, ps.Connection, &parties, `SELECT id, tx_hash, vega_time FROM parties WHERE tx_hash=$1`, txHash)
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &parties, `SELECT id, tx_hash, vega_time FROM parties WHERE tx_hash=$1`, txHash)
 	if err != nil {
 		return nil, ps.wrapE(err)
 	}
@@ -147,7 +147,7 @@ func (ps *Parties) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]e
 func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {
 	parties := []entities.Party{}
 	defer metrics.StartSQLQuery("Parties", "GetAll")()
-	err := pgxscan.Select(ctx, ps.Connection, &parties, `
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &parties, `
 		SELECT id, tx_hash, vega_time
 		FROM parties`)
 	return parties, err
@@ -183,7 +183,7 @@ func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination e
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, ps.Connection, &parties, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, ps.ConnectionSource, &parties, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 

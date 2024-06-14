@@ -61,7 +61,7 @@ func setupLPTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.LiquidityProvision,
 	bs := sqlstore.NewBlocks(connectionSource)
 	lp := sqlstore.NewLiquidityProvision(connectionSource, logging.NewTestLogger())
 
-	return bs, lp, connectionSource.Connection
+	return bs, lp, connectionSource
 }
 
 func testInsertNewInCurrentBlock(t *testing.T) {

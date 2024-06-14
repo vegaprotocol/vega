@@ -47,7 +47,7 @@ func NewAssets(connectionSource *ConnectionSource) *Assets {
 
 func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 	defer metrics.StartSQLQuery("Assets", "Add")()
-	_, err := as.Connection.Exec(ctx,
+	_, err := as.Exec(ctx,
 		`INSERT INTO assets(id, name, symbol, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, tx_hash, vega_time, status, chain_id)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          ON CONFLICT (id, vega_time) DO UPDATE SET
@@ -102,7 +102,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 	a := entities.Asset{}
 
 	defer metrics.StartSQLQuery("Assets", "GetByID")()
-	err := pgxscan.Get(ctx, as.Connection, &a,
+	err := pgxscan.Get(ctx, as.ConnectionSource, &a,
 		getAssetQuery(ctx)+` WHERE id=$1`,
 		entities.AssetID(id))
 
@@ -116,7 +116,7 @@ func (as *Assets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	defer metrics.StartSQLQuery("Assets", "GetByTxHash")()
 
 	var assets []entities.Asset
-	err := pgxscan.Select(ctx, as.Connection, &assets, `SELECT * FROM assets WHERE tx_hash=$1`, txHash)
+	err := pgxscan.Select(ctx, as.ConnectionSource, &assets, `SELECT * FROM assets WHERE tx_hash=$1`, txHash)
 	if err != nil {
 		return nil, as.wrapE(err)
 	}
@@ -127,7 +127,7 @@ func (as *Assets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
 	assets := []entities.Asset{}
 	defer metrics.StartSQLQuery("Assets", "GetAll")()
-	err := pgxscan.Select(ctx, as.Connection, &assets, getAssetQuery(ctx))
+	err := pgxscan.Select(ctx, as.ConnectionSource, &assets, getAssetQuery(ctx))
 	return assets, err
 }
 
@@ -146,7 +146,7 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 	}
 	defer metrics.StartSQLQuery("Assets", "GetAllWithCursorPagination")()
 
-	if err = pgxscan.Select(ctx, as.Connection, &assets, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, as.ConnectionSource, &assets, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get assets: %w", err)
 	}
 

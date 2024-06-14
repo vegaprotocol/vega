@@ -46,7 +46,7 @@ func NewVolumeDiscountStats(connectionSource *ConnectionSource) *VolumeDiscountS
 
 func (s *VolumeDiscountStats) Add(ctx context.Context, stats *entities.VolumeDiscountStats) error {
 	defer metrics.StartSQLQuery("VolumeDiscountStats", "Add")()
-	_, err := s.Connection.Exec(
+	_, err := s.Exec(
 		ctx,
 		`INSERT INTO volume_discount_stats(at_epoch, parties_volume_discount_stats, vega_time)
 			values ($1, $2, $3)`,
@@ -92,7 +92,7 @@ func (s *VolumeDiscountStats) Stats(ctx context.Context, atEpoch *uint64, partyI
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, s.Connection, &stats, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, s.ConnectionSource, &stats, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 

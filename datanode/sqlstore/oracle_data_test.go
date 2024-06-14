@@ -43,7 +43,7 @@ func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, 
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	od := sqlstore.NewOracleData(connectionSource)
-	return bs, od, connectionSource.Connection
+	return bs, od, connectionSource
 }
 
 func testAddAndRetrieveOracleDataWithError(t *testing.T) {
