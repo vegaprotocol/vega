@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.76.9
+
+### 🐛 Fixes
+
+- [11366](https://github.com/vegaprotocol/vega/pull/11366) - check for underflow in settlement engine.
+
+
 ## 0.76.8
 
 ### 🐛 Fixes
