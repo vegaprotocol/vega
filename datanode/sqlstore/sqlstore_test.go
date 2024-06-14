@@ -53,6 +53,8 @@ func TestMain(m *testing.M) {
 	databasetest.TestMain(m, ctx, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource,
 		postgresLog *bytes.Buffer,
 	) {
+		// ensures nested transactions execute the post-commit hooks while the parent transaction still rolls back the overall changes.
+		source.ToggleTest()
 		testDBPort = cfg.ConnectionConfig.Port
 		connectionSource = source
 		testConfig = cfg

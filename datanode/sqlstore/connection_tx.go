@@ -142,7 +142,8 @@ func (c *ConnectionSource) Commit(ctx context.Context) error {
 		return fmt.Errorf("failed to commit transaction for context: %s, error: %w", ctx, err)
 	}
 	// invoke all post-commit hooks once the transaction (and its sub transactions) have been committed
-	if tx.parent != nil {
+	// make an exception for unit tests, so we don't need to commit DB transactions for hooks on the nested transaction.
+	if !c.isTest && tx.parent != nil {
 		// this is a nested transaction, don't invoke hooks until the parent is committed
 		// instead prepend the hooks and return.
 		tx.parent.mu.Lock()
@@ -155,6 +156,11 @@ func (c *ConnectionSource) Commit(ctx context.Context) error {
 	// this is the main transactions, invoke all hooks now
 	for _, f := range post {
 		f()
+	}
+	if tx.parent != nil {
+		tx.parent.mu.Lock()
+		delete(tx.parent.subTx, tx.id)
+		tx.parent.mu.Unlock()
 	}
 	return nil
 }
