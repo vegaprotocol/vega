@@ -68,3 +68,7 @@ func (ps *Proposal) consume(ctx context.Context, event ProposalEvent) error {
 
 	return errors.Wrap(ps.store.AddProposal(ctx, proposal), "error adding proposal")
 }
+
+func (ps *Proposal) Name() string {
+	return "Proposal"
+}

@@ -24,6 +24,10 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+func (m *Market) OnMarketAMMMaxCalculationLevels(ctx context.Context, c *num.Uint) {
+	m.amm.OnMaxCalculationLevelsUpdate(ctx, c)
+}
+
 func (m *Market) OnAMMMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) {
 	m.amm.OnMinCommitmentQuantumUpdate(ctx, c)
 }
@@ -58,6 +62,11 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.
 	m.fee.OnFeeFactorsInfrastructureFeeUpdate(d)
 	m.mkt.Fees.Factors.InfrastructureFee = d
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+}
+
+func (m *Market) OnMinimalMarginQuantumMultipleUpdate(multiplier num.Decimal) error {
+	m.minMaintenanceMarginQuantumMultiplier = multiplier
+	return nil
 }
 
 func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {

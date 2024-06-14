@@ -260,21 +260,23 @@ service TradingDataService {
 
   // List candle data
   //
-  // Get a list of candle data for a given candle ID. Candle IDs can be obtained by calling list-candle-intervals
+  // Get a list of candle data for a given candle ID.
+  // A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
   rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
 
   // Observe candle data
   //
-  // Subscribe to a stream of candle updates
+  // Subscribe to a stream of candle updates given a candle ID.
+  // A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
   rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
 
   // List candle intervals
   //
-  // Get a list of all available intervals for a given market along with the corresponding candle ID
+  // Get a list of all available candle intervals for a given market along with the corresponding candle ID.
   rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
@@ -1099,6 +1101,10 @@ message GetPartyVestingStatsResponse {
   uint64 epoch_seq = 3;
   // The balance of the party, in quantum.
   string quantum_balance = 4;
+  // Bonus multiplier applied on the reward, summed across all derived accounts.
+  string summed_reward_bonus_multiplier = 5;
+  // The balance of the party and derived keys, in quantum.
+  string summed_quantum_balance = 6;
 }
 
 // Request sent to list the vesting and locked balances for a party
@@ -1139,6 +1145,9 @@ message AccountBalance {
   string market_id = 5;
   // Account type of this account.
   vega.AccountType type = 6;
+  // Parent party ID of the account.
+  // This field is optional and is used in cases where the account is derived from another party's account.
+  optional string parent_party_id = 7;
 }
 
 // Request that is sent when listing accounts.
@@ -1147,6 +1156,9 @@ message ListAccountsRequest {
   AccountFilter filter = 1;
   // Optional pagination control.
   optional Pagination pagination = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 3;
 }
 
 // Response that is received from listing accounts query.
@@ -1181,6 +1193,9 @@ message ObserveAccountsRequest {
   string asset = 3;
   // Account type to subscribe to, required field.
   vega.AccountType type = 4;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 5;
 }
 
 // Response that is received when subscribing to a stream of accounts.
@@ -1350,6 +1365,10 @@ message GameTeamScoresFilter {
   repeated string game_ids = 1;
   // Restrict game scores to those for the given teams.
   repeated string team_ids = 2;
+  // Restrict game scores to those from a given epoch.
+  optional uint64 epoch_from = 3;
+  // Restrict game scores to those up to a given epoch.
+  optional uint64 epoch_to = 4;
 }
 
 // Response received from the query for getting a list of game scores for teams.
@@ -1388,6 +1407,10 @@ message GamePartyScoresFilter {
   repeated string team_ids = 2;
   // Restrict game scores to those relating to the given parties.
   repeated string party_ids = 3;
+  // Restrict game scores to those from a given epoch.
+  optional uint64 epoch_from = 4;
+  // Restrict game scores to those up to a given epoch.
+  optional uint64 epoch_to = 5;
 }
 
 // Response received from the query for getting a list of game scores for teams.
@@ -2693,6 +2716,8 @@ message ListRewardsRequest {
   optional string team_id = 6;
   // Filter for rewards paid if the party participated in the given game
   optional string game_id = 7;
+  // Whether to return all derived parties from AMMs for the given party.
+  optional bool include_derived_parties = 8;
 }
 
 // Response for listing reward details for a single party
@@ -2725,6 +2750,9 @@ message ListRewardSummariesRequest {
   optional string asset_id = 2;
   // Pagination controls.
   optional Pagination pagination = 3;
+  // Whether to return rewards for all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 8;
 }
 
 // Response from listing reward details in for a single party

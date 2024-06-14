@@ -1298,7 +1298,7 @@ func TestRewardsResolver(t *testing.T) {
 	partyResolver := root.Party()
 	root.tradingDataClient.EXPECT().ListRewardSummaries(gomock.Any(), gomock.Any()).Times(1).Return(nil, errors.New("some error"))
 	assetID := "asset"
-	r, e := partyResolver.RewardSummaries(ctx, &protoTypes.Party{Id: "some"}, &assetID)
+	r, e := partyResolver.RewardSummaries(ctx, &protoTypes.Party{Id: "some"}, &assetID, nil)
 	require.Nil(t, r)
 	require.NotNil(t, e)
 }

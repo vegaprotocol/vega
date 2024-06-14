@@ -609,7 +609,7 @@ func TestNodeValidatorStatusEnum(t *testing.T) {
 			}
 			addRankingScore(t, ctx, ns, node1, score)
 			var got entities.RankingScore
-			require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, `
+			require.NoError(t, pgxscan.Get(ctx, connectionSource, &got, `
 			SELECT
 				stake_score,
 				performance_score,

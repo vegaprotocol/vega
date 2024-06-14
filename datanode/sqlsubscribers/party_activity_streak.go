@@ -65,3 +65,7 @@ func (pas *PartyActivityStreak) consumePartyActivityStreakEvent(ctx context.Cont
 
 	return errors.Wrap(pas.store.Add(ctx, activityStreak), "adding party activity streak")
 }
+
+func (pas *PartyActivityStreak) Name() string {
+	return "PartyActivityStreak"
+}

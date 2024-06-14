@@ -67,6 +67,9 @@ var (
 
 func defaultNetParams() map[string]value {
 	m := map[string]value{
+		MinimalMarginQuantumMultiple:  NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+		MinimalHoldingQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+
 		// spots
 		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("1"),
 
@@ -79,9 +82,11 @@ func defaultNetParams() map[string]value {
 		// ethereum oracles
 		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
-		MarketAMMMinCommitmentQuantum: NewUint(UintGT(num.UintZero())).Mutable(true).MustUpdate("100"),
+		MarketAMMMinCommitmentQuantum: NewUint(gteU0).Mutable(true).MustUpdate("100"),
+		MarketAMMMaxCalculationLevels: NewUint(gteU1).Mutable(true).MustUpdate("1000"),
 
 		// markets
+		MarketAggressiveOrderBlockDelay:           NewUint(gteU0).Mutable(true).MustUpdate("1"),
 		MarketMarginScalingFactors:                NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
 		MarketFeeFactorsInfrastructureFee:         NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),

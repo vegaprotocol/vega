@@ -347,6 +347,12 @@ func TestExtractOrdersWrongVolume(t *testing.T) {
 	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4, true) })
 }
 
+func TestExtractOrdersZeroVolume(t *testing.T) {
+	// Attempt to extract 0 volume of orders
+	side := getPopulatedTestSide(types.SideSell)
+	assert.Len(t, side.ExtractOrders(num.NewUint(101), 0, true), 0)
+}
+
 func TestBestStatic(t *testing.T) {
 	// Empty book
 	emptySide := getEmptyTestSide()
@@ -588,7 +594,7 @@ func TestFakeUncrossAuction(t *testing.T) {
 
 	orders := []*types.Order{order1, order2}
 
-	fakeTrades, err := buySide.fakeUncrossAuction(orders)
+	fakeTrades, err := buySide.fakeUncrossAuction(orders, nil)
 	assert.Len(t, fakeTrades, 6)
 	assert.NoError(t, err)
 

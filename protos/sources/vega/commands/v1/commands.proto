@@ -503,3 +503,9 @@ message CancelAMM {
   // Method to use to cancel the AMM.
   Method method = 2;
 }
+
+// Internal transactions used to convey delayed transactions to be included in the next block.
+message DelayedTransactionsWrapper {
+  repeated bytes transactions = 1;
+  uint64 height = 2;
+}

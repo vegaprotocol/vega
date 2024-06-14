@@ -80,10 +80,12 @@ type Market struct {
 	closingAt   time.Time
 	timeService common.TimeService
 
-	mu sync.Mutex
+	mu            sync.RWMutex
+	markPriceLock sync.RWMutex
 
 	lastTradedPrice *num.Uint
 	priceFactor     num.Decimal
+	assetFactor     num.Decimal
 
 	// own engines
 	matching                      *matching.CachedOrderBook
@@ -122,9 +124,10 @@ type Market struct {
 	lastMidBuyPrice  *num.Uint
 	lastMidSellPrice *num.Uint
 
-	bondPenaltyFactor       num.Decimal
-	lastMarketValueProxy    num.Decimal
-	marketValueWindowLength time.Duration
+	bondPenaltyFactor                     num.Decimal
+	lastMarketValueProxy                  num.Decimal
+	marketValueWindowLength               time.Duration
+	minMaintenanceMarginQuantumMultiplier num.Decimal
 
 	// Liquidity Fee
 	feeSplitter  *common.FeeSplitter
@@ -212,6 +215,7 @@ func NewMarket(
 	if exp := int(assetDecimals) - int(mkt.DecimalPlaces); exp != 0 {
 		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
+	assetFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(assetDecimals)))
 
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
@@ -334,6 +338,7 @@ func NewMarket(
 		stateVarEngine:                stateVarEngine,
 		marketActivityTracker:         marketActivityTracker,
 		priceFactor:                   priceFactor,
+		assetFactor:                   assetFactor,
 		positionFactor:                positionFactor,
 		nextMTM:                       time.Time{}, // default to zero time
 		maxStopOrdersPerParties:       num.UintZero(),
@@ -535,6 +540,10 @@ func (m *Market) BeginBlock(ctx context.Context) {
 	}
 }
 
+func (m *Market) GetAssets() []string {
+	return []string{m.settlementAsset}
+}
+
 // GetPartiesStats is called at the end of the epoch, only once to
 // be sent to the activity streak engine. This is using the calculated
 // at the end of the epoch based on the countrer in the position engine.
@@ -670,6 +679,8 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	if tickSizeChanged {
 		peggedOrders := m.matching.GetActivePeggedOrderIDs()
 		peggedOrders = append(peggedOrders, m.peggedOrders.GetParkedIDs()...)
+
+		tickSizeInAsset, _ := num.UintFromDecimal(m.mkt.TickSize.ToDecimal().Mul(m.priceFactor))
 		for _, po := range peggedOrders {
 			order, err := m.matching.GetOrderByID(po)
 			if err != nil {
@@ -678,7 +689,9 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 					continue
 				}
 			}
-			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() {
+			offsetInAsset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
+			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() ||
+				(order.PeggedOrder.Reference == types.PeggedReferenceMid && offsetInAsset.IsZero() && tickSizeInAsset.IsZero()) {
 				m.cancelOrder(ctx, order.Party, order.ID)
 			}
 		}
@@ -1126,7 +1139,8 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	// if it's time for mtm, let's do it
 	if (m.nextMTM.IsZero() || !m.nextMTM.After(t)) && !m.as.InAuction() {
 		prevMarkPrice := m.markPriceCalculator.GetPrice()
-		if _, err := m.markPriceCalculator.CalculateMarkPrice(
+		m.markPriceLock.Lock()
+		_, err := m.markPriceCalculator.CalculateMarkPrice(
 			ctx,
 			m.pMonitor,
 			m.as,
@@ -1137,7 +1151,9 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.mkt.LinearSlippageFactor,
 			m.risk.GetRiskFactors().Short,
 			m.risk.GetRiskFactors().Long,
-			true, false); err != nil {
+			true, false)
+		m.markPriceLock.Unlock()
+		if err != nil {
 			// start the  monitoring auction if required
 			if m.as.AuctionStart() {
 				m.enterAuction(ctx)
@@ -1151,11 +1167,11 @@ func (m *Market) BlockEnd(ctx context.Context) {
 				m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
 			}
 		}
-
 		m.nextMTM = t.Add(m.mtmDelta)
 
+		// mark price mustn't be zero, except for capped futures, where a zero price may well be possible
 		if !m.as.InAuction() && (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
-			!m.getCurrentMarkPrice().IsZero() {
+			(!m.getCurrentMarkPrice().IsZero() || m.capMax != nil) {
 			if m.confirmMTM(ctx, false) {
 				closedPositions := m.position.GetClosedPositions()
 				if len(closedPositions) > 0 {
@@ -1305,7 +1321,7 @@ func (m *Market) recordPositionActivity(t *types.Transfer) {
 	}
 	if t.Type == types.TransferTypeMTMWin || t.Type == types.TransferTypeMTMLoss ||
 		t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
-		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, m.mkt.ID, amt)
+		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, m.mkt.ID, amt.Div(m.assetFactor))
 	}
 	if t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
 		m.marketActivityTracker.RecordFundingPayment(m.settlementAsset, t.Owner, m.mkt.ID, amt)
@@ -1411,32 +1427,44 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	offset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
+	// we're converting both offset and tick size to asset decimals so we can adjust the price (in asset) directly
+	priceInMarket, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
 	if order.Side == types.SideSell {
-		price = price.AddSum(offset)
+		priceInMarket.AddSum(order.PeggedOrder.Offset)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
 		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
 		// whole multiples of tick size.
-		if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
-			price.Sub(price, mod)
+		if mod := num.UintZero().Mod(priceInMarket, m.mkt.TickSize); !mod.IsZero() {
+			priceInMarket.Sub(priceInMarket, mod)
 		}
+		price, _ := num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+
 		if m.capMax != nil {
-			price = num.Min(price, m.capMax.Clone())
+			upper := num.UintZero().Sub(m.capMax, num.UintOne())
+			price = num.Min(price, upper)
+		}
+		if price.IsZero() {
+			price = num.UintOne()
 		}
 		return price, nil
 	}
 
-	if price.LTE(offset) {
+	if priceInMarket.LTE(order.PeggedOrder.Offset) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	price.Sub(price, offset)
-	if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
-		price = num.UintZero().Sub(price.AddSum(m.mkt.TickSize), mod)
+	priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
+	if mod := num.UintZero().Mod(priceInMarket, m.mkt.TickSize); !mod.IsZero() {
+		priceInMarket = num.UintZero().Sub(priceInMarket.AddSum(m.mkt.TickSize), mod)
 	}
+	price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 
 	if m.capMax != nil {
-		price = num.Min(price, m.capMax.Clone())
+		upper := num.UintZero().Sub(m.capMax, num.UintOne())
+		price = num.Min(price, upper)
+	}
+	if price.IsZero() {
+		price = num.UintOne()
 	}
 	return price, nil
 }
@@ -1484,9 +1512,14 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
 			final = types.MarketStateCancelled
 		}
-		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
 		settlement, _ := num.UintFromDecimal(changes.SettlementPrice.ToDecimal().Mul(m.priceFactor))
+		if !m.validateSettlementData(settlement) {
+			// final settlement is not valid/impossible
+			return common.ErrSettlementDataOutOfRange
+		}
+		// in case we're in auction, uncross
+		m.uncrossOrderAtAuctionEnd(ctx)
 		m.tradingTerminatedWithFinalState(ctx, final, settlement)
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
@@ -1580,6 +1613,14 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 						logging.String("OrderID", uncrossedOrder.Order.ID))
 				}
 			}
+		}
+
+		// if the uncrossed order was generated by an AMM then register its position as if it was submitted
+		order := uncrossedOrder.Order
+		if order.GeneratedOffbook {
+			cpy := order.Clone()
+			cpy.Remaining = cpy.Size // remaining will be 0 since it has traded, so we copy it back to its full size to register
+			m.position.RegisterOrder(ctx, cpy)
 		}
 
 		// then do the confirmation
@@ -1681,6 +1722,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	t := m.timeService.GetTimeNow().UnixNano()
 
 	m.markPriceCalculator.SetBookPriceAtTimeT(m.lastTradedPrice, t)
+	m.markPriceLock.Lock()
 	if _, err := m.markPriceCalculator.CalculateMarkPrice(
 		ctx,
 		m.pMonitor,
@@ -1703,7 +1745,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			m.enterAuction(ctx)
 		}
 	}
-
+	m.markPriceLock.Unlock()
 	if wasOpeningAuction && !m.as.IsOpeningAuction() && m.getCurrentMarkPrice().IsZero() {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 		m.pMonitor.ResetPriceHistory(m.lastTradedPrice)
@@ -1826,6 +1868,13 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 			}
 			return reason
 		}
+		if order.PeggedOrder.Reference == types.PeggedReferenceMid {
+			offsetInAsset, _ := num.UintFromDecimal(order.PeggedOrder.Offset.ToDecimal().Mul(m.priceFactor))
+			tickSizeInAsset, _ := num.UintFromDecimal(m.mkt.TickSize.ToDecimal().Mul(m.priceFactor))
+			if offsetInAsset.IsZero() && tickSizeInAsset.IsZero() {
+				return fmt.Errorf("invalid offset - pegged mid will cross")
+			}
+		}
 		return m.validateTickSize(order.PeggedOrder.Offset)
 	}
 
@@ -1836,6 +1885,8 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 	return nil
 }
 
+// validateOrder checks that the order parameters are valid for the market.
+// NB: price in market, tickSize in market decimals.
 func (m *Market) validateTickSize(price *num.Uint) error {
 	d := num.UintZero().Mod(price, m.mkt.TickSize)
 	if !d.IsZero() {
@@ -2273,14 +2324,21 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 		m.triggerStopOrders(ctx, idgen)
 	}()
 	order := orderSubmission.IntoOrder(party)
+	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
+	order.ID = orderID
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
 		order.Price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
+		if order.Type == types.OrderTypeLimit && order.PeggedOrder == nil && order.Price.IsZero() {
+			// limit orders need to be priced > 0
+			order.Status = types.OrderStatusRejected
+			order.Reason = types.OrderErrorPriceNotInTickSize // @TODO add new error
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+			return nil, common.ErrInvalidOrderPrice
+		}
 	}
-	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
-	order.ID = orderID
 	// check max price in case of capped market
-	if m.capMax != nil && order.Price != nil && order.Price.GT(m.capMax) {
+	if m.capMax != nil && order.Price != nil && order.Price.GTE(m.capMax) {
 		order.Status = types.OrderStatusRejected
 		order.Reason = types.OrderErrorPriceLTEMaxPrice
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -3769,6 +3827,10 @@ func (m *Market) amendOrder(
 		return nil, nil, err
 	}
 
+	if err := m.checkOrderAmendForSpam(amendedOrder); err != nil {
+		return nil, nil, err
+	}
+
 	if orderAmendment.Price != nil && amendedOrder.OriginalPrice != nil {
 		if err = m.validateTickSize(amendedOrder.OriginalPrice); err != nil {
 			return nil, nil, err
@@ -4040,7 +4102,6 @@ func (m *Market) validateOrderAmendment(
 		// We cannot amend from a GFA/GFN orders
 		return types.OrderErrorCannotAmendFromGFAOrGFN
 	}
-
 	if order.PeggedOrder == nil {
 		// We cannot change a pegged orders details on a non pegged order
 		if amendment.PeggedOffset != nil ||
@@ -4581,6 +4642,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 			}()
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
+			m.markPriceLock.Lock()
 			m.markPriceCalculator.CalculateMarkPrice(
 				ctx,
 				m.pMonitor,
@@ -4594,6 +4656,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				m.risk.GetRiskFactors().Long,
 				false,
 				false)
+			m.markPriceLock.Unlock()
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(
@@ -4634,16 +4697,21 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		var err error
-		if settlementDataInAsset != nil {
+		if settlementDataInAsset != nil && m.validateSettlementData(settlementDataInAsset) {
 			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
 		} else if m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
 			settlementDataInAsset, err = m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 			if err != nil {
 				m.log.Error(err.Error())
-			} else {
-				m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
+				return
 			}
+			if !m.validateSettlementData(settlementDataInAsset) {
+				m.log.Warn("invalid settlement data", logging.MarketID(m.GetID()))
+				m.settlementDataInMarket = nil
+				return
+			}
+			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
 		} else {
 			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
 		}
@@ -4696,6 +4764,13 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 		return
 	}
 
+	// validate the settlement data
+	if !m.validateSettlementData(settlementDataInAsset) {
+		m.log.Warn("settlement data for capped market is invalid", logging.MarketID(m.GetID()))
+		// reset settlement data, it's not valid
+		m.settlementDataInMarket = nil
+		return
+	}
 	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
 }
 
@@ -4781,13 +4856,37 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	m.checkForReferenceMoves(ctx, orderUpdates, false)
 }
 
+func (m *Market) ValidateSettlementData(data *num.Uint) bool {
+	// convert to asset precision
+	settlement, _ := num.UintFromDecimal(data.ToDecimal().Mul(m.priceFactor))
+	return m.validateSettlementData(settlement)
+}
+
+func (m *Market) validateSettlementData(data *num.Uint) bool {
+	if m.closed {
+		return false
+	}
+	// not capped, accept the data
+	if m.fCap == nil {
+		return true
+	}
+	// data > max
+	if m.capMax.LT(data) {
+		return false
+	}
+	// binary capped market: reject if data is not zero and not == max price.
+	if m.fCap.Binary && !data.IsZero() && !data.EQ(m.capMax) {
+		return false
+	}
+	return true
+}
+
 // NB this must be called with the lock already acquired.
 func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	if m.closed {
 		return
 	}
 	if m.capMax != nil && m.capMax.LT(settlementDataInAsset) {
-		// we cannot perform the final settlement because the settlement price is out of the [0, max_price] range
 		return
 	}
 	if m.fCap != nil && m.fCap.Binary {
@@ -4960,6 +5059,8 @@ func (m *Market) getCurrentMarkPriceForMargin() *num.Uint {
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {
+	m.markPriceLock.RLock()
+	defer m.markPriceLock.RUnlock()
 	if m.markPriceCalculator.GetPrice() == nil {
 		return num.UintZero()
 	}
@@ -5142,6 +5243,77 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
 }
 
+func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+	rf := num.DecimalOne()
+
+	factor := m.mkt.LinearSlippageFactor
+	if m.risk.IsRiskFactorInitialised() {
+		if order.Side == types.SideBuy {
+			rf = m.risk.GetRiskFactors().Long
+		} else {
+			rf = m.risk.GetRiskFactors().Short
+		}
+	}
+	var price *num.Uint
+	if order.PeggedOrder == nil {
+		price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
+	} else {
+		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		if order.Side == types.SideBuy {
+			priceInMarket.AddSum(order.PeggedOrder.Offset)
+		} else {
+			priceInMarket = priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
+		}
+		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	}
+	margins := num.UintZero().Mul(price, num.NewUint(order.TrueRemaining())).ToDecimal().Div(m.positionFactor)
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
+	if err != nil {
+		return err
+	}
+	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(m.minMaintenanceMarginQuantumMultiplier.Mul(assetQuantum)) {
+		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
+	}
+	return nil
+}
+
+func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	rf := num.DecimalOne()
+
+	factor := m.mkt.LinearSlippageFactor
+	if m.risk.IsRiskFactorInitialised() {
+		if orderSubmission.Side == types.SideBuy {
+			rf = m.risk.GetRiskFactors().Long
+		} else {
+			rf = m.risk.GetRiskFactors().Short
+		}
+	}
+
+	var price *num.Uint
+	if orderSubmission.PeggedOrder == nil {
+		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
+	} else {
+		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		if orderSubmission.Side == types.SideBuy {
+			priceInMarket.AddSum(orderSubmission.PeggedOrder.Offset)
+		} else {
+			priceInMarket = priceInMarket.Sub(priceInMarket, orderSubmission.PeggedOrder.Offset)
+		}
+		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	}
+
+	margins := num.UintZero().Mul(price, num.NewUint(orderSubmission.Size)).ToDecimal().Div(m.positionFactor)
+
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
+	if err != nil {
+		return err
+	}
+	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
+		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
+	}
+	return nil
+}
+
 func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
 	return m.matching.GetFillPrice(volume, side)
 }
@@ -5251,6 +5423,10 @@ func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) 
 }
 
 func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, deterministicID string) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -5290,7 +5466,9 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 
 	// if a rebase is not necessary we're done, just confirm with the amm-engine
 	if order == nil {
-		return m.amm.Confirm(ctx, pool)
+		m.amm.Confirm(ctx, pool)
+		m.matching.UpdateAMM(pool.AMMParty)
+		return nil
 	}
 
 	if conf, _, err := m.submitValidatedOrder(ctx, order); err != nil || len(conf.Trades) == 0 {
@@ -5310,10 +5488,18 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 		return err
 	}
 
-	return m.amm.Confirm(ctx, pool)
+	// rebase successful so confirm the pool with the engine
+	m.amm.Confirm(ctx, pool)
+	// now tell the matching engine something new has appeared incase it needs to update its auction IPV cache
+	m.matching.UpdateAMM(pool.AMMParty)
+	return nil
 }
 
 func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, deterministicID string) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -5348,7 +5534,9 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	}
 
 	if order == nil {
-		return m.amm.Confirm(ctx, pool)
+		m.amm.Confirm(ctx, pool)
+		m.matching.UpdateAMM(pool.AMMParty)
+		return nil
 	}
 
 	conf, _, err := m.submitValidatedOrder(ctx, order)
@@ -5363,14 +5551,28 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 		return err
 	}
 
-	return m.amm.Confirm(ctx, pool)
+	m.amm.Confirm(ctx, pool)
+	m.matching.UpdateAMM(pool.AMMParty)
+	return nil
 }
 
 func (m *Market) CancelAMM(ctx context.Context, cancel *types.CancelAMM, deterministicID string) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
+	ammParty, err := m.amm.GetAMMParty(cancel.Party)
+	if err != nil {
+		return err
+	}
+
 	closeout, err := m.amm.CancelAMM(ctx, cancel)
 	if err != nil {
 		return err
 	}
+
+	// tell matching incase it needs to remove the AMM's contribution to the IPV cache
+	m.matching.UpdateAMM(ammParty)
 
 	if closeout == nil {
 		return nil

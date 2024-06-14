@@ -86,7 +86,7 @@ func TestUpdatingProfiles(t *testing.T) {
 				"key2": "value2",
 				"key3": "value3",
 			},
-			DerivedKeys: []string{},
+			DerivedKeys: map[string]struct{}{},
 		},
 		{
 			PartyID: party2,
@@ -94,7 +94,7 @@ func TestUpdatingProfiles(t *testing.T) {
 			Metadata: map[string]string{
 				"key1": "value1",
 			},
-			DerivedKeys: []string{},
+			DerivedKeys: map[string]struct{}{},
 		},
 	}, te.engine.ListProfiles())
 
@@ -114,8 +114,8 @@ func TestAssigningDerivedKeys(t *testing.T) {
 	require.False(t, te.engine.CheckDerivedKeyOwnership(party1, "derivedKey1"))
 
 	// Assigning derived keys create profile if it doesn't exist
-	te.engine.AssignDeriveKey(party1, "derivedKey1")
-	te.engine.AssignDeriveKey(party1, "derivedKey2")
+	te.engine.AssignDeriveKey(ctx, party1, "derivedKey1")
+	te.engine.AssignDeriveKey(ctx, party1, "derivedKey2")
 
 	require.True(t, te.engine.CheckDerivedKeyOwnership(party1, "derivedKey1"))
 	require.True(t, te.engine.CheckDerivedKeyOwnership(party1, "derivedKey2"))
@@ -162,7 +162,7 @@ func TestAssigningDerivedKeys(t *testing.T) {
 	}))
 
 	// Assign key for party 2
-	te.engine.AssignDeriveKey(party2, "derivedKey3")
+	te.engine.AssignDeriveKey(ctx, party2, "derivedKey3")
 
 	// Attempt using alias from party 2.
 	require.Error(t, te.engine.UpdateProfile(ctx, party1, &commandspb.UpdatePartyProfile{
@@ -177,7 +177,7 @@ func TestAssigningDerivedKeys(t *testing.T) {
 				"key2": "value2",
 				"key3": "value3",
 			},
-			DerivedKeys: []string{"derivedKey1", "derivedKey2"},
+			DerivedKeys: map[string]struct{}{"derivedKey1": {}, "derivedKey2": {}},
 		},
 		{
 			PartyID: party2,
@@ -185,7 +185,7 @@ func TestAssigningDerivedKeys(t *testing.T) {
 			Metadata: map[string]string{
 				"key1": "value1",
 			},
-			DerivedKeys: []string{"derivedKey3"},
+			DerivedKeys: map[string]struct{}{"derivedKey3": {}},
 		},
 	}, te.engine.ListProfiles())
 }

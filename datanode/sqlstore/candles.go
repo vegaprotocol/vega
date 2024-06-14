@@ -107,7 +107,7 @@ func (cs *Candles) getCandlesSubquery(ctx context.Context, descriptor candleDesc
 	if from == nil || to == nil {
 		datesQuery := fmt.Sprintf("select min(period_start) as start_date, max(period_start) as end_date from %s where market_id = $1", descriptor.view)
 		marketID := entities.MarketID(descriptor.market)
-		err := pgxscan.Get(ctx, cs.Connection, &candlesDateRange, datesQuery, marketID)
+		err := pgxscan.Get(ctx, cs.ConnectionSource, &candlesDateRange, datesQuery, marketID)
 		if err != nil {
 			return "", args, fmt.Errorf("querying candles date range: %w", err)
 		}
@@ -195,7 +195,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleID string
 	query = fmt.Sprintf("with gap_filled_candles as (%s) %s", subQuery, query)
 
 	defer metrics.StartSQLQuery("Candles", "GetCandleDataForTimeSpan")()
-	err = pgxscan.Select(ctx, cs.Connection, &candles, query, args...)
+	err = pgxscan.Select(ctx, cs.ConnectionSource, &candles, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying candles: %w", err)
 	}
@@ -244,7 +244,7 @@ func (cs *Candles) getIntervalToView(ctx context.Context) (map[string]string, er
 	query := fmt.Sprintf("SELECT table_name AS view_name FROM INFORMATION_SCHEMA.views WHERE table_name LIKE '%s%%'",
 		candlesViewNamePrePend)
 	defer metrics.StartSQLQuery("Candles", "GetIntervalToView")()
-	rows, err := cs.Connection.Query(ctx, query)
+	rows, err := cs.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("fetching existing views for interval: %w", err)
 	}
@@ -324,13 +324,13 @@ func (cs *Candles) normaliseInterval(ctx context.Context, interval string) (stri
 	var normalizedInterval string
 
 	defer metrics.StartSQLQuery("Candles", "normaliseInterval")()
-	_, err := cs.Connection.Exec(ctx, "SET intervalstyle = 'postgres_verbose' ")
+	_, err := cs.Exec(ctx, "SET intervalstyle = 'postgres_verbose' ")
 	if err != nil {
 		return "", fmt.Errorf("normalising interval, failed to set interval style:%w", err)
 	}
 
 	query := fmt.Sprintf("select cast( INTERVAL '%s' as text)", interval)
-	row := cs.Connection.QueryRow(ctx, query)
+	row := cs.QueryRow(ctx, query)
 
 	err = row.Scan(&normalizedInterval)
 	if err != nil {
@@ -347,7 +347,7 @@ func (cs *Candles) getIntervalSeconds(ctx context.Context, interval string) (int
 
 	defer metrics.StartSQLQuery("Candles", "getIntervalSeconds")()
 	query := fmt.Sprintf("SELECT EXTRACT(epoch FROM INTERVAL '%s')", interval)
-	row := cs.Connection.QueryRow(ctx, query)
+	row := cs.QueryRow(ctx, query)
 
 	err := row.Scan(&seconds)
 	if err != nil {

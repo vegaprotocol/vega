@@ -357,3 +357,7 @@ func (p *Position) updatePosition(ctx context.Context, pos entities.Position) er
 	err := p.store.Add(ctx, pos)
 	return errors.Wrap(err, "error updating position")
 }
+
+func (p *Position) Name() string {
+	return "Position"
+}

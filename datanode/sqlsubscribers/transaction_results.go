@@ -68,3 +68,7 @@ func (tr *TransactionResults) Observe(ctx context.Context, retries int,
 		})
 	return ch, ref
 }
+
+func (tr *TransactionResults) Name() string {
+	return "TransactionResults"
+}

@@ -1096,6 +1096,7 @@ type Market struct {
 	LiquidationStrategy    *LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *num.Uint
+	EnableTxReordering     bool
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -1162,6 +1163,7 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		LiquidationStrategy:           ls,
 		MarkPriceConfiguration:        markPriceConfiguration,
 		TickSize:                      tickSize,
+		EnableTxReordering:            mkt.EnableTransactionReordering,
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1234,6 +1236,7 @@ func (m Market) IntoProto() *vegapb.Market {
 		LiquidationStrategy:           lstrat,
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      m.TickSize.String(),
+		EnableTransactionReordering:   m.EnableTxReordering,
 	}
 	return r
 }
@@ -1244,7 +1247,7 @@ func (m Market) GetID() string {
 
 func (m Market) String() string {
 	return fmt.Sprintf(
-		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s) tickSize(%s)",
+		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s) tickSize(%s) enableTxReordering(%v)",
 		m.ID,
 		stringer.PtrToString(m.TradableInstrument),
 		m.DecimalPlaces,
@@ -1257,6 +1260,7 @@ func (m Market) String() string {
 		m.State.String(),
 		stringer.PtrToString(m.MarketTimestamps),
 		num.UintToString(m.TickSize),
+		m.EnableTxReordering,
 	)
 }
 
@@ -1286,6 +1290,7 @@ func (m Market) DeepClone() *Market {
 		ParentMarketID:          m.ParentMarketID,
 		InsurancePoolFraction:   m.InsurancePoolFraction,
 		TickSize:                m.TickSize.Clone(),
+		EnableTxReordering:      m.EnableTxReordering,
 	}
 
 	if m.LiquiditySLAParams != nil {

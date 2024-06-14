@@ -62,7 +62,7 @@ set
 	tx_hash=EXCLUDED.tx_hash`, sqlDepositsColumns)
 
 	defer metrics.StartSQLQuery("Deposits", "Upsert")()
-	if _, err := d.Connection.Exec(ctx, query, deposit.ID, deposit.Status, deposit.PartyID, deposit.Asset, deposit.Amount,
+	if _, err := d.Exec(ctx, query, deposit.ID, deposit.Status, deposit.PartyID, deposit.Asset, deposit.Amount,
 		deposit.ForeignTxHash, deposit.CreditedTimestamp, deposit.CreatedTimestamp, deposit.TxHash, deposit.VegaTime); err != nil {
 		err = fmt.Errorf("could not insert deposit into database: %w", err)
 		return err
@@ -81,7 +81,7 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 
 	defer metrics.StartSQLQuery("Deposits", "GetByID")()
 	return deposit, d.wrapE(pgxscan.Get(
-		ctx, d.Connection, &deposit, query, entities.DepositID(depositID)))
+		ctx, d.ConnectionSource, &deposit, query, entities.DepositID(depositID)))
 }
 
 func (d *Deposits) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Deposit, error) {
@@ -90,7 +90,7 @@ func (d *Deposits) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]e
 	var deposits []entities.Deposit
 	query := fmt.Sprintf(`SELECT %s FROM deposits WHERE tx_hash = $1`, sqlDepositsColumns)
 
-	err := pgxscan.Select(ctx, d.Connection, &deposits, query, txHash)
+	err := pgxscan.Select(ctx, d.ConnectionSource, &deposits, query, txHash)
 	if err != nil {
 		return nil, d.wrapE(err)
 	}
@@ -126,7 +126,7 @@ func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string,
 	}
 
 	defer metrics.StartSQLQuery("Deposits", "GetByParty")()
-	if err = pgxscan.Select(ctx, d.Connection, &deposits, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, d.ConnectionSource, &deposits, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get deposits by party: %w", err)
 	}
 

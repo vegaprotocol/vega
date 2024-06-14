@@ -46,7 +46,7 @@ func NewAMMPools(connectionSource *ConnectionSource) *AMMPools {
 
 func (p *AMMPools) Upsert(ctx context.Context, pool entities.AMMPool) error {
 	defer metrics.StartSQLQuery("AMMs", "UpsertAMM")
-	if _, err := p.Connection.Exec(ctx, `
+	if _, err := p.ConnectionSource.Exec(ctx, `
 insert into amms(party_id, market_id, id, amm_party_id,
 commitment, status, status_reason, 	parameters_base,
 parameters_lower_bound, parameters_upper_bound,
@@ -107,28 +107,28 @@ func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connectio
 
 func (p *AMMPools) ListByMarket(ctx context.Context, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByMarket")
-	return listBy(ctx, p.Connection, "market_id", &marketID, pagination)
+	return listBy(ctx, p.ConnectionSource, "market_id", &marketID, pagination)
 }
 
 func (p *AMMPools) ListByParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByParty")
 
-	return listBy(ctx, p.Connection, "party_id", &partyID, pagination)
+	return listBy(ctx, p.ConnectionSource, "party_id", &partyID, pagination)
 }
 
 func (p *AMMPools) ListByPool(ctx context.Context, poolID entities.AMMPoolID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByPool")
-	return listBy(ctx, p.Connection, "id", &poolID, pagination)
+	return listBy(ctx, p.ConnectionSource, "id", &poolID, pagination)
 }
 
 func (p *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByAMMParty")
-	return listBy(ctx, p.Connection, "amm_party_id", &ammPartyID, pagination)
+	return listBy(ctx, p.ConnectionSource, "amm_party_id", &ammPartyID, pagination)
 }
 
 func (p *AMMPools) ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByStatus")
-	return listBy(ctx, p.Connection, "status", &status, pagination)
+	return listBy(ctx, p.ConnectionSource, "status", &status, pagination)
 }
 
 func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
@@ -144,7 +144,7 @@ func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagina
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, p.Connection, &pools, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, p.ConnectionSource, &pools, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not list AMMs: %w", err)
 	}
 

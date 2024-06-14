@@ -203,10 +203,9 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	ctx := tempTransaction(t)
 
-	conn := connectionSource.Connection
 	var rowCount int
 
-	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
@@ -219,7 +218,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	err = md.Upsert(ctx, market)
 	require.NoError(t, err, "Saving market entity to database")
-	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
@@ -235,11 +234,10 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 	ctx := tempTransaction(t)
 
-	conn := connectionSource.Connection
 	var rowCount int
 
 	t.Run("should have no markets in the database", func(t *testing.T) {
-		err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+		err := connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, 0, rowCount)
 	})
@@ -258,7 +256,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
-		err = pgxscan.Get(ctx, conn, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
+		err = pgxscan.Get(ctx, connectionSource, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 		assert.NotNil(t, got.LiquidationStrategy)
@@ -278,7 +276,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
-		err = pgxscan.Get(ctx, conn, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
+		err = pgxscan.Get(ctx, connectionSource, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
@@ -297,7 +295,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
-		err = pgxscan.Get(ctx, conn, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
+		err = pgxscan.Get(ctx, connectionSource, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
@@ -315,19 +313,19 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		err = md.Upsert(ctx, market)
 		require.NoError(t, err, "Saving market entity to database")
 
-		err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+		err = connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, 3, rowCount)
 
 		var gotFirstBlock, gotSecondBlock entities.Market
 
-		err = pgxscan.Get(ctx, conn, &gotFirstBlock, `select * from markets where id = $1 and vega_time = $2`, market.ID, block.VegaTime)
+		err = pgxscan.Get(ctx, connectionSource, &gotFirstBlock, `select * from markets where id = $1 and vega_time = $2`, market.ID, block.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
 		assert.Equal(t, marketProto.TradableInstrument, gotFirstBlock.TradableInstrument.ToProto())
 
-		err = pgxscan.Get(ctx, conn, &gotSecondBlock, `select * from markets where id = $1 and vega_time = $2`, market.ID, newBlock.VegaTime)
+		err = pgxscan.Get(ctx, connectionSource, &gotSecondBlock, `select * from markets where id = $1 and vega_time = $2`, market.ID, newBlock.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
@@ -340,10 +338,9 @@ func shouldInsertAValidSpotMarketRecord(t *testing.T) {
 
 	ctx := tempTransaction(t)
 
-	conn := connectionSource.Connection
 	var rowCount int
 
-	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
@@ -356,7 +353,7 @@ func shouldInsertAValidSpotMarketRecord(t *testing.T) {
 
 	err = md.Upsert(ctx, market)
 	require.NoError(t, err, "Saving market entity to database")
-	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
@@ -366,10 +363,9 @@ func shouldInsertAValidPerpetualMarketRecord(t *testing.T) {
 
 	ctx := tempTransaction(t)
 
-	conn := connectionSource.Connection
 	var rowCount int
 
-	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
@@ -382,7 +378,7 @@ func shouldInsertAValidPerpetualMarketRecord(t *testing.T) {
 
 	err = md.Upsert(ctx, market)
 	require.NoError(t, err, "Saving market entity to database")
-	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
@@ -1286,7 +1282,6 @@ func testMarketLineageCreated(t *testing.T) {
 		ParentMarketID: successorMarketA.ID,
 	}
 
-	conn := connectionSource.Connection
 	var rowCount int64
 
 	source := &testBlockSource{bs, time.Now()}
@@ -1296,7 +1291,7 @@ func testMarketLineageCreated(t *testing.T) {
 		parentMarket.State = entities.MarketStateProposed
 		err := md.Upsert(ctx, &parentMarket)
 		require.NoError(t, err)
-		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, parentMarket.ID).Scan(&rowCount)
+		err = connectionSource.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, parentMarket.ID).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), rowCount)
 
@@ -1315,7 +1310,7 @@ func testMarketLineageCreated(t *testing.T) {
 		require.NoError(t, err)
 
 		var marketID, parentMarketID, rootID entities.MarketID
-		err = conn.QueryRow(ctx,
+		err = connectionSource.QueryRow(ctx,
 			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
 			parentMarket.ID,
 		).Scan(&marketID, &parentMarketID, &rootID)
@@ -1332,7 +1327,7 @@ func testMarketLineageCreated(t *testing.T) {
 		err := md.Upsert(ctx, &successorMarketA)
 		require.NoError(t, err)
 		// proposed market successor only, so it should not create a lineage record yet
-		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketA.ID).Scan(&rowCount)
+		err = connectionSource.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketA.ID).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), rowCount)
 
@@ -1351,7 +1346,7 @@ func testMarketLineageCreated(t *testing.T) {
 		require.NoError(t, err)
 		// proposed market successor has been accepted and is pending, so we should now have a lineage record pointing to the parent
 		var marketID, parentMarketID, rootID entities.MarketID
-		err = conn.QueryRow(ctx,
+		err = connectionSource.QueryRow(ctx,
 			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
 			successorMarketA.ID,
 		).Scan(&marketID, &parentMarketID, &rootID)
@@ -1368,7 +1363,7 @@ func testMarketLineageCreated(t *testing.T) {
 		err := md.Upsert(ctx, &successorMarketB)
 		require.NoError(t, err)
 		// proposed market successor only, so it should not create a lineage record yet
-		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketB.ID).Scan(&rowCount)
+		err = connectionSource.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketB.ID).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), rowCount)
 
@@ -1386,7 +1381,7 @@ func testMarketLineageCreated(t *testing.T) {
 		err = md.Upsert(ctx, &successorMarketB)
 		require.NoError(t, err)
 		var marketID, parentMarketID, rootID entities.MarketID
-		err = conn.QueryRow(ctx,
+		err = connectionSource.QueryRow(ctx,
 			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
 			successorMarketB.ID,
 		).Scan(&marketID, &parentMarketID, &rootID)

@@ -426,6 +426,10 @@ type GamePartyScoreFilter struct {
 	TeamIds []string `json:"teamIds,omitempty"`
 	// Zero or more party IDs to filter by
 	PartyIds []string `json:"partyIds,omitempty"`
+	// Optional 'from epoch' ID for scores epoch interval
+	EpochFrom *int `json:"epochFrom,omitempty"`
+	// Optional 'to epoch' ID for scores epoch interval
+	EpochTo *int `json:"epochTo,omitempty"`
 }
 
 type GameTeamScoreFilter struct {
@@ -433,6 +437,10 @@ type GameTeamScoreFilter struct {
 	GameIds []string `json:"gameIds,omitempty"`
 	// Zero or more team IDs to filter by
 	TeamIds []string `json:"teamIds,omitempty"`
+	// Optional 'from epoch' ID for scores epoch interval
+	EpochFrom *int `json:"epochFrom,omitempty"`
+	// Optional 'to epoch' ID for scores epoch interval
+	EpochTo *int `json:"epochTo,omitempty"`
 }
 
 // Individual party participating in a game and their metrics

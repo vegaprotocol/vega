@@ -119,31 +119,31 @@ Feature: Test vAMM submission works as expected (invalid submission)
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
-       | vamm4 | ETH/MAR22 | 100000  | 0.1      | 105  | 99          | 0.1                | 0.01         |
+       | vamm4 | ETH/MAR22 | 100000  | 0.1      | 105  | 99         | 0.1            | 0.01         |
      Then the AMM pool status should be:
-       | party | market id | amount | status        | base | lower bound | lower leverage |
-       | vamm4 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 105  | 99          | 0.1                |
+       | party | market id | amount | status         | base | lower bound | lower leverage |
+       | vamm4 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 105  | 99          | 0.1            |
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | upper bound | upper leverage | proposed fee |
-       | vamm5 | ETH/MAR22 | 100000  | 0.1      | 99   | 101         | 0.02               |  0.01        |
+       | vamm5 | ETH/MAR22 | 100000  | 0.1      | 99   | 101        | 0.02           |  0.01        |
      Then the AMM pool status should be:
        | party | market id | amount | status          | base | upper bound | upper leverage |
-       | vamm5 | ETH/MAR22 | 100000  | STATUS_ACTIVE   | 99  | 101          | 0.02               |
+       | vamm5 | ETH/MAR22 | 100000  | STATUS_ACTIVE   | 99  | 101         | 0.02           |
 
      When the parties submit the following AMM:
-       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-       | vamm6 | ETH/MAR22 | 100000  | 0.001    | 101  | 95          | 105         | 0.01               | 0.01               | 0.01         |
+       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee | error |
+       | vamm6 | ETH/MAR22 | 100000  | 0.001    | 101  | 95          | 105         | 0.01          | 0.01           | 0.01         | blah |
      Then the AMM pool status should be:
-       | party | market id | amount | status        | base | lower bound | lower leverage | upper bound | upper leverage |
-       | vamm6 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 101  | 95          | 0.01               | 105         | 0.01               |
+       | party | market id | amount | status         | base | lower bound | lower leverage | upper bound | upper leverage | 
+       | vamm6 | ETH/MAR22 | 100000 | STATUS_ACTIVE  | 101  | 95          | 0.01           | 105         | 0.01           |
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
-       | vamm7 | ETH/MAR22 | 100000  | 0.01     | 110  | 99          | 0.1                | 0.01         |
+       | vamm7 | ETH/MAR22 | 100000 | 0.01     | 101  | 99          | 0.1            | 0.01         |
      Then the AMM pool status should be:
        | party | market id | amount | status          | base | lower bound | lower leverage | 
-       | vamm7 | ETH/MAR22 | 100000  | STATUS_ACTIVE   | 110  | 99          | 0.1                | 
+       | vamm7 | ETH/MAR22 | 100000  | STATUS_ACTIVE  | 101  | 99          | 0.1            | 
 
      And set the following AMM sub account aliases:
        | party | market id | alias     |
@@ -154,7 +154,7 @@ Feature: Test vAMM submission works as expected (invalid submission)
        | vamm5 | ETH/MAR22 | vamm5-acc |
        | vamm6 | ETH/MAR22 | vamm6-acc |
      And the following transfers should happen:
-       | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
+       | from  | from account         | to        | to account           | market id | amount   | asset | is amm | type                  |
        | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
        | vamm2 | ACCOUNT_TYPE_GENERAL | vamm2-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
        | vamm3 | ACCOUNT_TYPE_GENERAL | vamm3-acc | ACCOUNT_TYPE_GENERAL |           | 100000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |

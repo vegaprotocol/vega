@@ -27,6 +27,9 @@ const (
 	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
 
+	MinimalMarginQuantumMultiple  = "spam.order.minimalMarginQuantumMultiple"
+	MinimalHoldingQuantumMultiple = "spam.order.minimalHoldingQuantumMultiple"
+
 	MarketTargetStakeTimeWindow               = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor            = "market.stake.target.scalingFactor"
 	MarketLiquidityTargetStakeTriggeringRatio = "market.liquidity.targetstake.triggering.ratio"
@@ -48,6 +51,8 @@ const (
 	MarketLiquidityStakeToCCYVolume                  = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeCalculationTimeStep   = "market.liquidity.providersFeeCalculationTimeStep"
 	MarketLiquidityEquityLikeShareFeeFraction        = "market.liquidity.equityLikeShareFeeFraction"
+
+	MarketAggressiveOrderBlockDelay = "market.aggressiveOrderBlockDelay"
 
 	RewardAsset = "reward.asset"
 
@@ -264,6 +269,7 @@ const (
 	RewardsActivityStreakMinQuantumTradeVolume = "rewards.activityStreak.minQuantumTradeVolume"
 
 	MarketAMMMinCommitmentQuantum = "market.amm.minCommitmentQuantum"
+	MarketAMMMaxCalculationLevels = "market.liquidity.maxAmmCalculationLevels"
 )
 
 var Deprecated = map[string]struct{}{
@@ -280,6 +286,7 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxUpdatePartyProfile:                          {},
 	SpamProtectionUpdateProfileMinFunds:                          {},
 	MarketAMMMinCommitmentQuantum:                                {},
+	MarketAMMMaxCalculationLevels:                                {},
 	GovernanceProposalVolumeDiscountProgramMinClose:              {},
 	GovernanceProposalVolumeDiscountProgramMaxClose:              {},
 	GovernanceProposalVolumeDiscountProgramMinEnact:              {},
@@ -306,6 +313,7 @@ var AllKeys = map[string]struct{}{
 	DefaultGas:                                                   {},
 	MinBlockCapacity:                                             {},
 	RewardMarketCreationQuantumMultiple:                          {},
+	MarketAggressiveOrderBlockDelay:                              {},
 	MarketMarginScalingFactors:                                   {},
 	MarketFeeFactorsMakerFee:                                     {},
 	MarketFeeFactorsInfrastructureFee:                            {},
@@ -461,4 +469,6 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionApplyReferralMinFunds:                          {},
 	SpamProtectionReferralSetMinFunds:                            {},
 	BlockchainsEthereumL2Configs:                                 {},
+	MinimalMarginQuantumMultiple:                                 {},
+	MinimalHoldingQuantumMultiple:                                {},
 }

@@ -891,6 +891,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadEthOracleVerifierMisc(dt)
 	case *snapshot.Payload_EvmMultisigTopologies:
 		ret.Data = PayloadEVMMultisigTopologiesFromProto(dt)
+	case *snapshot.Payload_TxCache:
+		ret.Data = PayloadTxCacheFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1083,6 +1085,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_EthOracleVerifierMisc:
 		ret.Data = dt
 	case *snapshot.Payload_EvmMultisigTopologies:
+		ret.Data = dt
+	case *snapshot.Payload_TxCache:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -4284,4 +4288,34 @@ func (p *PayloadEVMMultisigTopologies) Namespace() SnapshotNamespace {
 
 func (p *PayloadEVMMultisigTopologies) Key() string {
 	return "all"
+}
+
+type PayloadTxCache struct {
+	TxCache *snapshot.TxCache
+}
+
+func (p *PayloadTxCache) Key() string {
+	return "txCache"
+}
+
+func (*PayloadTxCache) Namespace() SnapshotNamespace {
+	return TxCacheSnapshot
+}
+
+func (p *PayloadTxCache) IntoProto() *snapshot.Payload_TxCache {
+	return &snapshot.Payload_TxCache{
+		TxCache: p.TxCache,
+	}
+}
+
+func (*PayloadTxCache) isPayload() {}
+
+func (p *PayloadTxCache) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadTxCacheFromProto(txCachePayload *snapshot.Payload_TxCache) *PayloadTxCache {
+	return &PayloadTxCache{
+		TxCache: txCachePayload.TxCache,
+	}
 }

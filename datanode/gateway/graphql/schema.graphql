@@ -55,6 +55,8 @@ type Subscription {
     assetId: ID
     "Type of the account"
     type: AccountType
+    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): [AccountUpdate!]!
 
   "Subscribe to event data from the event bus"
@@ -137,9 +139,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-  @deprecated(
-    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-  )
+    @deprecated(
+      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+    )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -592,7 +594,7 @@ type Query {
     partyId: ID
     "Market ID to filter for. Must be provided as the only filter if used."
     marketId: ID
-    
+
     """
     Party's underlying AMM sub-account to filter for. A party will only ever have one AMM sub-account regardless of how many AMMs they have created.
     This filter is ignored if party ID, market ID, or AMM ID is set.
@@ -722,7 +724,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-  @deprecated(reason: "Use estimateFees and estimatePosition instead")
+    @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -1395,7 +1397,7 @@ type Transfer {
 }
 
 union TransferKind =
-  OneOffTransfer
+    OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -1414,6 +1416,8 @@ type RecurringGovernanceTransfer {
   endEpoch: Int
   "An optional dispatch strategy for the recurring transfer"
   dispatchStrategy: DispatchStrategy
+  "The factor of the initial amount to be distributed"
+  factor: String 
 }
 
 "The specific details for a one-off transfer"
@@ -2083,7 +2087,6 @@ type LogNormalRiskModel {
   riskFactorOverride: RiskFactorOverride
 }
 
-
 "Risk factor override to control stable leverage"
 type RiskFactorOverride {
   "Short Risk factor value"
@@ -2633,6 +2636,8 @@ type Market {
     partyId: ID
     "Pagination information"
     pagination: Pagination
+    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): AccountsConnection
 
   tradesConnection(
@@ -2641,9 +2646,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Current depth on the order book for this market"
   depth(
@@ -2685,7 +2690,7 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-  @deprecated(reason: "Use liquidityProvisions instead")
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2698,7 +2703,7 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2725,6 +2730,9 @@ type Market {
 
   "The market minimum tick size"
   tickSize: String!
+  
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 """
@@ -2882,9 +2890,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2896,11 +2904,13 @@ type Party {
     type: AccountType
     "Cursor pagination information"
     pagination: Pagination
+    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): AccountsConnection
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-  @deprecated(reason: "Use root positions query instead of sub-query")
+    @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2965,7 +2975,7 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-  @deprecated(reason: "Use liquidityProvisions instead")
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -2992,10 +3002,17 @@ type Party {
     teamId: ID
     "Optionally filter for rewards earned for the given game ID"
     gameId: ID
+    "Whether to return rewards for all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): RewardsConnection
 
   "Return net reward information"
-  rewardSummaries("An asset ID (optional)" assetId: ID): [RewardSummary]
+  rewardSummaries(
+    "Restrict the reward summary to rewards paid in the given assets."
+    assetId: ID
+    "Whether to return rewards for all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
+  ): [RewardSummary]
 
   "All transfers for a public key"
   transfersConnection(
@@ -3044,6 +3061,10 @@ type PartyVestingStats {
   rewardBonusMultiplier: String!
   "The balance of the party, in quantum."
   quantumBalance: String!
+  "Bonus multiplier applied on the reward, summed across all derived accounts."
+  summedRewardBonusMultiplier: String
+  "The balance of the party and derived keys, in quantum."
+  summedQuantumBalance: String
 }
 
 """
@@ -3310,9 +3331,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "The order type"
   type: OrderType
@@ -3368,7 +3389,7 @@ enum StopOrderRejectionReason {
   REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
   "This stop order does not close the position"
   REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
- "The percentage value for the linked stop order is invalid"
+  "The percentage value for the linked stop order is invalid"
   REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID
   "Stop orders are not allowed during the opening auction"
   REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION
@@ -3727,6 +3748,8 @@ type AccountBalance {
   market: Market
   "Owner of the account"
   party: Party
+  "Parent party ID of the account. Used in cases where the account is derived from another party's account."
+  parentPartyId: Party
 }
 
 "An account record"
@@ -4773,7 +4796,7 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4786,6 +4809,8 @@ type NewMarket {
   markPriceConfiguration: CompositePriceConfiguration!
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 type CompositePriceConfiguration {
@@ -4838,7 +4863,7 @@ type UpdateMarketConfiguration {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4849,6 +4874,8 @@ type UpdateMarketConfiguration {
   markPriceConfiguration: CompositePriceConfiguration
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 type UpdateInstrumentConfiguration {
@@ -4892,7 +4919,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-  UpdateMarketSimpleRiskModel
+    UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4973,7 +5000,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-  OneOffGovernanceTransfer
+    OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -5078,6 +5105,8 @@ type NewSpotMarket {
   liquidityFeeSettings: LiquidityFeeSettings
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 "Update an existing spot market on Vega"
@@ -5091,7 +5120,7 @@ type UpdateSpotMarket {
 type UpdateSpotInstrumentConfiguration {
   "Instrument code, human-readable shortcode used to describe the instrument."
   code: String!
- "Instrument name"
+  "Instrument name"
   name: String!
 }
 
@@ -5112,6 +5141,8 @@ type UpdateSpotMarketConfiguration {
   liquidityFeeSettings: LiquidityFeeSettings
   "The market minimum tick size"
   tickSize: String!
+  "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
+  enableTxReordering: Boolean!
 }
 
 type LiquiditySLAParameters {
@@ -5149,7 +5180,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-  NewMarket
+    NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -5764,6 +5795,8 @@ type RewardSummary {
     assetId: ID
     "Cursor pagination information"
     pagination: Pagination
+    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): RewardsConnection
 }
 
@@ -6053,6 +6086,10 @@ input GameTeamScoreFilter {
   gameIds: [ID!]
   "Zero or more team IDs to filter by"
   teamIds: [ID!]
+  "Optional 'from epoch' ID for scores epoch interval"
+  epochFrom: Int
+  "Optional 'to epoch' ID for scores epoch interval"
+  epochTo: Int
 }
 
 input GamePartyScoreFilter {
@@ -6062,6 +6099,10 @@ input GamePartyScoreFilter {
   teamIds: [ID!]
   "Zero or more party IDs to filter by"
   partyIds: [ID!]
+  "Optional 'from epoch' ID for scores epoch interval"
+  epochFrom: Int
+  "Optional 'to epoch' ID for scores epoch interval"
+  epochTo: Int
 }
 
 input OrderByPartyIdsFilter {
@@ -6127,7 +6168,6 @@ type GameTeamScoreEdge {
   "The cursor for this game team score"
   cursor: String
 }
-
 
 "Edge type containing the position and cursor information returned by a PositionConnection"
 type PositionEdge {
@@ -6685,7 +6725,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-  DataSourceSpecConfigurationTime
+    DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -6707,7 +6747,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-  DataSourceDefinitionInternal
+    DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """
@@ -7503,23 +7543,23 @@ type GamePartyScore {
   "The epoch for which this score is"
   epochId: Int!
   "The party ID"
-  partyId: ID! 
-   "Time of the score in RFC3339Nano"
+  partyId: ID!
+  "Time of the score in RFC3339Nano"
   time: Timestamp!
   "The current score of the party in the game"
   score: String!
   "The staking balance of the party in the game, will be populated only if the game has a requirement for it"
   stakingBalance: String
   "The open volume of the party in the game, will be populated only if the game has a requirement for it"
-  openVolume: String 
+  openVolume: String
   "The total fees paid by the party in the game during the relevant period"
   totalFeesPaid: String!
   "Is the party eligible for a reward in this game based on existing information"
   isEligible: Boolean!
   "If the party is a member of a team, this is their relative position in the sorting order of the team's scores"
-  rank: Int 
+  rank: Int
 }
-  
+
 "Connection type for retrieving AMM information"
 type AMMConnection {
   "Page of AMMs for the connection"

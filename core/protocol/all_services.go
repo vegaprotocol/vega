@@ -63,6 +63,7 @@ import (
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/teams"
+	"code.vegaprotocol.io/vega/core/txcache"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
@@ -128,6 +129,7 @@ type allServices struct {
 	ethereumOraclesVerifier *ethverifier.Verifier
 
 	partiesEngine *parties.SnapshottedEngine
+	txCache       *txcache.TxCache
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -289,6 +291,7 @@ func newServices(
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
 
 	svcs.partiesEngine = parties.NewSnapshottedEngine(svcs.broker)
+	svcs.txCache = txcache.NewTxCache(svcs.commander)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts, svcs.broker)
@@ -334,6 +337,7 @@ func newServices(
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
 		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking, svcs.partiesEngine,
+		svcs.txCache,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
@@ -378,7 +382,7 @@ func newServices(
 		svcs.activityStreak.OnEpochRestore,
 	)
 
-	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
+	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets, svcs.partiesEngine)
 	svcs.timeService.NotifyOnTick(svcs.vesting.OnTick)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
 
@@ -426,6 +430,7 @@ func newServices(
 	svcs.topology.NotifyOnKeyChange(svcs.governance.ValidatorKeyChanged)
 
 	svcs.snapshotEngine.AddProviders(
+		svcs.txCache,
 		svcs.checkpoint,
 		svcs.collateral,
 		svcs.governance,
@@ -585,6 +590,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	if svcs.spam != nil {
 		spamWatchers = []netparams.WatchParam{
 			{
+				Param:   netparams.MarketAggressiveOrderBlockDelay,
+				Watcher: svcs.txCache.OnNumBlocksToDelayUpdated,
+			},
+			{
 				Param:   netparams.SpamProtectionMaxVotes,
 				Watcher: svcs.spam.OnMaxVotesChanged,
 			},
@@ -711,6 +720,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.RewardAsset,
 			Watcher: dispatch.RewardAssetUpdate(svcs.log, svcs.assets),
+		},
+		{
+			Param:   netparams.MinimalMarginQuantumMultiple,
+			Watcher: svcs.executionEngine.OnMinimalMarginQuantumMultipleUpdate,
+		},
+		{
+			Param:   netparams.MinimalHoldingQuantumMultiple,
+			Watcher: svcs.executionEngine.OnMinimalHoldingQuantumMultipleUpdate,
 		},
 		{
 			Param:   netparams.MarketMarginScalingFactors,
@@ -1117,6 +1134,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MarketAMMMinCommitmentQuantum,
 			Watcher: svcs.executionEngine.OnMarketAMMMinCommitmentQuantum,
+		},
+		{
+			Param:   netparams.MarketAMMMaxCalculationLevels,
+			Watcher: svcs.executionEngine.OnMarketAMMMaxCalculationLevels,
 		},
 		{
 			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,

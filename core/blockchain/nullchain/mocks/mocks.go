@@ -132,3 +132,18 @@ func (mr *MockApplicationServiceMockRecorder) InitChain(arg0, arg1 interface{}) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitChain", reflect.TypeOf((*MockApplicationService)(nil).InitChain), arg0, arg1)
 }
+
+// PrepareProposal mocks base method.
+func (m *MockApplicationService) PrepareProposal(arg0 context.Context, arg1 *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PrepareProposal", arg0, arg1)
+	ret0, _ := ret[0].(*types.ResponsePrepareProposal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareProposal indicates an expected call of PrepareProposal.
+func (mr *MockApplicationServiceMockRecorder) PrepareProposal(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareProposal", reflect.TypeOf((*MockApplicationService)(nil).PrepareProposal), arg0, arg1)
+}

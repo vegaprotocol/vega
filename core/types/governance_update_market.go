@@ -138,11 +138,12 @@ type UpdateMarketConfiguration struct {
 	LiquidationStrategy           *LiquidationStrategy
 	MarkPriceConfiguration        *CompositePriceConfiguration
 	TickSize                      *num.Uint
+	EnableTxReordering            bool
 }
 
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), markPriceConfiguration(%s), tickSize(%s)",
+		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), markPriceConfiguration(%s), tickSize(%s), enableTxReordering(%v)",
 		stringer.PtrToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
 		stringer.PtrToString(n.PriceMonitoringParameters),
@@ -152,6 +153,7 @@ func (n UpdateMarketConfiguration) String() string {
 		n.QuadraticSlippageFactor.String(),
 		stringer.PtrToString(n.MarkPriceConfiguration),
 		num.UintToString(n.TickSize),
+		n.EnableTxReordering,
 	)
 }
 
@@ -161,6 +163,7 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 		TickSize:                n.TickSize.Clone(),
+		EnableTxReordering:      n.EnableTxReordering,
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -232,6 +235,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      n.TickSize.String(),
+		EnableTransactionReordering:   n.EnableTxReordering,
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -332,6 +336,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        CompositePriceConfigurationFromProto(p.MarkPriceConfiguration),
 		TickSize:                      tickSize,
+		EnableTxReordering:            p.EnableTransactionReordering,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

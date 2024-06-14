@@ -49,6 +49,7 @@ func TestSubmitAMM(t *testing.T) {
 
 func TestAMMTrading(t *testing.T) {
 	t.Run("test basic submit order", testBasicSubmitOrder)
+	t.Run("test submit order at best price", testSubmitOrderAtBestPrice)
 	t.Run("test submit market order", testSubmitMarketOrder)
 	t.Run("test submit order pro rata", testSubmitOrderProRata)
 	t.Run("test best prices and volume", testBestPricesAndVolume)
@@ -59,7 +60,8 @@ func TestAMMTrading(t *testing.T) {
 
 func TestAmendAMM(t *testing.T) {
 	t.Run("test amend AMM which doesn't exist", testAmendAMMWhichDoesntExist)
-	t.Run("test amend AMM with sparse amend", TestAmendAMMSparse)
+	t.Run("test amend AMM with sparse amend", testAmendAMMSparse)
+	t.Run("test amend AMM insufficient commitment", testAmendInsufficientCommitment)
 }
 
 func TestClosingAMM(t *testing.T) {
@@ -102,7 +104,7 @@ func testAmendAMMWhichDoesntExist(t *testing.T) {
 	require.ErrorIs(t, err, ErrNoPoolMatchingParty)
 }
 
-func TestAmendAMMSparse(t *testing.T) {
+func testAmendAMMSparse(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -126,6 +128,33 @@ func TestAmendAMMSparse(t *testing.T) {
 	require.NoError(t, err)
 
 	tst.engine.Confirm(ctx, updated)
+}
+
+func testAmendInsufficientCommitment(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+	expectSubaccountCreation(t, tst, party, subAccount)
+	whenAMMIsSubmitted(t, tst, submit)
+
+	poolID := tst.engine.poolsCpy[0].ID
+
+	amend := getPoolAmendment(t, party, tst.marketID)
+	// no amend to the commitment amount
+	amend.CommitmentAmount = nil
+
+	// amend to super wide bounds so that the commitment is too thin to support the AMM
+	amend.Parameters.Base.AddSum(num.UintOne())
+	amend.Parameters.UpperBound.AddSum(num.NewUint(1000000))
+	amend.Parameters.LowerBound.AddSum(num.UintOne())
+
+	_, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
+	require.ErrorContains(t, err, "insufficient commitment")
+
+	// check that the original pool still exists
+	assert.Equal(t, poolID, tst.engine.poolsCpy[0].ID)
 }
 
 func testBasicSubmitOrder(t *testing.T) {
@@ -171,6 +200,48 @@ func testBasicSubmitOrder(t *testing.T) {
 	// note that this volume being bigger than 242367 above means we've moved back to position, then flipped
 	// sign, and took volume from the other curve.
 	assert.Equal(t, 362325, int(orders[0].Size))
+}
+
+func testSubmitOrderAtBestPrice(t *testing.T) {
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	whenAMMIsSubmitted(t, tst, submit)
+
+	// AMM has fair-price of 2000 so is willing to sell at 2001, send an incoming buy order at 2001
+	agg := &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideBuy,
+		Price:     num.NewUint(2001),
+		Type:      types.OrderTypeLimit,
+	}
+
+	ensurePosition(t, tst.pos, 0, num.NewUint(0))
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(2001))
+	require.Len(t, orders, 1)
+	assert.Equal(t, "2000", orders[0].Price.String())
+	assert.Equal(t, 11927, int(orders[0].Size))
+
+	bb, _, ba, _ := tst.engine.BestPricesAndVolumes()
+	assert.Equal(t, "2002", ba.String())
+	assert.Equal(t, "2000", bb.String())
+
+	// now trade back with a price of 2000
+	agg = &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideSell,
+		Price:     num.NewUint(2000),
+		Type:      types.OrderTypeLimit,
+	}
+	orders = tst.engine.SubmitOrder(agg, num.NewUint(2001), num.NewUint(2000))
+	require.Len(t, orders, 1)
+	assert.Equal(t, "2000", orders[0].Price.String())
+	assert.Equal(t, 11927, int(orders[0].Size))
 }
 
 func testSubmitMarketOrder(t *testing.T) {
@@ -568,7 +639,7 @@ func whenAMMIsSubmitted(t *testing.T, tst *tstEngine, submission *types.SubmitAM
 	ctx := context.Background()
 	pool, err := tst.engine.Create(ctx, submission, vgcrypto.RandomHash(), riskFactors, scalingFactors, slippage)
 	require.NoError(t, err)
-	require.NoError(t, tst.engine.Confirm(ctx, pool))
+	tst.engine.Confirm(ctx, pool)
 }
 
 func getParty(t *testing.T, tst *tstEngine) (string, string) {
@@ -657,7 +728,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
 	parties := cmocks.NewMockParties(ctrl)
-	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any()).AnyTimes()
+	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	eng := New(logging.NewTestLogger(), broker, col, marketID, assetID, pos, num.DecimalOne(), num.DecimalOne(), mat, parties)
 

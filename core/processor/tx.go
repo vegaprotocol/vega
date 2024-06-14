@@ -78,6 +78,8 @@ func DecodeTx(payload []byte, chainID string) (*Tx, error) {
 
 func (t Tx) Command() txn.Command {
 	switch cmd := t.inputData.Command.(type) {
+	case *commandspb.InputData_DelayedTransactionsWrapper:
+		return txn.DelayedTransactionsWrapper
 	case *commandspb.InputData_OrderSubmission:
 		return txn.SubmitOrderCommand
 	case *commandspb.InputData_OrderCancellation:
@@ -261,6 +263,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.AmendAmm
 	case *commandspb.InputData_CancelAmm:
 		return cmd.CancelAmm
+	case *commandspb.InputData_DelayedTransactionsWrapper:
+		return cmd.DelayedTransactionsWrapper
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -490,6 +494,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to CancelAMM")
 		}
 		*underlyingCmd = *cmd.CancelAmm
+	case *commandspb.InputData_DelayedTransactionsWrapper:
+		underlyingCmd, ok := i.(*commandspb.DelayedTransactionsWrapper)
+		if !ok {
+			return errors.New("failed to unmarshall to DelayedTransactionsWrapper")
+		}
+		*underlyingCmd = *cmd.DelayedTransactionsWrapper
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}

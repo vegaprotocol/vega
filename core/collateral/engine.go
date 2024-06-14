@@ -89,8 +89,9 @@ type TimeService interface {
 // Engine is handling the power of the collateral.
 type Engine struct {
 	Config
-	log   *logging.Logger
-	cfgMu sync.Mutex
+	log       *logging.Logger
+	cfgMu     sync.Mutex
+	cacheLock sync.RWMutex
 
 	accs map[string]*types.Account
 	// map of partyID -> account ID -> account
@@ -103,6 +104,10 @@ type Engine struct {
 
 	partiesAccsBalanceCache     map[string]*num.Uint
 	partiesAccsBalanceCacheLock sync.RWMutex
+
+	// a block cache of the total value of general + margin + order margin accounts in quantum
+	partyMarketCache map[string]map[string]*num.Uint
+	partyAssetCache  map[string]map[string]*num.Uint
 
 	idbuf []byte
 
@@ -144,10 +149,101 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		vesting:                 map[string]map[string]*num.Uint{},
 		partiesAccsBalanceCache: map[string]*num.Uint{},
 		nextBalancesSnapshot:    time.Time{},
+		partyAssetCache:         map[string]map[string]*num.Uint{},
+		partyMarketCache:        map[string]map[string]*num.Uint{},
 	}
 }
 
+func (e *Engine) updatePartyAssetCache() {
+	e.cacheLock.Lock()
+	defer e.cacheLock.Unlock()
+	e.partyAssetCache = map[string]map[string]*num.Uint{}
+	e.partyMarketCache = map[string]map[string]*num.Uint{}
+	// initialise party market and general accounts
+	for k, v := range e.partiesAccs {
+		if k == "*" {
+			continue
+		}
+		general := map[string]*num.Uint{}
+		marketAccounts := map[string]*num.Uint{}
+		for _, a := range v {
+			if a.Type != types.AccountTypeGeneral && a.Type != types.AccountTypeHolding && a.Type != types.AccountTypeMargin && a.Type != types.AccountTypeOrderMargin {
+				continue
+			}
+			if a.Type == types.AccountTypeGeneral {
+				general[a.Asset] = a.Balance.Clone()
+			} else {
+				if _, ok := marketAccounts[a.MarketID]; !ok {
+					marketAccounts[a.MarketID] = num.UintZero()
+				}
+				marketAccounts[a.MarketID].AddSum(a.Balance)
+			}
+		}
+		e.partyAssetCache[k] = general
+		e.partyMarketCache[k] = marketAccounts
+	}
+}
+
+func (e *Engine) CheckOrderSpamAllMarkets(party string) error {
+	e.cacheLock.RLock()
+	defer e.cacheLock.RUnlock()
+	if _, ok := e.partyAssetCache[party]; !ok {
+		return fmt.Errorf("party " + party + " is not eligible to submit order transaction with no market in scope")
+	} else {
+		for _, asts := range e.partyAssetCache {
+			for _, balance := range asts {
+				if !balance.IsZero() {
+					return nil
+				}
+			}
+		}
+	}
+	if marketBalances, ok := e.partyMarketCache[party]; ok {
+		for _, marketBalance := range marketBalances {
+			if !marketBalance.IsZero() {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("party " + party + " is not eligible to submit order transaction with no market in scope")
+}
+
+func (e *Engine) CheckOrderSpam(party, market string, assets []string) error {
+	e.cacheLock.RLock()
+	defer e.cacheLock.RUnlock()
+	e.log.Info("CheckOrderSpam", logging.String("party", party), logging.String("market", market), logging.Strings("assets", assets))
+	if assetBalances, ok := e.partyAssetCache[party]; !ok {
+		return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account in no asset)")
+	} else {
+		found := false
+		for _, ast := range assets {
+			if balance, ok := assetBalances[ast]; ok {
+				found = true
+				if !balance.IsZero() {
+					return nil
+				}
+			}
+		}
+		if !found {
+			for ast, balance := range e.partyAssetCache[party] {
+				e.log.Info("party asset cache", logging.String("party", party), logging.String("asset", ast), logging.String("balance", balance.String()))
+			}
+			return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account found)")
+		}
+	}
+
+	if marketBalances, ok := e.partyMarketCache[party]; ok {
+		if marketBalance, ok := marketBalances[market]; ok && !marketBalance.IsZero() {
+			return nil
+		} else {
+			return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account balance in asset and no market accounts found)")
+		}
+	}
+	return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account balance in asset and no balance in market accounts)")
+}
+
 func (e *Engine) BeginBlock(ctx context.Context) {
+	e.updatePartyAssetCache()
 	// FIXME(jeremy): to be removed after the migration from
 	// 72.x to 73, this will ensure all per assets accounts are being
 	// created after the restart

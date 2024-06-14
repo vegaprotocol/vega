@@ -95,7 +95,7 @@ const (
 	sqlMarketsColumns = `id, tx_hash, vega_time, instrument_id, tradable_instrument, decimal_places,
 		fees, opening_auction, price_monitoring_settings, liquidity_monitoring_parameters,
 		trading_mode, state, market_timestamps, position_decimal_places, lp_price_range, linear_slippage_factor, quadratic_slippage_factor,
-		parent_market_id, insurance_pool_fraction, liquidity_sla_parameters, liquidation_strategy, mark_price_configuration, tick_size`
+		parent_market_id, insurance_pool_fraction, liquidity_sla_parameters, liquidation_strategy, mark_price_configuration, tick_size, enable_tx_reordering`
 )
 
 func NewMarkets(connectionSource *ConnectionSource) *Markets {
@@ -108,7 +108,7 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 	query := fmt.Sprintf(`insert into markets(%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
 on conflict (id, vega_time) do update
 set
 	instrument_id=EXCLUDED.instrument_id,
@@ -131,15 +131,16 @@ set
     liquidity_sla_parameters=EXCLUDED.liquidity_sla_parameters,
 	liquidation_strategy=EXCLUDED.liquidation_strategy,
 	mark_price_configuration=EXCLUDED.mark_price_configuration,
-	tick_size=EXCLUDED.tick_size;`, sqlMarketsColumns)
+	tick_size=EXCLUDED.tick_size,
+	enable_tx_reordering=EXCLUDED.enable_tx_reordering;`, sqlMarketsColumns)
 
 	defer metrics.StartSQLQuery("Markets", "Upsert")()
-	if _, err := m.Connection.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
+	if _, err := m.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces, market.LpPriceRange,
 		market.LinearSlippageFactor, market.QuadraticSlippageFactor, market.ParentMarketID, market.InsurancePoolFraction,
 		market.LiquiditySLAParameters, market.LiquidationStrategy,
-		market.MarkPriceConfiguration, market.TickSize); err != nil {
+		market.MarkPriceConfiguration, market.TickSize, market.EnableTXReordering); err != nil {
 		err = fmt.Errorf("could not insert market into database: %w", err)
 		return err
 	}
@@ -166,7 +167,7 @@ func getSelect() string {
 select mc.id,  mc.tx_hash,  mc.vega_time,  mc.instrument_id,  mc.tradable_instrument,  mc.decimal_places,
 		mc.fees, mc.opening_auction, mc.price_monitoring_settings, mc.liquidity_monitoring_parameters,
 		mc.trading_mode, mc.state, mc.market_timestamps, mc.position_decimal_places, mc.lp_price_range, mc.linear_slippage_factor, mc.quadratic_slippage_factor,
-		mc.parent_market_id, mc.insurance_pool_fraction, ml.market_id as successor_market_id, mc.liquidity_sla_parameters, mc.liquidation_strategy, mc.mark_price_configuration, tick_size
+		mc.parent_market_id, mc.insurance_pool_fraction, ml.market_id as successor_market_id, mc.liquidity_sla_parameters, mc.liquidation_strategy, mc.mark_price_configuration, mc.tick_size, mc.enable_tx_reordering
 from markets_current mc
 left join lineage ml on mc.id = ml.parent_market_id
 `
@@ -188,7 +189,7 @@ order by id, vega_time desc
 `, getSelect())
 
 	defer metrics.StartSQLQuery("Markets", "GetByID")()
-	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.MarketID(marketID))
+	err := pgxscan.Get(ctx, m.ConnectionSource, &market, query, entities.MarketID(marketID))
 
 	if err == nil {
 		m.cache[marketID] = market
@@ -202,7 +203,7 @@ func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 
 	var markets []entities.Market
 	query := fmt.Sprintf(`%s where tx_hash = $1`, getSelect())
-	err := pgxscan.Select(ctx, m.Connection, &markets, query, txHash)
+	err := pgxscan.Select(ctx, m.ConnectionSource, &markets, query, txHash)
 
 	if err == nil {
 		m.cacheLock.Lock()
@@ -258,7 +259,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 		return markets, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &markets, query, args...); err != nil {
 		return markets, pageInfo, err
 	}
 
@@ -310,7 +311,7 @@ left join lineage s on l.successor_market_id = s.parent_id
 
 	query = fmt.Sprintf("%s %s", preQuery, query)
 
-	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &markets, query, args...); err != nil {
 		return nil, entities.PageInfo{}, m.wrapE(err)
 	}
 
@@ -329,7 +330,7 @@ left join lineage s on l.successor_market_id = s.parent_id
 
 	proposalsQuery := fmt.Sprintf(`select * from proposals_current where terms->'newMarket'->'changes'->'successor'->>'parentMarketId' in ('%s') order by vega_time, id`, strings.Join(parentMarketList, "', '"))
 
-	if err = pgxscan.Select(ctx, m.Connection, &proposals, proposalsQuery); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &proposals, proposalsQuery); err != nil {
 		return nil, entities.PageInfo{}, m.wrapE(err)
 	}
 

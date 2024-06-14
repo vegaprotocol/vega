@@ -35,6 +35,14 @@ type _Market struct{}
 
 type MarketID = ID[_Market]
 
+func NewMarketIDSlice(ids ...string) []MarketID {
+	res := make([]MarketID, 0, len(ids))
+	for _, v := range ids {
+		res = append(res, MarketID(v))
+	}
+	return res
+}
+
 type Market struct {
 	ID                            MarketID
 	TxHash                        TxHash
@@ -62,6 +70,7 @@ type Market struct {
 	LiquidationStrategy    LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *decimal.Decimal
+	EnableTXReordering     bool
 }
 
 type MarketCursor struct {
@@ -205,6 +214,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        mpc,
 		TickSize:                      &tickSize,
+		EnableTXReordering:            market.EnableTransactionReordering,
 	}, nil
 }
 
@@ -271,6 +281,7 @@ func (m Market) ToProto() *vega.Market {
 		LiquidationStrategy:           m.LiquidationStrategy.IntoProto(),
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.CompositePriceConfiguration,
 		TickSize:                      m.TickSize.String(),
+		EnableTransactionReordering:   m.EnableTXReordering,
 	}
 }
 

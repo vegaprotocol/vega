@@ -50,7 +50,7 @@ func (np *NetworkParameters) Add(ctx context.Context, r entities.NetworkParamete
 	defer np.cacheLock.Unlock()
 
 	defer metrics.StartSQLQuery("NetworkParameters", "Add")()
-	_, err := np.Connection.Exec(ctx,
+	_, err := np.Exec(ctx,
 		`INSERT INTO network_parameters(
 			key,
 			value,
@@ -80,7 +80,7 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 
 	query := `SELECT * FROM network_parameters_current where key = $1`
 	defer metrics.StartSQLQuery("NetworkParameters", "GetByKey")()
-	err := pgxscan.Get(ctx, np.Connection, &parameter, query, key)
+	err := pgxscan.Get(ctx, np.ConnectionSource, &parameter, query, key)
 	if err != nil {
 		return entities.NetworkParameter{}, np.wrapE(err)
 	}
@@ -95,7 +95,7 @@ func (np *NetworkParameters) GetByTxHash(ctx context.Context, txHash entities.Tx
 	var parameters []entities.NetworkParameter
 	query := `SELECT * FROM network_parameters WHERE tx_hash = $1`
 
-	err := pgxscan.Select(ctx, np.Connection, &parameters, query, txHash)
+	err := pgxscan.Select(ctx, np.ConnectionSource, &parameters, query, txHash)
 	if err != nil {
 		return nil, np.wrapE(err)
 	}
@@ -124,7 +124,7 @@ func (np *NetworkParameters) GetAll(ctx context.Context, pagination entities.Cur
 		return nil, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, np.Connection, &nps, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, np.ConnectionSource, &nps, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get network parameters: %w", err)
 	}
 

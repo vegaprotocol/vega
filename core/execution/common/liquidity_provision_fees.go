@@ -152,7 +152,7 @@ func (m *MarketLiquidity) updateAMMCommitment(count int64) {
 	}
 	bb, ba := num.DecimalFromUint(bestB), num.DecimalFromUint(bestA)
 	for amm, pool := range m.amm.GetAMMPoolsBySubAccount() {
-		buy, sell := pool.OrderbookShape(minP, maxP)
+		buy, sell := pool.OrderbookShape(minP, maxP, nil)
 		buyTotal, sellTotal := num.UintZero(), num.UintZero()
 		for _, b := range buy {
 			size := num.UintFromUint64(b.Size)

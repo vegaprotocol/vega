@@ -72,10 +72,48 @@ var validatorsTestnet = `{
   ]
 }`
 
+var mainnetMirror = `{
+  "configs": [
+    {
+      "network_id": "421614",
+      "chain_id": "421614",
+      "collateral_bridge_contract": {
+        "address": "0x412eD3b1951C39c182ea6682D2a16c1Ca22A5874"
+      },
+      "confirmations": 3,
+      "multisig_control_contract": {
+        "address": "0x2F933bf63D4059D66F20F97f4a0B540Ea1d0dE69",
+        "deployment_block_height": 46048993
+      },
+      "block_time": "250ms",
+      "name": "Arbitrum (Sepolia)"
+    }
+  ]
+}`
+
+var mainnet = `{
+  "configs": [
+    {
+      "network_id": "42161",
+      "chain_id": "42161",
+      "collateral_bridge_contract": {
+        "address": "0x475B597652bCb2769949FD6787b1DC6916518407"
+      },
+      "confirmations": 3,
+      "multisig_control_contract": {
+        "address": "0x348372DE65Ca7F2567FE267ccc4D1bF6d4b71f6F",
+        "deployment_block_height": 213213613
+      },
+      "block_time": "250ms",
+      "name": "Arbitrum One"
+    }
+  ]
+}`
+
 var bridgeMapping = map[string]string{
 	"vega-stagnet1-202307191148":       stagnet1,
 	"vega-fairground-202305051805":     testnet,
-	"vega-mainnet-mirror-202306231148": "{}",
+	"vega-mainnet-mirror-202306231148": mainnetMirror,
 	"vega-testnet-0002-v4":             validatorsTestnet,
-	"vega-mainnet-0011":                "{}",
+	"vega-mainnet-0011":                mainnet,
 }

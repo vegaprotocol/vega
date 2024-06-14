@@ -18,6 +18,7 @@ package amm
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -29,10 +30,11 @@ type ephemeralPosition struct {
 }
 
 type curve struct {
-	l     num.Decimal // virtual liquidity
-	high  *num.Uint   // high price value, upper bound if upper curve, base price is lower curve
-	low   *num.Uint   // low price value, base price if upper curve, lower bound if lower curve
-	empty bool        // if true the curve is of zero length and represents no liquidity on this side of the amm
+	l       num.Decimal // virtual liquidity
+	high    *num.Uint   // high price value, upper bound if upper curve, base price is lower curve
+	low     *num.Uint   // low price value, base price if upper curve, lower bound if lower curve
+	empty   bool        // if true the curve is of zero length and represents no liquidity on this side of the amm
+	isLower bool        // whether the curve is for the lower curve or the upper curve
 
 	// the theoretical position of the curve at its lower boundary
 	// note that this equals Vega's position at the boundary only in the lower curve, since Vega position == curve-position
@@ -58,6 +60,19 @@ func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
 		impliedPosition(sqrt(nd), sqrt(c.high), c.l),
 	)
 	return volume.Uint64()
+}
+
+// positionAtPrice returns the position of the AMM if its fair-price were the given price. This
+// will be signed for long/short as usual.
+func (c *curve) positionAtPrice(sqrt sqrtFn, price *num.Uint) int64 {
+	pos := impliedPosition(sqrt(price), sqrt(c.high), c.l)
+	if c.isLower {
+		return int64(pos.Uint64())
+	}
+
+	// if we are in the upper curve the position of 0 in "curve-space" is -cu.pv in Vega position
+	// so we need to flip the interval
+	return -c.pv.Sub(pos.ToDecimal()).IntPart()
 }
 
 type Pool struct {
@@ -91,8 +106,8 @@ type Pool struct {
 	// for the same incoming order, the second round of generated orders are priced as if the first round had traded.
 	eph *ephemeralPosition
 
-	// one price tick
-	oneTick *num.Uint
+	maxCalculationLevels *num.Uint // maximum number of price levels the AMM will be expanded into
+	oneTick              *num.Uint // one price tick
 }
 
 func NewPool(
@@ -108,24 +123,26 @@ func NewPool(
 	linearSlippage num.Decimal,
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
+	maxCalculationLevels *num.Uint,
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(priceFactor))
 	pool := &Pool{
-		ID:             id,
-		AMMParty:       ammParty,
-		Commitment:     submit.CommitmentAmount,
-		ProposedFee:    submit.ProposedFee,
-		Parameters:     submit.Parameters,
-		market:         submit.MarketID,
-		owner:          submit.Party,
-		asset:          asset,
-		sqrt:           sqrt,
-		collateral:     collateral,
-		position:       position,
-		priceFactor:    priceFactor,
-		positionFactor: positionFactor,
-		oneTick:        oneTick,
-		status:         types.AMMPoolStatusActive,
+		ID:                   id,
+		AMMParty:             ammParty,
+		Commitment:           submit.CommitmentAmount,
+		ProposedFee:          submit.ProposedFee,
+		Parameters:           submit.Parameters,
+		market:               submit.MarketID,
+		owner:                submit.Party,
+		asset:                asset,
+		sqrt:                 sqrt,
+		collateral:           collateral,
+		position:             position,
+		priceFactor:          priceFactor,
+		positionFactor:       positionFactor,
+		oneTick:              oneTick,
+		status:               types.AMMPoolStatusActive,
+		maxCalculationLevels: maxCalculationLevels,
 	}
 	err := pool.setCurves(rf, sf, linearSlippage)
 	if err != nil {
@@ -174,7 +191,7 @@ func NewPoolFromProto(
 	}
 
 	if state.Parameters.UpperBound != nil {
-		lower, overflow = num.UintFromString(*state.Parameters.UpperBound, 10)
+		upper, overflow = num.UintFromString(*state.Parameters.UpperBound, 10)
 		if overflow {
 			return nil, fmt.Errorf("failed to convert string to Uint: %s", *state.Parameters.UpperBound)
 		}
@@ -186,14 +203,21 @@ func NewPoolFromProto(
 	}
 
 	lowerCu, err := NewCurveFromProto(state.Lower)
+	lowerCu.isLower = true
+	if err != nil {
+		return nil, err
+	}
+
+	proposedFee, err := num.DecimalFromString(state.ProposedFee)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Pool{
-		ID:         state.Id,
-		AMMParty:   state.AmmPartyId,
-		Commitment: num.MustUintFromString(state.Commitment, 10),
+		ID:          state.Id,
+		AMMParty:    state.AmmPartyId,
+		Commitment:  num.MustUintFromString(state.Commitment, 10),
+		ProposedFee: proposedFee,
 		Parameters: &types.ConcentratedLiquidityParameters{
 			Base:                 base,
 			LowerBound:           lower,
@@ -246,12 +270,13 @@ func NewCurveFromProto(c *snapshotpb.PoolMapEntry_Curve) (*curve, error) {
 
 func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 	return &snapshotpb.PoolMapEntry_Pool{
-		Id:         p.ID,
-		AmmPartyId: p.AMMParty,
-		Commitment: p.Commitment.String(),
-		Parameters: p.Parameters.ToProtoEvent(),
-		Market:     p.market,
-		Asset:      p.asset,
+		Id:          p.ID,
+		AmmPartyId:  p.AMMParty,
+		Commitment:  p.Commitment.String(),
+		ProposedFee: p.ProposedFee.String(),
+		Parameters:  p.Parameters.ToProtoEvent(),
+		Market:      p.market,
+		Asset:       p.asset,
 		Lower: &snapshotpb.PoolMapEntry_Curve{
 			L:     p.lower.l.String(),
 			High:  p.lower.high.String(),
@@ -264,7 +289,7 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 			High:  p.upper.high.String(),
 			Low:   p.upper.low.String(),
 			Empty: p.upper.empty,
-			Pv:    p.lower.pv.String(),
+			Pv:    p.upper.pv.String(),
 		},
 		Status: p.status,
 	}
@@ -294,21 +319,22 @@ func (p *Pool) Update(
 	}
 
 	updated := &Pool{
-		ID:             p.ID,
-		AMMParty:       p.AMMParty,
-		Commitment:     commitment,
-		ProposedFee:    proposedFee,
-		Parameters:     parameters,
-		asset:          p.asset,
-		market:         p.market,
-		owner:          p.owner,
-		collateral:     p.collateral,
-		position:       p.position,
-		priceFactor:    p.priceFactor,
-		positionFactor: p.positionFactor,
-		status:         types.AMMPoolStatusActive,
-		sqrt:           p.sqrt,
-		oneTick:        p.oneTick,
+		ID:                   p.ID,
+		AMMParty:             p.AMMParty,
+		Commitment:           commitment,
+		ProposedFee:          proposedFee,
+		Parameters:           parameters,
+		asset:                p.asset,
+		market:               p.market,
+		owner:                p.owner,
+		collateral:           p.collateral,
+		position:             p.position,
+		priceFactor:          p.priceFactor,
+		positionFactor:       p.positionFactor,
+		status:               types.AMMPoolStatusActive,
+		sqrt:                 p.sqrt,
+		oneTick:              p.oneTick,
+		maxCalculationLevels: p.maxCalculationLevels,
 	}
 	if err := updated.setCurves(rf, sf, linearSlippage); err != nil {
 		return nil, err
@@ -400,10 +426,11 @@ func generateCurve(
 
 	// and finally calculate L = pv * Lu
 	return &curve{
-		l:    pv.Mul(lu),
-		low:  low,
-		high: high,
-		pv:   pv,
+		l:       pv.Mul(lu),
+		low:     low,
+		high:    high,
+		pv:      pv,
+		isLower: isLower,
 	}
 }
 
@@ -481,57 +508,228 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l num.Decimal) *num.Uint {
 
 // OrderbookShape returns slices of virtual buy and sell orders that the AMM has over a given range
 // and is essentially a view on the AMM's personal order-book.
-func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order) {
-	buys := []*types.Order{}
-	sells := []*types.Order{}
+func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order) {
+	buys := make([]*types.Order, 0, p.maxCalculationLevels.Uint64())
+	sells := make([]*types.Order, 0, p.maxCalculationLevels.Uint64())
 
-	if from == nil {
-		from = p.lower.low
-	}
-	if to == nil {
-		to = p.upper.high
-	}
-
-	// any volume strictly below the fair price will be a buy, and volume above will be a sell
-	side := types.SideBuy
+	lower := p.lower.low
+	upper := p.upper.high
 	fairPrice := p.fairPrice()
 
+	if p.closing() {
+		// AMM is in reduce only mode so will only have orders between its fair-price and its base so shrink from/to to that region
+		pos := p.getPosition()
+		if pos == 0 {
+			// pool is closed and we're waiting for the next MTM to close, so it has no orders
+			return nil, nil
+		}
+
+		if pos > 0 {
+			// only orders between fair-price -> base
+			lower = fairPrice.Clone()
+			upper = p.lower.high.Clone()
+		} else {
+			// only orders between base -> fair-price
+			upper = fairPrice.Clone()
+			lower = p.lower.high.Clone()
+		}
+	}
+
+	if from.GT(upper) || to.LT(lower) {
+		return nil, nil
+	}
+
+	side := types.SideBuy
+
+	// cap the range to the pool's bounds, there will be no orders outside of this
+	from = num.Max(from, lower)
+	to = num.Min(to, upper)
+
+	switch {
+	case from.GT(fairPrice):
+		// if we are expanding entirely in the sell range to calculate the order at price `from`
+		// we need to ask the AMM for volume in the range `from - 1 -> from` so we simply
+		// sub one here to cover than.
+		side = types.SideSell
+		from.Sub(from, p.oneTick)
+	case to.LT(fairPrice):
+		// if we are expanding entirely in the buy range to calculate the order at price `to`
+		// we need to ask the AMM for volume in the range `to -> to + 1` so we simply
+		// add one here to cover than.
+		to.Add(to, p.oneTick)
+	case from.EQ(fairPrice):
+		// if we are starting the expansion at the fair-price all orders will be sells
+		side = types.SideSell
+	}
+
+	var approx bool
+	step := p.oneTick.Clone()
+
+	delta, _ := num.UintZero().Delta(from, to)
+	delta.Div(delta, p.oneTick)
+
+	// we always create accurate orders at the boundary so the approximate region will be two less
+	// because we'll step in one from each end
+	two := num.NewUint(2)
+	if delta.GT(two) {
+		delta.Sub(delta, two)
+	}
+
+	// if there are too many price levels across `from -> to` we have to approximate the orderbook
+	// shape using steps larger than tick size
+	if delta.GT(p.maxCalculationLevels) {
+		step.Div(delta, p.maxCalculationLevels)
+		step.AddSum(num.UintOne()) // if delta / maxcals = 1.9 we're going to want steps of 2
+		step.Mul(step, p.oneTick)
+		approx = true
+
+		// we need to make sure we have an accurate order at the boundaries of the range and we only approximate
+		// steps internally. For example if the AMM is expanded into orders approximately over the interval [100, 200]
+		// in steps of 10, the first order covering the range 100 -> 110 will be priced at ~105. It then looks like
+		// there is no tradable orders at 100. This causes problems in auction uncrossing where we could calculate
+		// an *accurate* crossed region as being [100, 200] but then an *approximate* expansion causes missing volume
+		// at the boundaries.
+		//
+		// We solve this by always creating an accurate order at the boundaries. So for [100, 200] we in-step and
+		// approximate orders over prices [101, 199] then create single orders priced at 100 and 200 exactly.
+
+		bnd := from.Clone()
+		from.Add(from, p.oneTick)
+		to.Sub(to, p.oneTick)
+
+		// create start boundary order
+		o := p.makeBoundaryOrder(bnd, from, fairPrice, idgen)
+		if o.Side == types.SideBuy {
+			buys = append(buys, o)
+		} else {
+			sells = append(sells, o)
+		}
+	}
+
 	ordersFromCurve := func(cu *curve, from, to *num.Uint) {
+		if cu.empty {
+			return
+		}
+
 		from = num.Max(from, cu.low)
 		to = num.Min(to, cu.high)
-		price := from
-		for price.LT(to) {
-			next := num.UintZero().AddSum(price, p.oneTick)
 
-			volume := cu.volumeBetweenPrices(p.sqrt, price, next)
-			if side == types.SideBuy && next.GT(fairPrice) {
-				// now switch to sells, we're over the fair-price now
+		// quick check on whether its possibly that we might step over the AMM's fair-price
+		// it can only happen if the fair-price is *not* at the curve bounds
+		canSplit := fairPrice.NEQ(cu.low) && fairPrice.NEQ(cu.high)
+
+		// the price we have currently stepped to and the position of the AMM at that price
+		current := from
+		position := cu.positionAtPrice(p.sqrt, current)
+
+		for current.LT(to) && current.LT(cu.high) {
+			// take the next step
+			next := num.UintZero().AddSum(current, step)
+
+			if side == types.SideBuy && next.GT(fairPrice) && canSplit {
+				// we are in "approximation" mode with a step bigger than a tick and have stepped over the AMM's
+				// fair-price. We need to split this step into two, a buy order from current -> fp, and a sell
+				// from fp -> next
+
+				fairPosition := p.getPosition()
+				volume := uint64(num.DeltaV(position, fairPosition))
+
+				// our approximate bigger steps may be less than a price level away from the fair-price in which case
+				// the volume will be < 1 and we can just ignore an order for this segment since we are already *roughly* expanding into orders.
+				if volume != 0 {
+					price := p.priceForVolumeAtPosition(volume, types.OtherSide(side), fairPosition, fairPrice)
+					buys = append(buys, p.makeOrder(volume, price, side, idgen))
+				}
+
+				// we've step through fair-price now so orders will becomes sells
+				side = types.SideSell
+				current = fairPrice
+				position = fairPosition
+			}
+
+			nextPosition := cu.positionAtPrice(p.sqrt, num.Min(next, cu.high))
+			volume := uint64(num.DeltaV(position, nextPosition))
+
+			if volume != 0 {
+				if side == types.SideBuy {
+					price := current
+					if approx {
+						price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), nextPosition, next)
+					}
+					order := p.makeOrder(volume, price, side, idgen)
+					buys = append(buys, order)
+				} else {
+					price := next
+					if approx {
+						price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), position, current)
+					}
+					order := p.makeOrder(volume, price, side, idgen)
+					sells = append(sells, order)
+				}
+			}
+
+			// if we're calculating buys and we hit fair price, switch to sells
+			if side == types.SideBuy && next.GTE(fairPrice) {
 				side = types.SideSell
 			}
 
-			order := &types.Order{
-				Size:  volume,
-				Side:  side,
-				Price: price.Clone(),
-			}
-
-			if side == types.SideBuy {
-				buys = append(buys, order)
-			} else {
-				sells = append(sells, order)
-			}
-
-			price = next
+			current = next
+			position = nextPosition
 		}
 	}
+
 	ordersFromCurve(p.lower, from, to)
 	ordersFromCurve(p.upper, from, to)
+
+	if approx {
+		// create end boundary order
+		bnd := num.UintOne().Add(p.oneTick, to)
+		o := p.makeBoundaryOrder(to, bnd, fairPrice, idgen)
+		if o.Side == types.SideBuy {
+			buys = append(buys, o)
+		} else {
+			sells = append(sells, o)
+		}
+	}
+
 	return buys, sells
+}
+
+func (p *Pool) makeBoundaryOrder(st, nd, fairPrice *num.Uint, idgen *idgeneration.IDGenerator) *types.Order {
+	cu := p.lower
+	if st.GTE(p.lower.high) {
+		cu = p.upper
+	}
+
+	volume := num.DeltaV(
+		cu.positionAtPrice(p.sqrt, st),
+		cu.positionAtPrice(p.sqrt, nd),
+	)
+
+	if nd.GT(fairPrice) {
+		return p.makeOrder(uint64(volume), nd, types.SideSell, idgen)
+	}
+	return p.makeOrder(uint64(volume), st, types.SideBuy, idgen)
 }
 
 // PriceForVolume returns the price the AMM is willing to trade at to match with the given volume of an incoming order.
 func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
-	x, y := p.virtualBalances(p.getPosition(), p.fairPrice(), side)
+	return p.priceForVolumeAtPosition(
+		volume,
+		side,
+		p.getPosition(),
+		p.fairPrice(),
+	)
+}
+
+// priceForVolumeAtPosition returns the price the AMM is willing to trade at to match with the given volume if its position and fair-price
+// are as given.
+func (p *Pool) priceForVolumeAtPosition(volume uint64, side types.Side, pos int64, fp *num.Uint) *num.Uint {
+	if volume == 0 {
+		panic("cannot calculate price for zero volume trade")
+	}
+
+	x, y := p.virtualBalances(pos, fp, side)
 
 	// dy = x*y / (x - dx) - y
 	// where y and x are the balances on either side of the pool, and dx is the change in volume
@@ -693,6 +891,10 @@ func (p *Pool) fairPrice() *num.Uint {
 		pv = cu.pv.Add(pv)
 	}
 
+	if cu.empty {
+		panic("should not be calculating fair-price on empty-curve side")
+	}
+
 	l := cu.l
 
 	// pv * sqrt(pu) * (1/L) + 1
@@ -838,4 +1040,26 @@ func (p *Pool) canTrade(side types.Side) bool {
 		return true
 	}
 	return false
+}
+
+func (p *Pool) makeOrder(volume uint64, price *num.Uint, side types.Side, idgen *idgeneration.IDGenerator) *types.Order {
+	order := &types.Order{
+		MarketID:         p.market,
+		Party:            p.AMMParty,
+		Size:             volume,
+		Remaining:        volume,
+		Price:            price,
+		Side:             side,
+		TimeInForce:      types.OrderTimeInForceGTC,
+		Type:             types.OrderTypeLimit,
+		Status:           types.OrderStatusFilled,
+		Reference:        "vamm-" + p.AMMParty,
+		GeneratedOffbook: true,
+	}
+	order.OriginalPrice, _ = num.UintFromDecimal(order.Price.ToDecimal().Div(p.priceFactor))
+
+	if idgen != nil {
+		order.ID = idgen.NextID()
+	}
+	return order
 }

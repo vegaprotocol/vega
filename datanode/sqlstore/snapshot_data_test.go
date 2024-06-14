@@ -44,7 +44,7 @@ func TestGetSnapshots(t *testing.T) {
 	addSnapshot(t, ctx, ss, bs, entities.CoreSnapshotData{BlockHeight: 100, VegaCoreVersion: "v0.65.0"})
 
 	var rowCount int
-	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from core_snapshots`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from core_snapshots`).Scan(&rowCount)
 	require.NoError(t, err)
 	require.Equal(t, 1, rowCount)
 

@@ -82,6 +82,8 @@ func NewTransactionResultEventFailure(
 
 func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 	switch tv := tx.(type) {
+	case *commandspb.DelayedTransactionsWrapper:
+		break
 	case *commandspb.OrderSubmission:
 		t.evt.Transaction = &eventspb.TransactionResult_OrderSubmission{
 			OrderSubmission: tv,

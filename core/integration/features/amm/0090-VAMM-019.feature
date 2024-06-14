@@ -109,7 +109,7 @@ Feature: Test vAMM cancellation by abandoning.
       | party4 | 122   | 291  | vamm1-id | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 154       | 154              | 160              | 149            |
+      | 100        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
 
     # trying to trade again causes no trades because the AMM has no more volume
     When the parties place the following orders:
@@ -119,7 +119,7 @@ Feature: Test vAMM cancellation by abandoning.
     # the AMM's mid price has moved to 150, but it has no volume +150 so that best offer comes from the orderbook of 160
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 154       | 154              | 160              | 149            |
+      | 100        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
 
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
@@ -129,7 +129,7 @@ Feature: Test vAMM cancellation by abandoning.
     # Notional value therefore is 317 * 122
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 122        | TRADING_MODE_CONTINUOUS | 154       | 154              | 160              | 149            |
+      | 122        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
     
     # vAMM receives fees, but loses out in the MTM settlement
     And the following transfers should happen:

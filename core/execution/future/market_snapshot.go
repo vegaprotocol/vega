@@ -88,6 +88,7 @@ func NewMarketFromSnapshot(
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	exp := int(assetDecimals) - int(mkt.DecimalPlaces)
 	priceFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
+	assetFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(assetDecimals)))
 
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
@@ -249,6 +250,7 @@ func NewMarketFromSnapshot(
 		lastMidSellPrice:              em.LastMidAsk.Clone(),
 		lastTradedPrice:               em.LastTradedPrice,
 		priceFactor:                   priceFactor,
+		assetFactor:                   assetFactor,
 		lastMarketValueProxy:          em.LastMarketValueProxy,
 		marketActivityTracker:         marketActivityTracker,
 		positionFactor:                positionFactor,

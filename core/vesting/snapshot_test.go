@@ -161,4 +161,5 @@ func setupMocks(t *testing.T, te *testSnapshotEngine) {
 	te.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 	te.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
 	te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	te.parties.EXPECT().RelatedKeys(gomock.Any()).AnyTimes()
 }

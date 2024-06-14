@@ -166,6 +166,10 @@ message PartyVestingStats {
   string reward_bonus_multiplier = 2;
   // The balance of the party, in quantum.
   string quantum_balance = 3;
+  // Bonus multiplier applied on the reward, summed across all derived accounts.
+  string summed_reward_bonus_multiplier = 4;
+  // The balance of the party and derived keys, in quantum.
+  string summed_quantum_balance = 5;
 }
 
 // Fees rewards and discounts paid / received per parties during an epoch
@@ -414,6 +418,7 @@ message RecurringGovernanceTransfer {
   uint64 start_epoch = 1;
   optional uint64 end_epoch = 2;
   optional DispatchStrategy dispatch_strategy = 3;
+  string factor = 4;
 }
 
 // StakeLinking - an event notifying of stake being deposited or removed for a given party

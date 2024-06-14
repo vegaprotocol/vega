@@ -61,3 +61,7 @@ func (es *Epoch) consume(ctx context.Context, event EpochUpdateEvent) error {
 
 	return errors.Wrap(es.store.Add(ctx, epoch), "error adding epoch update")
 }
+
+func (es *Epoch) Name() string {
+	return "Epoch"
+}

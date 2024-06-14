@@ -66,7 +66,7 @@ func TestReferralSets_AddReferralSet(t *testing.T) {
 		require.NoError(t, err)
 
 		var got entities.ReferralSet
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_sets WHERE id = $1", set.ID)
+		err = pgxscan.Get(ctx, connectionSource, &got, "SELECT * FROM referral_sets WHERE id = $1", set.ID)
 		require.NoError(t, err)
 		assert.Equal(t, set, got)
 	})
@@ -111,7 +111,7 @@ func TestReferralSets_RefereeJoinedReferralSet(t *testing.T) {
 		require.NoError(t, err)
 
 		var got entities.ReferralSetReferee
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_referees WHERE referral_set_id = $1 AND referee = $2", set.ID, referee.ID)
+		err = pgxscan.Get(ctx, connectionSource, &got, "SELECT * FROM referral_set_referees WHERE referral_set_id = $1 AND referee = $2", set.ID, referee.ID)
 		require.NoError(t, err)
 		assert.Equal(t, setReferee, got)
 	})
@@ -555,7 +555,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 		require.NoError(t, err)
 
 		var got entities.ReferralSetStats
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
+		err = pgxscan.Get(ctx, connectionSource, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
 		require.NoError(t, err)
 		assert.Equal(t, stats, got)
 	})
@@ -578,7 +578,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 		err := rs.AddReferralSetStats(ctx, &stats)
 		require.NoError(t, err)
 		var got entities.ReferralSetStats
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
+		err = pgxscan.Get(ctx, connectionSource, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
 		require.NoError(t, err)
 		assert.Equal(t, stats, got)
 

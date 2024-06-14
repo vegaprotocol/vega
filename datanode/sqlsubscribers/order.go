@@ -196,3 +196,7 @@ func (os *Order) persist(o entities.Order) error {
 	os.cache[o.ID] = o
 	return os.store.Add(o)
 }
+
+func (os *Order) Name() string {
+	return "Order"
+}

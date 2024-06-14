@@ -37,7 +37,7 @@ func NewNetworkLimits(connectionSource *ConnectionSource) *NetworkLimits {
 // in one block, does occur).
 func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits) error {
 	defer metrics.StartSQLQuery("NetworkLimits", "Add")()
-	_, err := nl.Connection.Exec(ctx, `
+	_, err := nl.Exec(ctx, `
 	INSERT INTO network_limits(
 		tx_hash,
 		vega_time,
@@ -74,6 +74,6 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 func (nl *NetworkLimits) GetLatest(ctx context.Context) (entities.NetworkLimits, error) {
 	networkLimits := entities.NetworkLimits{}
 	defer metrics.StartSQLQuery("NetworkLimits", "GetLatest")()
-	return networkLimits, nl.wrapE(pgxscan.Get(ctx, nl.Connection, &networkLimits,
+	return networkLimits, nl.wrapE(pgxscan.Get(ctx, nl.ConnectionSource, &networkLimits,
 		`SELECT * FROM network_limits ORDER BY vega_time DESC limit 1;`))
 }

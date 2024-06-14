@@ -837,11 +837,21 @@ func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []s
 }
 
 func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GamePartyScoreFilter, pagination *v2.Pagination) (*v2.GamePartyScoresConnection, error) {
+	gameIds := []string{}
+	teamIds := []string{}
+	partyIds := []string{}
+
+	if filter != nil {
+		gameIds = filter.GameIds
+		teamIds = filter.TeamIds
+		partyIds = filter.PartyIds
+	}
+
 	req := v2.ListGamePartyScoresRequest{
 		Filter: &v2.GamePartyScoresFilter{
-			GameIds:  filter.GameIds,
-			TeamIds:  filter.TeamIds,
-			PartyIds: filter.PartyIds,
+			GameIds:  gameIds,
+			TeamIds:  teamIds,
+			PartyIds: partyIds,
 		},
 		Pagination: pagination,
 	}
@@ -853,10 +863,18 @@ func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GameParty
 }
 
 func (r *myQueryResolver) GameTeamScores(ctx context.Context, filter *GameTeamScoreFilter, pagination *v2.Pagination) (*v2.GameTeamScoresConnection, error) {
+	gameIds := []string{}
+	teamIds := []string{}
+
+	if filter != nil {
+		gameIds = filter.GameIds
+		teamIds = filter.TeamIds
+	}
+
 	req := v2.ListGameTeamScoresRequest{
 		Filter: &v2.GameTeamScoresFilter{
-			GameIds: filter.GameIds,
-			TeamIds: filter.TeamIds,
+			GameIds: gameIds,
+			TeamIds: teamIds,
 		},
 		Pagination: pagination,
 	}
@@ -1117,6 +1135,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
 		Creation:      fmt.Sprintf("%d", res.Creation),
+		SourceChainID: res.SourceChainId,
 	}, nil
 }
 
@@ -2223,7 +2242,7 @@ func (r *myPartyResolver) TransfersConnection(
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
-	fromEpoch *int, toEpoch *int, teamID, gameID *string,
+	fromEpoch *int, toEpoch *int, teamID, gameID *string, includeDerivedParties *bool,
 ) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
@@ -2243,13 +2262,14 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 	}
 
 	req := v2.ListRewardsRequest{
-		PartyId:    party.Id,
-		AssetId:    assetID,
-		Pagination: pagination,
-		FromEpoch:  from,
-		ToEpoch:    to,
-		TeamId:     teamID,
-		GameId:     gameID,
+		PartyId:               party.Id,
+		AssetId:               assetID,
+		Pagination:            pagination,
+		FromEpoch:             from,
+		ToEpoch:               to,
+		TeamId:                teamID,
+		GameId:                gameID,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
@@ -2263,6 +2283,7 @@ func (r *myPartyResolver) RewardSummaries(
 	ctx context.Context,
 	party *vegapb.Party,
 	asset *string,
+	includeDerivedParties *bool,
 ) ([]*vegapb.RewardSummary, error) {
 	var assetID string
 	if asset != nil {
@@ -2270,8 +2291,9 @@ func (r *myPartyResolver) RewardSummaries(
 	}
 
 	req := &v2.ListRewardSummariesRequest{
-		PartyId: &party.Id,
-		AssetId: &assetID,
+		PartyId:               &party.Id,
+		AssetId:               &assetID,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 
 	resp, err := r.tradingDataClientV2.ListRewardSummaries(ctx, req)
@@ -2487,7 +2509,7 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *vegapb
 	return res.Positions, nil
 }
 
-func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.Party, marketID *string, asset *string, accType *vegapb.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error) {
+func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.Party, marketID *string, asset *string, accType *vegapb.AccountType, pagination *v2.Pagination, includeDerivedParties *bool) (*v2.AccountsConnection, error) {
 	if party == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -2528,7 +2550,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.
 		AccountTypes: accountTypes,
 	}
 
-	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination}
+	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination, IncludeDerivedParties: includeDerivedParties}
 	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
 	if err != nil {
 		r.log.Error("unable to get Party account",
@@ -3233,7 +3255,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vegapb.AccountType) (<-chan []*v2.AccountBalance, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vegapb.AccountType, includeDerivedParties *bool) (<-chan []*v2.AccountBalance, error) {
 	var (
 		mkt, pty, ast string
 		ty            vegapb.AccountType
@@ -3257,10 +3279,11 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	req := &v2.ObserveAccountsRequest{
-		Asset:    ast,
-		MarketId: mkt,
-		PartyId:  pty,
-		Type:     ty,
+		Asset:                 ast,
+		MarketId:              mkt,
+		PartyId:               pty,
+		Type:                  ty,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	stream, err := r.tradingDataClientV2.ObserveAccounts(ctx, req)
 	if err != nil {
@@ -3948,6 +3971,13 @@ func (r *myAccountResolver) Party(ctx context.Context, acc *v2.AccountBalance) (
 		return nil, nil
 	}
 	return getParty(ctx, r.log, r.r.clt2, acc.Owner)
+}
+
+func (r *myAccountResolver) ParentPartyID(ctx context.Context, acc *v2.AccountBalance) (*vegapb.Party, error) {
+	if acc.ParentPartyId == nil || *acc.ParentPartyId == "" {
+		return nil, nil
+	}
+	return getParty(ctx, r.log, r.r.clt2, *acc.ParentPartyId)
 }
 
 func (r *myAccountResolver) Asset(ctx context.Context, obj *v2.AccountBalance) (*vegapb.Asset, error) {

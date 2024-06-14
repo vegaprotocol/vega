@@ -135,7 +135,9 @@ Feature: Ensure the vAMM positions follow the market correctly
 
   @VAMM
   Scenario: 0090-VAMM-008: If other traders trade to move the market mid price to 150 the vAMM will post no further sell orders above this price, and the vAMM's position notional value will be equal to 4x its total account balance.
-    #When the network moves ahead "1" epochs
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 100       | 100              | 101              | 99             |
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 500    | 155   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -145,7 +147,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party4 | 122   | 291  | vamm1-id | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 154       | 154              | 160              | 149            |
+      | 100        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
 
     # trying to trade again causes no trades because the AMM has no more volume
     When the parties place the following orders:
@@ -155,7 +157,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     # the AMM's mid price has moved to 150, but it has no volume +150 so that best offer comes from the orderbook of 160
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 154       | 154              | 160              | 149            |
+      | 100        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
 
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
@@ -165,7 +167,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     # Notional value therefore is 317 * 122
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 122        | TRADING_MODE_CONTINUOUS | 154       | 154              | 160              | 149            |
+      | 122        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
     
     # vAMM receives fees, but loses out in the MTM settlement
     And the following transfers should happen:
@@ -476,7 +478,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party5 | ETH/MAR22 | buy  | 65     | 120   | 1                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | ref price | mid price | static mid price | best offer price | best bid price |
-      | 95         | TRADING_MODE_CONTINUOUS | 100       | 120       | 120              | 121              | 119            |
+      | 95         | TRADING_MODE_CONTINUOUS | 100       | 120       | 120              | 121              | 120            |
     And the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
       | party5 | 114   | 64   | vamm1-id | true   |

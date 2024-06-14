@@ -25,7 +25,6 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -242,7 +241,7 @@ func (e *Engine) loadScheduledGovernanceTransfers(ctx context.Context, r []*chec
 		for _, g := range v.Transfers {
 			transfer := types.GovernanceTransferFromProto(g)
 			transfers = append(transfers, transfer)
-			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
+			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, transfer.Config.MaxAmount, e.getGovGameID(transfer)))
 		}
 		e.scheduledGovernanceTransfers[v.DeliverOn] = transfers
 	}
@@ -307,7 +306,7 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 		if transfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
 			e.registerDispatchStrategy(transfer.Config.RecurringTransferConfig.DispatchStrategy)
 		}
-		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
+		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, transfer.Config.MaxAmount, e.getGovGameID(transfer)))
 	}
 	return evts
 }

@@ -47,7 +47,7 @@ func NewProposals(connectionSource *ConnectionSource) *Proposals {
 
 func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 	defer metrics.StartSQLQuery("Proposals", "Add")()
-	_, err := ps.Connection.Exec(ctx,
+	_, err := ps.Exec(ctx,
 		`INSERT INTO proposals(
 			id,
 			batch_id,
@@ -89,7 +89,7 @@ func (ps *Proposals) getProposalsInBatch(ctx context.Context, batchID string) ([
 	var proposals []entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE batch_id=$1`
 
-	rows, err := ps.Connection.Query(ctx, query, entities.ProposalID(batchID))
+	rows, err := ps.Query(ctx, query, entities.ProposalID(batchID))
 	if err != nil {
 		return proposals, fmt.Errorf("querying proposals: %w", err)
 	}
@@ -132,8 +132,8 @@ func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal,
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
 
-	if err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)); err != nil {
-		return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)))
+	if err := pgxscan.Get(ctx, ps.ConnectionSource, &p, query, entities.ProposalID(id)); err != nil {
+		return p, ps.wrapE(pgxscan.Get(ctx, ps.ConnectionSource, &p, query, entities.ProposalID(id)))
 	}
 
 	p, err := ps.extendOrGetBatchProposal(ctx, p)
@@ -150,8 +150,8 @@ func (ps *Proposals) GetByIDWithoutBatch(ctx context.Context, id string) (entiti
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
 
-	if err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)); err != nil {
-		return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)))
+	if err := pgxscan.Get(ctx, ps.ConnectionSource, &p, query, entities.ProposalID(id)); err != nil {
+		return p, ps.wrapE(pgxscan.Get(ctx, ps.ConnectionSource, &p, query, entities.ProposalID(id)))
 	}
 
 	return p, nil
@@ -162,7 +162,7 @@ func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.P
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE reference=$1 LIMIT 1`
 
-	if err := pgxscan.Get(ctx, ps.Connection, &p, query, ref); err != nil {
+	if err := pgxscan.Get(ctx, ps.ConnectionSource, &p, query, ref); err != nil {
 		return p, ps.wrapE(err)
 	}
 
@@ -179,7 +179,7 @@ func (ps *Proposals) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([
 
 	var proposals []entities.Proposal
 	query := `SELECT * FROM proposals WHERE tx_hash=$1`
-	err := pgxscan.Select(ctx, ps.Connection, &proposals, query, txHash)
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &proposals, query, txHash)
 	if err != nil {
 		return nil, ps.wrapE(err)
 	}
@@ -397,7 +397,7 @@ func (ps *Proposals) Get(ctx context.Context,
 	defer metrics.StartSQLQuery("Proposals", "Get")()
 	// copy the store connection because we may need to make recursive calls when processing the from the batch
 	// causing the underlying connection to be busy and unusable
-	batchConn := ps.Connection
+	batchConn := ps.ConnectionSource
 	results := batchConn.SendBatch(ctx, batch)
 	defer results.Close()
 

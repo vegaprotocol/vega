@@ -71,6 +71,10 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+type DummyDelayTarget struct{}
+
+func (*DummyDelayTarget) MarketDelayRequiredUpdated(marketID string, required bool) {}
+
 type DummyASVM struct{}
 
 func (DummyASVM) GetRewardsVestingMultiplier(_ string) num.Decimal {
@@ -211,6 +215,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.volumeDiscountProgram,
 			execsetup.banking,
 			execsetup.profilesEngine,
+			&DummyDelayTarget{},
 		),
 		execsetup.broker,
 	)
@@ -223,7 +228,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.activityStreak = activitystreak.New(execsetup.log, execsetup.executionEngine, execsetup.broker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
 
-	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine)
+	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine, execsetup.profilesEngine)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
@@ -535,6 +540,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketAMMMinCommitmentQuantum,
 			Watcher: execsetup.executionEngine.OnMarketAMMMinCommitmentQuantum,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAMMMaxCalculationLevels,
+			Watcher: execsetup.executionEngine.OnMarketAMMMaxCalculationLevels,
 		},
 	)
 }

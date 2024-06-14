@@ -72,3 +72,7 @@ func (vs *Vote) consume(ctx context.Context, event VoteEvent) error {
 
 	return errors.Wrap(vs.store.AddVote(ctx, vote), "error adding vote:%w")
 }
+
+func (vs *Vote) Name() string {
+	return "Vote"
+}

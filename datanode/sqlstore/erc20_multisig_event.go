@@ -48,7 +48,7 @@ func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20Mul
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		ON CONFLICT (id) DO NOTHING`
 
-	if _, err := m.Connection.Exec(ctx, query,
+	if _, err := m.Exec(ctx, query,
 		e.ID,
 		e.ValidatorID,
 		e.SignerChange,
@@ -105,7 +105,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 	}
 
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetAddedEvents")()
-	if err = pgxscan.Select(ctx, m.Connection, &out, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &out, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve multisig signer events: %w", err)
 	}
 
@@ -165,7 +165,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 	}
 
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetRemovedEvents")()
-	if err = pgxscan.Select(ctx, m.Connection, &out, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.ConnectionSource, &out, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve multisig signer events: %w", err)
 	}
 
@@ -195,7 +195,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedByTxHash(ctx context.Context, txHas
 	var events []entities.ERC20MultiSigSignerRemovedEvent
 	query := `SELECT * FROM erc20_multisig_signer_events WHERE event=$1 AND tx_hash = $2`
 
-	if err := pgxscan.Select(ctx, m.Connection, &events, query, entities.ERC20MultiSigSignerEventTypeRemoved, txHash); err != nil {
+	if err := pgxscan.Select(ctx, m.ConnectionSource, &events, query, entities.ERC20MultiSigSignerEventTypeRemoved, txHash); err != nil {
 		return nil, fmt.Errorf("failed to retrieve multisig removed signer events: %w", err)
 	}
 
@@ -208,7 +208,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedByTxHash(ctx context.Context, txHash 
 	var events []entities.ERC20MultiSigSignerAddedEvent
 	query := `SELECT * FROM erc20_multisig_signer_events WHERE event=$1 AND tx_hash = $2`
 
-	if err := pgxscan.Select(ctx, m.Connection, &events, query, entities.ERC20MultiSigSignerEventTypeAdded, txHash); err != nil {
+	if err := pgxscan.Select(ctx, m.ConnectionSource, &events, query, entities.ERC20MultiSigSignerEventTypeAdded, txHash); err != nil {
 		return nil, fmt.Errorf("failed to retrieve multisig added signer events: %w", err)
 	}
 

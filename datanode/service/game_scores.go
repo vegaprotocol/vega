@@ -28,12 +28,16 @@ type gameScoreStore interface {
 		gameIDs []entities.GameID,
 		partyIDs []entities.PartyID,
 		teamIDs []entities.TeamID,
+		epochFromID *uint64,
+		epochToID *uint64,
 		pagination entities.CursorPagination,
 	) ([]entities.GamePartyScore, entities.PageInfo, error)
 	ListTeamScores(
 		ctx context.Context,
 		gameIDs []entities.GameID,
 		teamIDs []entities.TeamID,
+		epochFromID *uint64,
+		epochToID *uint64,
 		pagination entities.CursorPagination,
 	) ([]entities.GameTeamScore, entities.PageInfo, error)
 }
@@ -53,16 +57,20 @@ func (gs *GameScore) ListPartyScores(
 	gameIDs []entities.GameID,
 	partyIDs []entities.PartyID,
 	teamIDs []entities.TeamID,
+	epochFromID *uint64,
+	epochToID *uint64,
 	pagination entities.CursorPagination,
 ) ([]entities.GamePartyScore, entities.PageInfo, error) {
-	return gs.store.ListPartyScores(ctx, gameIDs, partyIDs, teamIDs, pagination)
+	return gs.store.ListPartyScores(ctx, gameIDs, partyIDs, teamIDs, epochFromID, epochToID, pagination)
 }
 
 func (gs *GameScore) ListTeamScores(
 	ctx context.Context,
 	gameIDs []entities.GameID,
 	teamIDs []entities.TeamID,
+	epochFromID *uint64,
+	epochToID *uint64,
 	pagination entities.CursorPagination,
 ) ([]entities.GameTeamScore, entities.PageInfo, error) {
-	return gs.store.ListTeamScores(ctx, gameIDs, teamIDs, pagination)
+	return gs.store.ListTeamScores(ctx, gameIDs, teamIDs, epochFromID, epochToID, pagination)
 }

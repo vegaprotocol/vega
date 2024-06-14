@@ -49,7 +49,7 @@ func (ps *ProtocolUpgradeProposals) Add(ctx context.Context, p entities.Protocol
 		p.Approvers = []string{}
 	}
 
-	_, err := ps.Connection.Exec(ctx,
+	_, err := ps.Exec(ctx,
 		`INSERT INTO protocol_upgrade_proposals(
 			upgrade_block_height,
 			vega_release_tag,
@@ -105,7 +105,7 @@ func (ps *ProtocolUpgradeProposals) List(ctx context.Context,
 
 	defer metrics.StartSQLQuery("ProtocolUpgradeProposals", "List")()
 	pups := make([]entities.ProtocolUpgradeProposal, 0)
-	if err := pgxscan.Select(ctx, ps.Connection, &pups, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, ps.ConnectionSource, &pups, query, args...); err != nil {
 		return pups, pageInfo, err
 	}
 
@@ -123,7 +123,7 @@ func (ps *ProtocolUpgradeProposals) GetByTxHash(
 	query := `SELECT upgrade_block_height, vega_release_tag, approvers, status, vega_time, tx_hash
 		FROM protocol_upgrade_proposals WHERE tx_hash = $1`
 
-	if err := pgxscan.Select(ctx, ps.Connection, &pups, query, txHash); err != nil {
+	if err := pgxscan.Select(ctx, ps.ConnectionSource, &pups, query, txHash); err != nil {
 		return nil, err
 	}
 

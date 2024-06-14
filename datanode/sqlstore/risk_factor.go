@@ -49,7 +49,7 @@ set
 	long=EXCLUDED.long,
 	tx_hash=EXCLUDED.tx_hash`, sqlRiskFactorColumns)
 
-	if _, err := rf.Connection.Exec(ctx, query, factor.MarketID, factor.Short, factor.Long, factor.TxHash, factor.VegaTime); err != nil {
+	if _, err := rf.Exec(ctx, query, factor.MarketID, factor.Short, factor.Long, factor.TxHash, factor.VegaTime); err != nil {
 		err = fmt.Errorf("could not insert risk factor into database: %w", err)
 		return err
 	}
@@ -66,5 +66,5 @@ func (rf *RiskFactors) GetMarketRiskFactors(ctx context.Context, marketID string
 		from risk_factors_current
 		where market_id = %s`, sqlRiskFactorColumns, nextBindVar(&bindVars, entities.MarketID(marketID)))
 
-	return riskFactor, rf.wrapE(pgxscan.Get(ctx, rf.Connection, &riskFactor, query, bindVars...))
+	return riskFactor, rf.wrapE(pgxscan.Get(ctx, rf.ConnectionSource, &riskFactor, query, bindVars...))
 }

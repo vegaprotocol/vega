@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/blockchain"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/cometbft/cometbft/abci/types"
 )
@@ -45,6 +46,11 @@ func (app *App) InitChain(_ context.Context, req *types.RequestInitChain) (*type
 	return &types.ResponseInitChain{}, nil
 }
 
+func (app *App) GetTx(tx []byte) (Tx, error) {
+	txx, _, err := app.getTx(tx)
+	return txx, err
+}
+
 // PrepareProposal will take the given transactions from the mempool and attempts to prepare a
 // proposal from them when it's our turn to do so while keeping the size, gas, pow, and spam constraints.
 func (app *App) PrepareProposal(_ context.Context, req *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
@@ -65,7 +71,7 @@ func (app *App) PrepareProposal(_ context.Context, req *types.RequestPrepareProp
 	}
 
 	// let the application decide on the order and the number of transactions it wants to pick up for this block
-	res := &types.ResponsePrepareProposal{Txs: app.OnPrepareProposal(txs, rawTxs)}
+	res := &types.ResponsePrepareProposal{Txs: app.OnPrepareProposal(uint64(req.Height), txs, rawTxs)}
 	return res, nil
 }
 
@@ -88,7 +94,7 @@ func (app *App) ProcessProposal(_ context.Context, req *types.RequestProcessProp
 		txs = append(txs, tx)
 	}
 	// let the application verify the block
-	if !app.OnProcessProposal(txs) {
+	if !app.OnProcessProposal(uint64(req.Height), txs) {
 		return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
 	}
 	return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_ACCEPT}, nil
@@ -322,6 +328,20 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
 			Key:   "proposal",
 			Value: proposal,
+			Index: true,
+		})
+	}
+
+	var sourceChainID string
+	if m, ok := cmd.(v1.ChainEvent); ok {
+		if e, ok := m.Event.(interface{ GetChainId() string }); ok {
+			sourceChainID = e.GetChainId()
+		}
+	}
+	if len(sourceChainID) > 0 {
+		commandAttributes = append(commandAttributes, types.EventAttribute{
+			Key:   "source-chain-id",
+			Value: sourceChainID,
 			Index: true,
 		})
 	}

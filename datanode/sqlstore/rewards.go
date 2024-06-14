@@ -55,7 +55,7 @@ func NewRewards(ctx context.Context, connectionSource *ConnectionSource) *Reward
 func (rs *Rewards) fetchRunningTotals(ctx context.Context) {
 	query := `SELECT * FROM current_game_reward_totals`
 	var totals []entities.RewardTotals
-	err := pgxscan.Select(ctx, rs.Connection, &totals, query)
+	err := pgxscan.Select(ctx, rs.ConnectionSource, &totals, query)
 	if err != nil && !pgxscan.NotFound(err) {
 		panic(fmt.Errorf("could not retrieve game reward totals: %w", err))
 	}
@@ -73,7 +73,7 @@ func (rs *Rewards) fetchRunningTotals(ctx context.Context) {
 
 func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 	defer metrics.StartSQLQuery("Rewards", "Add")()
-	_, err := rs.Connection.Exec(ctx,
+	_, err := rs.Exec(ctx,
 		`INSERT INTO rewards(
 			party_id,
 			asset_id,
@@ -109,7 +109,7 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 		rs.runningTotalsQuantum[gID][r.PartyID] = rs.runningTotalsQuantum[gID][r.PartyID].Add(r.QuantumAmount)
 
 		defer metrics.StartSQLQuery("GameRewardTotals", "Add")()
-		_, err = rs.Connection.Exec(ctx, `INSERT INTO game_reward_totals(
+		_, err = rs.Exec(ctx, `INSERT INTO game_reward_totals(
 			game_id,
 			party_id,
 			asset_id,
@@ -155,7 +155,7 @@ type scannedRewards struct {
 func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
 	defer metrics.StartSQLQuery("Rewards", "GetAll")()
 	scanned := []scannedRewards{}
-	err := pgxscan.Select(ctx, rs.Connection, &scanned, `SELECT * FROM rewards;`)
+	err := pgxscan.Select(ctx, rs.ConnectionSource, &scanned, `SELECT * FROM rewards;`)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (rs *Rewards) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]e
 	defer metrics.StartSQLQuery("Rewards", "GetByTxHash")()
 
 	scanned := []scannedRewards{}
-	err := pgxscan.Select(ctx, rs.Connection, &scanned, `SELECT * FROM rewards WHERE tx_hash = $1`, txHash)
+	err := pgxscan.Select(ctx, rs.ConnectionSource, &scanned, `SELECT * FROM rewards WHERE tx_hash = $1`, txHash)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (rs *Rewards) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]e
 }
 
 func (rs *Rewards) GetByCursor(ctx context.Context,
-	partyIDHex *string,
+	partyIDs []string,
 	assetIDHex *string,
 	fromEpoch *uint64,
 	toEpoch *uint64,
@@ -191,7 +191,7 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	)
 	SELECT * from cte_rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch)
+	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch)
 
 	query, args, err := PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
@@ -199,7 +199,7 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	}
 
 	scanned := []scannedRewards{}
-	if err := pgxscan.Select(ctx, rs.Connection, &scanned, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, rs.ConnectionSource, &scanned, query, args...); err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("querying rewards: %w", err)
 	}
 
@@ -209,16 +209,16 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 }
 
 func (rs *Rewards) GetSummaries(ctx context.Context,
-	partyIDHex *string, assetIDHex *string,
+	partyIDs []string, assetIDHex *string,
 ) ([]entities.RewardSummary, error) {
 	query := `SELECT party_id, asset_id, SUM(amount) AS amount FROM rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil, nil, nil)
-	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
+	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, nil, nil, nil, nil)
+	query = fmt.Sprintf("%s GROUP BY party_id, asset_id ORDER BY party_id", query)
 
 	summaries := []entities.RewardSummary{}
 	defer metrics.StartSQLQuery("Rewards", "GetSummaries")()
-	err := pgxscan.Select(ctx, rs.Connection, &summaries, query, args...)
+	err := pgxscan.Select(ctx, rs.ConnectionSource, &summaries, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying rewards: %w", err)
 	}
@@ -247,7 +247,7 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 	var summaries []entities.EpochRewardSummary
 	defer metrics.StartSQLQuery("Rewards", "GetEpochSummaries")()
 
-	if err = pgxscan.Select(ctx, rs.Connection, &summaries, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, rs.ConnectionSource, &summaries, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying epoch reward summaries: %w", err)
 	}
 
@@ -257,12 +257,13 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 
 // -------------------------------------------- Utility Methods
 
-func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
+func addRewardWhereClause(query string, args []interface{}, partyIDs []string, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
 	predicates := []string{}
 
-	if partyIDHex != nil && *partyIDHex != "" {
-		partyID := entities.PartyID(*partyIDHex)
-		predicates = append(predicates, fmt.Sprintf("party_id = %s", nextBindVar(&args, partyID)))
+	if len(partyIDs) > 0 {
+		inArgs, inList := prepareInClauseList[entities.PartyID](partyIDs)
+		args = append(args, inArgs...)
+		predicates = append(predicates, fmt.Sprintf("party_id IN (%s)", inList))
 	}
 
 	if assetIDHex != nil && *assetIDHex != "" {
@@ -293,6 +294,19 @@ func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDH
 	}
 
 	return query, args
+}
+
+func prepareInClauseList[A any, T entities.ID[A]](ids []string) ([]interface{}, string) {
+	var args []interface{}
+	var list strings.Builder
+	for i, id := range ids {
+		if i > 0 {
+			list.WriteString(",")
+		}
+
+		list.WriteString(nextBindVar(&args, T(id)))
+	}
+	return args, list.String()
 }
 
 // FilterRewardsQuery returns a WHERE part of the query and args for filtering the rewards table.

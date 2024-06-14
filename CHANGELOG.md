@@ -17,15 +17,30 @@
 - [11196](https://github.com/vegaprotocol/vega/issues/11196) - Add an active field in the price monitoring bounds payload.
 - [11211](https://github.com/vegaprotocol/vega/issues/11211) - Liquidation engine includes `vAMM` shapes as available volume.
 - [11217](https://github.com/vegaprotocol/vega/issues/11217) - Allow market proposals to override risk factors.
+- [11285](https://github.com/vegaprotocol/vega/issues/11285) - Add support for trading transaction ordering.
 - [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
+- [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
+- [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
+- [10634](https://github.com/vegaprotocol/vega/issues/10634) - Add spam checks for orders/liquidity provision
+- [11337](https://github.com/vegaprotocol/vega/issues/11337) - Enhance transaction reordering with per market control and configurable delay.
+- [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
+- [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
+- [11266](https://github.com/vegaprotocol/vega/issues/11266) - Include derived parties rewards API
+- [11357](https://github.com/vegaprotocol/vega/issues/11357) - Support historical game scores
 
 ### 🐛 Fixes
 
 - [11066](https://github.com/vegaprotocol/vega/issues/11066) - Ensure vesting statistics match vesting accounts numbers.
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
+- [11379](https://github.com/vegaprotocol/vega/issues/11379) - Source chain id is now populated in `GQL Erc20WithdrawalApproval` endpoint.
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
+- [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units.
+- [11319](https://github.com/vegaprotocol/vega/issues/11319) - Do not leak Ethereum client secrets in the logs.
+- [11336](https://github.com/vegaprotocol/vega/issues/11336) - Add support for decay factor in governance recurring transfers and report the proposal amount rather than 0 when the proposal gets enacted.
+- [11368](https://github.com/vegaprotocol/vega/issues/11368) - Add support for update vesting stats in REST API and fix summing the quantum balance for vesting stats.
+- [11136](https://github.com/vegaprotocol/vega/issues/11136) - Fix premature invocation of post commit hooks in case of fee stats event.
 
 ## 0.76.1
 

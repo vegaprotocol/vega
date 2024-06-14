@@ -70,7 +70,7 @@ func setupWithdrawalStoreTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.Withdr
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ws := sqlstore.NewWithdrawals(connectionSource)
-	return bs, ws, connectionSource.Connection
+	return bs, ws, connectionSource
 }
 
 func testAddWithdrawalForNewBlock(t *testing.T) {

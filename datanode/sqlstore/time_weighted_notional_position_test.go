@@ -44,7 +44,7 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		var got entities.TimeWeightedNotionalPosition
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got,
+		err = pgxscan.Get(ctx, connectionSource, &got,
 			`SELECT * FROM time_weighted_notional_positions WHERE asset_id = $1 AND party_id = $2 and game_id = $3 and epoch_seq = $4`,
 			want.AssetID, want.PartyID, want.GameID, want.EpochSeq)
 		require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 		err = tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		var got entities.TimeWeightedNotionalPosition
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got,
+		err = pgxscan.Get(ctx, connectionSource, &got,
 			`SELECT * FROM time_weighted_notional_positions WHERE asset_id = $1 AND party_id = $2 and game_id = $3 and epoch_seq = $4`,
 			want.AssetID, want.PartyID, want.GameID, want.EpochSeq)
 		require.NoError(t, err)

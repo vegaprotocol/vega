@@ -48,7 +48,7 @@ var (
 )
 
 const (
-	version = "AMMv1"
+	V1 = "AMMv1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/amm Collateral,Position
@@ -143,6 +143,7 @@ type Engine struct {
 	ammParties map[string]string
 
 	minCommitmentQuantum *num.Uint
+	maxCalculationLevels *num.Uint
 }
 
 func New(
@@ -247,6 +248,14 @@ func (e *Engine) OnMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) 
 	e.minCommitmentQuantum = c.Clone()
 }
 
+func (e *Engine) OnMaxCalculationLevelsUpdate(ctx context.Context, c *num.Uint) {
+	e.maxCalculationLevels = c.Clone()
+
+	for _, p := range e.poolsCpy {
+		p.maxCalculationLevels = e.maxCalculationLevels.Clone()
+	}
+}
+
 // OnMTM is called whenever core does an MTM and is a signal that any pool's that are closing and have 0 position can be fully removed.
 func (e *Engine) OnMTM(ctx context.Context) {
 	rm := []string{}
@@ -324,21 +333,26 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 		// get the volume on the buy side by simulating an incoming sell order
 		bid := num.UintZero().Sub(fp, pool.oneTick)
 		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
-		if bestBid == nil || bid.GT(bestBid) {
-			bestBid = bid
-			bestBidVolume = volume
-		} else if bid.EQ(bestBid) {
-			bestBidVolume += volume
+
+		if volume != 0 {
+			if bestBid == nil || bid.GT(bestBid) {
+				bestBid = bid
+				bestBidVolume = volume
+			} else if bid.EQ(bestBid) {
+				bestBidVolume += volume
+			}
 		}
 
 		// get the volume on the sell side by simulating an incoming buy order
 		ask := num.UintZero().Add(fp, pool.oneTick)
 		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
-		if bestAsk == nil || ask.LT(bestAsk) {
-			bestAsk = ask
-			bestAskVolume = volume
-		} else if ask.EQ(bestAsk) {
-			bestAskVolume += volume
+		if volume != 0 {
+			if bestAsk == nil || ask.LT(bestAsk) {
+				bestAsk = ask
+				bestAskVolume = volume
+			} else if ask.EQ(bestAsk) {
+				bestAskVolume += volume
+			}
 		}
 	}
 	return bestBid, bestBidVolume, bestAsk, bestAskVolume
@@ -379,14 +393,14 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		}
 
 		if agg.Side == types.SideBuy {
-			if price.GTE(outer) || (agg.Type != types.OrderTypeMarket && price.GT(agg.Price)) {
+			if price.GT(outer) || (agg.Type != types.OrderTypeMarket && price.GT(agg.Price)) {
 				// either fair price is out of bounds, or is selling at higher than incoming buy
 				continue
 			}
 		}
 
 		if agg.Side == types.SideSell {
-			if price.LTE(outer) || (agg.Type != types.OrderTypeMarket && price.LT(agg.Price)) {
+			if price.LT(outer) || (agg.Type != types.OrderTypeMarket && price.LT(agg.Price)) {
 				// either fair price is out of bounds, or is buying at lower than incoming sell
 				continue
 			}
@@ -444,23 +458,11 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 			logging.String("side", types.OtherSide(agg.Side).String()),
 		)
 
-		// construct the orders
-		o := &types.Order{
-			ID:               e.idgen.NextID(),
-			MarketID:         p.market,
-			Party:            p.AMMParty,
-			Size:             volume,
-			Remaining:        volume,
-			Price:            price,
-			Side:             types.OtherSide(agg.Side),
-			TimeInForce:      types.OrderTimeInForceFOK,
-			Type:             types.OrderTypeMarket,
-			CreatedAt:        agg.CreatedAt,
-			Status:           types.OrderStatusFilled,
-			Reference:        "vamm-" + p.AMMParty,
-			GeneratedOffbook: true,
-		}
-		o.OriginalPrice, _ = num.UintFromDecimal(o.Price.ToDecimal().Div(e.priceFactor))
+		// construct an order
+		o := p.makeOrder(volume, price, types.OtherSide(agg.Side), e.idgen)
+
+		// fill in extra details
+		o.CreatedAt = agg.CreatedAt
 
 		orders = append(orders, o)
 		p.updateEphemeralPosition(o)
@@ -504,6 +506,11 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 	for _, p := range e.poolsCpy {
 		// not active in range if it cannot trade
 		if !p.canTrade(agg.Side) {
+			continue
+		}
+
+		// stop early trying to trade with itself, can happens during auction uncrossing
+		if agg.Party == p.AMMParty {
 			continue
 		}
 
@@ -597,7 +604,7 @@ func (e *Engine) Create(
 	idgen := idgeneration.New(deterministicID)
 	poolID := idgen.NextID()
 
-	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, version, 0)
+	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, V1, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
 		e.broker.Send(
@@ -652,6 +659,7 @@ func (e *Engine) Create(
 		slippage,
 		e.priceFactor,
 		e.positionFactor,
+		e.maxCalculationLevels,
 	)
 	if err != nil {
 		e.broker.Send(
@@ -665,10 +673,10 @@ func (e *Engine) Create(
 		return nil, err
 	}
 
-	e.log.Debug("AMM created for market",
+	e.log.Debug("AMM created",
 		logging.String("owner", submit.Party),
-		logging.String("marketID", e.marketID),
 		logging.String("poolID", pool.ID),
+		logging.String("marketID", e.marketID),
 	)
 	return pool, nil
 }
@@ -677,17 +685,19 @@ func (e *Engine) Create(
 func (e *Engine) Confirm(
 	ctx context.Context,
 	pool *Pool,
-) error {
-	e.log.Debug("AMM added for market",
+) {
+	e.log.Debug("AMM confirmed",
 		logging.String("owner", pool.owner),
 		logging.String("marketID", e.marketID),
 		logging.String("poolID", pool.ID),
 	)
+
 	pool.status = types.AMMPoolStatusActive
+	pool.maxCalculationLevels = e.maxCalculationLevels
+
 	e.add(pool)
 	e.sendUpdate(ctx, pool)
-	e.parties.AssignDeriveKey(types.PartyID(pool.owner), pool.AMMParty)
-	return nil
+	e.parties.AssignDeriveKey(ctx, types.PartyID(pool.owner), pool.AMMParty)
 }
 
 // Amend takes the details of an amendment to an AMM and returns a copy of that pool with the updated curves along with the current pool.
@@ -710,14 +720,20 @@ func (e *Engine) Amend(
 		}
 	}
 
-	// we need to remove the existing pool from the engine so that when calculating rebasing orders we do not
-	// trade with ourselves.
-	e.remove(ctx, amend.Party)
 	updated, err := pool.Update(amend, riskFactors, scalingFactors, slippage)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// we need to remove the existing pool from the engine so that when calculating rebasing orders we do not
+	// trade with ourselves.
+	e.remove(ctx, amend.Party)
+
+	e.log.Debug("AMM amended",
+		logging.String("owner", amend.Party),
+		logging.String("marketID", e.marketID),
+		logging.String("poolID", pool.ID),
+	)
 	return updated, pool, nil
 }
 
@@ -746,6 +762,11 @@ func (e *Engine) CancelAMM(
 
 	pool.status = types.AMMPoolStatusCancelled
 	e.remove(ctx, cancel.Party)
+	e.log.Debug("AMM cancelled",
+		logging.String("owner", cancel.Party),
+		logging.String("poolID", pool.ID),
+		logging.String("marketID", e.marketID),
+	)
 	return closeout, nil
 }
 
@@ -907,12 +928,50 @@ func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
 	return ret
 }
 
+// OrderbookShape expands all registered AMM's into orders between the given prices. If `ammParty` is supplied then just the pool
+// with that party id is expanded.
+func (e *Engine) OrderbookShape(st, nd *num.Uint, ammParty *string) ([]*types.Order, []*types.Order) {
+	if ammParty == nil {
+		// no party give, expand all registered
+		buys, sells := []*types.Order{}, []*types.Order{}
+		for _, p := range e.poolsCpy {
+			b, s := p.OrderbookShape(st, nd, e.idgen)
+			buys = append(buys, b...)
+			sells = append(sells, s...)
+		}
+		return buys, sells
+	}
+
+	// asked to expand just one AMM, lets find it, first amm-party -> owning party
+	owner, ok := e.ammParties[*ammParty]
+	if !ok {
+		return nil, nil
+	}
+
+	// now owning party -> pool
+	p, ok := e.pools[owner]
+	if !ok {
+		return nil, nil
+	}
+
+	// expand it
+	return p.OrderbookShape(st, nd, e.idgen)
+}
+
 func (e *Engine) GetAllSubAccounts() []string {
 	ret := make([]string, 0, len(e.ammParties))
 	for _, subAccount := range e.ammParties {
 		ret = append(ret, subAccount)
 	}
 	return ret
+}
+
+// GetAMMParty returns the AMM's key given the owners key.
+func (e *Engine) GetAMMParty(party string) (string, error) {
+	if p, ok := e.pools[party]; ok {
+		return p.AMMParty, nil
+	}
+	return "", ErrNoPoolMatchingParty
 }
 
 func (e *Engine) add(p *Pool) {

@@ -16,6 +16,7 @@
 package commands
 
 import (
+	"errors"
 	"math/big"
 
 	"code.vegaprotocol.io/vega/libs/num"
@@ -69,31 +70,44 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 
 	if cmd.ConcentratedLiquidityParameters != nil {
 		hasUpdate = true
-		if amount, _ := big.NewInt(0).SetString(cmd.ConcentratedLiquidityParameters.Base, 10); amount == nil {
+		var base, lowerBound, upperBound *big.Int
+		if base, _ = big.NewInt(0).SetString(cmd.ConcentratedLiquidityParameters.Base, 10); base == nil {
 			errs.FinalAddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrIsNotValidNumber)
-		} else if amount.Cmp(big.NewInt(0)) <= 0 {
+		} else if base.Cmp(big.NewInt(0)) <= 0 {
 			errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrMustBePositive)
 		}
 
+		var haveLower, haveUpper bool
 		if cmd.ConcentratedLiquidityParameters.LowerBound != nil {
-			hasUpdate = true
-			if amount, _ := big.NewInt(0).SetString(*cmd.ConcentratedLiquidityParameters.LowerBound, 10); amount == nil {
+			haveLower = true
+			if lowerBound, _ = big.NewInt(0).SetString(*cmd.ConcentratedLiquidityParameters.LowerBound, 10); lowerBound == nil {
 				errs.FinalAddForProperty("amend_amm.concentrated_liquidity_parameters.lower_bound", ErrIsNotValidNumber)
-			} else if amount.Cmp(big.NewInt(0)) <= 0 {
+			} else if lowerBound.Cmp(big.NewInt(0)) <= 0 {
 				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.lower_bound", ErrMustBePositive)
 			}
 		}
 		if cmd.ConcentratedLiquidityParameters.UpperBound != nil {
-			hasUpdate = true
-			if amount, _ := big.NewInt(0).SetString(*cmd.ConcentratedLiquidityParameters.UpperBound, 10); amount == nil {
+			haveUpper = true
+			if upperBound, _ = big.NewInt(0).SetString(*cmd.ConcentratedLiquidityParameters.UpperBound, 10); upperBound == nil {
 				errs.FinalAddForProperty("amend_amm.concentrated_liquidity_parameters.upper_bound", ErrIsNotValidNumber)
-			} else if amount.Cmp(big.NewInt(0)) <= 0 {
+			} else if upperBound.Cmp(big.NewInt(0)) <= 0 {
 				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.upper_bound", ErrMustBePositive)
 			}
 		}
 
+		if !haveLower && !haveUpper {
+			errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.lower_bound", errors.New("lower_bound and upper_bound cannot both be empty"))
+		}
+
+		if base != nil && lowerBound != nil && base.Cmp(lowerBound) <= 0 {
+			errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.base", errors.New("should be a bigger value than lower_bound"))
+		}
+
+		if base != nil && upperBound != nil && base.Cmp(upperBound) >= 0 {
+			errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.base", errors.New("should be a smaller value than upper_bound"))
+		}
+
 		if cmd.ConcentratedLiquidityParameters.LeverageAtUpperBound != nil {
-			hasUpdate = true
 			if leverage, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.LeverageAtUpperBound); err != nil {
 				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.leverage_at_upper_bound", ErrIsNotValidNumber)
 			} else if leverage.LessThan(num.DecimalZero()) {
@@ -102,7 +116,6 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 		}
 
 		if cmd.ConcentratedLiquidityParameters.LeverageAtLowerBound != nil {
-			hasUpdate = true
 			if leverage, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.LeverageAtLowerBound); err != nil {
 				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.leverage_at_lower_bound", ErrIsNotValidNumber)
 			} else if leverage.LessThan(num.DecimalZero()) {

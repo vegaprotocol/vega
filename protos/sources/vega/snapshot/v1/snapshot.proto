@@ -148,6 +148,7 @@ message Payload {
     EthOracleVerifierMisc eth_oracle_verifier_misc = 85;
     BankingEVMBridgeStates banking_evm_bridge_states = 86;
     EVMMultisigTopologies evm_multisig_topologies = 87;
+    TxCache tx_cache = 88;
   }
 }
 
@@ -585,6 +586,7 @@ message PoolMapEntry {
     Curve lower = 7;
     Curve upper = 8;
     vega.events.v1.AMM.Status status = 9;
+    string proposed_fee = 10;
   }
 
   string party = 1;
@@ -1421,4 +1423,13 @@ message MarketLiquidity {
   string price_range = 1;
   int64 tick = 2;
   repeated AMMValues amm = 3;
+}
+
+message DelayedTx {
+  repeated bytes tx = 1;
+  uint64 height = 2;
+}
+
+message TxCache {
+  repeated DelayedTx txs = 1;
 }
