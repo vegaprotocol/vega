@@ -158,8 +158,8 @@ Feature: vAMM behaviour when a market settles
     # Different scenario's involving a final settlement: break even, profit and loss.
     Examples:
       | settle price | margin | amm balance | general balance |
-      | 105          | 205    | 29996       | 29996            | # settle price < market price: +1 from fees +1 from final settlement
-      | 107          | 203    | 29994       | 29994            | # settle price > market price: +1 from fees, -1 from final settlement
-      | 104          | 206    | 29997       | 29997            | # settle price < market price: +1 from fees +2 from final settlement
-      | 106          | 204    | 29995       | 29995            | # settle price = market price: +1 from fees
-      | 108          | 202    | 29993       | 29993           | # settle price > market price: +1 from fees, -2 from final settlement
+      | 105          | 205    | 29997       | 29997            | # settle price < market price: +1 from fees +1 from final settlement
+      | 107          | 203    | 29995       | 29995            | # settle price > market price: +1 from fees, -1 from final settlement
+      | 104          | 206    | 29998       | 29998            | # settle price < market price: +1 from fees +2 from final settlement
+      | 106          | 204    | 29996       | 29996            | # settle price = market price: +1 from fees
+      | 108          | 202    | 29994       | 29994           | # settle price > market price: +1 from fees, -2 from final settlement

@@ -2158,6 +2158,20 @@ func (mr *MockEquityLikeSharesMockRecorder) AllShares() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllShares", reflect.TypeOf((*MockEquityLikeShares)(nil).AllShares))
 }
 
+// HasShares mocks base method.
+func (m *MockEquityLikeShares) HasShares(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasShares", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasShares indicates an expected call of HasShares.
+func (mr *MockEquityLikeSharesMockRecorder) HasShares(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasShares", reflect.TypeOf((*MockEquityLikeShares)(nil).HasShares), arg0)
+}
+
 // SetPartyStake mocks base method.
 func (m *MockEquityLikeShares) SetPartyStake(arg0 string, arg1 *num.Uint) {
 	m.ctrl.T.Helper()

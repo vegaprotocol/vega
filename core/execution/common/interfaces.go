@@ -326,6 +326,7 @@ type MarketLiquidityEngine interface {
 type EquityLikeShares interface {
 	AllShares() map[string]num.Decimal
 	SetPartyStake(id string, newStakeU *num.Uint)
+	HasShares(id string) bool
 }
 
 type AMMPool interface {
@@ -337,6 +338,7 @@ type AMMPool interface {
 type AMM interface {
 	GetAMMPoolsBySubAccount() map[string]AMMPool
 	GetAllSubAccounts() []string
+	IsAMMPartyID(string) bool
 }
 
 type CommonMarket interface {

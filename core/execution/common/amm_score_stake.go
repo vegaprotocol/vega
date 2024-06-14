@@ -20,7 +20,7 @@ import "code.vegaprotocol.io/vega/libs/num"
 type AMMState struct {
 	stake    num.Decimal // stake during epoch
 	score    num.Decimal // running liquidity score
-	lastTick int64       // last time update, not used currently, but useful when we want to start caching this stuff
+	lastTick int64       // last time update
 	ltD      num.Decimal // last time update, just in decimal because it saves on pointless conversions between int64 and num.Decimal
 }
 
