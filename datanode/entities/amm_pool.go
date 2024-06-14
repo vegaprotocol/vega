@@ -62,7 +62,7 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		parametersBase,
 		commitment num.Decimal
 		parametersLowerBound,
-		parametersUpperBound *num.Decimal
+		parametersUpperBound, fee *num.Decimal
 		err error
 	)
 	partyID := PartyID(pool.PartyId)
@@ -118,9 +118,12 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		upperLeverage = &v
 	}
 
-	fee, err := num.DecimalFromString(pool.ProposedFee)
-	if err != nil {
-		return AMMPool{}, err
+	if len(pool.ProposedFee) > 0 {
+		fd, err := num.DecimalFromString(pool.ProposedFee)
+		if err != nil {
+			return AMMPool{}, err
+		}
+		fee = &fd
 	}
 
 	return AMMPool{
@@ -136,7 +139,7 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		ParametersUpperBound:           parametersUpperBound,
 		ParametersLeverageAtLowerBound: lowerLeverage,
 		ParametersLeverageAtUpperBound: upperLeverage,
-		ProposedFee:                    &fee,
+		ProposedFee:                    fee,
 		CreatedAt:                      vegaTime,
 		LastUpdated:                    vegaTime,
 	}, nil
