@@ -5017,7 +5017,6 @@ message AMMEdge {
   string cursor = 2;
 }
 
-// TODO Karel - finish the comment messages
 message EstimateAMMBoundsRequest {
   // Base price of the AMM pool, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
@@ -5039,10 +5038,16 @@ message EstimateAMMBoundsRequest {
 }
 
 message EstimateAMMBoundsResponse {
+  // Theoretical volume at the top of the upper bound.
   string position_size_at_upper = 1;
+  // Theoretical volume at the top of the lower bound.
   string position_size_at_lower = 2;
+  // Loss of commitment at the upper bound.
   string loss_on_commitment_at_upper = 3;
+  // Loss of commitment at the lower bound.
   string loss_on_commitment_at_lower = 4;
+  // Estimated price above upper bound at which the commitment will be lost.
   string liquidation_price_at_upper = 5;
+  // Estimaded price below the lower bound at which the commitment will be lost.
   string liquidation_price_at_lower = 6;
 }

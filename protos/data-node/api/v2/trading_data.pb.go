@@ -26750,7 +26750,6 @@ func (x *AMMEdge) GetCursor() string {
 	return ""
 }
 
-// TODO Karel - finish the comment messages
 type EstimateAMMBoundsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -26861,11 +26860,17 @@ type EstimateAMMBoundsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PositionSizeAtUpper     string `protobuf:"bytes,1,opt,name=position_size_at_upper,json=positionSizeAtUpper,proto3" json:"position_size_at_upper,omitempty"`
-	PositionSizeAtLower     string `protobuf:"bytes,2,opt,name=position_size_at_lower,json=positionSizeAtLower,proto3" json:"position_size_at_lower,omitempty"`
+	// Theoretical volume at the top of the upper bound.
+	PositionSizeAtUpper string `protobuf:"bytes,1,opt,name=position_size_at_upper,json=positionSizeAtUpper,proto3" json:"position_size_at_upper,omitempty"`
+	// Theoretical volume at the top of the lower bound.
+	PositionSizeAtLower string `protobuf:"bytes,2,opt,name=position_size_at_lower,json=positionSizeAtLower,proto3" json:"position_size_at_lower,omitempty"`
+	// Loss of commitment at the upper bound.
 	LossOnCommitmentAtUpper string `protobuf:"bytes,3,opt,name=loss_on_commitment_at_upper,json=lossOnCommitmentAtUpper,proto3" json:"loss_on_commitment_at_upper,omitempty"`
+	// Loss of commitment at the lower bound.
 	LossOnCommitmentAtLower string `protobuf:"bytes,4,opt,name=loss_on_commitment_at_lower,json=lossOnCommitmentAtLower,proto3" json:"loss_on_commitment_at_lower,omitempty"`
+	// Estimated price above upper bound at which the commitment will be lost.
 	LiquidationPriceAtUpper string `protobuf:"bytes,5,opt,name=liquidation_price_at_upper,json=liquidationPriceAtUpper,proto3" json:"liquidation_price_at_upper,omitempty"`
+	// Estimaded price below the lower bound at which the commitment will be lost.
 	LiquidationPriceAtLower string `protobuf:"bytes,6,opt,name=liquidation_price_at_lower,json=liquidationPriceAtLower,proto3" json:"liquidation_price_at_lower,omitempty"`
 }
 
