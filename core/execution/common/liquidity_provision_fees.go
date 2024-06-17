@@ -74,26 +74,38 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	if acc.Balance.IsZero() {
 		return nil
 	}
-	ammScores := m.getAMMScores()
+
+	// if there are AMM's which were created during this epoch and we are distributing fees
+	// want want to using a mid-epoch ELS
+	newAMMs := []string{}
+	for ammParty, stats := range m.ammStats {
+		if !stats.stake.IsZero() && !m.equityShares.HasShares(ammParty) {
+			// add a temporary mid epoch share
+			stake, _ := num.UintFromDecimal(stats.stake)
+			m.equityShares.SetPartyStake(ammParty, stake)
+			newAMMs = append(newAMMs, ammParty)
+		}
+	}
 
 	// Get equity like shares per party.
 	sharesPerLp := m.equityShares.AllShares()
+
+	// revert the temporary ELS for the new AMM
+	for _, ammParty := range newAMMs {
+		m.equityShares.SetPartyStake(ammParty, nil)
+	}
+
 	// get the LP scores
 	scoresPerLp := m.liquidityEngine.GetAverageLiquidityScores()
-	if len(sharesPerLp) == 0 && len(ammScores) == 0 && len(scoresPerLp) == 0 {
+	if len(sharesPerLp) == 0 && len(m.ammStats) == 0 && len(scoresPerLp) == 0 {
 		return nil
 	}
-	// add either the score and/or the ELS where needed
-	for id, av := range ammScores {
-		if _, ok := sharesPerLp[id]; !ok {
-			sharesPerLp[id] = num.DecimalZero()
-		}
-		if v, ok := scoresPerLp[id]; ok {
-			av = av.Add(v)
-		}
-		// add the AMM LP score to the scores map
-		scoresPerLp[id] = av
+
+	// include AMM average LP scores
+	for id, av := range m.ammStats {
+		scoresPerLp[id] = av.score
 	}
+
 	// a map of all the LP scores, both AMM and LPs, scaled to 1.
 	scaledScores := m.scaleScores(scoresPerLp)
 	// Multiplies each equity like share with corresponding score, scaled to 1.
@@ -120,25 +132,19 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	return nil
 }
 
-func (m *MarketLiquidity) getAMMScores() map[string]num.Decimal {
-	ammScores := make(map[string]num.Decimal, len(m.ammStats))
-	for id, vals := range m.ammStats {
-		ammScores[id] = vals.score
-	}
-	return ammScores
-}
-
 func (m *MarketLiquidity) updateAMMCommitment(count int64) {
 	if m.amm == nil {
 		// spot market, amm won't be set
 		return
 	}
+
 	minP, maxP, err := m.ValidOrdersPriceRange()
 	if err != nil {
 		m.log.Debug("get amm scores error", logging.Error(err))
 		// no price range -> we cannot determine the AMM scores.
 		return
 	}
+
 	skipScore := false
 	bestB, err := m.orderBook.GetBestStaticBidPrice()
 	if err != nil {
@@ -150,8 +156,9 @@ func (m *MarketLiquidity) updateAMMCommitment(count int64) {
 		m.log.Debug("could not get best ask", logging.Error(err))
 		skipScore = true
 	}
-	bb, ba := num.DecimalFromUint(bestB), num.DecimalFromUint(bestA)
-	for amm, pool := range m.amm.GetAMMPoolsBySubAccount() {
+
+	pools := m.amm.GetAMMPoolsBySubAccount()
+	for ammParty, pool := range pools {
 		buy, sell := pool.OrderbookShape(minP, maxP, nil)
 		buyTotal, sellTotal := num.UintZero(), num.UintZero()
 		for _, b := range buy {
@@ -162,23 +169,32 @@ func (m *MarketLiquidity) updateAMMCommitment(count int64) {
 			size := num.UintFromUint64(s.Size)
 			sellTotal.AddSum(size.Mul(size, s.Price))
 		}
-		value := buyTotal
-		if sellTotal.LT(buyTotal) {
-			value = sellTotal
-		}
+
 		// divide the lesser value by the market.liquidity.stakeToCcyVolume to get the equivalent bond
+		value := num.Min(buyTotal, sellTotal)
 		stake := num.DecimalFromUint(value).Div(m.stakeToCcyVolume)
-		as, ok := m.ammStats[amm]
+
+		as, ok := m.ammStats[ammParty]
 		if !ok {
 			as = newAMMState(count)
-			m.ammStats[amm] = as
+			m.ammStats[ammParty] = as
 		}
+
 		score := as.score
 		if !skipScore {
+			bb, ba := num.DecimalFromUint(bestB), num.DecimalFromUint(bestA)
 			score = m.liquidityEngine.GetPartyLiquidityScore(append(buy, sell...), bb, ba, minP, maxP)
 		}
+
 		// set the stake and score
 		as.UpdateTick(stake, score)
+	}
+
+	// if we have an AMM that is in our stats but isn't in the current AMM engine then it has been cancelled so we give it a score of 0
+	for ammParty, stats := range m.ammStats {
+		if _, ok := pools[ammParty]; !ok {
+			stats.UpdateTick(num.DecimalZero(), num.DecimalZero())
+		}
 	}
 }
 

@@ -313,6 +313,12 @@ func (es *EquityShares) SharesFromParty(party string) num.Decimal {
 	return partyELS.Div(totalEquity)
 }
 
+// HasShares returns whether the given party is registered as an LP with ELS.
+func (es *EquityShares) HasShares(party string) bool {
+	_, ok := es.lps[party]
+	return ok
+}
+
 // SharesExcept returns the ratio of equity for each party on the market, except
 // the ones listed in parameter.
 func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.Decimal {

@@ -134,11 +134,21 @@ func (m *MarketLiquidity) transferFees(ctx context.Context, ft events.FeesTransf
 func (m *MarketLiquidity) applyAMMStats() {
 	ids := maps.Keys(m.ammStats)
 	sort.Strings(ids)
+
 	for _, party := range ids {
 		amm := m.ammStats[party]
+
+		// if the amm has been cancelled for a whole epoch then just kill their ELS
+		if !m.amm.IsAMMPartyID(party) && amm.stake.IsZero() {
+			m.equityShares.SetPartyStake(party, nil)
+			delete(m.ammStats, party)
+			continue
+		}
+
+		// otherwise update it and start our stats again
 		stake, _ := num.UintFromDecimal(amm.stake)
 		m.equityShares.SetPartyStake(party, stake)
-		amm.StartEpoch() // mark as new epoch having started
+		amm.StartEpoch()
 	}
 }
 
@@ -356,6 +366,7 @@ func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Tim
 				Fee:  num.DecimalZero(),
 				Bond: num.DecimalZero(),
 			}
+			penalties.AllPartiesHaveFullFeePenalty = false
 		}
 	}
 

@@ -131,3 +131,17 @@ func (mr *MockAMMMockRecorder) GetAllSubAccounts() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllSubAccounts", reflect.TypeOf((*MockAMM)(nil).GetAllSubAccounts))
 }
+
+// IsAMMPartyID mocks base method.
+func (m *MockAMM) IsAMMPartyID(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAMMPartyID", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsAMMPartyID indicates an expected call of IsAMMPartyID.
+func (mr *MockAMMMockRecorder) IsAMMPartyID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAMMPartyID", reflect.TypeOf((*MockAMM)(nil).IsAMMPartyID), arg0)
+}
