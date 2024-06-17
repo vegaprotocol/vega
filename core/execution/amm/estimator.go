@@ -28,13 +28,8 @@ type EstimatedBounds struct {
 	LiquidationPriceAtLower num.Decimal
 }
 
-var sqrter *Sqrter
-
-func init() {
-	sqrter = NewSqrter()
-}
-
 func EstimateBounds(
+	sqrter *Sqrter,
 	lowerPrice, basePrice, upperPrice *num.Uint,
 	leverageLower, leverageUpper num.Decimal,
 	balance *num.Uint,
@@ -42,12 +37,12 @@ func EstimateBounds(
 	riskFactorShort, riskFactorLong num.Decimal,
 ) EstimatedBounds {
 	// test liquidity unit
-	unitLower := LiquidityUnit(basePrice, lowerPrice)
-	unitUpper := LiquidityUnit(upperPrice, basePrice)
+	unitLower := LiquidityUnit(sqrter, basePrice, lowerPrice)
+	unitUpper := LiquidityUnit(sqrter, upperPrice, basePrice)
 
 	// test average entry price
-	avgEntryLower := AverageEntryPrice(unitLower, basePrice)
-	avgEntryUpper := AverageEntryPrice(unitUpper, upperPrice)
+	avgEntryLower := AverageEntryPrice(sqrter, unitLower, basePrice)
+	avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
 
 	// test risk factor
 	riskFactorLower := RiskFactor(leverageLower, riskFactorLong, linearSlippageFactor, initialMargin)
@@ -80,7 +75,7 @@ func EstimateBounds(
 }
 
 // Lu = (sqrt(pu) * sqrt(pl)) / (sqrt(pu) - sqrt(pl)).
-func LiquidityUnit(pu, pl *num.Uint) num.Decimal {
+func LiquidityUnit(sqrter *Sqrter, pu, pl *num.Uint) num.Decimal {
 	sqrtPu := sqrter.sqrt(pu)
 	sqrtPl := sqrter.sqrt(pl)
 
@@ -94,7 +89,7 @@ func RiskFactor(lb, fs, fl, fi num.Decimal) num.Decimal {
 }
 
 // Pa = Lu * sqrt(pu) * (1 - (Lu / (Lu + sqrt(pu)))).
-func AverageEntryPrice(lu num.Decimal, pu *num.Uint) num.Decimal {
+func AverageEntryPrice(sqrter *Sqrter, lu num.Decimal, pu *num.Uint) num.Decimal {
 	sqrtPu := sqrter.sqrt(pu)
 	// (1 - Lu / (Lu + sqrt(pu)))
 	oneSubLuDivLuWithUpSquared := num.DecimalOne().Sub(lu.Div(lu.Add(sqrtPu)))

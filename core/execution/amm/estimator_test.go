@@ -30,6 +30,7 @@ func TestEstimateSeparateFunctions(t *testing.T) {
 	upperPrice := num.NewUint(1300)
 	leverageAtUpper := num.NewDecimalFromFloat(1.00)
 	leverageAtLower := num.NewDecimalFromFloat(5.00)
+	sqrter := NewSqrter()
 
 	shortRiskFactor := num.NewDecimalFromFloat(0.01)
 	longRiskFactor := num.NewDecimalFromFloat(0.01)
@@ -37,15 +38,15 @@ func TestEstimateSeparateFunctions(t *testing.T) {
 	initialMargin := num.DecimalOne()
 
 	// test liquidity unit
-	unitLower := LiquidityUnit(basePrice, lowerPrice)
-	unitUpper := LiquidityUnit(upperPrice, basePrice)
+	unitLower := LiquidityUnit(sqrter, basePrice, lowerPrice)
+	unitUpper := LiquidityUnit(sqrter, upperPrice, basePrice)
 
 	assert.Equal(t, num.DecimalFromFloat(584.6049894).String(), unitLower.Round(7).String())
 	assert.Equal(t, num.DecimalFromFloat(257.2170745).String(), unitUpper.Round(7).String())
 
 	// test average entry price
-	avgEntryLower := AverageEntryPrice(unitLower, basePrice)
-	avgEntryUpper := AverageEntryPrice(unitUpper, upperPrice)
+	avgEntryLower := AverageEntryPrice(sqrter, unitLower, basePrice)
+	avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
 	assert.Equal(t, num.DecimalFromFloat(948.683).String(), avgEntryLower.Round(3).String())
 	assert.Equal(t, num.DecimalFromFloat(1140.175).String(), avgEntryUpper.Round(3).String())
 
@@ -84,6 +85,7 @@ func TestEstimate(t *testing.T) {
 	riskFactorShort := num.DecimalFromFloat(0.01)
 	riskFactorLong := num.DecimalFromFloat(0.01)
 	linearSlippageFactor := num.DecimalFromFloat(0)
+	sqrter := NewSqrter()
 
 	t.Run("test 0014-NP-VAMM-001", func(t *testing.T) {
 		lowerPrice := num.NewUint(900)
@@ -103,6 +105,7 @@ func TestEstimate(t *testing.T) {
 		}
 
 		metrics := EstimateBounds(
+			sqrter,
 			lowerPrice,
 			basePrice,
 			upperPrice,
@@ -141,6 +144,7 @@ func TestEstimate(t *testing.T) {
 		}
 
 		metrics := EstimateBounds(
+			sqrter,
 			lowerPrice,
 			basePrice,
 			upperPrice,

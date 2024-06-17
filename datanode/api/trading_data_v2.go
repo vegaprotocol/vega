@@ -5620,7 +5620,10 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 		return nil, formatE(ErrEstimateAMMBounds, err)
 	}
 
+	sqrt := amm.NewSqrter()
+
 	estimatedBounds := amm.EstimateBounds(
+		sqrt,
 		lowerPrice,
 		basePrice,
 		upperPrice,
