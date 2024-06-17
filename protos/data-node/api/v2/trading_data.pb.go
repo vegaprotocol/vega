@@ -26870,7 +26870,7 @@ type EstimateAMMBoundsResponse struct {
 	LossOnCommitmentAtLower string `protobuf:"bytes,4,opt,name=loss_on_commitment_at_lower,json=lossOnCommitmentAtLower,proto3" json:"loss_on_commitment_at_lower,omitempty"`
 	// Estimated price above upper bound at which the commitment will be lost.
 	LiquidationPriceAtUpper string `protobuf:"bytes,5,opt,name=liquidation_price_at_upper,json=liquidationPriceAtUpper,proto3" json:"liquidation_price_at_upper,omitempty"`
-	// Estimaded price below the lower bound at which the commitment will be lost.
+	// Estimated price below the lower bound at which the commitment will be lost.
 	LiquidationPriceAtLower string `protobuf:"bytes,6,opt,name=liquidation_price_at_lower,json=liquidationPriceAtLower,proto3" json:"liquidation_price_at_lower,omitempty"`
 }
 

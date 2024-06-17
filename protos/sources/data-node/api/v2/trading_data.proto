@@ -962,7 +962,7 @@ service TradingDataService {
 
   // Estimate AMM bounds
   //
-  // Get a list of AMM or filter by market ID, party ID or AMM ID
+  // Get a list of AMMs or filter by market ID, party ID or AMM ID
   rpc EstimateAMMBounds(EstimateAMMBoundsRequest) returns (EstimateAMMBoundsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMs"};
   }
@@ -5048,6 +5048,6 @@ message EstimateAMMBoundsResponse {
   string loss_on_commitment_at_lower = 4;
   // Estimated price above upper bound at which the commitment will be lost.
   string liquidation_price_at_upper = 5;
-  // Estimaded price below the lower bound at which the commitment will be lost.
+  // Estimated price below the lower bound at which the commitment will be lost.
   string liquidation_price_at_lower = 6;
 }

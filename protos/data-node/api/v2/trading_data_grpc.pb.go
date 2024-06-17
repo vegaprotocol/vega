@@ -578,7 +578,7 @@ type TradingDataServiceClient interface {
 	ListAMMs(ctx context.Context, in *ListAMMsRequest, opts ...grpc.CallOption) (*ListAMMsResponse, error)
 	// Estimate AMM bounds
 	//
-	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	// Get a list of AMMs or filter by market ID, party ID or AMM ID
 	EstimateAMMBounds(ctx context.Context, in *EstimateAMMBoundsRequest, opts ...grpc.CallOption) (*EstimateAMMBoundsResponse, error)
 	// Export network history as CSV
 	//
@@ -2733,7 +2733,7 @@ type TradingDataServiceServer interface {
 	ListAMMs(context.Context, *ListAMMsRequest) (*ListAMMsResponse, error)
 	// Estimate AMM bounds
 	//
-	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	// Get a list of AMMs or filter by market ID, party ID or AMM ID
 	EstimateAMMBounds(context.Context, *EstimateAMMBoundsRequest) (*EstimateAMMBoundsResponse, error)
 	// Export network history as CSV
 	//
