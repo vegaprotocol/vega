@@ -784,7 +784,7 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 
 type myQueryResolver VegaResolverRoot
 
-func (r *myQueryResolver) EstimateAMMBounds(ctx context.Context, basePrice string, upperPrice string, lowerPrice string, leverageAtUpperPrice string, leverageAtLowerPrice string, commitmentAmount string, marketID string) (*v2.EstimateAMMBoundsResponse, error) {
+func (r *myQueryResolver) EstimateAMMBounds(ctx context.Context, basePrice string, upperPrice, lowerPrice, leverageAtUpperPrice, leverageAtLowerPrice *string, commitmentAmount string, marketID string) (*v2.EstimateAMMBoundsResponse, error) {
 	res, err := r.tradingDataClientV2.EstimateAMMBounds(ctx, &v2.EstimateAMMBoundsRequest{
 		BasePrice:            basePrice,
 		UpperPrice:           upperPrice,

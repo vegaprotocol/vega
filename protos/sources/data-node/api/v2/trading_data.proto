@@ -5023,17 +5023,17 @@ message EstimateAMMBoundsRequest {
   string base_price = 1;
   // Upper price of the AMM pool, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  string upper_price = 2;
+  optional string upper_price = 2;
   // Lower price of the AMM pool, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  string lower_price = 3;
+  optional string lower_price = 3;
   // Leverage at the upper price of the AMM pool.
-  string leverage_at_upper_price = 4;
+  optional string leverage_at_upper_price = 4;
   // Leverage at the lower price of the AMM pool.
-  string leverage_at_lower_price = 5;
+  optional string leverage_at_lower_price = 5;
   // Amount of the asset that the party is willing to commit to the AMM pool.
   string commitment_amount = 6;
-  // Market ID to filter for.
+  // Market ID to estimate the AMM for.
   string market_id = 7;
 }
 

@@ -783,16 +783,16 @@ type Query {
     Upper price of the AMM pool, the price is an integer, for example `123456` is a correctly
     formatted price of `1.23456` assuming market configured to 5 decimal places.
     """
-    upperPrice: String!
+    upperPrice: String
     """
     Lower price of the AMM pool, the price is an integer, for example `123456` is a correctly
     formatted price of `1.23456` assuming market configured to 5 decimal places.
     """
-    lowerPrice: String!
+    lowerPrice: String
     "Leverage at the upper price of the AMM pool."
-    leverageAtUpperPrice: String!
+    leverageAtUpperPrice: String
    "Leverage at the lower price of the AMM pool."
-    leverageAtLowerPrice: String!
+    leverageAtLowerPrice: String
     "Amount of the asset that the party is willing to commit to the AMM pool."
     commitmentAmount: String!
     "Market ID to filter for."
