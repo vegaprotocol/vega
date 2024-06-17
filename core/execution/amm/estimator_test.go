@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package amm
 
 import (
@@ -77,16 +92,16 @@ func TestEstimate(t *testing.T) {
 		leverageLower := num.DecimalFromFloat(2.00)
 		balance := num.NewUint(100)
 
-		expectedMetrics := EstimatorMetrics{
-			PositionSizeAtUpperBound:     num.DecimalFromFloat(-0.166),
-			PositionSizeAtLowerBound:     num.DecimalFromFloat(0.201),
-			LossOnCommitmentAtUpperBound: num.DecimalFromFloat(8.515),
-			LossOnCommitmentAtLowerBound: num.DecimalFromFloat(9.762),
-			LiquidationPriceAtUpperBound: num.DecimalFromFloat(1633.663),
-			LiquidationPriceAtLowerBound: num.DecimalFromFloat(454.545),
+		expectedMetrics := EstimatedBounds{
+			PositionSizeAtUpper:     num.DecimalFromFloat(-0.166),
+			PositionSizeAtLower:     num.DecimalFromFloat(0.201),
+			LossOnCommitmentAtUpper: num.DecimalFromFloat(8.515),
+			LossOnCommitmentAtLower: num.DecimalFromFloat(9.762),
+			LiquidationPriceAtUpper: num.DecimalFromFloat(1633.663),
+			LiquidationPriceAtLower: num.DecimalFromFloat(454.545),
 		}
 
-		metrics := Estimate(
+		metrics := EstimateBounds(
 			lowerPrice,
 			basePrice,
 			upperPrice,
@@ -99,12 +114,12 @@ func TestEstimate(t *testing.T) {
 			riskFactorLong,
 		)
 
-		assert.Equal(t, expectedMetrics.PositionSizeAtUpperBound.String(), metrics.PositionSizeAtUpperBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.PositionSizeAtLowerBound.String(), metrics.PositionSizeAtLowerBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LossOnCommitmentAtUpperBound.String(), metrics.LossOnCommitmentAtUpperBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LossOnCommitmentAtLowerBound.String(), metrics.LossOnCommitmentAtLowerBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LiquidationPriceAtUpperBound.String(), metrics.LiquidationPriceAtUpperBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LiquidationPriceAtLowerBound.String(), metrics.LiquidationPriceAtLowerBound.Round(3).String())
+		assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
+		assert.Equal(t, expectedMetrics.PositionSizeAtLower.String(), metrics.PositionSizeAtLower.Round(3).String())
+		assert.Equal(t, expectedMetrics.LossOnCommitmentAtUpper.String(), metrics.LossOnCommitmentAtUpper.Round(3).String())
+		assert.Equal(t, expectedMetrics.LossOnCommitmentAtLower.String(), metrics.LossOnCommitmentAtLower.Round(3).String())
+		assert.Equal(t, expectedMetrics.LiquidationPriceAtUpper.String(), metrics.LiquidationPriceAtUpper.Round(3).String())
+		assert.Equal(t, expectedMetrics.LiquidationPriceAtLower.String(), metrics.LiquidationPriceAtLower.Round(3).String())
 	})
 
 	t.Run("test 0014-NP-VAMM-004", func(t *testing.T) {
@@ -115,16 +130,16 @@ func TestEstimate(t *testing.T) {
 		leverageLower := num.DecimalFromFloat(5)
 		balance := num.NewUint(100)
 
-		expectedMetrics := EstimatorMetrics{
-			PositionSizeAtUpperBound:     num.DecimalFromFloat(-0.069),
-			PositionSizeAtLowerBound:     num.DecimalFromFloat(0.437),
-			LossOnCommitmentAtUpperBound: num.DecimalFromFloat(10.948),
-			LossOnCommitmentAtLowerBound: num.DecimalFromFloat(21.289),
-			LiquidationPriceAtUpperBound: num.DecimalFromFloat(2574.257),
-			LiquidationPriceAtLowerBound: num.DecimalFromFloat(727.273),
+		expectedMetrics := EstimatedBounds{
+			PositionSizeAtUpper:     num.DecimalFromFloat(-0.069),
+			PositionSizeAtLower:     num.DecimalFromFloat(0.437),
+			LossOnCommitmentAtUpper: num.DecimalFromFloat(10.948),
+			LossOnCommitmentAtLower: num.DecimalFromFloat(21.289),
+			LiquidationPriceAtUpper: num.DecimalFromFloat(2574.257),
+			LiquidationPriceAtLower: num.DecimalFromFloat(727.273),
 		}
 
-		metrics := Estimate(
+		metrics := EstimateBounds(
 			lowerPrice,
 			basePrice,
 			upperPrice,
@@ -137,11 +152,11 @@ func TestEstimate(t *testing.T) {
 			riskFactorLong,
 		)
 
-		assert.Equal(t, expectedMetrics.PositionSizeAtUpperBound.String(), metrics.PositionSizeAtUpperBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.PositionSizeAtLowerBound.String(), metrics.PositionSizeAtLowerBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LossOnCommitmentAtUpperBound.String(), metrics.LossOnCommitmentAtUpperBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LossOnCommitmentAtLowerBound.String(), metrics.LossOnCommitmentAtLowerBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LiquidationPriceAtUpperBound.String(), metrics.LiquidationPriceAtUpperBound.Round(3).String())
-		assert.Equal(t, expectedMetrics.LiquidationPriceAtLowerBound.String(), metrics.LiquidationPriceAtLowerBound.Round(3).String())
+		assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
+		assert.Equal(t, expectedMetrics.PositionSizeAtLower.String(), metrics.PositionSizeAtLower.Round(3).String())
+		assert.Equal(t, expectedMetrics.LossOnCommitmentAtUpper.String(), metrics.LossOnCommitmentAtUpper.Round(3).String())
+		assert.Equal(t, expectedMetrics.LossOnCommitmentAtLower.String(), metrics.LossOnCommitmentAtLower.Round(3).String())
+		assert.Equal(t, expectedMetrics.LiquidationPriceAtUpper.String(), metrics.LiquidationPriceAtUpper.Round(3).String())
+		assert.Equal(t, expectedMetrics.LiquidationPriceAtLower.String(), metrics.LiquidationPriceAtLower.Round(3).String())
 	})
 }

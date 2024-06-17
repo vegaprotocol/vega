@@ -576,6 +576,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of AMM or filter by market ID, party ID or AMM ID
 	ListAMMs(ctx context.Context, in *ListAMMsRequest, opts ...grpc.CallOption) (*ListAMMsResponse, error)
+	// Estimate AMM bounds
+	//
+	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	EstimateAMMBounds(ctx context.Context, in *EstimateAMMBoundsRequest, opts ...grpc.CallOption) (*EstimateAMMBoundsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2120,6 +2124,15 @@ func (c *tradingDataServiceClient) ListAMMs(ctx context.Context, in *ListAMMsReq
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) EstimateAMMBounds(ctx context.Context, in *EstimateAMMBoundsRequest, opts ...grpc.CallOption) (*EstimateAMMBoundsResponse, error) {
+	out := new(EstimateAMMBoundsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/EstimateAMMBounds", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2718,6 +2731,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of AMM or filter by market ID, party ID or AMM ID
 	ListAMMs(context.Context, *ListAMMsRequest) (*ListAMMsResponse, error)
+	// Estimate AMM bounds
+	//
+	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	EstimateAMMBounds(context.Context, *EstimateAMMBoundsRequest) (*EstimateAMMBoundsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -3156,6 +3173,9 @@ func (UnimplementedTradingDataServiceServer) GetTimeWeightedNotionalPosition(con
 }
 func (UnimplementedTradingDataServiceServer) ListAMMs(context.Context, *ListAMMsRequest) (*ListAMMsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAMMs not implemented")
+}
+func (UnimplementedTradingDataServiceServer) EstimateAMMBounds(context.Context, *EstimateAMMBoundsRequest) (*EstimateAMMBoundsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EstimateAMMBounds not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -5425,6 +5445,24 @@ func _TradingDataService_ListAMMs_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_EstimateAMMBounds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimateAMMBoundsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).EstimateAMMBounds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/EstimateAMMBounds",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).EstimateAMMBounds(ctx, req.(*EstimateAMMBoundsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5894,6 +5932,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAMMs",
 			Handler:    _TradingDataService_ListAMMs_Handler,
+		},
+		{
+			MethodName: "EstimateAMMBounds",
+			Handler:    _TradingDataService_EstimateAMMBounds_Handler,
 		},
 		{
 			MethodName: "Ping",

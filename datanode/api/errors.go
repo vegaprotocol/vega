@@ -343,6 +343,15 @@ var (
 	ErrDateRangeValidationFailed = newInvalidArgumentError("invalid date range")
 
 	ErrListAMMPools = errors.New("failed to list AMM pools")
+
+	// Amm bounds estimates.
+	ErrInvalidBasePrice            = newInvalidArgumentError("invalid base price")
+	ErrInvalidUpperPrice           = newInvalidArgumentError("invalid upper price")
+	ErrInvalidLowerPrice           = newInvalidArgumentError("invalid lower price")
+	ErrInvalidLeverageAtLowerPrice = newInvalidArgumentError("invalid leverage at lower price")
+	ErrInvalidLeverageAtUpperPrice = newInvalidArgumentError("invalid leverage at upper price")
+	ErrInvalidCommitmentAmount     = newInvalidArgumentError("invalid commitment amount")
+	ErrEstimateAMMBounds           = errors.New("failed to estimate AMM bounds")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

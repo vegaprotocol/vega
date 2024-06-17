@@ -960,6 +960,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMs"};
   }
 
+  // Estimate AMM bounds
+  //
+  // Get a list of AMM or filter by market ID, party ID or AMM ID
+  rpc EstimateAMMBounds(EstimateAMMBoundsRequest) returns (EstimateAMMBoundsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMs"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -5008,4 +5015,34 @@ message AMMEdge {
   vega.events.v1.AMM node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
+}
+
+// TODO Karel - finish the comment messages
+message EstimateAMMBoundsRequest {
+  // Base price of the AMM pool, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  string base_price = 1;
+  // Upper price of the AMM pool, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  string upper_price = 2;
+  // Lower price of the AMM pool, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  string lower_price = 3;
+  // Leverage at the upper price of the AMM pool.
+  string leverage_at_upper_price = 4;
+  // Leverage at the lower price of the AMM pool.
+  string leverage_at_lower_price = 5;
+  // Amount of the asset that the party is willing to commit to the AMM pool.
+  string commitment_amount = 6;
+  // Market ID to filter for.
+  string market_id = 7;
+}
+
+message EstimateAMMBoundsResponse {
+  string position_size_at_upper = 1;
+	string position_size_at_lower = 2;
+	string loss_on_commitment_at_upper = 3;
+	string loss_on_commitment_at_lower = 4;
+	string liquidation_price_at_upper = 5;
+	string liquidation_price_at_lower = 6;
 }
