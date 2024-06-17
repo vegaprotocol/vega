@@ -459,7 +459,9 @@ func newServices(
 		svcs.volumeDiscount,
 		svcs.teamsEngine,
 		svcs.spam,
-		svcs.l2Verifiers)
+		svcs.l2Verifiers,
+		svcs.partiesEngine,
+	)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW)
 
