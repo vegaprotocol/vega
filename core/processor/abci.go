@@ -1127,12 +1127,12 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 			}
 			if !someMarketRequiresDelay {
 				for _, s := range batch.StopOrdersSubmission {
-					if s.FallsBelow != nil && app.txCache.IsDelayRequired(s.FallsBelow.OrderSubmission.MarketId) {
+					if s.FallsBelow != nil && s.FallsBelow.OrderSubmission != nil && app.txCache.IsDelayRequired(s.FallsBelow.OrderSubmission.MarketId) {
 						someMarketRequiresDelay = true
 						break
 					}
 					if !someMarketRequiresDelay {
-						if s.RisesAbove != nil && app.txCache.IsDelayRequired(s.RisesAbove.OrderSubmission.MarketId) {
+						if s.RisesAbove != nil && s.RisesAbove.OrderSubmission != nil && app.txCache.IsDelayRequired(s.RisesAbove.OrderSubmission.MarketId) {
 							someMarketRequiresDelay = true
 							break
 						}
