@@ -784,6 +784,23 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) EstimateAMMBounds(ctx context.Context, basePrice string, upperPrice, lowerPrice, leverageAtUpperPrice, leverageAtLowerPrice *string, commitmentAmount string, marketID string) (*v2.EstimateAMMBoundsResponse, error) {
+	res, err := r.tradingDataClientV2.EstimateAMMBounds(ctx, &v2.EstimateAMMBoundsRequest{
+		BasePrice:            basePrice,
+		UpperPrice:           upperPrice,
+		LowerPrice:           lowerPrice,
+		LeverageAtUpperPrice: leverageAtUpperPrice,
+		LeverageAtLowerPrice: leverageAtLowerPrice,
+		CommitmentAmount:     commitmentAmount,
+		MarketId:             marketID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, assetID, partyID, gameID string, epoch *int) (*v2.TimeWeightedNotionalPosition, error) {
 	var atEpoch *uint64
 	if epoch != nil {

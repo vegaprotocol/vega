@@ -5559,3 +5559,110 @@ func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsReq
 		},
 	}, nil
 }
+
+func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.EstimateAMMBoundsRequest) (*v2.EstimateAMMBoundsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateAMMBounds")()
+
+	if req.MarketId == "" {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
+	basePrice, overflow := num.UintFromString(req.BasePrice, 10)
+	if overflow || basePrice.IsNegative() {
+		return nil, formatE(ErrInvalidBasePrice)
+	}
+
+	upperPrice := num.UintZero()
+	if req.UpperPrice != nil {
+		upperP, overflow := num.UintFromString(*req.UpperPrice, 10)
+		if overflow || upperPrice.IsNegative() || upperPrice.LTE(basePrice) {
+			return nil, formatE(ErrInvalidUpperPrice)
+		}
+		upperPrice = upperP
+	}
+
+	lowerPrice := num.UintZero()
+	if req.LowerPrice != nil {
+		lowerP, overflow := num.UintFromString(*req.LowerPrice, 10)
+		if overflow || lowerPrice.IsNegative() || lowerPrice.GTE(basePrice) {
+			return nil, formatE(ErrInvalidLowerPrice)
+		}
+		lowerPrice = lowerP
+	}
+
+	var leverageLowerPrice, leverageUpperPrice *num.Decimal
+	if req.LeverageAtLowerPrice != nil {
+		llPrice, err := num.DecimalFromString(*req.LeverageAtLowerPrice)
+		if err != nil || leverageLowerPrice.IsNegative() {
+			return nil, formatE(ErrInvalidLeverageAtLowerPrice, err)
+		}
+		leverageLowerPrice = &llPrice
+	}
+
+	if req.LeverageAtUpperPrice != nil {
+		luPrice, err := num.DecimalFromString(*req.LeverageAtUpperPrice)
+		if err != nil || leverageUpperPrice.IsNegative() {
+			return nil, formatE(ErrInvalidLeverageAtUpperPrice, err)
+		}
+		leverageUpperPrice = &luPrice
+	}
+
+	commitmentAmount, overflow := num.UintFromString(req.CommitmentAmount, 10)
+	if overflow || commitmentAmount.IsNegative() {
+		return nil, formatE(ErrInvalidCommitmentAmount)
+	}
+
+	// TODO Karel - make the market service and risk factor serices calls concurent
+	market, err := t.MarketsService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrEstimateAMMBounds, err)
+	}
+
+	if market.TradableInstrument.MarginCalculator == nil ||
+		market.TradableInstrument.MarginCalculator.ScalingFactors == nil {
+		return nil, formatE(ErrEstimateAMMBounds)
+	}
+
+	if market.LinearSlippageFactor == nil {
+		return nil, formatE(ErrEstimateAMMBounds)
+	}
+
+	initialMargin := num.DecimalFromFloat(market.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)
+	linearSlippageFactor := *market.LinearSlippageFactor
+
+	riskFactor, err := t.RiskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrEstimateAMMBounds, err)
+	}
+	if leverageLowerPrice == nil {
+		leverageLowerPrice = &riskFactor.Short
+	}
+	if leverageUpperPrice == nil {
+		leverageUpperPrice = &riskFactor.Long
+	}
+
+	sqrt := amm.NewSqrter()
+
+	estimatedBounds := amm.EstimateBounds(
+		sqrt,
+		lowerPrice,
+		basePrice,
+		upperPrice,
+		*leverageLowerPrice,
+		*leverageUpperPrice,
+		commitmentAmount,
+		linearSlippageFactor,
+		initialMargin,
+		riskFactor.Short,
+		riskFactor.Long,
+	)
+
+	return &v2.EstimateAMMBoundsResponse{
+		PositionSizeAtUpper:     estimatedBounds.PositionSizeAtUpper.String(),
+		PositionSizeAtLower:     estimatedBounds.PositionSizeAtLower.String(),
+		LossOnCommitmentAtUpper: estimatedBounds.LossOnCommitmentAtUpper.String(),
+		LossOnCommitmentAtLower: estimatedBounds.LossOnCommitmentAtLower.String(),
+		LiquidationPriceAtUpper: estimatedBounds.LiquidationPriceAtUpper.String(),
+		LiquidationPriceAtLower: estimatedBounds.LiquidationPriceAtLower.String(),
+	}, nil
+}
