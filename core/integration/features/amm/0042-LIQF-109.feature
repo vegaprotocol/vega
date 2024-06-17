@@ -108,9 +108,8 @@ Feature: Test vAMM implied commitment is working as expected
       | party                                                            | equity like share | virtual stake         | average entry valuation |
       | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 4669.0000000000000000 | 24669                   |
 
-
   Scenario: 0042-LIQF-109
-    #now check the virtual stake if vamm1 only provide AMM within SLA range for the first half of the epoch
+    #now check the virtual stake if vamm1 only provide AMM within SLA range for the first half of the epoch, and second half is lower AMM only
     Then the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
       | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 98          | 102         | 0.03         |
@@ -127,17 +126,86 @@ Feature: Test vAMM implied commitment is working as expected
       | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
       | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
 
-    Then the network moves ahead "4" blocks
+    Then the network moves ahead "5" blocks
 
     When the parties amend the following AMM:
       | party | market id | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 0.1      | 120  | 115         | 125         | 0.25           | 0.25           |
+      | vamm1 | ETH/MAR22 | 0.1      | 100  | 90          |             | 0.25           | 0.25           |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 120  | 115         | 125         | 0.25           | 0.25           |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 90          |             | 0.25           | 0.25           |
 
-    Then the network moves ahead "8" blocks
+    Then the network moves ahead "7" blocks
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party                                                            | equity like share | virtual stake         | average entry valuation |
-      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 3268.0000000000000000 | 23268                   |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 2334.0000000000000000 | 22334                   |
+
+  Scenario: 0042-LIQF-109
+    #now check the virtual stake if vamm1 only provide AMM within SLA range for the first half of the epoch, and second half is outside SLA range
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 98          | 102         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 98          | 102         |
+
+    And set the following AMM sub account aliases:
+      | party | market id | alias      |
+      | vamm1 | ETH/MAR22 | vamm-party |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "5" blocks
+
+    When the parties amend the following AMM:
+      | party | market id | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 0.1      | 100  | 80          | 115         | 0.25           | 0.25           |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 80          | 115         | 0.25           | 0.25           |
+
+    Then the network moves ahead "7" blocks
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party                                                            | equity like share | virtual stake         | average entry valuation |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 2625.0000000000000000 | 22625                   |
+
+
+  Scenario: 0042-LIQF-111:A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided for half the epoch, and then `5000` for the second half of the epoch (as the price was out of the vAMM's configured range), and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `75`.
+
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 98          | 102         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 98          | 102         |
+
+    And set the following AMM sub account aliases:
+      | party | market id | alias      |
+      | vamm1 | ETH/MAR22 | vamm-party |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "5" blocks
+
+    When the parties amend the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 5000   | 0.1      | 100  | 98          | 102         | 0.25           | 0.25           |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 5000   | STATUS_ACTIVE | 100  | 98          | 102         | 0.25           | 0.25           |
+
+    Then the network moves ahead "7" blocks
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party                                                            | equity like share | virtual stake         | average entry valuation |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 2925.0000000000000000 | 22925                   |
+
+
