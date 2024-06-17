@@ -5438,7 +5438,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	}
 
 	// create a rebasing order if the AMM needs it i.e its base if not within best-bid/best-ask
-	if ok, side, quote := m.needsRebase(submit.Parameters.Base); ok {
+	if ok, side, quote := m.needsRebase(pool.BestPrice(nil)); ok {
 		order, err = m.getRebasingOrder(quote, side, submit.SlippageTolerance, pool)
 		if err != nil {
 			m.broker.Send(
