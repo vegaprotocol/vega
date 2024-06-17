@@ -127,7 +127,7 @@ Feature: Test vAMM implied commitment is working as expected
       | party1 | ETH/MAR22 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
       | party2 | ETH/MAR22 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |           |
 
-    Then the network moves ahead "5" blocks
+    Then the network moves ahead "4" blocks
 
     When the parties amend the following AMM:
       | party | market id | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
@@ -136,8 +136,8 @@ Feature: Test vAMM implied commitment is working as expected
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 120  | 115         | 125         | 0.25           | 0.25           |
 
-    Then the network moves ahead "7" blocks
+    Then the network moves ahead "8" blocks
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party                                                            | equity like share | virtual stake         | average entry valuation |
-      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 3502.0000000000000000 | 23502                   |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 3268.0000000000000000 | 23268                   |
