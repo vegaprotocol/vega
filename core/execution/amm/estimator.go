@@ -17,7 +17,6 @@ package amm
 
 import (
 	"code.vegaprotocol.io/vega/libs/num"
-	"github.com/shopspring/decimal"
 )
 
 type EstimatedBounds struct {
@@ -39,8 +38,8 @@ func EstimateBounds(
 	lowerPrice, basePrice, upperPrice *num.Uint,
 	leverageLower, leverageUpper num.Decimal,
 	balance *num.Uint,
-	linearSlippageFactor, initialMargin decimal.Decimal,
-	riskFactorShort, riskFactorLong decimal.Decimal,
+	linearSlippageFactor, initialMargin,
+	riskFactorShort, riskFactorLong num.Decimal,
 ) EstimatedBounds {
 	// test liquidity unit
 	unitLower := LiquidityUnit(basePrice, lowerPrice)

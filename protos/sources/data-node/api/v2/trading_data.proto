@@ -5040,9 +5040,9 @@ message EstimateAMMBoundsRequest {
 
 message EstimateAMMBoundsResponse {
   string position_size_at_upper = 1;
-	string position_size_at_lower = 2;
-	string loss_on_commitment_at_upper = 3;
-	string loss_on_commitment_at_lower = 4;
-	string liquidation_price_at_upper = 5;
-	string liquidation_price_at_lower = 6;
+  string position_size_at_lower = 2;
+  string loss_on_commitment_at_upper = 3;
+  string loss_on_commitment_at_lower = 4;
+  string liquidation_price_at_upper = 5;
+  string liquidation_price_at_lower = 6;
 }
