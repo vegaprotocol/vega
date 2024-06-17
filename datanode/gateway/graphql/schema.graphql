@@ -772,6 +772,33 @@ type Query {
     scaleLiquidationPriceToMarketDecimals: Boolean
   ): PositionEstimate
 
+  "Estimate bounds for an AMM pool."
+  estimateAMMBounds(
+    """
+    Base price of the AMM pool, the price is an integer, for example `123456` is a correctly
+    formatted price of `1.23456` assuming market configured to 5 decimal places.
+    """
+    basePrice:String!
+    """
+    Upper price of the AMM pool, the price is an integer, for example `123456` is a correctly
+    formatted price of `1.23456` assuming market configured to 5 decimal places.
+    """
+    upperPrice: String!
+    """
+    Lower price of the AMM pool, the price is an integer, for example `123456` is a correctly
+    formatted price of `1.23456` assuming market configured to 5 decimal places.
+    """
+    lowerPrice: String!
+    "Leverage at the upper price of the AMM pool."
+    leverageAtUpperPrice: String!
+   "Leverage at the lower price of the AMM pool."
+    leverageAtLowerPrice: String!
+    "Amount of the asset that the party is willing to commit to the AMM pool."
+    commitmentAmount: String!
+    "Market ID to filter for."
+    marketId: ID!
+  ): EstimatedAMMBounds
+
   "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
@@ -1329,6 +1356,21 @@ type Query {
   ): PartyMarginModesConnection
 }
 
+type EstimatedAMMBounds {
+  "Theoretical volume at the top of the upper bound."
+  positionSizeAtUpper: String
+  "Theoretical volume at the top of the lower bound."
+  positionSizeAtLower: String
+  "Loss of commitment at the upper bound."
+  lossOnCommitmentAtUpper: String
+  "Loss of commitment at the lower bound."
+  lossOnCommitmentAtLower: String
+  "Estimated price above upper bound at which the commitment will be lost."
+  liquidationPriceAtUpper: String
+  "Estimated price below the lower bound at which the commitment will be lost."
+  liquidationPriceAtLower: String
+}
+
 "Defines the types of a dispatch strategy's scope the API can filter on."
 enum TransferScope {
   "Matches transfers that have dispatch strategy scope of individual set."
@@ -1417,7 +1459,7 @@ type RecurringGovernanceTransfer {
   "An optional dispatch strategy for the recurring transfer"
   dispatchStrategy: DispatchStrategy
   "The factor of the initial amount to be distributed"
-  factor: String 
+  factor: String
 }
 
 "The specific details for a one-off transfer"
@@ -2730,7 +2772,7 @@ type Market {
 
   "The market minimum tick size"
   tickSize: String!
-  
+
   "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
   enableTxReordering: Boolean!
 }

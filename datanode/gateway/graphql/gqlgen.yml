@@ -831,3 +831,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.RiskFactorOverride
   FutureCap:
     model: code.vegaprotocol.io/vega/protos/vega.FutureCap
+  EstimatedAMMBounds:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateAMMBoundsResponse
