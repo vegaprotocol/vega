@@ -84,7 +84,6 @@ Feature: Test vAMM implied commitment is working as expected
 
   @VAMM
   Scenario: 0042-LIQF-109: A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided for half the epoch, and then `0` for the second half of the epoch (as the price was out of the vAMM's configured range), and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `50`.
-
     #first check the virtual stake if vamm1 provide AMM within SLA range for the whole epoch
     Then the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
@@ -140,7 +139,8 @@ Feature: Test vAMM implied commitment is working as expected
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party                                                            | equity like share | virtual stake         | average entry valuation |
       | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 2334.0000000000000000 | 22334                   |
-
+  
+  @VAMM
   Scenario: 0042-LIQF-109
     #now check the virtual stake if vamm1 only provide AMM within SLA range for the first half of the epoch, and second half is outside SLA range
     Then the parties submit the following AMM:
@@ -170,15 +170,12 @@ Feature: Test vAMM implied commitment is working as expected
 
     Then the network moves ahead "7" blocks
 
-    # Then debug trades
-
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party                                                            | equity like share | virtual stake         | average entry valuation |
       | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 2625.0000000000000000 | 22625                   |
-
-
+  
+  @VAMM
   Scenario: 0042-LIQF-111:A vAMM which was active on the market with an average of `10000` liquidity units (`price * volume`) provided for half the epoch, and then `5000` for the second half of the epoch (as the price was out of the vAMM's configured range), and where the `market.liquidity.stakeToCcyVolume` value is `100`, will have an implied commitment of `75`.
-
     Then the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
       | vamm1 | ETH/MAR22 | 10000  | 0.05     | 100  | 98          | 102         | 0.03         |
