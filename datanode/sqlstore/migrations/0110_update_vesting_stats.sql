@@ -1,13 +1,14 @@
 -- +goose Up
 
+DROP TRIGGER IF EXISTS update_party_vesting_stats ON party_vesting_stats;
 -- update the vesting stats table to include the summed quantum balance and reward bonus multiplier
 ALTER TABLE party_vesting_stats
 ADD COLUMN IF NOT EXISTS summed_reward_bonus_multiplier NUMERIC(1000, 16) NOT NULL DEFAULT 0,
 ADD COLUMN IF NOT EXISTS summed_quantum_balance NUMERIC(1000, 16) NOT NULL DEFAULT 0;
 
 ALTER TABLE party_vesting_stats_current
-ADD COLUMN IF NOT EXISTS summed_reward_bonus_multiplier NUMERIC(1000, 16) NOT NULL,
-ADD COLUMN IF NOT EXISTS summed_quantum_balance NUMERIC(1000, 16) NOT NULL;
+ADD COLUMN IF NOT EXISTS summed_reward_bonus_multiplier NUMERIC(1000, 16) NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS summed_quantum_balance NUMERIC(1000, 16) NOT NULL DEFAULT 0;
 
 -- create the trigger functions and triggers
 -- +goose StatementBegin
@@ -31,12 +32,14 @@ as $$
 $$;
 -- +goose StatementEnd
 
-create or replace trigger update_party_vesting_stats after
-insert or update on party_vesting_stats for each row
-execute function update_party_vesting_stats ();
+CREATE TRIGGER update_party_vesting_stats
+    after insert or update
+    on party_vesting_stats
+    for each row execute function update_party_vesting_stats();
 
 -- +goose Down
 
+DROP TRIGGER IF EXISTS update_party_vesting_stats ON party_vesting_stats;
 ALTER TABLE party_vesting_stats
 DROP COLUMN summed_reward_bonus_multiplier,
 DROP COLUMN summed_quantum_balance;
@@ -64,6 +67,7 @@ as $$
 $$;
 -- +goose StatementEnd
 
-create or replace trigger update_party_vesting_stats after
-insert or update on party_vesting_stats for each row
-execute function update_party_vesting_stats ();
+CREATE TRIGGER update_party_vesting_stats
+    after insert or update
+    on party_vesting_stats
+    for each row execute function update_party_vesting_stats();
