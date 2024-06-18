@@ -170,6 +170,8 @@ Feature: Test vAMM implied commitment is working as expected
 
     Then the network moves ahead "7" blocks
 
+    # Then debug trades
+
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party                                                            | equity like share | virtual stake         | average entry valuation |
       | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 2625.0000000000000000 | 22625                   |
@@ -196,16 +198,17 @@ Feature: Test vAMM implied commitment is working as expected
     Then the network moves ahead "5" blocks
 
     When the parties amend the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 5000   | 0.1      | 100  | 98          | 102         | 0.25           | 0.25           |
+      | party | market id | amount | slippage | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 5000   | 0.05     | 100  | 98          | 102         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 5000   | STATUS_ACTIVE | 100  | 98          | 102         | 0.25           | 0.25           |
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 5000   | STATUS_ACTIVE | 100  | 98          | 102         |
 
     Then the network moves ahead "7" blocks
 
+    #virtual stake is 75% * 4669 = 3501
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party                                                            | equity like share | virtual stake         | average entry valuation |
-      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 2925.0000000000000000 | 22925                   |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 3501.0000000000000000 | 23501                   |
 
 
