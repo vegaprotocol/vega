@@ -70,8 +70,26 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, c
 		datanodeGrpcAPIPort: datanodeGrpcAPIPort,
 	}
 
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Info("saving network history before before leaving")
+				// consume all pending files
+				s.snapshotService.Flush()
+				s.log.Info("network history saved (maybe)")
+				return
+			case <-ticker.C:
+				s.snapshotService.Flush()
+			}
+		}
+	}()
+
 	if cfg.Publish {
 		var err error
+
+		// publish all file which are ready
 		go func() {
 			ticker := time.NewTicker(5 * time.Second)
 			for {
@@ -181,6 +199,11 @@ func (d *Service) CreateAndPublishSegment(ctx context.Context, chainID string, t
 			return fmt.Errorf("failed to create snapshot: %w", err)
 		}
 	}
+
+	// empty the file worker
+	d.log.Info("saving network history to disk")
+	d.snapshotService.Flush()
+	d.log.Info("network history saved to disk")
 
 	if err = d.PublishSegments(ctx); err != nil {
 		return fmt.Errorf("failed to publish snapshots: %w", err)

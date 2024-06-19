@@ -148,7 +148,7 @@ func TestMain(t *testing.M) {
 		pgLog *bytes.Buffer,
 	) {
 		sqlConfig = config
-		log.Infof("DB Connection String: ", sqlConfig.ConnectionConfig.GetConnectionString())
+		log.Infof("DB Connection String: %v", sqlConfig.ConnectionConfig.GetConnectionString())
 
 		pool, err := sqlstore.CreateConnectionPool(outerCtx, sqlConfig.ConnectionConfig)
 		if err != nil {
@@ -184,7 +184,7 @@ func TestMain(t *testing.M) {
 				panic(fmt.Errorf("failed to create snapshot: %w", err))
 			}
 
-			waitForSnapshotToComplete(ss)
+			waitForSnapshotToComplete2(ss, snapshotService.Flush)
 
 			snapshots = append(snapshots, ss)
 
@@ -211,7 +211,7 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToComplete(lastSnapshot)
+					waitForSnapshotToComplete2(lastSnapshot, snapshotService.Flush)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
@@ -268,7 +268,7 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToComplete(lastSnapshot)
+					waitForSnapshotToComplete2(lastSnapshot, snapshotService.Flush)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
@@ -421,6 +421,7 @@ func TestLoadingDataFetchedAsynchronously(t *testing.T) {
 	require.Equal(t, int64(1000), fetched)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, snapshotService, networkHistoryStore, snapshotCopyToPath)
+
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
@@ -583,7 +584,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 				ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
 
-				waitForSnapshotToComplete(ss)
+				waitForSnapshotToComplete2(ss, snapshotService.Flush)
 
 				md5Hash, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 				require.NoError(t, err)
@@ -888,7 +889,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 				ss, err = service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
-				waitForSnapshotToComplete(ss)
+				waitForSnapshotToComplete2(ss, service.Flush)
 
 				if lastCommittedBlockHeight == 4000 {
 					newSnapshotFileHashAt4000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
@@ -993,7 +994,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToComplete(ss)
+					waitForSnapshotToComplete2(ss, service.Flush)
 
 					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
@@ -1096,7 +1097,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToComplete(ss)
+					waitForSnapshotToComplete2(ss, service.Flush)
 
 					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
@@ -1562,6 +1563,36 @@ func waitForSnapshotToComplete(sf segment.Unpublished) {
 				panic(err)
 			}
 		}
+
+		// wait for snapshot data dump in progress file to be removed
+
+		_, err = os.Stat(sf.InProgressFilePath())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				break
+			} else {
+				panic(err)
+			}
+		} else {
+			continue
+		}
+	}
+}
+
+func waitForSnapshotToComplete2(sf segment.Unpublished, flush func()) {
+	for {
+		time.Sleep(10 * time.Millisecond)
+		// wait for snapshot current  file
+		_, err := os.Stat(sf.UnpublishedSnapshotDataDirectory())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			} else {
+				panic(err)
+			}
+		}
+
+		flush()
 
 		// wait for snapshot data dump in progress file to be removed
 
