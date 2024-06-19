@@ -40,6 +40,8 @@ type Service struct {
 
 	historyStore HistoryStore
 
+	fw *FileWorker
+
 	createSnapshotLock         mutex.CtxMutex
 	copyToPath                 string
 	migrateSchemaUpToVersion   func(version int64) error
@@ -67,6 +69,7 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 		migrateSchemaUpToVersion:   migrateDatabaseToVersion,
 		migrateSchemaDownToVersion: migrateSchemaDownToVersion,
 		historyStore:               historyStore,
+		fw:                         NewFileWorker(),
 	}
 
 	err = os.MkdirAll(s.copyToPath, fs.ModePerm)
@@ -75,6 +78,14 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 	}
 
 	return s, nil
+}
+
+func (b *Service) Flush() {
+	for !b.fw.Empty() {
+		if err := b.fw.Consume(); err != nil {
+			b.log.Error("failed to write all files to disk", logging.Error(err))
+		}
+	}
 }
 
 func (b *Service) SnapshotData(ctx context.Context, chainID string, toHeight int64) error {
