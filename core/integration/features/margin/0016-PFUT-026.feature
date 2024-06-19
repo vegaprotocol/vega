@@ -56,7 +56,7 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | party | USD   | ETH/FEB23 | 37206  | 443294  |
-      | aux1  | USD   | ETH/FEB23 | 19080  | 980920  |
+      | aux1  | USD   | ETH/FEB23 | 17880  | 982120  |
       | aux2  | USD   | ETH/FEB23 | 43680  | 56320   |
 
     #0016-PFUT-028: Updating a risk model on a futures market with [hardcoded risk factors]
