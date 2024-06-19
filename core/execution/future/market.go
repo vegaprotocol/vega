@@ -3414,13 +3414,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		}
 	}
 
-	var price *num.Uint
-	if m.capMax != nil {
-		price = m.capMax.Clone()
-	} else {
-		price = m.getCurrentMarkPrice()
-	}
-	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, price, increment, m.getAuctionPrice())
+	crossRiskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPriceForMargin(), increment, m.getAuctionPrice())
 	isolatedMarginPartiesToClose := []events.Risk{}
 	for _, evt := range isolatedEvts {
 		mrgns, err := m.risk.CheckMarginInvariants(ctx, evt, m.getMarketObservable(nil), increment, m.matching.GetOrdersPerParty(evt.Party()), m.getMarginFactor(evt.Party()))
@@ -4837,7 +4831,7 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 
 	// check margin balances
 	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPrice(), increment, m.getAuctionPrice())
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, crossEvts, m.getCurrentMarkPriceForMargin(), increment, m.getAuctionPrice())
 	isolatedMarginPartiesToClose := []events.Risk{}
 	for _, evt := range isolatedEvts {
 		mrgns, err := m.risk.CheckMarginInvariants(ctx, evt, m.getMarketObservable(nil), increment, m.matching.GetOrdersPerParty(evt.Party()), m.getMarginFactor(evt.Party()))
@@ -5013,7 +5007,7 @@ func (m *Market) GetTotalOpenPositionCount() uint64 {
 // getMarketObservable returns current mark price once market is out of opening auction, during opening auction the indicative uncrossing price is returned.
 func (m *Market) getMarketObservable(fallbackPrice *num.Uint) *num.Uint {
 	// this is used for margin calculations, so if there's a max price, return that.
-	if m.capMax != nil {
+	if m.capMax != nil && m.fCap.FullyCollateralised {
 		return m.capMax.Clone()
 	}
 	// during opening auction we don't have a last traded price, so we use the indicative price instead
@@ -5173,7 +5167,7 @@ func (m *Market) switchMarginMode(ctx context.Context, party string, marginMode 
 	var auctionPrice *num.Uint
 	if m.as.InAuction() {
 		auctionPrice = marketObservable
-		markPrice := m.getCurrentMarkPrice()
+		markPrice := m.getCurrentMarkPriceForMargin()
 		if markPrice != nil && marketObservable.LT(markPrice) {
 			auctionPrice = markPrice
 		}

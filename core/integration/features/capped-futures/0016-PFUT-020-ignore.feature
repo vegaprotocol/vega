@@ -159,7 +159,7 @@ Feature: When binary settlement is enabled, the market ignored oracle data that 
       | party  | asset | market id | margin | general |
       | party1 | USD   | ETH/DEC21 | 5000   | 5500    |
       | party2 | USD   | ETH/DEC21 | 2500   | 7000    |
-      | party3 | USD   | ETH/DEC22 | 2970   | 7530    |
+      | party3 | USD   | ETH/DEC22 | 3200   | 7300    |
       | party4 | USD   | ETH/DEC22 | 2310   | 7190    |
       | aux1   | USD   | ETH/DEC21 | 3098   | 96908   |
       | aux2   | USD   | ETH/DEC21 | 402    | 99570   |

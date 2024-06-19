@@ -127,10 +127,10 @@ Feature: Futures market can be created with a with [hardcoded risk factors](./00
     # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 3*(1100+1500*2)/3
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 3150   | 9345    |
-      | party2 | USD   | ETH/DEC21 | 4050   | 3455    |
+      | party1 | USD   | ETH/DEC21 | 3148   | 9347    |
+      | party2 | USD   | ETH/DEC21 | 4047   | 3458    |
       | aux1   | USD   | ETH/DEC21 | 990    | 100509  |
-      | aux2   | USD   | ETH/DEC21 | 2430   | 96085   |
+      | aux2   | USD   | ETH/DEC21 | 2428   | 96087   |
       | aux3   | USD   | ETH/DEC21 | 1260   | 98665   |
 
     And the parties should have the following margin levels:
