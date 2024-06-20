@@ -55,6 +55,8 @@ type SocketClient interface {
 
 type FileClientSend interface {
 	SendBatch(events []events.Event) error
+	Replace(*FileClient)
+	Close() error
 }
 
 type subscription struct {
@@ -126,6 +128,46 @@ func New(ctx context.Context, log *logging.Logger, config Config, stats Stats) (
 	}
 
 	return b, nil
+}
+
+func (b *Broker) ReloadConf(config Config) {
+	// check if we need to update the log level.
+	if newLvl := config.Level.Get(); newLvl != b.config.Level.Get() {
+		b.log.SetLevel(newLvl)
+		b.config.Level = config.Level
+	}
+	// if the config has enabled the file client, check if the config is different, and replace or activate the file client.
+	if config.File.Enabled && config.File != b.config.File {
+		fc, err := NewFileClient(b.log, &config.File)
+		if err != nil {
+			// we can't instantiate the file client, though the config is updated - treat this as a fatal error?
+			b.log.Fatal("Could not instantiate file client", logging.Error(err))
+		}
+		if b.fileClient != nil {
+			b.fileClient.Replace(fc)
+		} else {
+			b.fileClient = fc
+		}
+		// update the conifg
+		b.config.File = config.File
+	} else if !config.File.Enabled && b.fileClient != nil {
+		// we were streaming to a file, not anymore, so close the file and set the field to nil.
+		oldFC := b.fileClient
+		b.fileClient = nil
+		if err := oldFC.Close(); err != nil {
+			b.log.Error("Disabled file streaming, but file was not closed properly", logging.Error(err))
+		}
+		b.config.File = config.File
+	}
+	// we only allow switching socket config on if it isn't already. Switching sockets is a bit of a pain.
+	if config.Socket.Enabled && !b.config.Socket.Enabled {
+		sc, err := newSocketClient(b.ctx, b.log, &config.Socket)
+		if err != nil {
+			b.log.Fatal("Could not instantiate new socket client", logging.Error(err))
+		}
+		b.socketClient = sc
+		b.config.Socket = config.Socket
+	}
 }
 
 func (b *Broker) OnTick(ctx context.Context, _ time.Time) {
