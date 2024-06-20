@@ -120,6 +120,81 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
 }
 
+func TestFileStreaming(t *testing.T) {
+	tstBroker := getBroker(t)
+	defer tstBroker.Finish()
+	// create a temp file to use, close it so the opening is definitely handled by the file client, but remove it after the tests.
+	tmp, err := os.CreateTemp("", "file_client_tmp")
+	require.NoError(t, err)
+	tmpName := tmp.Name()
+	require.NoError(t, tmp.Close())
+	defer os.Remove(tmpName)
+	cfg := broker.NewDefaultConfig()
+	// current file contents:
+	content, err := os.ReadFile(tmpName)
+	require.NoError(t, err)
+	tmp2, err := os.CreateTemp("", "file_client_tmp_2")
+	require.NoError(t, err)
+	tmp2Name := tmp2.Name()
+	defer os.Remove(tmp2Name)
+	require.NoError(t, tmp2.Close())
+	content2, err := os.ReadFile(tmp2Name)
+	require.NoError(t, err)
+	require.Equal(t, content, content2)
+	t.Run("Reload config, toggling file streaming", func(t *testing.T) {
+		cfg.File.Enabled = true
+		cfg.File.File = tmpName
+		tstBroker.ReloadConf(cfg)
+		batchSendTest(t, tstBroker)
+		// now disable file streaming (closes the temp file)
+		cfg.File.Enabled = false
+		cfg.File.File = ""
+		tstBroker.ReloadConf(cfg)
+		newContent, err := os.ReadFile(tmpName)
+		require.NoError(t, err)
+		require.NotEqual(t, newContent, content)
+		require.True(t, len(content) < len(newContent))
+	})
+	t.Run("Reload config, switch file output", func(t *testing.T) {
+		cfg.File.Enabled = true
+		cfg.File.File = tmpName
+		batchSendTest(t, tstBroker)
+		cfg.File.File = tmp2Name
+		tstBroker.ReloadConf(cfg)
+		// turn the file streaming off
+		cfg.File.Enabled = false
+		cfg.File.File = ""
+		tstBroker.ReloadConf(cfg)
+		tmpCont, err := os.ReadFile(tmpName)
+		require.NoError(t, err)
+		tmp2Cont, err := os.ReadFile(tmp2Name)
+		require.NoError(t, err)
+		require.NotEqual(t, tmpCont, tmp2Cont)
+		require.Equal(t, tmp2Cont, content2)
+	})
+	t.Run("Reload Config, switch file output, but write to the new file", func(t *testing.T) {
+		cfg.File.Enabled = true
+		cfg.File.File = tmpName
+		tstBroker.ReloadConf(cfg)
+		// send another batch, this doubles the data in the file because we used tmpName in tests above
+		batchSendTest(t, tstBroker)
+		cfg.File.File = tmp2Name
+		tstBroker.ReloadConf(cfg)
+		// send the data once here...
+		batchSendTest(t, tstBroker)
+		// turn the file streaming off (optional step)
+		cfg.File.Enabled = false
+		cfg.File.File = ""
+		tstBroker.ReloadConf(cfg)
+		tmpCont, err := os.ReadFile(tmpName)
+		require.NoError(t, err)
+		tmp2Cont, err := os.ReadFile(tmp2Name)
+		require.NoError(t, err)
+		require.NotEqual(t, tmpCont, tmp2Cont)
+		require.NotEqual(t, tmp2Cont, content2)
+	})
+}
+
 func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 	t.Parallel()
 	tstBroker := getBroker(t)
@@ -341,13 +416,16 @@ func testUnsubscribeAutomaticallyIfSubscriberIsClosed(t *testing.T) {
 func testSendBatch(t *testing.T) {
 	t.Parallel()
 	tstBroker := getBroker(t)
+	defer tstBroker.Finish()
+	batchSendTest(t, tstBroker)
+}
+
+func batchSendTest(t *testing.T, tstBroker *brokerTst) {
+	t.Helper()
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	cancelCh := make(chan struct{})
-	defer func() {
-		tstBroker.Finish()
-		close(cancelCh)
-	}()
-	sub.EXPECT().Types().Times(1).Return(nil)
+	defer close(cancelCh)
+	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
 	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
@@ -373,6 +451,7 @@ func testSendBatch(t *testing.T) {
 	require.Equal(t, uint64(3), tstBroker.stats.CurrentEventsInBatch())
 	tstBroker.stats.NewBatch()
 	require.Equal(t, uint64(3), tstBroker.stats.TotalEventsLastBatch())
+	tstBroker.Unsubscribe(k1)
 }
 
 func testSendBatchChannel(t *testing.T) {

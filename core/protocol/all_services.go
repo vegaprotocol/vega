@@ -563,6 +563,7 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { svcs.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { svcs.stats.ReloadConf(cfg.Stats) },
+		func(cfg config.Config) { svcs.broker.ReloadConf(cfg.Broker) },
 	)
 
 	if svcs.conf.HaveEthClient() {

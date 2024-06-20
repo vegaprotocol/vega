@@ -118,6 +118,15 @@ func WriteRawToBufferFile(bufferFile *os.File, bufferSeqNum uint64, rawEvent []b
 	return nil
 }
 
+// Replace - in case of a config change, just replace the file we're writing to with the new one.
+func (fc *FileClient) Replace(newFC *FileClient) {
+	fc.mut.Lock()
+	defer fc.mut.Unlock()
+	fc.config = newFC.config
+	_ = fc.file.Close()
+	fc.file = newFC.file
+}
+
 func (fc *FileClient) Close() error {
 	return fc.file.Close()
 }
