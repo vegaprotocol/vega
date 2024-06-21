@@ -1026,7 +1026,7 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
 			}
 		case txn.StopOrdersCancellationCommand:
-			s := commandspb.StopOrdersCancellation{}
+			s := &commandspb.StopOrdersCancellation{}
 			if err := tx.tx.Unmarshal(s); err != nil {
 				continue
 			}
