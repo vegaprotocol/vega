@@ -35,6 +35,7 @@
 - [11066](https://github.com/vegaprotocol/vega/issues/11066) - Ensure vesting statistics match vesting accounts numbers.
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
+- [11401](https://github.com/vegaprotocol/vega/issues/11401) - Ignore dispatch strategies with zero `ref-counts` when calculating payouts.
 - [11379](https://github.com/vegaprotocol/vega/issues/11379) - Source chain id is now populated in `GQL Erc20WithdrawalApproval` endpoint.
 - [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
 - [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
