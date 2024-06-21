@@ -250,6 +250,10 @@ func buildMarketFromProposal(
 	}
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
+	// assign here, we want to update this after assigning market variable
+	marginCalc := &types.MarginCalculator{
+		ScalingFactors: types.ScalingFactorsFromProto(&scalingFactors),
+	}
 	market := &types.Market{
 		ID:                    marketID,
 		DecimalPlaces:         definition.Changes.DecimalPlaces,
@@ -265,10 +269,8 @@ func buildMarketFromProposal(
 			Duration: int64(openingAuctionDuration.Seconds()),
 		},
 		TradableInstrument: &types.TradableInstrument{
-			Instrument: instrument,
-			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: types.ScalingFactorsFromProto(&scalingFactors),
-			},
+			Instrument:       instrument,
+			MarginCalculator: marginCalc,
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
 			Parameters: definition.Changes.PriceMonitoringParameters,
@@ -281,6 +283,9 @@ func buildMarketFromProposal(
 		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
 		TickSize:                      definition.Changes.TickSize,
 		EnableTxReordering:            definition.Changes.EnableTxReordering,
+	}
+	if fCap := market.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
+		marginCalc.FullyCollateralised = fCap.FullyCollateralised
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {
