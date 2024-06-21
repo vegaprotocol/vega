@@ -17,6 +17,7 @@ package banking_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -26,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
@@ -737,4 +739,73 @@ func TestMarketAssetMismatchRejectsTransfer(t *testing.T) {
 	// if in-scope market has a different asset it is rejected
 	eng.marketActivityTracker.EXPECT().MarketTrackedForAsset(gomock.Any(), gomock.Any()).Times(1).Return(false)
 	require.Error(t, eng.TransferFunds(context.Background(), recurring))
+}
+
+func TestDispatchStrategyRemoval(t *testing.T) {
+	e := getTestEngine(t)
+
+	dispatchStrat := &vega.DispatchStrategy{
+		AssetForMetric:       "zohar",
+		Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Markets:              []string{"mmm"},
+		EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+		IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+		WindowLength:         1,
+		LockPeriod:           1,
+		DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
+	}
+
+	p, err := proto.Marshal(dispatchStrat)
+	require.NoError(t, err)
+	dsHash := hex.EncodeToString(crypto.Hash(p))
+
+	var endEpoch uint64 = 100
+	party := "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID",
+				From:            party,
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "0000000000000000000000000000000000000000000000000000000000000000",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           assetNameETH,
+				Amount:          num.NewUint(100),
+				Reference:       "someref",
+			},
+			StartEpoch:       8,
+			EndEpoch:         &endEpoch,
+			Factor:           num.MustDecimalFromString("0.9"),
+			DispatchStrategy: dispatchStrat,
+		},
+	}
+
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	e.marketActivityTracker.EXPECT().MarketTrackedForAsset(gomock.Any(), gomock.Any()).Times(1).Return(true)
+	assert.NoError(t, e.TransferFunds(ctx, transfer))
+
+	// it exists
+	assert.NotNil(t, e.GetDispatchStrategy(dsHash))
+
+	// now cancel
+	require.NoError(t, e.CancelTransferFunds(ctx,
+		&types.CancelTransferFunds{
+			Party:      party,
+			TransferID: "TRANSFERID",
+		},
+	),
+	)
+
+	// it does not exist (secretly it does but has ref-count 0)
+	assert.Nil(t, e.GetDispatchStrategy(dsHash))
+
+	// roll into the next epoch end
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8, Action: vega.EpochAction_EPOCH_ACTION_END})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9, Action: vega.EpochAction_EPOCH_ACTION_START})
+
+	// still not there
+	assert.Nil(t, e.GetDispatchStrategy(dsHash))
 }

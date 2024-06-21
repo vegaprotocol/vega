@@ -622,6 +622,10 @@ func (e *Engine) GetDispatchStrategy(hash string) *proto.DispatchStrategy {
 		return nil
 	}
 
+	if ds.refCount == 0 {
+		return nil
+	}
+
 	return ds.ds
 }
 
