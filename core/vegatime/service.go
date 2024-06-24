@@ -80,6 +80,10 @@ func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 	s.notify(ctx, t)
 }
 
+func (s *Svc) SetPrevTime(t time.Time) {
+	s.previousTimestamp = t
+}
+
 // GetTimeNow returns the current time in vega.
 func (s *Svc) GetTimeNow() time.Time {
 	s.mu.RLock()

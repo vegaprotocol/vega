@@ -100,6 +100,7 @@ type AuctionState interface {
 	price.AuctionState
 	// are we in auction, and what auction are we in?
 	ExtendAuctionSuspension(delta types.AuctionDuration)
+	ExtendAuctionLongBlock(delta types.AuctionDuration)
 	InAuction() bool
 	IsOpeningAuction() bool
 	IsPriceAuction() bool
@@ -128,6 +129,7 @@ type AuctionState interface {
 	Changed() bool
 	UpdateMaxDuration(ctx context.Context, d time.Duration)
 	StartGovernanceSuspensionAuction(t time.Time)
+	StartLongBlockAuction(t time.Time, d int64)
 	EndGovernanceSuspensionAuction()
 }
 
@@ -361,6 +363,7 @@ type CommonMarket interface {
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 	GetFillPrice(volume uint64, side types.Side) (*num.Uint, error)
 	Mkt() *types.Market
+	EnterLongBlockAuction(ctx context.Context, duration int64)
 
 	IsOpeningAuction() bool
 

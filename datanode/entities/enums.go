@@ -388,6 +388,7 @@ const (
 	MarketTradingModeMonitoringAuction      = MarketTradingMode(vega.Market_TRADING_MODE_MONITORING_AUCTION)
 	MarketTradingModeNoTrading              = MarketTradingMode(vega.Market_TRADING_MODE_NO_TRADING)
 	MarketTradingModeSuspendedViaGovernance = MarketTradingMode(vega.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE)
+	MarketTradingModelLongBlockAuction      = MarketTradingMode(vega.Market_TRADING_MODE_LONG_BLOCK_AUCTION)
 )
 
 func (m MarketTradingMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

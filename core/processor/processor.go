@@ -105,7 +105,7 @@ type ExecutionEngine interface {
 
 	// End of block
 	BlockEnd(ctx context.Context)
-	BeginBlock(ctx context.Context)
+	BeginBlock(ctx context.Context, duration time.Duration)
 
 	// Margin mode
 	UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error

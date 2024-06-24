@@ -1810,7 +1810,7 @@ func testMarketState(t *testing.T) {
 func testMarketTradingMode(t *testing.T) {
 	var marketTradingMode vega.Market_TradingMode
 	modes := getEnums(t, marketTradingMode)
-	assert.Len(t, modes, 7)
+	assert.Len(t, modes, 8)
 	for m, mode := range modes {
 		t.Run(mode, func(t *testing.T) {
 			bs, md := setupMarketsTest(t)

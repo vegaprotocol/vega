@@ -44,6 +44,37 @@ func SpamPoWHashFunction(supportedFunctions []string) func(string) error {
 	}
 }
 
+func LongBlockAuctionDurationTable() func(interface{}, interface{}) error {
+	return func(v interface{}, _ interface{}) error {
+		lbadTable, ok := v.(*types.LongBlockAuctionDurationTable)
+		if !ok {
+			return fmt.Errorf("invalid long block auction duration table")
+		}
+		seenThresholds := map[string]struct{}{}
+		for i, tad := range lbadTable.ThresholdAndDuration {
+			thr, err := time.ParseDuration(tad.Threshold)
+			if err != nil {
+				return fmt.Errorf("invalid long block auction duration table - threshold at index %d is not a valid duration", i)
+			}
+			if thr.Nanoseconds() <= 0 {
+				return fmt.Errorf("invalid long block auction duration table - threshold at index %d is not a positive duration", i)
+			}
+			dur, err := time.ParseDuration(tad.Duration)
+			if err != nil {
+				return fmt.Errorf("invalid long block auction duration table - duration at index %d is not a valid duration", i)
+			}
+			if dur.Nanoseconds() <= 0 {
+				return fmt.Errorf("invalid long block auction duration table - duration at index %d is not a positive duration", i)
+			}
+			if _, ok := seenThresholds[tad.Threshold]; ok {
+				return fmt.Errorf("invalid long block auction duration table - duplicate threshold")
+			}
+			seenThresholds[tad.Threshold] = struct{}{}
+		}
+		return nil
+	}
+}
+
 func MarginScalingFactor() func(interface{}, interface{}) error {
 	return func(v interface{}, _ interface{}) error {
 		sf := v.(*types.ScalingFactors)

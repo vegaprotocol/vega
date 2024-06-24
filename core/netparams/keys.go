@@ -21,6 +21,8 @@ const (
 	AMMMarketTradingEnabled   = "limits.markets.ammPoolEnabled"
 	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
+	NetworkWideAuctionDuration = "auction.LongBlock"
+
 	MarketMarginScalingFactors        = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee          = "market.fee.factors.makerFee"
 	MarketFeeFactorsInfrastructureFee = "market.fee.factors.infrastructureFee"
@@ -282,6 +284,7 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	NetworkWideAuctionDuration:                                   {},
 	RewardsUpdateFrequency:                                       {},
 	SpamProtectionMaxUpdatePartyProfile:                          {},
 	SpamProtectionUpdateProfileMinFunds:                          {},

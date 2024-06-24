@@ -238,6 +238,8 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS = 6 [deprecated = true];
   // Market is suspended and put into auction via governance
   AUCTION_TRIGGER_GOVERNANCE_SUSPENSION = 7;
+  // Market is suspended in response to a long block
+  AUCTION_TRIGGER_LONG_BLOCK = 8;
 }
 
 // Pegged reference defines which price point a pegged order is linked to - meaning
@@ -1985,4 +1987,16 @@ enum MarginMode {
   MARGIN_MODE_CROSS_MARGIN = 1;
   // Isolated margin mode - margin for any newly opened position volume is transferred to the margin account when the trade is executed
   MARGIN_MODE_ISOLATED_MARGIN = 2;
+}
+
+message LongBlockAuction {
+  // Threshold for a long block.
+  string threshold = 1;
+  // Auction duration for the given threshold.
+  string duration = 2;
+}
+
+message LongBlockAuctionDurationTable {
+  // Slice of thresholds and durations for corresponding auctions.
+  repeated LongBlockAuction threshold_and_duration = 1;
 }

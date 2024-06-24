@@ -343,6 +343,12 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 	return ErrMarketDoesNotExist
 }
 
+func (e *Engine) EnterLongBlockAuction(ctx context.Context, duration int64) {
+	for _, mkt := range e.allMarkets {
+		mkt.EnterLongBlockAuction(ctx, duration)
+	}
+}
+
 func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string) error {
 	return e.succeedOrRestore(ctx, successor, parent, false)
 }
@@ -1383,9 +1389,17 @@ func (e *Engine) BlockEnd(ctx context.Context) {
 	}
 }
 
-func (e *Engine) BeginBlock(ctx context.Context) {
+func (e *Engine) BeginBlock(ctx context.Context, prevBlockDuration time.Duration) {
 	for _, mkt := range e.allMarketsCpy {
 		mkt.BeginBlock(ctx)
+	}
+	longBlockAuctionDuration := e.npv.lbadTable.GetLongBlockAuctionDurationForBlockDuration(prevBlockDuration)
+	if longBlockAuctionDuration == nil {
+		return
+	}
+	auctionDurationInSeconds := int64(longBlockAuctionDuration.Seconds())
+	for _, mkt := range e.allMarketsCpy {
+		mkt.EnterLongBlockAuction(ctx, auctionDurationInSeconds)
 	}
 }
 

@@ -565,6 +565,7 @@ type AppState struct {
 	Height          uint64
 	Block           string
 	Time            int64
+	PrevBlockTime   int64
 	ChainID         string
 	ProtocolVersion string
 	ProtocolUpdgade bool
@@ -2172,6 +2173,7 @@ func AppStateFromProto(as *snapshot.AppState) *AppState {
 	return &AppState{
 		Height:          as.Height,
 		Block:           as.Block,
+		PrevBlockTime:   as.PrevBlockTime,
 		Time:            as.Time,
 		ChainID:         as.ChainId,
 		ProtocolVersion: as.ProtocolVersion,
@@ -2184,6 +2186,7 @@ func (a AppState) IntoProto() *snapshot.AppState {
 		Height:          a.Height,
 		Block:           a.Block,
 		Time:            a.Time,
+		PrevBlockTime:   a.PrevBlockTime,
 		ChainId:         a.ChainID,
 		ProtocolVersion: a.ProtocolVersion,
 		ProtocolUpgrade: a.ProtocolUpdgade,

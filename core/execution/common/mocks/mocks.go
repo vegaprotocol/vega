@@ -1287,6 +1287,18 @@ func (mr *MockAuctionStateMockRecorder) ExtendAuction(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuction", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuction), arg0)
 }
 
+// ExtendAuctionLongBlock mocks base method.
+func (m *MockAuctionState) ExtendAuctionLongBlock(arg0 types.AuctionDuration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExtendAuctionLongBlock", arg0)
+}
+
+// ExtendAuctionLongBlock indicates an expected call of ExtendAuctionLongBlock.
+func (mr *MockAuctionStateMockRecorder) ExtendAuctionLongBlock(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLongBlock", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLongBlock), arg0)
+}
+
 // ExtendAuctionPrice mocks base method.
 func (m *MockAuctionState) ExtendAuctionPrice(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
@@ -1487,6 +1499,18 @@ func (m *MockAuctionState) StartGovernanceSuspensionAuction(arg0 time.Time) {
 func (mr *MockAuctionStateMockRecorder) StartGovernanceSuspensionAuction(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).StartGovernanceSuspensionAuction), arg0)
+}
+
+// StartLongBlockAuction mocks base method.
+func (m *MockAuctionState) StartLongBlockAuction(arg0 time.Time, arg1 int64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartLongBlockAuction", arg0, arg1)
+}
+
+// StartLongBlockAuction indicates an expected call of StartLongBlockAuction.
+func (mr *MockAuctionStateMockRecorder) StartLongBlockAuction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLongBlockAuction", reflect.TypeOf((*MockAuctionState)(nil).StartLongBlockAuction), arg0, arg1)
 }
 
 // StartPriceAuction mocks base method.

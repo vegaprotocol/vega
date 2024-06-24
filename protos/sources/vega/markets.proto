@@ -357,6 +357,8 @@ message Market {
     TRADING_MODE_NO_TRADING = 5;
     // Special auction mode triggered via governance
     TRADING_MODE_SUSPENDED_VIA_GOVERNANCE = 6;
+    // Auction triggered globally by long block
+    TRADING_MODE_LONG_BLOCK_AUCTION = 7;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
