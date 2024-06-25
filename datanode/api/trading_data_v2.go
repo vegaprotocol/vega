@@ -2534,7 +2534,15 @@ func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
 	}
 
-	stats, pageInfo, err := t.paidLiquidityFeesStatsService.List(ctx, marketID, assetID, req.EpochSeq, req.PartyIds, pagination)
+	partyIDs := req.PartyIds
+	if req.IncludeDerivedParties != nil && *req.IncludeDerivedParties {
+		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, marketID)
+		if err != nil {
+			return nil, formatE(ErrInvalidFilter, err)
+		}
+		partyIDs = append(partyIDs, subKeys...)
+	}
+	stats, pageInfo, err := t.paidLiquidityFeesStatsService.List(ctx, marketID, assetID, req.EpochSeq, partyIDs, pagination)
 	if err != nil {
 		return nil, formatE(ErrListPaidLiquidityFees, err)
 	}

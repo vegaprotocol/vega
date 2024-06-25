@@ -18,6 +18,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -116,6 +117,31 @@ func (p *AMMPools) ListByParty(ctx context.Context, partyID entities.PartyID, pa
 	defer metrics.StartSQLQuery("AMMs", "ListByParty")
 
 	return listBy(ctx, p.ConnectionSource, "party_id", &partyID, pagination)
+}
+
+func (p *AMMPools) GetSubKeysForParties(ctx context.Context, partyIDs []string, marketID *entities.MarketID) ([]string, error) {
+	if len(partyIDs) == 0 {
+		return nil, nil
+	}
+	parties := strings.Builder{}
+	args := make([]any, 0, len(partyIDs)+1)
+	query := `SELECT amm_party_id FROM amms WHERE "`
+	if marketID != nil {
+		query = fmt.Sprintf("%s market_id = %s AND ", query, nextBindVar(&args, *marketID))
+	}
+	for i, party := range partyIDs {
+		if i > 0 {
+			parties.WriteString(",")
+		}
+		parties.WriteString(nextBindVar(&args, party))
+	}
+
+	subKeys := []string{}
+	query = fmt.Sprintf(`%s party_id IN (%s)`, query, parties.String())
+	if err := pgxscan.Select(ctx, p.ConnectionSource, &subKeys, query, args...); err != nil {
+		return nil, err
+	}
+	return subKeys, nil
 }
 
 func (p *AMMPools) ListByPool(ctx context.Context, poolID entities.AMMPoolID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {

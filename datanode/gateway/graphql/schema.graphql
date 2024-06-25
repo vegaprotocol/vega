@@ -1067,6 +1067,8 @@ type Query {
     epoch: Int
     "Optional party IDs to filter for"
     partyIDs: [String!]
+    "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
+    includeDerivedParties: Boolean
   ): PaidLiquidityFeesConnection
 
   "One or more entities that are trading on the Vega network"

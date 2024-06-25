@@ -136,7 +136,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
 
 
     And the following trades should be executed:
-      | buyer    | price | size | seller   | is amm |
+      | buyer    | price | size | seller | is amm |
       | vamm1-id | 120   | 49   | party4 | true   |
     # ensure the vamm closed its position
     When the network moves ahead "1" blocks
@@ -144,9 +144,9 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | mark price | trading mode            | mid price | static mid price |
       | 120        | TRADING_MODE_CONTINUOUS | 119       | 119              |
     And the parties should have the following profit and loss:
-      | party    | volume  | unrealised pnl | realised pnl | is amm |
-      | party4   | -49     | 0              | 0            |        |
-      | vamm1-id | 49      | 0              | 0            | true   |
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party4   | -49    | 0              | 0            |        |
+      | vamm1-id | 49     | 0              | 0            | true   |
 
   @VAMM
   Scenario: 0090-VAMM-026: If the trade cannot execute with the slippage as configured in the request then the transaction is rejected and no changes to the vAMM are made.
@@ -172,8 +172,8 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
 
     # Now amend the vAMM such that there won't be enough liquidity to rebase
     When the parties amend the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound  | error                                  |
-      | vamm1 | ETH/MAR22 | 10005      | 0.01     | 165  | 160          | 170         | not enough liquidity for AMM to rebase |
+      | party | market id | amount | slippage | base | lower bound | upper bound | error                                  |
+      | vamm1 | ETH/MAR22 | 10005  | 0.01     | 165  | 160         | 170         | not enough liquidity for AMM to rebase |
     # ensure the status of the vAMM remains the same (if no update event is sent, this test will pass even if the vAMM was in some way changed)
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
@@ -181,8 +181,8 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
 
     # check that the account balances have not been updated either
     And the parties should have the following account balances:
-      | party    | asset | market id | general  | margin | is amm |
-      | vamm1-id | USD   | ETH/MAR22 | 29162    | 840    | true   |
+      | party    | asset | market id | general | margin | is amm |
+      | vamm1-id | USD   | ETH/MAR22 | 29162   | 840    | true   |
 
     # To account for a passing test caused by an event not being sent out, cancel the vAMM and check the status
     When the parties cancel the following AMM:
