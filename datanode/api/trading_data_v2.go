@@ -416,7 +416,7 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	var partyPerDerivedKey map[string]string
+	var partyPerDerivedKey []string
 
 	if req.Filter != nil {
 		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
@@ -433,12 +433,12 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		req.Filter.PartyIds = partyIDs
 
 		if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-			partyPerDerivedKey, err = t.getDerivedParties(ctx, partyIDs, req.Filter.MarketIds)
+			partyPerDerivedKey, err = t.ammPoolService.GetSubKeysForParties(ctx, req.Filter.PartyIds, req.Filter.MarketIds)
 			if err != nil {
 				return nil, formatE(err)
 			}
 
-			req.Filter.PartyIds = append(req.Filter.PartyIds, maps.Keys(partyPerDerivedKey)...)
+			req.Filter.PartyIds = append(req.Filter.PartyIds, partyPerDerivedKey...)
 		}
 	}
 
@@ -476,12 +476,14 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	partyPerDerivedKey := map[string]string{}
 
 	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		partyPerDerivedKeyUpdate, err := t.getDerivedParties(ctx, []string{req.PartyId}, []string{req.MarketId})
+		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, []string{req.PartyId}, []string{req.MarketId})
 		if err != nil {
 			return formatE(err)
 		}
-
-		partyPerDerivedKey = partyPerDerivedKeyUpdate
+		// should really only be a single key, but just in case...
+		for _, sk := range subKeys {
+			partyPerDerivedKey[sk] = req.PartyId
+		}
 	}
 
 	// First get the 'initial image' of accounts matching the request and send those
@@ -1613,39 +1615,6 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 	}, nil
 }
 
-func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, partyIDs []string, marketIDs []string) (map[string]string, error) {
-	partyPerDerivedKey := map[string]string{}
-
-	if len(partyIDs) == 0 {
-		return partyPerDerivedKey, nil
-	}
-
-	if len(marketIDs) != 0 {
-		for _, marketID := range marketIDs {
-			for _, partyID := range partyIDs {
-				partyPerDerivedKey[amm.DeriveAMMParty(partyID, marketID, amm.V1, 0)] = partyID
-			}
-		}
-
-		return partyPerDerivedKey, nil
-	}
-
-	// get a list of all markets to generate all potential
-	// sub accounts for the party
-	markets, _, err := t.MarketsService.GetAllPaged(ctx, "", entities.DefaultCursorPagination(true), false)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, market := range markets {
-		for _, partyID := range partyIDs {
-			partyPerDerivedKey[amm.DeriveAMMParty(partyID, market.ID.String(), amm.V1, 0)] = partyID
-		}
-	}
-
-	return partyPerDerivedKey, nil
-}
-
 // ObservePositions subscribes to a stream of Positions.
 func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
@@ -1668,12 +1637,10 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 				marketIDs = []string{*req.MarketId}
 			}
 
-			partyPerDerivedKey, err := t.getDerivedParties(ctx, partyIDs, marketIDs)
+			derivedParties, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
 			if err != nil {
 				return formatE(err)
 			}
-
-			derivedParties = maps.Keys(partyPerDerivedKey)
 			slices.Sort(derivedParties)
 		}
 	}
@@ -1932,12 +1899,11 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 
 	partyIDs := []string{req.PartyId}
 	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		partyPerDerivedKey, err := t.getDerivedParties(ctx, []string{req.PartyId}, nil)
+		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, nil)
 		if err != nil {
 			return nil, formatE(err)
 		}
-
-		partyIDs = append(partyIDs, maps.Keys(partyPerDerivedKey)...)
+		partyIDs = append(partyIDs, subKeys...)
 	}
 
 	rewards, pageInfo, err := t.RewardService.GetByCursor(ctx, partyIDs, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
@@ -1970,12 +1936,11 @@ func (t *TradingDataServiceV2) ListRewardSummaries(ctx context.Context, req *v2.
 	}
 
 	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		partyPerDerivedKey, err := t.getDerivedParties(ctx, partyIDs, nil)
+		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, nil)
 		if err != nil {
 			return nil, formatE(err)
 		}
-
-		partyIDs = append(partyIDs, maps.Keys(partyPerDerivedKey)...)
+		partyIDs = append(partyIDs, subKeys...)
 	}
 
 	summaries, err := t.RewardService.GetSummaries(ctx, partyIDs, req.AssetId)
@@ -2525,8 +2490,10 @@ func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v
 	}
 
 	var marketID *entities.MarketID
+	var marketIDs []string
 	if req.MarketId != nil {
 		marketID = ptr.From(entities.MarketID(*req.MarketId))
+		marketIDs = []string{*req.MarketId}
 	}
 
 	var assetID *entities.AssetID
@@ -2536,7 +2503,7 @@ func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v
 
 	partyIDs := req.PartyIds
 	if req.IncludeDerivedParties != nil && *req.IncludeDerivedParties {
-		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, marketID)
+		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
 		if err != nil {
 			return nil, formatE(ErrInvalidFilter, err)
 		}
