@@ -1349,6 +1349,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData,
 				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination,
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
+				Cap:                                 existingMarket.GetFuture().Cap(),
 			},
 		}
 	case *types.UpdateInstrumentConfigurationPerps:
@@ -1377,7 +1378,6 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 	if newMarket.Changes.LiquidationStrategy == nil {
 		newMarket.Changes.LiquidationStrategy = existingMarket.LiquidationStrategy
 	}
-
 	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow(), e.netp); err != nil {
 		return nil, perr, err
 	}
