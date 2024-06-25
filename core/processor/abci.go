@@ -1342,7 +1342,8 @@ func (app *App) OnBeginBlock(blockHeight uint64, blockHash string, blockTime tim
 	app.protocolUpgradeService.BeginBlock(ctx, blockHeight)
 	app.top.BeginBlock(ctx, blockHeight, proposer)
 	app.balanceChecker.BeginBlock(ctx)
-	app.exec.BeginBlock(ctx)
+	blockDuration := app.currentTimestamp.Sub(app.previousTimestamp)
+	app.exec.BeginBlock(ctx, blockDuration)
 	return ctx
 }
 

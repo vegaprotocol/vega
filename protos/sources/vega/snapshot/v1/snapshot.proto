@@ -745,6 +745,7 @@ message AppState {
   string chain_id = 4;
   string protocol_version = 5;
   bool protocol_upgrade = 6;
+  int64 prev_block_time = 7;
 }
 
 // EpochState details

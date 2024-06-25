@@ -64,6 +64,9 @@ type netParamsValues struct {
 
 	// only used for protocol upgrade to v0.74
 	chainID uint64
+
+	// network wide auction duration
+	lbadTable *types.LongBlockAuctionDurationTable
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -270,6 +273,24 @@ func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Co
 	}
 
 	e.npv.liquidityV2ProvidersFeeCalculationTimeStep = d
+	return nil
+}
+
+func (e *Engine) OnNetworkWideAuctionDurationUpdated(ctx context.Context, v interface{}) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update network wide auction duration",
+			logging.Reflect("network-wide-auction-duration", v),
+		)
+	}
+	lbadTable, ok := v.(*vega.LongBlockAuctionDurationTable)
+	if !ok {
+		return errors.New("invalid long block auction duration table")
+	}
+	lbads, err := types.LongBlockAuctionDurationTableFromProto(lbadTable)
+	if err != nil {
+		return err
+	}
+	e.npv.lbadTable = lbads
 	return nil
 }
 

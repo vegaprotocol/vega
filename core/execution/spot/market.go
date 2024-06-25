@@ -487,6 +487,22 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 	m.uncrossOnLeaveAuction(ctx)
 }
 
+func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
+	m.mkt.State = types.MarketStateSuspended
+	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
+	if m.as.InAuction() {
+		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: duration})
+		evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
+		if evt != nil {
+			m.broker.Send(evt)
+		}
+	} else {
+		m.as.StartLongBlockAuction(m.timeService.GetTimeNow(), duration)
+		m.enterAuction(ctx)
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	}
+}
+
 func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	// make deterministic ID for this market, concatenate

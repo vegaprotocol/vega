@@ -4463,6 +4463,9 @@ enum MarketTradingMode {
 
   "Special auction mode triggered via governance market suspension"
   TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
+
+  "Auction triggered by a long block"
+  TRADING_MODE_LONG_BLOCK_AUCTION
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -5660,6 +5663,8 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
   "Auction triggered by governance market suspension"
   AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
+  "Auction triggered following a long block, e.g. due to protocol upgrade"
+  AUCTION_TRIGGER_LONG_BLOCK
 }
 
 "Event types"

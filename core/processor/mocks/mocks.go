@@ -310,15 +310,15 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2, arg3 int
 }
 
 // BeginBlock mocks base method.
-func (m *MockExecutionEngine) BeginBlock(arg0 context.Context) {
+func (m *MockExecutionEngine) BeginBlock(arg0 context.Context, arg1 time.Duration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "BeginBlock", arg0)
+	m.ctrl.Call(m, "BeginBlock", arg0, arg1)
 }
 
 // BeginBlock indicates an expected call of BeginBlock.
-func (mr *MockExecutionEngineMockRecorder) BeginBlock(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) BeginBlock(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockExecutionEngine)(nil).BeginBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockExecutionEngine)(nil).BeginBlock), arg0, arg1)
 }
 
 // BlockEnd mocks base method.

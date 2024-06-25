@@ -67,6 +67,7 @@ var (
 
 func defaultNetParams() map[string]value {
 	m := map[string]value{
+		NetworkWideAuctionDuration:    NewJSON(&proto.LongBlockAuctionDurationTable{}, checks.LongBlockAuctionDurationTable()).Mutable(true).MustUpdate(`{"threshold_and_duration": [{"threshold":"10s","duration":"1m"},{"threshold":"1m","duration":"5m"},{"threshold":"10m","duration":"1h"},{"threshold":"1h","duration":"1h"},{"threshold":"6h","duration":"3h"},{"threshold":"24h","duration":"6h"}]}`),
 		MinimalMarginQuantumMultiple:  NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
 		MinimalHoldingQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
 

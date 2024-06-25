@@ -141,6 +141,8 @@ const (
 	MarketTradingModeNoTrading MarketTradingMode = vegapb.Market_TRADING_MODE_NO_TRADING
 	// Special auction mode for market suspended via governance.
 	MarketTradingModeSuspendedViaGovernance MarketTradingMode = vegapb.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
+	// Long block auction.
+	MarketTradingModelLongBlockAuction MarketTradingMode = vegapb.Market_TRADING_MODE_LONG_BLOCK_AUCTION
 )
 
 type MarketState = vegapb.Market_State
@@ -189,6 +191,8 @@ const (
 	AuctionTriggerGovernanceSuspension AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
 	// AuctionTriggerUnableToDeployLPOrders legacy liquidity provision supports.
 	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
+	// AuctionTriggerLongBlock for market suspension due to a long block.
+	AuctionTriggerLongBlock AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_LONG_BLOCK
 )
 
 type InstrumentMetadata struct {

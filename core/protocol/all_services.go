@@ -749,6 +749,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
 		{
+			Param:   netparams.NetworkWideAuctionDuration,
+			Watcher: svcs.executionEngine.OnNetworkWideAuctionDurationUpdated,
+		},
+		{
 			Param: netparams.BlockchainsPrimaryEthereumConfig,
 			Watcher: func(ctx context.Context, cfg interface{}) error {
 				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)

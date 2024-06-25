@@ -109,6 +109,7 @@ func testRestoringStateSucceeds(t *testing.T) {
 	// converting the chunks to payload, that are then broadcast to the providers.
 
 	timeService.EXPECT().SetTimeNow(gomock.Any(), time.Unix(0, testSnapshot.appState.Time)).Times(1)
+	timeService.EXPECT().SetPrevTime(time.Unix(0, testSnapshot.appState.PrevBlockTime)).Times(1)
 	statsService.EXPECT().SetHeight(testSnapshot.appState.Height).Times(1)
 	governanceProvider.EXPECT().LoadState(gomock.Any(), testSnapshot.PayloadGovernanceActive()).Return(nil, nil).Times(1)
 	governanceProvider.EXPECT().LoadState(gomock.Any(), testSnapshot.PayloadGovernanceEnacted()).Return(nil, nil).Times(1)
@@ -176,6 +177,7 @@ func testRestoringStateSucceeds(t *testing.T) {
 
 	// State restored on the snapshot engine itself, from the local snapshot.
 	timeService.EXPECT().SetTimeNow(gomock.Any(), time.Unix(0, testSnapshot.appState.Time)).Times(1)
+	timeService.EXPECT().SetPrevTime(time.Unix(0, testSnapshot.appState.PrevBlockTime)).Times(1)
 	statsService.EXPECT().SetHeight(testSnapshot.appState.Height).Times(1)
 
 	// LoadState() is called once for each key. If there are 2 keys, it's called twice.
@@ -363,6 +365,7 @@ func TestTakingSnapshotSucceeds(t *testing.T) {
 	delegationProvider.EXPECT().GetState(payloadDelegationActive.Key()).Return(serialize(t, payloadDelegationActive), nil, nil).Times(1)
 	epochProvider.EXPECT().GetState(payloadEpoch.Key()).Return(serialize(t, payloadEpoch), nil, nil).Times(1)
 	timeService.EXPECT().GetTimeNow().Return(time.Now()).Times(1)
+	timeService.EXPECT().GetTimeLastBatch().Return(time.Now()).Times(1)
 
 	// This time, the snapshot is triggered.
 	hash, done, err := engine.Snapshot(ctx)
@@ -378,6 +381,7 @@ func TestTakingSnapshotSucceeds(t *testing.T) {
 	delegationProvider.EXPECT().GetState(payloadDelegationActive.Key()).Return(serialize(t, payloadDelegationActive), nil, nil).Times(1)
 	epochProvider.EXPECT().GetState(payloadEpoch.Key()).Return(serialize(t, payloadEpoch), nil, nil).Times(1)
 	timeService.EXPECT().GetTimeNow().Return(time.Now()).Times(1)
+	timeService.EXPECT().GetTimeLastBatch().Return(time.Now()).Times(1)
 
 	// First 11 iterations as the snapshot occurs on th 12th one, as we configured
 	// above.
@@ -462,6 +466,7 @@ func TestProtocolVersionInAppstatePayload(t *testing.T) {
 	require.NoError(t, engine.Start(ctx))
 
 	timeService.EXPECT().GetTimeNow().AnyTimes()
+	timeService.EXPECT().GetTimeLastBatch().Return(time.Now()).Times(1)
 	_, err = engine.SnapshotNow(ctx)
 	engine.Close()
 	require.NoError(t, err)
@@ -517,6 +522,7 @@ func TestSnapshotVersionCommunicatedToProviders(t *testing.T) {
 	// converting the chunks to payload, that are then broadcast to the providers.
 
 	timeService.EXPECT().SetTimeNow(gomock.Any(), time.Unix(0, testSnapshot.appState.Time)).Times(1)
+	timeService.EXPECT().SetPrevTime(time.Unix(0, testSnapshot.appState.PrevBlockTime)).Times(1)
 	statsService.EXPECT().SetHeight(testSnapshot.appState.Height).Times(1)
 	governanceProvider.EXPECT().LoadState(gomock.Any(), testSnapshot.PayloadGovernanceActive()).Return(nil, nil).Times(1)
 	governanceProvider.EXPECT().LoadState(gomock.Any(), testSnapshot.PayloadGovernanceEnacted()).Return(nil, nil).Times(1)
