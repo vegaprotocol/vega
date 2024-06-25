@@ -117,6 +117,17 @@ type AssetService interface {
 	GetAllWithCursorPagination(ctx context.Context, pagination entities.CursorPagination) ([]entities.Asset, entities.PageInfo, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/amm_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api AMMService
+type AMMService interface {
+	GetSubKeysForParties(ctx context.Context, partyIDs []string, marketIDs []string) ([]string, error)
+	ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByMarket(ctx context.Context, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByPool(ctx context.Context, poolID entities.AMMPoolID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListBySubAccount(ctx context.Context, ammPartyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+}
+
 // GRPCServer represent the grpc api provided by the vega node.
 type GRPCServer struct {
 	Config
@@ -565,7 +576,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		marginModesService:            g.marginModesService,
 		twNotionalPositionService:     g.timeWeightedNotionalPositionService,
 		gameScoreService:              g.gameScoreService,
-		ammPoolService:                g.ammPoolService,
+		AMMPoolService:                g.ammPoolService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

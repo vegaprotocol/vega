@@ -135,7 +135,7 @@ type TradingDataServiceV2 struct {
 	marginModesService            *service.MarginModes
 	twNotionalPositionService     *service.TimeWeightedNotionalPosition
 	gameScoreService              *service.GameScore
-	ammPoolService                *service.AMMPools
+	AMMPoolService                AMMService
 }
 
 func (t *TradingDataServiceV2) SetLogger(l *logging.Logger) {
@@ -433,7 +433,7 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		req.Filter.PartyIds = partyIDs
 
 		if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-			partyPerDerivedKey, err = t.ammPoolService.GetSubKeysForParties(ctx, req.Filter.PartyIds, req.Filter.MarketIds)
+			partyPerDerivedKey, err = t.AMMPoolService.GetSubKeysForParties(ctx, req.Filter.PartyIds, req.Filter.MarketIds)
 			if err != nil {
 				return nil, formatE(err)
 			}
@@ -476,7 +476,7 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	partyPerDerivedKey := map[string]string{}
 
 	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, []string{req.PartyId}, []string{req.MarketId})
+		subKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, []string{req.PartyId}, []string{req.MarketId})
 		if err != nil {
 			return formatE(err)
 		}
@@ -1637,7 +1637,7 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 				marketIDs = []string{*req.MarketId}
 			}
 
-			derivedParties, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
+			derivedParties, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
 			if err != nil {
 				return formatE(err)
 			}
@@ -1899,7 +1899,7 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 
 	partyIDs := []string{req.PartyId}
 	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, nil)
+		subKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, nil)
 		if err != nil {
 			return nil, formatE(err)
 		}
@@ -1936,7 +1936,7 @@ func (t *TradingDataServiceV2) ListRewardSummaries(ctx context.Context, req *v2.
 	}
 
 	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, nil)
+		subKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, nil)
 		if err != nil {
 			return nil, formatE(err)
 		}
@@ -2503,7 +2503,7 @@ func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v
 
 	partyIDs := req.PartyIds
 	if req.IncludeDerivedParties != nil && *req.IncludeDerivedParties {
-		subKeys, err := t.ammPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
+		subKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
 		if err != nil {
 			return nil, formatE(ErrInvalidFilter, err)
 		}
@@ -5505,17 +5505,17 @@ func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsReq
 	)
 
 	if req.PartyId != nil {
-		pools, pageInfo, err = t.ammPoolService.ListByParty(ctx, entities.PartyID(*req.PartyId), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByParty(ctx, entities.PartyID(*req.PartyId), pagination)
 	} else if req.MarketId != nil {
-		pools, pageInfo, err = t.ammPoolService.ListByMarket(ctx, entities.MarketID(*req.MarketId), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByMarket(ctx, entities.MarketID(*req.MarketId), pagination)
 	} else if req.Id != nil {
-		pools, pageInfo, err = t.ammPoolService.ListByPool(ctx, entities.AMMPoolID(*req.Id), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByPool(ctx, entities.AMMPoolID(*req.Id), pagination)
 	} else if req.AmmPartyId != nil {
-		pools, pageInfo, err = t.ammPoolService.ListBySubAccount(ctx, entities.PartyID(*req.AmmPartyId), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListBySubAccount(ctx, entities.PartyID(*req.AmmPartyId), pagination)
 	} else if req.Status != nil {
-		pools, pageInfo, err = t.ammPoolService.ListByStatus(ctx, entities.AMMStatus(*req.Status), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByStatus(ctx, entities.AMMStatus(*req.Status), pagination)
 	} else {
-		pools, pageInfo, err = t.ammPoolService.ListAll(ctx, pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListAll(ctx, pagination)
 	}
 
 	if err != nil {
