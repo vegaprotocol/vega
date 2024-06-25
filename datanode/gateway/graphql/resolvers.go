@@ -2117,6 +2117,7 @@ func (r *myQueryResolver) PaidLiquidityFees(
 	assetID *string,
 	epoch *int,
 	partyIDs []string,
+	includeDerivedParties *bool,
 ) (*v2.PaidLiquidityFeesConnection, error) {
 	var epochSeq *uint64
 
@@ -2125,10 +2126,11 @@ func (r *myQueryResolver) PaidLiquidityFees(
 	}
 
 	req := &v2.ListPaidLiquidityFeesRequest{
-		MarketId: marketID,
-		AssetId:  assetID,
-		EpochSeq: epochSeq,
-		PartyIds: partyIDs,
+		MarketId:              marketID,
+		AssetId:               assetID,
+		EpochSeq:              epochSeq,
+		PartyIds:              partyIDs,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 
 	resp, err := r.tradingDataClientV2.ListPaidLiquidityFees(ctx, req)
