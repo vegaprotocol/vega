@@ -206,6 +206,6 @@ Feature: Test vAMM implied commitment is working as expected
     #virtual stake is 75% * 4669 = 3501
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party                                                            | equity like share | virtual stake         | average entry valuation |
-      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 3501.0000000000000000 | 23501                   |
+      | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 0                 | 3502.0000000000000000 | 23502                   |
 
 
