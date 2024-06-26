@@ -66,6 +66,9 @@ func LongBlockAuctionDurationTable() func(interface{}, interface{}) error {
 			if dur.Nanoseconds() <= 0 {
 				return fmt.Errorf("invalid long block auction duration table - duration at index %d is not a positive duration", i)
 			}
+			if dur.Seconds() < 1 {
+				return fmt.Errorf("invalid long block auction duration table - duration at index %d is less than one second", i)
+			}
 			if _, ok := seenThresholds[tad.Threshold]; ok {
 				return fmt.Errorf("invalid long block auction duration table - duplicate threshold")
 			}
