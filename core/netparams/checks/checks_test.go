@@ -59,6 +59,9 @@ func TestLongBlockChecks(t *testing.T) {
 	table.ThresholdAndDuration = []*types.LongBlockAuction{{Threshold: "1s", Duration: "0s"}}
 	require.Equal(t, "invalid long block auction duration table - duration at index 0 is not a positive duration", checks.LongBlockAuctionDurationTable()(table, nil).Error())
 
+	table.ThresholdAndDuration = []*types.LongBlockAuction{{Threshold: "1s", Duration: "0.5s"}}
+	require.Equal(t, "invalid long block auction duration table - duration at index 0 is less than one second", checks.LongBlockAuctionDurationTable()(table, nil).Error())
+
 	// invalid threshold at index 1 - error
 	table.ThresholdAndDuration = []*types.LongBlockAuction{{Threshold: "1s", Duration: "1s"}, {Threshold: "banana", Duration: "1s"}}
 	require.Equal(t, "invalid long block auction duration table - threshold at index 1 is not a valid duration", checks.LongBlockAuctionDurationTable()(table, nil).Error())
