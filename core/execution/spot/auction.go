@@ -111,6 +111,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		return
 	}
 
+	if m.as.Trigger() == types.AuctionTriggerLongBlock || m.as.ExtensionTrigger() == types.AuctionTriggerLongBlock {
+		if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(now) {
+			m.as.SetReadyToLeave()
+		}
+	}
+
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if isPrice || m.as.CanLeave() {
 		m.pMonitor.CheckPrice(ctx, m.as, indicativeUncrossingPrice, true, true)
