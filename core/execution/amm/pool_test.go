@@ -133,6 +133,52 @@ func testTradeableVolumeInRange(t *testing.T) {
 	}
 }
 
+func TestTradeableVolumeWhenAtBoundary(t *testing.T) {
+	// from ticket 11389 this replicates a scenario found during fuzz testing
+	submit := &types.SubmitAMM{
+		AMMBaseCommand: types.AMMBaseCommand{
+			Party:             vgcrypto.RandomHash(),
+			MarketID:          vgcrypto.RandomHash(),
+			SlippageTolerance: num.DecimalFromFloat(0.1),
+		},
+		CommitmentAmount: num.MustUintFromString("2478383748073213000000", 10),
+		Parameters: &types.ConcentratedLiquidityParameters{
+			Base:                 num.NewUint(676540),
+			LowerBound:           num.NewUint(671272),
+			UpperBound:           nil,
+			LeverageAtLowerBound: ptr.From(num.DecimalFromFloat(39.1988064541227)),
+			LeverageAtUpperBound: nil,
+		},
+	}
+
+	p := newTestPoolWithSubmission(t,
+		num.DecimalFromInt64(1000),
+		submit,
+	)
+	defer p.ctrl.Finish()
+
+	// when position is zero fair-price should be the base
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 3)
+	fp := p.pool.BestPrice(nil)
+	assert.Equal(t, "6765400000000000000000", fp.String())
+
+	fullLong := 12546
+
+	// volume from base -> low is 12546, but in reality it is 12546.4537027400278, but we can only trade int volume.
+	volume := p.pool.TradableVolumeInRange(types.SideSell, num.MustUintFromString("6712720000000000000000", 10), num.MustUintFromString("6765400000000000000000", 10))
+	assert.Equal(t, fullLong, int(volume))
+
+	// now lets pretend the AMM has fully traded out in that direction, best price will be near but not quite the lower bound
+	ensurePositionN(t, p.pos, int64(fullLong), num.UintZero(), 3)
+	fp = p.pool.BestPrice(nil)
+	assert.Equal(t, "6712721893865935337785", fp.String())
+	assert.True(t, fp.GTE(num.MustUintFromString("6712720000000000000000", 10)))
+
+	// now the fair-price is not *quite* on the lower boundary but the volume between it at the lower bound should be 0.
+	volume = p.pool.TradableVolumeInRange(types.SideSell, num.MustUintFromString("6712720000000000000000", 10), fp)
+	assert.Equal(t, 0, int(volume))
+}
+
 func testPoolPositionFactor(t *testing.T) {
 	p := newTestPoolWithPositionFactor(t, num.DecimalFromInt64(1000))
 	defer p.ctrl.Finish()
@@ -794,6 +840,45 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 		num.DecimalOne(),
 		positionFactor,
 		num.NewUint(100000),
+	)
+	assert.NoError(t, err)
+
+	return &tstPool{
+		submission: submit,
+		pool:       pool,
+		col:        col,
+		pos:        pos,
+		ctrl:       ctrl,
+	}
+}
+
+func newTestPoolWithSubmission(t *testing.T, positionFactor num.Decimal, submit *types.SubmitAMM) *tstPool {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	col := mocks.NewMockCollateral(ctrl)
+	pos := mocks.NewMockPosition(ctrl)
+
+	sqrter := &Sqrter{cache: map[string]num.Decimal{}}
+
+	pool, err := NewPool(
+		vgcrypto.RandomHash(),
+		vgcrypto.RandomHash(),
+		vgcrypto.RandomHash(),
+		submit,
+		sqrter.sqrt,
+		col,
+		pos,
+		&types.RiskFactor{
+			Short: num.DecimalFromFloat(0.009937604878885509),
+			Long:  num.DecimalFromFloat(0.00984363574304481),
+		},
+		&types.ScalingFactors{
+			InitialMargin: num.DecimalFromFloat(1.5), // this is 1/0.8 which is margin_usage_at_bound_above in the note-book
+		},
+		num.DecimalFromFloat(0.001),
+		num.DecimalFromFloat(10000000000000000),
+		positionFactor,
+		num.NewUint(1000),
 	)
 	assert.NoError(t, err)
 

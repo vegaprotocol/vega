@@ -54,12 +54,12 @@ func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
 		return 0
 	}
 
+	stP := impliedPosition(sqrt(st), sqrt(c.high), c.l)
+	ndP := impliedPosition(sqrt(nd), sqrt(c.high), c.l)
+
 	// abs(P(st) - P(nd))
-	volume, _ := num.UintZero().Delta(
-		impliedPosition(sqrt(st), sqrt(c.high), c.l),
-		impliedPosition(sqrt(nd), sqrt(c.high), c.l),
-	)
-	return volume.Uint64()
+	volume := stP.Sub(ndP).Abs()
+	return uint64(volume.IntPart())
 }
 
 // positionAtPrice returns the position of the AMM if its fair-price were the given price. This
@@ -67,12 +67,12 @@ func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
 func (c *curve) positionAtPrice(sqrt sqrtFn, price *num.Uint) int64 {
 	pos := impliedPosition(sqrt(price), sqrt(c.high), c.l)
 	if c.isLower {
-		return int64(pos.Uint64())
+		return pos.IntPart()
 	}
 
 	// if we are in the upper curve the position of 0 in "curve-space" is -cu.pv in Vega position
 	// so we need to flip the interval
-	return -c.pv.Sub(pos.ToDecimal()).IntPart()
+	return -c.pv.Sub(pos).IntPart()
 }
 
 type Pool struct {
@@ -494,7 +494,7 @@ func (p *Pool) setCurves(
 // impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
 // the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
 // price to calculate the position for, and higher boundary of the curve.
-func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l num.Decimal) *num.Uint {
+func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l num.Decimal) num.Decimal {
 	// L * (sqrt(high) - sqrt(price))
 	numer := sqrtHigh.Sub(sqrtPrice).Mul(l)
 
@@ -502,8 +502,7 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l num.Decimal) *num.Uint {
 	denom := sqrtHigh.Mul(sqrtPrice)
 
 	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
-	res, _ := num.UintFromDecimal(numer.Div(denom))
-	return res
+	return numer.Div(denom)
 }
 
 // OrderbookShape returns slices of virtual buy and sell orders that the AMM has over a given range

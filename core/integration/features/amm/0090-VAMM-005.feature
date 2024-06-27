@@ -119,10 +119,10 @@ Feature: Test vAMM submission works as expected (invalid submission)
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
-       | vamm4 | ETH/MAR22 | 100000  | 0.1      | 105  | 99         | 0.1            | 0.01         |
+       | vamm4 | ETH/MAR22 | 100000 | 0.1      | 100  | 99          | 0.1            | 0.01         |
      Then the AMM pool status should be:
        | party | market id | amount | status         | base | lower bound | lower leverage |
-       | vamm4 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 105  | 99          | 0.1            |
+       | vamm4 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 100  | 99          | 0.1            |
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | upper bound | upper leverage | proposed fee |

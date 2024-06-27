@@ -91,7 +91,7 @@ Feature: vAMM rebasing when created or amended
 
    And the market data for the market "ETH/MAR22" should be:
       | trading mode                 | indicative price | indicative volume |
-      | TRADING_MODE_OPENING_AUCTION | 100              | 92                |
+      | TRADING_MODE_OPENING_AUCTION | 100              | 91                |
 
    When the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
@@ -103,7 +103,7 @@ Feature: vAMM rebasing when created or amended
     # two AMMs are now prices at ~100 which is between their base values
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price |
-      | 100        | TRADING_MODE_CONTINUOUS  | 100            | 101              |
+      | 100        | TRADING_MODE_CONTINUOUS  | 99             | 101              |
 
 
   @VAMM
@@ -354,7 +354,7 @@ Feature: vAMM rebasing when created or amended
 
     And the market data for the market "ETH/MAR22" should be:
       | trading mode                 | indicative price | indicative volume |
-      | TRADING_MODE_OPENING_AUCTION | 100              | 92                |
+      | TRADING_MODE_OPENING_AUCTION | 100              | 91                |
 
 
     # now uncross
@@ -367,4 +367,4 @@ Feature: vAMM rebasing when created or amended
     Then the network moves ahead "1" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price |
-      | 100        | TRADING_MODE_CONTINUOUS  | 100            | 101              |
+      | 100        | TRADING_MODE_CONTINUOUS  | 99             | 101              |

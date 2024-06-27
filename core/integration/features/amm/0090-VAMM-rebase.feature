@@ -152,13 +152,13 @@ Feature: vAMM rebasing when created or amended
     # second AMM has its base 5 away from the first AMM so it must submit a rebasing-order 
     And the following trades should be executed:
       | buyer    | price | size | seller   | is amm |
-      | vamm2-id | 101   | 177  | vamm1-id | true   |
+      | vamm2-id | 101   | 176  | vamm1-id | true   |
     Then the network moves ahead "1" blocks
 
     # and now the mid-price has shifted lower to a value between the two AMM's bases 100 < 104 < 105
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | 
-      | 101        | TRADING_MODE_CONTINUOUS | 104       |
+      | 101        | TRADING_MODE_CONTINUOUS | 103       |
   
 
 
@@ -233,13 +233,13 @@ Feature: vAMM rebasing when created or amended
     # second AMM has its base 5 away from the first AMM so it must submit a rebasing-order 
     And the following trades should be executed:
       | buyer    | price | size | seller   | is amm |
-      | vamm2-id | 101   | 177  | vamm1-id | true   |
+      | vamm2-id | 101   | 176  | vamm1-id | true   |
     Then the network moves ahead "1" blocks
 
     # and now the mid-price has shifted lower to a value between the two AMM's bases 100 < 104 < 105
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | 
-      | 101        | TRADING_MODE_CONTINUOUS | 104       |
+      | 101        | TRADING_MODE_CONTINUOUS | 103       |
 
 
 @VAMM
