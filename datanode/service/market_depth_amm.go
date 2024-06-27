@@ -1,0 +1,152 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package service
+
+import (
+	"context"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/logging"
+)
+
+var activeStates = []entities.AMMStatus{entities.AMMStatusActive, entities.AMMStatusReduceOnly}
+
+// TODO make this configurable
+const (
+	// accurate expansion 5% either side of mid
+	accurateExpansion = 0.05
+	// step size in estimated region 10% of mid
+	estimateStep = 0.10
+	// the number of steps to take in the estimated region
+	maxEstimatedSteps = 100
+)
+
+// impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
+// the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
+// price to calculate the position for, and higher boundary of the curve.
+func impliedPosition(price, high *num.Uint, l num.Decimal) *num.Uint {
+
+	sqrtHigh := num.MaxUint().Sqrt(high)
+	sqrtPrice := num.MaxUint().Sqrt(price)
+
+	// L * (sqrt(high) - sqrt(price))
+	numer := sqrtHigh.Sub(sqrtPrice).Mul(l)
+
+	// sqrt(high) * sqrt(price)
+	denom := sqrtHigh.Mul(sqrtPrice)
+
+	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
+	res, _ := num.UintFromDecimal(numer.Div(denom))
+	return res
+}
+
+func (m *MarketDepth) GetActiveAMMs(ctx context.Context) map[string][]entities.AMMPool {
+
+	ammByMarket := map[string][]entities.AMMPool{}
+	for _, state := range activeStates {
+
+		// TODO page through AMMs
+		amms, _, err := m.ammStore.ListByStatus(ctx, state, entities.DefaultCursorPagination(true))
+		if err != nil {
+			m.log.Warn("unable to query AMM's for market-depth",
+				logging.Error(err),
+			)
+			continue
+		}
+
+		for _, amm := range amms {
+			marketID := string(amm.MarketID)
+			if _, ok := ammByMarket[marketID]; !ok {
+				ammByMarket[marketID] = []entities.AMMPool{}
+			}
+
+			ammByMarket[marketID] = append(ammByMarket[marketID], amm)
+		}
+	}
+	return ammByMarket
+}
+
+func (m *MarketDepth) ExpandAMMs(ctx context.Context) error {
+
+	active := m.GetActiveAMMs(ctx)
+	if len(active) == 0 {
+		return nil
+	}
+
+	// expand all these AMM's from the midpoint
+	for marketID, amms := range active {
+
+		marketData, err := m.marketData.GetMarketDataByID(ctx, marketID)
+		if err != nil {
+			m.log.Warn("unable to get market-data for market",
+				logging.String("market-id", marketID),
+				logging.Error(err),
+			)
+			continue
+		}
+
+		reference := marketData.MidPrice
+		if !marketData.IndicativePrice.IsZero() {
+			reference = marketData.IndicativePrice
+		}
+
+		if reference.IsZero() {
+			m.log.Warn("cannot calculate market-depth for AMM, no reference point available",
+				logging.String("mid-price", marketData.MidPrice.String()),
+				logging.String("indicative-price", marketData.IndicativePrice.String()),
+			)
+			continue
+		}
+
+		// TODO scale reference to Asset DP?
+		for _, amm := range amms {
+			m.ExpandAMM(amm, reference)
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) error {
+
+	// calculate accurate bounds
+
+	accLow := reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion)))
+	accHigh := reference.Mul(num.DecimalOne().Sub(num.DecimalFromFloat(accurateExpansion)))
+
+	eStep := reference.Mul(num.DecimalFromFloat(estimateStep))
+
+	eRange := eStep.Mul(num.DecimalFromInt64(maxEstimatedSteps))
+	estLow := accLow.Sub(eRange)
+	estHigh := accHigh.Add(eRange)
+
+	// now get the range the AMM itself lives in
+	pLow := pool.ParametersBase
+	if pool.ParametersLowerBound != nil {
+		pLow := *pool.ParametersLowerBound
+	}
+
+	pHigh := pool.ParametersBase
+	if pool.ParametersUpperBound != nil {
+		pHigh := *pool.ParametersUpperBound
+	}
+
+	// all we need is implied position at each price, then we're golden
+
+	return nil
+}

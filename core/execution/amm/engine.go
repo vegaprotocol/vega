@@ -102,16 +102,7 @@ func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
 	// TODO that we may need to re-visit this depending on the performance impact
 	// but for now lets do it "properly" in full decimals and work out how we can
 	// improve it once we have reg-tests and performance data.
-
-	// integer sqrt is a good approximation
-	r := num.UintOne().Sqrt(u).ToDecimal()
-
-	// so now lets do a few iterations using Heron's Method to get closer
-	// x_i = (x + u/x) / 2
-	ud := u.ToDecimal()
-	for i := 0; i < 6; i++ {
-		r = r.Add(ud.Div(r)).Div(num.DecimalFromInt64(2))
-	}
+	r := num.UintOne().Sqrt(u)
 
 	// and cache it -- we can also maybe be more clever here and use a LRU but thats for later
 	s.cache[u.String()] = r
