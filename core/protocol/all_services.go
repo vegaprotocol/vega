@@ -144,6 +144,7 @@ type allServices struct {
 	referralProgram *referral.SnapshottedEngine
 
 	primaryEventForwarder       *evtforward.Forwarder
+	forwarderHeartbeat          *evtforward.Tracker
 	primaryEventForwarderEngine EventForwarderEngine
 	primaryEthConfirmations     *ethclient.EthereumConfirmations
 	primaryEthClient            *ethclient.PrimaryClient
@@ -249,6 +250,7 @@ func newServices(
 	svcs.primaryMultisig.SetWitness(svcs.witness)
 	svcs.secondaryMultisig.SetWitness(svcs.witness)
 	svcs.primaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
+	svcs.forwarderHeartbeat = evtforward.NewTracker(log, svcs.witness, svcs.timeService)
 
 	if svcs.conf.HaveEthClient() {
 		svcs.primaryBridgeView = bridges.NewERC20LogicView(primaryEthClient, primaryEthConfirmations)
@@ -279,11 +281,11 @@ func newServices(
 	svcs.oracleAdaptors = oracleAdaptors.New()
 
 	// this is done to go around circular deps again..s
-	svcs.primaryMultisig.SetEthereumEventSource(svcs.primaryEventForwarderEngine)
-	svcs.secondaryMultisig.SetEthereumEventSource(svcs.secondaryEventForwarderEngine)
+	svcs.primaryMultisig.SetEthereumEventSource(svcs.forwarderHeartbeat)
+	svcs.secondaryMultisig.SetEthereumEventSource(svcs.forwarderHeartbeat)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
-		svcs.log, svcs.conf.Staking, svcs.timeService, svcs.broker, svcs.witness, svcs.primaryEthClient, svcs.netParams, svcs.primaryEventForwarder, svcs.conf.HaveEthClient(), svcs.primaryEthConfirmations, svcs.primaryEventForwarderEngine,
+		svcs.log, svcs.conf.Staking, svcs.timeService, svcs.broker, svcs.witness, svcs.primaryEthClient, svcs.netParams, svcs.primaryEventForwarder, svcs.conf.HaveEthClient(), svcs.primaryEthConfirmations, svcs.forwarderHeartbeat,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
@@ -331,7 +333,7 @@ func newServices(
 
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService,
 		svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView,
-		svcs.secondaryBridgeView, svcs.primaryEventForwarderEngine, svcs.secondaryEventForwarderEngine, svcs.partiesEngine)
+		svcs.secondaryBridgeView, svcs.forwarderHeartbeat, svcs.partiesEngine)
 
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
@@ -461,6 +463,7 @@ func newServices(
 		svcs.spam,
 		svcs.l2Verifiers,
 		svcs.partiesEngine,
+		svcs.forwarderHeartbeat,
 	)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW)
@@ -535,6 +538,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 
 		svcs.ethereumOraclesVerifier.OnTick,
 		svcs.l2Verifiers.OnTick,
+		svcs.forwarderHeartbeat.OnTick,
 	)
 }
 
@@ -765,7 +769,23 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), true)
-				return svcs.primaryEventForwarderEngine.SetupEthereumEngine(svcs.primaryEthClient, svcs.primaryEventForwarder, svcs.conf.EvtForward.Ethereum, ethCfg, svcs.assets)
+				if err := svcs.primaryEventForwarderEngine.SetupEthereumEngine(
+					svcs.primaryEthClient,
+					svcs.primaryEventForwarder,
+					svcs.conf.EvtForward.Ethereum,
+					ethCfg,
+					svcs.assets); err != nil {
+					return err
+				}
+				svcs.forwarderHeartbeat.RegisterForwarder(
+					svcs.primaryEventForwarderEngine,
+					ethCfg.ChainID(),
+					ethCfg.CollateralBridge().HexAddress(),
+					ethCfg.StakingBridge().HexAddress(),
+					ethCfg.VestingBridge().HexAddress(),
+					ethCfg.MultiSigControl().HexAddress(),
+				)
+				return nil
 			},
 		},
 		{
@@ -788,7 +808,25 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				if svcs.conf.HaveEthClient() {
 					bridgeCfg = svcs.conf.EvtForward.EVMBridges[0]
 				}
-				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.primaryEventForwarder, bridgeCfg, ethCfg, svcs.assets)
+
+				if err := svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(
+					svcs.secondaryEthClient,
+					svcs.primaryEventForwarder,
+					bridgeCfg,
+					ethCfg,
+					svcs.assets,
+				); err != nil {
+					return err
+				}
+
+				svcs.forwarderHeartbeat.RegisterForwarder(
+					svcs.secondaryEventForwarderEngine,
+					ethCfg.ChainID(),
+					ethCfg.CollateralBridge().HexAddress(),
+					ethCfg.MultiSigControl().HexAddress(),
+				)
+
+				return nil
 			},
 		},
 		{
@@ -1009,7 +1047,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 					return fmt.Errorf("invalid primary ethereum configuration: %w", err)
 				}
 
-				svcs.banking.OnPrimaryEthChainIDUpdated(ethCfg.ChainID())
+				svcs.banking.OnPrimaryEthChainIDUpdated(ethCfg.ChainID(), ethCfg.CollateralBridge().HexAddress())
 				return nil
 			},
 		},
@@ -1022,7 +1060,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				ethCfg := ethCfgs.Configs[0]
-				svcs.banking.OnSecondaryEthChainIDUpdated(ethCfg.ChainID())
+				svcs.banking.OnSecondaryEthChainIDUpdated(ethCfg.ChainID(), ethCfg.CollateralBridge().HexAddress())
 				svcs.witness.SetSecondaryDefaultConfirmations(ethCfg.ChainID(), ethCfg.Confirmations(), ethCfg.BlockTime())
 				return nil
 			},

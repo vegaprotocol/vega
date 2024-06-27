@@ -96,3 +96,18 @@ func (mr *MockFiltererMockRecorder) FilterVestingEvents(arg0, arg1, arg2, arg3 i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterVestingEvents", reflect.TypeOf((*MockFilterer)(nil).FilterVestingEvents), arg0, arg1, arg2, arg3)
 }
+
+// GetEthTime mocks base method.
+func (m *MockFilterer) GetEthTime(arg0 context.Context, arg1 uint64) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEthTime", arg0, arg1)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEthTime indicates an expected call of GetEthTime.
+func (mr *MockFiltererMockRecorder) GetEthTime(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEthTime", reflect.TypeOf((*MockFilterer)(nil).GetEthTime), arg0, arg1)
+}

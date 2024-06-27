@@ -1585,6 +1585,8 @@ message EthereumConfig {
   EthereumContractConfig token_vesting_contract = 6;
   // Contract configuration of the multisig control contract for this Ethereum network.
   EthereumContractConfig multisig_control_contract = 7;
+  // Approximate block time of the EVM chain as a duration e.g. 12s, 250ms.
+  string block_time = 8;
 }
 
 // EVM Chain configuration details.

@@ -97,7 +97,9 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 
 	// 0 is default value, we assume that it was then not set
 	if b.LastBlockSeen != 0 {
-		c.ethEventSource.UpdateStakingStartingBlock(b.LastBlockSeen)
+		for _, addr := range c.stakeVerifier.ocv.GetStakingBridgeAddresses() {
+			c.ethEventSource.UpdateContractBlock(addr, c.accounting.chainID, b.LastBlockSeen)
+		}
 	}
 
 	return nil

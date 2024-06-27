@@ -215,6 +215,11 @@ type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
 }
 
+// EvtForwarderHeartbeat ...
+type EvtForwarderHeartbeat interface {
+	ProcessHeartbeat(string, string, uint64, uint64) error
+}
+
 // Banking ..
 //
 //nolint:interfacebloat

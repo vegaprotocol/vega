@@ -79,6 +79,14 @@ func (e *Engine) UpdateMultisigControlStartingBlock(b uint64) {
 	e.ethEngine.UpdateMultiSigControlStartingBlock(b)
 }
 
+func (e *Engine) VerifyHeartbeat(ctx context.Context, height uint64, chainID string, contract string, blockTime uint64) error {
+	return e.ethEngine.VerifyHeartbeat(ctx, height, chainID, contract, blockTime)
+}
+
+func (e *Engine) UpdateStartingBlock(address string, block uint64) {
+	e.ethEngine.UpdateStartingBlock(address, block)
+}
+
 func (e *Engine) SetupEthereumEngine(
 	client ethereum.Client,
 	forwarder ethereum.Forwarder,
@@ -127,7 +135,9 @@ func (e *Engine) SetupEthereumEngine(
 		ethCfg.StakingBridge(),
 		ethCfg.VestingBridge(),
 		ethCfg.MultiSigControl(),
+		ethCfg.CollateralBridge(),
 		ethCfg.ChainID(),
+		ethCfg.BlockTime(),
 	)
 
 	e.UpdateCollateralStartingBlock(filterer.CurrentHeight(context.Background()))
@@ -196,7 +206,9 @@ func (e *Engine) SetupSecondaryEthereumEngine(
 		types.EthereumContract{},
 		types.EthereumContract{},
 		ethCfg.MultiSigControl(),
+		ethCfg.CollateralBridge(),
 		ethCfg.ChainID(),
+		ethCfg.BlockTime(),
 	)
 
 	e.UpdateCollateralStartingBlock(filterer.CurrentHeight(context.Background()))
@@ -259,6 +271,12 @@ func (e *NoopEngine) UpdateCollateralStartingBlock(b uint64) {}
 func (e *NoopEngine) UpdateStakingStartingBlock(b uint64) {}
 
 func (e *NoopEngine) UpdateMultisigControlStartingBlock(b uint64) {}
+
+func (e *NoopEngine) VerifyHeartbeat(_ context.Context, _ uint64, _ string, _ string, _ uint64) error {
+	return nil
+}
+
+func (e *NoopEngine) UpdateStartingBlock(_ string, _ uint64) {}
 
 func (e *NoopEngine) SetupEthereumEngine(
 	_ ethereum.Client,

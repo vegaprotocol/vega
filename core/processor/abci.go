@@ -225,6 +225,7 @@ type App struct {
 	broker                         Broker
 	witness                        Witness
 	evtForwarder                   EvtForwarder
+	evtHeartbeat                   EvtForwarderHeartbeat
 	primaryChainID                 uint64
 	secondaryChainID               uint64
 	exec                           ExecutionEngine
@@ -274,6 +275,7 @@ func NewApp(log *logging.Logger,
 	broker Broker,
 	witness Witness,
 	evtForwarder EvtForwarder,
+	evtHeartbeat EvtForwarderHeartbeat,
 	exec ExecutionEngine,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
@@ -324,6 +326,7 @@ func NewApp(log *logging.Logger,
 		broker:                         broker,
 		witness:                        witness,
 		evtForwarder:                   evtForwarder,
+		evtHeartbeat:                   evtHeartbeat,
 		exec:                           exec,
 		ghandler:                       ghandler,
 		gov:                            gov,

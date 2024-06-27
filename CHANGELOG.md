@@ -24,6 +24,7 @@
 - [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
 - [10634](https://github.com/vegaprotocol/vega/issues/10634) - Add spam checks for orders/liquidity provision
 - [11337](https://github.com/vegaprotocol/vega/issues/11337) - Enhance transaction reordering with per market control and configurable delay.
+- [11334](https://github.com/vegaprotocol/vega/issues/11334) - Heartbeat chain events are now sent to keep last seen block up to date.
 - [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
 - [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
 - [11266](https://github.com/vegaprotocol/vega/issues/11266) - Include derived parties rewards API

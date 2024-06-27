@@ -894,6 +894,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadEVMMultisigTopologiesFromProto(dt)
 	case *snapshot.Payload_TxCache:
 		ret.Data = PayloadTxCacheFromProto(dt)
+	case *snapshot.Payload_EvmFwdHeartbeats:
+		ret.Data = PayloadEVMFwdHeartbeatsFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1088,6 +1090,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_EvmMultisigTopologies:
 		ret.Data = dt
 	case *snapshot.Payload_TxCache:
+		ret.Data = dt
+	case *snapshot.Payload_EvmFwdHeartbeats:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -4320,5 +4324,35 @@ func (p *PayloadTxCache) plToProto() interface{} {
 func PayloadTxCacheFromProto(txCachePayload *snapshot.Payload_TxCache) *PayloadTxCache {
 	return &PayloadTxCache{
 		TxCache: txCachePayload.TxCache,
+	}
+}
+
+type PayloadEVMFwdHeartbeats struct {
+	EVMFwdHeartbeats *snapshot.EVMFwdHeartbeats
+}
+
+func (p *PayloadEVMFwdHeartbeats) Key() string {
+	return "all"
+}
+
+func (*PayloadEVMFwdHeartbeats) Namespace() SnapshotNamespace {
+	return EVMHeartbeatSnapshot
+}
+
+func (p *PayloadEVMFwdHeartbeats) IntoProto() *snapshot.Payload_EvmFwdHeartbeats {
+	return &snapshot.Payload_EvmFwdHeartbeats{
+		EvmFwdHeartbeats: p.EVMFwdHeartbeats,
+	}
+}
+
+func (*PayloadEVMFwdHeartbeats) isPayload() {}
+
+func (p *PayloadEVMFwdHeartbeats) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadEVMFwdHeartbeatsFromProto(pl *snapshot.Payload_EvmFwdHeartbeats) *PayloadEVMFwdHeartbeats {
+	return &PayloadEVMFwdHeartbeats{
+		EVMFwdHeartbeats: pl.EvmFwdHeartbeats,
 	}
 }

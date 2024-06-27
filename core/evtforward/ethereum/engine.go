@@ -17,16 +17,21 @@ package ethereum
 
 import (
 	"context"
+	"errors"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 const (
 	engineLogger = "engine"
 )
+
+var ErrInvalidHeartbeat = errors.New("forwarded heartbeat is invalid")
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethereum Forwarder
 type Forwarder interface {
@@ -40,6 +45,14 @@ type Filterer interface {
 	FilterVestingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterMultisigControlEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	CurrentHeight(context.Context) uint64
+	GetEthTime(ctx context.Context, atBlock uint64) (uint64, error)
+}
+
+// Contract wrapper around EthereumContract to keep track of the block heights we've checked.
+type Contract struct {
+	types.EthereumContract
+	next uint64 // the block height we will next check for events, all block heights less than this will have events sent in
+	last uint64 // the block height we last sent out an event for this contract, including heartbeats
 }
 
 type Engine struct {
@@ -50,17 +63,18 @@ type Engine struct {
 	filterer  Filterer
 	forwarder Forwarder
 
-	nextCollateralBlockNumber      uint64
-	nextMultiSigControlBlockNumber uint64
-	nextStakingBlockNumber         uint64
-	nextVestingBlockNumber         uint64
-
 	chainID string
 
-	shouldFilterVestingBridge bool
-	shouldFilterStakingBridge bool
+	stakingDeployment    *Contract
+	vestingDeployment    *Contract
+	collateralDeployment *Contract
+	multisigDeployment   *Contract
+	mu                   sync.Mutex
 
 	cancelEthereumQueries context.CancelFunc
+
+	// the number of blocks between heartbeats
+	heartbeatInterval uint64
 }
 
 type fwdWrapper struct {
@@ -90,7 +104,9 @@ func NewEngine(
 	stakingDeployment types.EthereumContract,
 	vestingDeployment types.EthereumContract,
 	multiSigDeployment types.EthereumContract,
+	collateralDeployment types.EthereumContract,
 	chainID string,
+	blockTime time.Duration,
 ) *Engine {
 	l := log.Named(engineLogger)
 
@@ -99,32 +115,36 @@ func NewEngine(
 	// if they are left out
 	cfg.setDefaults()
 
+	// calculate the number of blocks in an hour, this will be the interval we send out heartbeats
+	heartbeatTime := cfg.HeartbeatIntervalForTestOnlyDoNotChange.Duration
+	heartbeatInterval := heartbeatTime.Seconds() / blockTime.Seconds()
+
 	return &Engine{
-		cfg:                            cfg,
-		log:                            l,
-		poller:                         newPoller(cfg.PollEventRetryDuration.Get()),
-		filterer:                       filterer,
-		forwarder:                      fwdWrapper{forwarder, chainID},
-		shouldFilterStakingBridge:      stakingDeployment.HasAddress(),
-		nextStakingBlockNumber:         stakingDeployment.DeploymentBlockHeight(),
-		shouldFilterVestingBridge:      vestingDeployment.HasAddress(),
-		nextVestingBlockNumber:         vestingDeployment.DeploymentBlockHeight(),
-		nextMultiSigControlBlockNumber: multiSigDeployment.DeploymentBlockHeight(),
-		chainID:                        chainID,
+		cfg:                  cfg,
+		log:                  l,
+		poller:               newPoller(cfg.PollEventRetryDuration.Get()),
+		filterer:             filterer,
+		forwarder:            fwdWrapper{forwarder, chainID},
+		stakingDeployment:    &Contract{stakingDeployment, 0, 0},
+		vestingDeployment:    &Contract{vestingDeployment, 0, 0},
+		multisigDeployment:   &Contract{multiSigDeployment, 0, 0},
+		collateralDeployment: &Contract{collateralDeployment, 0, 0},
+		chainID:              chainID,
+		heartbeatInterval:    uint64(heartbeatInterval),
 	}
 }
 
 func (e *Engine) UpdateCollateralStartingBlock(b uint64) {
-	e.nextCollateralBlockNumber = b
+	e.collateralDeployment.next = b
 }
 
 func (e *Engine) UpdateStakingStartingBlock(b uint64) {
-	e.nextStakingBlockNumber = b
-	e.nextVestingBlockNumber = b
+	e.vestingDeployment.next = b
+	e.stakingDeployment.next = b
 }
 
 func (e *Engine) UpdateMultiSigControlStartingBlock(b uint64) {
-	e.nextMultiSigControlBlockNumber = b
+	e.multisigDeployment.next = b
 }
 
 func (e *Engine) ReloadConf(cfg Config) {
@@ -154,9 +174,9 @@ func (e *Engine) Start() {
 		if e.log.IsDebug() {
 			e.log.Debug("Clock is ticking, gathering Ethereum events",
 				logging.String("chain-id", e.chainID),
-				logging.Uint64("next-collateral-block-number", e.nextCollateralBlockNumber),
-				logging.Uint64("next-multisig-control-block-number", e.nextMultiSigControlBlockNumber),
-				logging.Uint64("next-staking-block-number", e.nextStakingBlockNumber),
+				logging.Uint64("next-collateral-block-number", e.collateralDeployment.next),
+				logging.Uint64("next-multisig-control-block-number", e.multisigDeployment.next),
+				logging.Uint64("next-staking-block-number", e.stakingDeployment.next),
 			)
 		}
 		e.gatherEvents(ctx)
@@ -180,42 +200,168 @@ func min(a, b uint64) uint64 {
 func (e *Engine) gatherEvents(ctx context.Context) {
 	nBlocks := e.cfg.MaxEthereumBlocks
 	currentHeight := e.filterer.CurrentHeight(ctx)
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if ok, nextHeight := issueFilteringRequest(e.nextCollateralBlockNumber, currentHeight, nBlocks); ok {
-		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
+	if ok, nextHeight := issueFilteringRequest(e.collateralDeployment.next, currentHeight, nBlocks); ok {
+		e.filterer.FilterCollateralEvents(ctx, e.collateralDeployment.next, nextHeight, func(event *commandspb.ChainEvent, h uint64) {
 			e.forwarder.ForwardFromSelf(event)
+			e.collateralDeployment.last = h
 		})
-		e.nextCollateralBlockNumber = nextHeight + 1
+		e.collateralDeployment.next = nextHeight + 1
+		e.sendHeartbeat(e.collateralDeployment)
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.shouldFilterStakingBridge {
-		if ok, nextHeight := issueFilteringRequest(e.nextStakingBlockNumber, currentHeight, nBlocks); ok {
-			e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
+	if e.stakingDeployment.HasAddress() {
+		if ok, nextHeight := issueFilteringRequest(e.stakingDeployment.next, currentHeight, nBlocks); ok {
+			e.filterer.FilterStakingEvents(ctx, e.stakingDeployment.next, nextHeight, func(event *commandspb.ChainEvent, h uint64) {
 				e.forwarder.ForwardFromSelf(event)
+				e.stakingDeployment.last = h
 			})
-			e.nextStakingBlockNumber = nextHeight + 1
+			e.stakingDeployment.next = nextHeight + 1
+			e.sendHeartbeat(e.stakingDeployment)
 		}
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.shouldFilterVestingBridge {
-		if ok, nextHeight := issueFilteringRequest(e.nextVestingBlockNumber, currentHeight, nBlocks); ok {
-			e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
+	if e.vestingDeployment.HasAddress() {
+		if ok, nextHeight := issueFilteringRequest(e.vestingDeployment.next, currentHeight, nBlocks); ok {
+			e.filterer.FilterVestingEvents(ctx, e.vestingDeployment.next, nextHeight, func(event *commandspb.ChainEvent, h uint64) {
 				e.forwarder.ForwardFromSelf(event)
+				e.vestingDeployment.last = h
 			})
-			e.nextVestingBlockNumber = nextHeight + 1
+			e.vestingDeployment.next = nextHeight + 1
+			e.sendHeartbeat(e.vestingDeployment)
 		}
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if ok, nextHeight := issueFilteringRequest(e.nextMultiSigControlBlockNumber, currentHeight, nBlocks); ok {
-		e.filterer.FilterMultisigControlEvents(ctx, e.nextMultiSigControlBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
+	if ok, nextHeight := issueFilteringRequest(e.multisigDeployment.next, currentHeight, nBlocks); ok {
+		e.filterer.FilterMultisigControlEvents(ctx, e.multisigDeployment.next, nextHeight, func(event *commandspb.ChainEvent, h uint64) {
 			e.forwarder.ForwardFromSelf(event)
+			e.multisigDeployment.last = h
 		})
-		e.nextMultiSigControlBlockNumber = nextHeight + 1
+		e.multisigDeployment.next = nextHeight + 1
+		e.sendHeartbeat(e.multisigDeployment)
 	}
+}
+
+// sendHeartbeat checks whether it has been more than and hour since the validator sent a chain event for the given contract
+// and if it has will send a heartbeat chain event so that core has an recent view on the last block checked for new events.
+func (e *Engine) sendHeartbeat(contract *Contract) {
+	// how many heartbeat intervals between the last sent event, and the block height we're checking next
+	n := (contract.next - contract.last) / e.heartbeatInterval
+	if n == 0 {
+		return
+	}
+
+	height := contract.last + n*e.heartbeatInterval
+	time, err := e.filterer.GetEthTime(context.Background(), height)
+	if err != nil {
+		e.log.Error("unable to find eth-time for contract heartbeat",
+			logging.Uint64("height", height),
+			logging.String("chain-id", e.chainID),
+			logging.Error(err),
+		)
+		return
+	}
+
+	e.forwarder.ForwardFromSelf(
+		&commandspb.ChainEvent{
+			TxId:  "internal", // NA
+			Nonce: 0,          // NA
+			Event: &commandspb.ChainEvent_Heartbeat{
+				Heartbeat: &vega.ERC20Heartbeat{
+					ContractAddress: contract.HexAddress(),
+					BlockHeight:     height,
+					SourceChainId:   e.chainID,
+					BlockTime:       time,
+				},
+			},
+		},
+	)
+	contract.last = height
+}
+
+// VerifyHeart checks that the block height of the heartbeat exists and contains the correct block time. It also
+// checks that this node has checked the logs of the given contract address up to at least the given height.
+func (e *Engine) VerifyHeartbeat(ctx context.Context, height uint64, chainID string, address string, blockTime uint64) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	t, err := e.filterer.GetEthTime(ctx, height)
+	if err != nil {
+		return err
+	}
+
+	if t != blockTime {
+		return ErrInvalidHeartbeat
+	}
+
+	var lastChecked uint64
+	if e.collateralDeployment.HexAddress() == address {
+		lastChecked = e.collateralDeployment.next - 1
+	}
+
+	if e.multisigDeployment.HexAddress() == address {
+		lastChecked = e.multisigDeployment.next - 1
+	}
+
+	if e.stakingDeployment.HexAddress() == address {
+		lastChecked = e.stakingDeployment.next - 1
+	}
+
+	if e.vestingDeployment.HexAddress() == address {
+		lastChecked = e.vestingDeployment.next - 1
+	}
+
+	// if the heartbeat block height is higher than the last block *this* node has checked for logs
+	// on the contract, then fail the verification
+	if lastChecked < height {
+		return ErrInvalidHeartbeat
+	}
+	return nil
+}
+
+// UpdateStartingBlock sets the height that we should starting looking for new events from for the given bridge contract address.
+func (e *Engine) UpdateStartingBlock(address string, block uint64) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if block == 0 {
+		return
+	}
+
+	if e.collateralDeployment.HexAddress() == address {
+		e.collateralDeployment.last = block
+		e.collateralDeployment.next = block
+		return
+	}
+
+	if e.multisigDeployment.HexAddress() == address {
+		e.multisigDeployment.last = block
+		e.multisigDeployment.next = block
+		return
+	}
+
+	if e.stakingDeployment.HexAddress() == address {
+		e.stakingDeployment.last = block
+		e.stakingDeployment.next = block
+		return
+	}
+
+	if e.vestingDeployment.HexAddress() == address {
+		e.vestingDeployment.last = block
+		e.vestingDeployment.next = block
+		return
+	}
+
+	e.log.Warn("unexpected contract address starting block",
+		logging.String("chain-id", e.chainID),
+		logging.String("contract-address", address),
+	)
 }
 
 // Stop stops the engine, its polling and event forwarding.

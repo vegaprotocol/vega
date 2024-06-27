@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -69,7 +70,7 @@ func (t *Topology) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 }
 
 func (t *Topology) restoreVerifiedState(
-	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified,
+	ctx context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified,
 ) error {
 	t.log.Debug("restoring snapshot verified state")
 	if s.Threshold != nil {
@@ -94,6 +95,11 @@ func (t *Topology) restoreVerifiedState(
 			events = append(events, types.SignerEventFromEventProto(e))
 		}
 		t.eventsPerAddress[v.Address] = events
+	}
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.76.8") {
+		lastSeen := t.getLastBlockSeen()
+		t.ethEventSource.UpdateContractBlock(t.ocv.GetMultiSigAddress(), t.chainID, lastSeen)
 	}
 
 	return nil
@@ -265,14 +271,4 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
-}
-
-func (t *Topology) OnStateLoaded(ctx context.Context) error {
-	// tell the internal EEF where it got up to so we do not resend events we're already seen
-	lastSeen := t.getLastBlockSeen()
-	if lastSeen != 0 {
-		t.log.Info("restoring multisig starting block", logging.Uint64("block", lastSeen))
-		t.ethEventSource.UpdateMultisigControlStartingBlock(t.getLastBlockSeen())
-	}
-	return nil
 }

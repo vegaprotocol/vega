@@ -117,7 +117,7 @@ type MarketActivityTracker interface {
 }
 
 type EthereumEventSource interface {
-	UpdateCollateralStartingBlock(uint64)
+	UpdateContractBlock(string, string, uint64)
 }
 
 type Parties interface {
@@ -164,7 +164,6 @@ type Engine struct {
 	lastSeenPrimaryEthBlock uint64
 	primaryBridgeState      *bridgeState
 	primaryBridgeView       ERC20BridgeView
-	primaryEthEventSource   EthereumEventSource
 
 	// lastSeenSecondaryEthBlock holds the block height of the latest ERC20 chain
 	// event, from the secondary chain, processed by the engine.
@@ -172,7 +171,11 @@ type Engine struct {
 	secondaryEthChainID       string
 	secondaryBridgeState      *bridgeState
 	secondaryBridgeView       ERC20BridgeView
-	secondaryEthEventSource   EthereumEventSource
+
+	// map from chain-id -> collateral contract address
+	bridgeAddresses map[string]string
+
+	ethEventSource EthereumEventSource
 
 	withdrawals   map[string]withdrawalRef
 	withdrawalCnt *big.Int
@@ -237,8 +240,7 @@ func New(log *logging.Logger,
 	marketActivityTracker MarketActivityTracker,
 	primaryBridgeView ERC20BridgeView,
 	secondaryBridgeView ERC20BridgeView,
-	primaryEthEventSource EthereumEventSource,
-	secondaryEthEventSource EthereumEventSource,
+	ethEventSource EthereumEventSource,
 	parties Parties,
 ) (e *Engine) {
 	log = log.Named(namedLogger)
@@ -254,8 +256,7 @@ func New(log *logging.Logger,
 		assets:                          assets,
 		notary:                          notary,
 		top:                             top,
-		primaryEthEventSource:           primaryEthEventSource,
-		secondaryEthEventSource:         secondaryEthEventSource,
+		ethEventSource:                  ethEventSource,
 		parties:                         parties,
 		assetActions:                    map[string]*assetAction{},
 		seenAssetActions:                treeset.NewWithStringComparator(),
@@ -281,6 +282,7 @@ func New(log *logging.Logger,
 		secondaryBridgeState: &bridgeState{
 			active: true,
 		},
+		bridgeAddresses:                           map[string]string{},
 		feeDiscountPerPartyAndAsset:               map[partyAssetKey]*num.Uint{},
 		pendingPerAssetAndPartyFeeDiscountUpdates: map[string]map[string]*num.Uint{},
 		primaryBridgeView:                         primaryBridgeView,
@@ -304,12 +306,14 @@ func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal
 	return nil
 }
 
-func (e *Engine) OnPrimaryEthChainIDUpdated(chainID string) {
+func (e *Engine) OnPrimaryEthChainIDUpdated(chainID, collateralAddress string) {
 	e.primaryEthChainID = chainID
+	e.bridgeAddresses[chainID] = collateralAddress
 }
 
-func (e *Engine) OnSecondaryEthChainIDUpdated(chainID string) {
+func (e *Engine) OnSecondaryEthChainIDUpdated(chainID, collateralAddress string) {
 	e.secondaryEthChainID = chainID
+	e.bridgeAddresses[chainID] = collateralAddress
 }
 
 // ReloadConf updates the internal configuration.
@@ -466,6 +470,11 @@ func (e *Engine) dedupAction(ctx context.Context, aa *assetAction) error {
 }
 
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction, now time.Time) error {
+	// tell the evt forwarder tracker about this block height
+	if addr, ok := e.bridgeAddresses[aa.chainID]; ok {
+		e.ethEventSource.UpdateContractBlock(addr, aa.chainID, aa.blockHeight)
+	}
+
 	switch {
 	case aa.IsBuiltinAssetDeposit():
 		dep := e.deposits[aa.id]

@@ -17,6 +17,7 @@ package netparams
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 
@@ -144,32 +145,23 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		}
 	}
 
-	// TODO use a UpgradeFrom tag when we know which versions we will upgrade from
-	if vgcontext.InProgressUpgrade(ctx) {
-		haveConfig := false
-		bridgeConfigs := &vegapb.EVMBridgeConfigs{}
-		if err := s.GetJSONStruct(BlockchainsEVMBridgeConfigs, bridgeConfigs); err == nil {
-			haveConfig = bridgeConfigs.Configs[0].ChainId != "XXX"
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.76.8") {
+		bridgeConfig := &vegapb.EthereumConfig{}
+		if err := s.GetJSONStruct(BlockchainsPrimaryEthereumConfig, bridgeConfig); err != nil {
+			s.log.Panic("expected ethereum block chain config", logging.Error(err))
 		}
 
-		// if the config hasn't been set, then initialise it from the bridge mapping
-		// this is to initially avoid having to know which version we are upgrading from on our test networks
-		if !haveConfig {
-			vgChainID, err := vgcontext.ChainIDFromContext(ctx)
+		// update ethereum config block-time to 12s
+		if bridgeConfig.BlockTime == "" {
+			bridgeConfig.BlockTime = "12s"
+			v, err := json.Marshal(bridgeConfig)
 			if err != nil {
-				panic(fmt.Errorf("no vega chain ID found in context: %w", err))
+				s.log.Panic("unable to update ethereum chain block time", logging.Error(err))
 			}
 
-			if secondaryEthConf, ok := bridgeMapping[vgChainID]; ok {
-				s.log.Info("setting second bridge config during upgrade", logging.String("cfg", secondaryEthConf))
-				if err := s.UpdateOptionalValidation(ctx, BlockchainsEVMBridgeConfigs, secondaryEthConf, false, false); err != nil {
-					return nil, err
-				}
+			if err := s.UpdateOptionalValidation(ctx, BlockchainsPrimaryEthereumConfig, string(v), false, false); err != nil {
+				return nil, err
 			}
-		}
-
-		if err := s.UpdateOptionalValidation(ctx, SpotMarketTradingEnabled, "1", false, false); err != nil {
-			return nil, err
 		}
 	}
 

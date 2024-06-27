@@ -149,6 +149,7 @@ message Payload {
     BankingEVMBridgeStates banking_evm_bridge_states = 86;
     EVMMultisigTopologies evm_multisig_topologies = 87;
     TxCache tx_cache = 88;
+    EVMFwdHeartbeats evm_fwd_heartbeats = 89;
   }
 }
 
@@ -1433,4 +1434,22 @@ message DelayedTx {
 
 message TxCache {
   repeated DelayedTx txs = 1;
+}
+
+message EVMFwdPendingHeartbeat {
+  uint64 block_height = 1;
+  uint64 block_time = 2;
+  string contract_address = 3;
+  string chain_id = 4;
+}
+
+message EVMFwdLastSeen {
+  string chain_id = 1;
+  string contract_address = 2;
+  uint64 block_height = 3;
+}
+
+message EVMFwdHeartbeats {
+  repeated EVMFwdPendingHeartbeat pending_heartbeats = 1;
+  repeated EVMFwdLastSeen last_seen = 2;
 }
