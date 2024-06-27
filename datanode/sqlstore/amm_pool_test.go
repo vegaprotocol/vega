@@ -79,6 +79,10 @@ func TestAMMPool_Upsert(t *testing.T) {
 				ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
 				CreatedAt:                      block.VegaTime,
 				LastUpdated:                    upsertTime,
+				LowerVirtualLiquidity:          num.DecimalOne(),
+				UpperVirtualLiquidity:          num.DecimalOne(),
+				LowerTheoreticalPosition:       num.DecimalOne(),
+				UpperTheoreticalPosition:       num.DecimalOne(),
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -116,6 +120,10 @@ func TestAMMPool_Upsert(t *testing.T) {
 				ParametersLeverageAtUpperBound: ptr.From(amount),
 				CreatedAt:                      block.VegaTime,
 				LastUpdated:                    upsertTime,
+				LowerVirtualLiquidity:          num.DecimalOne(),
+				UpperVirtualLiquidity:          num.DecimalOne(),
+				LowerTheoreticalPosition:       num.DecimalOne(),
+				UpperTheoreticalPosition:       num.DecimalOne(),
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -147,6 +155,10 @@ func TestAMMPool_Upsert(t *testing.T) {
 			ParametersLeverageAtUpperBound: nil,
 			CreatedAt:                      block.VegaTime,
 			LastUpdated:                    upsertTime,
+			LowerVirtualLiquidity:          num.DecimalOne(),
+			UpperVirtualLiquidity:          num.DecimalOne(),
+			LowerTheoreticalPosition:       num.DecimalOne(),
+			UpperTheoreticalPosition:       num.DecimalOne(),
 		}
 		require.NoError(t, ps.Upsert(ctx, pool))
 		var upserted entities.AMMPool
@@ -217,6 +229,10 @@ func setupAMMPoolsTest(ctx context.Context, t *testing.T) (
 					ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
 					CreatedAt:                      block.VegaTime,
 					LastUpdated:                    block.VegaTime,
+					LowerVirtualLiquidity:          num.DecimalOne(),
+					UpperVirtualLiquidity:          num.DecimalOne(),
+					LowerTheoreticalPosition:       num.DecimalOne(),
+					UpperTheoreticalPosition:       num.DecimalOne(),
 				}
 				require.NoError(t, ps.Upsert(ctx, pool))
 				pools = append(pools, pool)

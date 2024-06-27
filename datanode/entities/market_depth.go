@@ -31,6 +31,10 @@ type PriceLevel struct {
 	TotalOrders uint64
 	// How much volume is at this level
 	TotalVolume uint64
+	// How much volume from AMM's are at this level
+	TotalAMMVolume uint64
+	// If true the AMM volume at this level is only an estimate
+	AMMVolumeEstimated bool
 	// What side of the book is this level
 	Side types.Side
 }
@@ -40,6 +44,8 @@ type MarketDepth struct {
 	MarketID string
 	// All of the orders in the order book
 	LiveOrders map[string]*types.Order
+	// All of the active AMM's
+	LiveAMMs map[string]*AMMPool
 	// Just the buy side of the book
 	BuySide []*PriceLevel
 	// Just the sell side of the book
@@ -128,6 +134,8 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 
 	if pl == nil {
 		pl = md.createNewPriceLevel(order)
+	} else if order.GeneratedOffbook {
+		pl.TotalAMMVolume += order.TrueRemaining()
 	} else {
 		pl.TotalOrders++
 		pl.TotalVolume += order.TrueRemaining()
@@ -143,8 +151,13 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 		return errors.New("unknown pricelevel")
 	}
 	// Update the values
-	pl.TotalOrders--
-	pl.TotalVolume -= order.TrueRemaining()
+	if order.GeneratedOffbook {
+		pl.TotalAMMVolume -= order.TrueRemaining()
+	} else {
+		pl.TotalOrders--
+		pl.TotalVolume -= order.TrueRemaining()
+
+	}
 
 	// See if we can remove this price level
 	if pl.TotalOrders == 0 {
@@ -184,10 +197,15 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 
 func (md *MarketDepth) createNewPriceLevel(order *types.Order) *PriceLevel {
 	pl := &PriceLevel{
-		Price:       order.Price.Clone(),
-		TotalOrders: 1,
-		TotalVolume: order.TrueRemaining(),
-		Side:        order.Side,
+		Price: order.Price.Clone(),
+		Side:  order.Side,
+	}
+
+	if order.GeneratedOffbook {
+		pl.TotalAMMVolume = order.TrueRemaining()
+	} else {
+		pl.TotalOrders = 1
+		pl.TotalVolume = order.TrueRemaining()
 	}
 
 	if order.Side == types.SideBuy {

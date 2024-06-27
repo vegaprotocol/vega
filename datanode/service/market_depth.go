@@ -32,19 +32,33 @@ type OrderStore interface {
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 }
 
+type AMMStore interface {
+	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+}
+
+type Positions interface {
+	GetByMarketAndParty(ctx context.Context, marketID string, partyID string) (entities.Position, error)
+}
+
 type MarketDepth struct {
+	log            *logging.Logger
 	marketDepths   map[string]*entities.MarketDepth
 	orderStore     OrderStore
+	ammStore       AMMStore
+	marketData     MarketDataStore
 	depthObserver  utils.Observer[*types.MarketDepth]
 	updateObserver utils.Observer[*types.MarketDepthUpdate]
 	mu             sync.RWMutex
 	sequenceNumber uint64
 }
 
-func NewMarketDepth(orderStore OrderStore, logger *logging.Logger) *MarketDepth {
+func NewMarketDepth(orderStore OrderStore, ammStore AMMStore, marketData MarketDataStore, positions Positions, logger *logging.Logger) *MarketDepth {
 	return &MarketDepth{
+		log:            logger,
 		marketDepths:   map[string]*entities.MarketDepth{},
 		orderStore:     orderStore,
+		ammStore:       ammStore,
+		marketData:     marketData,
 		depthObserver:  utils.NewObserver[*types.MarketDepth]("market_depth", logger, 100, 100),
 		updateObserver: utils.NewObserver[*types.MarketDepthUpdate]("market_depth_update", logger, 100, 100),
 	}
@@ -64,6 +78,8 @@ func (m *MarketDepth) Initialise(ctx context.Context) error {
 		}
 		m.AddOrder(order, liveOrder.VegaTime, liveOrder.SeqNum)
 	}
+
+	// TODO get and expand active AMM's
 
 	return nil
 }
@@ -116,6 +132,12 @@ func (m *MarketDepth) publishChanges() {
 		md.Changes = make([]*entities.PriceLevel, 0, len(md.Changes))
 		md.PreviousSequenceNumber = md.SequenceNumber
 	}
+}
+
+func (m *MarketDepth) AddAMM() {
+
+	// get hte AMM's position somehow
+
 }
 
 func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64) {

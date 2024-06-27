@@ -1074,6 +1074,7 @@ const (
 	AMMStatusRejected    = AMMStatus(eventspb.AMM_STATUS_REJECTED)
 	AMMStatusCancelled   = AMMStatus(eventspb.AMM_STATUS_CANCELLED)
 	AMMStatusStopped     = AMMStatus(eventspb.AMM_STATUS_STOPPED)
+	AMMStatusReduceOnly  = AMMStatus(eventspb.AMM_STATUS_REDUCE_ONLY)
 )
 
 func (s AMMStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

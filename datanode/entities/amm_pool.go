@@ -46,6 +46,10 @@ type AMMPool struct {
 	ProposedFee                    *num.Decimal
 	CreatedAt                      time.Time
 	LastUpdated                    time.Time
+	LowerVirtualLiquidity          num.Decimal
+	LowerTheoreticalPosition       num.Decimal
+	UpperVirtualLiquidity          num.Decimal
+	UpperTheoreticalPosition       num.Decimal
 }
 
 type AMMPoolsFilter interface {
@@ -126,6 +130,16 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		fee = &fd
 	}
 
+	lowerL, err := num.DecimalFromString(pool.LowerCurve.VirtualLiquidty)
+	if err != nil {
+		return AMMPool{}, err
+	}
+
+	upperL, err := num.DecimalFromString(pool.UpperCurve.VirtualLiquidty)
+	if err != nil {
+		return AMMPool{}, err
+	}
+
 	return AMMPool{
 		PartyID:                        partyID,
 		MarketID:                       marketID,
@@ -142,6 +156,8 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		ProposedFee:                    fee,
 		CreatedAt:                      vegaTime,
 		LastUpdated:                    vegaTime,
+		LowerVirtualLiquidity:          lowerL,
+		UpperVirtualLiquidity:          upperL,
 	}, nil
 }
 

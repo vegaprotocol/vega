@@ -611,7 +611,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonPartyAlreadyOwnsAPool,
-				submit.ProposedFee,
+				submit.ProposedFee, nil, nil,
 			),
 		)
 
@@ -628,7 +628,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, reason,
-				submit.ProposedFee,
+				submit.ProposedFee, nil, nil,
 			),
 		)
 		return nil, err
@@ -641,7 +641,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonUnspecified,
-				submit.ProposedFee,
+				submit.ProposedFee, nil, nil,
 			),
 		)
 
@@ -669,7 +669,7 @@ func (e *Engine) Create(
 				ctx, submit.Party, e.marketID, subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCommitmentTooLow,
-				submit.ProposedFee,
+				submit.ProposedFee, nil, nil,
 			),
 		)
 
@@ -805,6 +805,14 @@ func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 			pool.Commitment, pool.Parameters,
 			pool.status, types.AMMStatusReasonUnspecified,
 			pool.ProposedFee,
+			&events.AMMCurve{
+				VirtualLiquidty:     pool.lower.l,
+				TheoreticalPosition: pool.lower.pv,
+			},
+			&events.AMMCurve{
+				VirtualLiquidty:     pool.upper.l,
+				TheoreticalPosition: pool.upper.pv,
+			},
 		),
 	)
 }
