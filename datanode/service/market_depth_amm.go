@@ -30,9 +30,9 @@ var activeStates = []entities.AMMStatus{entities.AMMStatusActive, entities.AMMSt
 // TODO make this configurable
 const (
 	// accurate expansion 5% either side of mid
-	accurateExpansion = 0.01
+	accurateExpansion = 0.001
 	// step size in estimated region 10% of mid
-	estimateStep = 0.1
+	estimateStep = 0.025
 	// the number of steps to take in the estimated region
 	maxEstimatedSteps = 5
 )
@@ -265,7 +265,7 @@ func (m *MarketDepth) getVolume(pool *amm, price1, price2 *num.Uint) (uint64, *n
 	volume := v1.Sub(v2).Abs().IntPart()
 
 	retPrice := price2
-	if side == types.SideSell {
+	if side == types.SideBuy {
 		retPrice = price1
 	}
 	fmt.Println("volume", price1, price2, volume, "good", retPrice, "side", side)
