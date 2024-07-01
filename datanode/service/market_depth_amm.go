@@ -37,10 +37,39 @@ const (
 	maxEstimatedSteps = 5
 )
 
+type curve struct {
+	pv      num.Decimal
+	l       num.Decimal
+	isLower bool
+}
+
+func (cu *curve) impliedPosition(price, high *num.Uint) num.Decimal {
+	sqrtHigh := high.Sqrt(high)
+	sqrtPrice := price.Sqrt(price)
+
+	// L * (sqrt(high) - sqrt(price))
+	numer := sqrtHigh.Sub(sqrtPrice).Mul(cu.l)
+
+	// sqrt(high) * sqrt(price)
+	denom := sqrtHigh.Mul(sqrtPrice)
+
+	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
+	res := numer.Div(denom)
+
+	if cu.isLower {
+		return res
+	}
+
+	// if we are in the upper curve the position of 0 in "curve-space" is -cu.pv in Vega position
+	// so we need to flip the interval
+	return cu.pv.Sub(res).Neg()
+
+}
+
 // impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
 // the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
 // price to calculate the position for, and higher boundary of the curve.
-func impliedPosition(price, high *num.Uint, l num.Decimal) num.Decimal {
+func impliedPosition(price, high *num.Uint, l num.Decimal, isLower bool) num.Decimal {
 
 	sqrtHigh := high.Sqrt(high)
 	sqrtPrice := price.Sqrt(price)
@@ -159,6 +188,8 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 
 		next := num.UintZero().Add(price, step)
 		levels = append(levels, next.Clone())
+
+		// get which curve we're on
 		m.getVolume(pool, price, next)
 
 		// if we're entering accurate region, reduce step size
@@ -184,6 +215,10 @@ func (m *MarketDepth) getVolume(pool entities.AMMPool, price1, price2 *num.Uint)
 
 	// cap the ranges
 	// now get the range the AMM itself lives in
+
+	// the AMM's position is its fair-price, we don't want to calculate the fair-price from the position
+
+	base, _ := num.UintFromDecimal(pool.ParametersBase)
 	pLow, _ := num.UintFromDecimal(pool.ParametersBase)
 	if pool.ParametersLowerBound != nil {
 		pLow, _ = num.UintFromDecimal(*pool.ParametersLowerBound)
@@ -205,13 +240,20 @@ func (m *MarketDepth) getVolume(pool entities.AMMPool, price1, price2 *num.Uint)
 		return 0, nil
 	}
 
+	// pick curve if
+
+	vl := pool.UpperVirtualLiquidity
+	if price1.LT(base) {
+		// lower curve
+		vl = pool.LowerVirtualLiquidity
+	}
+
 	p1 := num.Max(pLow, price1)
 	p2 := num.Min(price2, pHigh)
 
 	// let calculate the volume between these two
-	// TODO get correct curve half
-	v1 := impliedPosition(p1, pHigh, pool.UpperVirtualLiquidity)
-	v2 := impliedPosition(p2, pHigh, pool.UpperVirtualLiquidity)
+	v1 := impliedPosition(p1, pHigh, vl)
+	v2 := impliedPosition(p2, pHigh, vl)
 
 	// need to use position to tell us if its buy or sell volume
 	side := types.SideBuy
