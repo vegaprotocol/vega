@@ -33,7 +33,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getTestMDS(t *testing.T) *service.MarketDepth {
+type MDS struct {
+	service    *service.MarketDepth
+	ctrl       *gomock.Controller
+	pos        *mocks.MockPositionStore
+	amm        *mocks.MockAMMStore
+	orders     *mocks.MockOrderStore
+	marketData *mocks.MockMarketDataStore
+}
+
+func getTestMDS(t *testing.T) *MDS {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	pos := mocks.NewMockPositionStore(ctrl)
@@ -41,7 +50,14 @@ func getTestMDS(t *testing.T) *service.MarketDepth {
 	marketData := mocks.NewMockMarketDataStore(ctrl)
 	amm := mocks.NewMockAMMStore(ctrl)
 
-	return service.NewMarketDepth(orders, amm, marketData, pos, logging.NewTestLogger())
+	return &MDS{
+		service:    service.NewMarketDepth(orders, amm, marketData, pos, logging.NewTestLogger()),
+		ctrl:       ctrl,
+		pos:        pos,
+		amm:        amm,
+		orders:     orders,
+		marketData: marketData,
+	}
 }
 
 func buildOrder(id string, side types.Side, orderType types.OrderType, price uint64, size uint64, remaining uint64) *types.Order {
@@ -65,32 +81,32 @@ func TestBuyPriceLevels(t *testing.T) {
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 9, 9)
-	mds.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order1, vegaTime, 1)
 
 	order2 := buildOrder("Order2", types.SideBuy, types.OrderTypeLimit, 102, 7, 7)
-	mds.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order2, vegaTime, 2)
 
 	order3 := buildOrder("Order3", types.SideBuy, types.OrderTypeLimit, 101, 8, 8)
-	mds.AddOrder(order3, vegaTime, 3)
+	mds.service.AddOrder(order3, vegaTime, 3)
 
 	order4 := buildOrder("Order4", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	mds.AddOrder(order4, vegaTime, 4)
+	mds.service.AddOrder(order4, vegaTime, 4)
 
-	assert.Equal(t, 4, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(4), mds.GetOrderCount("M"))
+	assert.Equal(t, 4, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(4), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(7), mds.GetVolumeAtPrice("M", types.SideBuy, 102))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 102))
+	assert.Equal(t, uint64(7), mds.service.GetVolumeAtPrice("M", types.SideBuy, 102))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 102))
 
-	assert.Equal(t, uint64(8), mds.GetVolumeAtPrice("M", types.SideBuy, 101))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 101))
+	assert.Equal(t, uint64(8), mds.service.GetVolumeAtPrice("M", types.SideBuy, 101))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 101))
 
-	assert.Equal(t, uint64(9), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(9), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 
-	assert.Equal(t, uint64(10), mds.GetVolumeAtPrice("M", types.SideBuy, 99))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 99))
+	assert.Equal(t, uint64(10), mds.service.GetVolumeAtPrice("M", types.SideBuy, 99))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 99))
 }
 
 func TestSellPriceLevels(t *testing.T) {
@@ -98,32 +114,32 @@ func TestSellPriceLevels(t *testing.T) {
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideSell, types.OrderTypeLimit, 100, 9, 9)
-	mds.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order1, vegaTime, 1)
 
 	order2 := buildOrder("Order2", types.SideSell, types.OrderTypeLimit, 102, 7, 7)
-	mds.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order2, vegaTime, 2)
 
 	order3 := buildOrder("Order3", types.SideSell, types.OrderTypeLimit, 101, 8, 8)
-	mds.AddOrder(order3, vegaTime, 3)
+	mds.service.AddOrder(order3, vegaTime, 3)
 
 	order4 := buildOrder("Order4", types.SideSell, types.OrderTypeLimit, 99, 10, 10)
-	mds.AddOrder(order4, vegaTime, 4)
+	mds.service.AddOrder(order4, vegaTime, 4)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 4, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(4), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 4, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(4), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(7), mds.GetVolumeAtPrice("M", types.SideSell, 102))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideSell, 102))
+	assert.Equal(t, uint64(7), mds.service.GetVolumeAtPrice("M", types.SideSell, 102))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideSell, 102))
 
-	assert.Equal(t, uint64(8), mds.GetVolumeAtPrice("M", types.SideSell, 101))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideSell, 101))
+	assert.Equal(t, uint64(8), mds.service.GetVolumeAtPrice("M", types.SideSell, 101))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideSell, 101))
 
-	assert.Equal(t, uint64(9), mds.GetVolumeAtPrice("M", types.SideSell, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideSell, 100))
+	assert.Equal(t, uint64(9), mds.service.GetVolumeAtPrice("M", types.SideSell, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideSell, 100))
 
-	assert.Equal(t, uint64(10), mds.GetVolumeAtPrice("M", types.SideSell, 99))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideSell, 99))
+	assert.Equal(t, uint64(10), mds.service.GetVolumeAtPrice("M", types.SideSell, 99))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideSell, 99))
 }
 
 func TestAddOrderToEmptyBook(t *testing.T) {
@@ -131,14 +147,14 @@ func TestAddOrderToEmptyBook(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
-	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(1), mds.GetOrderCount("M"))
+	assert.Equal(t, 1, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(1), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(10), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(10), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestCancelOrder(t *testing.T) {
@@ -146,18 +162,18 @@ func TestCancelOrder(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	cancelorder := *order
 	cancelorder.Status = types.OrderStatusCancelled
-	mds.AddOrder(&cancelorder, vegaTime, 2)
+	mds.service.AddOrder(&cancelorder, vegaTime, 2)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestStoppedOrder(t *testing.T) {
@@ -165,18 +181,18 @@ func TestStoppedOrder(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	cancelorder := *order
 	cancelorder.Status = types.OrderStatusStopped
-	mds.AddOrder(&cancelorder, vegaTime, 2)
+	mds.service.AddOrder(&cancelorder, vegaTime, 2)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestExpiredOrder(t *testing.T) {
@@ -184,18 +200,18 @@ func TestExpiredOrder(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	cancelorder := *order
 	cancelorder.Status = types.OrderStatusExpired
-	mds.AddOrder(&cancelorder, vegaTime, 2)
+	mds.service.AddOrder(&cancelorder, vegaTime, 2)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestAmendOrderPrice(t *testing.T) {
@@ -205,23 +221,23 @@ func TestAmendOrderPrice(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	order2 := buildOrder("Order2", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 
-	mds.AddOrder(order, vegaTime, 1)
-	mds.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order2, vegaTime, 2)
 
 	// Amend the price to force a change in price level
 	amendorder := *order
 	amendorder.Price = num.NewUint(90)
 	amendorder.OriginalPrice = num.NewUint(90)
-	mds.AddOrder(&amendorder, vegaTime, 3)
+	mds.service.AddOrder(&amendorder, vegaTime, 3)
 
-	assert.Equal(t, 2, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(2), mds.GetOrderCount("M"))
+	assert.Equal(t, 2, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(2), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(10), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(10), mds.GetVolumeAtPrice("M", types.SideBuy, 90))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 90))
+	assert.Equal(t, uint64(10), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(10), mds.service.GetVolumeAtPrice("M", types.SideBuy, 90))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 90))
 }
 
 func TestAmendOrderVolumeUp(t *testing.T) {
@@ -229,19 +245,19 @@ func TestAmendOrderVolumeUp(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	amendorder := *order
 	amendorder.Size = 20
 	amendorder.Remaining = 20
-	mds.AddOrder(&amendorder, vegaTime, 2)
+	mds.service.AddOrder(&amendorder, vegaTime, 2)
 
-	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(1), mds.GetOrderCount("M"))
+	assert.Equal(t, 1, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(1), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(20), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(20), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestAmendOrderVolumeDown(t *testing.T) {
@@ -249,19 +265,19 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	amendorder := *order
 	amendorder.Size = 5
 	amendorder.Remaining = 5
-	mds.AddOrder(&amendorder, vegaTime, 2)
+	mds.service.AddOrder(&amendorder, vegaTime, 2)
 
-	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(1), mds.GetOrderCount("M"))
+	assert.Equal(t, 1, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(1), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(5), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(5), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestAmendOrderVolumeDownToZero(t *testing.T) {
@@ -269,19 +285,19 @@ func TestAmendOrderVolumeDownToZero(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	amendorder := *order
 	amendorder.Size = 0
 	amendorder.Remaining = 0
-	mds.AddOrder(&amendorder, vegaTime, 2)
+	mds.service.AddOrder(&amendorder, vegaTime, 2)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestPartialFill(t *testing.T) {
@@ -289,18 +305,18 @@ func TestPartialFill(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	pforder := *order
 	pforder.Remaining = 5
-	mds.AddOrder(&pforder, vegaTime, 2)
+	mds.service.AddOrder(&pforder, vegaTime, 2)
 
-	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(1), mds.GetOrderCount("M"))
+	assert.Equal(t, 1, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(1), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(5), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(5), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestIOCPartialFill(t *testing.T) {
@@ -310,14 +326,14 @@ func TestIOCPartialFill(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 5)
 	order.Status = types.OrderStatusPartiallyFilled
 	order.TimeInForce = types.OrderTimeInForceIOC
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestFullyFill(t *testing.T) {
@@ -325,19 +341,19 @@ func TestFullyFill(t *testing.T) {
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
 	fforder := *order
 	fforder.Remaining = 0
 	fforder.Status = types.OrderStatusFilled
-	mds.AddOrder(&fforder, vegaTime, 2)
+	mds.service.AddOrder(&fforder, vegaTime, 2)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestMarketOrder(t *testing.T) {
@@ -346,14 +362,14 @@ func TestMarketOrder(t *testing.T) {
 
 	// market orders should not stay on the book
 	marketorder := buildOrder("Order1", types.SideBuy, types.OrderTypeMarket, 100, 10, 10)
-	mds.AddOrder(marketorder, vegaTime, 1)
+	mds.service.AddOrder(marketorder, vegaTime, 1)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestFOKOrder(t *testing.T) {
@@ -363,14 +379,14 @@ func TestFOKOrder(t *testing.T) {
 	// FOK orders do not stay on the book
 	fokorder := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	fokorder.TimeInForce = types.OrderTimeInForceFOK
-	mds.AddOrder(fokorder, vegaTime, 1)
+	mds.service.AddOrder(fokorder, vegaTime, 1)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestIOCOrder(t *testing.T) {
@@ -380,14 +396,14 @@ func TestIOCOrder(t *testing.T) {
 	// IOC orders do not stay on the book
 	iocorder := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	iocorder.TimeInForce = types.OrderTimeInForceIOC
-	mds.AddOrder(iocorder, vegaTime, 1)
+	mds.service.AddOrder(iocorder, vegaTime, 1)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestRejectedOrder(t *testing.T) {
@@ -397,14 +413,14 @@ func TestRejectedOrder(t *testing.T) {
 	// Rejected orders should be ignored
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	order.Status = types.OrderStatusRejected
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestInvalidOrder(t *testing.T) {
@@ -414,14 +430,14 @@ func TestInvalidOrder(t *testing.T) {
 	// Invalid orders should be ignored
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	order.Status = types.OrderStatusUnspecified
-	mds.AddOrder(order, vegaTime, 1)
+	mds.service.AddOrder(order, vegaTime, 1)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestPartialMatchOrders(t *testing.T) {
@@ -433,17 +449,17 @@ func TestPartialMatchOrders(t *testing.T) {
 	order3 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 5)
 	order4 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 1)
 
-	mds.AddOrder(order1, vegaTime, 1)
-	mds.AddOrder(order2, vegaTime, 2)
-	mds.AddOrder(order3, vegaTime, 3)
-	mds.AddOrder(order4, vegaTime, 4)
+	mds.service.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order3, vegaTime, 3)
+	mds.service.AddOrder(order4, vegaTime, 4)
 
-	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(1), mds.GetOrderCount("M"))
+	assert.Equal(t, 1, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(1), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(1), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestFullyMatchOrders(t *testing.T) {
@@ -456,17 +472,17 @@ func TestFullyMatchOrders(t *testing.T) {
 	order4 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 0)
 	order4.Status = types.OrderStatusFilled
 
-	mds.AddOrder(order1, vegaTime, 1)
-	mds.AddOrder(order2, vegaTime, 2)
-	mds.AddOrder(order3, vegaTime, 3)
-	mds.AddOrder(order4, vegaTime, 4)
+	mds.service.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order3, vegaTime, 3)
+	mds.service.AddOrder(order4, vegaTime, 4)
 
-	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(0), mds.GetOrderCount("M"))
+	assert.Equal(t, 0, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 
 func TestRemovingPriceLevels(t *testing.T) {
@@ -479,17 +495,17 @@ func TestRemovingPriceLevels(t *testing.T) {
 	order4 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 0)
 	order4.Status = types.OrderStatusFilled
 
-	mds.AddOrder(order1, vegaTime, 1)
-	mds.AddOrder(order2, vegaTime, 2)
-	mds.AddOrder(order3, vegaTime, 3)
-	mds.AddOrder(order4, vegaTime, 4)
+	mds.service.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order3, vegaTime, 3)
+	mds.service.AddOrder(order4, vegaTime, 4)
 
-	assert.Equal(t, 2, mds.GetBuyPriceLevels("M"))
-	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(2), mds.GetOrderCount("M"))
+	assert.Equal(t, 2, mds.service.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mds.service.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(2), mds.service.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(0), mds.GetVolumeAtPrice("M", types.SideBuy, 101))
-	assert.Equal(t, uint64(0), mds.GetOrderCountAtPrice("M", types.SideBuy, 101))
+	assert.Equal(t, uint64(0), mds.service.GetVolumeAtPrice("M", types.SideBuy, 101))
+	assert.Equal(t, uint64(0), mds.service.GetOrderCountAtPrice("M", types.SideBuy, 101))
 }
 
 func TestMarketDepthFields(t *testing.T) {
@@ -497,9 +513,9 @@ func TestMarketDepthFields(t *testing.T) {
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
-	mds.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order1, vegaTime, 1)
 
-	md := mds.GetMarketDepth("M", 0)
+	md := mds.service.GetMarketDepth("M", 0)
 	assert.NotNil(t, md)
 
 	assert.Equal(t, "M", md.MarketId)
@@ -520,15 +536,15 @@ func TestParkingOrder(t *testing.T) {
 	// Create a valid and live pegged order
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
 	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
-	mds.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order1, vegaTime, 1)
 
 	// Park it
 	order2 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 0, 10, 10)
 	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order2.Status = types.OrderStatusParked
-	mds.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order2, vegaTime, 2)
 
-	md := mds.GetMarketDepth("M", 0)
+	md := mds.service.GetMarketDepth("M", 0)
 	assert.NotNil(t, md)
 
 	assert.Equal(t, "M", md.MarketId)
@@ -539,9 +555,9 @@ func TestParkingOrder(t *testing.T) {
 	order3 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
 	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order3.Status = types.OrderStatusActive
-	mds.AddOrder(order3, vegaTime, 3)
+	mds.service.AddOrder(order3, vegaTime, 3)
 
-	md2 := mds.GetMarketDepth("M", 0)
+	md2 := mds.service.GetMarketDepth("M", 0)
 	assert.NotNil(t, md2)
 
 	assert.Equal(t, "M", md2.MarketId)
@@ -557,9 +573,9 @@ func TestParkedOrder(t *testing.T) {
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
 	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order1.Status = types.OrderStatusParked
-	mds.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order1, vegaTime, 1)
 
-	md := mds.GetMarketDepth("M", 0)
+	md := mds.service.GetMarketDepth("M", 0)
 	assert.NotNil(t, md)
 
 	assert.Equal(t, "M", md.MarketId)
@@ -575,56 +591,56 @@ func TestParkedOrder2(t *testing.T) {
 	order1 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 0, 10, 10)
 	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order1.Status = types.OrderStatusParked
-	mds.AddOrder(order1, vegaTime, 1)
+	mds.service.AddOrder(order1, vegaTime, 1)
 
 	// Create normal order
 	order2 := buildOrder("Normal1", types.SideBuy, types.OrderTypeLimit, 100, 1, 1)
-	mds.AddOrder(order2, vegaTime, 2)
+	mds.service.AddOrder(order2, vegaTime, 2)
 
 	// Unpark pegged order
 	order3 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
 	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order3.Status = types.OrderStatusActive
-	mds.AddOrder(order3, vegaTime, 3)
+	mds.service.AddOrder(order3, vegaTime, 3)
 
 	// Cancel normal order
 	order4 := buildOrder("Normal1", types.SideBuy, types.OrderTypeLimit, 100, 1, 1)
 	order4.Status = types.OrderStatusCancelled
-	mds.AddOrder(order4, vegaTime, 4)
+	mds.service.AddOrder(order4, vegaTime, 4)
 
 	// Park pegged order
 	order5 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
 	order5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order5.Status = types.OrderStatusParked
-	mds.AddOrder(order5, vegaTime, 5)
+	mds.service.AddOrder(order5, vegaTime, 5)
 
 	// Create normal order
 	order6 := buildOrder("Normal2", types.SideBuy, types.OrderTypeLimit, 100, 1, 1)
-	mds.AddOrder(order6, vegaTime, 6)
+	mds.service.AddOrder(order6, vegaTime, 6)
 
 	// Unpark pegged order
 	order7 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
 	order7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order7.Status = types.OrderStatusActive
-	mds.AddOrder(order7, vegaTime, 7)
+	mds.service.AddOrder(order7, vegaTime, 7)
 
 	// Fill normal order
 	order8 := buildOrder("Normal2", types.SideBuy, types.OrderTypeLimit, 100, 1, 0)
 	order8.Status = types.OrderStatusFilled
-	mds.AddOrder(order8, vegaTime, 8)
+	mds.service.AddOrder(order8, vegaTime, 8)
 
 	// Create new matching order
 	order9 := buildOrder("Normal3", types.SideSell, types.OrderTypeLimit, 100, 1, 0)
 	order9.Status = types.OrderStatusFilled
-	mds.AddOrder(order9, vegaTime, 9)
+	mds.service.AddOrder(order9, vegaTime, 9)
 
 	// Park pegged order
 	order10 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
 	order10.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
 	order10.Status = types.OrderStatusParked
-	mds.AddOrder(order10, vegaTime, 10)
+	mds.service.AddOrder(order10, vegaTime, 10)
 
-	md := mds.GetMarketDepth("M", 0)
+	md := mds.service.GetMarketDepth("M", 0)
 	assert.NotNil(t, md)
 
 	assert.Equal(t, "M", md.MarketId)

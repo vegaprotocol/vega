@@ -423,7 +423,7 @@ func generateCurve(
 
 	// now we scale theoretical position by position factor so that is it feeds through into all subsequent equations
 	pv = pv.Mul(positionFactor)
-
+	fmt.Println("lower", isLower, "pv", pv, "l", pv.Mul(lu))
 	// and finally calculate L = pv * Lu
 	return &curve{
 		l:       pv.Mul(lu),

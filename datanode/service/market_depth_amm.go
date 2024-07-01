@@ -254,6 +254,7 @@ func (m *MarketDepth) getVolume(pool *amm, price1, price2 *num.Uint) (uint64, *n
 
 	v1 := cu.impliedPosition(p1, pHigh)
 	v2 := cu.impliedPosition(p2, pHigh)
+	fmt.Println("v1", v1, "v2", v2)
 
 	// need to use position to tell us if its buy or sell volume
 	side := types.SideBuy

@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,6 +38,12 @@ func TestAMMThings(t *testing.T) {
 		UpperTheoreticalPosition: num.DecimalFromInt64(1000),
 	}
 
-	mds.ExpandAMM(pool, num.DecimalFromInt64(200))
+	pos := entities.Position{
+		OpenVolume: 0,
+	}
+
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(pos, nil)
+
+	mds.service.ExpandAMM(pool, num.DecimalFromInt64(200))
 	require.False(t, true)
 }
