@@ -28,9 +28,13 @@ func TestAMMThings(t *testing.T) {
 	mds := getTestMDS(t)
 
 	pool := entities.AMMPool{
-		ParametersBase:        num.DecimalFromInt64(200),
-		ParametersUpperBound:  ptr.From(num.DecimalFromInt64(300)),
-		UpperVirtualLiquidity: num.DecimalFromInt64(100000),
+		ParametersLowerBound:     ptr.From(num.DecimalFromInt64(100)),
+		LowerVirtualLiquidity:    num.DecimalFromInt64(100000),
+		LowerTheoreticalPosition: num.DecimalFromInt64(1000),
+		ParametersBase:           num.DecimalFromInt64(200),
+		ParametersUpperBound:     ptr.From(num.DecimalFromInt64(300)),
+		UpperVirtualLiquidity:    num.DecimalFromInt64(100000),
+		UpperTheoreticalPosition: num.DecimalFromInt64(1000),
 	}
 
 	mds.ExpandAMM(pool, num.DecimalFromInt64(200))

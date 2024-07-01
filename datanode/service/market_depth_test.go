@@ -35,7 +35,13 @@ import (
 
 func getTestMDS(t *testing.T) *service.MarketDepth {
 	t.Helper()
-	return service.NewMarketDepth(nil, nil, nil, nil, logging.NewTestLogger())
+	ctrl := gomock.NewController(t)
+	pos := mocks.NewMockPositionStore(ctrl)
+	orders := mocks.NewMockOrderStore(ctrl)
+	marketData := mocks.NewMockMarketDataStore(ctrl)
+	amm := mocks.NewMockAMMStore(ctrl)
+
+	return service.NewMarketDepth(orders, amm, marketData, pos, logging.NewTestLogger())
 }
 
 func buildOrder(id string, side types.Side, orderType types.OrderType, price uint64, size uint64, remaining uint64) *types.Order {

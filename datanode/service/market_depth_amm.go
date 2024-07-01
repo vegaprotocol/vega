@@ -37,6 +37,13 @@ const (
 	maxEstimatedSteps = 5
 )
 
+type amm struct {
+	entities.AMMPool
+	lower    *curve
+	upper    *curve
+	position int64 // signed position in Vega-space
+}
+
 type curve struct {
 	pv      num.Decimal
 	l       num.Decimal
@@ -64,25 +71,6 @@ func (cu *curve) impliedPosition(price, high *num.Uint) num.Decimal {
 	// so we need to flip the interval
 	return cu.pv.Sub(res).Neg()
 
-}
-
-// impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
-// the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
-// price to calculate the position for, and higher boundary of the curve.
-func impliedPosition(price, high *num.Uint, l num.Decimal, isLower bool) num.Decimal {
-
-	sqrtHigh := high.Sqrt(high)
-	sqrtPrice := price.Sqrt(price)
-
-	// L * (sqrt(high) - sqrt(price))
-	numer := sqrtHigh.Sub(sqrtPrice).Mul(l)
-
-	// sqrt(high) * sqrt(price)
-	denom := sqrtHigh.Mul(sqrtPrice)
-
-	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
-	res := numer.Div(denom)
-	return res
 }
 
 func (m *MarketDepth) GetActiveAMMs(ctx context.Context) map[string][]entities.AMMPool {
@@ -160,8 +148,21 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 	if err != nil {
 		// TODO if not found positions is zero, anything else is real error
 	}
+	amm := &amm{
+		AMMPool:  pool,
+		position: pos.OpenVolume,
+		lower: &curve{
+			isLower: true,
+			l:       pool.LowerVirtualLiquidity,
+			pv:      pool.LowerTheoreticalPosition,
+		},
+		upper: &curve{
+			l:  pool.UpperVirtualLiquidity,
+			pv: pool.UpperTheoreticalPosition,
+		},
+	}
 
-	_ = pos.OpenVolume
+	// pack some curves
 
 	// calculate accurate bounds
 	//accLow, _ := reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))).Uint()
@@ -190,7 +191,7 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 		levels = append(levels, next.Clone())
 
 		// get which curve we're on
-		m.getVolume(pool, price, next)
+		m.getVolume(amm, price, next)
 
 		// if we're entering accurate region, reduce step size
 		if estimate && next.GTE(accLow) {
@@ -211,7 +212,7 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 	return nil
 }
 
-func (m *MarketDepth) getVolume(pool entities.AMMPool, price1, price2 *num.Uint) (uint64, *num.Uint) {
+func (m *MarketDepth) getVolume(pool *amm, price1, price2 *num.Uint) (uint64, *num.Uint) {
 
 	// cap the ranges
 	// now get the range the AMM itself lives in
@@ -240,30 +241,33 @@ func (m *MarketDepth) getVolume(pool entities.AMMPool, price1, price2 *num.Uint)
 		return 0, nil
 	}
 
-	// pick curve if
-
-	vl := pool.UpperVirtualLiquidity
-	if price1.LT(base) {
-		// lower curve
-		vl = pool.LowerVirtualLiquidity
-	}
-
 	p1 := num.Max(pLow, price1)
 	p2 := num.Min(price2, pHigh)
 
+	// pick curve if
+	cu := pool.lower
+	if p1.GTE(base) {
+		cu = pool.upper
+	}
+
 	// let calculate the volume between these two
-	v1 := impliedPosition(p1, pHigh, vl)
-	v2 := impliedPosition(p2, pHigh, vl)
+
+	v1 := cu.impliedPosition(p1, pHigh)
+	v2 := cu.impliedPosition(p2, pHigh)
 
 	// need to use position to tell us if its buy or sell volume
 	side := types.SideBuy
+	if v1.LessThan(num.DecimalZero()) {
+		side = types.SideSell
+	}
+
 	volume := v1.Sub(v2).Abs().IntPart()
 
 	retPrice := price2
 	if side == types.SideSell {
 		retPrice = price1
 	}
-	fmt.Println("volume", price1, price2, volume, "good", retPrice)
+	fmt.Println("volume", price1, price2, volume, "good", retPrice, "side", side)
 	return uint64(volume), retPrice.Clone()
 
 }
