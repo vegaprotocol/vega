@@ -28,14 +28,17 @@ import (
 func TestAMMThings(t *testing.T) {
 	mds := getTestMDS(t)
 
+	// lower true pv 702.4119613637248987 l 580723.51752738390596462639919437474617
+	// lower false pv 635.3954521864637116 l 610600.1174758454383959875699679680084
+
 	pool := entities.AMMPool{
-		ParametersLowerBound:     ptr.From(num.DecimalFromInt64(100)),
-		LowerVirtualLiquidity:    num.DecimalFromInt64(100000),
-		LowerTheoreticalPosition: num.DecimalFromInt64(1000),
-		ParametersBase:           num.DecimalFromInt64(200),
-		ParametersUpperBound:     ptr.From(num.DecimalFromInt64(300)),
-		UpperVirtualLiquidity:    num.DecimalFromInt64(100000),
-		UpperTheoreticalPosition: num.DecimalFromInt64(1000),
+		ParametersLowerBound:     ptr.From(num.DecimalFromInt64(1800)),
+		LowerVirtualLiquidity:    num.DecimalFromFloat(580723.51752738390596462639919437474617),
+		LowerTheoreticalPosition: num.DecimalFromFloat(702.4119613637248987),
+		ParametersBase:           num.DecimalFromInt64(2000),
+		ParametersUpperBound:     ptr.From(num.DecimalFromInt64(2200)),
+		UpperVirtualLiquidity:    num.DecimalFromFloat(610600.1174758454383959875699679680084),
+		UpperTheoreticalPosition: num.DecimalFromFloat(635.3954521864637116),
 	}
 
 	pos := entities.Position{
@@ -44,6 +47,6 @@ func TestAMMThings(t *testing.T) {
 
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(pos, nil)
 
-	mds.service.ExpandAMM(pool, num.DecimalFromInt64(200))
+	mds.service.ExpandAMM(pool, num.DecimalFromInt64(2000))
 	require.False(t, true)
 }

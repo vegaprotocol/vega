@@ -735,6 +735,8 @@ func TestNotebook(t *testing.T) {
 
 	pos := int64(0)
 
+	require.False(t, true)
+
 	ensurePositionN(t, p.pos, pos, num.UintZero(), 2)
 	volume := p.pool.TradableVolumeInRange(types.SideSell, base, low)
 	assert.Equal(t, int(702), int(volume))

@@ -381,14 +381,15 @@ func (u *Uint) SqrtInt(x *Uint) *Uint {
 func (u *Uint) Sqrt(x *Uint) Decimal {
 
 	// integer sqrt is a good approximation
-	r := UintOne().SqrtInt(u).ToDecimal()
+	r := UintOne().SqrtInt(x).ToDecimal()
 
 	// so now lets do a few iterations using Heron's Method to get closer
-	// x_i = (x + u/x) / 2
-	ud := u.ToDecimal()
+	// r_i = (r + u/r) / 2
+	ud := x.ToDecimal()
 	for i := 0; i < 6; i++ {
 		r = r.Add(ud.Div(r)).Div(DecimalFromInt64(2))
 	}
+
 	return r
 }
 
