@@ -125,15 +125,15 @@ func (m *MarketDepth) ExpandAMMs(ctx context.Context) error {
 func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) error {
 
 	// calculate accurate bounds
+	//accLow, _ := reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))).Uint()
+	accHigh, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Sub(num.DecimalFromFloat(accurateExpansion))))
+	accLow, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))))
 
-	accLow := reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion)))
-	accHigh := reference.Mul(num.DecimalOne().Sub(num.DecimalFromFloat(accurateExpansion)))
+	eStep, _ := num.UintFromDecimal(reference.Mul(num.DecimalFromFloat(estimateStep)))
 
-	eStep := reference.Mul(num.DecimalFromFloat(estimateStep))
-
-	eRange := eStep.Mul(num.DecimalFromInt64(maxEstimatedSteps))
-	estLow := accLow.Sub(eRange)
-	estHigh := accHigh.Add(eRange)
+	eRange := num.UintZero().Mul(eStep, num.NewUint(maxEstimatedSteps))
+	estLow := num.UintZero().Sub(accLow, eRange)
+	estHigh := num.UintZero().Add(accHigh, eRange)
 
 	// now get the range the AMM itself lives in
 	pLow := pool.ParametersBase
@@ -144,6 +144,29 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 	pHigh := pool.ParametersBase
 	if pool.ParametersUpperBound != nil {
 		pHigh := *pool.ParametersUpperBound
+	}
+
+	// lets calculate all the prices we are going to get a level for
+	levels := []*num.Uint{estLow.Clone()}
+
+	step := eStep.Clone()
+	price := estLow.Clone()
+	for price.LTE(estHigh) {
+
+		next := num.UintZero().Add(price, step)
+		levels = append(levels, next.Clone())
+
+		// if we're entering accurate region, reduce step size
+		if next.GTE(accLow) {
+			step = num.UintOne()
+		}
+
+		// if we've leaving accurate region increase step size
+		if next.GTE(accHigh) {
+			step = eStep.Clone()
+		}
+
+		price = next
 	}
 
 	// all we need is implied position at each price, then we're golden
