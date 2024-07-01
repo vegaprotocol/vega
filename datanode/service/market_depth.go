@@ -46,6 +46,7 @@ type MarketDepth struct {
 	orderStore     OrderStore
 	ammStore       AMMStore
 	marketData     MarketDataStore
+	positions      Positions
 	depthObserver  utils.Observer[*types.MarketDepth]
 	updateObserver utils.Observer[*types.MarketDepthUpdate]
 	mu             sync.RWMutex
@@ -59,6 +60,7 @@ func NewMarketDepth(orderStore OrderStore, ammStore AMMStore, marketData MarketD
 		orderStore:     orderStore,
 		ammStore:       ammStore,
 		marketData:     marketData,
+		positions:      positions,
 		depthObserver:  utils.NewObserver[*types.MarketDepth]("market_depth", logger, 100, 100),
 		updateObserver: utils.NewObserver[*types.MarketDepthUpdate]("market_depth_update", logger, 100, 100),
 	}

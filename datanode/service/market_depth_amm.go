@@ -126,6 +126,14 @@ func (m *MarketDepth) ExpandAMMs(ctx context.Context) error {
 
 func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) error {
 
+	// get positions
+	pos, err := m.positions.GetByMarketAndParty(context.Background(), string(pool.MarketID), string(pool.AmmPartyID))
+	if err != nil {
+		// TODO if not found positions is zero, anything else is real error
+	}
+
+	_ = pos.OpenVolume
+
 	// calculate accurate bounds
 	//accLow, _ := reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))).Uint()
 	accHigh, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))))
