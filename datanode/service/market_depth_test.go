@@ -35,7 +35,7 @@ import (
 
 func getTestMDS(t *testing.T) *service.MarketDepth {
 	t.Helper()
-	return service.NewMarketDepth(nil, logging.NewTestLogger())
+	return service.NewMarketDepth(nil, nil, nil, nil, logging.NewTestLogger())
 }
 
 func buildOrder(id string, side types.Side, orderType types.OrderType, price uint64, size uint64, remaining uint64) *types.Order {
@@ -803,7 +803,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				SeqNum:          66,
 			},
 		}, nil).Times(1)
-		svc := service.NewMarketDepth(store, logging.NewTestLogger())
+		svc := service.NewMarketDepth(store, nil, nil, nil, logging.NewTestLogger())
 		require.NoError(t, svc.Initialise(ctx))
 	})
 }

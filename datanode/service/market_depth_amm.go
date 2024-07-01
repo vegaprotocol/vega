@@ -17,7 +17,9 @@ package service
 
 import (
 	"context"
+	"fmt"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -28,20 +30,20 @@ var activeStates = []entities.AMMStatus{entities.AMMStatusActive, entities.AMMSt
 // TODO make this configurable
 const (
 	// accurate expansion 5% either side of mid
-	accurateExpansion = 0.05
+	accurateExpansion = 0.01
 	// step size in estimated region 10% of mid
-	estimateStep = 0.10
+	estimateStep = 0.1
 	// the number of steps to take in the estimated region
-	maxEstimatedSteps = 100
+	maxEstimatedSteps = 5
 )
 
 // impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
 // the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
 // price to calculate the position for, and higher boundary of the curve.
-func impliedPosition(price, high *num.Uint, l num.Decimal) *num.Uint {
+func impliedPosition(price, high *num.Uint, l num.Decimal) num.Decimal {
 
-	sqrtHigh := num.MaxUint().Sqrt(high)
-	sqrtPrice := num.MaxUint().Sqrt(price)
+	sqrtHigh := high.Sqrt(high)
+	sqrtPrice := price.Sqrt(price)
 
 	// L * (sqrt(high) - sqrt(price))
 	numer := sqrtHigh.Sub(sqrtPrice).Mul(l)
@@ -50,7 +52,7 @@ func impliedPosition(price, high *num.Uint, l num.Decimal) *num.Uint {
 	denom := sqrtHigh.Mul(sqrtPrice)
 
 	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
-	res, _ := num.UintFromDecimal(numer.Div(denom))
+	res := numer.Div(denom)
 	return res
 }
 
@@ -126,8 +128,8 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 
 	// calculate accurate bounds
 	//accLow, _ := reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))).Uint()
-	accHigh, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Sub(num.DecimalFromFloat(accurateExpansion))))
-	accLow, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))))
+	accHigh, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))))
+	accLow, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Sub(num.DecimalFromFloat(accurateExpansion))))
 
 	eStep, _ := num.UintFromDecimal(reference.Mul(num.DecimalFromFloat(estimateStep)))
 
@@ -135,41 +137,83 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 	estLow := num.UintZero().Sub(accLow, eRange)
 	estHigh := num.UintZero().Add(accHigh, eRange)
 
-	// now get the range the AMM itself lives in
-	pLow := pool.ParametersBase
-	if pool.ParametersLowerBound != nil {
-		pLow := *pool.ParametersLowerBound
-	}
-
-	pHigh := pool.ParametersBase
-	if pool.ParametersUpperBound != nil {
-		pHigh := *pool.ParametersUpperBound
-	}
-
 	// lets calculate all the prices we are going to get a level for
 	levels := []*num.Uint{estLow.Clone()}
 
+	fmt.Println("level regions", estLow, accLow, accHigh, estHigh)
+
 	step := eStep.Clone()
 	price := estLow.Clone()
+	estimate := true
 	for price.LTE(estHigh) {
+
+		// if this price is in the AMM's range calculate the thing.
 
 		next := num.UintZero().Add(price, step)
 		levels = append(levels, next.Clone())
+		m.getVolume(pool, price, next)
 
 		// if we're entering accurate region, reduce step size
-		if next.GTE(accLow) {
+		if estimate && next.GTE(accLow) {
 			step = num.UintOne()
+			estimate = false
 		}
 
 		// if we've leaving accurate region increase step size
-		if next.GTE(accHigh) {
+		if !estimate && next.GTE(accHigh) {
 			step = eStep.Clone()
+			estimate = true
 		}
-
 		price = next
 	}
 
 	// all we need is implied position at each price, then we're golden
 
 	return nil
+}
+
+func (m *MarketDepth) getVolume(pool entities.AMMPool, price1, price2 *num.Uint) (uint64, *num.Uint) {
+
+	// cap the ranges
+	// now get the range the AMM itself lives in
+	pLow, _ := num.UintFromDecimal(pool.ParametersBase)
+	if pool.ParametersLowerBound != nil {
+		pLow, _ = num.UintFromDecimal(*pool.ParametersLowerBound)
+	}
+
+	pHigh, _ := num.UintFromDecimal(pool.ParametersBase)
+	if pool.ParametersUpperBound != nil {
+		pHigh, _ = num.UintFromDecimal(*pool.ParametersUpperBound)
+	}
+
+	// outside of range
+	if pLow.GTE(price2) {
+		fmt.Println("volume", price1, price2, 0, "outside low")
+		return 0, nil
+	}
+
+	if pHigh.LTE(price1) {
+		fmt.Println("volume", price1, price2, 0, "outside high")
+		return 0, nil
+	}
+
+	p1 := num.Max(pLow, price1)
+	p2 := num.Min(price2, pHigh)
+
+	// let calculate the volume between these two
+	// TODO get correct curve half
+	v1 := impliedPosition(p1, pHigh, pool.UpperVirtualLiquidity)
+	v2 := impliedPosition(p2, pHigh, pool.UpperVirtualLiquidity)
+
+	// need to use position to tell us if its buy or sell volume
+	side := types.SideBuy
+	volume := v1.Sub(v2).Abs().IntPart()
+
+	retPrice := price2
+	if side == types.SideSell {
+		retPrice = price1
+	}
+	fmt.Println("volume", price1, price2, volume, "good", retPrice)
+	return uint64(volume), retPrice.Clone()
+
 }
