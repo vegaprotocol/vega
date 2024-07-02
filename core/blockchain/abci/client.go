@@ -23,12 +23,12 @@ import (
 	"sync"
 	"time"
 
+	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
+
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	tmlog "github.com/cometbft/cometbft/libs/log"
-	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
 	tmclihttp "github.com/cometbft/cometbft/rpc/client/http"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/cometbft/cometbft/types"
 	tmtypes "github.com/cometbft/cometbft/types"
 )
 
@@ -44,7 +44,7 @@ func NewClient(addr string) (*Client, error) {
 		return nil, ErrEmptyClientAddr
 	}
 
-	clt, err := tmclihttp.New(addr, "/websocket")
+	clt, err := tmclihttp.New(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (c *cachedGenesisDoc) cacheGenesis(
 		buf = append(buf, decoded...)
 	}
 
-	genDoc := types.GenesisDoc{}
+	genDoc := tmtypes.GenesisDoc{}
 	err = cmtjson.Unmarshal(buf, &genDoc)
 	if err != nil {
 		return nil, err

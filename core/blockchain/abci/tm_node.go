@@ -16,6 +16,7 @@
 package abci
 
 import (
+	"context"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -24,7 +25,7 @@ import (
 	"github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/config"
 	bftconfig "github.com/cometbft/cometbft/config"
-	"github.com/cometbft/cometbft/libs/service"
+	bftlog "github.com/cometbft/cometbft/libs/log"
 	nm "github.com/cometbft/cometbft/node"
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/privval"
@@ -33,9 +34,41 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Service defines a service that can be started, stopped, and reset.
+type Service interface {
+	// Start the service.
+	// If it's already started or stopped, will return an error.
+	// If OnStart() returns an error, it's returned by Start()
+	Start() error
+	OnStart() error
+
+	// Stop the service.
+	// If it's already stopped, will return an error.
+	// OnStop must never error.
+	Stop() error
+	OnStop()
+
+	// Reset the service.
+	// Panics by default - must be overwritten to enable reset.
+	Reset() error
+	OnReset() error
+
+	// Return true if the service is running
+	IsRunning() bool
+
+	// Quit returns a channel, which is closed once service is stopped.
+	Quit() <-chan struct{}
+
+	// String representation of the service
+	String() string
+
+	// SetLogger sets a logger.
+	SetLogger(l bftlog.Logger)
+}
+
 type TmNode struct {
 	conf        blockchain.Config
-	node        service.Service
+	node        Service
 	MempoolSize int64
 }
 
@@ -70,16 +103,7 @@ func NewTmNode(
 		return nil, fmt.Errorf("invalid tendermint configuration data: %v", err)
 	}
 
-	if genesisDoc == nil {
-		genesisDoc, err = tmtypes.GenesisDocFromFile(config.GenesisFile())
-		if err != nil {
-			return nil, fmt.Errorf("loading tendermint genesis document: %v", err)
-		}
-	}
-
-	genesisDocProvider := func() (*tmtypes.GenesisDoc, error) {
-		return genesisDoc, nil
-	}
+	genesisDocProvider := nm.DefaultGenesisDocProviderFunc(config)
 
 	// read private validator
 	pv := privval.LoadFilePV(
@@ -98,6 +122,7 @@ func NewTmNode(
 
 	// create node
 	node, err := nm.NewNode(
+		context.Background(),
 		config,
 		pv,
 		nodeKey,
@@ -105,7 +130,8 @@ func NewTmNode(
 		genesisDocProvider,
 		bftconfig.DefaultDBProvider,
 		nm.DefaultMetricsProvider(config.Instrumentation),
-		logger)
+		logger,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new Tendermint node: %w", err)
 	}

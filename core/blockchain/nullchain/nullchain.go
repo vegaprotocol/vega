@@ -33,9 +33,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/ed25519"
 	"github.com/cometbft/cometbft/crypto/tmhash"
 	"github.com/cometbft/cometbft/p2p"
-	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmtypes "github.com/cometbft/cometbft/types"
 )
@@ -54,11 +54,11 @@ type TimeService interface {
 }
 
 type ApplicationService interface {
-	InitChain(context.Context, *abci.RequestInitChain) (*abci.ResponseInitChain, error)
-	PrepareProposal(_ context.Context, req *abci.RequestPrepareProposal) (*abci.ResponsePrepareProposal, error)
-	FinalizeBlock(context.Context, *abci.RequestFinalizeBlock) (*abci.ResponseFinalizeBlock, error)
-	Commit(context.Context, *abci.RequestCommit) (*abci.ResponseCommit, error)
-	Info(context.Context, *abci.RequestInfo) (*abci.ResponseInfo, error)
+	InitChain(context.Context, *abci.InitChainRequest) (*abci.InitChainResponse, error)
+	PrepareProposal(_ context.Context, req *abci.PrepareProposalRequest) (*abci.PrepareProposalResponse, error)
+	FinalizeBlock(context.Context, *abci.FinalizeBlockRequest) (*abci.FinalizeBlockResponse, error)
+	Commit(context.Context, *abci.CommitRequest) (*abci.CommitResponse, error)
+	Info(context.Context, *abci.InfoRequest) (*abci.InfoResponse, error)
 }
 
 // nullGenesis is a subset of a tendermint genesis file, just the bits we need to run the nullblockchain.
@@ -136,7 +136,7 @@ func (n *NullBlockchain) StartChain() error {
 		return err
 	}
 
-	if r, _ := n.app.Info(context.Background(), &abci.RequestInfo{}); r.LastBlockHeight > 0 {
+	if r, _ := n.app.Info(context.Background(), &abci.InfoRequest{}); r.LastBlockHeight > 0 {
 		n.log.Info("protocol loaded from snapshot", logging.Int64("height", r.LastBlockHeight))
 		n.blockHeight = r.LastBlockHeight + 1
 		n.now = n.timeService.GetTimeNow().Add(n.blockDuration)
@@ -191,7 +191,7 @@ func (n *NullBlockchain) processBlock() {
 	// prepare it first
 	ctx := context.Background()
 	proposal, err := n.app.PrepareProposal(ctx,
-		&abci.RequestPrepareProposal{
+		&abci.PrepareProposalRequest{
 			Height: n.blockHeight,
 			Time:   n.now,
 			Txs:    n.pending,
@@ -201,7 +201,7 @@ func (n *NullBlockchain) processBlock() {
 		panic("nullchain cannot handle failure to prepare a proposal")
 	}
 
-	resp := &abci.ResponseFinalizeBlock{}
+	resp := &abci.FinalizeBlockResponse{}
 	if n.replayer != nil && n.cfg.Replay.Record {
 		n.replayer.startBlock(n.blockHeight, n.now.UnixNano(), proposal.Txs)
 		defer func() {
@@ -209,14 +209,14 @@ func (n *NullBlockchain) processBlock() {
 		}()
 	}
 
-	resp, _ = n.app.FinalizeBlock(ctx, &abci.RequestFinalizeBlock{
+	resp, _ = n.app.FinalizeBlock(ctx, &abci.FinalizeBlockRequest{
 		Height: n.blockHeight,
 		Time:   n.now,
 		Hash:   vgcrypto.Hash([]byte(strconv.FormatInt(n.blockHeight+n.now.UnixNano(), 10))),
 		Txs:    proposal.Txs,
 	})
 	n.pending = n.pending[:0]
-	n.app.Commit(ctx, &abci.RequestCommit{})
+	n.app.Commit(ctx, &abci.CommitRequest{})
 
 	// Increment time, blockheight, ready to start a new block
 	n.blockHeight++
@@ -307,11 +307,8 @@ func (n *NullBlockchain) InitChain() error {
 		pubKey, _ := base64.StdEncoding.DecodeString(k)
 		validators = append(validators,
 			abci.ValidatorUpdate{
-				PubKey: crypto.PublicKey{
-					Sum: &crypto.PublicKey_Ed25519{
-						Ed25519: pubKey,
-					},
-				},
+				PubKeyType:  ed25519.KeyType,
+				PubKeyBytes: pubKey,
 			},
 		)
 	}
@@ -323,7 +320,7 @@ func (n *NullBlockchain) InitChain() error {
 		logging.Int("n_validators", len(validators)),
 	)
 	n.app.InitChain(context.Background(),
-		&abci.RequestInitChain{
+		&abci.InitChainRequest{
 			Time:          n.now,
 			ChainId:       n.genesis.ChainID,
 			InitialHeight: n.blockHeight,

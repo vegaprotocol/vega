@@ -38,6 +38,7 @@ type snapshotCmd struct {
 	TendermintHome       string `description:"tendermint home directory, if set will print the last processed block height" long:"tendermint-home"`
 }
 
+// temp until it's public again
 func getLastProcessedBlock(homeDir string) (int64, error) {
 	conf := tmconfig.DefaultConfig()
 	if err := viper.Unmarshal(conf); err != nil {

@@ -26,12 +26,11 @@ import (
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
 	tmcfg "github.com/cometbft/cometbft/config"
-	tmos "github.com/cometbft/cometbft/libs/os"
-	tmrand "github.com/cometbft/cometbft/libs/rand"
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/privval"
 	"github.com/cometbft/cometbft/types"
@@ -153,12 +152,17 @@ func (opts *InitCmd) Execute(args []string) error {
 	return nil
 }
 
+func FileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
+	return !os.IsNotExist(err)
+}
+
 func initTendermintConfiguration(output config.Output, logger *logging.Logger, config *tmcfg.Config) error {
 	// private validator
 	privValKeyFile := config.PrivValidatorKeyFile()
 	privValStateFile := config.PrivValidatorStateFile()
 	var pv *privval.FilePV
-	if tmos.FileExists(privValKeyFile) {
+	if FileExists(privValKeyFile) {
 		pv = privval.LoadFilePV(privValKeyFile, privValStateFile)
 		if output.IsHuman() {
 			logger.Info("Found private validator",
@@ -178,7 +182,7 @@ func initTendermintConfiguration(output config.Output, logger *logging.Logger, c
 	}
 
 	nodeKeyFile := config.NodeKeyFile()
-	if tmos.FileExists(nodeKeyFile) {
+	if FileExists(nodeKeyFile) {
 		if output.IsHuman() {
 			logger.Info("Found node key", logging.String("path", nodeKeyFile))
 		}
@@ -193,13 +197,13 @@ func initTendermintConfiguration(output config.Output, logger *logging.Logger, c
 
 	// genesis file
 	genFile := config.GenesisFile()
-	if tmos.FileExists(genFile) {
+	if FileExists(genFile) {
 		if output.IsHuman() {
 			logger.Info("Found genesis file", logging.String("path", genFile))
 		}
 	} else {
 		genDoc := types.GenesisDoc{
-			ChainID:         fmt.Sprintf("test-chain-%v", tmrand.Str(6)),
+			ChainID:         fmt.Sprintf("test-chain-%v", vgrand.RandomStr(6)),
 			GenesisTime:     time.Now().Round(0).UTC(),
 			ConsensusParams: types.DefaultConsensusParams(),
 		}

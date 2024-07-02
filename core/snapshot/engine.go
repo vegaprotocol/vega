@@ -301,13 +301,13 @@ func (e *Engine) HasSnapshots() (bool, error) {
 // current snapshot loading is aborted, and the new one is used instead.
 // Proceeding as such allows Tendermint to start over when an error occurs during
 // state-sync.
-func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.ResponseOfferSnapshot {
+func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.OfferSnapshotResponse {
 	e.ensureEngineIsStarted()
 
 	if e.stateRestored.Load() {
 		e.log.Error("Attempt to offer a snapshot whereas the state has already been restored, aborting offer")
-		return tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_ABORT,
+		return tmtypes.OfferSnapshotResponse{
+			Result: tmtypes.OFFER_SNAPSHOT_RESULT_ABORT,
 		}
 	}
 
@@ -315,8 +315,8 @@ func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.Respon
 		e.log.Info("The received snapshot is missing meta-data, rejecting offer",
 			logging.Uint64("snapshot-height", offeredSnapshot.Height),
 		)
-		return tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		return tmtypes.OfferSnapshotResponse{
+			Result: tmtypes.OFFER_SNAPSHOT_RESULT_REJECT,
 		}
 	}
 	e.log.Info("New snapshot received from state-sync",
@@ -330,8 +330,8 @@ func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.Respon
 			logging.Uint64("snapshot-height", offeredSnapshot.Height),
 			logging.Int64("expected-height", e.config.StartHeight),
 		)
-		return tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		return tmtypes.OfferSnapshotResponse{
+			Result: tmtypes.OFFER_SNAPSHOT_RESULT_REJECT,
 		}
 	}
 
@@ -349,14 +349,14 @@ func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.Respon
 		logging.Uint64("snapshot-height", offeredSnapshot.Height),
 	)
 
-	return tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
+	return tmtypes.OfferSnapshotResponse{
+		Result: tmtypes.OFFER_SNAPSHOT_RESULT_ACCEPT,
 	}
 }
 
 // ReceiveSnapshotChunk is called by Tendermint to restore state from state-sync.
 // It receives the chunks matching the snapshot received via the `ReceiveSnapshot()`.
-func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk, sender string) tmtypes.ResponseApplySnapshotChunk {
+func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk, sender string) tmtypes.ApplySnapshotChunkResponse {
 	e.ensureEngineIsStarted()
 
 	if e.stateRestored.Load() {
@@ -379,8 +379,8 @@ func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk
 		// In the meantime, we should monitor the error messages, and see if it's
 		// ever happening, to know if we can safely remove it.
 		e.log.Error("Attempt to load snapshot chunks without offering a snapshot first, this should not have happened, aborting state-sync")
-		return tmtypes.ResponseApplySnapshotChunk{
-			Result: tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT,
+		return tmtypes.ApplySnapshotChunkResponse{
+			Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_RETRY_SNAPSHOT,
 		}
 	}
 
@@ -394,8 +394,8 @@ func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk
 					zap.String("sender", sender),
 					logging.Error(err),
 				)
-				return tmtypes.ResponseApplySnapshotChunk{
-					Result: tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT,
+				return tmtypes.ApplySnapshotChunkResponse{
+					Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_REJECT_SNAPSHOT,
 				}
 			}
 		} else if errors.Is(err, types.ErrMissingChunks) {
@@ -406,8 +406,8 @@ func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk
 				e.log.Warn("Snapshot is missing chunks, retrying",
 					logging.Error(err),
 				)
-				return tmtypes.ResponseApplySnapshotChunk{
-					Result:        tmtypes.ResponseApplySnapshotChunk_RETRY,
+				return tmtypes.ApplySnapshotChunkResponse{
+					Result:        tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_RETRY,
 					RefetchChunks: e.offeredSnapshot.MissingChunks(),
 				}
 			}
@@ -420,8 +420,8 @@ func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk
 					zap.String("rejected-sender", sender),
 					logging.Error(err),
 				)
-				return tmtypes.ResponseApplySnapshotChunk{
-					Result:        tmtypes.ResponseApplySnapshotChunk_RETRY,
+				return tmtypes.ApplySnapshotChunkResponse{
+					Result:        tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_RETRY,
 					RejectSenders: []string{sender},
 				}
 			}
@@ -439,8 +439,8 @@ func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk
 	)
 
 	if !e.offeredSnapshot.Ready() {
-		return tmtypes.ResponseApplySnapshotChunk{
-			Result: tmtypes.ResponseApplySnapshotChunk_ACCEPT,
+		return tmtypes.ApplySnapshotChunkResponse{
+			Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_ACCEPT,
 		}
 	}
 
@@ -467,8 +467,8 @@ func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk
 
 	e.log.Info("The state has been restored")
 
-	return tmtypes.ResponseApplySnapshotChunk{
-		Result: tmtypes.ResponseApplySnapshotChunk_ACCEPT,
+	return tmtypes.ApplySnapshotChunkResponse{
+		Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_ACCEPT,
 	}
 }
 
@@ -842,11 +842,11 @@ func (e *Engine) shouldAbortStateSync() bool {
 	return e.attemptsToApplySnapshotChunk >= e.config.RetryLimit
 }
 
-func (e *Engine) abortStateSync() tmtypes.ResponseApplySnapshotChunk {
+func (e *Engine) abortStateSync() tmtypes.ApplySnapshotChunkResponse {
 	e.resetOfferedSnapshot()
 
-	return tmtypes.ResponseApplySnapshotChunk{
-		Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
+	return tmtypes.ApplySnapshotChunkResponse{
+		Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_ABORT,
 	}
 }
 

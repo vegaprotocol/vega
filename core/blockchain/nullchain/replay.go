@@ -75,7 +75,7 @@ func NewNullChainReplayer(app ApplicationService, cfg blockchain.ReplayConfig, l
 	}, nil
 }
 
-func (r *Replayer) InitChain(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+func (r *Replayer) InitChain(req abci.InitChainRequest) (*abci.InitChainResponse, error) {
 	return r.app.InitChain(context.Background(), &req)
 }
 
@@ -157,14 +157,14 @@ func (r *Replayer) replayChain(appHeight int64) (int64, time.Time, error) {
 		}
 
 		r.log.Info("replaying block", logging.Int64("height", data.Height), logging.Int("ntxns", len(data.Txs)))
-		resp, _ := r.app.FinalizeBlock(context.Background(), &abci.RequestFinalizeBlock{
+		resp, _ := r.app.FinalizeBlock(context.Background(), &abci.FinalizeBlockRequest{
 			Height: data.Height,
 			Time:   time.Unix(0, data.Time),
 			Hash:   vgcrypto.Hash([]byte(strconv.FormatInt(data.Height+data.Time, 10))),
 			Txs:    data.Txs,
 		})
 
-		r.app.Commit(context.Background(), &abci.RequestCommit{})
+		r.app.Commit(context.Background(), &abci.CommitRequest{})
 
 		if len(data.AppHash) == 0 {
 			// we've replayed a block which when recorded must have panicked so we do not have a apphash

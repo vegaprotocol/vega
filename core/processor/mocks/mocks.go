@@ -19,7 +19,7 @@ import (
 	num "code.vegaprotocol.io/vega/libs/num"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	types0 "github.com/cometbft/cometbft/abci/types"
+	v10 "github.com/cometbft/cometbft/api/cometbft/abci/v1"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 )
@@ -1364,10 +1364,10 @@ func (mr *MockValidatorTopologyMockRecorder) BeginBlock(arg0, arg1, arg2 interfa
 }
 
 // GetValidatorPowerUpdates mocks base method.
-func (m *MockValidatorTopology) GetValidatorPowerUpdates() []types0.ValidatorUpdate {
+func (m *MockValidatorTopology) GetValidatorPowerUpdates() []v10.ValidatorUpdate {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidatorPowerUpdates")
-	ret0, _ := ret[0].([]types0.ValidatorUpdate)
+	ret0, _ := ret[0].([]v10.ValidatorUpdate)
 	return ret0
 }
 
