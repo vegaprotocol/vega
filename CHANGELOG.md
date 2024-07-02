@@ -49,6 +49,7 @@
 - [11136](https://github.com/vegaprotocol/vega/issues/11136) - Fix premature invocation of post commit hooks in case of fee stats event.
 - [11409](https://github.com/vegaprotocol/vega/issues/11409) - When updating a capped market - copy the cap from the existing market definition. 
 - [11415](https://github.com/vegaprotocol/vega/issues/11415) - End long block auction when expired. 
+- [11419](https://github.com/vegaprotocol/vega/issues/11419) - Fix long block auction extension to be calculated from current time. 
 
 ## 0.76.1
 

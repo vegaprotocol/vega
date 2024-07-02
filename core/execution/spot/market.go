@@ -491,7 +491,11 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 	m.mkt.State = types.MarketStateSuspended
 	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
 	if m.as.InAuction() {
-		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: duration})
+		effDuration := int(m.timeService.GetTimeNow().UnixNano()/1e9) + int(duration) - int(m.as.ExpiresAt().UnixNano()/1e9)
+		if effDuration <= 0 {
+			return
+		}
+		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: int64(effDuration)})
 		evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
 		if evt != nil {
 			m.broker.Send(evt)
