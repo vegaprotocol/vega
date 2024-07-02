@@ -493,17 +493,23 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 	if m.as.InAuction() {
 		effDuration := int(m.timeService.GetTimeNow().UnixNano()/1e9) + int(duration) - int(m.as.ExpiresAt().UnixNano()/1e9)
 		if effDuration <= 0 {
+			m.log.Info("EnterLongBlockAuction: already in auction with effective duration <=0", logging.String("market-id", m.mkt.ID), logging.Int("duration", effDuration))
 			return
 		}
+		m.log.Info("EnterLongBlockAuction: extending existing auction with duration", logging.String("market-id", m.mkt.ID), logging.Int("duration", effDuration))
 		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: int64(effDuration)})
 		evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
 		if evt != nil {
+			m.log.Info("EnterLongBlockAuction: auction extended due to long block", logging.String("market-id", m.mkt.ID), logging.String("auction-extension-event", evt.StreamMessage().String()))
 			m.broker.Send(evt)
 		}
 	} else {
+		m.log.Info("EnterLongBlockAuction: starting a new auction with duration", logging.String("market-id", m.mkt.ID), logging.Int64("duration", duration))
 		m.as.StartLongBlockAuction(m.timeService.GetTimeNow(), duration)
 		m.enterAuction(ctx)
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		evt := events.NewMarketUpdatedEvent(ctx, *m.mkt)
+		m.log.Info("EnterLongBlockAuction: new auction event", logging.String("market-id", m.mkt.ID), logging.String("auction-extension-event", evt.StreamMessage().String()))
+		m.broker.Send(evt)
 	}
 }
 
