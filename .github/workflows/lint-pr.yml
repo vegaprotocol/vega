@@ -1,0 +1,33 @@
+---
+
+
+name: "Verify PR title"
+
+"on":
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  lint_pr:
+    timeout-minutes: 10
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.github/workflows/config/.nvmrc'
+
+      - name: Install dependencies
+        run: |
+          rm package.json
+          npm install --no-save @commitlint/cli @commitlint/config-conventional
+
+      - name: Check PR title
+        run: echo "${{ github.event.pull_request.title }}" | npx commitlint --config ./.github/workflows/config/commitlint.config-ci.js

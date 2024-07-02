@@ -11,6 +11,7 @@ changelog:
     - title: Vulnerabilities 🔐
       labels:
         - vulnerability
+        - security
     - title: Breaking Changes 🛠
       labels:
         - breaking-change
