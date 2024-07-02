@@ -20,7 +20,6 @@ import (
 	"time"
 
 	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
-
 	nm "github.com/cometbft/cometbft/node"
 	"github.com/cometbft/cometbft/rpc/client/local"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"

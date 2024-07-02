@@ -23,10 +23,9 @@ import (
 	"sync"
 	"time"
 
-	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
-
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	tmlog "github.com/cometbft/cometbft/libs/log"
+	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
 	tmclihttp "github.com/cometbft/cometbft/rpc/client/http"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmtypes "github.com/cometbft/cometbft/types"
