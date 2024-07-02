@@ -44,3 +44,7 @@ func (*BridgeViewStub) FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex 
 func (*BridgeViewStub) FindAssetLimitsUpdated(w *types.ERC20AssetLimitsUpdated, blockNumber, logIndex uint64, ethAssetAddress string, txHash string) error {
 	return nil
 }
+
+func (*BridgeViewStub) CollateralBridgeAddress() string {
+	return ""
+}

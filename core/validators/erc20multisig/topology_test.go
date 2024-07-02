@@ -222,6 +222,8 @@ func testValidSignerEvents(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 
+	top.ocv.EXPECT().GetMultiSigAddress().AnyTimes()
+	top.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	top.OnTick(context.Background(), time.Unix(10, 0))
 
 	// first assert we have no signers

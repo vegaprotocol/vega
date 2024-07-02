@@ -28,7 +28,6 @@ import (
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
-	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/integration/helpers"
@@ -172,7 +171,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.witness = validators.NewWitness(ctx, execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
 
-	eventForwarder := evtforward.NewNoopEngine(execsetup.log, ethereum.Config{})
+	eventHeartbeat := evtforward.NewTracker(execsetup.log, execsetup.witness, execsetup.timeService)
 
 	execsetup.oracleEngine = spec.NewEngine(execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	execsetup.builtinOracle = spec.NewBuiltin(execsetup.oracleEngine, execsetup.timeService)
@@ -198,7 +197,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, execsetup.marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventForwarder, nil, execsetup.profilesEngine)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventHeartbeat, execsetup.profilesEngine)
 
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(

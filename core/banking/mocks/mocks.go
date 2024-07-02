@@ -603,6 +603,20 @@ func (m *MockERC20BridgeView) EXPECT() *MockERC20BridgeViewMockRecorder {
 	return m.recorder
 }
 
+// CollateralBridgeAddress mocks base method.
+func (m *MockERC20BridgeView) CollateralBridgeAddress() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CollateralBridgeAddress")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// CollateralBridgeAddress indicates an expected call of CollateralBridgeAddress.
+func (mr *MockERC20BridgeViewMockRecorder) CollateralBridgeAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CollateralBridgeAddress", reflect.TypeOf((*MockERC20BridgeView)(nil).CollateralBridgeAddress))
+}
+
 // FindAssetLimitsUpdated mocks base method.
 func (m *MockERC20BridgeView) FindAssetLimitsUpdated(arg0 *types.ERC20AssetLimitsUpdated, arg1, arg2 uint64, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
@@ -696,16 +710,16 @@ func (m *MockEthereumEventSource) EXPECT() *MockEthereumEventSourceMockRecorder 
 	return m.recorder
 }
 
-// UpdateCollateralStartingBlock mocks base method.
-func (m *MockEthereumEventSource) UpdateCollateralStartingBlock(arg0 uint64) {
+// UpdateContractBlock mocks base method.
+func (m *MockEthereumEventSource) UpdateContractBlock(arg0, arg1 string, arg2 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateCollateralStartingBlock", arg0)
+	m.ctrl.Call(m, "UpdateContractBlock", arg0, arg1, arg2)
 }
 
-// UpdateCollateralStartingBlock indicates an expected call of UpdateCollateralStartingBlock.
-func (mr *MockEthereumEventSourceMockRecorder) UpdateCollateralStartingBlock(arg0 interface{}) *gomock.Call {
+// UpdateContractBlock indicates an expected call of UpdateContractBlock.
+func (mr *MockEthereumEventSourceMockRecorder) UpdateContractBlock(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCollateralStartingBlock", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateCollateralStartingBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractBlock", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateContractBlock), arg0, arg1, arg2)
 }
 
 // MockParties is a mock of Parties interface.

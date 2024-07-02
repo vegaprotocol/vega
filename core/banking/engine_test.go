@@ -81,10 +81,11 @@ func getTestEngine(t *testing.T) *testEngine {
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
 	parties := mocks.NewMockParties(ctrl)
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, primaryBridgeView, secondaryBridgeView, ethSource, nil, parties)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, primaryBridgeView, secondaryBridgeView, ethSource, parties)
 
 	require.NoError(t, eng.OnMaxQuantumAmountUpdate(context.Background(), num.DecimalOne()))
-	eng.OnPrimaryEthChainIDUpdated("1")
+	eng.OnPrimaryEthChainIDUpdated("1", "hello")
+	eng.OnSecondaryEthChainIDUpdated("2", "hello2")
 
 	return &testEngine{
 		Engine:                eng,

@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	vgreflect "code.vegaprotocol.io/vega/libs/reflect"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -52,6 +53,7 @@ type EthereumConfig struct {
 	multiSigControl  EthereumContract
 	stakingBridge    EthereumContract
 	vestingBridge    EthereumContract
+	blockTime        time.Duration
 }
 
 func EthereumConfigFromUntypedProto(v interface{}) (*EthereumConfig, error) {
@@ -84,6 +86,7 @@ func EthereumConfigFromProto(cfgProto *proto.EthereumConfig) (*EthereumConfig, e
 			address:               cfgProto.MultisigControlContract.Address,
 			deploymentBlockHeight: cfgProto.MultisigControlContract.DeploymentBlockHeight,
 		},
+		blockTime: 12 * time.Second,
 	}
 
 	if cfgProto.StakingBridgeContract != nil {
@@ -98,6 +101,14 @@ func EthereumConfigFromProto(cfgProto *proto.EthereumConfig) (*EthereumConfig, e
 			address:               cfgProto.TokenVestingContract.Address,
 			deploymentBlockHeight: cfgProto.TokenVestingContract.DeploymentBlockHeight,
 		}
+	}
+
+	if len(cfgProto.BlockTime) != 0 {
+		bl, err := time.ParseDuration(cfgProto.BlockTime)
+		if err != nil {
+			return nil, fmt.Errorf("invalid Ethereum chain configuration, block_length: %w", err)
+		}
+		cfg.blockTime = bl
 	}
 
 	return cfg, nil
@@ -129,6 +140,10 @@ func (c *EthereumConfig) StakingBridge() EthereumContract {
 
 func (c *EthereumConfig) VestingBridge() EthereumContract {
 	return c.vestingBridge
+}
+
+func (c *EthereumConfig) BlockTime() time.Duration {
+	return c.blockTime
 }
 
 // StakingBridgeAddresses returns the registered staking bridge addresses. It
@@ -222,6 +237,13 @@ func CheckEthereumConfig(cfgProto *proto.EthereumConfig) error {
 	noVestingBridgeSetUp := cfgProto.TokenVestingContract == nil || len(cfgProto.TokenVestingContract.Address) == 0
 	if noStakingBridgeSetUp && noVestingBridgeSetUp {
 		return ErrAtLeastOneOfStakingOrVestingBridgeAddressMustBeSet
+	}
+
+	if len(cfgProto.BlockTime) != 0 {
+		_, err := time.ParseDuration(cfgProto.BlockTime)
+		if err != nil {
+			return ErrInvalidBlockLengthDuration
+		}
 	}
 
 	return nil

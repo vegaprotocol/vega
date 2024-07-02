@@ -53,11 +53,12 @@ func getAccountingTest(t *testing.T) *accountingTest {
 	broker := mocks.NewMockBroker(ctrl)
 	evtfwd := smocks.NewMockEvtForwarder(ctrl)
 	witness := smocks.NewMockWitness(ctrl)
+	ethsource := smocks.NewMockEthereumEventSource(ctrl)
 	var onTick func(context.Context, time.Time)
 
 	return &accountingTest{
 		Accounting: staking.NewAccounting(
-			log, staking.NewDefaultConfig(), ts, broker, nil, evtfwd, witness, true),
+			log, staking.NewDefaultConfig(), ts, broker, nil, evtfwd, witness, true, ethsource),
 		log:     log,
 		ctrl:    ctrl,
 		tsvc:    ts,

@@ -34,4 +34,5 @@ const (
 	NodeVoteTypeSignerThresholdSet         NodeVoteType = proto.NodeVote_TYPE_SIGNER_THRESHOLD_SET
 	NodeVoteTypeGovernanceValidateAsset    NodeVoteType = proto.NodeVote_TYPE_GOVERNANCE_VALIDATE_ASSET
 	NodeVoteTypeEthereumContractCallResult NodeVoteType = proto.NodeVote_TYPE_ETHEREUM_CONTRACT_CALL_RESULT
+	NodeVoteTypeEthereumHeartbeat          NodeVoteType = proto.NodeVote_TYPE_ETHEREUM_HEARTBEAT
 )

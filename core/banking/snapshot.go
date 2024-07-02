@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -312,7 +313,7 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	case *types.PayloadBankingWithdrawals:
 		return nil, e.restoreWithdrawals(pl.BankingWithdrawals, p)
 	case *types.PayloadBankingSeen:
-		return nil, e.restoreSeen(pl.BankingSeen, p)
+		return nil, e.restoreSeen(ctx, pl.BankingSeen, p)
 	case *types.PayloadBankingAssetActions:
 		return nil, e.restoreAssetActions(pl.BankingAssetActions, p)
 	case *types.PayloadBankingRecurringTransfers:
@@ -423,13 +424,35 @@ func (e *Engine) restoreWithdrawals(withdrawals *types.BankingWithdrawals, p *ty
 	return err
 }
 
-func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
+func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *types.Payload) error {
 	var err error
 	e.log.Info("restoring seen", logging.Int("n", len(seen.Refs)))
 	e.seenAssetActions = treeset.NewWithStringComparator()
 	for _, v := range seen.Refs {
 		e.seenAssetActions.Add(v)
 	}
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.76.8") {
+		e.log.Info("migration code updating primary bridge last seen",
+			logging.String("address", e.primaryBridgeView.CollateralBridgeAddress()),
+			logging.Uint64("last-seen", seen.LastSeenPrimaryEthBlock),
+		)
+		e.ethEventSource.UpdateContractBlock(
+			e.primaryBridgeView.CollateralBridgeAddress(),
+			e.primaryEthChainID,
+			seen.LastSeenPrimaryEthBlock,
+		)
+		e.log.Info("migration code updating primary bridge last seen",
+			logging.String("address", e.secondaryBridgeView.CollateralBridgeAddress()),
+			logging.Uint64("last-seen", seen.LastSeenSecondaryEthBlock),
+		)
+		e.ethEventSource.UpdateContractBlock(
+			e.secondaryBridgeView.CollateralBridgeAddress(),
+			e.secondaryEthChainID,
+			seen.LastSeenSecondaryEthBlock,
+		)
+	}
+
 	e.lastSeenPrimaryEthBlock = seen.LastSeenPrimaryEthBlock
 	e.lastSeenSecondaryEthBlock = seen.LastSeenSecondaryEthBlock
 	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
@@ -474,17 +497,4 @@ func (e *Engine) restoreTransferFeeDiscounts(
 func (e *Engine) OnEpochRestore(_ context.Context, ep types.Epoch) {
 	e.log.Debug("epoch restoration notification received", logging.String("epoch", ep.String()))
 	e.currentEpoch = ep.Seq
-}
-
-func (e *Engine) OnStateLoaded(_ context.Context) error {
-	if e.lastSeenPrimaryEthBlock != 0 {
-		e.log.Info("restoring primary collateral bridge starting block", logging.Uint64("block", e.lastSeenPrimaryEthBlock))
-		e.primaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenPrimaryEthBlock)
-	}
-
-	if e.lastSeenSecondaryEthBlock != 0 {
-		e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", e.lastSeenSecondaryEthBlock))
-		e.secondaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenSecondaryEthBlock)
-	}
-	return nil
 }

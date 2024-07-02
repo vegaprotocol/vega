@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -175,7 +176,7 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 			sts:     pendingSupply,
 			chainID: a.chainID,
 			check: func() error {
-				totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
+				totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddresses[0])
 				if err != nil {
 					return err
 				}
@@ -191,6 +192,18 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 			},
 		}
 		a.witness.RestoreResource(a.pendingStakeTotalSupply, a.onStakeTotalSupplyVerified)
+	}
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.76.8") {
+		lastSeen := a.getLastBlockSeen()
+		for _, addr := range a.stakingBridgeAddresses {
+			a.log.Info("migration code updating multisig last seen",
+				logging.String("address", addr.Hex()),
+				logging.Uint64("last-seen", lastSeen),
+				logging.String("chain-id", a.chainID),
+			)
+			a.ethSource.UpdateContractBlock(addr.Hex(), a.chainID, lastSeen)
+		}
 	}
 
 	a.stakingAssetTotalSupply = accounts.StakingAssetTotalSupply.Clone()

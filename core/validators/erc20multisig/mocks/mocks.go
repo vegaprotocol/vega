@@ -115,6 +115,20 @@ func (mr *MockMultiSigOnChainVerifierMockRecorder) CheckThresholdSetEvent(arg0 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckThresholdSetEvent", reflect.TypeOf((*MockMultiSigOnChainVerifier)(nil).CheckThresholdSetEvent), arg0)
 }
 
+// GetMultiSigAddress mocks base method.
+func (m *MockMultiSigOnChainVerifier) GetMultiSigAddress() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMultiSigAddress")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetMultiSigAddress indicates an expected call of GetMultiSigAddress.
+func (mr *MockMultiSigOnChainVerifierMockRecorder) GetMultiSigAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMultiSigAddress", reflect.TypeOf((*MockMultiSigOnChainVerifier)(nil).GetMultiSigAddress))
+}
+
 // MockEthConfirmations is a mock of EthConfirmations interface.
 type MockEthConfirmations struct {
 	ctrl     *gomock.Controller
@@ -175,14 +189,14 @@ func (m *MockEthereumEventSource) EXPECT() *MockEthereumEventSourceMockRecorder 
 	return m.recorder
 }
 
-// UpdateMultisigControlStartingBlock mocks base method.
-func (m *MockEthereumEventSource) UpdateMultisigControlStartingBlock(arg0 uint64) {
+// UpdateContractBlock mocks base method.
+func (m *MockEthereumEventSource) UpdateContractBlock(arg0, arg1 string, arg2 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateMultisigControlStartingBlock", arg0)
+	m.ctrl.Call(m, "UpdateContractBlock", arg0, arg1, arg2)
 }
 
-// UpdateMultisigControlStartingBlock indicates an expected call of UpdateMultisigControlStartingBlock.
-func (mr *MockEthereumEventSourceMockRecorder) UpdateMultisigControlStartingBlock(arg0 interface{}) *gomock.Call {
+// UpdateContractBlock indicates an expected call of UpdateContractBlock.
+func (mr *MockEthereumEventSourceMockRecorder) UpdateContractBlock(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMultisigControlStartingBlock", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateMultisigControlStartingBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractBlock", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateContractBlock), arg0, arg1, arg2)
 }
