@@ -335,6 +335,10 @@ func (t *Tracker) LoadState(ctx context.Context, payload *types.Payload) ([]type
 func (t *Tracker) OnStateLoaded(_ context.Context) error {
 	for _, bridge := range t.bridges {
 		for address, lastSeen := range bridge.contractAddresses {
+			t.log.Info("updating starting block after restore",
+				logging.String("address", address),
+				logging.Uint64("last-seen", lastSeen),
+			)
 			bridge.engine.UpdateStartingBlock(address, lastSeen)
 		}
 	}

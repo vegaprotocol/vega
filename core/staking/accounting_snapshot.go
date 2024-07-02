@@ -197,6 +197,11 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 	if vgcontext.InProgressUpgradeFrom(ctx, "v0.76.8") {
 		lastSeen := a.getLastBlockSeen()
 		for _, addr := range a.stakingBridgeAddresses {
+			a.log.Info("migration code updating multisig last seen",
+				logging.String("address", addr.Hex()),
+				logging.Uint64("last-seen", lastSeen),
+				logging.String("chain-id", a.chainID),
+			)
 			a.ethSource.UpdateContractBlock(addr.Hex(), a.chainID, lastSeen)
 		}
 	}

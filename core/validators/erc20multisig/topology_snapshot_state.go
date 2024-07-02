@@ -99,6 +99,12 @@ func (t *Topology) restoreVerifiedState(
 
 	if vgcontext.InProgressUpgradeFrom(ctx, "v0.76.8") {
 		lastSeen := t.getLastBlockSeen()
+
+		t.log.Info("migration code updating multisig last seen",
+			logging.String("address", t.ocv.GetMultiSigAddress()),
+			logging.Uint64("last-seen", lastSeen),
+			logging.String("chain-id", t.chainID),
+		)
 		t.ethEventSource.UpdateContractBlock(t.ocv.GetMultiSigAddress(), t.chainID, lastSeen)
 	}
 
