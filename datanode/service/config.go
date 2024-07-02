@@ -20,9 +20,16 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Config represent the configuration of the candle package.
+type MarketDepthConfig struct {
+	AmmFullExpansionPercentage float64 `long:"amm-full-expansion-percentage" description:"The percentage eitherside of the mid price at which to display acccurate AMM volume"`
+	AmmEstimatedStepPercentage float64 `long:"amm-estimated-step-percentage" description:"The size of the step as a percentage of the mid price at which we aggregate AMM volume"`
+	AmmMaxEstimatedSteps       uint64  `long:"amm-max-estimated-steps" description:"The number of estimate steps to take outside the accurate region"`
+}
+
+// Config represent the configuration of the service package.
 type Config struct {
-	Level encoding.LogLevel `long:"log-level"`
+	Level       encoding.LogLevel `long:"log-level"`
+	MarketDepth MarketDepthConfig
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -30,5 +37,10 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
+		MarketDepth: MarketDepthConfig{
+			AmmFullExpansionPercentage: 0.1,
+			AmmEstimatedStepPercentage: 2.5,
+			AmmMaxEstimatedSteps:       10,
+		},
 	}
 }

@@ -42,6 +42,7 @@ type Positions interface {
 
 type MarketDepth struct {
 	log            *logging.Logger
+	cfg            MarketDepthConfig
 	marketDepths   map[string]*entities.MarketDepth
 	orderStore     OrderStore
 	ammStore       AMMStore
@@ -52,11 +53,13 @@ type MarketDepth struct {
 	mu             sync.RWMutex
 	sequenceNumber uint64
 	ammOrders      map[string][]*types.Order
+	activeAMMs     map[string]*entities.AMMPool
 }
 
-func NewMarketDepth(orderStore OrderStore, ammStore AMMStore, marketData MarketDataStore, positions Positions, logger *logging.Logger) *MarketDepth {
+func NewMarketDepth(cfg MarketDepthConfig, orderStore OrderStore, ammStore AMMStore, marketData MarketDataStore, positions Positions, logger *logging.Logger) *MarketDepth {
 	return &MarketDepth{
 		log:            logger,
+		cfg:            cfg,
 		marketDepths:   map[string]*entities.MarketDepth{},
 		orderStore:     orderStore,
 		ammStore:       ammStore,
@@ -146,7 +149,7 @@ func (m *MarketDepth) publishChanges() {
 	}
 }
 
-func (m *MarketDepth) UpdateAMM(pool entities.AMMPool) {
+func (m *MarketDepth) UpdateAMM(pool *entities.AMMPool) {
 
 	// remove any existing orders for this AMM and we'll generate some more given its new definition
 	existing := m.ammOrders[string(pool.AmmPartyID)]
@@ -156,8 +159,12 @@ func (m *MarketDepth) UpdateAMM(pool entities.AMMPool) {
 	}
 
 	if pool.Status == entities.AMMStatusCancelled || pool.Status == entities.AMMStatusStopped {
+		delete(m.activeAMMs, pool.ID.String())
 		return
 	}
+
+	// update its definition
+	m.activeAMMs[pool.ID.String()] = pool
 
 	marketID := string(pool.MarketID)
 	marketData, err := m.marketData.GetMarketDataByID(context.Background(), marketID)
@@ -184,14 +191,56 @@ func (m *MarketDepth) UpdateAMM(pool entities.AMMPool) {
 
 	// an AMM has appeared, lets add its volume
 	orders, _ := m.ExpandAMM(pool, reference)
-
+	md := m.getDepth(pool.MarketID.String())
 	for _, o := range orders {
-		m.AddOrder(o, time.Time{}, m.sequenceNumber)
+		md.AddAMMOrder(o, false)
 	}
 
 }
 
+func (m *MarketDepth) refreshAMM(ammParty, marketID string) {
+
+	depth := m.getDepth(marketID)
+
+	// TODO we don't have the pool ID from the order :()
+	pool, ok := m.activeAMMs[ammParty]
+	if !ok {
+		m.log.Warn("trying to referesh an AMM that doesn't exist",
+			logging.String("amm-party", ammParty),
+			logging.String("market-id", marketID),
+		)
+		return
+	}
+
+	// remove any orders it already has
+	existing := m.ammOrders[ammParty]
+	for _, o := range existing {
+		o.Status = entities.OrderStatusCancelled
+		depth.AddOrderUpdate(o)
+	}
+	delete(m.ammOrders, ammParty)
+
+	if pool.Status == entities.AMMStatusCancelled || pool.Status == entities.AMMStatusStopped {
+		delete(m.activeAMMs, ammParty)
+		return
+	}
+
+	// an AMM has appeared, lets add its volume
+	// TODO reference
+	orders, _ := m.ExpandAMM(pool, num.DecimalOne())
+
+	md := m.getDepth(marketID)
+	for _, o := range orders {
+		md.AddOrderUpdate(o)
+	}
+
+	return
+
+}
+
 func (m *MarketDepth) HandleAMMOrder(order *types.Order) {
+
+	// if this order came through the orders stream it means the AMM traded and we need re-expand and add the whole this in again
 
 	md := m.getDepth(order.MarketID)
 	md.AddOrderUpdate(order)
@@ -199,13 +248,12 @@ func (m *MarketDepth) HandleAMMOrder(order *types.Order) {
 }
 
 func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64) {
-
-	// TODO this lock probably means we should lock handleAMMOrder too?
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	if _, ok := m.ammOrders[order.Party]; ok {
-		m.HandleAMMOrder(order)
+		// this AMM order has come through the orders stream, it can only mean that it has traded so we need to refresh its depth
+		m.refreshAMM(order.Party, order.MarketID)
 		return
 	}
 

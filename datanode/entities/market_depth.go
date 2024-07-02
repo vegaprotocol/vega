@@ -44,8 +44,6 @@ type MarketDepth struct {
 	MarketID string
 	// All of the orders in the order book
 	LiveOrders map[string]*types.Order
-	// All of the active AMM's
-	LiveAMMs map[string]*AMMPool
 	// Just the buy side of the book
 	BuySide []*PriceLevel
 	// Just the sell side of the book
@@ -101,6 +99,10 @@ func (md *MarketDepth) ToProto(limit uint64) *vega.MarketDepth {
 	}
 }
 
+func (md *MarketDepth) AddAMMOrder(order *types.Order, estimated bool) {
+	md.addOrder(order, estimated)
+}
+
 func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
 	// Do we know about this order already?
 	originalOrder := md.orderExists(order.ID)
@@ -119,7 +121,7 @@ func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
 		}
 	} else {
 		if order.TrueRemaining() > 0 && order.Status == types.OrderStatusActive {
-			md.addOrder(order)
+			md.addOrder(order, false)
 		}
 	}
 }
@@ -128,7 +130,7 @@ func (md *MarketDepth) orderExists(orderID string) *types.Order {
 	return md.LiveOrders[orderID]
 }
 
-func (md *MarketDepth) addOrder(order *types.Order) {
+func (md *MarketDepth) addOrder(order *types.Order, estimated bool) {
 	// Cache the orderID
 	orderCopy := order.Clone()
 	md.LiveOrders[order.ID] = orderCopy
@@ -140,6 +142,7 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 		pl = md.createNewPriceLevel(order)
 	} else if order.GeneratedOffbook {
 		pl.TotalAMMVolume += order.TrueRemaining()
+		pl.AMMVolumeEstimated = estimated
 	} else {
 		pl.TotalOrders++
 		pl.TotalVolume += order.TrueRemaining()
@@ -194,7 +197,7 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	} else {
 		md.removeOrder(originalOrder)
 		if newOrder.TrueRemaining() > 0 {
-			md.addOrder(newOrder)
+			md.addOrder(newOrder, false)
 		}
 	}
 }

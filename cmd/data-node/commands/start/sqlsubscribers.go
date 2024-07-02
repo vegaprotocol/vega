@@ -319,7 +319,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.ammPoolsStore = sqlstore.NewAMMPools(transactionalConnectionSource)
 }
 
-func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
+func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, cfg service.Config, candlesConfig candlesv2.Config) error {
 	s.accountService = service.NewAccount(s.accountStore, s.balanceStore, log)
 	s.assetService = service.NewAsset(s.assetStore)
 	s.blockService = service.NewBlock(s.blockStore)
@@ -375,7 +375,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.gameScoreService = service.NewGameScore(s.gameScoreStore, log)
 	s.ammPoolsService = service.NewAMMPools(s.ammPoolsStore)
 
-	s.marketDepthService = service.NewMarketDepth(s.orderStore, s.ammPoolsStore, s.positionService, log)
+	s.marketDepthService = service.NewMarketDepth(cfg.MarketDepth, s.orderStore, s.ammPoolsStore, s.marketDataStore, s.positionService, log)
 
 	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)

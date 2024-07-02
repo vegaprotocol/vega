@@ -17,6 +17,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -25,20 +26,14 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var activeStates = []entities.AMMStatus{entities.AMMStatusActive, entities.AMMStatusReduceOnly}
+var (
+	ErrNoAMMVolumeReference = errors.New("cannot find reference price to estimate AMM volume")
 
-// TODO make this configurable
-const (
-	// accurate expansion 5% either side of mid
-	accurateExpansion = 0.001
-	// step size in estimated region 10% of mid
-	estimateStep = 0.025
-	// the number of steps to take in the estimated region
-	maxEstimatedSteps = 5
+	activeStates = []entities.AMMStatus{entities.AMMStatusActive, entities.AMMStatusReduceOnly}
 )
 
 type amm struct {
-	entities.AMMPool
+	*entities.AMMPool
 	lower    *curve
 	upper    *curve
 	position int64 // signed position in Vega-space
@@ -73,9 +68,9 @@ func (cu *curve) impliedPosition(price, high *num.Uint) num.Decimal {
 
 }
 
-func (m *MarketDepth) GetActiveAMMs(ctx context.Context) map[string][]entities.AMMPool {
+func (m *MarketDepth) getActiveAMMs(ctx context.Context) map[string][]*entities.AMMPool {
 
-	ammByMarket := map[string][]entities.AMMPool{}
+	ammByMarket := map[string][]*entities.AMMPool{}
 	for _, state := range activeStates {
 
 		// TODO page through AMMs
@@ -90,18 +85,64 @@ func (m *MarketDepth) GetActiveAMMs(ctx context.Context) map[string][]entities.A
 		for _, amm := range amms {
 			marketID := string(amm.MarketID)
 			if _, ok := ammByMarket[marketID]; !ok {
-				ammByMarket[marketID] = []entities.AMMPool{}
+				ammByMarket[marketID] = []*entities.AMMPool{}
 			}
 
-			ammByMarket[marketID] = append(ammByMarket[marketID], amm)
+			ammByMarket[marketID] = append(ammByMarket[marketID], &amm)
 		}
 	}
 	return ammByMarket
 }
 
+func (m *MarketDepth) getCalculationBounds(reference num.Decimal) (*num.Uint, *num.Uint, *num.Uint, *num.Uint) {
+
+	accurateExpansion := m.cfg.AmmFullExpansionPercentage
+	estimateStep := m.cfg.AmmEstimatedStepPercentage
+	maxEstimatedSteps := m.cfg.AmmMaxEstimatedSteps
+
+	// calculate accurate bounds
+	accHigh, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))))
+	accLow, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Sub(num.DecimalFromFloat(accurateExpansion))))
+
+	eStep, _ := num.UintFromDecimal(reference.Mul(num.DecimalFromFloat(estimateStep)))
+
+	eRange := num.UintZero().Mul(eStep, num.NewUint(maxEstimatedSteps))
+	estLow := num.UintZero().Sub(accLow, eRange)
+	estHigh := num.UintZero().Add(accHigh, eRange)
+
+	return estLow, accLow, accHigh, estHigh
+
+}
+
+func (m *MarketDepth) getReference(ctx context.Context, marketID string) (num.Decimal, error) {
+	marketData, err := m.marketData.GetMarketDataByID(ctx, marketID)
+	if err != nil {
+		m.log.Warn("unable to get market-data for market",
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return num.DecimalZero(), ErrNoAMMVolumeReference
+	}
+
+	reference := marketData.MidPrice
+	if !marketData.IndicativePrice.IsZero() {
+		reference = marketData.IndicativePrice
+	}
+
+	if reference.IsZero() {
+		m.log.Warn("cannot calculate market-depth for AMM, no reference point available",
+			logging.String("mid-price", marketData.MidPrice.String()),
+			logging.String("indicative-price", marketData.IndicativePrice.String()),
+		)
+		return num.DecimalZero(), ErrNoAMMVolumeReference
+	}
+
+	return reference, nil
+}
+
 func (m *MarketDepth) ExpandAMMs(ctx context.Context) map[string][]*types.Order {
 
-	active := m.GetActiveAMMs(ctx)
+	active := m.getActiveAMMs(ctx)
 	if len(active) == 0 {
 		return nil
 	}
@@ -111,25 +152,13 @@ func (m *MarketDepth) ExpandAMMs(ctx context.Context) map[string][]*types.Order 
 	// expand all these AMM's from the midpoint
 	for marketID, amms := range active {
 
-		marketData, err := m.marketData.GetMarketDataByID(ctx, marketID)
+		// add it to out active list
+		for _, a := range amms {
+			m.activeAMMs[a.ID.String()] = a
+		}
+
+		reference, err := m.getReference(ctx, marketID)
 		if err != nil {
-			m.log.Warn("unable to get market-data for market",
-				logging.String("market-id", marketID),
-				logging.Error(err),
-			)
-			continue
-		}
-
-		reference := marketData.MidPrice
-		if !marketData.IndicativePrice.IsZero() {
-			reference = marketData.IndicativePrice
-		}
-
-		if reference.IsZero() {
-			m.log.Warn("cannot calculate market-depth for AMM, no reference point available",
-				logging.String("mid-price", marketData.MidPrice.String()),
-				logging.String("indicative-price", marketData.IndicativePrice.String()),
-			)
 			continue
 		}
 
@@ -146,7 +175,7 @@ func (m *MarketDepth) ExpandAMMs(ctx context.Context) map[string][]*types.Order 
 	return nil
 }
 
-func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) ([]*types.Order, error) {
+func (m *MarketDepth) ExpandAMM(pool *entities.AMMPool, reference num.Decimal) ([]*types.Order, error) {
 
 	// get positions
 	pos, err := m.positions.GetByMarketAndParty(context.Background(), string(pool.MarketID), string(pool.AmmPartyID))
@@ -169,16 +198,7 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) ([
 
 	// pack some curves
 
-	// calculate accurate bounds
-	//accLow, _ := reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))).Uint()
-	accHigh, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Add(num.DecimalFromFloat(accurateExpansion))))
-	accLow, _ := num.UintFromDecimal(reference.Mul(num.DecimalOne().Sub(num.DecimalFromFloat(accurateExpansion))))
-
-	eStep, _ := num.UintFromDecimal(reference.Mul(num.DecimalFromFloat(estimateStep)))
-
-	eRange := num.UintZero().Mul(eStep, num.NewUint(maxEstimatedSteps))
-	estLow := num.UintZero().Sub(accLow, eRange)
-	estHigh := num.UintZero().Add(accHigh, eRange)
+	estLow, accLow, accHigh, estHigh := m.getCalculationBounds(reference)
 
 	// lets calculate all the prices we are going to get a level for
 	levels := []*num.Uint{estLow.Clone()}
