@@ -171,7 +171,7 @@ func (t *Teams) AddTeam(ctx context.Context, team *entities.Team) error {
 		team.AllowList = []string{}
 	}
 
-	if _, err := t.Connection.Exec(
+	if _, err := t.Exec(
 		ctx,
 		"INSERT INTO teams(id, referrer, name, team_url, avatar_url, closed, allow_list, created_at, created_at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
 		team.ID,
@@ -188,7 +188,7 @@ func (t *Teams) AddTeam(ctx context.Context, team *entities.Team) error {
 		return err
 	}
 
-	if _, err := t.Connection.Exec(
+	if _, err := t.Exec(
 		ctx,
 		"INSERT INTO team_members(team_id, party_id, joined_at_epoch, joined_at, vega_time) VALUES ($1, $2, $3, $4, $5)",
 		team.ID,
@@ -210,7 +210,7 @@ func (t *Teams) UpdateTeam(ctx context.Context, team *entities.TeamUpdated) erro
 		team.AllowList = []string{}
 	}
 
-	ct, err := t.Connection.Exec(ctx,
+	ct, err := t.Exec(ctx,
 		`UPDATE teams
         SET name = $1,
             team_url = $2,
@@ -234,7 +234,7 @@ func (t *Teams) UpdateTeam(ctx context.Context, team *entities.TeamUpdated) erro
 
 func (t *Teams) RefereeJoinedTeam(ctx context.Context, referee *entities.TeamMember) error {
 	defer metrics.StartSQLQuery("Teams", "RefereeJoinedTeam")()
-	_, err := t.Connection.Exec(ctx,
+	_, err := t.Exec(ctx,
 		`INSERT INTO team_members(team_id, party_id, joined_at, joined_at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5)`,
 		referee.TeamID,
 		referee.PartyID,
@@ -249,7 +249,7 @@ func (t *Teams) RefereeJoinedTeam(ctx context.Context, referee *entities.TeamMem
 func (t *Teams) RefereeSwitchedTeam(ctx context.Context, referee *entities.RefereeTeamSwitch) error {
 	defer metrics.StartSQLQuery("Teams", "RefereeJoinedTeam")()
 
-	_, err := t.Connection.Exec(ctx,
+	_, err := t.Exec(ctx,
 		`INSERT INTO team_members(team_id, party_id, joined_at, joined_at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5)`,
 		referee.ToTeamID,
 		referee.PartyID,
@@ -288,7 +288,7 @@ func (t *Teams) TeamsStatsUpdated(ctx context.Context, evt *eventspb.TeamsStatsU
 	}
 
 	query := fmt.Sprintf(upsertTeamsStats, strings.Join(values, ","))
-	_, err := t.Connection.Exec(ctx, query, args...)
+	_, err := t.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("could not insert team stats update: %w", err)
 	}
@@ -327,7 +327,7 @@ FROM teams
 
 	query = fmt.Sprintf(query, where)
 
-	if err := pgxscan.Get(ctx, t.Connection, &team, query, args...); err != nil {
+	if err := pgxscan.Get(ctx, t.ConnectionSource, &team, query, args...); err != nil {
 		return nil, err
 	}
 
@@ -359,7 +359,7 @@ FROM teams
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, t.Connection, &teams, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, t.ConnectionSource, &teams, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -390,7 +390,7 @@ func (t *Teams) ListTeamsStatistics(ctx context.Context, pagination entities.Cur
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, t.Connection, &teamsStats, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, t.ConnectionSource, &teamsStats, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -431,7 +431,7 @@ func (t *Teams) ListTeamMembersStatistics(ctx context.Context, pagination entiti
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, t.Connection, &membersStats, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, t.ConnectionSource, &membersStats, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -474,7 +474,7 @@ func (t *Teams) ListReferees(ctx context.Context, teamID entities.TeamID, pagina
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, t.Connection, &referees, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, t.ConnectionSource, &referees, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -502,7 +502,7 @@ func (t *Teams) ListRefereeHistory(ctx context.Context, referee entities.PartyID
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, t.Connection, &referees, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, t.ConnectionSource, &referees, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 

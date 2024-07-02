@@ -148,3 +148,7 @@ func (t *TransferResponse) obtainAccountWithAccountDetails(ctx context.Context, 
 	}
 	return a, nil
 }
+
+func (t *TransferResponse) Name() string {
+	return "TransferResponse"
+}

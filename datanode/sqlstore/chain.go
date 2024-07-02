@@ -40,13 +40,13 @@ func (c *Chain) Get(ctx context.Context) (entities.Chain, error) {
 	chain := entities.Chain{}
 
 	query := `SELECT id from chain`
-	return chain, c.wrapE(pgxscan.Get(ctx, c.Connection, &chain, query))
+	return chain, c.wrapE(pgxscan.Get(ctx, c.ConnectionSource, &chain, query))
 }
 
 func (c *Chain) Set(ctx context.Context, chain entities.Chain) error {
 	defer metrics.StartSQLQuery("Chain", "Set")()
 	query := `INSERT INTO chain(id) VALUES($1)`
-	_, err := c.Connection.Exec(ctx, query, chain.ID)
+	_, err := c.Exec(ctx, query, chain.ID)
 	if e, ok := err.(*pgconn.PgError); ok {
 		// 23505 is postgres error code for a unique constraint violation
 		if e.Code == "23505" {

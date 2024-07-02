@@ -41,7 +41,7 @@ func (pas *PartyActivityStreaks) Add(
 ) error {
 	defer metrics.StartSQLQuery("PartyActivityStreaks", "Add")()
 
-	_, err := pas.Connection.Exec(
+	_, err := pas.Exec(
 		ctx, partyActivityStreakAddQuery, activityStreak.Fields()...)
 
 	return err
@@ -71,7 +71,7 @@ func (pas *PartyActivityStreaks) Get(
 		)
 	}
 
-	err := pgxscan.Select(ctx, pas.Connection, &activityStreak, query, args...)
+	err := pgxscan.Select(ctx, pas.ConnectionSource, &activityStreak, query, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,6 @@
 package processor
 
 import (
-	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -37,7 +36,6 @@ type Config struct {
 	LogOrderSubmitDebug encoding.Bool     `long:"log-order-submit-debug"`
 	LogOrderAmendDebug  encoding.Bool     `long:"log-order-amend-debug"`
 	LogOrderCancelDebug encoding.Bool     `long:"log-order-cancel-debug"`
-	Ratelimit           ratelimit.Config  `group:"Ratelimit"             namespace:"ratelimit"`
 	KeepCheckpointsMax  uint              `long:"keep-checkpoints-max"`
 	SnapshotDebug       Snapshot          `group:"SnapshotDebug"         namespace:"snapshotdebug"`
 }
@@ -48,7 +46,6 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		LogOrderSubmitDebug: true,
-		Ratelimit:           ratelimit.NewDefaultConfig(),
 		KeepCheckpointsMax:  20,
 		SnapshotDebug: Snapshot{
 			DevEnabled:     false,

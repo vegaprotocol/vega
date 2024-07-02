@@ -59,7 +59,7 @@ func (od *OracleData) Add(ctx context.Context, oracleData *entities.OracleData) 
 	defer metrics.StartSQLQuery("OracleData", "Add")()
 	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6, $7, $8)", sqlOracleDataColumns)
 
-	if _, err := od.Connection.Exec(
+	if _, err := od.Exec(
 		ctx, query,
 		oracleData.ExternalData.Data.Signers, oracleData.ExternalData.Data.Data, oracleData.ExternalData.Data.MetaData,
 		oracleData.ExternalData.Data.BroadcastAt,
@@ -71,7 +71,7 @@ func (od *OracleData) Add(ctx context.Context, oracleData *entities.OracleData) 
 	}
 
 	query2 := "insert into oracle_data_oracle_specs(vega_time, seq_num, spec_id) values ($1, $2, unnest($3::bytea[]))"
-	if _, err := od.Connection.Exec(
+	if _, err := od.Exec(
 		ctx, query2,
 		oracleData.ExternalData.Data.VegaTime, oracleData.ExternalData.Data.SeqNum, oracleData.ExternalData.Data.MatchedSpecIds,
 	); err != nil {
@@ -85,7 +85,7 @@ func (od *OracleData) Add(ctx context.Context, oracleData *entities.OracleData) 
 func (od *OracleData) ListOracleData(ctx context.Context, id string, pagination entities.Pagination) ([]entities.OracleData, entities.PageInfo, error) {
 	switch p := pagination.(type) {
 	case entities.CursorPagination:
-		return listOracleDataBySpecIDCursorPagination(ctx, od.Connection, id, p)
+		return listOracleDataBySpecIDCursorPagination(ctx, od.ConnectionSource, id, p)
 	default:
 		panic("unsupported pagination")
 	}
@@ -96,7 +96,7 @@ func (od *OracleData) GetByTxHash(ctx context.Context, txHash entities.TxHash) (
 
 	var data []entities.Data
 	query := fmt.Sprintf(`%s WHERE tx_hash = $1`, oracleDataQuery)
-	err := pgxscan.Select(ctx, od.Connection, &data, query, txHash)
+	err := pgxscan.Select(ctx, od.ConnectionSource, &data, query, txHash)
 	if err != nil {
 		return nil, err
 	}

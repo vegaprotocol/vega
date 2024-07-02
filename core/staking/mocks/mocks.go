@@ -113,16 +113,16 @@ func (m *MockEthereumEventSource) EXPECT() *MockEthereumEventSourceMockRecorder 
 	return m.recorder
 }
 
-// UpdateStakingStartingBlock mocks base method.
-func (m *MockEthereumEventSource) UpdateStakingStartingBlock(arg0 uint64) {
+// UpdateContractBlock mocks base method.
+func (m *MockEthereumEventSource) UpdateContractBlock(arg0, arg1 string, arg2 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateStakingStartingBlock", arg0)
+	m.ctrl.Call(m, "UpdateContractBlock", arg0, arg1, arg2)
 }
 
-// UpdateStakingStartingBlock indicates an expected call of UpdateStakingStartingBlock.
-func (mr *MockEthereumEventSourceMockRecorder) UpdateStakingStartingBlock(arg0 interface{}) *gomock.Call {
+// UpdateContractBlock indicates an expected call of UpdateContractBlock.
+func (mr *MockEthereumEventSourceMockRecorder) UpdateContractBlock(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStakingStartingBlock", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateStakingStartingBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractBlock", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateContractBlock), arg0, arg1, arg2)
 }
 
 // MockTimeService is a mock of TimeService interface.
@@ -248,6 +248,20 @@ func (m *MockEthOnChainVerifier) CheckStakeRemoved(arg0 *types.StakeRemoved) err
 func (mr *MockEthOnChainVerifierMockRecorder) CheckStakeRemoved(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckStakeRemoved", reflect.TypeOf((*MockEthOnChainVerifier)(nil).CheckStakeRemoved), arg0)
+}
+
+// GetStakingBridgeAddresses mocks base method.
+func (m *MockEthOnChainVerifier) GetStakingBridgeAddresses() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStakingBridgeAddresses")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetStakingBridgeAddresses indicates an expected call of GetStakingBridgeAddresses.
+func (mr *MockEthOnChainVerifierMockRecorder) GetStakingBridgeAddresses() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStakingBridgeAddresses", reflect.TypeOf((*MockEthOnChainVerifier)(nil).GetStakingBridgeAddresses))
 }
 
 // MockWitness is a mock of Witness interface.

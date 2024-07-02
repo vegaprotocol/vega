@@ -25,6 +25,10 @@ import (
 
 type newMarketResolver VegaResolverRoot
 
+func (r *newMarketResolver) EnableTxReordering(ctx context.Context, obj *types.NewMarket) (bool, error) {
+	return obj.Changes.EnableTransactionReordering, nil
+}
+
 func (r *newMarketResolver) TickSize(_ context.Context, obj *types.NewMarket) (string, error) {
 	return obj.Changes.TickSize, nil
 }

@@ -50,7 +50,7 @@ func NewBlocks(connectionSource *ConnectionSource) *Blocks {
 func (bs *Blocks) Add(ctx context.Context, b entities.Block) error {
 	defer metrics.StartSQLQuery("Blocks", "Add")()
 
-	_, err := bs.Connection.Exec(ctx,
+	_, err := bs.Exec(ctx,
 		`insert into blocks(vega_time, height, hash) values ($1, $2, $3)`,
 		b.VegaTime, b.Height, b.Hash)
 	if err != nil {
@@ -64,7 +64,7 @@ func (bs *Blocks) Add(ctx context.Context, b entities.Block) error {
 func (bs *Blocks) GetAll(ctx context.Context) ([]entities.Block, error) {
 	defer metrics.StartSQLQuery("Blocks", "GetAll")()
 	blocks := []entities.Block{}
-	err := pgxscan.Select(ctx, bs.Connection, &blocks,
+	err := pgxscan.Select(ctx, bs.ConnectionSource, &blocks,
 		`SELECT vega_time, height, hash
 		FROM blocks
 		ORDER BY vega_time desc`)
@@ -72,7 +72,7 @@ func (bs *Blocks) GetAll(ctx context.Context) ([]entities.Block, error) {
 }
 
 func (bs *Blocks) GetAtHeight(ctx context.Context, height int64) (entities.Block, error) {
-	connection := bs.Connection
+	connection := bs.ConnectionSource
 	defer metrics.StartSQLQuery("Blocks", "GetAtHeight")()
 
 	// Check if it's in our cache first
@@ -102,7 +102,7 @@ func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	}
 	defer metrics.StartSQLQuery("Blocks", "GetLastBlock")()
 
-	lastBlock, err := bs.getLastBlockUsingConnection(ctx, bs.Connection)
+	lastBlock, err := bs.getLastBlockUsingConnection(ctx, bs.ConnectionSource)
 	// FIXME(woot?): why do we set that before checking for error, that would clearly fuckup the cache or something innit?
 	bs.lastBlock = lastBlock
 	if err != nil {
@@ -121,7 +121,7 @@ func (bs *Blocks) setLastBlock(b entities.Block) {
 func (bs *Blocks) GetOldestHistoryBlock(ctx context.Context) (entities.Block, error) {
 	defer metrics.StartSQLQuery("Blocks", "GetOldestHistoryBlock")()
 
-	return bs.getOldestHistoryBlockUsingConnection(ctx, bs.Connection)
+	return bs.getOldestHistoryBlockUsingConnection(ctx, bs.ConnectionSource)
 }
 
 func (bs *Blocks) getOldestHistoryBlockUsingConnection(ctx context.Context, connection Connection) (entities.Block, error) {

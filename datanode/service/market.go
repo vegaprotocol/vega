@@ -55,8 +55,8 @@ func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 		return err
 	}
 	m.cacheLock.Lock()
-	if market.State == entities.MarketStateSettled || market.State == entities.MarketStateRejected {
-		// a settled or rejected market can be safely removed from this map.
+	if market.State == entities.MarketStateSettled || market.State == entities.MarketStateRejected || market.State == entities.MarketStateCancelled {
+		// a settled, cancelled, or rejected market can be safely removed from this map.
 		delete(m.sf, market.ID)
 		delete(m.isSpotCache, market.ID)
 	} else {

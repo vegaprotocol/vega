@@ -123,3 +123,7 @@ func (a *Asset) addAsset(ctx context.Context, va vega.Asset, txHash string, vega
 
 	return errors.WithStack(a.store.Add(ctx, asset))
 }
+
+func (a *Asset) Name() string {
+	return "Asset"
+}

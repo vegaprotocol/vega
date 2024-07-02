@@ -92,10 +92,6 @@ func (e *Engine) updatePriceBounds(ctx context.Context, res statevar.StateVariab
 
 func (e *Engine) updateFactors(down, up []num.Decimal) {
 	for i, b := range e.bounds {
-		if !b.Active {
-			continue
-		}
-
 		b.DownFactor = down[i]
 		b.UpFactor = up[i]
 	}

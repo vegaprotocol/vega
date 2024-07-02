@@ -96,9 +96,11 @@ func getMockedEngine(t *testing.T) *engineFake {
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
-
+	parties := mocks.NewMockParties(ctrl)
+	delayTarget := mocks.NewMockDelayTransactionsTarget(ctrl)
+	delayTarget.EXPECT().MarketDelayRequiredUpdated(gomock.Any(), gomock.Any()).AnyTimes()
 	mat := common.NewMarketActivityTracker(log, teams, balanceChecker, broker)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking, parties, delayTarget)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return &engineFake{
 		Engine:     exec,
@@ -163,8 +165,10 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	mat := common.NewMarketActivityTracker(log, teams, balanceChecker, broker)
 	banking := mocks.NewMockBanking(ctrl)
-
-	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
+	parties := mocks.NewMockParties(ctrl)
+	delayTarget := mocks.NewMockDelayTransactionsTarget(ctrl)
+	delayTarget.EXPECT().MarketDelayRequiredUpdated(gomock.Any(), gomock.Any()).AnyTimes()
+	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking, parties, delayTarget)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return e, ctrl
 }

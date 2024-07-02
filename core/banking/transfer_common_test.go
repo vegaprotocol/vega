@@ -127,3 +127,52 @@ func TestCheckTransferWithVestedAccount(t *testing.T) {
 		e.CheckTransfer(transfer),
 	)
 }
+
+func TestCheckTransferWithVestedAccountFromSubAccount(t *testing.T) {
+	e := getTestEngine(t)
+
+	derivedKey := "c84fbf3442a2a9f9ca87c9cefe686aed241ff49981dd8ce819dd532cd42a8427"
+	asset := "eth"
+
+	transfer := &types.TransferBase{
+		From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+		FromDerivedKey:  &derivedKey,
+		FromAccountType: types.AccountTypeVestedRewards,
+		To:              "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+		ToAccountType:   types.AccountTypeGeneral,
+		Asset:           asset,
+		Amount:          num.NewUint(10),
+		Reference:       "someref",
+	}
+
+	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
+
+	// balance is under the min amount
+	e.col.EXPECT().GetPartyVestedRewardAccount(derivedKey, gomock.Any()).Return(&types.Account{Balance: num.NewUint(90)}, nil).Times(1)
+
+	// asset exists
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+	// try to transfer a small balance, but not the whole balance
+	require.EqualError(t,
+		e.CheckTransfer(transfer),
+		"transfer from vested account under minimal transfer amount must be the full balance",
+	)
+
+	// now we try to transfer the full amount
+	e.col.EXPECT().GetPartyVestedRewardAccount(derivedKey, gomock.Any()).Return(&types.Account{Balance: num.NewUint(90)}, nil).Times(2)
+	transfer.Amount = num.NewUint(90)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+	require.NoError(t,
+		e.CheckTransfer(transfer),
+	)
+
+	// now we try again, with a balance above the min amount, but not the whole balance
+	e.col.EXPECT().GetPartyVestedRewardAccount(derivedKey, gomock.Any()).Return(&types.Account{Balance: num.NewUint(300)}, nil).Times(1)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+
+	transfer.Amount = num.NewUint(110)
+	// try to transfer a small balance, but not the whole balance
+	require.NoError(t,
+		e.CheckTransfer(transfer),
+	)
+}

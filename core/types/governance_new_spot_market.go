@@ -120,6 +120,7 @@ type NewSpotMarketConfiguration struct {
 	SLAParams                 *LiquiditySLAParams
 	LiquidityFeeSettings      *LiquidityFeeSettings
 	TickSize                  *num.Uint
+	EnableTxReordering        bool
 
 	// New market risk model parameters
 	//
@@ -154,15 +155,16 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 	}
 
 	r := &vegapb.NewSpotMarketConfiguration{
-		Instrument:                instrument,
-		PriceDecimalPlaces:        n.PriceDecimalPlaces,
-		SizeDecimalPlaces:         n.SizeDecimalPlaces,
-		Metadata:                  md,
-		PriceMonitoringParameters: priceMonitoring,
-		TargetStakeParameters:     targetStakeParameters,
-		SlaParams:                 n.SLAParams.IntoProto(),
-		LiquidityFeeSettings:      n.LiquidityFeeSettings.IntoProto(),
-		TickSize:                  n.TickSize.String(),
+		Instrument:                  instrument,
+		PriceDecimalPlaces:          n.PriceDecimalPlaces,
+		SizeDecimalPlaces:           n.SizeDecimalPlaces,
+		Metadata:                    md,
+		PriceMonitoringParameters:   priceMonitoring,
+		TargetStakeParameters:       targetStakeParameters,
+		SlaParams:                   n.SLAParams.IntoProto(),
+		LiquidityFeeSettings:        n.LiquidityFeeSettings.IntoProto(),
+		TickSize:                    n.TickSize.String(),
+		EnableTransactionReordering: n.EnableTxReordering,
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewSpotMarketConfiguration_Simple:
@@ -180,6 +182,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 		Metadata:           make([]string, len(n.Metadata)),
 		SLAParams:          n.SLAParams.DeepClone(),
 		TickSize:           n.TickSize.Clone(),
+		EnableTxReordering: n.EnableTxReordering,
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -202,7 +205,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 
 func (n NewSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s) tickSize (%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s) tickSize (%s) enableTxReordering(%v)",
 		n.Metadata,
 		n.PriceDecimalPlaces,
 		n.SizeDecimalPlaces,
@@ -212,6 +215,7 @@ func (n NewSpotMarketConfiguration) String() string {
 		stringer.ObjToString(n.RiskParameters),
 		stringer.PtrToString(n.SLAParams),
 		num.UintToString(n.TickSize),
+		n.EnableTxReordering,
 	)
 }
 
@@ -256,6 +260,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		SLAParams:                 slaParams,
 		LiquidityFeeSettings:      liquidityFeeSettings,
 		TickSize:                  tickSize,
+		EnableTxReordering:        p.EnableTransactionReordering,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

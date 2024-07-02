@@ -63,7 +63,7 @@ type Assets interface {
 	GetVegaIDFromEthereumAddress(string) string
 }
 
-type OnEventFound func(*commandspb.ChainEvent)
+type OnEventFound func(*commandspb.ChainEvent, uint64)
 
 type Client interface {
 	ethbind.ContractFilterer
@@ -186,6 +186,20 @@ func (f *LogFilterer) CurrentHeight(ctx context.Context) uint64 {
 	return *currentHeight
 }
 
+func (f *LogFilterer) GetEthTime(ctx context.Context, atBlock uint64) (uint64, error) {
+	blockNum := big.NewInt(0).SetUint64(atBlock)
+	header, err := f.client.HeaderByNumber(ctx, blockNum)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get block header: %w", err)
+	}
+
+	if header == nil {
+		return 0, fmt.Errorf("nil block header: %w", err)
+	}
+
+	return header.Time, nil
+}
+
 // FilterCollateralEvents retrieves the events from the collateral bridge on
 // Ethereum starting at startAt, transform them into ChainEvent, and pass it to
 // the OnEventFound callback.
@@ -197,7 +211,7 @@ func (f *LogFilterer) FilterCollateralEvents(ctx context.Context, startAt, stopA
 	var event *types.ChainEvent
 	for _, log := range logs {
 		event = f.toCollateralChainEvent(log)
-		cb(event)
+		cb(event, log.BlockNumber)
 	}
 }
 
@@ -214,7 +228,7 @@ func (f *LogFilterer) FilterStakingEvents(ctx context.Context, startAt, stopAt u
 	for _, log := range logs {
 		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
 		event = f.toStakingChainEvent(log, blockTime)
-		cb(event)
+		cb(event, log.BlockNumber)
 	}
 }
 
@@ -231,7 +245,7 @@ func (f *LogFilterer) FilterVestingEvents(ctx context.Context, startAt, stopAt u
 	for _, log := range logs {
 		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
 		event = f.toStakingChainEvent(log, blockTime)
-		cb(event)
+		cb(event, log.BlockNumber)
 	}
 }
 
@@ -244,7 +258,7 @@ func (f *LogFilterer) FilterMultisigControlEvents(ctx context.Context, startAt, 
 	for _, log := range logs {
 		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
 		event = f.toMultisigControlChainEvent(log, blockTime)
-		cb(event)
+		cb(event, log.BlockNumber)
 	}
 }
 

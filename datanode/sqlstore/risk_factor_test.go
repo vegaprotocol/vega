@@ -89,7 +89,7 @@ func testAddRiskFactor(t *testing.T) {
 	bs, rfStore := setupRiskFactorTests(t)
 
 	var rowCount int
-	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 
 	block := addTestBlock(t, ctx, bs)
@@ -100,7 +100,7 @@ func testAddRiskFactor(t *testing.T) {
 	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
@@ -111,7 +111,7 @@ func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
 	bs, rfStore := setupRiskFactorTests(t)
 
 	var rowCount int
-	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 
 	block := addTestBlock(t, ctx, bs)
@@ -122,14 +122,14 @@ func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
 	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 
 	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
@@ -148,7 +148,7 @@ func testGetMarketRiskFactors(t *testing.T) {
 	bs, rfStore := setupRiskFactorTests(t)
 
 	var rowCount int
-	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 
 	block := addTestBlock(t, ctx, bs)
@@ -159,7 +159,7 @@ func testGetMarketRiskFactors(t *testing.T) {
 	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 

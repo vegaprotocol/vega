@@ -126,6 +126,13 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	if m.as.Trigger() == types.AuctionTriggerLiquidityTargetNotMet || m.as.Trigger() == types.AuctionTriggerUnableToDeployLPOrders {
 		m.as.SetReadyToLeave()
 	}
+
+	if m.as.Trigger() == types.AuctionTriggerLongBlock || m.as.ExtensionTrigger() == types.AuctionTriggerLongBlock {
+		if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(now) {
+			m.as.SetReadyToLeave()
+		}
+	}
+
 	// price and liquidity auctions
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if !isPrice {

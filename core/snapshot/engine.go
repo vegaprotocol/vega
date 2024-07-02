@@ -64,6 +64,8 @@ type DoneCh <-chan interface{}
 type TimeService interface {
 	GetTimeNow() time.Time
 	SetTimeNow(context.Context, time.Time)
+	GetTimeLastBatch() time.Time
+	SetPrevTime(t time.Time)
 }
 
 type StatsService interface {
@@ -727,7 +729,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	_, block := vegactx.TraceIDFromContext(ctx)
 	e.appState.Block = block
 	e.appState.Time = e.timeService.GetTimeNow().UnixNano()
-
+	e.appState.PrevBlockTime = e.timeService.GetTimeLastBatch().UnixNano()
 	cid, err := vegactx.ChainIDFromContext(ctx)
 	if err != nil {
 		e.snapshotTreeLock.Unlock()
@@ -883,6 +885,7 @@ func (e *Engine) restoreStateFromSnapshot(ctx context.Context, payloads []*types
 
 	// Restoring state in globally shared services.
 	e.timeService.SetTimeNow(ctx, time.Unix(0, e.appState.Time))
+	e.timeService.SetPrevTime(time.Unix(0, e.appState.PrevBlockTime))
 	e.statsService.SetHeight(e.appState.Height)
 
 	e.log.Info("loading state from snapshot",

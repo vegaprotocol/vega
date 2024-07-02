@@ -90,7 +90,7 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 	defer metrics.StartSQLQuery("Trades", "Flush")()
 
 	if rows != nil {
-		copyCount, err := ts.Connection.CopyFrom(
+		copyCount, err := ts.CopyFrom(
 			ctx,
 			pgx.Identifier{"trades"},
 			[]string{
@@ -206,7 +206,7 @@ func (ts *Trades) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	query := `SELECT * from trades WHERE tx_hash=$1`
 
 	var trades []entities.Trade
-	err := pgxscan.Select(ctx, ts.Connection, &trades, query, txHash)
+	err := pgxscan.Select(ctx, ts.ConnectionSource, &trades, query, txHash)
 	if err != nil {
 		return nil, fmt.Errorf("querying trades: %w", err)
 	}
@@ -218,7 +218,7 @@ func (ts *Trades) queryTrades(ctx context.Context, query string, args []interfac
 	query, args = queryTradesLast(query, []string{"synthetic_time"}, args...)
 
 	var trades []entities.Trade
-	err := pgxscan.Select(ctx, ts.Connection, &trades, query, args...)
+	err := pgxscan.Select(ctx, ts.ConnectionSource, &trades, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying trades: %w", err)
 	}
@@ -261,7 +261,7 @@ func (ts *Trades) queryTradesWithCursorPagination(ctx context.Context, query str
 	}
 	var trades []entities.Trade
 
-	err = pgxscan.Select(ctx, ts.Connection, &trades, query, args...)
+	err = pgxscan.Select(ctx, ts.ConnectionSource, &trades, query, args...)
 	if err != nil {
 		return trades, pageInfo, fmt.Errorf("querying trades: %w", err)
 	}

@@ -23,6 +23,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
@@ -98,13 +99,25 @@ func NewPartyProfileUpdatedEvent(ctx context.Context, p *types.PartyProfile) *Pa
 		return strings.Compare(a.Key, b.Key)
 	})
 
+	// Ensure deterministic order in event.
+	slices.SortStableFunc(metadata, func(a, b *vegapb.Metadata) int {
+		return strings.Compare(a.Key, b.Key)
+	})
+
+	derivedKeys := maps.Keys(p.DerivedKeys)
+
+	slices.SortStableFunc(derivedKeys, func(a, b string) int {
+		return strings.Compare(a, b)
+	})
+
 	return &PartyProfileUpdated{
 		Base: newBase(ctx, PartyProfileUpdatedEvent),
 		e: eventspb.PartyProfileUpdated{
 			UpdatedProfile: &vegapb.PartyProfile{
-				PartyId:  p.PartyID.String(),
-				Alias:    p.Alias,
-				Metadata: metadata,
+				PartyId:     p.PartyID.String(),
+				Alias:       p.Alias,
+				Metadata:    metadata,
+				DerivedKeys: derivedKeys,
 			},
 		},
 	}

@@ -64,3 +64,7 @@ func (n *NetworkParameter) consume(ctx context.Context, event NetworkParameterEv
 
 	return errors.Wrap(n.store.Add(ctx, np), "error adding networkParameter")
 }
+
+func (n *NetworkParameter) Name() string {
+	return "NetworkParameter"
+}

@@ -27,29 +27,30 @@ import (
 )
 
 type Order struct {
-	ID             string
-	MarketID       string
-	Party          string
-	Side           Side
-	Price          *num.Uint
-	OriginalPrice  *num.Uint
-	Size           uint64
-	Remaining      uint64
-	TimeInForce    OrderTimeInForce
-	Type           OrderType
-	CreatedAt      int64
-	Status         OrderStatus
-	ExpiresAt      int64
-	Reference      string
-	Reason         OrderError
-	UpdatedAt      int64
-	Version        uint64
-	BatchID        uint64
-	PeggedOrder    *PeggedOrder
-	PostOnly       bool
-	ReduceOnly     bool
-	extraRemaining uint64
-	IcebergOrder   *IcebergOrder
+	ID               string
+	MarketID         string
+	Party            string
+	Side             Side
+	Price            *num.Uint
+	OriginalPrice    *num.Uint
+	Size             uint64
+	Remaining        uint64
+	TimeInForce      OrderTimeInForce
+	Type             OrderType
+	CreatedAt        int64
+	Status           OrderStatus
+	ExpiresAt        int64
+	Reference        string
+	Reason           OrderError
+	UpdatedAt        int64
+	Version          uint64
+	BatchID          uint64
+	PeggedOrder      *PeggedOrder
+	PostOnly         bool
+	ReduceOnly       bool
+	extraRemaining   uint64
+	IcebergOrder     *IcebergOrder
+	GeneratedOffbook bool
 }
 
 func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
@@ -929,6 +930,7 @@ const (
 	OrderErrorIsolatedMarginCheckFailed              OrderError = proto.OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
 	OrderErrorPeggedOrdersNotAllowedInIsolatedMargin OrderError = proto.OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
 	OrderErrorPriceNotInTickSize                     OrderError = proto.OrderError_ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE
+	OrderErrorPriceLTEMaxPrice                       OrderError = proto.OrderError_ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE
 )
 
 var (
@@ -959,6 +961,16 @@ var (
 	ErrPeggedOrdersNotAllowedInIsolatedMargin      = OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
 	ErrOrderNotInTickSize                          = OrderErrorPriceNotInTickSize
 )
+
+func OtherSide(s Side) Side {
+	switch s {
+	case SideBuy:
+		return SideSell
+	case SideSell:
+		return SideBuy
+	}
+	return SideUnspecified
+}
 
 func IsOrderError(err error) (OrderError, bool) {
 	oerr, ok := err.(OrderError)

@@ -24,6 +24,7 @@ import (
 )
 
 func PartiesShouldHaveTheFollowingAccountBalances(
+	exec Execution,
 	broker *stubs.BrokerStub,
 	table *godog.Table,
 ) error {
@@ -32,15 +33,23 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 
 		expectedValues := map[string]string{}
 		foundValues := map[string]string{}
+		party := row.Party()
+		if row.IsAMM() {
+			id, ok := exec.GetAMMSubAccountID(party)
+			if !ok {
+				return errAMMAliasNotFound(party)
+			}
+			party = id
+		}
 
 		expectedAsset := row.Asset()
 		if row.ExpectGeneralAccountBalance() && len(row.GeneralAccountBalance()) > 0 {
-			generalAccount, err := broker.GetPartyGeneralAccount(row.Party(), expectedAsset)
+			generalAccount, err := broker.GetPartyGeneralAccount(party, expectedAsset)
 			if err != nil {
-				return errCannotGetPartyGeneralAccount(row.Party(), expectedAsset, err)
+				return errCannotGetPartyGeneralAccount(party, expectedAsset, err)
 			}
 			if generalAccount.GetAsset() != expectedAsset {
-				return errWrongGeneralAccountAsset(row.Party(), expectedAsset, generalAccount.GetAsset())
+				return errWrongGeneralAccountAsset(party, expectedAsset, generalAccount.GetAsset())
 			}
 
 			foundBalance := generalAccount.GetBalance()
@@ -55,12 +64,12 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			if !row.ExpectMarketID() {
 				return fmt.Errorf("market id must be specified when expected margin account balance is supplied")
 			}
-			marginAccount, err := broker.GetPartyMarginAccount(row.Party(), row.MarketID())
+			marginAccount, err := broker.GetPartyMarginAccount(party, row.MarketID())
 			if err != nil {
-				return errCannotGetPartyMarginAccount(row.Party(), row.MarketID(), err)
+				return errCannotGetPartyMarginAccount(party, row.MarketID(), err)
 			}
 			if marginAccount.GetAsset() != expectedAsset {
-				return errWrongMarketAccountAsset(marginAccount.GetType().String(), row.Party(), row.MarketID(), expectedAsset, marginAccount.GetAsset())
+				return errWrongMarketAccountAsset(marginAccount.GetType().String(), party, row.MarketID(), expectedAsset, marginAccount.GetAsset())
 			}
 			foundBalance := marginAccount.GetBalance()
 			expectedBalance := row.MarginAccountBalance()
@@ -74,12 +83,12 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			if !row.ExpectMarketID() {
 				return fmt.Errorf("market id must be specified when expected order margin account balance is supplied")
 			}
-			orderMarginAccount, err := broker.GetPartyOrderMarginAccount(row.Party(), row.MarketID())
+			orderMarginAccount, err := broker.GetPartyOrderMarginAccount(party, row.MarketID())
 			if err != nil {
-				return errCannotGetPartyOrderMarginAccount(row.Party(), row.MarketID(), err)
+				return errCannotGetPartyOrderMarginAccount(party, row.MarketID(), err)
 			}
 			if orderMarginAccount.GetAsset() != expectedAsset {
-				return errWrongMarketAccountAsset(orderMarginAccount.GetType().String(), row.Party(), row.MarketID(), expectedAsset, orderMarginAccount.GetAsset())
+				return errWrongMarketAccountAsset(orderMarginAccount.GetType().String(), party, row.MarketID(), expectedAsset, orderMarginAccount.GetAsset())
 			}
 			foundBalance := orderMarginAccount.GetBalance()
 			expectedBalance := row.OrderMarginAccountBalance()
@@ -94,12 +103,12 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			if !row.ExpectMarketID() {
 				return fmt.Errorf("market id must be specified when expected bond account balance is supplied")
 			}
-			bondAcc, err := broker.GetPartyBondAccountForMarket(row.Party(), expectedAsset, row.MarketID())
+			bondAcc, err := broker.GetPartyBondAccountForMarket(party, expectedAsset, row.MarketID())
 			if err != nil {
-				return errCannotGetPartyBondAccount(row.Party(), row.MarketID(), err)
+				return errCannotGetPartyBondAccount(party, row.MarketID(), err)
 			}
 			if bondAcc.GetAsset() != expectedAsset {
-				return errWrongMarketAccountAsset(bondAcc.GetType().String(), row.Party(), row.MarketID(), expectedAsset, bondAcc.GetAsset())
+				return errWrongMarketAccountAsset(bondAcc.GetType().String(), party, row.MarketID(), expectedAsset, bondAcc.GetAsset())
 			}
 			foundBalance := bondAcc.GetBalance()
 			expectedBalance := row.BondAccountBalance()
@@ -113,12 +122,12 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			if !row.ExpectMarketID() {
 				return fmt.Errorf("market id must be specified when expected bond account balance is supplied")
 			}
-			vestingAcc, err := broker.GetPartyVestingAccountForMarket(row.Party(), expectedAsset, row.MarketID())
+			vestingAcc, err := broker.GetPartyVestingAccountForMarket(party, expectedAsset, row.MarketID())
 			if err != nil {
-				return errCannotGetPartyVestingAccount(row.Party(), row.MarketID(), err)
+				return errCannotGetPartyVestingAccount(party, row.MarketID(), err)
 			}
 			if vestingAcc.GetAsset() != expectedAsset {
-				return errWrongMarketAccountAsset(vestingAcc.GetType().String(), row.Party(), row.MarketID(), expectedAsset, vestingAcc.GetAsset())
+				return errWrongMarketAccountAsset(vestingAcc.GetType().String(), party, row.MarketID(), expectedAsset, vestingAcc.GetAsset())
 			}
 			foundBalance := vestingAcc.GetBalance()
 			expectedBalance := row.VestingAccountBalance()
@@ -132,12 +141,12 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			if !row.ExpectMarketID() {
 				return fmt.Errorf("market id must be specified when expected bond account balance is supplied")
 			}
-			vestedAcc, err := broker.GetPartyVestedAccountForMarket(row.Party(), expectedAsset, row.MarketID())
+			vestedAcc, err := broker.GetPartyVestedAccountForMarket(party, expectedAsset, row.MarketID())
 			if err != nil {
-				return errCannotGetPartyVestedAccount(row.Party(), row.MarketID(), err)
+				return errCannotGetPartyVestedAccount(party, row.MarketID(), err)
 			}
 			if vestedAcc.GetAsset() != expectedAsset {
-				return errWrongMarketAccountAsset(vestedAcc.GetType().String(), row.Party(), row.MarketID(), expectedAsset, vestedAcc.GetAsset())
+				return errWrongMarketAccountAsset(vestedAcc.GetType().String(), party, row.MarketID(), expectedAsset, vestedAcc.GetAsset())
 			}
 			foundBalance := vestedAcc.GetBalance()
 			expectedBalance := row.VestedAccountBalance()
@@ -148,10 +157,14 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		}
 
 		if len(expectedValues) > 0 {
-			return formatDiff(fmt.Sprintf("account balances did not match for party %q", row.Party()), expectedValues, foundValues)
+			return formatDiff(fmt.Sprintf("account balances did not match for party %q", party), expectedValues, foundValues)
 		}
 	}
 	return nil
+}
+
+func errAMMAliasNotFound(party string) error {
+	return fmt.Errorf("couldn't find AMM alias %s", party)
 }
 
 func errCannotGetPartyGeneralAccount(party, asset string, err error) error {
@@ -214,6 +227,7 @@ func parseAccountBalancesTable(table *godog.Table) []RowWrapper {
 		"vesting",
 		"vested",
 		"order margin",
+		"is amm",
 	})
 }
 
@@ -287,4 +301,11 @@ func (r accountBalancesRow) VestingAccountBalance() string {
 
 func (r accountBalancesRow) ExpectVestingAccountBalance() bool {
 	return r.row.HasColumn("vesting")
+}
+
+func (r accountBalancesRow) IsAMM() bool {
+	if !r.row.HasColumn("is amm") {
+		return false
+	}
+	return r.row.MustBool("is amm")
 }

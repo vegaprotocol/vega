@@ -93,3 +93,7 @@ func (rp *VolumeDiscountProgram) consumeVolumeDiscountProgramEndedEvent(ctx cont
 	ev := e.GetVolumeDiscountProgramEnded()
 	return rp.store.EndVolumeDiscountProgram(ctx, ev.GetVersion(), time.Unix(0, ev.EndedAt), rp.vegaTime, e.Sequence())
 }
+
+func (rp *VolumeDiscountProgram) Name() string {
+	return "VolumeDiscountProgram"
+}

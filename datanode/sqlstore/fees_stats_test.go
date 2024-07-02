@@ -84,7 +84,7 @@ func testAddFeesStatsEpochNotExists(t *testing.T) {
 
 	// Check that the stats were added
 	var got entities.FeesStats
-	err = pgxscan.Get(ctx, connectionSource.Connection, &got,
+	err = pgxscan.Get(ctx, connectionSource, &got,
 		`SELECT * FROM fees_stats WHERE market_id = $1 AND asset_id = $2 AND epoch_seq = $3`,
 		market.ID, asset.ID, want.EpochSeq,
 	)

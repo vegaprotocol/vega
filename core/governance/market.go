@@ -70,6 +70,7 @@ var (
 	ErrInvalidInsurancePoolFraction          = errors.New("insurnace pool fraction invalid")
 	ErrUpdateMarketDifferentProduct          = errors.New("cannot update a market to a different product type")
 	ErrInvalidEVMChainIDInEthereumOracleSpec = errors.New("invalid source chain id in ethereum oracle spec")
+	ErrMaxPriceInvalid                       = errors.New("max price for capped future must be greater than zero")
 )
 
 func assignProduct(
@@ -101,6 +102,7 @@ func assignProduct(
 				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: datasource.SpecFromDefinition(product.Future.DataSourceSpecForTradingTermination),
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
+				Cap:                                 product.Future.Cap,
 			},
 		}
 	case *types.InstrumentConfigurationPerps:
@@ -248,6 +250,10 @@ func buildMarketFromProposal(
 	}
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
+	// assign here, we want to update this after assigning market variable
+	marginCalc := &types.MarginCalculator{
+		ScalingFactors: types.ScalingFactorsFromProto(&scalingFactors),
+	}
 	market := &types.Market{
 		ID:                    marketID,
 		DecimalPlaces:         definition.Changes.DecimalPlaces,
@@ -263,10 +269,8 @@ func buildMarketFromProposal(
 			Duration: int64(openingAuctionDuration.Seconds()),
 		},
 		TradableInstrument: &types.TradableInstrument{
-			Instrument: instrument,
-			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: types.ScalingFactorsFromProto(&scalingFactors),
-			},
+			Instrument:       instrument,
+			MarginCalculator: marginCalc,
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
 			Parameters: definition.Changes.PriceMonitoringParameters,
@@ -278,6 +282,10 @@ func buildMarketFromProposal(
 		LiquidationStrategy:           lstrat,
 		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
 		TickSize:                      definition.Changes.TickSize,
+		EnableTxReordering:            definition.Changes.EnableTxReordering,
+	}
+	if fCap := market.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
+		marginCalc.FullyCollateralised = fCap.FullyCollateralised
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {
@@ -357,6 +365,7 @@ func buildSpotMarketFromProposal(
 		LiquiditySLAParams:            definition.Changes.SLAParams,
 		MarkPriceConfiguration:        defaultMarkPriceConfig,
 		TickSize:                      definition.Changes.TickSize,
+		EnableTxReordering:            definition.Changes.EnableTxReordering,
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -420,7 +429,7 @@ func validateSpot(spot *types.SpotProduct, decimals uint64, positionDecimals int
 	return validateAssetBasic(spot.BaseAsset, assets, positionDecimals, deepCheck)
 }
 
-func validateFuture(future *types.FutureProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
+func validateFuture(future *types.FutureProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, evmChainIDs []uint64, tickSize *num.Uint) (types.ProposalError, error) {
 	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
 	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
 
@@ -523,8 +532,31 @@ func validateFuture(future *types.FutureProduct, decimals uint64, positionDecima
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
 	}
+	if err := validateFutureCap(future.Cap, tickSize); err != nil {
+		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid capped future configuration: %w", err)
+	}
 
 	return validateAsset(future.SettlementAsset, decimals, positionDecimals, assets, deepCheck)
+}
+
+func validateFutureCap(fCap *types.FutureCap, tickSize *num.Uint) error {
+	if fCap == nil {
+		return nil
+	}
+	if fCap.MaxPrice.IsZero() {
+		return ErrMaxPriceInvalid
+	}
+	// tick size of nil, zero, or one are fine for this check
+	mod := num.UintOne()
+	if tickSize == nil || tickSize.LTE(mod) {
+		return nil
+	}
+	// if maxPrice % tickSize != 0, the max price is invalid
+	if !mod.Mod(fCap.MaxPrice, tickSize).IsZero() {
+		return ErrMaxPriceInvalid
+	}
+
+	return nil
 }
 
 func validatePerps(perps *types.PerpsProduct, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
@@ -633,12 +665,12 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, positionDecimals 
 	return validateAsset(perps.SettlementAsset, decimals, positionDecimals, assets, deepCheck)
 }
 
-func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, evmChainIDs []uint64) (types.ProposalError, error) {
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, positionDecimals int64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, evmChainIDs []uint64, tickSize *num.Uint) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
-		return validateFuture(product.Future, decimals, positionDecimals, assets, et, deepCheck, evmChainIDs)
+		return validateFuture(product.Future, decimals, positionDecimals, assets, et, deepCheck, evmChainIDs, tickSize)
 	case *types.InstrumentConfigurationPerps:
 		return validatePerps(product.Perps, decimals, positionDecimals, assets, et, *currentTime, deepCheck, evmChainIDs)
 	case *types.InstrumentConfigurationSpot:
@@ -796,7 +828,7 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.PriceDecimalPlaces, terms.Changes.SizeDecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.PriceDecimalPlaces, terms.Changes.SizeDecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp), terms.Changes.TickSize); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
@@ -828,7 +860,7 @@ func validateNewMarketChange(
 	restore bool,
 ) (types.ProposalError, error) {
 	// in all cases, the instrument must be specified and validated, successor markets included.
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, terms.Changes.PositionDecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), getEVMChainIDs(netp)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, terms.Changes.PositionDecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), getEVMChainIDs(netp), terms.Changes.TickSize); err != nil {
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets

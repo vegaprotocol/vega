@@ -51,6 +51,10 @@ func (r updateSpotMarketResolver) UpdateSpotMarketConfiguration(ctx context.Cont
 
 type updateSpotMarketConfigurationResolver VegaResolverRoot
 
+func (r *updateSpotMarketConfigurationResolver) EnableTxReordering(ctx context.Context, obj *types.UpdateSpotMarketConfiguration) (bool, error) {
+	return obj.EnableTransactionReordering, nil
+}
+
 // Instrument implements UpdateSpotMarketConfigurationResolver.
 func (r *updateSpotMarketConfigurationResolver) Instrument(ctx context.Context, obj *types.UpdateSpotMarketConfiguration) (*UpdateSpotInstrumentConfiguration, error) {
 	return &UpdateSpotInstrumentConfiguration{
@@ -86,6 +90,10 @@ func (r updateSpotMarketConfigurationResolver) LiquiditySLAParams(ctx context.Co
 }
 
 type newSpotMarketResolver VegaResolverRoot
+
+func (r *newSpotMarketResolver) EnableTxReordering(ctx context.Context, obj *types.NewSpotMarket) (bool, error) {
+	return obj.Changes.EnableTransactionReordering, nil
+}
 
 func (r *newSpotMarketResolver) TickSize(_ context.Context, obj *types.NewSpotMarket) (string, error) {
 	return obj.Changes.TickSize, nil

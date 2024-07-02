@@ -107,8 +107,9 @@ func (t *EVMTopologies) OnStateLoaded(ctx context.Context) error {
 	topology := t.topologies[0]
 	lastSeen := topology.getLastBlockSeen()
 	if lastSeen != 0 {
+		// TODO snapshot migration stuff
 		topology.log.Info("restoring multisig starting block", logging.Uint64("block", lastSeen), logging.String("chain-id", topology.chainID))
-		topology.ethEventSource.UpdateMultisigControlStartingBlock(topology.getLastBlockSeen())
+		// topology.ethEventSource.UpdateMultisigControlStartingBlock(topology.getLastBlockSeen())
 	}
 	return nil
 }

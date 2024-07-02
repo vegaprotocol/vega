@@ -83,3 +83,7 @@ func (md *MarketData) convertMarketDataProto(data *types.MarketData, seqNum uint
 
 	return record, nil
 }
+
+func (md *MarketData) Name() string {
+	return "MarketData"
+}

@@ -40,7 +40,7 @@ func TestERC20MultiSigEvent(t *testing.T) {
 func setupERC20MultiSigEventStoreTests(t *testing.T) (*sqlstore.ERC20MultiSigSignerEvent, sqlstore.Connection) {
 	t.Helper()
 	ms := sqlstore.NewERC20MultiSigSignerEvent(connectionSource)
-	return ms, connectionSource.Connection
+	return ms, connectionSource
 }
 
 func testAddSigner(t *testing.T) {

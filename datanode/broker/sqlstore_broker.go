@@ -18,7 +18,6 @@ package broker
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -34,6 +33,7 @@ type SQLBrokerSubscriber interface {
 	Flush(ctx context.Context) error
 	Push(ctx context.Context, val events.Event) error
 	Types() []events.Type
+	Name() string
 }
 
 type SQLStoreEventBroker interface {
@@ -126,7 +126,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		return err
 	}
 
-	dbContext, err := b.transactionManager.WithConnection(context.Background())
+	dbContext, err := b.transactionManager.WithConnection(ctx)
 	if err != nil {
 		return err
 	}
@@ -228,14 +228,6 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	betweenBlocks := false
 	refreshMaterializedViews := false
 	for {
-		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
-		// the number of things we'll keep trying to handle after we are cancelled.
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-
 		blockTimer.stopTimer()
 		select {
 		case <-ctx.Done():
@@ -325,8 +317,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 func (b *SQLStoreBroker) flushAllSubscribers(blockCtx context.Context) error {
 	for _, subscriber := range b.subscribers {
-		subName := reflect.TypeOf(subscriber).Elem().Name()
-		timer := metrics.NewTimeCounter(subName)
+		timer := metrics.NewTimeCounter(subscriber.Name())
 		err := subscriber.Flush(blockCtx)
 		timer.FlushTimeCounterAdd()
 		if err != nil {
@@ -367,8 +358,7 @@ func (b *SQLStoreBroker) handleEvent(ctx context.Context, e events.Event) error 
 }
 
 func (b *SQLStoreBroker) push(ctx context.Context, sub SQLBrokerSubscriber, e events.Event) error {
-	subName := reflect.TypeOf(sub).Elem().Name()
-	timer := metrics.NewTimeCounter("sql", subName, e.Type().String())
+	timer := metrics.NewTimeCounter("sql", sub.Name(), e.Type().String())
 	err := sub.Push(ctx, e)
 	timer.EventTimeCounterAdd()
 

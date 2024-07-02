@@ -307,7 +307,7 @@ func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) 
 
 		if bound.MinValidPrice != other[i].MinValidPrice ||
 			bound.MaxValidPrice != other[i].MaxValidPrice ||
-			bound.ReferencePrice != other[i].ReferencePrice {
+			bound.ReferencePrice != other[i].ReferencePrice || bound.Active != other[i].Active {
 			return false
 		}
 

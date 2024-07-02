@@ -18,6 +18,7 @@ package banking
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -25,6 +26,15 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+func (e *Engine) OnRewardsUpdateFrequencyUpdate(ctx context.Context, d time.Duration) error {
+	if !e.nextMetricUpdate.IsZero() {
+		e.nextMetricUpdate = e.nextMetricUpdate.Add(-e.metricUpdateFrequency)
+	}
+	e.nextMetricUpdate = e.nextMetricUpdate.Add(d)
+	e.metricUpdateFrequency = d
+	return nil
+}
 
 func (e *Engine) OnTransferFeeFactorUpdate(ctx context.Context, f num.Decimal) error {
 	e.transferFeeFactor = f
@@ -81,11 +91,11 @@ func (e *Engine) CheckTransfer(t *types.TransferBase) error {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
 
-	if err := e.ensureMinimalTransferAmount(a, t.Amount, t.FromAccountType, t.From); err != nil {
+	if err := e.ensureMinimalTransferAmount(a, t.Amount, t.FromAccountType, t.From, t.FromDerivedKey); err != nil {
 		return err
 	}
 
-	if err = e.ensureFeeForTransferFunds(a, t.Amount, t.From, t.FromAccountType, t.To); err != nil {
+	if err = e.ensureFeeForTransferFunds(a, t.Amount, t.From, t.FromAccountType, t.FromDerivedKey, t.To); err != nil {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
 	return nil
@@ -96,6 +106,7 @@ func (e *Engine) ensureMinimalTransferAmount(
 	amount *num.Uint,
 	fromAccType types.AccountType,
 	from string,
+	fromSubAccount *string,
 ) error {
 	quantum := a.Type().Details.Quantum
 	// no reason this would produce an error
@@ -104,6 +115,9 @@ func (e *Engine) ensureMinimalTransferAmount(
 	// no verify amount
 	if amount.LT(minAmount) {
 		if fromAccType == types.AccountTypeVestedRewards {
+			if fromSubAccount != nil {
+				from = *fromSubAccount
+			}
 			return e.ensureMinimalTransferAmountFromVested(amount, from, a.Type().ID)
 		}
 
@@ -142,6 +156,8 @@ func (e *Engine) processTransfer(
 	reference string,
 	transferID string,
 	epoch uint64,
+	// optional from derived key transfer
+	fromDerivedKey *string,
 	// optional oneoff transfer
 	// in case we need to schedule the delivery
 	oneoff *types.OneOffTransfer,
@@ -150,11 +166,16 @@ func (e *Engine) processTransfer(
 
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
-	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(ctx, assetType, amount, from, fromAcc, to)
+	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(ctx, assetType, amount, from, fromAcc, fromDerivedKey, to)
 	if err != nil {
 		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
 	feeTransferAccountType := []types.AccountType{fromAcc}
+
+	// transfer from sub account to owners general account
+	if fromDerivedKey != nil {
+		from = *fromDerivedKey
+	}
 
 	fromTransfer, toTransfer := e.makeTransfers(from, to, assetType.ID, "", toMarket, amount, &transferID)
 	transfers := []*types.Transfer{fromTransfer}
@@ -226,6 +247,7 @@ func (e *Engine) calculateFeeTransferForTransfer(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
+	fromDerivedKey *string,
 	to string,
 ) *num.Uint {
 	return calculateFeeForTransfer(
@@ -235,6 +257,7 @@ func (e *Engine) calculateFeeTransferForTransfer(
 		amount,
 		from,
 		fromAccountType,
+		fromDerivedKey,
 		to,
 	)
 }
@@ -245,12 +268,13 @@ func (e *Engine) makeFeeTransferForFundsTransfer(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
+	fromDerivedKey *string,
 	to string,
 ) (*types.Transfer, *num.Uint, error) {
-	theoreticalFee := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, to)
+	theoreticalFee := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, fromDerivedKey, to)
 	feeAmount, discountAmount := e.ApplyFeeDiscount(ctx, asset.ID, from, theoreticalFee)
 
-	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, feeAmount); err != nil {
+	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, fromDerivedKey, feeAmount); err != nil {
 		return nil, nil, err
 	}
 
@@ -280,12 +304,13 @@ func (e *Engine) ensureFeeForTransferFunds(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
+	fromDerivedKey *string,
 	to string,
 ) error {
 	assetType := asset.ToAssetType()
-	theoreticalFee := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, to)
+	theoreticalFee := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, fromDerivedKey, to)
 	feeAmount, _ := e.EstimateFeeDiscount(assetType.ID, from, theoreticalFee)
-	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, feeAmount)
+	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, fromDerivedKey, feeAmount)
 }
 
 func (e *Engine) ensureEnoughFundsForTransfer(
@@ -293,6 +318,7 @@ func (e *Engine) ensureEnoughFundsForTransfer(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
+	fromDerivedKey *string,
 	feeAmount *num.Uint,
 ) error {
 	var (
@@ -307,6 +333,11 @@ func (e *Engine) ensureEnoughFundsForTransfer(
 			return err
 		}
 	case types.AccountTypeVestedRewards:
+		// sending from sub account to owners general account
+		if fromDerivedKey != nil {
+			from = *fromDerivedKey
+		}
+
 		account, err = e.col.GetPartyVestedRewardAccount(from, asset.ID)
 		if err != nil {
 			return err

@@ -82,6 +82,8 @@ type SQLSubscribers struct {
 	gamesStore                        *sqlstore.Games
 	marginModesStore                  *sqlstore.MarginModes
 	timeWeightedNotionalPositionStore *sqlstore.TimeWeightedNotionalPosition
+	gameScoreStore                    *sqlstore.GameScores
+	ammPoolsStore                     *sqlstore.AMMPools
 
 	// Services
 	candleService                       *candlesv2.Svc
@@ -138,6 +140,8 @@ type SQLSubscribers struct {
 	gamesService                        *service.Games
 	marginModesService                  *service.MarginModes
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition
+	gameScoreService                    *service.GameScore
+	ammPoolsService                     *service.AMMPools
 
 	// Subscribers
 	accountSub                      *sqlsubscribers.Account
@@ -190,6 +194,8 @@ type SQLSubscribers struct {
 	transactionResultsSub           *sqlsubscribers.TransactionResults
 	marginModesSub                  *sqlsubscribers.MarginModes
 	timeWeightedNotionalPositionSub *sqlsubscribers.TimeWeightedNotionalPosition
+	gameScoreSub                    *sqlsubscribers.GameScore
+	ammPoolsSub                     *sqlsubscribers.AMMPools
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -246,6 +252,8 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.transactionResultsSub,
 		s.marginModesSub,
 		s.timeWeightedNotionalPositionSub,
+		s.gameScoreSub,
+		s.ammPoolsSub,
 	}
 }
 
@@ -307,6 +315,8 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.gamesStore = sqlstore.NewGames(transactionalConnectionSource)
 	s.marginModesStore = sqlstore.NewMarginModes(transactionalConnectionSource)
 	s.timeWeightedNotionalPositionStore = sqlstore.NewTimeWeightedNotionalPosition(transactionalConnectionSource)
+	s.gameScoreStore = sqlstore.NewGameScores(transactionalConnectionSource)
+	s.ammPoolsStore = sqlstore.NewAMMPools(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -363,6 +373,8 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.gamesService = service.NewGames(s.gamesStore)
 	s.marginModesService = service.NewMarginModes(s.marginModesStore)
 	s.timeWeightedNotionalPositionService = service.NewTimeWeightedNotionalPosition(s.timeWeightedNotionalPositionStore)
+	s.gameScoreService = service.NewGameScore(s.gameScoreStore, log)
+	s.ammPoolsService = service.NewAMMPools(s.ammPoolsStore)
 
 	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)
@@ -432,4 +444,6 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
 	s.marginModesSub = sqlsubscribers.NewMarginModes(s.marginModesService)
 	s.timeWeightedNotionalPositionSub = sqlsubscribers.NewTimeWeightedNotionalPosition(s.timeWeightedNotionalPositionService)
+	s.gameScoreSub = sqlsubscribers.NewGameScore(s.gameScoreStore)
+	s.ammPoolsSub = sqlsubscribers.NewAMMPools(s.ammPoolsService)
 }

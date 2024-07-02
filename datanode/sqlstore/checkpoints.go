@@ -43,7 +43,7 @@ func NewCheckpoints(connectionSource *ConnectionSource) *Checkpoints {
 
 func (c *Checkpoints) Add(ctx context.Context, r entities.Checkpoint) error {
 	defer metrics.StartSQLQuery("Checkpoints", "Add")()
-	_, err := c.Connection.Exec(ctx,
+	_, err := c.Exec(ctx,
 		`INSERT INTO checkpoints(
 			hash,
 			block_hash,
@@ -70,7 +70,7 @@ func (c *Checkpoints) GetAll(ctx context.Context, pagination entities.CursorPagi
 		return nps, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, c.Connection, &nps, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, c.ConnectionSource, &nps, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get checkpoint data: %w", err)
 	}
 

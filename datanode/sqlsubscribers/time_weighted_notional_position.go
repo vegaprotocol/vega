@@ -64,3 +64,7 @@ func (tw *TimeWeightedNotionalPosition) Push(ctx context.Context, e events.Event
 		return fmt.Errorf("unexpected event type: %T", e)
 	}
 }
+
+func (tw *TimeWeightedNotionalPosition) Name() string {
+	return "TimeWeightedNotionalPosition"
+}

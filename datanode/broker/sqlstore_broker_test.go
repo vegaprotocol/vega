@@ -584,6 +584,10 @@ func (t *testSQLBrokerSubscriber) Types() []events.Type {
 	return []events.Type{t.eventType}
 }
 
+func (_ *testSQLBrokerSubscriber) Name() string {
+	return "testSQLBrokerSubscriber"
+}
+
 type blockEventSource struct {
 	vegaTime    time.Time
 	blockHeight uint64

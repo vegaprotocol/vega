@@ -22,7 +22,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var (
@@ -64,6 +63,6 @@ func (e *Engine) CancelGovTransfer(ctx context.Context, ID string) error {
 	}
 	e.deleteGovTransfer(ID)
 	gTransfer.Status = types.TransferStatusCancelled
-	e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, num.UintZero(), e.getGovGameID(gTransfer)))
+	e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, gTransfer.Config.MaxAmount, e.getGovGameID(gTransfer)))
 	return nil
 }

@@ -143,6 +143,14 @@ func (l ProvisionsPerParty) FeeForWeightedAverage() num.Decimal {
 	return l.Slice().sortByCommitment().feeForWeightedAverage()
 }
 
+func (l ProvisionsPerParty) Clone() ProvisionsPerParty {
+	clone := ProvisionsPerParty{}
+	for k, v := range l {
+		clone[k] = v
+	}
+	return clone
+}
+
 // TotalStake returns the sum of all CommitmentAmount, which corresponds to the
 // total stake of a market.
 func (l ProvisionsPerParty) TotalStake() *num.Uint {

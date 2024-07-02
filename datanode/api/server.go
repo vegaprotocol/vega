@@ -180,6 +180,8 @@ type GRPCServer struct {
 	gamesService                        *service.Games
 	marginModesService                  *service.MarginModes
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition
+	gameScoreService                    *service.GameScore
+	ammPoolService                      *service.AMMPools
 
 	eventObserver *eventObserver
 
@@ -250,6 +252,8 @@ func NewGRPCServer(
 	gameService *service.Games,
 	marginModesService *service.MarginModes,
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition,
+	gameScoreService *service.GameScore,
+	ammPoolService *service.AMMPools,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -319,6 +323,8 @@ func NewGRPCServer(
 		gamesService:                        gameService,
 		marginModesService:                  marginModesService,
 		timeWeightedNotionalPositionService: timeWeightedNotionalPositionService,
+		gameScoreService:                    gameScoreService,
+		ammPoolService:                      ammPoolService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -515,8 +521,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		partyService:                  g.partyService,
 		riskService:                   g.riskService,
 		positionService:               g.positionService,
-		accountService:                g.accountService,
-		rewardService:                 g.rewardService,
+		AccountService:                g.accountService,
+		RewardService:                 g.rewardService,
 		depositService:                g.depositService,
 		withdrawalService:             g.withdrawalService,
 		oracleSpecService:             g.oracleSpecService,
@@ -558,6 +564,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		gamesService:                  g.gamesService,
 		marginModesService:            g.marginModesService,
 		twNotionalPositionService:     g.timeWeightedNotionalPositionService,
+		gameScoreService:              g.gameScoreService,
+		ammPoolService:                g.ammPoolService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

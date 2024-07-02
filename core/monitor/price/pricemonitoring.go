@@ -142,9 +142,9 @@ type Engine struct {
 	asset          string
 }
 
-func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonitoringSettings) {
+func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonitoringSettings, as AuctionState) {
 	e.riskModel = riskModel
-	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings)
+	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings, as)
 	e.initialised = false
 	e.boundFactorsInitialised = false
 	e.priceRangesCache = make(map[int]priceRange, len(e.bounds)) // clear the cache
@@ -169,7 +169,7 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, auctionState Aucti
 	}
 
 	// Other functions depend on this sorting
-	horizons, bounds := computeBoundsAndHorizons(settings)
+	horizons, bounds := computeBoundsAndHorizons(settings, auctionState)
 
 	e := &Engine{
 		riskModel:               riskModel,
@@ -238,6 +238,32 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 					ReferencePrice: pr.ReferencePrice,
 				})
 		}
+	}
+
+	sort.SliceStable(ret,
+		func(i, j int) bool {
+			if ret[i].Trigger.Horizon == ret[j].Trigger.Horizon {
+				return ret[i].Trigger.Probability.LessThan(ret[j].Trigger.Probability)
+			}
+			return ret[i].Trigger.Horizon < ret[j].Trigger.Horizon
+		})
+
+	return ret
+}
+
+// GetBounds returns a list of valid price ranges per price monitoring trigger. Note these are subject to change as the time progresses.
+func (e *Engine) GetBounds() []*types.PriceMonitoringBounds {
+	priceRanges := e.getCurrentPriceRanges(false)
+	ret := make([]*types.PriceMonitoringBounds, 0, len(priceRanges))
+	for ind, pr := range priceRanges {
+		ret = append(ret,
+			&types.PriceMonitoringBounds{
+				MinValidPrice:  pr.MinPrice.Representation(),
+				MaxValidPrice:  pr.MaxPrice.Representation(),
+				Trigger:        e.bounds[ind].Trigger,
+				ReferencePrice: pr.ReferencePrice,
+				Active:         e.bounds[ind].Active,
+			})
 	}
 
 	sort.SliceStable(ret,
@@ -525,7 +551,9 @@ func (e *Engine) noHistory() bool {
 	return len(e.pricesPast) == 0 && len(e.pricesNow) == 0
 }
 
-func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings) (map[int64]num.Decimal, []*bound) {
+func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings, as AuctionState) (map[int64]num.Decimal, []*bound) {
+	// set bounds to inactive if we're in price monitoring auction
+	active := !as.IsPriceAuction()
 	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
 	for _, p := range settings.Parameters.Triggers {
 		p := *p
@@ -541,7 +569,7 @@ func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings) (map[int6
 	bounds := make([]*bound, 0, len(parameters))
 	for _, p := range parameters {
 		bounds = append(bounds, &bound{
-			Active:  true,
+			Active:  active,
 			Trigger: p,
 		})
 		if _, ok := horizons[p.Horizon]; !ok {

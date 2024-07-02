@@ -130,7 +130,7 @@ func TestStopOrders_Add(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		rows, err := connectionSource.Connection.Query(ctx, "select * from stop_orders")
+		rows, err := connectionSource.Query(ctx, "select * from stop_orders")
 		require.NoError(t, err)
 		assert.False(t, rows.Next())
 
@@ -140,7 +140,7 @@ func TestStopOrders_Add(t *testing.T) {
 			assert.Len(t, orders, len(stopOrders))
 
 			var results []entities.StopOrder
-			err = pgxscan.Select(ctx, connectionSource.Connection, &results, "select * from stop_orders")
+			err = pgxscan.Select(ctx, connectionSource, &results, "select * from stop_orders")
 			require.NoError(t, err)
 			assert.Len(t, results, len(stopOrders))
 			assert.ElementsMatch(t, results, orders)

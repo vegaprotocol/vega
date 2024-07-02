@@ -617,9 +617,9 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 	}
 
 	// IMPORTANT!!!! We MUST refresh the materialized views or the tests will fail because there will be NO DATA!!!
-	_, err := connectionSource.Connection.Exec(ctx, "REFRESH MATERIALIZED VIEW game_stats")
+	_, err := connectionSource.Exec(ctx, "REFRESH MATERIALIZED VIEW game_stats")
 	require.NoError(t, err)
-	_, err = connectionSource.Connection.Exec(ctx, "REFRESH MATERIALIZED VIEW game_stats_current")
+	_, err = connectionSource.Exec(ctx, "REFRESH MATERIALIZED VIEW game_stats_current")
 	require.NoError(t, err)
 
 	return orderResults(results), gameIDs, rewards, teams, individuals

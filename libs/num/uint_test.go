@@ -244,3 +244,10 @@ func TestMedian(t *testing.T) {
 	require.Equal(t, "10", num.Median([]*num.Uint{num.NewUint(10), num.NewUint(5), num.NewUint(17)}).String())
 	require.Equal(t, "11", num.Median([]*num.Uint{num.NewUint(10), num.NewUint(5), num.NewUint(12), num.NewUint(17)}).String())
 }
+
+func TestSqrt(t *testing.T) {
+	n := num.NewUint(123456789)
+
+	n.Sqrt(n)
+	assert.Equal(t, "11111", n.String())
+}

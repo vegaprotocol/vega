@@ -46,15 +46,28 @@ type batchIntruction struct {
 // if any of the ingress methods returns an error (as the processor would).
 type exEng struct {
 	*execution.Engine
-	broker *stubs.BrokerStub
-	batch  *batchIntruction
+	broker   *stubs.BrokerStub
+	batch    *batchIntruction
+	ammAlias map[string]string
 }
 
 func newExEng(e *execution.Engine, broker *stubs.BrokerStub) *exEng {
 	return &exEng{
-		Engine: e,
-		broker: broker,
+		Engine:   e,
+		broker:   broker,
+		ammAlias: map[string]string{},
 	}
+}
+
+// GetAMMSubAccountID returns the derived account ID based on the alias.
+func (e *exEng) GetAMMSubAccountID(alias string) (string, bool) {
+	id, ok := e.ammAlias[alias]
+	return id, ok
+}
+
+// SetAMMSubAccountIDAlias creates an alias for a derived AMM sub account.
+func (e *exEng) SetAMMSubAccountIDAlias(alias, id string) {
+	e.ammAlias[alias] = id
 }
 
 func (e *exEng) BlockEnd(ctx context.Context) {
@@ -196,6 +209,33 @@ func (e *exEng) ProcessBatch(ctx context.Context, party string) error {
 	bmi := processor.NewBMIProcessor(nil, e.Engine, noopValidation{})
 	if err := bmi.ProcessBatch(context.Background(), batch, party, vgcrypto.RandomHash(), stats.NewBlockchain()); err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, nil, "processBatch"))
+		return err
+	}
+	return nil
+}
+
+func (e *exEng) SubmitAMM(ctx context.Context, submission *types.SubmitAMM) error {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	if err := e.Engine.SubmitAMM(ctx, submission, idgen.NextID()); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, submission.Party, submission.IntoProto(), "submitAMM"))
+		return err
+	}
+	return nil
+}
+
+func (e *exEng) AmendAMM(ctx context.Context, submission *types.AmendAMM) error {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	if err := e.Engine.AmendAMM(ctx, submission, idgen.NextID()); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, submission.Party, submission.IntoProto(), "amendAMM"))
+		return err
+	}
+	return nil
+}
+
+func (e *exEng) CancelAMM(ctx context.Context, cancel *types.CancelAMM) error {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	if err := e.Engine.CancelAMM(ctx, cancel, idgen.NextID()); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, cancel.Party, cancel.IntoProto(), "cancelAMM"))
 		return err
 	}
 	return nil

@@ -28,6 +28,14 @@ type _Party struct{}
 
 type PartyID = ID[_Party]
 
+func NewPartyIDSlice(ids ...string) []PartyID {
+	res := make([]PartyID, 0, len(ids))
+	for _, v := range ids {
+		res = append(res, PartyID(v))
+	}
+	return res
+}
+
 type Party struct {
 	ID       PartyID
 	TxHash   TxHash

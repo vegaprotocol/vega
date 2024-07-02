@@ -371,6 +371,11 @@ func (u *Uint) Exp(x, y *Uint) *Uint {
 	return u
 }
 
+func (u *Uint) Sqrt(x *Uint) *Uint {
+	u.u.Sqrt(&x.u)
+	return u
+}
+
 // LT with check if the value stored in u is
 // lesser than oth
 // this is equivalent to:

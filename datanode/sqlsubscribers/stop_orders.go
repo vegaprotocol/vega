@@ -70,3 +70,7 @@ func (so *StopOrder) consume(evt StopOrderEvent, seqNum uint64) error {
 	}
 	return errors.Wrap(so.store.Add(stop), "adding stop order")
 }
+
+func (so *StopOrder) Name() string {
+	return "StopOrder"
+}

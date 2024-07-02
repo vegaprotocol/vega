@@ -63,3 +63,7 @@ func (kr *EthereumKeyRotation) consume(ctx context.Context, event EthereumKeyRot
 
 	return errors.Wrap(kr.service.Add(ctx, record), "Inserting ethereum key rotation to SQL store failed")
 }
+
+func (kr *EthereumKeyRotation) Name() string {
+	return "EthereumKeyRotation"
+}

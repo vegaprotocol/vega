@@ -138,3 +138,7 @@ func (n *Node) consumeEthereumKeyRotation(ctx context.Context, event EthereumKey
 
 	return errors.Wrap(n.store.UpdateEthereumAddress(ctx, record), "Updating public key to SQL store failed")
 }
+
+func (n *Node) Name() string {
+	return "Node"
+}

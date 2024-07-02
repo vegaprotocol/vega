@@ -125,3 +125,7 @@ func (t *Teams) consumeRefereeSwitchedTeamEvent(ctx context.Context, e RefereeSw
 func (t *Teams) consumeTeamsStatsUpdatedEvent(ctx context.Context, e TeamsStatsUpdated) error {
 	return errors.Wrap(t.store.TeamsStatsUpdated(ctx, e.TeamsStatsUpdated()), "teams stats updated")
 }
+
+func (t *Teams) Name() string {
+	return "Teams"
+}

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -41,6 +42,9 @@ import (
 var (
 	// ErrMarketDoesNotExist is returned when the market does not exist.
 	ErrMarketDoesNotExist = errors.New("market does not exist")
+
+	// ErrNotAFutureMarket is returned when the market isn't a future market.
+	ErrNotAFutureMarket = errors.New("not a future market")
 
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation.
 	ErrNoMarketID = errors.New("no valid market id was supplied")
@@ -83,6 +87,7 @@ type Engine struct {
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
 	banking                       common.Banking
+	parties                       common.Parties
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -109,70 +114,13 @@ type Engine struct {
 	isSuccessor     map[string]string
 	successorWindow time.Duration
 	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
-	skipRestoreSuccessors map[string]struct{}
-}
+	skipRestoreSuccessors                 map[string]struct{}
+	minMaintenanceMarginQuantumMultiplier num.Decimal
+	minHoldingQuantumMultiplier           num.Decimal
 
-type netParamsValues struct {
-	feeDistributionTimeStep               time.Duration
-	marketValueWindowLength               time.Duration
-	suppliedStakeToObligationFactor       num.Decimal
-	infrastructureFee                     num.Decimal
-	makerFee                              num.Decimal
-	scalingFactors                        *types.ScalingFactors
-	maxLiquidityFee                       num.Decimal
-	bondPenaltyFactor                     num.Decimal
-	auctionMinDuration                    time.Duration
-	auctionMaxDuration                    time.Duration
-	probabilityOfTradingTauScaling        num.Decimal
-	minProbabilityOfTradingLPOrders       num.Decimal
-	minLpStakeQuantumMultiple             num.Decimal
-	marketCreationQuantumMultiple         num.Decimal
-	markPriceUpdateMaximumFrequency       time.Duration
-	internalCompositePriceUpdateFrequency time.Duration
-	marketPartiesMaximumStopOrdersUpdate  *num.Uint
+	lock sync.RWMutex
 
-	// Liquidity version 2.
-	liquidityV2BondPenaltyFactor                 num.Decimal
-	liquidityV2EarlyExitPenalty                  num.Decimal
-	liquidityV2MaxLiquidityFee                   num.Decimal
-	liquidityV2SLANonPerformanceBondPenaltyMax   num.Decimal
-	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
-	liquidityV2StakeToCCYVolume                  num.Decimal
-	liquidityV2ProvidersFeeCalculationTimeStep   time.Duration
-
-	// only used for protocol upgrade to v0.74
-	chainID uint64
-}
-
-func defaultNetParamsValues() netParamsValues {
-	return netParamsValues{
-		feeDistributionTimeStep:         -1,
-		marketValueWindowLength:         -1,
-		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
-		infrastructureFee:               num.DecimalFromInt64(-1),
-		makerFee:                        num.DecimalFromInt64(-1),
-		scalingFactors:                  nil,
-		maxLiquidityFee:                 num.DecimalFromInt64(-1),
-		bondPenaltyFactor:               num.DecimalFromInt64(-1),
-
-		auctionMinDuration:                    -1,
-		probabilityOfTradingTauScaling:        num.DecimalFromInt64(-1),
-		minProbabilityOfTradingLPOrders:       num.DecimalFromInt64(-1),
-		minLpStakeQuantumMultiple:             num.DecimalFromInt64(-1),
-		marketCreationQuantumMultiple:         num.DecimalFromInt64(-1),
-		markPriceUpdateMaximumFrequency:       5 * time.Second, // default is 5 seconds, should come from net params though
-		internalCompositePriceUpdateFrequency: 5 * time.Second,
-		marketPartiesMaximumStopOrdersUpdate:  num.UintZero(),
-
-		// Liquidity version 2.
-		liquidityV2BondPenaltyFactor:                 num.DecimalFromInt64(-1),
-		liquidityV2EarlyExitPenalty:                  num.DecimalFromInt64(-1),
-		liquidityV2MaxLiquidityFee:                   num.DecimalFromInt64(-1),
-		liquidityV2SLANonPerformanceBondPenaltyMax:   num.DecimalFromInt64(-1),
-		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
-		liquidityV2StakeToCCYVolume:                  num.DecimalFromInt64(-1),
-		liquidityV2ProvidersFeeCalculationTimeStep:   time.Second * 5,
-	}
+	delayTransactionsTarget common.DelayTransactionsTarget
 }
 
 // NewEngine takes stores and engines and returns
@@ -190,6 +138,8 @@ func NewEngine(
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
 	banking common.Banking,
+	parties common.Parties,
+	delayTransactionsTarget common.DelayTransactionsTarget,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -216,6 +166,8 @@ func NewEngine(
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
 		banking:                       banking,
+		parties:                       parties,
+		delayTransactionsTarget:       delayTransactionsTarget,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -288,6 +240,54 @@ func (e *Engine) Hash() []byte {
 	return crypto.Hash(bytes)
 }
 
+func (e *Engine) ensureIsFutureMarket(market string) error {
+	if _, exist := e.allMarkets[market]; !exist {
+		return ErrMarketDoesNotExist
+	}
+
+	if _, isFuture := e.futureMarkets[market]; !isFuture {
+		return ErrNotAFutureMarket
+	}
+
+	return nil
+}
+
+func (e *Engine) SubmitAMM(
+	ctx context.Context,
+	submit *types.SubmitAMM,
+	deterministicID string,
+) error {
+	if err := e.ensureIsFutureMarket(submit.MarketID); err != nil {
+		return err
+	}
+
+	return e.allMarkets[submit.MarketID].SubmitAMM(ctx, submit, deterministicID)
+}
+
+func (e *Engine) AmendAMM(
+	ctx context.Context,
+	submit *types.AmendAMM,
+	deterministicID string,
+) error {
+	if err := e.ensureIsFutureMarket(submit.MarketID); err != nil {
+		return err
+	}
+
+	return e.allMarkets[submit.MarketID].AmendAMM(ctx, submit, deterministicID)
+}
+
+func (e *Engine) CancelAMM(
+	ctx context.Context,
+	cancel *types.CancelAMM,
+	deterministicID string,
+) error {
+	if err := e.ensureIsFutureMarket(cancel.MarketID); err != nil {
+		return err
+	}
+
+	return e.allMarkets[cancel.MarketID].CancelAMM(ctx, cancel, deterministicID)
+}
+
 // RejectMarket will stop the execution of the market
 // and refund into the general account any funds in margins accounts from any parties
 // This works only if the market is in a PROPOSED STATE.
@@ -341,6 +341,12 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 	}
 
 	return ErrMarketDoesNotExist
+}
+
+func (e *Engine) EnterLongBlockAuction(ctx context.Context, duration int64) {
+	for _, mkt := range e.allMarkets {
+		mkt.EnterLongBlockAuction(ctx, duration)
+	}
 }
 
 func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string) error {
@@ -570,6 +576,7 @@ func (e *Engine) UpdateSpotMarket(ctx context.Context, marketConfig *types.Marke
 	if err := mkt.Update(ctx, marketConfig); err != nil {
 		return err
 	}
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.publishUpdateMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return nil
 }
@@ -627,6 +634,7 @@ func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) e
 	if err := mkt.Update(ctx, marketConfig, e.oracle); err != nil {
 		return err
 	}
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.publishUpdateMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return nil
 }
@@ -700,6 +708,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
 		e.banking,
+		e.parties,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -709,11 +718,13 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		return err
 	}
 
+	e.lock.Lock()
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.futureMarkets[marketConfig.ID] = mkt
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
-
+	e.lock.Unlock()
 	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt, false)
 }
 
@@ -788,12 +799,13 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		)
 		return err
 	}
-
+	e.lock.Lock()
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.spotMarkets[marketConfig.ID] = mkt
 	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
-
+	e.lock.Unlock()
 	e.collateral.CreateSpotMarketAccounts(ctx, marketConfig.ID, quoteAsset)
 
 	if err := e.propagateSpotInitialNetParams(ctx, mkt, false); err != nil {
@@ -803,142 +815,10 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 	return nil
 }
 
-func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Market, isRestore bool) error {
-	if !e.npv.minLpStakeQuantumMultiple.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, e.npv.minLpStakeQuantumMultiple)
-	}
-	if e.npv.auctionMinDuration != -1 {
-		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
-	}
-	if e.npv.auctionMaxDuration > 0 {
-		mkt.OnMarketAuctionMaximumDurationUpdate(ctx, e.npv.auctionMaxDuration)
-	}
-	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee)
-	}
-
-	if !e.npv.makerFee.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnFeeFactorsMakerFeeUpdate(ctx, e.npv.makerFee)
-	}
-
-	if e.npv.marketValueWindowLength != -1 {
-		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
-	}
-
-	if e.npv.markPriceUpdateMaximumFrequency > 0 {
-		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
-	}
-
-	if !e.npv.liquidityV2EarlyExitPenalty.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2EarlyExitPenaltyUpdate(e.npv.liquidityV2EarlyExitPenalty)
-	}
-
-	if !e.npv.liquidityV2MaxLiquidityFee.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(e.npv.liquidityV2MaxLiquidityFee)
-	}
-
-	if !e.npv.liquidityV2SLANonPerformanceBondPenaltySlope.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltySlope)
-	}
-
-	if !e.npv.liquidityV2SLANonPerformanceBondPenaltyMax.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltyMax)
-	}
-
-	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
-	}
-
-	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
-
-	e.propagateSLANetParams(ctx, mkt, isRestore)
-	return nil
-}
-
-func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mkt *future.Market, isRestore bool) error {
-	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
-	}
-	if !e.npv.minProbabilityOfTradingLPOrders.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnMarketMinProbabilityOfTradingLPOrdersUpdate(ctx, e.npv.minProbabilityOfTradingLPOrders)
-	}
-	if !e.npv.minLpStakeQuantumMultiple.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, e.npv.minLpStakeQuantumMultiple)
-	}
-	if e.npv.auctionMinDuration != -1 {
-		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
-	}
-	if e.npv.auctionMaxDuration > 0 {
-		mkt.OnMarketAuctionMaximumDurationUpdate(ctx, e.npv.auctionMaxDuration)
-	}
-
-	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee)
-	}
-
-	if !e.npv.makerFee.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnFeeFactorsMakerFeeUpdate(ctx, e.npv.makerFee)
-	}
-
-	if e.npv.scalingFactors != nil {
-		if err := mkt.OnMarginScalingFactorsUpdate(ctx, e.npv.scalingFactors); err != nil {
-			return err
-		}
-	}
-
-	if e.npv.marketValueWindowLength != -1 {
-		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
-	}
-
-	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
-	}
-	if e.npv.markPriceUpdateMaximumFrequency > 0 {
-		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
-	}
-	if e.npv.internalCompositePriceUpdateFrequency > 0 {
-		mkt.OnInternalCompositePriceUpdateFrequency(ctx, e.npv.internalCompositePriceUpdateFrequency)
-	}
-
-	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
-
-	e.propagateSLANetParams(ctx, mkt, isRestore)
-
-	return nil
-}
-
-func (e *Engine) propagateSLANetParams(_ context.Context, mkt common.CommonMarket, isRestore bool) {
-	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2BondPenaltyFactorUpdate(e.npv.liquidityV2BondPenaltyFactor)
-	}
-
-	if !e.npv.liquidityV2EarlyExitPenalty.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2EarlyExitPenaltyUpdate(e.npv.liquidityV2EarlyExitPenalty)
-	}
-
-	if !e.npv.liquidityV2MaxLiquidityFee.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(e.npv.liquidityV2MaxLiquidityFee)
-	}
-
-	if !e.npv.liquidityV2SLANonPerformanceBondPenaltySlope.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltySlope)
-	}
-
-	if !e.npv.liquidityV2SLANonPerformanceBondPenaltyMax.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltyMax)
-	}
-
-	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
-	}
-
-	if !isRestore && e.npv.liquidityV2ProvidersFeeCalculationTimeStep != 0 {
-		mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2ProvidersFeeCalculationTimeStep)
-	}
-}
-
 func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	delete(e.allMarkets, mktID)
 	for i, mkt := range e.allMarketsCpy {
 		if mkt.GetID() == mktID {
@@ -1096,6 +976,14 @@ func (e *Engine) SubmitOrder(ctx context.Context, submission *types.OrderSubmiss
 		return conf, nil
 	}
 	return nil, types.ErrInvalidMarketID
+}
+
+func (e *Engine) ValidateSettlementData(mID string, data *num.Uint) bool {
+	mkt, ok := e.allMarkets[mID]
+	if !ok {
+		return false
+	}
+	return mkt.ValidateSettlementData(data)
 }
 
 // AmendOrder takes order amendment details and attempts to amend the order
@@ -1501,9 +1389,17 @@ func (e *Engine) BlockEnd(ctx context.Context) {
 	}
 }
 
-func (e *Engine) BeginBlock(ctx context.Context) {
+func (e *Engine) BeginBlock(ctx context.Context, prevBlockDuration time.Duration) {
 	for _, mkt := range e.allMarketsCpy {
 		mkt.BeginBlock(ctx)
+	}
+	longBlockAuctionDuration := e.npv.lbadTable.GetLongBlockAuctionDurationForBlockDuration(prevBlockDuration)
+	if longBlockAuctionDuration == nil {
+		return
+	}
+	auctionDurationInSeconds := int64(longBlockAuctionDuration.Seconds())
+	for _, mkt := range e.allMarketsCpy {
+		mkt.EnterLongBlockAuction(ctx, auctionDurationInSeconds)
 	}
 }
 
@@ -1528,330 +1424,6 @@ func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
 		return mkt.GetMarketData(), nil
 	}
 	return types.MarketData{}, types.ErrInvalidMarketID
-}
-
-func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) error {
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
-	}
-	e.npv.auctionMinDuration = d
-	return nil
-}
-
-func (e *Engine) OnMarketAuctionMaximumDurationUpdate(ctx context.Context, d time.Duration) error {
-	for _, mkt := range e.allMarketsCpy {
-		if mkt.IsOpeningAuction() {
-			mkt.OnMarketAuctionMaximumDurationUpdate(ctx, d)
-		}
-	}
-	e.npv.auctionMaxDuration = d
-	return nil
-}
-
-func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) error {
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, d)
-	}
-	e.npv.markPriceUpdateMaximumFrequency = d
-	return nil
-}
-
-func (e *Engine) OnInternalCompositePriceUpdateFrequency(ctx context.Context, d time.Duration) error {
-	for _, mkt := range e.futureMarkets {
-		mkt.OnInternalCompositePriceUpdateFrequency(ctx, d)
-	}
-	e.npv.internalCompositePriceUpdateFrequency = d
-	return nil
-}
-
-// OnMarketLiquidityV2BondPenaltyUpdate stores net param on execution engine and applies to markets at the start of new epoch.
-func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market liquidity bond penalty (liquidity v2)",
-			logging.Decimal("bond-penalty-factor", d),
-		)
-	}
-
-	// Set immediately during opening auction
-	for _, mkt := range e.allMarketsCpy {
-		if mkt.IsOpeningAuction() {
-			mkt.OnMarketLiquidityV2BondPenaltyFactorUpdate(d)
-		}
-	}
-
-	e.npv.liquidityV2BondPenaltyFactor = d
-	return nil
-}
-
-// OnMarketLiquidityV2EarlyExitPenaltyUpdate stores net param on execution engine and applies to markets
-// at the start of new epoch.
-func (e *Engine) OnMarketLiquidityV2EarlyExitPenaltyUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market liquidity early exit penalty (liquidity v2)",
-			logging.Decimal("early-exit-penalty", d),
-		)
-	}
-
-	// Set immediately during opening auction
-	for _, mkt := range e.allMarketsCpy {
-		if mkt.IsOpeningAuction() {
-			mkt.OnMarketLiquidityV2EarlyExitPenaltyUpdate(d)
-		}
-	}
-
-	e.npv.liquidityV2EarlyExitPenalty = d
-	return nil
-}
-
-// OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate stores net param on execution engine and
-// applies at the start of new epoch.
-func (e *Engine) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update liquidity provision max liquidity fee factor (liquidity v2)",
-			logging.Decimal("max-liquidity-fee", d),
-		)
-	}
-
-	// Set immediately during opening auction
-	for _, mkt := range e.allMarketsCpy {
-		if mkt.IsOpeningAuction() {
-			mkt.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(d)
-		}
-	}
-
-	e.npv.liquidityV2MaxLiquidityFee = d
-	return nil
-}
-
-// OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate stores net param on execution engine and applies to markets at the
-// start of new epoch.
-func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market SLA non performance bond penalty slope (liquidity v2)",
-			logging.Decimal("bond-penalty-slope", d),
-		)
-	}
-
-	// Set immediately during opening auction
-	for _, mkt := range e.allMarketsCpy {
-		if mkt.IsOpeningAuction() {
-			mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(d)
-		}
-	}
-
-	e.npv.liquidityV2SLANonPerformanceBondPenaltySlope = d
-	return nil
-}
-
-// OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate stores net param on execution engine and applies to markets
-// at the start of new epoch.
-func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market SLA non performance bond penalty max (liquidity v2)",
-			logging.Decimal("bond-penalty-max", d),
-		)
-	}
-
-	for _, m := range e.futureMarketsCpy {
-		// Set immediately during opening auction
-		if m.IsOpeningAuction() {
-			m.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d)
-		}
-	}
-
-	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
-	return nil
-}
-
-// OnMarketLiquidityV2StakeToCCYVolumeUpdate stores net param on execution engine and applies to markets
-// at the start of new epoch.
-func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market stake to CCYVolume (liquidity v2)",
-			logging.Decimal("stake-to-ccy-volume", d),
-		)
-	}
-
-	for _, m := range e.futureMarketsCpy {
-		// Set immediately during opening auction
-		if m.IsOpeningAuction() {
-			m.OnMarketLiquidityV2StakeToCCYVolume(d)
-		}
-	}
-
-	e.npv.liquidityV2StakeToCCYVolume = d
-	return nil
-}
-
-// OnMarketLiquidityV2ProvidersFeeCalculationTimeStep stores net param on execution engine and applies to markets
-// at the start of new epoch.
-func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Context, d time.Duration) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market SLA providers fee calculation time step (liquidity v2)",
-			logging.Duration("providersFeeCalculationTimeStep", d),
-		)
-	}
-
-	for _, m := range e.allMarketsCpy {
-		// Set immediately during opening auction
-		if m.IsOpeningAuction() {
-			m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d)
-		}
-	}
-
-	e.npv.liquidityV2ProvidersFeeCalculationTimeStep = d
-	return nil
-}
-
-func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v interface{}) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market scaling factors",
-			logging.Reflect("scaling-factors", v),
-		)
-	}
-
-	pscalingFactors, ok := v.(*vega.ScalingFactors)
-	if !ok {
-		return errors.New("invalid types for Margin ScalingFactors")
-	}
-	scalingFactors := types.ScalingFactorsFromProto(pscalingFactors)
-	for _, mkt := range e.futureMarketsCpy {
-		if err := mkt.OnMarginScalingFactorsUpdate(ctx, scalingFactors); err != nil {
-			return err
-		}
-	}
-	e.npv.scalingFactors = scalingFactors
-	return nil
-}
-
-func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update maker fee in market fee factors",
-			logging.Decimal("maker-fee", d),
-		)
-	}
-
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnFeeFactorsMakerFeeUpdate(ctx, d)
-	}
-	e.npv.makerFee = d
-	return nil
-}
-
-func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update infrastructure fee in market fee factors",
-			logging.Decimal("infrastructure-fee", d),
-		)
-	}
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, d)
-	}
-	e.npv.infrastructureFee = d
-	return nil
-}
-
-func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Duration) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market value window length",
-			logging.Duration("window-length", d),
-		)
-	}
-
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnMarketValueWindowLengthUpdate(d)
-	}
-	e.npv.marketValueWindowLength = d
-	return nil
-}
-
-// to be removed and replaced by its v2 counterpart. in use only for future.
-func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update liquidity provision max liquidity fee factor",
-			logging.Decimal("max-liquidity-fee", d),
-		)
-	}
-
-	for _, mkt := range e.futureMarketsCpy {
-		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(d)
-	}
-	e.npv.maxLiquidityFee = d
-
-	return nil
-}
-
-func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update probability of trading tau scaling",
-			logging.Decimal("probability-of-trading-tau-scaling", d),
-		)
-	}
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, d)
-	}
-	e.npv.probabilityOfTradingTauScaling = d
-	return nil
-}
-
-func (e *Engine) OnMarketMinProbabilityOfTradingForLPOrdersUpdate(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update min probability of trading tau scaling",
-			logging.Decimal("min-probability-of-trading-lp-orders", d),
-		)
-	}
-
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnMarketMinProbabilityOfTradingLPOrdersUpdate(ctx, d)
-	}
-	e.npv.minProbabilityOfTradingLPOrders = d
-	return nil
-}
-
-func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update min lp stake quantum multiple",
-			logging.Decimal("min-lp-stake-quantum-multiple", d),
-		)
-	}
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, d)
-	}
-	e.npv.minLpStakeQuantumMultiple = d
-	return nil
-}
-
-func (e *Engine) OnMarketCreationQuantumMultipleUpdate(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market creation quantum multiple",
-			logging.Decimal("market-creation-quantum-multiple", d),
-		)
-	}
-	e.npv.marketCreationQuantumMultiple = d
-	return nil
-}
-
-func (e *Engine) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *num.Uint) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market parties maxiumum stop orders",
-			logging.BigUint("value", u),
-		)
-	}
-	e.npv.marketPartiesMaximumStopOrdersUpdate = u
-	for _, mkt := range e.allMarketsCpy {
-		mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, u)
-	}
-	return nil
-}
-
-func (e *Engine) OnMaxPeggedOrderUpdate(ctx context.Context, max *num.Uint) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update max pegged orders",
-			logging.Uint64("max-pegged-orders", max.Uint64()),
-		)
-	}
-	e.maxPeggedOrders = max.Uint64()
-	return nil
 }
 
 func (e *Engine) MarketExists(market string) bool {
@@ -1934,6 +1506,48 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 	}
 
 	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
+}
+
+func (e *Engine) OnMinimalMarginQuantumMultipleUpdate(_ context.Context, multiplier num.Decimal) error {
+	e.minMaintenanceMarginQuantumMultiplier = multiplier
+	for _, mkt := range e.futureMarketsCpy {
+		mkt.OnMinimalMarginQuantumMultipleUpdate(multiplier)
+	}
+	return nil
+}
+
+func (e *Engine) OnMinimalHoldingQuantumMultipleUpdate(_ context.Context, multiplier num.Decimal) error {
+	e.minHoldingQuantumMultiplier = multiplier
+	for _, mkt := range e.spotMarketsCpy {
+		mkt.OnMinimalHoldingQuantumMultipleUpdate(multiplier)
+	}
+	return nil
+}
+
+func (e *Engine) CheckCanSubmitOrderOrLiquidityCommitment(party, market string) error {
+	if len(market) == 0 {
+		return e.collateral.CheckOrderSpamAllMarkets(party)
+	}
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	mkt, ok := e.allMarkets[market]
+	if !ok {
+		return fmt.Errorf("market does not exist")
+	}
+	assets := mkt.GetAssets()
+	return e.collateral.CheckOrderSpam(party, market, assets)
+}
+
+func (e *Engine) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string) error {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	if mkt := e.allMarkets[orderSubmission.MarketID]; mkt == nil {
+		return types.ErrInvalidMarketID
+	}
+	if ftr := e.futureMarkets[orderSubmission.MarketID]; ftr != nil {
+		return ftr.CheckOrderSubmissionForSpam(orderSubmission, party, e.minMaintenanceMarginQuantumMultiplier)
+	}
+	return e.spotMarkets[orderSubmission.MarketID].CheckOrderSubmissionForSpam(orderSubmission, party, e.minHoldingQuantumMultiplier)
 }
 
 func (e *Engine) GetFillPriceForMarket(marketID string, volume uint64, side types.Side) (*num.Uint, error) {

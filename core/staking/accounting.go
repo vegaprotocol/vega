@@ -67,11 +67,14 @@ type Accounting struct {
 	isValidator      bool
 
 	stakingAssetTotalSupply *num.Uint
-	stakingBridgeAddress    ethcmn.Address
+	stakingBridgeAddresses  []ethcmn.Address
 	chainID                 string
 
 	// snapshot bits
 	accState accountingSnapshotState
+
+	// only used in upgrade from v0.76.8
+	ethSource EthereumEventSource
 
 	// these two are used in order to propagate
 	// the staking asset total supply at genesis.
@@ -107,6 +110,7 @@ func NewAccounting(
 	evtForward EvtForwarder,
 	witness Witness,
 	isValidator bool,
+	ethSource EthereumEventSource,
 ) (acc *Accounting) {
 	log = log.Named("accounting")
 
@@ -122,6 +126,7 @@ func NewAccounting(
 		evtFwd:                  evtForward,
 		witness:                 witness,
 		isValidator:             isValidator,
+		ethSource:               ethSource,
 	}
 }
 
@@ -176,7 +181,8 @@ func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
 }
 
 func (a *Accounting) UpdateStakingBridgeAddress(ethCfg *types.EthereumConfig) error {
-	a.stakingBridgeAddress = ethCfg.StakingBridgeAddresses()[0]
+	a.stakingBridgeAddresses = ethCfg.StakingBridgeAddresses()
+
 	a.chainID = ethCfg.ChainID()
 
 	if !a.accState.isRestoring {
@@ -203,7 +209,7 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 		sts:     evt,
 		chainID: a.chainID,
 		check: func() error {
-			totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
+			totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddresses[0])
 			if err != nil {
 				return err
 			}
@@ -258,7 +264,7 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 		return nil
 	}
 
-	totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
+	totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddresses[0])
 	if err != nil {
 		return err
 	}
@@ -270,7 +276,7 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 			StakingEvent: &vgproto.StakingEvent{
 				Action: &vgproto.StakingEvent_TotalSupply{
 					TotalSupply: &vgproto.StakeTotalSupply{
-						TokenAddress: a.stakingBridgeAddress.Hex(),
+						TokenAddress: a.stakingBridgeAddresses[0].Hex(),
 						TotalSupply:  totalSupply.String(),
 					},
 				},

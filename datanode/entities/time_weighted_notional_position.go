@@ -16,9 +16,9 @@
 package entities
 
 import (
-	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -28,12 +28,12 @@ type TimeWeightedNotionalPosition struct {
 	AssetID                      AssetID
 	PartyID                      PartyID
 	GameID                       GameID
-	TimeWeightedNotionalPosition uint64
+	TimeWeightedNotionalPosition num.Decimal
 	VegaTime                     time.Time
 }
 
 func TimeWeightedNotionalPositionFromProto(event *eventspb.TimeWeightedNotionalPositionUpdated, vegaTime time.Time) (*TimeWeightedNotionalPosition, error) {
-	twNotionalPosition, err := strconv.ParseUint(event.TimeWeightedNotionalPosition, 10, 64)
+	twNotionalPosition, err := num.DecimalFromString(event.TimeWeightedNotionalPosition)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (tw *TimeWeightedNotionalPosition) ToProto() *v2.TimeWeightedNotionalPositi
 		PartyId:                      tw.PartyID.String(),
 		GameId:                       tw.GameID.String(),
 		AtEpoch:                      tw.EpochSeq,
-		TimeWeightedNotionalPosition: strconv.FormatUint(tw.TimeWeightedNotionalPosition, 10),
+		TimeWeightedNotionalPosition: tw.TimeWeightedNotionalPosition.String(),
 		LastUpdated:                  tw.VegaTime.UnixNano(),
 	}
 }

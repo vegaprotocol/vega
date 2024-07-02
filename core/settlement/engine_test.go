@@ -84,6 +84,7 @@ func TestMTMWinDistribution(t *testing.T) {
 	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
 	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
 	t.Run("Distribute loss excess in a scenario where no transfer amount is < 1", testMTMWinWithZero)
+	t.Run("A MTM case where win total > loss total", testMTMWinGTLoss)
 }
 
 func testSettlingAFundingPeriod(t *testing.T) {
@@ -1393,6 +1394,105 @@ func testMTMWinWithZero(t *testing.T) {
 	}
 	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
 	require.NotEmpty(t, transfers)
+}
+
+func testMTMWinGTLoss(t *testing.T) {
+	// cheat by setting the factor to some specific value, makes it easier to create a scenario where win/loss amounts don't match
+	engine := getTestEngineWithFactor(t, 5)
+	defer engine.Finish()
+
+	price := num.NewUint(100000)
+	one := num.NewUint(1)
+	two := num.Sum(one, one)
+	ctx := context.Background()
+
+	initPos := []testPos{
+		{
+			price: price.Clone(),
+			party: "party-1",
+			size:  10,
+		},
+		{
+			price: price.Clone(),
+			party: "party-2",
+			size:  -4,
+		},
+		{
+			price: price.Clone(),
+			party: "party-3",
+			size:  -1,
+		},
+		{
+			price: price.Clone(),
+			party: "party-4",
+			size:  -5,
+		},
+		{
+			price: price.Clone(),
+			party: "party-6",
+			size:  -1,
+		},
+		{
+			price: price.Clone(),
+			party: "party-7",
+			size:  1,
+		},
+	}
+	init := make([]events.MarketPosition, 0, len(initPos))
+	for _, p := range initPos {
+		init = append(init, p)
+	}
+
+	somePrice := num.Sum(price, two)
+	newPrice := num.Sum(price, one)
+	newParty := testPos{
+		size:  3,
+		price: newPrice.Clone(),
+		party: "party-5",
+	}
+
+	trades := []*types.Trade{
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[3].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  newPrice.Clone(),
+		},
+	}
+	updates := make([]events.MarketPosition, 0, len(initPos)+1)
+	for _, trade := range trades {
+		for i, p := range initPos {
+			if p.party == trade.Seller {
+				p.size -= int64(trade.Size)
+				initPos[i] = p
+			}
+			p.price = trade.Price.Clone()
+		}
+	}
+	for _, p := range initPos {
+		updates = append(updates, p)
+	}
+	updates = append(updates, newParty)
+	engine.Update(init)
+	for _, trade := range trades {
+		engine.AddTrade(trade)
+	}
+	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
+	require.NotEmpty(t, transfers)
+	// just a single transfer of 2
+	require.True(t, transfers[0].Transfer().Amount.Amount.EQ(two))
 }
 
 // {{{.

@@ -70,7 +70,7 @@ set
 	tx_hash=EXCLUDED.tx_hash
 	`, sqlStakeLinkingColumns)
 
-	if _, err := s.Connection.Exec(ctx, query, stake.ID, stake.StakeLinkingType, stake.EthereumTimestamp, stake.PartyID, stake.Amount,
+	if _, err := s.Exec(ctx, query, stake.ID, stake.StakeLinkingType, stake.EthereumTimestamp, stake.PartyID, stake.Amount,
 		stake.StakeLinkingStatus, stake.FinalizedAt, stake.ForeignTxHash, stake.ForeignBlockHeight, stake.ForeignBlockTime, stake.LogIndex,
 		stake.EthereumAddress, stake.TxHash, stake.VegaTime); err != nil {
 		return err
@@ -109,7 +109,7 @@ func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID
 
 	var bal *num.Uint
 
-	err = pgxscan.Select(ctx, s.Connection, &links, query, bindVars...)
+	err = pgxscan.Select(ctx, s.ConnectionSource, &links, query, bindVars...)
 	if err != nil {
 		s.log.Errorf("could not retrieve links", logging.Error(err))
 		return bal, nil, pageInfo, err
@@ -151,7 +151,7 @@ WHERE party_id = %s
 
 	var currentBalance decimal.Decimal
 	defer metrics.StartSQLQuery("StakeLinking", "calculateBalance")()
-	if err := pgxscan.Get(ctx, s.Connection, &currentBalance, query, bindVars...); err != nil {
+	if err := pgxscan.Get(ctx, s.ConnectionSource, &currentBalance, query, bindVars...); err != nil {
 		return bal, err
 	}
 

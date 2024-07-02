@@ -18,13 +18,19 @@ package netparams
 const (
 	SpotMarketTradingEnabled  = "limits.markets.proposeSpotEnabled"
 	PerpsMarketTradingEnabled = "limits.markets.proposePerpetualEnabled"
+	AMMMarketTradingEnabled   = "limits.markets.ammPoolEnabled"
 	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
+
+	NetworkWideAuctionDuration = "auction.LongBlock"
 
 	MarketMarginScalingFactors        = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee          = "market.fee.factors.makerFee"
 	MarketFeeFactorsInfrastructureFee = "market.fee.factors.infrastructureFee"
 	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
+
+	MinimalMarginQuantumMultiple  = "spam.order.minimalMarginQuantumMultiple"
+	MinimalHoldingQuantumMultiple = "spam.order.minimalHoldingQuantumMultiple"
 
 	MarketTargetStakeTimeWindow               = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor            = "market.stake.target.scalingFactor"
@@ -46,6 +52,9 @@ const (
 	MarketLiquiditySLANonPerformanceBondPenaltySlope = "market.liquidity.sla.nonPerformanceBondPenaltySlope"
 	MarketLiquidityStakeToCCYVolume                  = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeCalculationTimeStep   = "market.liquidity.providersFeeCalculationTimeStep"
+	MarketLiquidityEquityLikeShareFeeFraction        = "market.liquidity.equityLikeShareFeeFraction"
+
+	MarketAggressiveOrderBlockDelay = "market.aggressiveOrderBlockDelay"
 
 	RewardAsset = "reward.asset"
 
@@ -155,6 +164,7 @@ const (
 
 	RewardMarketCreationQuantumMultiple       = "rewards.marketCreationQuantumMultiple"
 	MinEpochsInTeamForMetricRewardEligibility = "rewards.team.minEpochsInTeam"
+	RewardsUpdateFrequency                    = "rewards.updateFrequency"
 
 	// spam policies params.
 	SpamProtectionMaxVotes                         = "spam.protection.max.votes"
@@ -259,6 +269,9 @@ const (
 	RewardsActivityStreakInactivityLimit       = "rewards.activityStreak.inactivityLimit"
 	RewardsActivityStreakMinQuantumOpenVolume  = "rewards.activityStreak.minQuantumOpenVolume"
 	RewardsActivityStreakMinQuantumTradeVolume = "rewards.activityStreak.minQuantumTradeVolume"
+
+	MarketAMMMinCommitmentQuantum = "market.amm.minCommitmentQuantum"
+	MarketAMMMaxCalculationLevels = "market.liquidity.maxAmmCalculationLevels"
 )
 
 var Deprecated = map[string]struct{}{
@@ -271,8 +284,12 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	NetworkWideAuctionDuration:                                   {},
+	RewardsUpdateFrequency:                                       {},
 	SpamProtectionMaxUpdatePartyProfile:                          {},
 	SpamProtectionUpdateProfileMinFunds:                          {},
+	MarketAMMMinCommitmentQuantum:                                {},
+	MarketAMMMaxCalculationLevels:                                {},
 	GovernanceProposalVolumeDiscountProgramMinClose:              {},
 	GovernanceProposalVolumeDiscountProgramMaxClose:              {},
 	GovernanceProposalVolumeDiscountProgramMinEnact:              {},
@@ -292,12 +309,14 @@ var AllKeys = map[string]struct{}{
 	RewardsVestingBaseRate:                                       {},
 	SpotMarketTradingEnabled:                                     {},
 	PerpsMarketTradingEnabled:                                    {},
+	AMMMarketTradingEnabled:                                      {},
 	EthereumOraclesEnabled:                                       {},
 	MaxPeggedOrders:                                              {},
 	MaxGasPerBlock:                                               {},
 	DefaultGas:                                                   {},
 	MinBlockCapacity:                                             {},
 	RewardMarketCreationQuantumMultiple:                          {},
+	MarketAggressiveOrderBlockDelay:                              {},
 	MarketMarginScalingFactors:                                   {},
 	MarketFeeFactorsMakerFee:                                     {},
 	MarketFeeFactorsInfrastructureFee:                            {},
@@ -311,6 +330,7 @@ var AllKeys = map[string]struct{}{
 	MarketLiquiditySLANonPerformanceBondPenaltyMax:               {},
 	MarketLiquidityStakeToCCYVolume:                              {},
 	MarketLiquidityProvidersFeeCalculationTimeStep:               {},
+	MarketLiquidityEquityLikeShareFeeFraction:                    {},
 	MarketTargetStakeTimeWindow:                                  {},
 	MarketTargetStakeScalingFactor:                               {},
 	MarketPriceMonitoringDefaultParameters:                       {},
@@ -452,4 +472,6 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionApplyReferralMinFunds:                          {},
 	SpamProtectionReferralSetMinFunds:                            {},
 	BlockchainsEthereumL2Configs:                                 {},
+	MinimalMarginQuantumMultiple:                                 {},
+	MinimalHoldingQuantumMultiple:                                {},
 }

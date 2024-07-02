@@ -1381,6 +1381,66 @@ func TestTransferFunds(t *testing.T) {
 			},
 			errString: "transfer.kind.dispatch_strategy.transfer_interval (must be between 1 and 100)",
 		},
+		// sub account type tests
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				From:            toPointer("derived_key"),
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "0000000000000000000000000000000000000000000000000000000000000000",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.from (should be a valid vega public key)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				From:            toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "0000000000000000000000000000000000000000000000000000000000000000",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.from (from can only be set for vested rewards)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+				From:            toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "0000000000000000000000000000000000000000000000000000000000000000",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.from (from can only be set when transferring to general account)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				From:            toPointer("171538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff"),
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "0000000000000000000000000000000000000000000000000000000000000000",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
 	}
 
 	invalidAccountTypesForOneOff := []vega.AccountType{
@@ -1444,4 +1504,8 @@ func checkTransfer(cmd *commandspb.Transfer) commands.Errors {
 	}
 
 	return e
+}
+
+func toPointer[T any](val T) *T {
+	return &val
 }

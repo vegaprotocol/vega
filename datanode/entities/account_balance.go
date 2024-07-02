@@ -42,9 +42,27 @@ func (ab AccountBalance) ToProto() *v2.AccountBalance {
 	}
 }
 
-func (ab AccountBalance) ToProtoEdge(_ ...any) (*v2.AccountEdge, error) {
+func (ab AccountBalance) ToProtoWithParent(parentPartyID *string) *v2.AccountBalance {
+	proto := ab.ToProto()
+	proto.ParentPartyId = parentPartyID
+	return proto
+}
+
+func (ab AccountBalance) ToProtoEdge(args ...any) (*v2.AccountEdge, error) {
+	var parentPartyID *string
+	if len(args) > 0 {
+		perPartyDerivedKey, ok := args[0].(map[string]string)
+		if !ok {
+			return nil, fmt.Errorf("expected argument of type map[string]string, got %T", args[0])
+		}
+
+		if party, isDerivedKey := perPartyDerivedKey[ab.PartyID.String()]; isDerivedKey {
+			parentPartyID = &party
+		}
+	}
+
 	return &v2.AccountEdge{
-		Node:   ab.ToProto(),
+		Node:   ab.ToProtoWithParent(parentPartyID),
 		Cursor: ab.Cursor().Encode(),
 	}, nil
 }

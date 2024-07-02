@@ -39,7 +39,7 @@ func setupNotaryStoreTests(t *testing.T) (*sqlstore.Notary, *sqlstore.Blocks, sq
 	t.Helper()
 	ns := sqlstore.NewNotary(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
-	return ns, bs, connectionSource.Connection
+	return ns, bs, connectionSource
 }
 
 func testAddSignatures(t *testing.T) {

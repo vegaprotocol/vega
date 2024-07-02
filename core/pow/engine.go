@@ -250,7 +250,7 @@ func (e *Engine) updatePowState(txs []abci.Tx) {
 	}
 
 	for i, p := range e.activeParams {
-		outOfScopeBlock := int64(e.currentBlock) + 1 - int64(p.spamPoWNumberOfPastBlocks)
+		outOfScopeBlock := int64(e.currentBlock) - int64(p.spamPoWNumberOfPastBlocks)
 		if outOfScopeBlock < 0 {
 			continue
 		}

@@ -488,6 +488,7 @@ Feature: Calculating SLA Performance
       | lp2  |     | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | BTC/ETH   | 100    | ETH   |
       |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL                           | BTC/ETH   | 150    | ETH   |
 
+
   Scenario: 4 LPs acheive various penalty fractions, unpaid liquidity fees distributed correctly as a bonus (0042-LIQF-105)
     # Initialise the market with the required parameters
     Given the liquidity sla params named "scenario-sla-params":
@@ -500,6 +501,8 @@ Feature: Calculating SLA Performance
     And the following network parameters are set:
       | name                    | value |
       | validators.epoch.length | 98s   |
+      | market.liquidity.equityLikeShareFeeFraction | 1   |
+
 
     # Setup the market with 4 LPs who initially meet their commitment
     Given the parties submit the following liquidity provision:

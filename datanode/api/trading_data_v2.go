@@ -24,6 +24,7 @@ import (
 	"math"
 	"math/rand"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,6 +32,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/amm"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
@@ -57,6 +59,7 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -89,8 +92,8 @@ type TradingDataServiceV2 struct {
 	partyService                  *service.Party
 	riskService                   *service.Risk
 	positionService               *service.Position
-	accountService                *service.Account
-	rewardService                 *service.Reward
+	AccountService                *service.Account
+	RewardService                 *service.Reward
 	depositService                *service.Deposit
 	withdrawalService             *service.Withdrawal
 	oracleSpecService             *service.OracleSpec
@@ -131,6 +134,12 @@ type TradingDataServiceV2 struct {
 	gamesService                  *service.Games
 	marginModesService            *service.MarginModes
 	twNotionalPositionService     *service.TimeWeightedNotionalPosition
+	gameScoreService              *service.GameScore
+	ammPoolService                *service.AMMPools
+}
+
+func (t *TradingDataServiceV2) SetLogger(l *logging.Logger) {
+	t.log = l
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -146,12 +155,27 @@ func (t *TradingDataServiceV2) GetPartyVestingStats(
 		return nil, formatE(err)
 	}
 
-	return &v2.GetPartyVestingStatsResponse{
+	res := &v2.GetPartyVestingStatsResponse{
 		PartyId:               stats.PartyID.String(),
 		EpochSeq:              stats.AtEpoch,
 		RewardBonusMultiplier: stats.RewardBonusMultiplier.String(),
 		QuantumBalance:        stats.QuantumBalance.String(),
-	}, nil
+	}
+
+	// set minimum values if the summed values are zero
+	if stats.SummedRewardBonusMultiplier.IsZero() {
+		res.SummedRewardBonusMultiplier = res.RewardBonusMultiplier
+	} else {
+		res.SummedRewardBonusMultiplier = stats.SummedRewardBonusMultiplier.String()
+	}
+
+	if stats.SummedQuantumBalance.IsZero() {
+		res.SummedQuantumBalance = res.QuantumBalance
+	} else {
+		res.SummedQuantumBalance = stats.SummedQuantumBalance.String()
+	}
+
+	return res, nil
 }
 
 func (t *TradingDataServiceV2) GetVestingBalancesSummary(
@@ -287,6 +311,102 @@ func (t *TradingDataServiceV2) ListFundingPayments(ctx context.Context, req *v2.
 	}, nil
 }
 
+func (t *TradingDataServiceV2) ListGamePartyScores(ctx context.Context, req *v2.ListGamePartyScoresRequest) (*v2.ListGamePartyScoresResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGamePartyScore")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var partyIDs []entities.PartyID
+	var teamIDs []entities.TeamID
+	var gameIDs []entities.GameID
+	var epochFromID *uint64
+	var epochToID *uint64
+	if req.Filter != nil {
+		partyIDs = make([]entities.PartyID, 0, len(req.Filter.PartyIds))
+		for _, pid := range req.Filter.PartyIds {
+			partyIDs = append(partyIDs, entities.PartyID(pid))
+		}
+		teamIDs = make([]entities.TeamID, 0, len(req.Filter.TeamIds))
+		for _, tid := range req.Filter.TeamIds {
+			teamIDs = append(teamIDs, entities.TeamID(tid))
+		}
+
+		gameIDs = make([]entities.GameID, 0, len(req.Filter.GameIds))
+		for _, gid := range req.Filter.GameIds {
+			gameIDs = append(gameIDs, entities.GameID(gid))
+		}
+		epochFromID = req.Filter.EpochFrom
+		epochToID = req.Filter.EpochTo
+	}
+
+	partyScores, pageInfo, err := t.gameScoreService.ListPartyScores(
+		ctx, gameIDs, partyIDs, teamIDs, epochFromID, epochToID, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.GamePartyScoresEdge](partyScores)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.GamePartyScoresConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListGamePartyScoresResponse{
+		PartyScores: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListGameTeamScores(ctx context.Context, req *v2.ListGameTeamScoresRequest) (*v2.ListGameTeamScoresResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGameTeamScores")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+	var teamIDs []entities.TeamID
+	var gameIDs []entities.GameID
+	var epochFromID *uint64
+	var epochToID *uint64
+	if req.Filter != nil {
+		teamIDs = make([]entities.TeamID, 0, len(req.Filter.TeamIds))
+		for _, tid := range req.Filter.TeamIds {
+			teamIDs = append(teamIDs, entities.TeamID(tid))
+		}
+
+		gameIDs = make([]entities.GameID, 0, len(req.Filter.GameIds))
+		for _, gid := range req.Filter.GameIds {
+			gameIDs = append(gameIDs, entities.GameID(gid))
+		}
+		epochFromID = req.Filter.EpochFrom
+		epochToID = req.Filter.EpochTo
+	}
+
+	teamScores, pageInfo, err := t.gameScoreService.ListTeamScores(
+		ctx, gameIDs, teamIDs, epochFromID, epochToID, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.GameTeamScoresEdge](teamScores)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.GameTeamScoresConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListGameTeamScoresResponse{
+		TeamScores: connection,
+	}, nil
+}
+
 // ListAccounts lists accounts matching the request.
 func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAccountsV2")()
@@ -295,6 +415,8 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
 	}
+
+	var partyPerDerivedKey map[string]string
 
 	if req.Filter != nil {
 		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
@@ -307,7 +429,17 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		if err := partyIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
+
 		req.Filter.PartyIds = partyIDs
+
+		if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
+			partyPerDerivedKey, err = t.getDerivedParties(ctx, partyIDs, req.Filter.MarketIds)
+			if err != nil {
+				return nil, formatE(err)
+			}
+
+			req.Filter.PartyIds = append(req.Filter.PartyIds, maps.Keys(partyPerDerivedKey)...)
+		}
 	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)
@@ -315,12 +447,12 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		return nil, formatE(ErrInvalidFilter, err)
 	}
 
-	accountBalances, pageInfo, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, pageInfo, err := t.AccountService.QueryBalances(ctx, filter, pagination)
 	if err != nil {
 		return nil, formatE(ErrAccountServiceListAccounts, err)
 	}
 
-	edges, err := makeEdges[*v2.AccountEdge](accountBalances)
+	edges, err := makeEdges[*v2.AccountEdge](accountBalances, partyPerDerivedKey)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -341,13 +473,26 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	partyPerDerivedKey := map[string]string{}
+
+	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
+		partyPerDerivedKeyUpdate, err := t.getDerivedParties(ctx, []string{req.PartyId}, []string{req.MarketId})
+		if err != nil {
+			return formatE(err)
+		}
+
+		partyPerDerivedKey = partyPerDerivedKeyUpdate
+	}
+
 	// First get the 'initial image' of accounts matching the request and send those
-	if err := t.sendAccountsSnapshot(ctx, req, srv); err != nil {
+	if err := t.sendAccountsSnapshot(ctx, req, srv, partyPerDerivedKey); err != nil {
 		return formatE(ErrFailedToSendSnapshot, err)
 	}
 
-	accountsChan, ref := t.accountService.ObserveAccountBalances(
-		ctx, t.config.StreamRetries, req.MarketId, req.PartyId, req.Asset, req.Type)
+	partyPerDerivedKey[req.PartyId] = req.PartyId
+
+	accountsChan, ref := t.AccountService.ObserveAccountBalances(
+		ctx, t.config.StreamRetries, req.MarketId, req.Asset, req.Type, partyPerDerivedKey)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -356,7 +501,12 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
 		protos := make([]*v2.AccountBalance, len(accounts))
 		for i := 0; i < len(accounts); i++ {
-			protos[i] = accounts[i].ToProto()
+			var parentPartyID *string
+			if party, ok := partyPerDerivedKey[accounts[i].PartyID.String()]; ok {
+				parentPartyID = &party
+			}
+
+			protos[i] = accounts[i].ToProtoWithParent(parentPartyID)
 		}
 		batches := batch(protos, snapshotPageSize)
 
@@ -373,8 +523,14 @@ func (t *TradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 	})
 }
 
-func (t *TradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2.ObserveAccountsRequest, srv v2.TradingDataService_ObserveAccountsServer) error {
-	filter := entities.AccountFilter{}
+func (t *TradingDataServiceV2) sendAccountsSnapshot(ctx context.Context,
+	req *v2.ObserveAccountsRequest,
+	srv v2.TradingDataService_ObserveAccountsServer,
+	partyPerDerivedKey map[string]string,
+) error {
+	filter := entities.AccountFilter{
+		PartyIDs: entities.NewPartyIDSlice(maps.Keys(partyPerDerivedKey)...),
+	}
 	if req.Asset != "" {
 		filter.AssetID = entities.AssetID(req.Asset)
 	}
@@ -388,7 +544,7 @@ func (t *TradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 		filter.AccountTypes = append(filter.AccountTypes, req.Type)
 	}
 
-	accounts, pageInfo, err := t.accountService.QueryBalances(ctx, filter, entities.CursorPagination{})
+	accounts, pageInfo, err := t.AccountService.QueryBalances(ctx, filter, entities.CursorPagination{})
 	if err != nil {
 		return errors.Wrap(err, "fetching account balance initial image")
 	}
@@ -399,7 +555,12 @@ func (t *TradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 
 	protos := make([]*v2.AccountBalance, len(accounts))
 	for i := 0; i < len(accounts); i++ {
-		protos[i] = accounts[i].ToProto()
+		var parentPartyID *string
+		if party, ok := partyPerDerivedKey[accounts[i].PartyID.String()]; ok {
+			parentPartyID = &party
+		}
+
+		protos[i] = accounts[i].ToProtoWithParent(parentPartyID)
 	}
 
 	batches := batch(protos, snapshotPageSize)
@@ -549,7 +710,7 @@ func (t *TradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 		return nil, formatE(ErrDateRangeValidationFailed, err)
 	}
 
-	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(ctx, filter, dateRange, pagination)
+	balances, pageInfo, err := t.AccountService.QueryAggregatedBalances(ctx, filter, dateRange, pagination)
 	if err != nil {
 		return nil, formatE(ErrAccountServiceGetBalances, err)
 	}
@@ -1452,19 +1613,83 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 	}, nil
 }
 
+func (t *TradingDataServiceV2) getDerivedParties(ctx context.Context, partyIDs []string, marketIDs []string) (map[string]string, error) {
+	partyPerDerivedKey := map[string]string{}
+
+	if len(partyIDs) == 0 {
+		return partyPerDerivedKey, nil
+	}
+
+	if len(marketIDs) != 0 {
+		for _, marketID := range marketIDs {
+			for _, partyID := range partyIDs {
+				partyPerDerivedKey[amm.DeriveAMMParty(partyID, marketID, amm.V1, 0)] = partyID
+			}
+		}
+
+		return partyPerDerivedKey, nil
+	}
+
+	// get a list of all markets to generate all potential
+	// sub accounts for the party
+	markets, _, err := t.MarketsService.GetAllPaged(ctx, "", entities.DefaultCursorPagination(true), false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, market := range markets {
+		for _, partyID := range partyIDs {
+			partyPerDerivedKey[amm.DeriveAMMParty(partyID, market.ID.String(), amm.V1, 0)] = partyID
+		}
+	}
+
+	return partyPerDerivedKey, nil
+}
+
 // ObservePositions subscribes to a stream of Positions.
 func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	if err := t.sendPositionsSnapshot(ctx, req, srv); err != nil {
+	// handle derived parties
+	includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties)
+	if includeDerivedParties && (req.PartyId == nil || len(*req.PartyId) <= 0) {
+		return formatE(newInvalidArgumentError("includeDerivedParties requires a partyId"))
+	}
+
+	derivedParties := []string{}
+	if req.PartyId != nil && len(*req.PartyId) > 0 {
+		if includeDerivedParties {
+			partyIDs := []string{*req.PartyId}
+
+			var marketIDs []string
+			if req.MarketId != nil && len(*req.MarketId) > 0 {
+				marketIDs = []string{*req.MarketId}
+			}
+
+			partyPerDerivedKey, err := t.getDerivedParties(ctx, partyIDs, marketIDs)
+			if err != nil {
+				return formatE(err)
+			}
+
+			derivedParties = maps.Keys(partyPerDerivedKey)
+			slices.Sort(derivedParties)
+		}
+	}
+
+	if err := t.sendPositionsSnapshot(ctx, req, srv, derivedParties); err != nil {
 		if !errors.Is(err, entities.ErrNotFound) {
 			return formatE(ErrPositionServiceSendSnapshot, err)
 		}
 	}
 
-	positionsChan, ref := t.positionService.Observe(ctx, t.config.StreamRetries, ptr.UnBox(req.PartyId), ptr.UnBox(req.MarketId))
+	// add the party to the derived parties
+	if req.PartyId != nil && len(*req.PartyId) > 0 {
+		derivedParties = append(derivedParties, *req.PartyId)
+	}
+
+	positionsChan, ref := t.positionService.ObserveMany(ctx, t.config.StreamRetries, ptr.UnBox(req.MarketId), derivedParties...)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -1489,7 +1714,7 @@ func (t *TradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	})
 }
 
-func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
+func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer, derivedParties []string) error {
 	var (
 		positions []entities.Position
 		err       error
@@ -1526,6 +1751,24 @@ func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		if err != nil {
 			return errors.Wrap(err, "getting initial positions by party")
 		}
+	}
+
+	// finally handle derived parties
+	for _, v := range derivedParties {
+		if req.MarketId != nil {
+			position, err := t.positionService.GetByMarketAndParty(ctx, *req.MarketId, v)
+			if err != nil {
+				return errors.Wrap(err, "getting initial positions by market+party")
+			}
+			positions = append(positions, position)
+			continue
+		}
+
+		derivedPartyPositions, err := t.positionService.GetByParty(ctx, entities.PartyID(v))
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by party")
+		}
+		positions = append(positions, derivedPartyPositions...)
 	}
 
 	protos := make([]*vega.Position, len(positions))
@@ -1639,7 +1882,7 @@ func (t *TradingDataServiceV2) ListMarginLevels(ctx context.Context, req *v2.Lis
 		return nil, formatE(ErrRiskServiceGetMarginLevelsByID, err)
 	}
 
-	edges, err := makeEdges[*v2.MarginEdge](marginLevels, ctx, t.accountService)
+	edges, err := makeEdges[*v2.MarginEdge](marginLevels, ctx, t.AccountService)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -1667,7 +1910,7 @@ func (t *TradingDataServiceV2) ObserveMarginLevels(req *v2.ObserveMarginLevelsRe
 	}
 
 	return observe(ctx, t.log, "MarginLevel", marginLevelsChan, ref, func(ml entities.MarginLevels) error {
-		protoMl, err := ml.ToProto(ctx, t.accountService)
+		protoMl, err := ml.ToProto(ctx, t.AccountService)
 		if err != nil {
 			return errors.Wrap(err, "converting margin levels to proto")
 		}
@@ -1687,7 +1930,17 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
+	partyIDs := []string{req.PartyId}
+	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
+		partyPerDerivedKey, err := t.getDerivedParties(ctx, []string{req.PartyId}, nil)
+		if err != nil {
+			return nil, formatE(err)
+		}
+
+		partyIDs = append(partyIDs, maps.Keys(partyPerDerivedKey)...)
+	}
+
+	rewards, pageInfo, err := t.RewardService.GetByCursor(ctx, partyIDs, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
 	if err != nil {
 		return nil, formatE(ErrGetRewards, err)
 	}
@@ -1711,7 +1964,21 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 func (t *TradingDataServiceV2) ListRewardSummaries(ctx context.Context, req *v2.ListRewardSummariesRequest) (*v2.ListRewardSummariesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListRewardSummariesV2")()
 
-	summaries, err := t.rewardService.GetSummaries(ctx, req.PartyId, req.AssetId)
+	partyIDs := []string{}
+	if req.PartyId != nil {
+		partyIDs = []string{*req.PartyId}
+	}
+
+	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
+		partyPerDerivedKey, err := t.getDerivedParties(ctx, partyIDs, nil)
+		if err != nil {
+			return nil, formatE(err)
+		}
+
+		partyIDs = append(partyIDs, maps.Keys(partyPerDerivedKey)...)
+	}
+
+	summaries, err := t.RewardService.GetSummaries(ctx, partyIDs, req.AssetId)
 	if err != nil {
 		return nil, formatE(ErrSummaryServiceGet, err)
 	}
@@ -1737,7 +2004,7 @@ func (t *TradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, req
 	}
 
 	filter := entities.RewardSummaryFilterFromProto(req.Filter)
-	summaries, pageInfo, err := t.rewardService.GetEpochRewardSummaries(ctx, filter, pagination)
+	summaries, pageInfo, err := t.RewardService.GetEpochRewardSummaries(ctx, filter, pagination)
 	if err != nil {
 		return nil, formatE(ErrSummaryServiceGet, err)
 	}
@@ -2444,7 +2711,7 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 	if err != nil {
 		return nil, formatE(err)
 	}
-	tp, err := transfer.ToProto(ctx, t.accountService)
+	tp, err := transfer.ToProto(ctx, t.AccountService)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -2530,7 +2797,7 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		return nil, formatE(ErrTransferServiceGet, errors.Wrapf(err, "pubkey: %s", ptr.UnBox(req.Pubkey)))
 	}
 
-	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.accountService)
+	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.AccountService)
 	if err != nil {
 		t.log.Error("Something went wrong making transfer edges", logging.Error(err))
 		return nil, formatE(err)
@@ -3038,8 +3305,8 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 	if err != nil {
 		return nil, err
 	}
-
-	return price.Mul(price, priceFactor), nil
+	price, _ = num.UintFromDecimal(price.ToDecimal().Mul(priceFactor))
+	return price, nil
 }
 
 func (t *TradingDataServiceV2) scaleDecimalFromMarketToAssetPrice(
@@ -3057,22 +3324,23 @@ func (t *TradingDataServiceV2) scaleDecimalFromAssetToMarketPrice(
 func (t *TradingDataServiceV2) getMarketPriceFactor(
 	ctx context.Context,
 	mkt entities.Market,
-) (*num.Uint, error) {
+) (num.Decimal, error) {
 	assetID, err := mkt.ToProto().GetAsset()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting asset from market")
+		return num.DecimalZero(), errors.Wrap(err, "getting asset from market")
 	}
 
 	asset, err := t.AssetService.GetByID(ctx, assetID)
 	if err != nil {
-		return nil, errors.Wrapf(ErrAssetServiceGetByID, "assetID: %s", assetID)
+		return num.DecimalZero(), errors.Wrapf(ErrAssetServiceGetByID, "assetID: %s", assetID)
 	}
 
 	// scale the price if needed
 	// price is expected in market decimal
-	priceFactor := num.NewUint(1)
+	priceFactor := num.DecimalOne()
+	// this could be negative, use decimal
 	if exp := asset.Decimals - mkt.DecimalPlaces; exp != 0 {
-		priceFactor.Exp(num.NewUint(10), num.NewUint(uint64(exp)))
+		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 	return priceFactor, nil
 }
@@ -3298,7 +3566,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, err
 	}
 
-	dPriceFactor := priceFactor.ToDecimal()
+	dPriceFactor := priceFactor
 
 	buyOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
 	sellOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
@@ -4237,7 +4505,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 
 	// query
 	accounts := queryProtoEntities[*vega.Account](ctx, eg, txHash,
-		t.accountService.GetByTxHash, ErrAccountServiceGetByTxHash)
+		t.AccountService.GetByTxHash, ErrAccountServiceGetByTxHash)
 
 	orders := queryProtoEntities[*vega.Order](ctx, eg, txHash,
 		t.orderService.GetByTxHash, ErrOrderServiceGetByTxHash)
@@ -4246,7 +4514,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.positionService.GetByTxHash, ErrPositionsGetByTxHash)
 
 	balances := queryProtoEntities[*v2.AccountBalance](ctx, eg, txHash,
-		t.accountService.GetBalancesByTxHash, ErrAccountServiceGetBalancesByTxHash)
+		t.AccountService.GetBalancesByTxHash, ErrAccountServiceGetBalancesByTxHash)
 
 	votes := queryProtoEntities[*vega.Vote](ctx, eg, txHash,
 		t.governanceService.GetVotesByTxHash, ErrVotesGetByTxHash)
@@ -4267,7 +4535,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.partyService.GetByTxHash, ErrPartyServiceGetByTxHash)
 
 	rewards := queryProtoEntities[*vega.Reward](ctx, eg, txHash,
-		t.rewardService.GetByTxHash, ErrRewardsGetByTxHash)
+		t.RewardService.GetByTxHash, ErrRewardsGetByTxHash)
 
 	deposits := queryProtoEntities[*vega.Deposit](ctx, eg, txHash,
 		t.depositService.GetByTxHash, ErrDepositsGetByTxHash)
@@ -4309,7 +4577,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 	ledgerEntries := queryAndMapEntities(ctx, eg, txHash,
 		t.ledgerService.GetByTxHash,
 		func(item entities.LedgerEntry) (*vega.LedgerEntry, error) {
-			return item.ToProto(ctx, t.accountService)
+			return item.ToProto(ctx, t.AccountService)
 		},
 		ErrLedgerEntriesGetByTxHash,
 	)
@@ -4317,7 +4585,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 	transfers := queryAndMapEntities(ctx, eg, txHash,
 		t.transfersService.GetByTxHash,
 		func(item entities.Transfer) (*v1.Transfer, error) {
-			return item.ToProto(ctx, t.accountService)
+			return item.ToProto(ctx, t.AccountService)
 		},
 		ErrTransfersGetByTxHash,
 	)
@@ -4325,7 +4593,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 	marginLevels := queryAndMapEntities(ctx, eg, txHash,
 		t.riskService.GetByTxHash,
 		func(item entities.MarginLevels) (*vega.MarginLevels, error) {
-			return item.ToProto(ctx, t.accountService)
+			return item.ToProto(ctx, t.AccountService)
 		},
 		ErrMarginLevelsGetByTxHash,
 	)
@@ -5117,6 +5385,7 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 		accumulatedDiscount,
 		req.FromAccount,
 		req.FromAccountType,
+		req.FromAmmKey,
 		req.ToAccount,
 	)
 
@@ -5244,5 +5513,156 @@ func (t *TradingDataServiceV2) GetTimeWeightedNotionalPosition(ctx context.Conte
 
 	return &v2.GetTimeWeightedNotionalPositionResponse{
 		TimeWeightedNotionalPosition: pos.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsRequest) (*v2.ListAMMsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListAMMs")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var (
+		pools    []entities.AMMPool
+		pageInfo entities.PageInfo
+	)
+
+	if req.PartyId != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByParty(ctx, entities.PartyID(*req.PartyId), pagination)
+	} else if req.MarketId != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByMarket(ctx, entities.MarketID(*req.MarketId), pagination)
+	} else if req.Id != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByPool(ctx, entities.AMMPoolID(*req.Id), pagination)
+	} else if req.AmmPartyId != nil {
+		pools, pageInfo, err = t.ammPoolService.ListBySubAccount(ctx, entities.PartyID(*req.AmmPartyId), pagination)
+	} else if req.Status != nil {
+		pools, pageInfo, err = t.ammPoolService.ListByStatus(ctx, entities.AMMStatus(*req.Status), pagination)
+	} else {
+		pools, pageInfo, err = t.ammPoolService.ListAll(ctx, pagination)
+	}
+
+	if err != nil {
+		return nil, formatE(ErrListAMMPools, err)
+	}
+
+	edges, err := makeEdges[*v2.AMMEdge](pools)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListAMMsResponse{
+		Amms: &v2.AMMConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
+func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.EstimateAMMBoundsRequest) (*v2.EstimateAMMBoundsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateAMMBounds")()
+
+	if req.MarketId == "" {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
+	basePrice, overflow := num.UintFromString(req.BasePrice, 10)
+	if overflow || basePrice.IsNegative() {
+		return nil, formatE(ErrInvalidBasePrice)
+	}
+
+	upperPrice := num.UintZero()
+	if req.UpperPrice != nil {
+		upperP, overflow := num.UintFromString(*req.UpperPrice, 10)
+		if overflow || upperPrice.IsNegative() || upperPrice.LTE(basePrice) {
+			return nil, formatE(ErrInvalidUpperPrice)
+		}
+		upperPrice = upperP
+	}
+
+	lowerPrice := num.UintZero()
+	if req.LowerPrice != nil {
+		lowerP, overflow := num.UintFromString(*req.LowerPrice, 10)
+		if overflow || lowerPrice.IsNegative() || lowerPrice.GTE(basePrice) {
+			return nil, formatE(ErrInvalidLowerPrice)
+		}
+		lowerPrice = lowerP
+	}
+
+	var leverageLowerPrice, leverageUpperPrice *num.Decimal
+	if req.LeverageAtLowerPrice != nil {
+		llPrice, err := num.DecimalFromString(*req.LeverageAtLowerPrice)
+		if err != nil || leverageLowerPrice.IsNegative() {
+			return nil, formatE(ErrInvalidLeverageAtLowerPrice, err)
+		}
+		leverageLowerPrice = &llPrice
+	}
+
+	if req.LeverageAtUpperPrice != nil {
+		luPrice, err := num.DecimalFromString(*req.LeverageAtUpperPrice)
+		if err != nil || leverageUpperPrice.IsNegative() {
+			return nil, formatE(ErrInvalidLeverageAtUpperPrice, err)
+		}
+		leverageUpperPrice = &luPrice
+	}
+
+	commitmentAmount, overflow := num.UintFromString(req.CommitmentAmount, 10)
+	if overflow || commitmentAmount.IsNegative() {
+		return nil, formatE(ErrInvalidCommitmentAmount)
+	}
+
+	// TODO Karel - make the market service and risk factor serices calls concurent
+	market, err := t.MarketsService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrEstimateAMMBounds, err)
+	}
+
+	if market.TradableInstrument.MarginCalculator == nil ||
+		market.TradableInstrument.MarginCalculator.ScalingFactors == nil {
+		return nil, formatE(ErrEstimateAMMBounds)
+	}
+
+	if market.LinearSlippageFactor == nil {
+		return nil, formatE(ErrEstimateAMMBounds)
+	}
+
+	initialMargin := num.DecimalFromFloat(market.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)
+	linearSlippageFactor := *market.LinearSlippageFactor
+
+	riskFactor, err := t.RiskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrEstimateAMMBounds, err)
+	}
+	if leverageLowerPrice == nil {
+		leverageLowerPrice = &riskFactor.Short
+	}
+	if leverageUpperPrice == nil {
+		leverageUpperPrice = &riskFactor.Long
+	}
+
+	sqrt := amm.NewSqrter()
+
+	estimatedBounds := amm.EstimateBounds(
+		sqrt,
+		lowerPrice,
+		basePrice,
+		upperPrice,
+		*leverageLowerPrice,
+		*leverageUpperPrice,
+		commitmentAmount,
+		linearSlippageFactor,
+		initialMargin,
+		riskFactor.Short,
+		riskFactor.Long,
+	)
+
+	return &v2.EstimateAMMBoundsResponse{
+		PositionSizeAtUpper:     estimatedBounds.PositionSizeAtUpper.String(),
+		PositionSizeAtLower:     estimatedBounds.PositionSizeAtLower.String(),
+		LossOnCommitmentAtUpper: estimatedBounds.LossOnCommitmentAtUpper.String(),
+		LossOnCommitmentAtLower: estimatedBounds.LossOnCommitmentAtLower.String(),
+		LiquidationPriceAtUpper: estimatedBounds.LiquidationPriceAtUpper.String(),
+		LiquidationPriceAtLower: estimatedBounds.LiquidationPriceAtLower.String(),
 	}, nil
 }

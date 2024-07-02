@@ -72,6 +72,12 @@ func NewOnChainVerifier(
 	}
 }
 
+func (o *OnChainVerifier) GetMultiSigAddress() string {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return o.multiSigAddress.Hex()
+}
+
 func (o *OnChainVerifier) UpdateMultiSigAddress(multiSigAddress ethcmn.Address, chainID string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()

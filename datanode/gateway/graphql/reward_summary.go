@@ -29,11 +29,12 @@ func (r *rewardSummaryResolver) Asset(ctx context.Context, obj *vega.RewardSumma
 	return r.r.getAssetByID(ctx, obj.AssetId)
 }
 
-func (r *rewardSummaryResolver) RewardsConnection(ctx context.Context, summary *vega.RewardSummary, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
+func (r *rewardSummaryResolver) RewardsConnection(ctx context.Context, summary *vega.RewardSummary, assetID *string, pagination *v2.Pagination, includeDerivedParties *bool) (*v2.RewardsConnection, error) {
 	req := v2.ListRewardsRequest{
-		PartyId:    summary.PartyId,
-		AssetId:    assetID,
-		Pagination: pagination,
+		PartyId:               summary.PartyId,
+		AssetId:               assetID,
+		Pagination:            pagination,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {

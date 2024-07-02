@@ -4,6 +4,18 @@ package vega;
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
+// Heartbeat represents that the ERC20 bridge is being watched even though no events happened.
+message ERC20Heartbeat {
+  // Contract address that is being listened to
+  string contract_address = 1;
+  // Last Ethereum block height that was checked for events
+  uint64 block_height = 2;
+  // Ethereum block time in Unix seconds.
+  uint64 block_time = 3;
+  // Source chain for this chain event.
+  string source_chain_id = 6;
+}
+
 // Result of calling an arbitrary Ethereum contract method
 message EthContractCallEvent {
   // ID of the data source spec that triggered this contract call.

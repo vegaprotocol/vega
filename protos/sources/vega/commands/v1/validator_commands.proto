@@ -89,6 +89,8 @@ message NodeVote {
     TYPE_GOVERNANCE_VALIDATE_ASSET = 12;
     // Node vote for an Ethereum contract call result
     TYPE_ETHEREUM_CONTRACT_CALL_RESULT = 13;
+    // Node vote for an Ethereum chain event heartbeat.
+    TYPE_ETHEREUM_HEARTBEAT = 14;
   }
 }
 
@@ -137,6 +139,8 @@ message ChainEvent {
     vega.ERC20MultiSigEvent erc20_multisig = 1006;
     // Ethereum contract call event.
     vega.EthContractCallEvent contract_call = 1007;
+    // Heartbeat showing evidence that a contract is being listened to.
+    vega.ERC20Heartbeat heartbeat = 1008;
   }
 }
 

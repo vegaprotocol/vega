@@ -93,3 +93,7 @@ func (rp *ReferralProgram) consumeReferralProgramEndedEvent(ctx context.Context,
 	ev := e.GetReferralProgramEnded()
 	return rp.store.EndReferralProgram(ctx, ev.GetVersion(), time.Unix(0, ev.EndedAt), rp.vegaTime, e.Sequence())
 }
+
+func (rp *ReferralProgram) Name() string {
+	return "ReferralProgram"
+}

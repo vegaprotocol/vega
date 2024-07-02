@@ -62,3 +62,7 @@ func (sl StakeLinking) consume(ctx context.Context, event StakeLinkingEvent) err
 
 	return errors.Wrap(sl.store.Upsert(ctx, entity), "inserting stake linking event to SQL store failed")
 }
+
+func (sl *StakeLinking) Name() string {
+	return "StakeLinking"
+}

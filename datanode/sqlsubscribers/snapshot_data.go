@@ -62,3 +62,7 @@ func (s *SnapshotData) consume(ctx context.Context, event CoreSnapshotEvent) err
 
 	return nil
 }
+
+func (s *SnapshotData) Name() string {
+	return "SnapshotData"
+}

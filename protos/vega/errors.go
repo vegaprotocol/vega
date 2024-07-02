@@ -126,6 +126,8 @@ func (err OrderError) Error() string {
 		return "OrderError: pegged orders not allowed in isolated margin mode"
 	case OrderError_ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE:
 		return "OrderError: price not in tick size"
+	case OrderError_ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE:
+		return "OrderError: price exceeds max price"
 	default:
 		return "invalid OrderError"
 	}

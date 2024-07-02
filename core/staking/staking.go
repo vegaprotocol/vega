@@ -40,7 +40,7 @@ type EthereumClientConfirmations interface {
 }
 
 type EthereumEventSource interface {
-	UpdateStakingStartingBlock(uint64)
+	UpdateContractBlock(string, string, uint64)
 }
 
 func New(
@@ -58,7 +58,7 @@ func New(
 ) (*Accounting, *StakeVerifier, *Checkpoint) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
-	accs := NewAccounting(log, cfg, ts, broker, ethClient, evtFwd, witness, isValidator)
+	accs := NewAccounting(log, cfg, ts, broker, ethClient, evtFwd, witness, isValidator, ethEventSource)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
 	stakeV := NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv, ethEventSource)
 

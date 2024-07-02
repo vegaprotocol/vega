@@ -95,3 +95,7 @@ func (rs *ReferralSets) consumeReferralSetStatsUpdated(ctx context.Context, e Re
 	}
 	return rs.store.AddReferralSetStats(ctx, stats)
 }
+
+func (rs *ReferralSets) Name() string {
+	return "ReferralSets"
+}

@@ -80,7 +80,7 @@ func VolumeDiscountProgram(
 		if row.closingTimestamp() == 0 {
 			vdp.EndOfProgramTimestamp = time.Time{}
 		} else {
-			vdp.EndOfProgramTimestamp = time.Unix(int64(row.closingTimestamp()), 0)
+			vdp.EndOfProgramTimestamp = time.Unix(row.closingTimestamp(), 0)
 		}
 		tierName := row.tiers()
 		if tier := tiers[tierName]; tier != nil {
@@ -112,8 +112,8 @@ func (r volumeDiscountRow) tiers() string {
 	return r.row.MustStr("tiers")
 }
 
-func (r volumeDiscountRow) closingTimestamp() uint64 {
-	return r.row.MustU64("closing timestamp")
+func (r volumeDiscountRow) closingTimestamp() int64 {
+	return r.row.MustI64("closing timestamp")
 }
 
 func (r volumeDiscountRow) windowLength() uint64 {
@@ -136,4 +136,21 @@ func PartyHasTheFollowingTakerNotional(party, notional string, vde *volumediscou
 		return fmt.Errorf("%s has the taker notional of %s when we expected %s", party, tn, tn2)
 	}
 	return nil
+}
+
+func AMMHasTheFollowingNotionalValue(exec Execution, vde *volumediscount.Engine, alias, value string) error {
+	id, ok := exec.GetAMMSubAccountID(alias)
+	if !ok {
+		return fmt.Errorf("unknown vAMM alias %s", alias)
+	}
+	// from this point, it's the same as for a normal party
+	return PartyHasTheFollowingTakerNotional(id, value, vde)
+}
+
+func AMMHasTheFollowingDiscountFactor(exec Execution, vde *volumediscount.Engine, alias, factor string) error {
+	id, ok := exec.GetAMMSubAccountID(alias)
+	if !ok {
+		return fmt.Errorf("unknown vAMM alias %s", alias)
+	}
+	return PartyHasTheFollowingDiscountFactor(id, factor, vde)
 }

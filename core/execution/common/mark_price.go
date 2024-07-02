@@ -44,6 +44,7 @@ type CompositePriceCalculator struct {
 	priceSources []*num.Uint
 	oracles      []*products.CompositePriceOracle
 	scalingFunc  func(context.Context, *num.Numeric, int64) *num.Uint
+	maxPrice     *num.Uint
 }
 
 const (
@@ -203,6 +204,11 @@ func (mpc *CompositePriceCalculator) OverridePrice(p *num.Uint) {
 	}
 }
 
+// SetMaxPriceCap is called from a capped future, to filter out price data that exceeds the max price.
+func (mpc *CompositePriceCalculator) SetMaxPriceCap(mp *num.Uint) {
+	mpc.maxPrice = mp
+}
+
 // NewTrade is called to inform the mark price calculator on a new trade.
 // All the trades for a given mark price calculation interval are saved until the end of the interval.
 func (mpc *CompositePriceCalculator) NewTrade(trade *types.Trade) {
@@ -222,7 +228,12 @@ func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) f
 			return err
 		}
 		p := mpc.scalingFunc(ctx, pd, mpc.oracles[oracleIndex].GetDecimals())
+		// ignore prices that exceed the cap
 		if p == nil || p.IsZero() {
+			return nil
+		}
+		// ignore price data > max price
+		if mpc.maxPrice != nil && p.GT(mpc.maxPrice) {
 			return nil
 		}
 		mpc.priceSources[FirstOraclePriceIndex+oracleIndex] = p.Clone()

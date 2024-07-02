@@ -266,6 +266,20 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 	return m.recorder
 }
 
+// AmendAMM mocks base method.
+func (m *MockExecutionEngine) AmendAMM(arg0 context.Context, arg1 *types.AmendAMM, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AmendAMM", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AmendAMM indicates an expected call of AmendAMM.
+func (mr *MockExecutionEngineMockRecorder) AmendAMM(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendAMM", reflect.TypeOf((*MockExecutionEngine)(nil).AmendAMM), arg0, arg1, arg2)
+}
+
 // AmendLiquidityProvision mocks base method.
 func (m *MockExecutionEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
@@ -296,15 +310,15 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2, arg3 int
 }
 
 // BeginBlock mocks base method.
-func (m *MockExecutionEngine) BeginBlock(arg0 context.Context) {
+func (m *MockExecutionEngine) BeginBlock(arg0 context.Context, arg1 time.Duration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "BeginBlock", arg0)
+	m.ctrl.Call(m, "BeginBlock", arg0, arg1)
 }
 
 // BeginBlock indicates an expected call of BeginBlock.
-func (mr *MockExecutionEngineMockRecorder) BeginBlock(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) BeginBlock(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockExecutionEngine)(nil).BeginBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockExecutionEngine)(nil).BeginBlock), arg0, arg1)
 }
 
 // BlockEnd mocks base method.
@@ -317,6 +331,20 @@ func (m *MockExecutionEngine) BlockEnd(arg0 context.Context) {
 func (mr *MockExecutionEngineMockRecorder) BlockEnd(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockEnd", reflect.TypeOf((*MockExecutionEngine)(nil).BlockEnd), arg0)
+}
+
+// CancelAMM mocks base method.
+func (m *MockExecutionEngine) CancelAMM(arg0 context.Context, arg1 *types.CancelAMM, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelAMM", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelAMM indicates an expected call of CancelAMM.
+func (mr *MockExecutionEngineMockRecorder) CancelAMM(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelAMM", reflect.TypeOf((*MockExecutionEngine)(nil).CancelAMM), arg0, arg1, arg2)
 }
 
 // CancelLiquidityProvision mocks base method.
@@ -360,6 +388,34 @@ func (m *MockExecutionEngine) CancelStopOrders(arg0 context.Context, arg1 *types
 func (mr *MockExecutionEngineMockRecorder) CancelStopOrders(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelStopOrders", reflect.TypeOf((*MockExecutionEngine)(nil).CancelStopOrders), arg0, arg1, arg2, arg3)
+}
+
+// CheckCanSubmitOrderOrLiquidityCommitment mocks base method.
+func (m *MockExecutionEngine) CheckCanSubmitOrderOrLiquidityCommitment(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckCanSubmitOrderOrLiquidityCommitment", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckCanSubmitOrderOrLiquidityCommitment indicates an expected call of CheckCanSubmitOrderOrLiquidityCommitment.
+func (mr *MockExecutionEngineMockRecorder) CheckCanSubmitOrderOrLiquidityCommitment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCanSubmitOrderOrLiquidityCommitment", reflect.TypeOf((*MockExecutionEngine)(nil).CheckCanSubmitOrderOrLiquidityCommitment), arg0, arg1)
+}
+
+// CheckOrderSubmissionForSpam mocks base method.
+func (m *MockExecutionEngine) CheckOrderSubmissionForSpam(arg0 *types.OrderSubmission, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckOrderSubmissionForSpam", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckOrderSubmissionForSpam indicates an expected call of CheckOrderSubmissionForSpam.
+func (mr *MockExecutionEngineMockRecorder) CheckOrderSubmissionForSpam(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckOrderSubmissionForSpam", reflect.TypeOf((*MockExecutionEngine)(nil).CheckOrderSubmissionForSpam), arg0, arg1)
 }
 
 // Hash mocks base method.
@@ -416,6 +472,20 @@ func (m *MockExecutionEngine) StartOpeningAuction(arg0 context.Context, arg1 str
 func (mr *MockExecutionEngineMockRecorder) StartOpeningAuction(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartOpeningAuction", reflect.TypeOf((*MockExecutionEngine)(nil).StartOpeningAuction), arg0, arg1)
+}
+
+// SubmitAMM mocks base method.
+func (m *MockExecutionEngine) SubmitAMM(arg0 context.Context, arg1 *types.SubmitAMM, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitAMM", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitAMM indicates an expected call of SubmitAMM.
+func (mr *MockExecutionEngineMockRecorder) SubmitAMM(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitAMM", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitAMM), arg0, arg1, arg2)
 }
 
 // SubmitLiquidityProvision mocks base method.
@@ -1734,6 +1804,18 @@ func (mr *MockBankingMockRecorder) NewGovernanceTransfer(arg0, arg1, arg2, arg3 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).NewGovernanceTransfer), arg0, arg1, arg2, arg3)
 }
 
+// OnBlockEnd mocks base method.
+func (m *MockBanking) OnBlockEnd(arg0 context.Context, arg1 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnBlockEnd", arg0, arg1)
+}
+
+// OnBlockEnd indicates an expected call of OnBlockEnd.
+func (mr *MockBankingMockRecorder) OnBlockEnd(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnBlockEnd", reflect.TypeOf((*MockBanking)(nil).OnBlockEnd), arg0, arg1)
+}
+
 // TransferFunds mocks base method.
 func (m *MockBanking) TransferFunds(arg0 context.Context, arg1 *types.TransferFunds) error {
 	m.ctrl.T.Helper()
@@ -2105,6 +2187,20 @@ func (m *MockLimits) CanTrade() bool {
 func (mr *MockLimitsMockRecorder) CanTrade() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanTrade", reflect.TypeOf((*MockLimits)(nil).CanTrade))
+}
+
+// CanUseAMMPool mocks base method.
+func (m *MockLimits) CanUseAMMPool() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanUseAMMPool")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanUseAMMPool indicates an expected call of CanUseAMMPool.
+func (mr *MockLimitsMockRecorder) CanUseAMMPool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanUseAMMPool", reflect.TypeOf((*MockLimits)(nil).CanUseAMMPool))
 }
 
 // MockStakeVerifier is a mock of StakeVerifier interface.

@@ -17,6 +17,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
@@ -78,8 +79,13 @@ func TheMarketStateIsUpdatedTo(exec Execution, data *godog.Table) error {
 		if r.HasColumn("settlement price") {
 			changes.SettlementPrice = mu.SettlementPrice()
 		}
+		expErr := mu.Err()
 		if err := exec.UpdateMarketState(ctx, changes); err != nil {
-			return err
+			if expErr != nil && err.Error() != expErr.Error() {
+				return err
+			}
+		} else if expErr != nil {
+			return fmt.Errorf("expected error %s, instead got no error", expErr.Error())
 		}
 	}
 	return nil
@@ -93,7 +99,10 @@ func parseStateUpdate(data *godog.Table) []RowWrapper {
 	return StrictParseTable(data, []string{
 		"market id",
 		"state",
-	}, []string{"settlement price"})
+	}, []string{
+		"settlement price",
+		"error",
+	})
 }
 
 func errMismatchedMarketState(market string, expectedMarketState, marketState types.Market_State) error {
@@ -118,4 +127,11 @@ func (m marketUpdateGov) MarketStateUpdate() vtypes.MarketStateUpdateType {
 
 func (m marketUpdateGov) SettlementPrice() *num.Uint {
 	return m.row.MustUint("settlement price")
+}
+
+func (m marketUpdateGov) Err() error {
+	if m.row.HasColumn("error") {
+		return errors.New(m.row.MustStr("error"))
+	}
+	return nil
 }

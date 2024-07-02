@@ -58,7 +58,7 @@ set
 
 	defer metrics.StartSQLQuery("OracleSpec", "Upsert")()
 	specData := spec.ExternalDataSourceSpec.Spec
-	if _, err := os.Connection.Exec(ctx, query, specData.ID, specData.CreatedAt, specData.UpdatedAt, specData.Data,
+	if _, err := os.Exec(ctx, query, specData.ID, specData.CreatedAt, specData.UpdatedAt, specData.Data,
 		specData.Status, specData.TxHash, specData.VegaTime); err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (os *OracleSpec) GetSpecByID(ctx context.Context, specID string) (*entities
 where id = $1
 order by id, vega_time desc`, getOracleSpecsQuery())
 
-	err := pgxscan.Get(ctx, os.Connection, &spec, query, entities.SpecID(specID))
+	err := pgxscan.Get(ctx, os.ConnectionSource, &spec, query, entities.SpecID(specID))
 	if err != nil {
 		return nil, os.wrapE(err)
 	}
@@ -90,7 +90,7 @@ func (os *OracleSpec) GetByTxHash(ctx context.Context, txHash entities.TxHash) (
 
 	var specs []*entities.DataSourceSpec
 	query := "SELECT * FROM oracle_specs WHERE tx_hash = $1"
-	err := pgxscan.Select(ctx, os.Connection, &specs, query, txHash)
+	err := pgxscan.Select(ctx, os.ConnectionSource, &specs, query, txHash)
 	if err != nil {
 		return nil, os.wrapE(err)
 	}
@@ -145,7 +145,7 @@ func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entit
 		return nil, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, os.Connection, &specs, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, os.ConnectionSource, &specs, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying oracle specs: %w", err)
 	}
 

@@ -16,6 +16,7 @@
 package snapshot
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,7 +30,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/fs"
-	vio "code.vegaprotocol.io/vega/libs/io"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -50,7 +50,10 @@ func (b *Service) CreateSnapshotAsynchronously(ctx context.Context, chainID stri
 	return b.createNewSnapshot(ctx, chainID, toHeight, true)
 }
 
-func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeight int64,
+func (b *Service) createNewSnapshot(
+	ctx context.Context,
+	chainID string,
+	toHeight int64,
 	async bool,
 ) (segment.Unpublished, error) {
 	var err error
@@ -115,11 +118,12 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 		runAllInReverseOrder(cleanUp)
 		return segment.Unpublished{}, fmt.Errorf("failed to create write lock file:%w", err)
 	}
-	cleanUp = append(cleanUp, func() { _ = os.Remove(s.InProgressFilePath()) })
+	// cleanUp = append(cleanUp, func() { _ = os.Remove(s.InProgressFilePath()) })
 
 	// To ensure reads are isolated from this point forward execute a read on last block
 	_, err = sqlstore.GetLastBlockUsingConnection(ctx, copyDataTx)
 	if err != nil {
+		_ = os.Remove(s.InProgressFilePath())
 		runAllInReverseOrder(cleanUp)
 		return segment.Unpublished{}, fmt.Errorf("failed to get last block using connection: %w", err)
 	}
@@ -130,6 +134,8 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 		if err != nil {
 			b.log.Panic("failed to snapshot data", logging.Error(err))
 		}
+
+		b.fw.AddLockFile(s.InProgressFilePath())
 	}
 
 	if async {
@@ -241,14 +247,14 @@ func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData Databa
 
 	// Write Current State
 	currentSQL := currentStateCopySQL(dbMetaData)
-	currentRowsCopied, currentStateBytesCopied, err := copyTablesData(ctx, tx, currentSQL, currentStateDir)
+	currentRowsCopied, currentStateBytesCopied, err := copyTablesData(ctx, tx, currentSQL, currentStateDir, b.fw)
 	if err != nil {
 		return fmt.Errorf("failed to copy current state table data:%w", err)
 	}
 
 	// Write History
 	historySQL := historyCopySQL(dbMetaData, seg)
-	historyRowsCopied, historyBytesCopied, err := copyTablesData(ctx, tx, historySQL, historyStateDir)
+	historyRowsCopied, historyBytesCopied, err := copyTablesData(ctx, tx, historySQL, historyStateDir, b.fw)
 	if err != nil {
 		return fmt.Errorf("failed to copy history table data:%w", err)
 	}
@@ -310,15 +316,24 @@ func historyCopySQL(dbMetaData DatabaseMetadata, segment interface{ GetFromHeigh
 	return copySQL
 }
 
-func copyTablesData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql, toDir string) (int64, int64, error) {
+func copyTablesData(
+	ctx context.Context,
+	tx pgx.Tx,
+	copySQL []TableCopySql,
+	toDir string,
+	fw *FileWorker,
+) (int64, int64, error) {
 	var totalRowsCopied int64
 	var totalBytesCopied int64
+
 	for _, tableSql := range copySQL {
 		filePath := path.Join(toDir, tableSql.metaData.Name)
-		numRowsCopied, bytesCopied, err := writeTableToDataFile(ctx, tx, filePath, tableSql)
+		// numRowsCopied, bytesCopied, err := writeTableToDataFile(ctx, tx, filePath, tableSql)
+		numRowsCopied, bytesCopied, err := extractTableData(ctx, tx, filePath, tableSql, fw)
 		if err != nil {
 			return 0, 0, fmt.Errorf("failed to write table %s to file %s:%w", tableSql.metaData.Name, filePath, err)
 		}
+
 		totalRowsCopied += numRowsCopied
 		totalBytesCopied += bytesCopied
 	}
@@ -326,20 +341,25 @@ func copyTablesData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql, toDi
 	return totalRowsCopied, totalBytesCopied, nil
 }
 
-func writeTableToDataFile(ctx context.Context, tx pgx.Tx, filePath string, tableSql TableCopySql) (int64, int64, error) {
-	file, err := os.Create(filePath)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create file %s:%w", filePath, err)
-	}
-	defer file.Close()
+func extractTableData(
+	ctx context.Context,
+	tx pgx.Tx,
+	filePath string,
+	tableSql TableCopySql,
+	fw *FileWorker,
+) (int64, int64, error) {
+	b := new(bytes.Buffer)
 
-	fileWriter := vio.NewCountWriter(file)
-
-	numRowsCopied, err := executeCopy(ctx, tx, tableSql, fileWriter)
+	numRowsCopied, err := executeCopy(ctx, tx, tableSql, b)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to execute copy: %w", err)
 	}
-	return numRowsCopied, fileWriter.Count(), nil
+
+	len := int64(b.Len())
+	// schedule it
+	fw.Add(b, filePath)
+
+	return numRowsCopied, len, nil
 }
 
 func executeCopy(ctx context.Context, tx pgx.Tx, tableSql TableCopySql, w io.Writer) (int64, error) {

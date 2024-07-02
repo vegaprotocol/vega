@@ -128,6 +128,18 @@ models:
   StopOrderSizeOverrideSetting:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderSizeOverrideSetting
+  GameTeamScore:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.GameTeamScore
+  GamePartyScore:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.GamePartyScore
+  GamePartyScoreEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamePartyScoresEdge
+  GamePartyScoreConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamePartyScoresConnection
+  GameTeamScoreEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameTeamScoresEdge
+  GameTeamScoreConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameTeamScoresConnection
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   OrderUpdate:
@@ -803,3 +815,21 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.VoteELSPair
   TimeWeightedNotionalPosition:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TimeWeightedNotionalPosition
+  AMMStatus:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AMMStatus
+  AMMStatusReason:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AMMStatusReason
+  ConcentratedLiquidityParameters:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.AMM_ConcentratedLiquidityParameters
+  AMM:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.AMM
+  AMMEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMEdge
+  AMMConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMConnection
+  RiskFactorOverride:
+    model: code.vegaprotocol.io/vega/protos/vega.RiskFactorOverride
+  FutureCap:
+    model: code.vegaprotocol.io/vega/protos/vega.FutureCap
+  EstimatedAMMBounds:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateAMMBoundsResponse

@@ -48,6 +48,7 @@ func (e *Engine) serialiseLimits() ([]byte, error) {
 				ProposeAssetEnabled:       e.proposeAssetEnabled,
 				ProposeMarketEnabledFrom:  e.proposeMarketEnabledFrom,
 				ProposeAssetEnabledFrom:   e.proposeAssetEnabledFrom,
+				CanUseAMMEnabled:          e.useAMMEnabled,
 			},
 		},
 	}
@@ -109,6 +110,7 @@ func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState, p *type
 	e.proposeAssetEnabledFrom = l.ProposeAssetEnabledFrom
 	e.proposeSpotMarketEnabled = l.ProposeSpotMarketEnabled
 	e.proposePerpsMarketEnabled = l.ProposePerpsMarketEnabled
+	e.useAMMEnabled = l.CanUseAMMEnabled
 
 	e.sendEvent(ctx)
 	var err error

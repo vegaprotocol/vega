@@ -88,8 +88,9 @@ func TestCheckpointLoadNoDuplicates(t *testing.T) {
 
 	cptest.acc.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	cptest.acc.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	cptest.ethEventSource.EXPECT().UpdateStakingStartingBlock(gomock.Any()).Do(
-		func(block uint64) {
+	cptest.sv.ocv.EXPECT().GetStakingBridgeAddresses().Times(1).Return([]string{"hello"})
+	cptest.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).Do(
+		func(_, _ string, block uint64) {
 			// ensure we restart at the right block
 			// which is the last pending event we've seen
 			assert.Equal(t, int(block), 15026715)
@@ -117,9 +118,10 @@ func TestCheckpoint(t *testing.T) {
 
 	cptest2 := getCheckpointTest(t)
 
-	cptest2.acc.broker.EXPECT().Send(gomock.Any()).Times(1)
-	cptest2.ethEventSource.EXPECT().UpdateStakingStartingBlock(gomock.Any()).Do(
-		func(block uint64) {
+	cptest2.acc.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	cptest2.sv.ocv.EXPECT().GetStakingBridgeAddresses().AnyTimes().Return([]string{"hello"})
+	cptest2.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).Do(
+		func(_, _ string, block uint64) {
 			// ensure we restart at the right block
 			// which is the last pending event we've seen
 			assert.Equal(t, int(block), 42)

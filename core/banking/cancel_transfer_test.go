@@ -68,7 +68,6 @@ func TestCancelTransfer(t *testing.T) {
 
 	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(
 		assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(100), name: asset}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 

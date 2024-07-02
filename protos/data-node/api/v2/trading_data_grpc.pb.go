@@ -62,6 +62,14 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of stop orders that match the given filters
 	ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error)
+	// List game team scores
+	//
+	// Get a list of team scores for the given filters
+	ListGameTeamScores(ctx context.Context, in *ListGameTeamScoresRequest, opts ...grpc.CallOption) (*ListGameTeamScoresResponse, error)
+	// List game party scores
+	//
+	// Get a list of party scores for the given filters
+	ListGamePartyScores(ctx context.Context, in *ListGamePartyScoresRequest, opts ...grpc.CallOption) (*ListGamePartyScoresResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: List positions
 	//
@@ -160,15 +168,17 @@ type TradingDataServiceClient interface {
 	GetNetworkLimits(ctx context.Context, in *GetNetworkLimitsRequest, opts ...grpc.CallOption) (*GetNetworkLimitsResponse, error)
 	// List candle data
 	//
-	// Get a list of candle data for a given candle ID. Candle IDs can be obtained by calling list-candle-intervals
+	// Get a list of candle data for a given candle ID.
+	// A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
 	ListCandleData(ctx context.Context, in *ListCandleDataRequest, opts ...grpc.CallOption) (*ListCandleDataResponse, error)
 	// Observe candle data
 	//
-	// Subscribe to a stream of candle updates
+	// Subscribe to a stream of candle updates given a candle ID.
+	// A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
 	ObserveCandleData(ctx context.Context, in *ObserveCandleDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveCandleDataClient, error)
 	// List candle intervals
 	//
-	// Get a list of all available intervals for a given market along with the corresponding candle ID
+	// Get a list of all available candle intervals for a given market along with the corresponding candle ID.
 	ListCandleIntervals(ctx context.Context, in *ListCandleIntervalsRequest, opts ...grpc.CallOption) (*ListCandleIntervalsResponse, error)
 	// List votes
 	//
@@ -562,6 +572,14 @@ type TradingDataServiceClient interface {
 	// If no epoch is specified, the final time weighted notional position from the end of the most recently completed epoch is returned.
 	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
 	GetTimeWeightedNotionalPosition(ctx context.Context, in *GetTimeWeightedNotionalPositionRequest, opts ...grpc.CallOption) (*GetTimeWeightedNotionalPositionResponse, error)
+	// List AMMs
+	//
+	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	ListAMMs(ctx context.Context, in *ListAMMsRequest, opts ...grpc.CallOption) (*ListAMMsResponse, error)
+	// Estimate AMM bounds
+	//
+	// Get a list of AMMs or filter by market ID, party ID or AMM ID
+	EstimateAMMBounds(ctx context.Context, in *EstimateAMMBoundsRequest, opts ...grpc.CallOption) (*EstimateAMMBoundsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -759,6 +777,24 @@ func (c *tradingDataServiceClient) GetStopOrder(ctx context.Context, in *GetStop
 func (c *tradingDataServiceClient) ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error) {
 	out := new(ListStopOrdersResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListStopOrders", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListGameTeamScores(ctx context.Context, in *ListGameTeamScoresRequest, opts ...grpc.CallOption) (*ListGameTeamScoresResponse, error) {
+	out := new(ListGameTeamScoresResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGameTeamScores", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListGamePartyScores(ctx context.Context, in *ListGamePartyScoresRequest, opts ...grpc.CallOption) (*ListGamePartyScoresResponse, error) {
+	out := new(ListGamePartyScoresResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGamePartyScores", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2079,6 +2115,24 @@ func (c *tradingDataServiceClient) GetTimeWeightedNotionalPosition(ctx context.C
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListAMMs(ctx context.Context, in *ListAMMsRequest, opts ...grpc.CallOption) (*ListAMMsResponse, error) {
+	out := new(ListAMMsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAMMs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) EstimateAMMBounds(ctx context.Context, in *EstimateAMMBoundsRequest, opts ...grpc.CallOption) (*EstimateAMMBoundsResponse, error) {
+	out := new(EstimateAMMBoundsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/EstimateAMMBounds", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2163,6 +2217,14 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of stop orders that match the given filters
 	ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error)
+	// List game team scores
+	//
+	// Get a list of team scores for the given filters
+	ListGameTeamScores(context.Context, *ListGameTeamScoresRequest) (*ListGameTeamScoresResponse, error)
+	// List game party scores
+	//
+	// Get a list of party scores for the given filters
+	ListGamePartyScores(context.Context, *ListGamePartyScoresRequest) (*ListGamePartyScoresResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: List positions
 	//
@@ -2261,15 +2323,17 @@ type TradingDataServiceServer interface {
 	GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error)
 	// List candle data
 	//
-	// Get a list of candle data for a given candle ID. Candle IDs can be obtained by calling list-candle-intervals
+	// Get a list of candle data for a given candle ID.
+	// A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
 	ListCandleData(context.Context, *ListCandleDataRequest) (*ListCandleDataResponse, error)
 	// Observe candle data
 	//
-	// Subscribe to a stream of candle updates
+	// Subscribe to a stream of candle updates given a candle ID.
+	// A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
 	ObserveCandleData(*ObserveCandleDataRequest, TradingDataService_ObserveCandleDataServer) error
 	// List candle intervals
 	//
-	// Get a list of all available intervals for a given market along with the corresponding candle ID
+	// Get a list of all available candle intervals for a given market along with the corresponding candle ID.
 	ListCandleIntervals(context.Context, *ListCandleIntervalsRequest) (*ListCandleIntervalsResponse, error)
 	// List votes
 	//
@@ -2663,6 +2727,14 @@ type TradingDataServiceServer interface {
 	// If no epoch is specified, the final time weighted notional position from the end of the most recently completed epoch is returned.
 	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
 	GetTimeWeightedNotionalPosition(context.Context, *GetTimeWeightedNotionalPositionRequest) (*GetTimeWeightedNotionalPositionResponse, error)
+	// List AMMs
+	//
+	// Get a list of AMM or filter by market ID, party ID or AMM ID
+	ListAMMs(context.Context, *ListAMMsRequest) (*ListAMMsResponse, error)
+	// Estimate AMM bounds
+	//
+	// Get a list of AMMs or filter by market ID, party ID or AMM ID
+	EstimateAMMBounds(context.Context, *EstimateAMMBoundsRequest) (*EstimateAMMBoundsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2762,6 +2834,12 @@ func (UnimplementedTradingDataServiceServer) GetStopOrder(context.Context, *GetS
 }
 func (UnimplementedTradingDataServiceServer) ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListStopOrders not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListGameTeamScores(context.Context, *ListGameTeamScoresRequest) (*ListGameTeamScoresResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGameTeamScores not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListGamePartyScores(context.Context, *ListGamePartyScoresRequest) (*ListGamePartyScoresResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGamePartyScores not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPositions not implemented")
@@ -3093,6 +3171,12 @@ func (UnimplementedTradingDataServiceServer) ListPartyMarginModes(context.Contex
 func (UnimplementedTradingDataServiceServer) GetTimeWeightedNotionalPosition(context.Context, *GetTimeWeightedNotionalPositionRequest) (*GetTimeWeightedNotionalPositionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTimeWeightedNotionalPosition not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListAMMs(context.Context, *ListAMMsRequest) (*ListAMMsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAMMs not implemented")
+}
+func (UnimplementedTradingDataServiceServer) EstimateAMMBounds(context.Context, *EstimateAMMBoundsRequest) (*EstimateAMMBoundsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EstimateAMMBounds not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
 }
@@ -3276,6 +3360,42 @@ func _TradingDataService_ListStopOrders_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListStopOrders(ctx, req.(*ListStopOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListGameTeamScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGameTeamScoresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListGameTeamScores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListGameTeamScores",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListGameTeamScores(ctx, req.(*ListGameTeamScoresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListGamePartyScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGamePartyScoresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListGamePartyScores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListGamePartyScores",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListGamePartyScores(ctx, req.(*ListGamePartyScoresRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5307,6 +5427,42 @@ func _TradingDataService_GetTimeWeightedNotionalPosition_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListAMMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAMMsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListAMMs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListAMMs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListAMMs(ctx, req.(*ListAMMsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_EstimateAMMBounds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimateAMMBoundsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).EstimateAMMBounds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/EstimateAMMBounds",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).EstimateAMMBounds(ctx, req.(*EstimateAMMBoundsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5380,6 +5536,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListStopOrders",
 			Handler:    _TradingDataService_ListStopOrders_Handler,
+		},
+		{
+			MethodName: "ListGameTeamScores",
+			Handler:    _TradingDataService_ListGameTeamScores_Handler,
+		},
+		{
+			MethodName: "ListGamePartyScores",
+			Handler:    _TradingDataService_ListGamePartyScores_Handler,
 		},
 		{
 			MethodName: "ListPositions",
@@ -5764,6 +5928,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTimeWeightedNotionalPosition",
 			Handler:    _TradingDataService_GetTimeWeightedNotionalPosition_Handler,
+		},
+		{
+			MethodName: "ListAMMs",
+			Handler:    _TradingDataService_ListAMMs_Handler,
+		},
+		{
+			MethodName: "EstimateAMMBounds",
+			Handler:    _TradingDataService_EstimateAMMBounds_Handler,
 		},
 		{
 			MethodName: "Ping",

@@ -41,7 +41,7 @@ func NewCoreSnapshotData(connectionSource *ConnectionSource) *CoreSnapshotData {
 func (s *CoreSnapshotData) Add(ctx context.Context, csd entities.CoreSnapshotData) error {
 	defer metrics.StartSQLQuery("CoreSnapshotData", "Add")()
 
-	_, err := s.Connection.Exec(ctx,
+	_, err := s.Exec(ctx,
 		`INSERT INTO core_snapshots(
 			block_height,
 			block_hash,
@@ -73,7 +73,7 @@ func (s *CoreSnapshotData) List(ctx context.Context, pagination entities.CursorP
 
 	defer metrics.StartSQLQuery("CoreSnapshotData", "List")()
 	snaps := make([]entities.CoreSnapshotData, 0)
-	if err := pgxscan.Select(ctx, s.Connection, &snaps, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, s.ConnectionSource, &snaps, query, args...); err != nil {
 		return snaps, pageInfo, err
 	}
 

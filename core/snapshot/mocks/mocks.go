@@ -35,6 +35,20 @@ func (m *MockTimeService) EXPECT() *MockTimeServiceMockRecorder {
 	return m.recorder
 }
 
+// GetTimeLastBatch mocks base method.
+func (m *MockTimeService) GetTimeLastBatch() time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTimeLastBatch")
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// GetTimeLastBatch indicates an expected call of GetTimeLastBatch.
+func (mr *MockTimeServiceMockRecorder) GetTimeLastBatch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeLastBatch", reflect.TypeOf((*MockTimeService)(nil).GetTimeLastBatch))
+}
+
 // GetTimeNow mocks base method.
 func (m *MockTimeService) GetTimeNow() time.Time {
 	m.ctrl.T.Helper()
@@ -47,6 +61,18 @@ func (m *MockTimeService) GetTimeNow() time.Time {
 func (mr *MockTimeServiceMockRecorder) GetTimeNow() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeNow", reflect.TypeOf((*MockTimeService)(nil).GetTimeNow))
+}
+
+// SetPrevTime mocks base method.
+func (m *MockTimeService) SetPrevTime(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetPrevTime", arg0)
+}
+
+// SetPrevTime indicates an expected call of SetPrevTime.
+func (mr *MockTimeServiceMockRecorder) SetPrevTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPrevTime", reflect.TypeOf((*MockTimeService)(nil).SetPrevTime), arg0)
 }
 
 // SetTimeNow mocks base method.

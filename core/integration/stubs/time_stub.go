@@ -43,6 +43,13 @@ func (t *TimeStub) SetTimeNow(_ context.Context, newNow time.Time) {
 	t.SetTime(newNow)
 }
 
+func (t *TimeStub) SetPrevTime(newNow time.Time) {
+}
+
+func (t *TimeStub) GetTimeLastBatch() time.Time {
+	return time.Time{}
+}
+
 func (t *TimeStub) SetTime(newNow time.Time) {
 	t.now = newNow
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())

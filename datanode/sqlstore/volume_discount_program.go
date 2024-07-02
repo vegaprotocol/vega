@@ -41,7 +41,7 @@ func (rp *VolumeDiscountPrograms) AddVolumeDiscountProgram(ctx context.Context, 
 }
 
 func (rp *VolumeDiscountPrograms) insertVolumeDiscountProgram(ctx context.Context, program *entities.VolumeDiscountProgram) error {
-	_, err := rp.Connection.Exec(ctx,
+	_, err := rp.Exec(ctx,
 		`INSERT INTO volume_discount_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, vega_time, seq_num)
     		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		program.ID,
@@ -62,7 +62,7 @@ func (rp *VolumeDiscountPrograms) UpdateVolumeDiscountProgram(ctx context.Contex
 
 func (rp *VolumeDiscountPrograms) EndVolumeDiscountProgram(ctx context.Context, version uint64, endedAt time.Time, vegaTime time.Time, seqNum uint64) error {
 	defer metrics.StartSQLQuery("VolumeDiscountPrograms", "EndVolumeDiscountProgram")()
-	_, err := rp.Connection.Exec(ctx,
+	_, err := rp.Exec(ctx,
 		`INSERT INTO volume_discount_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, ended_at, vega_time, seq_num)
             SELECT id, $1, benefit_tiers, end_of_program_timestamp, window_length, $2, $3, $4
             FROM current_volume_discount_program`, version, endedAt, vegaTime, seqNum,
@@ -76,7 +76,7 @@ func (rp *VolumeDiscountPrograms) GetCurrentVolumeDiscountProgram(ctx context.Co
 	var programProgram entities.VolumeDiscountProgram
 
 	query := `SELECT id, version, benefit_tiers, end_of_program_timestamp, window_length, vega_time, ended_at, seq_num FROM current_volume_discount_program`
-	if err := pgxscan.Get(ctx, rp.Connection, &programProgram, query); err != nil {
+	if err := pgxscan.Get(ctx, rp.ConnectionSource, &programProgram, query); err != nil {
 		return programProgram, err
 	}
 

@@ -66,6 +66,14 @@ func (app *App) processChainEvent(
 	// OK the event was newly acknowledged, so now we need to
 	// figure out what to do with it.
 	switch c := ce.Event.(type) {
+	case *commandspb.ChainEvent_Heartbeat:
+		app.evtHeartbeat.ProcessHeartbeat(
+			c.Heartbeat.ContractAddress,
+			c.Heartbeat.SourceChainId,
+			c.Heartbeat.BlockHeight,
+			c.Heartbeat.BlockTime,
+		)
+		return nil
 	case *commandspb.ChainEvent_StakingEvent:
 		blockNumber := c.StakingEvent.Block
 		logIndex := c.StakingEvent.Index

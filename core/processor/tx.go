@@ -78,6 +78,8 @@ func DecodeTx(payload []byte, chainID string) (*Tx, error) {
 
 func (t Tx) Command() txn.Command {
 	switch cmd := t.inputData.Command.(type) {
+	case *commandspb.InputData_DelayedTransactionsWrapper:
+		return txn.DelayedTransactionsWrapper
 	case *commandspb.InputData_OrderSubmission:
 		return txn.SubmitOrderCommand
 	case *commandspb.InputData_OrderCancellation:
@@ -146,6 +148,12 @@ func (t Tx) Command() txn.Command {
 		return txn.BatchProposeCommand
 	case *commandspb.InputData_UpdatePartyProfile:
 		return txn.UpdatePartyProfileCommand
+	case *commandspb.InputData_SubmitAmm:
+		return txn.SubmitAMMCommand
+	case *commandspb.InputData_AmendAmm:
+		return txn.AmendAMMCommand
+	case *commandspb.InputData_CancelAmm:
+		return txn.CancelAMMCommand
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
@@ -249,6 +257,14 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.BatchProposalSubmission
 	case *commandspb.InputData_UpdatePartyProfile:
 		return cmd.UpdatePartyProfile
+	case *commandspb.InputData_SubmitAmm:
+		return cmd.SubmitAmm
+	case *commandspb.InputData_AmendAmm:
+		return cmd.AmendAmm
+	case *commandspb.InputData_CancelAmm:
+		return cmd.CancelAmm
+	case *commandspb.InputData_DelayedTransactionsWrapper:
+		return cmd.DelayedTransactionsWrapper
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -460,6 +476,30 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to UpdatePartyProfile")
 		}
 		*underlyingCmd = *cmd.UpdatePartyProfile
+	case *commandspb.InputData_SubmitAmm:
+		underlyingCmd, ok := i.(*commandspb.SubmitAMM)
+		if !ok {
+			return errors.New("failed to unmarshall to SubmitAMM")
+		}
+		*underlyingCmd = *cmd.SubmitAmm
+	case *commandspb.InputData_AmendAmm:
+		underlyingCmd, ok := i.(*commandspb.AmendAMM)
+		if !ok {
+			return errors.New("failed to unmarshall to AmendAMM")
+		}
+		*underlyingCmd = *cmd.AmendAmm
+	case *commandspb.InputData_CancelAmm:
+		underlyingCmd, ok := i.(*commandspb.CancelAMM)
+		if !ok {
+			return errors.New("failed to unmarshall to CancelAMM")
+		}
+		*underlyingCmd = *cmd.CancelAmm
+	case *commandspb.InputData_DelayedTransactionsWrapper:
+		underlyingCmd, ok := i.(*commandspb.DelayedTransactionsWrapper)
+		if !ok {
+			return errors.New("failed to unmarshall to DelayedTransactionsWrapper")
+		}
+		*underlyingCmd = *cmd.DelayedTransactionsWrapper
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}

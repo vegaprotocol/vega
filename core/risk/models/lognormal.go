@@ -34,6 +34,7 @@ type LogNormal struct {
 	riskAversionParameter, tau num.Decimal
 	params                     riskmodelbs.ModelParamsBS
 	asset                      string
+	RiskFactorOverride         *types.RiskFactorOverride
 
 	distCache    interfaces.AnalyticalDistribution
 	cachePrice   num.Decimal
@@ -49,6 +50,15 @@ func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, 
 	mu, _ := pf.Params.Mu.Float64()
 	r, _ := pf.Params.R.Float64()
 	sigma, _ := pf.Params.Sigma.Float64()
+
+	var override *types.RiskFactorOverride
+	if pf.RiskFactorOverride != nil {
+		override = &types.RiskFactorOverride{
+			Short: pf.RiskFactorOverride.Short,
+			Long:  pf.RiskFactorOverride.Long,
+		}
+	}
+
 	return &LogNormal{
 		riskAversionParameter: pf.RiskAversionParameter,
 		tau:                   pf.Tau,
@@ -58,13 +68,21 @@ func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, 
 			R:     r,
 			Sigma: sigma,
 		},
-		asset: asset,
+		RiskFactorOverride: override,
+		asset:              asset,
 	}, nil
 }
 
 // CalculateRiskFactors calls the risk model in order to get
 // the new risk models.
 func (f *LogNormal) CalculateRiskFactors() *types.RiskFactor {
+	if f.RiskFactorOverride != nil {
+		return &types.RiskFactor{
+			Long:  f.RiskFactorOverride.Long,
+			Short: f.RiskFactorOverride.Short,
+		}
+	}
+
 	rav, _ := f.riskAversionParameter.Float64()
 	tau, _ := f.tau.Float64()
 	rawrf := riskmodelbs.RiskFactorsForward(rav, tau, f.params)
@@ -112,6 +130,13 @@ func (f *LogNormal) GetProjectionHorizon() num.Decimal {
 }
 
 func (f *LogNormal) DefaultRiskFactors() *types.RiskFactor {
+	if f.RiskFactorOverride != nil {
+		return &types.RiskFactor{
+			Long:  f.RiskFactorOverride.Long,
+			Short: f.RiskFactorOverride.Short,
+		}
+	}
+
 	return &types.RiskFactor{
 		Short: num.DecimalFromFloat(1),
 		Long:  num.DecimalFromFloat(1),

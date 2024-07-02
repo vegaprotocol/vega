@@ -83,7 +83,7 @@ type Engine struct {
 	marginCalculator        *types.MarginCalculator
 	scalingFactorsUint      *scalingFactorsUint
 	log                     *logging.Logger
-	cfgMu                   sync.Mutex
+	cfgMu                   sync.RWMutex
 	model                   Model
 	factors                 *types.RiskFactor
 	waiting                 bool
@@ -151,7 +151,9 @@ func NewEngine(log *logging.Logger,
 	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, FactorConverter{}, e.startRiskFactorsCalculation, []statevar.EventType{statevar.EventTypeMarketEnactment, statevar.EventTypeMarketUpdated}, e.updateRiskFactor)
 
 	if initialisedRiskFactors != nil {
+		e.cfgMu.Lock()
 		e.factors = initialisedRiskFactors
+		e.cfgMu.Unlock()
 		// we've restored from snapshot, we don't need want to trigger a MarketEnactment event
 	} else {
 		// trigger the calculation of risk factors for the market
@@ -220,7 +222,9 @@ func (e *Engine) UpdateModel(
 	quadraticSlippageFactor num.Decimal,
 ) {
 	e.scalingFactorsUint = scalingFactorsUintFromDecimals(calculator.ScalingFactors)
+	e.cfgMu.Lock()
 	e.factors = model.DefaultRiskFactors()
+	e.cfgMu.Unlock()
 	e.model = model
 	e.linearSlippageFactor = linearSlippageFactor
 	e.quadraticSlippageFactor = quadraticSlippageFactor
@@ -245,7 +249,17 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // GetRiskFactors returns risk factors per specified asset.
 func (e *Engine) GetRiskFactors() *types.RiskFactor {
+	e.cfgMu.RLock()
+	defer e.cfgMu.RUnlock()
 	return e.factors
+}
+
+func (e *Engine) GetScalingFactors() *types.ScalingFactors {
+	return e.marginCalculator.ScalingFactors
+}
+
+func (e *Engine) GetSlippage() num.Decimal {
+	return e.linearSlippageFactor
 }
 
 func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint, increment num.Decimal, auctionPrice *num.Uint) ([]events.Risk, []events.Margin) {

@@ -74,6 +74,17 @@ func (o *OnChainVerifier) UpdateStakingBridgeAddresses(stakingBridgeAddresses []
 	}
 }
 
+func (o *OnChainVerifier) GetStakingBridgeAddresses() []string {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	addresses := make([]string, 0, len(o.stakingBridgeAddresses))
+	for _, v := range o.stakingBridgeAddresses {
+		addresses = append(addresses, v.Hex())
+	}
+	return addresses
+}
+
 func (o *OnChainVerifier) CheckStakeDeposited(
 	event *types.StakeDeposited,
 ) error {

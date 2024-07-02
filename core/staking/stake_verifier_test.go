@@ -59,7 +59,7 @@ func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
 	evtSrc := mocks.NewMockEthereumEventSource(ctrl)
 
-	accs := staking.NewAccounting(log, cfg, ts, broker, nil, evtfwd, witness, true)
+	accs := staking.NewAccounting(log, cfg, ts, broker, nil, evtfwd, witness, true, evtSrc)
 
 	svt := &stakeVerifierTest{
 		StakeVerifier: staking.NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv, evtSrc),
@@ -125,6 +125,7 @@ func testProcessStakeEventDepositedOK(t *testing.T) {
 	f(evt, true)
 
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
+	stakev.ocv.EXPECT().GetStakingBridgeAddresses().Times(1)
 	stakev.onTick(context.Background(), time.Unix(10, 0))
 
 	balance, err := stakev.accs.GetAvailableBalance("somepubkey")
@@ -216,6 +217,7 @@ func testProcessStakeEventRemovedOK(t *testing.T) {
 	// no expectation there.
 	f(evt, true)
 
+	stakev.ocv.EXPECT().GetStakingBridgeAddresses().Times(1)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
 	stakev.onTick(context.Background(), time.Unix(10, 0))
 
@@ -278,6 +280,7 @@ func testProcessStakeEventMultiOK(t *testing.T) {
 
 	stakev.tsvc.EXPECT().GetTimeNow().Times(2)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(2)
+	stakev.ocv.EXPECT().GetStakingBridgeAddresses().AnyTimes()
 
 	var f func(interface{}, bool)
 	var evt interface{}

@@ -18,7 +18,6 @@ package api_test
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"testing"
 	"time"
@@ -40,8 +39,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -98,9 +95,8 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	conf.CandlesV2.CandleStore.DefaultCandleIntervals = ""
 
-	sqlConn := &sqlstore.ConnectionSource{
-		Connection: dummyConnection{},
-	}
+	sqlConn := &sqlstore.ConnectionSource{}
+	sqlConn.ToggleTest() // ensure calls to query and copyTo do not fail
 
 	bro, err := broker.New(ctx, logging.NewTestLogger(), conf.Broker, "", eventSource)
 	if err != nil {
@@ -165,6 +161,8 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	gameService := service.NewGames(sqlstore.NewGames(sqlConn))
 	marginModesService := service.NewMarginModes(sqlstore.NewMarginModes(sqlConn))
 	timeWeightedNotionPositionService := service.NewTimeWeightedNotionalPosition(sqlstore.NewTimeWeightedNotionalPosition(sqlConn))
+	gameScoreService := service.NewGameScore(sqlstore.NewGameScores(sqlConn), logger)
+	ammPoolsService := service.NewAMMPools(sqlstore.NewAMMPools(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -225,6 +223,8 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		gameService,
 		marginModesService,
 		timeWeightedNotionPositionService,
+		gameScoreService,
+		ammPoolsService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")
@@ -251,18 +251,6 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	waitForNode(ctx, t, conn)
 
 	return tidy, conn, mockCoreServiceClient, err
-}
-
-type dummyConnection struct {
-	sqlstore.Connection
-}
-
-func (d dummyConnection) Query(context.Context, string, ...interface{}) (pgx.Rows, error) {
-	return nil, pgx.ErrNoRows
-}
-
-func (d dummyConnection) CopyTo(context.Context, io.Writer, string, ...any) (pgconn.CommandTag, error) {
-	return pgconn.CommandTag{}, nil
 }
 
 func TestSubmitTransaction(t *testing.T) {

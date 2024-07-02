@@ -218,4 +218,8 @@ const (
 	TransferTypeOrderMarginLow    TransferType = proto.TransferType_TRANSFER_TYPE_ORDER_MARGIN_LOW
 	TransferTypeOrderMarginHigh   TransferType = proto.TransferType_TRANSFER_TYPE_ORDER_MARGIN_HIGH
 	TransferTypeIsolatedMarginLow TransferType = proto.TransferType_TRANSFER_TYPE_ISOLATED_MARGIN_LOW
+	// AMM account juggling.
+	TransferTypeAMMLow     TransferType = proto.TransferType_TRANSFER_TYPE_AMM_LOW
+	TransferTypeAMMHigh    TransferType = proto.TransferType_TRANSFER_TYPE_AMM_HIGH
+	TransferTypeAMMRelease TransferType = proto.TransferType_TRANSFER_TYPE_AMM_RELEASE
 )

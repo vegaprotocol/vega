@@ -68,3 +68,7 @@ func (pas *VolumeDiscountStatsUpdated) consumeVolumeDiscountStatsUpdatedEvent(ct
 
 	return errors.Wrap(pas.store.Add(ctx, stats), "could not add volume discount stats to the store")
 }
+
+func (pas *VolumeDiscountStatsUpdated) Name() string {
+	return "VolumeDiscountStatsUpdated"
+}

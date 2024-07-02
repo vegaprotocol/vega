@@ -79,6 +79,10 @@ func NewERC20LogicView(
 	}
 }
 
+func (e *ERC20LogicView) CollateralBridgeAddress() string {
+	return e.clt.CollateralBridgeAddress().Hex()
+}
+
 // FindAsset will try to find an asset and validate it's details on ethereum.
 func (e *ERC20LogicView) FindAsset(
 	asset *types.AssetDetails,

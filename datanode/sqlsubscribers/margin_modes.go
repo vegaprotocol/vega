@@ -58,3 +58,7 @@ func NewMarginModes(store MarginModeStore) *MarginModes {
 		store: store,
 	}
 }
+
+func (t *MarginModes) Name() string {
+	return "MarginModes"
+}

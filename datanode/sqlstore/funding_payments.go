@@ -50,7 +50,7 @@ func (fp *FundingPayments) Add(
 	defer metrics.StartSQLQuery("FundingPayments", "Add")()
 
 	for _, v := range fundingPayments {
-		_, err := fp.Connection.Exec(ctx,
+		_, err := fp.Exec(ctx,
 			`insert into funding_payment(market_id, party_id, funding_period_seq, amount, vega_time, tx_hash)
 values ($1, $2, $3, $4, $5, $6)`,
 			v.MarketID, v.PartyID, v.FundingPeriodSeq, v.Amount, v.VegaTime, v.TxHash)
@@ -85,7 +85,7 @@ func (fp *FundingPayments) List(
 		return fundingPayments, pageInfo, err
 	}
 
-	err = pgxscan.Select(ctx, fp.Connection, &fundingPayments, query, args...)
+	err = pgxscan.Select(ctx, fp.ConnectionSource, &fundingPayments, query, args...)
 	if err != nil {
 		return fundingPayments, pageInfo, err
 	}

@@ -25,6 +25,7 @@ Feature: Test changing market.liquidity.providersFeeCalculationTimeStep;
       | validators.epoch.length                             | 15s   |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.25  |
+      | market.liquidity.equityLikeShareFeeFraction         | 1     |
 
     Given the liquidity monitoring parameters:
       | name       | triggering ratio | time window | scaling factor |
@@ -147,3 +148,104 @@ Feature: Test changing market.liquidity.providersFeeCalculationTimeStep;
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 18     | USD   |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 48     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 32     | USD   |
+
+  @Now
+  Scenario: 001b: lp1 and lp2 on the market ETH/MAR22, 0044-LIME-062 with ELS fee share fraction set to 0.5
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount  |
+      | lp1    | USD   | 100000  |
+      | lp2    | USD   | 100000  |
+      | party1 | USD   | 1000000 |
+      | party2 | USD   | 1000000 |
+    And the following network parameters are set:
+      | name                                        | value |
+      | market.liquidity.equityLikeShareFeeFraction | 0.5   |
+
+    And the network moves ahead "1" blocks
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee   | lp type    |
+      | lp_1 | lp1   | ETH/MAR22 | 6000              | 0.02  | submission |
+      | lp_2 | lp2   | ETH/MAR22 | 4000              | 0.015 | submission |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | sell | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | lp1    | ETH/MAR22 | buy  | 10     | 950   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | lp2    | ETH/MAR22 | buy  | 10     | 970   | 0                | TYPE_LIMIT | TIF_GTC | lp2-b     |
+      | lp2    | ETH/MAR22 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | lp2-s     |
+      | lp1    | ETH/MAR22 | sell | 10     | 1050  | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
+
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1000  | 1    | party2 |
+
+    When the network moves ahead "4" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 10000          | 1             |
+
+
+    Then the network moves ahead "1" epochs
+    Then the following network parameters are set:
+      | name                                             | value |
+      | market.liquidity.providersFeeCalculationTimeStep | 3s    |
+
+    # As we are still within the epoch, the change to 3s distributions should not occur yet, so we make a trade
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    # Then forward enough blocks that the 3s setting would have caused a distribution and place another trade
+    Then the network moves ahead "4" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | sell | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "8" blocks
+
+    # Now forward enough that a distribution does occur at the original 10s frequency and see one took place with the
+    # volume from both orders in one transfer, implying nothing happened between the two orders
+    Then the following transfers should happen:
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 33     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 27     | USD   |
+
+    # We are now nearly at the epoch boundary, so place an order just before
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "1" epochs
+    # And once we pass the epoch, this is distributed to the fee accounts at the new frequency
+    And the following transfers should happen:
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 16     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 13     | USD   |
+
+    # So now if we place a new trade
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 3      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | sell | 3      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+    Then the network moves ahead "4" blocks
+    # Forward past the distribution frequency cutoff and place another
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | sell | 4      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | buy  | 4      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    # Then forward enough to cause them both to distribute, the fees are instead sent as two separate distributions
+    Then the network moves ahead "7" blocks
+    And the following transfers should happen:
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 25     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 44     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 20     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 36     | USD   |

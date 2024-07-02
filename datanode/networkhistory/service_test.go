@@ -144,13 +144,13 @@ func TestMain(t *testing.M) {
 		}
 	}()
 
-	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
+	exitCode := databasetest.TestMain(t, outerCtx, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
 		pgLog *bytes.Buffer,
 	) {
 		sqlConfig = config
-		log.Infof("DB Connection String: ", sqlConfig.ConnectionConfig.GetConnectionString())
+		log.Infof("DB Connection String: %v", sqlConfig.ConnectionConfig.GetConnectionString())
 
-		pool, err := sqlstore.CreateConnectionPool(sqlConfig.ConnectionConfig)
+		pool, err := sqlstore.CreateConnectionPool(outerCtx, sqlConfig.ConnectionConfig)
 		if err != nil {
 			panic(fmt.Errorf("failed to create connection pool: %w", err))
 		}
@@ -184,7 +184,7 @@ func TestMain(t *testing.M) {
 				panic(fmt.Errorf("failed to create snapshot: %w", err))
 			}
 
-			waitForSnapshotToComplete(ss)
+			waitForSnapshotToComplete2(ss, snapshotService.Flush)
 
 			snapshots = append(snapshots, ss)
 
@@ -203,7 +203,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		preUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		preUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -211,7 +211,7 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToComplete(lastSnapshot)
+					waitForSnapshotToComplete2(lastSnapshot, snapshotService.Flush)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
@@ -260,7 +260,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		postUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		postUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -268,7 +268,7 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToComplete(lastSnapshot)
+					waitForSnapshotToComplete2(lastSnapshot, snapshotService.Flush)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
@@ -379,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQqE56RWuyHEWm1rqcFNcEvCWiBpgMsSs1CAwABGfkSSh", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmNn42pXmiaxpDgLAAr2H1WTdz9YWYfyWgDBWajPb6m6Qd", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmcwwiZP3stVahfyLU4f6NjL3Spyn67JXV4RsPt2ieWL5i", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmP8LoArcevGNGoyMnfcLS82gErPfHHAukYJyax3hfvFd9", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmRJbm1dMajfEEMAzumsybuZ7hq6QcZJddT5QcNmGsFZir", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmQusPSJ5wq5gLjjCutX3hzUZ4yyY4uysyvqtq4K5disQE", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQX6n82ex2XDh1tWL1gCv2viDttUwRSdyG1XaekYfLpJk", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaWdp5RPui6ePszzPvk48e7FxHmPGx2VMpbXD2NTgtFMT", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmRmAX4AfQ9xAdLN8GjVCBmDH7Cm6q1ts7TBF9UjLdjMG9", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmNM3M1bQWgY9VXKj1vAixm3xW6Z9hgUa2iqrZibzx2B9r", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmcynDS55pPV7YntUwyhhizvUKnV8pKsHr8LVKnR4JAb65", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmdMh6i3db5i7wvskqhXkFW3cGoq9CsLS3b26qjjuTu5kn", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -421,6 +421,7 @@ func TestLoadingDataFetchedAsynchronously(t *testing.T) {
 	require.Equal(t, int64(1000), fetched)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, snapshotService, networkHistoryStore, snapshotCopyToPath)
+
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
@@ -583,7 +584,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 				ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
 
-				waitForSnapshotToComplete(ss)
+				waitForSnapshotToComplete2(ss, snapshotService.Flush)
 
 				md5Hash, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 				require.NoError(t, err)
@@ -862,7 +863,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	assert.Equal(t, int64(2001), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(3000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -888,7 +889,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 				ss, err = service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
-				waitForSnapshotToComplete(ss)
+				waitForSnapshotToComplete2(ss, service.Flush)
 
 				if lastCommittedBlockHeight == 4000 {
 					newSnapshotFileHashAt4000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
@@ -951,7 +952,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -993,7 +994,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToComplete(ss)
+					waitForSnapshotToComplete2(ss, service.Flush)
 
 					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
@@ -1054,7 +1055,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -1096,7 +1097,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToComplete(ss)
+					waitForSnapshotToComplete2(ss, service.Flush)
 
 					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
@@ -1310,7 +1311,7 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string,
 		lastCommittedBlockHeight int64, snapshotTaken bool), evtSource eventSource, protocolUpdateHandler ProtocolUpgradeHandler,
 ) (sqlStoreBroker, error) {
-	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), testDbConfig.ConnectionConfig)
+	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), testDbConfig.ConnectionConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -1562,6 +1563,36 @@ func waitForSnapshotToComplete(sf segment.Unpublished) {
 				panic(err)
 			}
 		}
+
+		// wait for snapshot data dump in progress file to be removed
+
+		_, err = os.Stat(sf.InProgressFilePath())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				break
+			} else {
+				panic(err)
+			}
+		} else {
+			continue
+		}
+	}
+}
+
+func waitForSnapshotToComplete2(sf segment.Unpublished, flush func()) {
+	for {
+		time.Sleep(10 * time.Millisecond)
+		// wait for snapshot current  file
+		_, err := os.Stat(sf.UnpublishedSnapshotDataDirectory())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			} else {
+				panic(err)
+			}
+		}
+
+		flush()
 
 		// wait for snapshot data dump in progress file to be removed
 

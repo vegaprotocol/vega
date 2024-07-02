@@ -83,3 +83,7 @@ func (fp *FundingPeriod) consumeFundingPeriodDataPointEvent(ctx context.Context,
 	}
 	return errors.Wrap(fp.store.AddDataPoint(ctx, dataPoint), "adding funding period data point")
 }
+
+func (fp *FundingPeriod) Name() string {
+	return "FundingPeriod"
+}

@@ -23,22 +23,30 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
+	"code.vegaprotocol.io/vega/datanode/service"
+	smocks "code.vegaprotocol.io/vega/datanode/service/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 	"google.golang.org/genproto/googleapis/api/httpbody"
 	"google.golang.org/grpc/metadata"
 )
@@ -793,6 +801,532 @@ func TestEstimatePosition(t *testing.T) {
 	}
 }
 
+func TestListAccounts(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	accountStore := smocks.NewMockAccountStore(ctrl)
+	balanceStore := smocks.NewMockBalanceStore(ctrl)
+
+	apiService := api.TradingDataServiceV2{
+		AccountService: service.NewAccount(accountStore, balanceStore, logging.NewTestLogger()),
+	}
+
+	ctx := context.Background()
+
+	req := &v2.ListAccountsRequest{
+		Filter: &v2.AccountFilter{
+			AssetId:   "asset1",
+			PartyIds:  []string{"90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d", "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9"},
+			MarketIds: []string{"a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea", "af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"},
+		},
+	}
+
+	// without derived keys
+	{
+		expect := []entities.AccountBalance{
+			{
+				Account: &entities.Account{
+					PartyID: "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+					AssetID: "asset1",
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID: "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
+					AssetID: "asset1",
+				},
+			},
+		}
+
+		accountFilter := entities.AccountFilter{
+			AssetID:   entities.AssetID(req.Filter.AssetId),
+			PartyIDs:  entities.NewPartyIDSlice(req.Filter.PartyIds...),
+			MarketIDs: entities.NewMarketIDSlice(req.Filter.MarketIds...),
+		}
+
+		accountStore.EXPECT().QueryBalances(gomock.Any(), accountFilter, gomock.Any()).Times(1).Return(expect, entities.PageInfo{}, nil)
+
+		resp, err := apiService.ListAccounts(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Accounts.Edges, 2)
+		require.Equal(t, expect[0].ToProto(), resp.Accounts.Edges[0].Node)
+		require.Equal(t, expect[1].ToProto(), resp.Accounts.Edges[1].Node)
+	}
+
+	// now test with derived keys
+	{
+		req.IncludeDerivedParties = ptr.From(true)
+
+		expect := []entities.AccountBalance{
+			{
+				Account: &entities.Account{
+					PartyID: "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+					AssetID: "asset1",
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID: "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
+					AssetID: "asset1",
+				},
+			},
+		}
+
+		partyPerDerivedKey := map[string]string{
+			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba": "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+			"79b3aaa5ff0933408cf8f1bcb0b1006cd7bc259d76d400721744e8edc12f2929": "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
+			"35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b": "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+			"161c1c424215cff4f32154871c225dc9760bcac1d4d6783deeaacf7f8b6861ab": "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
+		}
+
+		for derivedKey := range partyPerDerivedKey {
+			expect = append(expect, entities.AccountBalance{
+				Account: &entities.Account{
+					PartyID: entities.PartyID(derivedKey),
+					AssetID: "asset1",
+				},
+			})
+		}
+
+		accountStore.EXPECT().QueryBalances(gomock.Any(), gomock.Any(), gomock.Any()).
+			Do(func(ctx context.Context, filter entities.AccountFilter, pageInfo entities.CursorPagination) {
+				var expectPartyIDs []string
+				for _, e := range expect {
+					expectPartyIDs = append(expectPartyIDs, e.PartyID.String())
+				}
+
+				var gotPartyIDs []string
+				for _, p := range filter.PartyIDs {
+					gotPartyIDs = append(gotPartyIDs, p.String())
+				}
+
+				slices.Sort(expectPartyIDs)
+				slices.Sort(gotPartyIDs)
+				require.Zero(t, slices.Compare(expectPartyIDs, gotPartyIDs))
+			}).Times(1).Return(expect, entities.PageInfo{}, nil)
+
+		resp, err := apiService.ListAccounts(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Accounts.Edges, 6)
+
+		for i := range expect {
+			require.Equal(t, expect[i].ToProto().Owner, resp.Accounts.Edges[i].Node.Owner)
+
+			if party, ok := partyPerDerivedKey[expect[i].PartyID.String()]; ok {
+				require.NotNil(t, resp.Accounts.Edges[i].Node.ParentPartyId)
+				require.Equal(t, party, *resp.Accounts.Edges[i].Node.ParentPartyId)
+			}
+		}
+	}
+}
+
+func TestObserveAccountBalances(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	accountStore := smocks.NewMockAccountStore(ctrl)
+	balanceStore := smocks.NewMockBalanceStore(ctrl)
+
+	apiService := api.TradingDataServiceV2{
+		AccountService: service.NewAccount(accountStore, balanceStore, logging.NewTestLogger()),
+	}
+
+	apiService.SetLogger(logging.NewTestLogger())
+
+	ctx := context.Background()
+
+	req := &v2.ObserveAccountsRequest{
+		MarketId: "a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea",
+		PartyId:  "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+		Asset:    "asset1",
+	}
+
+	// without derived keys
+	{
+		expect := []entities.AccountBalance{
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_MARGIN,
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_BOND,
+				},
+			},
+		}
+
+		balanceStore.EXPECT().Flush(gomock.Any()).Return(expect[1:], nil).Times(1)
+
+		accountFilter := entities.AccountFilter{
+			AssetID:   "asset1",
+			PartyIDs:  entities.NewPartyIDSlice(req.PartyId),
+			MarketIDs: entities.NewMarketIDSlice(req.MarketId),
+		}
+
+		accountStore.EXPECT().QueryBalances(gomock.Any(), accountFilter, gomock.Any()).Times(1).Return(expect[:1], entities.PageInfo{}, nil)
+
+		srvCtx, cancel := context.WithCancel(ctx)
+		res := mockObserveAccountServer{
+			mockServerStream: mockServerStream{ctx: srvCtx},
+			send: func(oar *v2.ObserveAccountsResponse) error {
+				switch res := oar.Response.(type) {
+				case *v2.ObserveAccountsResponse_Snapshot:
+					require.Len(t, res.Snapshot.Accounts, 1)
+					require.Equal(t, expect[0].ToProto(), res.Snapshot.Accounts[0])
+				case *v2.ObserveAccountsResponse_Updates:
+					require.Equal(t, len(expect[1:]), len(res.Updates.Accounts))
+					require.Equal(t, expect[1].ToProto().Owner, res.Updates.Accounts[0].Owner)
+					require.Equal(t, expect[1].ToProto().Type, res.Updates.Accounts[0].Type)
+					require.Equal(t, expect[2].ToProto().Owner, res.Updates.Accounts[1].Owner)
+					require.Equal(t, expect[2].ToProto().Type, res.Updates.Accounts[1].Type)
+					cancel()
+				default:
+					t.Fatalf("unexpected response type: %T", oar.Response)
+				}
+				return nil
+			},
+		}
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			apiService.ObserveAccounts(req, res)
+		}()
+
+		time.Sleep(1 * time.Second)
+		err := apiService.AccountService.Flush(ctx)
+		require.NoError(t, err)
+		wg.Wait()
+	}
+
+	// now test with derived keys
+	{
+		req.IncludeDerivedParties = ptr.From(true)
+
+		expect := []entities.AccountBalance{
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_MARGIN,
+				},
+			},
+			{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(req.PartyId),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_BOND,
+				},
+			},
+		}
+
+		partyPerDerivedKey := map[string]string{
+			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba": req.PartyId,
+		}
+
+		for derivedKey := range partyPerDerivedKey {
+			expect = append(expect, entities.AccountBalance{
+				Account: &entities.Account{
+					PartyID:  entities.PartyID(derivedKey),
+					AssetID:  entities.AssetID(req.Asset),
+					MarketID: entities.MarketID(req.MarketId),
+					Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				},
+			})
+		}
+		balanceStore.EXPECT().Flush(gomock.Any()).Return(expect[3:], nil).Times(1)
+
+		accountFilter := entities.AccountFilter{
+			AssetID:   "asset1",
+			PartyIDs:  entities.NewPartyIDSlice(append(maps.Keys(partyPerDerivedKey), req.PartyId)...),
+			MarketIDs: entities.NewMarketIDSlice(req.MarketId),
+		}
+
+		accountStore.EXPECT().QueryBalances(gomock.Any(), accountFilter, gomock.Any()).Times(1).Return(expect[:3], entities.PageInfo{}, nil)
+
+		srvCtx, cancel := context.WithCancel(ctx)
+		res := mockObserveAccountServer{
+			mockServerStream: mockServerStream{ctx: srvCtx},
+			send: func(oar *v2.ObserveAccountsResponse) error {
+				switch res := oar.Response.(type) {
+				case *v2.ObserveAccountsResponse_Snapshot:
+					require.Len(t, res.Snapshot.Accounts, 3)
+					require.Equal(t, expect[0].ToProto(), res.Snapshot.Accounts[0])
+					require.Equal(t, expect[1].ToProto(), res.Snapshot.Accounts[1])
+					require.Equal(t, expect[2].ToProto(), res.Snapshot.Accounts[2])
+				case *v2.ObserveAccountsResponse_Updates:
+					require.Equal(t, len(expect[3:]), len(res.Updates.Accounts))
+					require.Equal(t, expect[3].ToProto().Owner, res.Updates.Accounts[0].Owner)
+					require.Equal(t, expect[3].ToProto().Type, res.Updates.Accounts[0].Type)
+					cancel()
+				default:
+					t.Fatalf("unexpected response type: %T", oar.Response)
+				}
+				return nil
+			},
+		}
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			apiService.ObserveAccounts(req, res)
+		}()
+
+		time.Sleep(1 * time.Second)
+		err := apiService.AccountService.Flush(ctx)
+		require.NoError(t, err)
+		wg.Wait()
+	}
+}
+
+func TestListRewards(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	marketStore := smocks.NewMockMarketStore(ctrl)
+	rewardStore := smocks.NewMockRewardStore(ctrl)
+
+	apiService := api.TradingDataServiceV2{
+		MarketsService: service.NewMarkets(marketStore),
+		RewardService:  service.NewReward(rewardStore, logging.NewTestLogger()),
+	}
+
+	ctx := context.Background()
+
+	req := &v2.ListRewardsRequest{
+		PartyId: "90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d",
+	}
+
+	// without derived keys
+	{
+		expect := []entities.Reward{
+			{
+				PartyID: entities.PartyID(req.PartyId),
+			},
+		}
+
+		pagination := entities.DefaultCursorPagination(true)
+
+		rewardStore.EXPECT().GetByCursor(ctx,
+			[]string{req.PartyId}, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId).
+			Times(1).Return(expect, entities.PageInfo{}, nil)
+
+		resp, err := apiService.ListRewards(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Rewards.Edges, 1)
+		require.Equal(t, expect[0].ToProto().PartyId, resp.Rewards.Edges[0].Node.PartyId)
+	}
+
+	// now test with derived keys
+	{
+		req.IncludeDerivedParties = ptr.From(true)
+
+		expect := []entities.Reward{
+			{
+				PartyID: entities.PartyID(req.PartyId),
+			},
+			{
+				PartyID: entities.PartyID("653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba"),
+			},
+			{
+				PartyID: entities.PartyID("35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b"),
+			},
+		}
+
+		pagination := entities.DefaultCursorPagination(true)
+
+		markets := []entities.Market{
+			{
+				ID: entities.MarketID("a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea"),
+			},
+			{
+				ID: entities.MarketID("af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"),
+			},
+		}
+
+		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Times(1).Return(markets, entities.PageInfo{}, nil)
+
+		rewardStore.EXPECT().GetByCursor(ctx, gomock.Any(), req.AssetId, req.FromEpoch, req.ToEpoch,
+			pagination, req.TeamId, req.GameId).
+			Do(func(_ context.Context, gotPartyIDs []string, _ *string, _, _ *uint64, _ entities.CursorPagination, _, _ *string) {
+				expectPartyIDs := []string{expect[0].PartyID.String(), expect[1].PartyID.String(), expect[2].PartyID.String()}
+
+				slices.Sort(expectPartyIDs)
+				slices.Sort(gotPartyIDs)
+				require.Zero(t, slices.Compare(expectPartyIDs, gotPartyIDs))
+			}).
+			Times(1).Return(expect, entities.PageInfo{}, nil)
+
+		resp, err := apiService.ListRewards(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Rewards.Edges, 3)
+		require.Equal(t, expect[0].ToProto().PartyId, resp.Rewards.Edges[0].Node.PartyId)
+		require.Equal(t, expect[1].ToProto().PartyId, resp.Rewards.Edges[1].Node.PartyId)
+		require.Equal(t, expect[2].ToProto().PartyId, resp.Rewards.Edges[2].Node.PartyId)
+	}
+}
+
+func TestListRewardSummaries(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	marketStore := smocks.NewMockMarketStore(ctrl)
+	rewardStore := smocks.NewMockRewardStore(ctrl)
+
+	apiService := api.TradingDataServiceV2{
+		MarketsService: service.NewMarkets(marketStore),
+		RewardService:  service.NewReward(rewardStore, logging.NewTestLogger()),
+	}
+
+	ctx := context.Background()
+
+	t.Run("without party id", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			AssetId: ptr.From("asset1"),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID("random-party"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+		}
+
+		rewardStore.EXPECT().GetSummaries(ctx, []string{}, req.AssetId).
+			Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 1)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+	})
+
+	t.Run("with derived keys without party", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			AssetId:               ptr.From("asset1"),
+			IncludeDerivedParties: ptr.From(true),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID("random-party"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+		}
+
+		rewardStore.EXPECT().GetSummaries(ctx, []string{}, req.AssetId).
+			Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 1)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+	})
+
+	t.Run("without derived keys with party", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			PartyId: ptr.From("90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d"),
+			AssetId: ptr.From("asset1"),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID(*req.PartyId),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+		}
+
+		rewardStore.EXPECT().GetSummaries(ctx, []string{*req.PartyId}, req.AssetId).
+			Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 1)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+	})
+
+	t.Run("with derived keys and party", func(t *testing.T) {
+		req := &v2.ListRewardSummariesRequest{
+			PartyId:               ptr.From("90421f905ab72919671caca4ffb891ba8b253a4d506e1c0223745268edf4416d"),
+			AssetId:               ptr.From("asset1"),
+			IncludeDerivedParties: ptr.From(true),
+		}
+
+		expect := []entities.RewardSummary{
+			{
+				PartyID: entities.PartyID(*req.PartyId),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(200),
+			},
+			{
+				PartyID: entities.PartyID("653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(150),
+			},
+			{
+				PartyID: entities.PartyID("35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b"),
+				AssetID: entities.AssetID(*req.AssetId),
+				Amount:  num.NewDecimalFromFloat(130),
+			},
+		}
+
+		markets := []entities.Market{
+			{
+				ID: entities.MarketID("a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea"),
+			},
+			{
+				ID: entities.MarketID("af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"),
+			},
+		}
+
+		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Times(1).Return(markets, entities.PageInfo{}, nil)
+
+		rewardStore.EXPECT().GetSummaries(ctx, gomock.Any(), req.AssetId).
+			Do(func(_ context.Context, gotPartyIDs []string, _ *string) {
+				var expectPartyIDs []string
+				for _, e := range expect {
+					expectPartyIDs = append(expectPartyIDs, e.PartyID.String())
+				}
+
+				slices.Sort(expectPartyIDs)
+				slices.Sort(gotPartyIDs)
+				require.Zero(t, slices.Compare(expectPartyIDs, gotPartyIDs))
+			}).Times(1).Return(expect, nil)
+
+		resp, err := apiService.ListRewardSummaries(ctx, req)
+		require.NoError(t, err)
+		require.Len(t, resp.Summaries, 3)
+		require.Equal(t, expect[0].ToProto(), resp.Summaries[0])
+		require.Equal(t, expect[1].ToProto(), resp.Summaries[1])
+		require.Equal(t, expect[2].ToProto(), resp.Summaries[2])
+	})
+}
+
 //nolint:unparam
 func floatToStringWithDp(value float64, dp int) string {
 	return fmt.Sprintf("%f", value*math.Pow10(dp))
@@ -941,4 +1475,63 @@ func getMarketOrderNotional(marketObservable float64, orders []*v2.OrderInfo, pr
 		notional += marketObservable * priceFactor * size
 	}
 	return notional
+}
+
+type mockObserveAccountServer struct {
+	mockServerStream
+	send func(*v2.ObserveAccountsResponse) error
+}
+
+func (m mockObserveAccountServer) Send(resp *v2.ObserveAccountsResponse) error {
+	if m.send != nil {
+		return m.send(resp)
+	}
+	return nil
+}
+
+type mockServerStream struct {
+	ctx        context.Context
+	recvMsg    func(m interface{}) error
+	sendMsg    func(m interface{}) error
+	setHeader  func(md metadata.MD) error
+	sendHeader func(md metadata.MD) error
+	setTrailer func(md metadata.MD)
+}
+
+func (m mockServerStream) Context() context.Context {
+	return m.ctx
+}
+
+func (m mockServerStream) SendMsg(msg interface{}) error {
+	if m.sendMsg != nil {
+		return m.sendMsg(msg)
+	}
+	return nil
+}
+
+func (m mockServerStream) RecvMsg(msg interface{}) error {
+	if m.recvMsg != nil {
+		return m.recvMsg(msg)
+	}
+	return nil
+}
+
+func (m mockServerStream) SetHeader(md metadata.MD) error {
+	if m.setHeader != nil {
+		return m.setHeader(md)
+	}
+	return nil
+}
+
+func (m mockServerStream) SendHeader(md metadata.MD) error {
+	if m.sendHeader != nil {
+		return m.sendHeader(md)
+	}
+	return nil
+}
+
+func (m mockServerStream) SetTrailer(md metadata.MD) {
+	if m.setTrailer != nil {
+		m.setTrailer(md)
+	}
 }

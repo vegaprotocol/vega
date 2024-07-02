@@ -44,7 +44,7 @@ func NewVotes(connectionSource *ConnectionSource) *Votes {
 
 func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 	defer metrics.StartSQLQuery("Votes", "Add")()
-	_, err := vs.Connection.Exec(ctx,
+	_, err := vs.Exec(ctx,
 		`INSERT INTO votes(
 			proposal_id,
 			party_id,
@@ -93,7 +93,7 @@ func (vs *Votes) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]ent
 
 	var votes []entities.Vote
 	query := `SELECT * FROM votes WHERE tx_hash = $1`
-	err := pgxscan.Select(ctx, vs.Connection, &votes, query, txHash)
+	err := pgxscan.Select(ctx, vs.ConnectionSource, &votes, query, txHash)
 	if err != nil {
 		return nil, fmt.Errorf("querying votes: %w", err)
 	}
@@ -115,7 +115,7 @@ func (vs *Votes) GetByPartyConnection(ctx context.Context, partyIDStr string, pa
 		return votes, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, vs.Connection, &votes, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, vs.ConnectionSource, &votes, query, args...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 
@@ -158,7 +158,7 @@ func (vs *Votes) GetConnection(
 		return votes, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, vs.Connection, &votes, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, vs.ConnectionSource, &votes, query, args...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 
@@ -195,7 +195,7 @@ func (vs *Votes) Get(ctx context.Context,
 	}
 
 	votes := []entities.Vote{}
-	err := pgxscan.Select(ctx, vs.Connection, &votes, query, args...)
+	err := pgxscan.Select(ctx, vs.ConnectionSource, &votes, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying votes: %w", err)
 	}

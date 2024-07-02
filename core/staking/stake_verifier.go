@@ -55,6 +55,7 @@ type EthConfirmations interface {
 type EthOnChainVerifier interface {
 	CheckStakeDeposited(*types.StakeDeposited) error
 	CheckStakeRemoved(*types.StakeRemoved) error
+	GetStakingBridgeAddresses() []string
 }
 
 // Witness provide foreign chain resources validations.
@@ -288,15 +289,17 @@ func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
 
 func (s *StakeVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, evt := range s.finalizedEvents {
-		// s.removeEvent(evt.ID)
 		if evt.Status == types.StakeLinkingStatusAccepted {
 			s.accs.AddEvent(ctx, evt)
+			for _, addresss := range s.ocv.GetStakingBridgeAddresses() {
+				s.ethEventSource.UpdateContractBlock(addresss, s.accs.chainID, evt.BlockHeight)
+			}
 		}
+
 		s.log.Info("stake linking finalized",
 			logging.String("status", evt.Status.String()),
 			logging.String("event", evt.String()))
 		s.broker.Send(events.NewStakeLinking(ctx, *evt))
 	}
-
 	s.finalizedEvents = nil
 }

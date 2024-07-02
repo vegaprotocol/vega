@@ -88,3 +88,7 @@ func (m *ERC20MultiSigSignerEvent) consumeRemovedEvent(ctx context.Context, even
 	}
 	return nil
 }
+
+func (m *ERC20MultiSigSignerEvent) Name() string {
+	return "ERC20MultiSigSignerEvent"
+}

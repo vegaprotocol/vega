@@ -39,17 +39,22 @@ func NewCachedOrderBook(
 	}
 }
 
+func (b *CachedOrderBook) SetOffbookSource(obs OffbookSource) {
+	b.OrderBook.SetOffbookSource(obs)
+}
+
 func (b *CachedOrderBook) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	providers, err := b.OrderBook.LoadState(ctx, payload)
 	if err != nil {
 		return providers, err
 	}
 
-	// when a market is restored we call `GetMarketData` which fills this cache based on an unrestored orderbook,
-	// now we have restored we need to recalculate.
-	b.log.Info("restoring orderbook cache for", logging.String("marketID", b.marketID))
-	b.cache.Invalidate()
-	b.GetIndicativePriceAndVolume()
+	if b.auction {
+		b.cache.Invalidate()
+		b.log.Info("restoring orderbook cache for", logging.String("marketID", b.marketID))
+		b.GetIndicativePriceAndVolume()
+	}
+
 	return providers, err
 }
 
@@ -211,4 +216,13 @@ func (b *CachedOrderBook) GetIndicativePrice() *num.Uint {
 		b.cache.SetIndicativePrice(price.Clone())
 	}
 	return price
+}
+
+func (b *CachedOrderBook) UpdateAMM(party string) {
+	if !b.auction {
+		return
+	}
+
+	b.cache.Invalidate()
+	b.OrderBook.UpdateAMM(party)
 }

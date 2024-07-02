@@ -77,7 +77,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 		return fmt.Errorf("failed to kill all connections to database: %w", err)
 	}
 
-	connPool, err := getCommandConnPool(cmd.Config.SQLStore.ConnectionConfig)
+	connPool, err := getCommandConnPool(ctx, cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to get command connection pool: %w", err)
 	}
@@ -89,7 +89,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	}
 
 	if hasSchema {
-		err = verifyChainID(cmd.SQLStore.ConnectionConfig, cmd.ChainID)
+		err = verifyChainID(ctx, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 		if err != nil {
 			if !errors.Is(err, networkhistory.ErrChainNotFound) {
 				return fmt.Errorf("failed to verify chain id:%w", err)

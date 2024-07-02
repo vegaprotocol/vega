@@ -140,6 +140,7 @@ func (o *Observer[T]) Observe(ctx context.Context, retries int, filter func(T) b
 					close(out)
 					return
 				}
+
 				filtered := make([]T, 0, len(values))
 				for _, value := range values {
 					if filter(value) {

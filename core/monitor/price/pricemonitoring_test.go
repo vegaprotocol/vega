@@ -48,6 +48,7 @@ func TestEmptyParametersList(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -87,6 +88,7 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	// statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	// auctionStateMock.EXPECT().IsPriceAuction().Times(1).Return(false)
 	pm, err := price.NewMonitor("asset", "market", nil, auctionStateMock, settings, statevar, logging.NewTestLogger())
 	require.Error(t, err)
 	require.Nil(t, pm)
@@ -107,6 +109,7 @@ func TestGetHorizonYearFractions(t *testing.T) {
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	auctionStateMock.EXPECT().IsPriceAuction().Times(1).Return(false)
 	pm, err := price.NewMonitor("asset", "market", riskModel, auctionStateMock, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
@@ -136,6 +139,7 @@ func TestRecordPriceChange(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -190,6 +194,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	upFactors := []num.Decimal{pMax1.Div(cpDec), pMax2.Div(cpDec)}
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(14)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -359,6 +364,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -413,6 +419,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -475,6 +482,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	t2ub1, _ := num.UintFromDecimal(pMax2)
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
@@ -594,6 +602,7 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 	t2ub1, _ := num.UintFromDecimal(pMax2)
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
@@ -673,6 +682,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	ctx := context.Background()
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	end := now.Add(time.Second)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&end).Times(1)
@@ -711,6 +721,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	// price monitoring starts with auction, not initialised, so there's no fixed price level it'll check
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(4)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().CanLeave().Return(false).AnyTimes()
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
@@ -764,6 +775,7 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(1)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -810,6 +822,7 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	currentPriceD := currentPrice.ToDecimal()
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(12)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(12)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 

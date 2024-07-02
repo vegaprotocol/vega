@@ -82,6 +82,8 @@ func NewTransactionResultEventFailure(
 
 func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 	switch tv := tx.(type) {
+	case *commandspb.DelayedTransactionsWrapper:
+		break
 	case *commandspb.OrderSubmission:
 		t.evt.Transaction = &eventspb.TransactionResult_OrderSubmission{
 			OrderSubmission: tv,
@@ -197,6 +199,18 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 	case *commandspb.UpdatePartyProfile:
 		t.evt.Transaction = &eventspb.TransactionResult_UpdatePartyProfile{
 			UpdatePartyProfile: tv,
+		}
+	case *commandspb.SubmitAMM:
+		t.evt.Transaction = &eventspb.TransactionResult_SubmitAmm{
+			SubmitAmm: tv,
+		}
+	case *commandspb.AmendAMM:
+		t.evt.Transaction = &eventspb.TransactionResult_AmendAmm{
+			AmendAmm: tv,
+		}
+	case *commandspb.CancelAMM:
+		t.evt.Transaction = &eventspb.TransactionResult_CancelAmm{
+			CancelAmm: tv,
 		}
 	default:
 		panic(fmt.Sprintf("unsupported command %T", tv))

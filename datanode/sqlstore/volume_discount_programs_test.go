@@ -93,7 +93,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 		require.NoError(t, err)
 
 		var got []entities.VolumeDiscountProgram
-		require.NoError(t, pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_programs"))
+		require.NoError(t, pgxscan.Select(ctx, connectionSource, &got, "SELECT * FROM volume_discount_programs"))
 		require.Len(t, got, 1)
 		assert.Equal(t, *want, got[0])
 
@@ -101,7 +101,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 		err = rs.AddVolumeDiscountProgram(ctx, want2)
 		require.NoError(t, err)
 
-		err = pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_programs")
+		err = pgxscan.Select(ctx, connectionSource, &got, "SELECT * FROM volume_discount_programs")
 		require.NoError(t, err)
 		require.Len(t, got, 2)
 		wantAll := []entities.VolumeDiscountProgram{*want, *want2}
@@ -181,7 +181,7 @@ func TestVolumeDiscountPrograms_UpdateVolumeDiscountProgram(t *testing.T) {
 		require.NoError(t, err)
 
 		var got []entities.VolumeDiscountProgram
-		err = pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_programs")
+		err = pgxscan.Select(ctx, connectionSource, &got, "SELECT * FROM volume_discount_programs")
 		require.NoError(t, err)
 
 		require.Len(t, got, 1)
@@ -192,7 +192,7 @@ func TestVolumeDiscountPrograms_UpdateVolumeDiscountProgram(t *testing.T) {
 		err = rs.UpdateVolumeDiscountProgram(ctx, wantUpdated)
 		require.NoError(t, err)
 
-		err = pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_programs")
+		err = pgxscan.Select(ctx, connectionSource, &got, "SELECT * FROM volume_discount_programs")
 		require.NoError(t, err)
 
 		require.Len(t, got, 2)
@@ -203,7 +203,7 @@ func TestVolumeDiscountPrograms_UpdateVolumeDiscountProgram(t *testing.T) {
 
 	t.Run("The current_referral view should list the updated referral program record", func(t *testing.T) {
 		var got []entities.VolumeDiscountProgram
-		err := pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM current_volume_discount_program")
+		err := pgxscan.Select(ctx, connectionSource, &got, "SELECT * FROM current_volume_discount_program")
 		require.NoError(t, err)
 		require.Len(t, got, 1)
 		assert.Equal(t, *wantUpdated, got[0])
@@ -237,13 +237,13 @@ func TestVolumeDiscountPrograms_EndVolumeDiscountProgram(t *testing.T) {
 		ended.EndedAt = &endTime
 
 		var got []entities.VolumeDiscountProgram
-		err = pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_programs order by vega_time")
+		err = pgxscan.Select(ctx, connectionSource, &got, "SELECT * FROM volume_discount_programs order by vega_time")
 		require.NoError(t, err)
 		require.Len(t, got, 3)
 		wantAll := []entities.VolumeDiscountProgram{*started, *updated, *ended}
 		assert.Equal(t, wantAll, got)
 
-		err = pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM current_volume_discount_program")
+		err = pgxscan.Select(ctx, connectionSource, &got, "SELECT * FROM current_volume_discount_program")
 		require.NoError(t, err)
 		require.Len(t, got, 1)
 		assert.Equal(t, *ended, got[0])

@@ -66,6 +66,8 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 
+	top.ocv.EXPECT().GetMultiSigAddress().AnyTimes()
+	top.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	top.OnTick(context.Background(), time.Unix(10, 0))
 	// first set the threshold and 1 validator
 
@@ -196,6 +198,8 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	// now instantiate a new one, and load the stuff
 	top2 := getTestTopology(t)
 	defer top2.ctrl.Finish()
+	top2.ocv.EXPECT().GetMultiSigAddress().AnyTimes()
+	top2.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	snap := &snapshotpb.Payload{}
 	err = proto.Unmarshal(stateVerified, snap)
@@ -291,6 +295,8 @@ func TestERC20TopologySnapshotAddRemoveSigner(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 
+	top.ocv.EXPECT().GetMultiSigAddress().AnyTimes()
+	top.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	top.OnTick(context.Background(), time.Unix(10, 0))
 
 	var cb func(interface{}, bool)
@@ -369,6 +375,8 @@ func TestERC20TopologySnapshotAddRemoveSigner(t *testing.T) {
 	// now instantiate a new one, and load the stuff
 	top2 := getTestTopology(t)
 	defer top2.ctrl.Finish()
+	top2.ocv.EXPECT().GetMultiSigAddress().AnyTimes()
+	top2.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	snap := &snapshotpb.Payload{}
 	err = proto.Unmarshal(stateVerified, snap)

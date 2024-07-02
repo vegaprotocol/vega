@@ -27,6 +27,10 @@ import (
 
 type myMarketResolver VegaResolverRoot
 
+func (r *myMarketResolver) EnableTxReordering(ctx context.Context, obj *types.Market) (bool, error) {
+	return obj.EnableTransactionReordering, nil
+}
+
 func (r *myMarketResolver) LiquidityProvisionsConnection(
 	ctx context.Context,
 	market *types.Market,
@@ -190,7 +194,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 	}, nil
 }
 
-func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types.Market, partyID *string, pagination *v2.Pagination) (*v2.AccountsConnection, error) {
+func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types.Market, partyID *string, pagination *v2.Pagination, includeDerivedParties *bool) (*v2.AccountsConnection, error) {
 	filter := v2.AccountFilter{MarketIds: []string{market.Id}}
 	ptyID := ""
 
@@ -206,7 +210,7 @@ func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types
 		}
 	}
 
-	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination}
+	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination, IncludeDerivedParties: includeDerivedParties}
 
 	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
 	if err != nil {

@@ -75,14 +75,14 @@ var defaultCollateralAssets = []types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
 			Symbol:  "ETH",
-			Quantum: num.DecimalZero(),
+			Quantum: num.DecimalOne(),
 		},
 	},
 	{
 		ID: "BTC",
 		Details: &types.AssetDetails{
 			Symbol:  "BTC",
-			Quantum: num.DecimalZero(),
+			Quantum: num.DecimalOne(),
 		},
 	},
 	{
@@ -91,7 +91,7 @@ var defaultCollateralAssets = []types.Asset{
 			Name:     "VOTE",
 			Symbol:   "VOTE",
 			Decimals: 5,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},

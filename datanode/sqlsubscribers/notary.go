@@ -66,3 +66,7 @@ func (n *Notary) Types() []events.Type {
 		events.NodeSignatureEvent,
 	}
 }
+
+func (n *Notary) Name() string {
+	return "Notary"
+}

@@ -312,7 +312,6 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 	seenKey := (&types.PayloadBankingSeen{}).Key()
 	eng := getTestEngine(t)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 	state1, _, err := eng.GetState(seenKey)
 	require.Nil(t, err)
 	eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
@@ -464,7 +463,6 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Times(1).Return(&fromAcc, nil)
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	require.NoError(t, eng.TransferFunds(ctx, oneoff))
 
@@ -494,7 +492,6 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	}
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -596,7 +593,6 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	dsHash := hex.EncodeToString(crypto.Hash(p))
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
-	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	// test the new transfer prompts a change
@@ -622,10 +618,6 @@ func TestScheduledgGovTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
 	e := getTestEngine(t)
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).AnyTimes()
 
 	// let's do a massive fee, easy to test.
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))

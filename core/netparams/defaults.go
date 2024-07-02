@@ -67,16 +67,27 @@ var (
 
 func defaultNetParams() map[string]value {
 	m := map[string]value{
+		NetworkWideAuctionDuration:    NewJSON(&proto.LongBlockAuctionDurationTable{}, checks.LongBlockAuctionDurationTable()).Mutable(true).MustUpdate(`{"threshold_and_duration": [{"threshold":"10s","duration":"1m"},{"threshold":"1m","duration":"5m"},{"threshold":"10m","duration":"1h"},{"threshold":"1h","duration":"1h"},{"threshold":"6h","duration":"3h"},{"threshold":"24h","duration":"6h"}]}`),
+		MinimalMarginQuantumMultiple:  NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+		MinimalHoldingQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+
 		// spots
 		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("1"),
 
 		// perps
 		PerpsMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
+		// AMMs
+		AMMMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+
 		// ethereum oracles
 		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
+		MarketAMMMinCommitmentQuantum: NewUint(gteU0).Mutable(true).MustUpdate("100"),
+		MarketAMMMaxCalculationLevels: NewUint(gteU1).Mutable(true).MustUpdate("1000"),
+
 		// markets
+		MarketAggressiveOrderBlockDelay:           NewUint(gteU0).Mutable(true).MustUpdate("1"),
 		MarketMarginScalingFactors:                NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
 		MarketFeeFactorsInfrastructureFee:         NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),
@@ -100,6 +111,7 @@ func defaultNetParams() map[string]value {
 		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
 		MarketLiquidityProvidersFeeCalculationTimeStep:   NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
+		MarketLiquidityEquityLikeShareFeeFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
@@ -295,6 +307,7 @@ func defaultNetParams() map[string]value {
 		RewardsVestingBaseRate:        NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.25"),
 		RewardsVestingMinimumTransfer: NewDecimal(gtD0).Mutable(true).MustUpdate("10"),
 		RewardsVestingBenefitTiers:    NewJSON(&proto.VestingBenefitTiers{}, types.CheckUntypedVestingBenefitTier).Mutable(true).MustUpdate(`{"tiers": []}`),
+		RewardsUpdateFrequency:        NewDuration(gte1s).Mutable(true).MustUpdate("10m"),
 
 		// Referral program
 		ReferralProgramMaxReferralTiers:                        NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("10"),

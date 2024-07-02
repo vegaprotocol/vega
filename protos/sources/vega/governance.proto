@@ -29,6 +29,8 @@ message FutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 4;
   // Binding between the data source spec and the settlement data.
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
+  // If set, this product creates a capped future market.
+  optional FutureCap cap = 6;
 }
 
 // Perpetual product configuration
@@ -105,6 +107,8 @@ message NewSpotMarketConfiguration {
   LiquidityFeeSettings liquidity_fee_settings = 8;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 9;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 10;
 }
 
 // Configuration for a new futures market on Vega
@@ -148,6 +152,8 @@ message NewMarketConfiguration {
   CompositePriceConfiguration mark_price_configuration = 15;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 16;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 17;
 }
 
 // New spot market on Vega
@@ -221,6 +227,8 @@ message UpdateMarketConfiguration {
   CompositePriceConfiguration mark_price_configuration = 11;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 12;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 13;
 }
 
 // Configuration to update a spot market on Vega
@@ -246,6 +254,8 @@ message UpdateSpotMarketConfiguration {
   string tick_size = 6;
   // Specifies the name and code of the spot instrument.
   UpdateSpotInstrumentConfiguration instrument = 7;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 8;
 }
 
 message UpdateSpotInstrumentConfiguration {
@@ -845,4 +855,7 @@ message RecurringTransfer {
   optional uint64 end_epoch = 2;
   // Optional parameter defining how a transfer is dispatched.
   optional vega.DispatchStrategy dispatch_strategy = 3;
+  // Factor that the initial transfer amount is multiplied by for each epoch that it is executed.
+  // For example if the initial transfer amount is 1000 and the factor is 0.5, then the amounts transferred per epoch will be 1000, 500, 250, 125, etc.
+  string factor = 4;
 }

@@ -196,6 +196,10 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.TimeWeightedNotionalPositionUpdatedEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS:
 		return events.CancelledOrdersEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_GAME_SCORES:
+		return events.GameScoresEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_AMM:
+		return events.AMMPoolEventFromStream(ctx, be)
 	}
 
 	return nil

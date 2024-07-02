@@ -91,18 +91,22 @@ func TestMain(m *testing.M) {
 	}
 
 	cancel()
-	connectionSource, err = sqlstore.NewTransactionalConnectionSource(log, sqlConfig.ConnectionConfig)
+	ctx, cancel = context.WithCancel(context.Background())
+	connectionSource, err = sqlstore.NewTransactionalConnectionSource(ctx, log, sqlConfig.ConnectionConfig)
 	if err != nil {
+		cancel()
 		panic(err)
 	}
 	defer embeddedPostgres.Stop()
 
 	if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(log, sqlConfig.ConnectionConfig, store.EmbedMigrations, false); err != nil {
 		log.Errorf("failed to wipe database and migrate schema, dumping postgres log:\n %s", postgresLog.String())
+		cancel()
 		panic(err)
 	}
 
 	code := m.Run()
+	cancel()
 	os.Exit(code)
 }
 
@@ -119,7 +123,6 @@ type txResult struct {
 func addTestTxResults(ctx context.Context, t *testing.T, txResultTable string, txResults ...txResult) []*pb.Transaction {
 	t.Helper()
 
-	conn := connectionSource.Connection
 	rows := make([]*pb.Transaction, 0, len(txResults))
 	blockIDs := make(map[int64]int64)
 
@@ -136,14 +139,14 @@ func addTestTxResults(ctx context.Context, t *testing.T, txResultTable string, t
 		var ok bool
 
 		if blockID, ok = blockIDs[txr.height]; !ok {
-			require.NoError(t, conn.QueryRow(ctx, blockSQL, txr.height, "test-chain", txr.createdAt).Scan(&blockID))
+			require.NoError(t, connectionSource.QueryRow(ctx, blockSQL, txr.height, "test-chain", txr.createdAt).Scan(&blockID))
 			blockIDs[txr.height] = blockID
 		}
 
 		index := txr.index
 
 		var rowID int64
-		require.NoError(t, conn.QueryRow(ctx, resultSQL, blockID, index, txr.createdAt, txr.txHash, txr.txResult, txr.submitter, txr.cmdType).Scan(&rowID))
+		require.NoError(t, connectionSource.QueryRow(ctx, resultSQL, blockID, index, txr.createdAt, txr.txHash, txr.txResult, txr.submitter, txr.cmdType).Scan(&rowID))
 
 		row := entities.TxResultRow{
 			RowID:       rowID,
@@ -168,10 +171,9 @@ func addTestTxResults(ctx context.Context, t *testing.T, txResultTable string, t
 func cleanupTransactionsTest(ctx context.Context, t *testing.T) {
 	t.Helper()
 
-	conn := connectionSource.Connection
-	_, err := conn.Exec(ctx, `DELETE FROM tx_results`)
+	_, err := connectionSource.Exec(ctx, `DELETE FROM tx_results`)
 	require.NoError(t, err)
-	_, err = conn.Exec(ctx, `DELETE FROM blocks`)
+	_, err = connectionSource.Exec(ctx, `DELETE FROM blocks`)
 	require.NoError(t, err)
 }
 

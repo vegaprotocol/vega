@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	defaultHeartbeatInterval       = 1 * time.Hour
 	defaultDurationBetweenTwoRetry = 20 * time.Second
 	maxEthereumBlocks              = 10000 // chosen because one of the validators wanted to use quicknode, and this is their limit
 )
@@ -30,18 +31,20 @@ const (
 type Config struct {
 	// Level specifies the logging level of the Ethereum implementation of the
 	// Event Forwarder.
-	Level                  encoding.LogLevel `long:"log-level"`
-	MaxEthereumBlocks      uint64            `long:"max-ethereum-blocks"`
-	PollEventRetryDuration encoding.Duration
-	ChainID                string
-	SkipClientVerification bool
+	Level                                   encoding.LogLevel `long:"log-level"`
+	MaxEthereumBlocks                       uint64            `long:"max-ethereum-blocks"`
+	PollEventRetryDuration                  encoding.Duration
+	ChainID                                 string
+	SkipClientVerification                  bool
+	HeartbeatIntervalForTestOnlyDoNotChange encoding.Duration
 }
 
 func NewDefaultConfig() Config {
 	return Config{
-		Level:                  encoding.LogLevel{Level: logging.InfoLevel},
-		PollEventRetryDuration: encoding.Duration{Duration: defaultDurationBetweenTwoRetry},
-		MaxEthereumBlocks:      maxEthereumBlocks,
+		Level:                                   encoding.LogLevel{Level: logging.InfoLevel},
+		PollEventRetryDuration:                  encoding.Duration{Duration: defaultDurationBetweenTwoRetry},
+		MaxEthereumBlocks:                       maxEthereumBlocks,
+		HeartbeatIntervalForTestOnlyDoNotChange: encoding.Duration{Duration: defaultHeartbeatInterval},
 	}
 }
 
@@ -52,5 +55,9 @@ func (c *Config) setDefaults() {
 
 	if c.PollEventRetryDuration.Duration == 0 {
 		c.PollEventRetryDuration.Duration = defaultDurationBetweenTwoRetry
+	}
+
+	if c.HeartbeatIntervalForTestOnlyDoNotChange.Duration == 0 {
+		c.HeartbeatIntervalForTestOnlyDoNotChange.Duration = defaultHeartbeatInterval
 	}
 }

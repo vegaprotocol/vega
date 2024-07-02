@@ -52,6 +52,14 @@ func AbsV[T Signed](a T) T {
 	return a
 }
 
+// DeltaV generic delta function signed primitives.
+func DeltaV[T Signed](a, b T) T {
+	if a < b {
+		return b - a
+	}
+	return a - b
+}
+
 // MaxAbs - get max value based on absolute values of abolute vals.
 func MaxAbs[T Signed](vals ...T) T {
 	var r, m T

@@ -42,6 +42,7 @@ type ERC20BridgeView interface {
 	FindBridgeResumed(al *types.ERC20EventBridgeResumed, blockNumber, logIndex uint64, txHash string) error
 	FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex uint64, ethAssetAddress string, txHash string) error
 	FindAssetLimitsUpdated(update *types.ERC20AssetLimitsUpdated, blockNumber uint64, logIndex uint64, ethAssetAddress string, txHash string) error
+	CollateralBridgeAddress() string
 }
 
 func (e *Engine) EnableERC20(
@@ -348,9 +349,4 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 
 func (e *Engine) addAction(aa *assetAction) {
 	e.assetActions[aa.id] = aa
-	if aa.chainID == e.primaryEthChainID && aa.blockHeight > e.lastSeenPrimaryEthBlock {
-		e.lastSeenPrimaryEthBlock = aa.blockHeight
-	} else if aa.chainID == e.secondaryEthChainID && aa.blockHeight > e.lastSeenSecondaryEthBlock {
-		e.lastSeenSecondaryEthBlock = aa.blockHeight
-	}
 }

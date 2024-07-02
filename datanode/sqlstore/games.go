@@ -91,7 +91,7 @@ func (g *Games) ListGames(ctx context.Context, gameID *string, entityScope *vega
 		return nil, pageInfo, err
 	}
 
-	if err := pgxscan.Select(ctx, g.Connection, &gameRewards, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, g.ConnectionSource, &gameRewards, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 

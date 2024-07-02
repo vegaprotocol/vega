@@ -101,3 +101,7 @@ func (as *Account) obtainAccountWithProto(ctx context.Context, va *vega.Account,
 	}
 	return a, nil
 }
+
+func (as *Account) Name() string {
+	return "Account"
+}

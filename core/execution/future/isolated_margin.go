@@ -71,6 +71,11 @@ func (m *Market) getIsolatedMarginContext(mpos *positions.MarketPosition, order 
 func (m *Market) getAuctionPrice() *num.Uint {
 	var auctionPrice *num.Uint
 	if m.as.InAuction() {
+		if m.capMax != nil && m.fCap.FullyCollateralised {
+			// if this is a capped market with max price, this is the price we need to use all the time
+			// this function is called to calculate margins, and margin calculations are always going to be based on the max price.
+			return m.capMax.Clone()
+		}
 		auctionPrice = m.matching.GetIndicativePrice()
 		if markPrice := m.getCurrentMarkPrice(); markPrice != nil && !markPrice.IsZero() && (markPrice.GT(auctionPrice) || auctionPrice == nil) {
 			auctionPrice = markPrice

@@ -61,3 +61,7 @@ func (nl *NetworkLimits) consume(ctx context.Context, event NetworkLimitsEvent) 
 
 	return errors.Wrap(nl.store.Add(ctx, limits), "error adding network limits")
 }
+
+func (nl *NetworkLimits) Name() string {
+	return "NetworkLimits"
+}

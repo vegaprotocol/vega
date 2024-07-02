@@ -114,16 +114,16 @@ Feature: Confirm return to continuous trading during significant mark price chan
       | ETH/FEB23 | my-price-monitoring-2  | weight     | 0,0,1,0        | 0s,0s,0h0m120s,0s          |
     # first we get bounds based on default factors, once the state variable engine finishes its calculation we get the proper values
     Then the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode                    | auction trigger       | horizon | ref price | min bound | max bound |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 30      | 1000      | 900       | 1100      |
+      | mark price | trading mode                    | auction trigger       |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
     # the last second of the original extensions
     And the network moves ahead "3" blocks
     Then the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode                    | auction trigger       | horizon | ref price | min bound | max bound |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 30      | 1000      | 997       | 1003      |
+      | mark price | trading mode                    | auction trigger       |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
-    # the updated extension triggered, no triggers left
+    # the updated extension triggered, no triggers left as they've all been switched off since update took place during auction
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    | auction trigger       |
@@ -174,15 +174,15 @@ Feature: Confirm return to continuous trading during significant mark price chan
     # the last second of the original extensions
     And the network moves ahead "3" blocks
     Then the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode                    | auction trigger       | horizon | ref price | min bound | max bound |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 30      | 1000      | 997       | 1003      |
+      | mark price | trading mode                    | auction trigger       |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
     When the parties place the following orders with ticks:
       | party             | market id | side | volume | price  | resulting trades | type       | tif     |
       | party1            | ETH/FEB23 | buy  | 1      | 2004   | 0                | TYPE_LIMIT | TIF_GTC |
       | party2            | ETH/FEB23 | sell | 1      | 2004   | 0                | TYPE_LIMIT | TIF_GTC |
 
-    # the updated extension triggered, no triggers left
+    # the updated extension triggered, no triggers left as they've all been switched off since update took place during auction
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    | auction trigger       |
@@ -217,14 +217,14 @@ Feature: Confirm return to continuous trading during significant mark price chan
     # the last second of the original extensions
     And the network moves ahead "3" blocks
     Then the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode                    | auction trigger       | horizon | ref price | min bound | max bound |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 30      | 1000      | 997       | 1003      |
+      | mark price | trading mode                    | auction trigger       |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value | time offset |
       | prices.ETH.value | 2000  | -1s         |
 
-    # the updated extension triggered, no triggers left
+    # the updated extension triggered, no triggers left as they've all been switched off since update took place during auction
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    | auction trigger       |
@@ -254,3 +254,25 @@ Feature: Confirm return to continuous trading during significant mark price chan
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    | auction trigger             | last traded price | horizon | ref price | min bound | max bound |
       | 1000       | TRADING_MODE_CONTINUOUS         | AUCTION_TRIGGER_UNSPECIFIED | 1003              | 30      | 1003      | 1000      | 1006      | 
+
+  Scenario: Verify that trigger update in continuous trading works as expected
+
+    When the network moves ahead "2" blocks
+    Then the market data for the market "ETH/FEB23" should be:
+      | mark price | trading mode            | horizon | ref price | min bound | max bound | 
+      | 1000       | TRADING_MODE_CONTINUOUS | 60      | 1000      | 995       | 1005      |
+
+    And the price monitoring named "my-price-monitoring-2":
+      | horizon | probability | auction extension |
+      | 30      | 0.95        | 1                 |
+    
+    # update trigger here so that there's only one
+    When the markets are updated:
+      | id        | price monitoring       | price type | source weights | source staleness tolerance |
+      | ETH/FEB23 | my-price-monitoring-2  | weight     | 0,0,1,0        | 0s,0s,0h0m120s,0s          |
+
+    # the last second of the original extensions
+    And the network moves ahead "3" blocks
+    Then the market data for the market "ETH/FEB23" should be:
+      | mark price | trading mode            | horizon | ref price | min bound | max bound | 
+      | 1000       | TRADING_MODE_CONTINUOUS | 30      | 1000      | 997       | 1003      |

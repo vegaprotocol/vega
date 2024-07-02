@@ -81,11 +81,6 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 func testSimpledScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
 
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).AnyTimes()
-
 	// let's do a massive fee, easy to test.
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
 	e.OnTick(context.Background(), time.Unix(10, 0))
@@ -229,7 +224,6 @@ func TestGovernanceScheduledTransfer(t *testing.T) {
 	}
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
-	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, 0))
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	checkp, err := e.Checkpoint()
@@ -286,11 +280,10 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 		FractionOfBalance:       num.DecimalFromFloat(0.1),
 		Kind:                    types.TransferKindRecurring,
 		OneOffTransferConfig:    nil,
-		RecurringTransferConfig: &vega.RecurringTransfer{StartEpoch: 1, EndEpoch: &endEpoch},
+		RecurringTransferConfig: &vega.RecurringTransfer{StartEpoch: 1, EndEpoch: &endEpoch, Factor: "1"},
 	}
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
-	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, 0))
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	checkp, err := e.Checkpoint()
@@ -316,7 +309,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 0, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
-	e2.broker.EXPECT().Send(gomock.Any()).Times(3)
+	e2.broker.EXPECT().Send(gomock.Any()).Times(2)
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 

@@ -50,7 +50,7 @@ func NewPositions(connectionSource *ConnectionSource) *Positions {
 
 func (ps *Positions) Flush(ctx context.Context) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "Flush")()
-	return ps.batcher.Flush(ctx, ps.Connection)
+	return ps.batcher.Flush(ctx, ps.ConnectionSource)
 }
 
 func (ps *Positions) Add(ctx context.Context, p entities.Position) error {
@@ -69,7 +69,7 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 	)
 
 	defer metrics.StartSQLQuery("Positions", "GetByMarketAndParty")()
-	return position, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &position,
+	return position, ps.wrapE(pgxscan.Get(ctx, ps.ConnectionSource, &position,
 		`SELECT * FROM positions_current WHERE market_id=$1 AND party_id=$2`,
 		marketID, partyID))
 }
@@ -91,14 +91,14 @@ func (ps *Positions) GetByMarketAndParties(ctx context.Context, marketIDRaw stri
 	positions := []entities.Position{}
 	// build the query
 	q := fmt.Sprintf(`SELECT * FROM positions_current WHERE market_id = $1 AND party_id IN (%s)`, strings.Join(in, ", "))
-	err := pgxscan.Select(ctx, ps.Connection, &positions, q, bind...)
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &positions, q, bind...)
 	return positions, err
 }
 
 func (ps *Positions) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetByMarket")()
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.Connection, &positions,
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &positions,
 		`SELECT * FROM positions_current WHERE market_id=$1`,
 		entities.MarketID(marketID))
 	return positions, err
@@ -107,7 +107,7 @@ func (ps *Positions) GetByMarket(ctx context.Context, marketID string) ([]entiti
 func (ps *Positions) GetByParty(ctx context.Context, partyID string) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetByParty")()
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.Connection, &positions,
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &positions,
 		`SELECT * FROM positions_current WHERE party_id=$1`,
 		entities.PartyID(partyID))
 	return positions, err
@@ -174,7 +174,7 @@ func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw []stri
 	}
 
 	var positions []entities.Position
-	if err = pgxscan.Select(ctx, ps.Connection, &positions, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, ps.ConnectionSource, &positions, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 
@@ -185,14 +185,14 @@ func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw []stri
 func (ps *Positions) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetByTxHash")()
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.Connection, &positions, `SELECT * FROM positions WHERE tx_hash=$1`, txHash)
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &positions, `SELECT * FROM positions WHERE tx_hash=$1`, txHash)
 	return positions, err
 }
 
 func (ps *Positions) GetAll(ctx context.Context) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetAll")()
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.Connection, &positions,
+	err := pgxscan.Select(ctx, ps.ConnectionSource, &positions,
 		`SELECT * FROM positions_current`)
 	return positions, err
 }

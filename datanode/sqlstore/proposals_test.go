@@ -1120,11 +1120,11 @@ func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlst
 func cleanupTestProposals(t *testing.T) {
 	t.Helper()
 	// Remove the proposals, then the parties and then the blocks
-	_, err := connectionSource.Connection.Exec(context.Background(), `TRUNCATE TABLE proposals`)
+	_, err := connectionSource.Exec(context.Background(), `TRUNCATE TABLE proposals`)
 	require.NoError(t, err)
-	_, err = connectionSource.Connection.Exec(context.Background(), `TRUNCATE TABLE parties`)
+	_, err = connectionSource.Exec(context.Background(), `TRUNCATE TABLE parties`)
 	require.NoError(t, err)
-	_, err = connectionSource.Connection.Exec(context.Background(), `TRUNCATE TABLE blocks`)
+	_, err = connectionSource.Exec(context.Background(), `TRUNCATE TABLE blocks`)
 	require.NoError(t, err)
 }
 

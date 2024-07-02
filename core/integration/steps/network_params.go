@@ -68,6 +68,11 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 			if err := netParams.Update(ctx, netparams.InternalCompositePriceUpdateFrequency, str); err != nil {
 				return err
 			}
+		case netparams.MarketLiquidityEquityLikeShareFeeFraction:
+			dv := row.MustDecimal("value")
+			if err := netParams.Update(ctx, netparams.MarketLiquidityEquityLikeShareFeeFraction, dv.String()); err != nil {
+				return err
+			}
 		default:
 			value := row.MustStr("value")
 			if err := netParams.Update(ctx, name, value); err != nil {

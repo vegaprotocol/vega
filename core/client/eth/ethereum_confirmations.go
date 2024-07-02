@@ -109,6 +109,11 @@ func (e *EthereumConfirmations) Check(block uint64) error {
 		return err
 	}
 
+	// if finality state is "latest" we do not need to check as this will already be done by the confirmations count
+	if e.finState == nil {
+		return nil
+	}
+
 	finalized, err := e.finalizedHeight(context.Background())
 	if err != nil {
 		return err

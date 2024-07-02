@@ -63,6 +63,8 @@ func TestMultisigTopologyCheckpoint(t *testing.T) {
 	cb(res, true)
 
 	// now we can update the time
+	top.ocv.EXPECT().GetMultiSigAddress().AnyTimes()
+	top.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	top.broker.EXPECT().Send(gomock.Any()).Times(1)
 	top.OnTick(context.Background(), time.Unix(11, 0))
 	assert.Equal(t, top.GetThreshold(), uint32(666))
@@ -162,15 +164,10 @@ func TestMultisigTopologyCheckpoint(t *testing.T) {
 	assert.True(t, len(cp) > 0)
 
 	top2 := getTestTopology(t)
+	top2.ocv.EXPECT().GetMultiSigAddress().AnyTimes()
+	top2.ethEventSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	top2.broker.EXPECT().Send(gomock.Any()).Times(2)
-	top2.ethEventSource.EXPECT().UpdateMultisigControlStartingBlock(gomock.Any()).Do(
-		func(block uint64) {
-			// ensure we restart at the right block
-			assert.Equal(t, int(block), 101)
-		},
-	)
-
 	require.NoError(t, top2.Load(context.Background(), cp))
 
 	// no assert state is restored correctly

@@ -50,10 +50,11 @@ type Witness interface {
 type MultiSigOnChainVerifier interface {
 	CheckSignerEvent(*types.SignerEvent) error
 	CheckThresholdSetEvent(*types.SignerThresholdSetEvent) error
+	GetMultiSigAddress() string
 }
 
 type EthereumEventSource interface {
-	UpdateMultisigControlStartingBlock(uint64)
+	UpdateContractBlock(string, string, uint64)
 }
 
 // Topology keeps track of all the validators
@@ -388,6 +389,8 @@ func (t *Topology) addSignerEvent(ctx context.Context, event *types.SignerEvent)
 	case types.SignerEventKindAdded:
 		t.signers[event.Address] = struct{}{}
 	}
+
+	t.ethEventSource.UpdateContractBlock(t.ocv.GetMultiSigAddress(), t.chainID, event.BlockNumber)
 
 	// send the event anyway so APIs can be aware of past thresholds
 	t.broker.Send(events.NewERC20MultiSigSigner(ctx, *event))

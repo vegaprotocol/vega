@@ -72,6 +72,9 @@ type DelegationEngine interface {
 
 //nolint:interfacebloat
 type ExecutionEngine interface {
+	CheckCanSubmitOrderOrLiquidityCommitment(party, market string) error
+	CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string) error
+
 	// orders stuff
 	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen common.IDGenerator, orderID string) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
@@ -102,12 +105,16 @@ type ExecutionEngine interface {
 
 	// End of block
 	BlockEnd(ctx context.Context)
-	BeginBlock(ctx context.Context)
+	BeginBlock(ctx context.Context, duration time.Duration)
 
 	// Margin mode
 	UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error
 	// default chain ID, can be removed once we've upgraded to v0.74
 	OnChainIDUpdate(uint64) error
+
+	SubmitAMM(ctx context.Context, sub *types.SubmitAMM, deterministicID string) error
+	AmendAMM(ctx context.Context, sub *types.AmendAMM, deterministicID string) error
+	CancelAMM(ctx context.Context, sub *types.CancelAMM, deterministicID string) error
 }
 
 type GovernanceEngine interface {
@@ -208,6 +215,11 @@ type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
 }
 
+// EvtForwarderHeartbeat ...
+type EvtForwarderHeartbeat interface {
+	ProcessHeartbeat(string, string, uint64, uint64) error
+}
+
 // Banking ..
 //
 //nolint:interfacebloat
@@ -229,6 +241,7 @@ type Banking interface {
 	VerifyGovernanceTransfer(transfer *types.NewTransferConfiguration) error
 	VerifyCancelGovernanceTransfer(transferID string) error
 	CancelGovTransfer(ctx context.Context, ID string) error
+	OnBlockEnd(ctx context.Context, now time.Time)
 }
 
 // NetworkParameters ...
@@ -266,6 +279,7 @@ type Limits interface {
 	CanProposeAsset() bool
 	CanProposeSpotMarket() bool
 	CanProposePerpsMarket() bool
+	CanUseAMMPool() bool
 	CanTrade() bool
 }
 

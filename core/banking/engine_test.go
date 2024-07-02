@@ -55,6 +55,7 @@ type testEngine struct {
 	marketActivityTracker *mocks.MockMarketActivityTracker
 	ethSource             *mocks.MockEthereumEventSource
 	secondaryBridgeView   *mocks.MockERC20BridgeView
+	parties               *mocks.MockParties
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -64,6 +65,10 @@ func getTestEngine(t *testing.T) *testEngine {
 	col := mocks.NewMockCollateral(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	tsvc := mocks.NewMockTimeService(ctrl)
+	tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).AnyTimes()
 	notary := mocks.NewMockNotary(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	top := mocks.NewMockTopology(ctrl)
@@ -75,10 +80,12 @@ func getTestEngine(t *testing.T) *testEngine {
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, primaryBridgeView, secondaryBridgeView, ethSource, nil)
+	parties := mocks.NewMockParties(ctrl)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, primaryBridgeView, secondaryBridgeView, ethSource, parties)
 
 	require.NoError(t, eng.OnMaxQuantumAmountUpdate(context.Background(), num.DecimalOne()))
-	eng.OnPrimaryEthChainIDUpdated("1")
+	eng.OnPrimaryEthChainIDUpdated("1", "hello")
+	eng.OnSecondaryEthChainIDUpdated("2", "hello2")
 
 	return &testEngine{
 		Engine:                eng,
@@ -94,6 +101,7 @@ func getTestEngine(t *testing.T) *testEngine {
 		secondaryBridgeView:   secondaryBridgeView,
 		marketActivityTracker: marketActivityTracker,
 		ethSource:             ethSource,
+		parties:               parties,
 	}
 }
 
@@ -118,7 +126,6 @@ func testDepositSuccess(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.NoError(t, err)
 
@@ -147,7 +154,6 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	require.NoError(t, eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42))
 
 	// then we call the callback from the fake witness
@@ -161,7 +167,6 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng.OnTick(context.Background(), time.Now())
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	require.NoError(t, eng.DepositBuiltinAsset(context.Background(), bad, "depositid2", 43))
 
 	// then we call the callback from the fake witness
@@ -188,7 +193,6 @@ func testDepositFailure(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.NoError(t, err)
 
@@ -217,7 +221,6 @@ func testDepositError(t *testing.T) {
 	eng.witness.err = expectError
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.EqualError(t, err, expectError.Error())
 }
@@ -236,7 +239,6 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	}
 
 	// call the deposit function
-	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.EqualError(t, err, expectError.Error())
 }

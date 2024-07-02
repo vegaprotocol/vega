@@ -70,6 +70,36 @@ func NewCommander(cfg Config, log *logging.Logger, bc Chain, w *vega.Wallet, bst
 	}, nil
 }
 
+func (c *Commander) NewTransaction(ctx context.Context, cmd txn.Command, payload proto.Message) ([]byte, error) {
+	chainID, err := c.bc.GetChainID(ctx)
+	if err != nil {
+		c.log.Error("couldn't retrieve chain ID",
+			logging.Error(err),
+		)
+		return nil, err
+	}
+	inputData := commands.NewInputData(c.bstats.Height())
+	wrapPayloadIntoInputData(inputData, cmd, payload)
+	marshalInputData, err := commands.MarshalInputData(inputData)
+	if err != nil {
+		// this should never be possible
+		c.log.Panic("could not marshal core transaction", logging.Error(err))
+	}
+
+	signature, err := c.sign(commands.BundleInputDataForSigning(marshalInputData, chainID))
+	if err != nil {
+		// this should never be possible too
+		c.log.Panic("could not sign command", logging.Error(err))
+	}
+
+	tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalInputData, signature)
+	marshalledTx, err := proto.Marshal(tx)
+	if err != nil {
+		return nil, err
+	}
+	return marshalledTx, nil
+}
+
 // Command - send command to chain.
 // Note: beware when passing in an exponential back off since the done function may be called many times.
 func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(string, error), bo *backoff.ExponentialBackOff) {
@@ -165,6 +195,12 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 	switch cmd {
 	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.BatchProposeCommand, txn.SubmitOracleDataCommand, txn.StopOrdersCancellationCommand, txn.StopOrdersSubmissionCommand:
 		panic("command is not supported to be sent by a node.")
+	case txn.DelayedTransactionsWrapper:
+		if underlyingCmd, ok := payload.(*commandspb.DelayedTransactionsWrapper); ok {
+			data.Command = &commandspb.InputData_DelayedTransactionsWrapper{
+				DelayedTransactionsWrapper: underlyingCmd,
+			}
+		}
 	case txn.ProtocolUpgradeCommand:
 		if underlyingCmd, ok := payload.(*commandspb.ProtocolUpgradeProposal); ok {
 			data.Command = &commandspb.InputData_ProtocolUpgradeProposal{

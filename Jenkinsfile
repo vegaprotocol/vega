@@ -228,6 +228,15 @@ pipeline {
                         dir('vega/core/integration') {
                             sh 'go test . -timeout 30m --godog.format=junit:core-integration-report.xml'
                             junit checksName: 'Core Integration Tests', testResults: 'core-integration-report.xml'
+
+                        }
+                    }
+                    post {
+                        failure {
+                           archiveArtifacts(
+                                artifacts: 'vega/core/integration/core-integration-report.xml',
+                                allowEmptyArchive: true
+                            )
                         }
                     }
                 }
@@ -236,6 +245,14 @@ pipeline {
                         dir('vega/core/integration') {
                             sh 'go test . -timeout 30m -perps --godog.format=junit:core-integration-perps-report.xml'
                             junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
+                        }
+                    }
+                    post {
+                        failure {
+                           archiveArtifacts(
+                                artifacts: 'vega/core/integration/core-integration-perps-report.xml',
+                                allowEmptyArchive: true
+                            )
                         }
                     }
                 }

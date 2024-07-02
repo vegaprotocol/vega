@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -28,7 +29,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
@@ -49,6 +51,7 @@ type MarketLiquidity struct {
 	broker                Broker
 	orderBook             liquidity.OrderBook
 	equityShares          EquityLikeShares
+	amm                   AMM
 	marketActivityTracker *MarketActivityTracker
 	fee                   *fee.Engine
 
@@ -63,6 +66,10 @@ type MarketLiquidity struct {
 	minLPStakeQuantumMultiple num.Decimal
 
 	bondPenaltyFactor num.Decimal
+	elsFeeFactor      num.Decimal
+	stakeToCcyVolume  num.Decimal
+	ammStats          map[string]*AMMState
+	tick              int64
 }
 
 func NewMarketLiquidity(
@@ -79,6 +86,7 @@ func NewMarketLiquidity(
 	asset string,
 	priceFactor num.Decimal,
 	priceRange num.Decimal,
+	amm AMM,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
 		log:                   log,
@@ -94,9 +102,15 @@ func NewMarketLiquidity(
 		asset:                 asset,
 		priceFactor:           priceFactor,
 		priceRange:            priceRange,
+		amm:                   amm,
+		ammStats:              map[string]*AMMState{},
 	}
 
 	return ml
+}
+
+func (m *MarketLiquidity) SetAMM(a AMM) {
+	m.amm = a
 }
 
 func (m *MarketLiquidity) bondUpdate(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error) {
@@ -114,6 +128,27 @@ func (m *MarketLiquidity) transferFees(ctx context.Context, ft events.FeesTransf
 		return m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, ft)
 	default:
 		return m.collateral.TransferFees(ctx, m.marketID, m.asset, ft)
+	}
+}
+
+func (m *MarketLiquidity) applyAMMStats() {
+	ids := maps.Keys(m.ammStats)
+	sort.Strings(ids)
+
+	for _, party := range ids {
+		amm := m.ammStats[party]
+
+		// if the amm has been cancelled for a whole epoch then just kill their ELS
+		if !m.amm.IsAMMPartyID(party) && amm.stake.IsZero() {
+			m.equityShares.SetPartyStake(party, nil)
+			delete(m.ammStats, party)
+			continue
+		}
+
+		// otherwise update it and start our stats again
+		stake, _ := num.UintFromDecimal(amm.stake)
+		m.equityShares.SetPartyStake(party, stake)
+		amm.StartEpoch()
 	}
 }
 
@@ -288,7 +323,8 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 	for _, provision := range appliedLiquidityProvisions {
 		// now we can setup our party stake to calculate equities
 		m.equityShares.SetPartyStake(provision.Party, provision.CommitmentAmount.Clone())
-		// force update of shares so they are updated for all
+		// force update of shares so they are updated for all, used to be in the loop, but should be
+		// fine to just do this once
 		_ = m.equityShares.AllShares()
 	}
 }
@@ -300,6 +336,8 @@ func (m *MarketLiquidity) OnEpochStart(
 ) {
 	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
 
+	m.applyAMMStats()
+	m.tick = 0 // start of a new epoch, we are at tick 0
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
 	m.syncPartyCommitmentWithBondAccount(ctx, appliedProvisions)
 }
@@ -320,6 +358,18 @@ func (m *MarketLiquidity) OnMarketClosed(ctx context.Context, t time.Time) {
 
 func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Time) {
 	penalties := m.liquidityEngine.CalculateSLAPenalties(t)
+
+	if m.amm != nil {
+		for _, subAccountID := range maps.Keys(m.amm.GetAMMPoolsBySubAccount()) {
+			// set penalty to zero for pool sub accounts as they always meet their obligations for SLA
+			penalties.PenaltiesPerParty[subAccountID] = &liquidity.SlaPenalty{
+				Fee:  num.DecimalZero(),
+				Bond: num.DecimalZero(),
+			}
+			penalties.AllPartiesHaveFullFeePenalty = false
+		}
+	}
+
 	m.distributeFeesBonusesAndApplyPenalties(ctx, penalties)
 }
 
@@ -336,6 +386,10 @@ func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	}
 
 	m.updateLiquidityScores()
+	// first tick since the start of the epoch will be 0
+	m.updateAMMCommitment(m.tick)
+	// increment tick
+	m.tick++
 }
 
 func (m *MarketLiquidity) EndBlock(markPrice, midPrice *num.Uint, positionFactor num.Decimal) {
@@ -872,6 +926,7 @@ func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
 
 func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
 	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
+	m.stakeToCcyVolume = stakeToCcyVolume
 }
 
 func (m *MarketLiquidity) OnProvidersFeeCalculationTimeStep(d time.Duration) {
@@ -892,46 +947,4 @@ func (m *MarketLiquidity) ProvisionsPerParty() liquidity.ProvisionsPerParty {
 
 func (m *MarketLiquidity) CalculateSuppliedStake() *num.Uint {
 	return m.liquidityEngine.CalculateSuppliedStake()
-}
-
-func NewMarketLiquidityFromSnapshot(
-	log *logging.Logger,
-	liquidityEngine LiquidityEngine,
-	collateral Collateral,
-	broker Broker,
-	orderBook liquidity.OrderBook,
-	equityShares EquityLikeShares,
-	marketActivityTracker *MarketActivityTracker,
-	fee *fee.Engine,
-	marketType marketType,
-	marketID string,
-	asset string,
-	priceFactor num.Decimal,
-	state *snapshot.MarketLiquidity,
-) *MarketLiquidity {
-	priceRange, _ := num.DecimalFromString(state.PriceRange)
-
-	ml := &MarketLiquidity{
-		log:                   log,
-		liquidityEngine:       liquidityEngine,
-		collateral:            collateral,
-		broker:                broker,
-		orderBook:             orderBook,
-		equityShares:          equityShares,
-		marketActivityTracker: marketActivityTracker,
-		fee:                   fee,
-		marketType:            marketType,
-		marketID:              marketID,
-		asset:                 asset,
-		priceFactor:           priceFactor,
-		priceRange:            priceRange,
-	}
-
-	return ml
-}
-
-func (m *MarketLiquidity) GetState() *snapshot.MarketLiquidity {
-	return &snapshot.MarketLiquidity{
-		PriceRange: m.priceRange.String(),
-	}
 }

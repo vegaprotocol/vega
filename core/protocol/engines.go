@@ -16,6 +16,8 @@
 package protocol
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	evtfwdeth "code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	"code.vegaprotocol.io/vega/core/types"
@@ -32,4 +34,6 @@ type EventForwarderEngine interface {
 	UpdateCollateralStartingBlock(uint64)
 	UpdateStakingStartingBlock(uint64)
 	UpdateMultisigControlStartingBlock(uint64)
+	VerifyHeartbeat(context.Context, uint64, string, string, uint64) error
+	UpdateStartingBlock(string, uint64)
 }

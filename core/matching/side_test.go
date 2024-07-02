@@ -178,7 +178,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		Remaining:     1,
 		TimeInForce:   types.OrderTimeInForceGTC,
 	}
-	side.uncross(aggressiveOrder, true)
+	side.uncross(aggressiveOrder, true, nil)
 	assert.Len(t, side.levels, 1)
 }
 
@@ -347,6 +347,12 @@ func TestExtractOrdersWrongVolume(t *testing.T) {
 	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4, true) })
 }
 
+func TestExtractOrdersZeroVolume(t *testing.T) {
+	// Attempt to extract 0 volume of orders
+	side := getPopulatedTestSide(types.SideSell)
+	assert.Len(t, side.ExtractOrders(num.NewUint(101), 0, true), 0)
+}
+
 func TestBestStatic(t *testing.T) {
 	// Empty book
 	emptySide := getEmptyTestSide()
@@ -439,11 +445,11 @@ func TestFakeUncrossNormal(t *testing.T) {
 	}
 
 	checkWashTrades := false
-	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades)
+	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades, nil)
 	assert.Len(t, fakeTrades, 5)
 	assert.NoError(t, err)
 
-	trades, _, _, err := buySide.uncross(&order, checkWashTrades)
+	trades, _, _, err := buySide.uncross(&order, checkWashTrades, nil)
 	assert.Len(t, trades, 5)
 	assert.NoError(t, err)
 
@@ -468,11 +474,11 @@ func TestFakeUncrossSelfTradeFOKMarketOrder(t *testing.T) {
 	}
 
 	checkWashTrades := false
-	fakeTrades, err1 := buySide.fakeUncross(&order, checkWashTrades)
+	fakeTrades, err1 := buySide.fakeUncross(&order, checkWashTrades, nil)
 	assert.Len(t, fakeTrades, 0)
 	assert.Error(t, err1)
 
-	trades, _, _, err2 := buySide.uncross(&order, checkWashTrades)
+	trades, _, _, err2 := buySide.uncross(&order, checkWashTrades, nil)
 	assert.Len(t, trades, 0)
 	assert.Error(t, err2)
 
@@ -495,12 +501,12 @@ func TestFakeUncrossSelfTradeNonFOKLimitOrder_DontCheckWashTrades(t *testing.T) 
 	}
 
 	checkWashTrades := false
-	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades)
+	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades, nil)
 	assert.Len(t, fakeTrades, 1)
 	assert.NoError(t, err)
 	assert.Equal(t, fakeTrades[0].SellOrder, order.ID)
 
-	trades, _, _, err := buySide.uncross(&order, checkWashTrades)
+	trades, _, _, err := buySide.uncross(&order, checkWashTrades, nil)
 	assert.Len(t, trades, 1)
 	assert.NoError(t, err)
 
@@ -523,12 +529,12 @@ func TestFakeUncrossSelfTradeNonFOKLimitOrder_CheckWashTrades(t *testing.T) {
 	}
 
 	checkWashTrades := true
-	fakeTrades, err1 := buySide.fakeUncross(&order, checkWashTrades)
+	fakeTrades, err1 := buySide.fakeUncross(&order, checkWashTrades, nil)
 	assert.Len(t, fakeTrades, 0)
 	assert.Error(t, err1)
 	assert.Equal(t, "party attempted to submit wash trade", err1.Error())
 
-	trades, _, _, err2 := buySide.uncross(&order, checkWashTrades)
+	trades, _, _, err2 := buySide.uncross(&order, checkWashTrades, nil)
 	assert.Len(t, trades, 0)
 	assert.Error(t, err2)
 	assert.Equal(t, "party attempted to submit wash trade", err2.Error())
@@ -550,11 +556,11 @@ func TestFakeUncrossNotEnoughVolume(t *testing.T) {
 	}
 
 	checkWashTrades := false
-	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades)
+	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades, nil)
 	assert.Len(t, fakeTrades, 0)
 	assert.NoError(t, err)
 
-	trades, _, _, err := buySide.uncross(&order, checkWashTrades)
+	trades, _, _, err := buySide.uncross(&order, checkWashTrades, nil)
 	assert.Len(t, trades, 0)
 	assert.NoError(t, err)
 }
@@ -588,13 +594,13 @@ func TestFakeUncrossAuction(t *testing.T) {
 
 	orders := []*types.Order{order1, order2}
 
-	fakeTrades, err := buySide.fakeUncrossAuction(orders)
+	fakeTrades, err := buySide.fakeUncrossAuction(orders, nil)
 	assert.Len(t, fakeTrades, 6)
 	assert.NoError(t, err)
 
 	trades := []*types.Trade{}
 	for _, order := range orders {
-		trds, _, _, err := buySide.uncross(order, false)
+		trds, _, _, err := buySide.uncross(order, false, nil)
 		assert.NoError(t, err)
 		trades = append(trades, trds...)
 	}

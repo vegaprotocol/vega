@@ -16,6 +16,8 @@
 package types
 
 import (
+	"time"
+
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
@@ -567,12 +569,14 @@ func PayloadBankingTransferFeeDiscountsFromProto(pbd *snapshot.Payload_BankingTr
 
 type PayloadBankingRecurringTransfers struct {
 	BankingRecurringTransfers *checkpointpb.RecurringTransfers
+	NextMetricUpdate          time.Time
 }
 
 func (p PayloadBankingRecurringTransfers) IntoProto() *snapshot.Payload_BankingRecurringTransfers {
 	return &snapshot.Payload_BankingRecurringTransfers{
 		BankingRecurringTransfers: &snapshot.BankingRecurringTransfers{
 			RecurringTransfers: p.BankingRecurringTransfers,
+			NextMetricUpdate:   p.NextMetricUpdate.UnixNano(),
 		},
 	}
 }
@@ -594,5 +598,6 @@ func (*PayloadBankingRecurringTransfers) Namespace() SnapshotNamespace {
 func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
 	return &PayloadBankingRecurringTransfers{
 		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTransfers,
+		NextMetricUpdate:          time.Unix(0, pbd.BankingRecurringTransfers.NextMetricUpdate),
 	}
 }

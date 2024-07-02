@@ -55,6 +55,7 @@ type TimeService interface {
 
 type ApplicationService interface {
 	InitChain(context.Context, *abci.RequestInitChain) (*abci.ResponseInitChain, error)
+	PrepareProposal(_ context.Context, req *abci.RequestPrepareProposal) (*abci.ResponsePrepareProposal, error)
 	FinalizeBlock(context.Context, *abci.RequestFinalizeBlock) (*abci.ResponseFinalizeBlock, error)
 	Commit(context.Context, *abci.RequestCommit) (*abci.ResponseCommit, error)
 	Info(context.Context, *abci.RequestInfo) (*abci.ResponseInfo, error)
@@ -187,22 +188,35 @@ func (n *NullBlockchain) processBlock() {
 		n.log.Debugf("processing block %d with %d transactions", n.blockHeight, len(n.pending))
 	}
 
+	// prepare it first
+	ctx := context.Background()
+	proposal, err := n.app.PrepareProposal(ctx,
+		&abci.RequestPrepareProposal{
+			Height: n.blockHeight,
+			Time:   n.now,
+			Txs:    n.pending,
+		})
+	if err != nil {
+		// core always returns nil so we are safe really
+		panic("nullchain cannot handle failure to prepare a proposal")
+	}
+
 	resp := &abci.ResponseFinalizeBlock{}
 	if n.replayer != nil && n.cfg.Replay.Record {
-		n.replayer.startBlock(n.blockHeight, n.now.UnixNano(), n.pending)
+		n.replayer.startBlock(n.blockHeight, n.now.UnixNano(), proposal.Txs)
 		defer func() {
 			n.replayer.saveBlock(resp.AppHash)
 		}()
 	}
 
-	resp, _ = n.app.FinalizeBlock(context.Background(), &abci.RequestFinalizeBlock{
+	resp, _ = n.app.FinalizeBlock(ctx, &abci.RequestFinalizeBlock{
 		Height: n.blockHeight,
 		Time:   n.now,
 		Hash:   vgcrypto.Hash([]byte(strconv.FormatInt(n.blockHeight+n.now.UnixNano(), 10))),
-		Txs:    n.pending,
+		Txs:    proposal.Txs,
 	})
 	n.pending = n.pending[:0]
-	n.app.Commit(context.Background(), &abci.RequestCommit{})
+	n.app.Commit(ctx, &abci.RequestCommit{})
 
 	// Increment time, blockheight, ready to start a new block
 	n.blockHeight++

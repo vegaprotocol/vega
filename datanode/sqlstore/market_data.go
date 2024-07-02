@@ -93,7 +93,7 @@ func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error)
 	}
 	defer metrics.StartSQLQuery("MarketData", "Flush")()
 	if rows != nil {
-		copyCount, err := md.Connection.CopyFrom(
+		copyCount, err := md.CopyFrom(
 			ctx,
 			pgx.Identifier{"market_data"}, md.columns, pgx.CopyFromRows(rows),
 		)
@@ -118,7 +118,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 
 	var marketData entities.MarketData
 	query := fmt.Sprintf("select %s from current_market_data where market = $1", selectMarketDataColumns)
-	return marketData, md.wrapE(pgxscan.Get(ctx, md.Connection, &marketData, query, entities.MarketID(marketID)))
+	return marketData, md.wrapE(pgxscan.Get(ctx, md.ConnectionSource, &marketData, query, entities.MarketID(marketID)))
 }
 
 func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData, error) {
@@ -128,7 +128,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	query := fmt.Sprintf("select %s from current_market_data", selectMarketDataColumns)
 
 	defer metrics.StartSQLQuery("MarketData", "GetMarketsData")()
-	err := pgxscan.Select(ctx, md.Connection, &marketData, query)
+	err := pgxscan.Select(ctx, md.ConnectionSource, &marketData, query)
 
 	return marketData, err
 }
@@ -190,7 +190,7 @@ func (md *MarketData) getHistoricMarketData(ctx context.Context, marketID string
 	}
 	var pagedData []entities.MarketData
 
-	if err = pgxscan.Select(ctx, md.Connection, &pagedData, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, md.ConnectionSource, &pagedData, query, args...); err != nil {
 		return pagedData, pageInfo, err
 	}
 

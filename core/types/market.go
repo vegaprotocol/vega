@@ -141,6 +141,8 @@ const (
 	MarketTradingModeNoTrading MarketTradingMode = vegapb.Market_TRADING_MODE_NO_TRADING
 	// Special auction mode for market suspended via governance.
 	MarketTradingModeSuspendedViaGovernance MarketTradingMode = vegapb.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
+	// Long block auction.
+	MarketTradingModelLongBlockAuction MarketTradingMode = vegapb.Market_TRADING_MODE_LONG_BLOCK_AUCTION
 )
 
 type MarketState = vegapb.Market_State
@@ -189,6 +191,8 @@ const (
 	AuctionTriggerGovernanceSuspension AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
 	// AuctionTriggerUnableToDeployLPOrders legacy liquidity provision supports.
 	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
+	// AuctionTriggerLongBlock for market suspension due to a long block.
+	AuctionTriggerLongBlock AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_LONG_BLOCK
 )
 
 type InstrumentMetadata struct {
@@ -430,36 +434,49 @@ type Future struct {
 	DataSourceSpecForSettlementData     *datasource.Spec
 	DataSourceSpecForTradingTermination *datasource.Spec
 	DataSourceSpecBinding               *datasource.SpecBindingForFuture
+	Cap                                 *FutureCap
 }
 
 func FutureFromProto(f *vegapb.Future) *Future {
+	fCap, _ := FutureCapFromProto(f.Cap)
 	return &Future{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     datasource.SpecFromProto(f.DataSourceSpecForSettlementData),
 		DataSourceSpecForTradingTermination: datasource.SpecFromProto(f.DataSourceSpecForTradingTermination),
 		DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(f.DataSourceSpecBinding),
+		Cap:                                 fCap,
 	}
 }
 
 func (f Future) IntoProto() *vegapb.Future {
+	var fCap *vegapb.FutureCap
+	if f.Cap != nil {
+		fCap = f.Cap.IntoProto()
+	}
 	return &vegapb.Future{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
+		Cap:                                 fCap,
 	}
 }
 
 func (f Future) String() string {
+	fCap := "no"
+	if f.Cap != nil {
+		fCap = f.Cap.String()
+	}
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s)) capped(%s)",
 		f.QuoteName,
 		f.SettlementAsset,
 		stringer.PtrToString(f.DataSourceSpecForSettlementData),
 		stringer.PtrToString(f.DataSourceSpecForTradingTermination),
 		stringer.PtrToString(f.DataSourceSpecBinding),
+		fCap,
 	)
 }
 
@@ -632,6 +649,8 @@ func (i InstrumentSpot) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
+func (_ InstrumentSpot) Cap() *FutureCap { return nil }
+
 func InstrumentFutureFromProto(f *vegapb.Instrument_Future) *InstrumentFuture {
 	return &InstrumentFuture{
 		Future: FutureFromProto(f.Future),
@@ -716,15 +735,25 @@ func (i InstrumentFuture) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
+func (i InstrumentFuture) Cap() *FutureCap {
+	if i.Future.Cap == nil {
+		return nil
+	}
+	return i.Future.Cap.DeepClone()
+}
+
 func (i InstrumentPerps) iIntoProto() interface{} {
 	return i.IntoProto()
 }
+
+func (_ InstrumentPerps) Cap() *FutureCap { return nil }
 
 type iProto interface {
 	iIntoProto() interface{}
 	getAssets() ([]string, error)
 	String() string
 	Type() ProductType
+	Cap() *FutureCap
 }
 
 type Instrument struct {
@@ -1071,6 +1100,7 @@ type Market struct {
 	LiquidationStrategy    *LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *num.Uint
+	EnableTxReordering     bool
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -1137,6 +1167,7 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		LiquidationStrategy:           ls,
 		MarkPriceConfiguration:        markPriceConfiguration,
 		TickSize:                      tickSize,
+		EnableTxReordering:            mkt.EnableTransactionReordering,
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1209,6 +1240,7 @@ func (m Market) IntoProto() *vegapb.Market {
 		LiquidationStrategy:           lstrat,
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      m.TickSize.String(),
+		EnableTransactionReordering:   m.EnableTxReordering,
 	}
 	return r
 }
@@ -1219,7 +1251,7 @@ func (m Market) GetID() string {
 
 func (m Market) String() string {
 	return fmt.Sprintf(
-		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s) tickSize(%s)",
+		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s) tickSize(%s) enableTxReordering(%v)",
 		m.ID,
 		stringer.PtrToString(m.TradableInstrument),
 		m.DecimalPlaces,
@@ -1232,6 +1264,7 @@ func (m Market) String() string {
 		m.State.String(),
 		stringer.PtrToString(m.MarketTimestamps),
 		num.UintToString(m.TickSize),
+		m.EnableTxReordering,
 	)
 }
 
@@ -1261,6 +1294,7 @@ func (m Market) DeepClone() *Market {
 		ParentMarketID:          m.ParentMarketID,
 		InsurancePoolFraction:   m.InsurancePoolFraction,
 		TickSize:                m.TickSize.Clone(),
+		EnableTxReordering:      m.EnableTxReordering,
 	}
 
 	if m.LiquiditySLAParams != nil {

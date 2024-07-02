@@ -22,6 +22,7 @@ import (
 // providersInCallOrder holds the providers namespace in the order in which
 // they must be called.
 var providersInCallOrder = []types.SnapshotNamespace{
+	types.TxCacheSnapshot,
 	types.EpochSnapshot,
 	types.AssetsSnapshot,  // Needs to happen before banking.
 	types.WitnessSnapshot, // Needs to happen before banking and governance.
@@ -35,8 +36,8 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.DelegationSnapshot,
 	types.FloatingPointConsensusSnapshot, // Shouldn't matter but maybe best before the markets are restored.
 	types.ExecutionSnapshot,              // Creates the markets, returns matching and positions engines for state providers.
-	types.MatchingSnapshot,               // Requires markets.
 	types.PositionsSnapshot,              // Requires markets.
+	types.MatchingSnapshot,               // Requires markets, and positions so that AMM's evaluate properly
 	types.SettlementSnapshot,             // Requires markets.
 	types.LiquidationSnapshot,            // Requires markets.
 	types.HoldingAccountTrackerSnapshot,
@@ -63,6 +64,7 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.ActivityStreakSnapshot,
 	types.VolumeDiscountProgramSnapshot,
 	types.PartiesSnapshot,
+	types.EVMHeartbeatSnapshot,
 }
 
 func groupPayloadsPerNamespace(payloads []*types.Payload) map[types.SnapshotNamespace][]*types.Payload {
