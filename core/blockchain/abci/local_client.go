@@ -20,7 +20,6 @@ import (
 	"time"
 
 	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
-	"github.com/cometbft/cometbft/libs/service"
 	nm "github.com/cometbft/cometbft/node"
 	"github.com/cometbft/cometbft/rpc/client/local"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -32,7 +31,7 @@ type LocalClient struct {
 	genesisDoc *cachedGenesisDoc
 }
 
-func newLocalClient(node service.Service) (*LocalClient, error) {
+func newLocalClient(node Service) (*LocalClient, error) {
 	localNode := local.New(node.(*nm.Node))
 	return &LocalClient{
 		node:       localNode,

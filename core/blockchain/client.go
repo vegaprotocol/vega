@@ -106,7 +106,7 @@ func (c *Client) CheckTransaction(ctx context.Context, tx *commandspb.Transactio
 
 	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
 		return &tmctypes.ResultCheckTx{
-			ResponseCheckTx: *NewResponseCheckTxError(AbciTxnDecodingFailure, err),
+			CheckTxResponse: *NewResponseCheckTxError(AbciTxnDecodingFailure, err),
 		}, nil
 	}
 

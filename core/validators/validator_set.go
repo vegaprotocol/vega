@@ -29,7 +29,8 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 
 	tmtypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/crypto/encoding"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	cryptoenc "github.com/cometbft/cometbft/crypto/encoding"
 )
 
 var (
@@ -148,7 +149,10 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	vpu, nextVotingPower := t.applyPromotion(perfScore, rankingScore, delegationState, stakeScoreParams)
 	t.validatorPowerUpdates = vpu
 	for _, vu := range t.validatorPowerUpdates {
-		cPubKey, _ := encoding.PubKeyFromProto(vu.PubKey)
+		cPubKey, err := cryptoenc.PubKeyFromTypeAndBytes(vu.PubKeyType, vu.PubKeyBytes)
+		if err != nil {
+			t.log.Panic("invalid public key", logging.Error(err))
+		}
 		t.log.Info("setting voting power to", logging.String(("address"), cPubKey.Address().String()), logging.Uint64("power", uint64(vu.Power)))
 	}
 
@@ -385,7 +389,11 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 			continue
 		}
 		vd.validatorPower = nextValidatorsVotingPower[v]
-		update := tmtypes.UpdateValidator(pubkey, nextValidatorsVotingPower[v], "")
+		update := tmtypes.ValidatorUpdate{
+			Power:       nextValidatorsVotingPower[v],
+			PubKeyType:  ed25519.KeyType,
+			PubKeyBytes: pubkey,
+		}
 		vUpdates = append(vUpdates, update)
 	}
 
@@ -394,15 +402,8 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	}
 
 	for _, vu := range vUpdates {
-		pkey := vu.PubKey.GetEd25519()
-		if pkey == nil || len(pkey) <= 0 {
-			pkey = vu.PubKey.GetSecp256K1()
-		}
-		// tendermint pubkey are marshalled in base64,
-		// so let's do this as well here for logging
-		spkey := base64.StdEncoding.EncodeToString(pkey)
-
-		t.log.Info("voting power update", logging.String("pubKey", spkey), logging.Int64("power", vu.Power))
+		pkey := base64.StdEncoding.EncodeToString(vu.PubKeyBytes)
+		t.log.Info("voting power update", logging.String("pubKey", pkey), logging.String("pubKeyType", vu.PubKeyType), logging.Int64("power", vu.Power))
 	}
 
 	return vUpdates, nextValidatorsVotingPower
