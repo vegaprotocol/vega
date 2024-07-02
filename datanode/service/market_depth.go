@@ -51,6 +51,7 @@ type MarketDepth struct {
 	updateObserver utils.Observer[*types.MarketDepthUpdate]
 	mu             sync.RWMutex
 	sequenceNumber uint64
+	ammOrders      map[string][]*types.Order
 }
 
 func NewMarketDepth(orderStore OrderStore, ammStore AMMStore, marketData MarketDataStore, positions Positions, logger *logging.Logger) *MarketDepth {
@@ -82,6 +83,15 @@ func (m *MarketDepth) Initialise(ctx context.Context) error {
 	}
 
 	// TODO get and expand active AMM's
+	ammOrders := m.ExpandAMMs(ctx)
+	m.ammOrders = ammOrders
+
+	for _, orders := range ammOrders {
+		for _, o := range orders {
+			// TODO what the hell are sequence numbers about
+			m.AddOrder(o, time.Time{}, m.sequenceNumber)
+		}
+	}
 
 	return nil
 }
@@ -136,15 +146,68 @@ func (m *MarketDepth) publishChanges() {
 	}
 }
 
-func (m *MarketDepth) AddAMM() {
+func (m *MarketDepth) UpdateAMM(pool entities.AMMPool) {
 
-	// get hte AMM's position somehow
+	// remove any existing orders for this AMM and we'll generate some more given its new definition
+	existing := m.ammOrders[string(pool.AmmPartyID)]
+	for _, o := range existing {
+		o.Status = vega.Order_STATUS_CANCELLED
+		m.AddOrder(o, time.Time{}, m.sequenceNumber)
+	}
+
+	if pool.Status == entities.AMMStatusCancelled || pool.Status == entities.AMMStatusStopped {
+		return
+	}
+
+	marketID := string(pool.MarketID)
+	marketData, err := m.marketData.GetMarketDataByID(context.Background(), marketID)
+	if err != nil {
+		m.log.Warn("unable to get market-data for market",
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return
+	}
+
+	reference := marketData.MidPrice
+	if !marketData.IndicativePrice.IsZero() {
+		reference = marketData.IndicativePrice
+	}
+
+	if reference.IsZero() {
+		m.log.Warn("cannot calculate market-depth for AMM, no reference point available",
+			logging.String("mid-price", marketData.MidPrice.String()),
+			logging.String("indicative-price", marketData.IndicativePrice.String()),
+		)
+		return
+	}
+
+	// an AMM has appeared, lets add its volume
+	orders, _ := m.ExpandAMM(pool, reference)
+
+	for _, o := range orders {
+		m.AddOrder(o, time.Time{}, m.sequenceNumber)
+	}
+
+}
+
+func (m *MarketDepth) HandleAMMOrder(order *types.Order) {
+
+	md := m.getDepth(order.MarketID)
+	md.AddOrderUpdate(order)
 
 }
 
 func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64) {
+
+	// TODO this lock probably means we should lock handleAMMOrder too?
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if _, ok := m.ammOrders[order.Party]; ok {
+		m.HandleAMMOrder(order)
+		return
+	}
 
 	// Non persistent and network orders do not matter
 	if order.Type == types.OrderTypeMarket ||
@@ -170,22 +233,26 @@ func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceN
 
 	m.sequenceNumber = seqNum
 
+	md := m.getDepth(order.MarketID)
+	md.AddOrderUpdate(order)
+	md.SequenceNumber = m.sequenceNumber
+}
+
+func (m *MarketDepth) getDepth(marketID string) *entities.MarketDepth {
 	// See if we already have a MarketDepth item for this market
-	md := m.marketDepths[order.MarketID]
-	if md == nil {
-		// First time we have an update for this market
-		// so we need to create a new MarketDepth
-		md = &entities.MarketDepth{
-			MarketID:   order.MarketID,
-			LiveOrders: map[string]*types.Order{},
-		}
-		md.SequenceNumber = m.sequenceNumber
-		m.marketDepths[order.MarketID] = md
+	if md := m.marketDepths[marketID]; md != nil {
+		return md
 	}
 
-	md.AddOrderUpdate(order)
-
+	// First time we have an update for this market
+	// so we need to create a new MarketDepth
+	md := &entities.MarketDepth{
+		MarketID:   marketID,
+		LiveOrders: map[string]*types.Order{},
+	}
 	md.SequenceNumber = m.sequenceNumber
+	m.marketDepths[marketID] = md
+	return md
 }
 
 // GetMarketDepth builds up the structure to be sent out to any market depth listeners.
@@ -274,7 +341,7 @@ func (m *MarketDepth) GetVolumeAtPrice(market string, side types.Side, price uin
 		if pl == nil {
 			return 0
 		}
-		return pl.TotalVolume
+		return pl.TotalVolume + pl.TotalAMMVolume
 	}
 	return 0
 }
@@ -285,11 +352,11 @@ func (m *MarketDepth) GetTotalVolume(market string) int64 {
 	md := m.marketDepths[market]
 	if md != nil {
 		for _, pl := range md.BuySide {
-			volume += int64(pl.TotalVolume)
+			volume += int64(pl.TotalVolume) + int64(pl.TotalAMMVolume)
 		}
 
 		for _, pl := range md.SellSide {
-			volume += int64(pl.TotalVolume)
+			volume += int64(pl.TotalVolume) + int64(pl.TotalAMMVolume)
 		}
 		return volume
 	}

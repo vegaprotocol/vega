@@ -99,12 +99,14 @@ func (m *MarketDepth) GetActiveAMMs(ctx context.Context) map[string][]entities.A
 	return ammByMarket
 }
 
-func (m *MarketDepth) ExpandAMMs(ctx context.Context) error {
+func (m *MarketDepth) ExpandAMMs(ctx context.Context) map[string][]*types.Order {
 
 	active := m.GetActiveAMMs(ctx)
 	if len(active) == 0 {
 		return nil
 	}
+
+	allOrders := map[string][]*types.Order{}
 
 	// expand all these AMM's from the midpoint
 	for marketID, amms := range active {
@@ -133,7 +135,10 @@ func (m *MarketDepth) ExpandAMMs(ctx context.Context) error {
 
 		// TODO scale reference to Asset DP?
 		for _, amm := range amms {
-			m.ExpandAMM(amm, reference)
+			orders, _ := m.ExpandAMM(amm, reference)
+			if len(orders) != 0 {
+				allOrders[orders[0].Party] = orders
+			}
 		}
 
 	}
@@ -141,7 +146,7 @@ func (m *MarketDepth) ExpandAMMs(ctx context.Context) error {
 	return nil
 }
 
-func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) error {
+func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) ([]*types.Order, error) {
 
 	// get positions
 	pos, err := m.positions.GetByMarketAndParty(context.Background(), string(pool.MarketID), string(pool.AmmPartyID))
@@ -180,6 +185,8 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 
 	fmt.Println("level regions", estLow, accLow, accHigh, estHigh)
 
+	orders := []*types.Order{}
+
 	step := eStep.Clone()
 	price := estLow.Clone()
 	estimate := true
@@ -191,7 +198,9 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 		levels = append(levels, next.Clone())
 
 		// get which curve we're on
-		m.getVolume(amm, price, next)
+		if o := m.makeOrder(amm, price, next); o != nil {
+			orders = append(orders, m.makeOrder(amm, price, next))
+		}
 
 		// if we're entering accurate region, reduce step size
 		if estimate && next.GTE(accLow) {
@@ -209,10 +218,10 @@ func (m *MarketDepth) ExpandAMM(pool entities.AMMPool, reference num.Decimal) er
 
 	// all we need is implied position at each price, then we're golden
 
-	return nil
+	return orders, nil
 }
 
-func (m *MarketDepth) getVolume(pool *amm, price1, price2 *num.Uint) (uint64, *num.Uint) {
+func (m *MarketDepth) makeOrder(pool *amm, price1, price2 *num.Uint) *types.Order {
 
 	// cap the ranges
 	// now get the range the AMM itself lives in
@@ -233,12 +242,12 @@ func (m *MarketDepth) getVolume(pool *amm, price1, price2 *num.Uint) (uint64, *n
 	// outside of range
 	if pLow.GTE(price2) {
 		fmt.Println("volume", price1, price2, 0, "outside low")
-		return 0, nil
+		return nil
 	}
 
 	if pHigh.LTE(price1) {
 		fmt.Println("volume", price1, price2, 0, "outside high")
-		return 0, nil
+		return nil
 	}
 
 	p1 := num.Max(pLow, price1)
@@ -269,6 +278,15 @@ func (m *MarketDepth) getVolume(pool *amm, price1, price2 *num.Uint) (uint64, *n
 		retPrice = price1
 	}
 	fmt.Println("volume", price1, price2, volume, "good", retPrice, "side", side)
-	return uint64(volume), retPrice.Clone()
+	return &types.Order{
+		Party:            string(pool.AmmPartyID),
+		Price:            retPrice,
+		Status:           entities.OrderStatusActive,
+		Type:             entities.OrderTypeLimit,
+		TimeInForce:      entities.OrderTimeInForceGTC,
+		Size:             uint64(volume),
+		Remaining:        uint64(volume),
+		GeneratedOffbook: true,
+	}
 
 }
