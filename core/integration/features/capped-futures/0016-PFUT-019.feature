@@ -36,7 +36,7 @@ Feature: Settle capped futures market with a price within correct range
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | false                | false  |
 
 
-  @SLABug @NoPerp @Capped
+  @SLABug @NoPerp @Capped @CIsolated
   Scenario: 0016-PFUT-019: When `max_price` is specified and the final settlement price candidate received from the oracle is equal to `max_price` comes and market settles correctly
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
@@ -44,6 +44,7 @@ Feature: Settle capped futures market with a price within correct range
       | party1   | ETH   | 10000     |
       | party2   | ETH   | 1000      |
       | party3   | ETH   | 5000      |
+      | party4   | ETH   | 50000     |
       | aux1     | ETH   | 100000    |
       | aux2     | ETH   | 100000    |
       | party-lp | ETH   | 100000000 |
@@ -57,17 +58,27 @@ Feature: Settle capped futures market with a price within correct range
       | party-lp | ETH/DEC21 | 60000     | 30000                | sell | ASK              | 180000 | 10     |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 2      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
-      | aux2  | ETH/DEC21 | sell | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
-      | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
-      | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1   | ETH/DEC21 | buy  | 2      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | aux2   | ETH/DEC21 | sell | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | aux1   | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
+      | aux2   | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
+      | party4 | ETH/DEC21 | buy  | 2      | 600   | 0                | TYPE_LIMIT | TIF_GTC | ref-9     |
     And the network moves ahead "2" blocks
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party4 | ETH   | ETH/DEC21 | 480    | 49520   |
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
+    When the parties submit update margin mode:
+      | party  | market    | margin_mode     | margin_factor | error |
+      | party4 | ETH/DEC21 | isolated margin | 0.5           |       |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party4 | ETH   | ETH/DEC21 | 0      | 49400   | 600          |
     Then the network moves ahead "2" blocks
 
     # The market considered here ("ETH/DEC19") relies on "0xCAFECAFE" oracle, checking that broadcasting events from "0xCAFECAFE1" should have no effect on it apart from insurance pool transfer
