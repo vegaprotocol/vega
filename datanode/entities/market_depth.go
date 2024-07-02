@@ -75,17 +75,21 @@ func (md *MarketDepth) ToProto(limit uint64) *vega.MarketDepth {
 	// Copy the data across
 	for index, pl := range md.BuySide[:buyLimit] {
 		buyPtr[index] = &types.PriceLevel{
-			Volume:         pl.TotalVolume,
-			NumberOfOrders: pl.TotalOrders,
-			Price:          pl.Price.Clone(),
+			Volume:             pl.TotalVolume,
+			NumberOfOrders:     pl.TotalOrders,
+			Price:              pl.Price.Clone(),
+			AMMVolume:          pl.TotalAMMVolume,
+			AMMVolumeEstimated: pl.AMMVolumeEstimated,
 		}
 	}
 
 	for index, pl := range md.SellSide[:sellLimit] {
 		sellPtr[index] = &types.PriceLevel{
-			Volume:         pl.TotalVolume,
-			NumberOfOrders: pl.TotalOrders,
-			Price:          pl.Price.Clone(),
+			Volume:             pl.TotalVolume,
+			NumberOfOrders:     pl.TotalOrders,
+			Price:              pl.Price.Clone(),
+			AMMVolume:          pl.TotalAMMVolume,
+			AMMVolumeEstimated: pl.AMMVolumeEstimated,
 		}
 	}
 
