@@ -82,6 +82,7 @@ type Engine struct {
 	allMarkets    map[string]common.CommonMarket
 	allMarketsCpy []common.CommonMarket
 
+	communityTags                 *MarketCommunityTags
 	collateral                    common.Collateral
 	assets                        common.Assets
 	referralDiscountRewardService fee.ReferralDiscountRewardService
@@ -168,6 +169,7 @@ func NewEngine(
 		banking:                       banking,
 		parties:                       parties,
 		delayTransactionsTarget:       delayTransactionsTarget,
+		communityTags:                 NewMarketCommunityTags(broker),
 	}
 
 	// set the eligibility for proposer bonus checker

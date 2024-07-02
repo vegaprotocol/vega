@@ -131,6 +131,8 @@ const (
 	ProposalErrorProposalInBatchDeclined ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
 	// ProposalErrorInvalidSizeDecimalPlaces is returned in spot market when the proposed position decimal places is > base asset decimal places.
 	ProposalErrorInvalidSizeDecimalPlaces = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES
+	// ProposalErrorUnknownMarketID ...
+	ProposalErrorUnknownMarketID = vegapb.ProposalError_PROPOSAL_ERROR_UNKNOWN_MARKET_ID
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -170,6 +172,7 @@ const (
 	ProposalTermsTypeUpdateMarketState
 	ProposalTermsTypeUpdateReferralProgram
 	ProposalTermsTypeUpdateVolumeDiscountProgram
+	ProposalTermsTypeUpdateMarketCommunityTags
 )
 
 type ProposalSubmission struct {
@@ -483,6 +486,14 @@ func (p Proposal) IsReferralProgramUpdate() bool {
 
 func (p Proposal) IsVolumeDiscountProgramUpdate() bool {
 	return p.Terms.IsVolumeDiscountProgramUpdate()
+}
+
+func (p Proposal) IsUpdateMarketCommunityTags() bool {
+	return p.Terms.IsUpdateMarketCommunityTags()
+}
+
+func (p Proposal) UpdateMarketCommunityTags() *UpdateMarketCommunityTags {
+	return p.Terms.UpdateMarketCommunityTags()
 }
 
 func (p Proposal) MarketUpdate() *UpdateMarket {
