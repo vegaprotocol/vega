@@ -434,20 +434,20 @@ func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *ty
 
 	if vgcontext.InProgressUpgradeFrom(ctx, "v0.76.8") {
 		e.log.Info("migration code updating primary bridge last seen",
-			logging.String("address", e.primaryBridgeView.CollateralBridgeAddress()),
+			logging.String("address", e.bridgeAddresses[e.primaryEthChainID]),
 			logging.Uint64("last-seen", seen.LastSeenPrimaryEthBlock),
 		)
 		e.ethEventSource.UpdateContractBlock(
-			e.primaryBridgeView.CollateralBridgeAddress(),
+			e.bridgeAddresses[e.primaryEthChainID],
 			e.primaryEthChainID,
 			seen.LastSeenPrimaryEthBlock,
 		)
 		e.log.Info("migration code updating primary bridge last seen",
-			logging.String("address", e.secondaryBridgeView.CollateralBridgeAddress()),
+			logging.String("address", e.bridgeAddresses[e.secondaryEthChainID]),
 			logging.Uint64("last-seen", seen.LastSeenSecondaryEthBlock),
 		)
 		e.ethEventSource.UpdateContractBlock(
-			e.secondaryBridgeView.CollateralBridgeAddress(),
+			e.bridgeAddresses[e.secondaryEthChainID],
 			e.secondaryEthChainID,
 			seen.LastSeenSecondaryEthBlock,
 		)
