@@ -96,13 +96,13 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	e.lastSeenPrimaryEthBlock = b.LastSeenPrimaryEthBlock
 	if e.lastSeenPrimaryEthBlock != 0 {
 		e.log.Info("restoring primary collateral bridge starting block", logging.Uint64("block", e.lastSeenPrimaryEthBlock))
-		e.ethEventSource.UpdateContractBlock(e.primaryBridgeView.CollateralBridgeAddress(), e.primaryEthChainID, e.lastSeenPrimaryEthBlock)
+		e.ethEventSource.UpdateContractBlock(e.bridgeAddresses[e.primaryEthChainID], e.primaryEthChainID, e.lastSeenPrimaryEthBlock)
 	}
 
 	e.lastSeenSecondaryEthBlock = b.LastSeenSecondaryEthBlock
 	if e.lastSeenSecondaryEthBlock != 0 {
 		e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", e.lastSeenSecondaryEthBlock))
-		e.ethEventSource.UpdateContractBlock(e.secondaryBridgeView.CollateralBridgeAddress(), e.secondaryEthChainID, e.lastSeenSecondaryEthBlock)
+		e.ethEventSource.UpdateContractBlock(e.bridgeAddresses[e.secondaryEthChainID], e.secondaryEthChainID, e.lastSeenSecondaryEthBlock)
 	}
 
 	aa := make([]*types.AssetAction, 0, len(b.AssetActions))
