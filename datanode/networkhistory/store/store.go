@@ -528,7 +528,8 @@ func zipSegmentData(segmentDataDir string, zipWriter *zip.Writer) error {
 		}
 		defer file.Close()
 
-		_, err = io.Copy(fw, file)
+		_, err = file.WriteTo(fw)
+		// _, err = io.Copy(fw, file)
 		if err != nil {
 			return err
 		}
