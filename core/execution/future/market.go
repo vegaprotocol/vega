@@ -1499,6 +1499,10 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 }
 
 func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
+	if !m.canTrade() {
+		return
+	}
+
 	m.mkt.State = types.MarketStateSuspended
 	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
 	if m.as.InAuction() {
