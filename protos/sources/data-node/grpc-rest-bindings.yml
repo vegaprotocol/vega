@@ -217,6 +217,8 @@ http:
       get: "/api/v2/games/team-scores"
     - selector: datanode.api.v2.TradingDataService.ListAMMs
       get: "/api/v2/amms"
+    - selector: datanode.api.v2.TradingDataService.EstimateAMMBounds
+      get: "/api/v2/estimate/amm/bounds"
 
     # websockets
 
