@@ -95,6 +95,10 @@ func NewSqrter() *Sqrter {
 
 // sqrt calculates the square root of the uint and caches it.
 func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
+	if u.IsZero() {
+		return num.DecimalZero()
+	}
+
 	if r, ok := s.cache[u.String()]; ok {
 		return r
 	}

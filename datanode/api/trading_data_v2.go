@@ -5572,19 +5572,19 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 		return nil, formatE(ErrInvalidBasePrice)
 	}
 
-	upperPrice := num.UintZero()
+	var upperPrice *num.Uint
 	if req.UpperPrice != nil {
 		upperP, overflow := num.UintFromString(*req.UpperPrice, 10)
-		if overflow || upperPrice.IsNegative() || upperPrice.LTE(basePrice) {
+		if overflow || upperP.IsNegative() || upperP.LTE(basePrice) {
 			return nil, formatE(ErrInvalidUpperPrice)
 		}
 		upperPrice = upperP
 	}
 
-	lowerPrice := num.UintZero()
+	var lowerPrice *num.Uint
 	if req.LowerPrice != nil {
 		lowerP, overflow := num.UintFromString(*req.LowerPrice, 10)
-		if overflow || lowerPrice.IsNegative() || lowerPrice.GTE(basePrice) {
+		if overflow || lowerP.IsNegative() || lowerP.GTE(basePrice) {
 			return nil, formatE(ErrInvalidLowerPrice)
 		}
 		lowerPrice = lowerP
@@ -5593,7 +5593,7 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 	var leverageLowerPrice, leverageUpperPrice *num.Decimal
 	if req.LeverageAtLowerPrice != nil {
 		llPrice, err := num.DecimalFromString(*req.LeverageAtLowerPrice)
-		if err != nil || leverageLowerPrice.IsNegative() {
+		if err != nil || llPrice.IsNegative() {
 			return nil, formatE(ErrInvalidLeverageAtLowerPrice, err)
 		}
 		leverageLowerPrice = &llPrice
@@ -5601,7 +5601,7 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 
 	if req.LeverageAtUpperPrice != nil {
 		luPrice, err := num.DecimalFromString(*req.LeverageAtUpperPrice)
-		if err != nil || leverageUpperPrice.IsNegative() {
+		if err != nil || luPrice.IsNegative() {
 			return nil, formatE(ErrInvalidLeverageAtUpperPrice, err)
 		}
 		leverageUpperPrice = &luPrice
@@ -5610,6 +5610,10 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 	commitmentAmount, overflow := num.UintFromString(req.CommitmentAmount, 10)
 	if overflow || commitmentAmount.IsNegative() {
 		return nil, formatE(ErrInvalidCommitmentAmount)
+	}
+
+	if lowerPrice == nil && upperPrice == nil {
+		return nil, formatE(ErrInvalidLowerPrice)
 	}
 
 	// TODO Karel - make the market service and risk factor serices calls concurent

@@ -36,42 +36,38 @@ func EstimateBounds(
 	linearSlippageFactor, initialMargin,
 	riskFactorShort, riskFactorLong num.Decimal,
 ) EstimatedBounds {
-	// test liquidity unit
-	unitLower := LiquidityUnit(sqrter, basePrice, lowerPrice)
-	unitUpper := LiquidityUnit(sqrter, upperPrice, basePrice)
+	r := EstimatedBounds{}
 
-	// test average entry price
-	avgEntryLower := AverageEntryPrice(sqrter, unitLower, basePrice)
-	avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
-
-	// test risk factor
-	riskFactorLower := RiskFactor(leverageLower, riskFactorLong, linearSlippageFactor, initialMargin)
-	riskFactorUpper := RiskFactor(leverageUpper, riskFactorShort, linearSlippageFactor, initialMargin)
-
-	lowerPriceD := lowerPrice.ToDecimal()
-	upperPriceD := upperPrice.ToDecimal()
 	balanceD := balance.ToDecimal()
+	if lowerPrice != nil {
+		unitLower := LiquidityUnit(sqrter, basePrice, lowerPrice)
+		avgEntryLower := AverageEntryPrice(sqrter, unitLower, basePrice)
+		riskFactorLower := RiskFactor(leverageLower, riskFactorLong, linearSlippageFactor, initialMargin)
+		lowerPriceD := lowerPrice.ToDecimal()
+		boundPosLower := PositionAtLowerBound(riskFactorLower, balanceD, lowerPriceD, avgEntryLower)
+		lossLower := LossOnCommitment(avgEntryLower, lowerPriceD, boundPosLower)
+		liquidationPriceAtLower := LiquidationPrice(balanceD, lossLower, boundPosLower, lowerPriceD, linearSlippageFactor, riskFactorLong)
 
-	// test position at bounds
-	boundPosLower := PositionAtLowerBound(riskFactorLower, balanceD, lowerPriceD, avgEntryLower)
-	boundPosUpper := PositionAtUpperBound(riskFactorUpper, balanceD, upperPriceD, avgEntryUpper)
-
-	// test loss on commitment
-	lossLower := LossOnCommitment(avgEntryLower, lowerPriceD, boundPosLower)
-	lossUpper := LossOnCommitment(avgEntryUpper, upperPriceD, boundPosUpper)
-
-	// test liquidation price
-	liquidationPriceAtLower := LiquidationPrice(balanceD, lossLower, boundPosLower, lowerPriceD, linearSlippageFactor, riskFactorLong)
-	liquidationPriceAtUpper := LiquidationPrice(balanceD, lossUpper, boundPosUpper, upperPriceD, linearSlippageFactor, riskFactorShort)
-
-	return EstimatedBounds{
-		PositionSizeAtUpper:     boundPosUpper,
-		PositionSizeAtLower:     boundPosLower,
-		LossOnCommitmentAtUpper: lossUpper,
-		LossOnCommitmentAtLower: lossLower,
-		LiquidationPriceAtUpper: liquidationPriceAtUpper,
-		LiquidationPriceAtLower: liquidationPriceAtLower,
+		r.PositionSizeAtLower = boundPosLower.Truncate(5)
+		r.LiquidationPriceAtLower = liquidationPriceAtLower.Truncate(5)
+		r.LossOnCommitmentAtLower = lossLower.Truncate(5)
 	}
+
+	if upperPrice != nil {
+		unitUpper := LiquidityUnit(sqrter, upperPrice, basePrice)
+		avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
+		riskFactorUpper := RiskFactor(leverageUpper, riskFactorShort, linearSlippageFactor, initialMargin)
+		upperPriceD := upperPrice.ToDecimal()
+		boundPosUpper := PositionAtUpperBound(riskFactorUpper, balanceD, upperPriceD, avgEntryUpper)
+		lossUpper := LossOnCommitment(avgEntryUpper, upperPriceD, boundPosUpper)
+		liquidationPriceAtUpper := LiquidationPrice(balanceD, lossUpper, boundPosUpper, upperPriceD, linearSlippageFactor, riskFactorShort)
+
+		r.PositionSizeAtUpper = boundPosUpper.Truncate(5)
+		r.LiquidationPriceAtUpper = liquidationPriceAtUpper.Truncate(5)
+		r.LossOnCommitmentAtUpper = lossUpper.Truncate(5)
+	}
+
+	return r
 }
 
 // Lu = (sqrt(pu) * sqrt(pl)) / (sqrt(pu) - sqrt(pl)).
