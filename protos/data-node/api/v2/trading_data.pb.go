@@ -14066,7 +14066,7 @@ type ListPaidLiquidityFeesRequest struct {
 	PartyIds []string `protobuf:"bytes,4,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Whether to return all derived parties from AMMs for the given party.
+	// Whether to return all derived parties from AMMs for the given party. If used, party ID is required.
 	IncludeDerivedParties *bool `protobuf:"varint,6,opt,name=include_derived_parties,json=includeDerivedParties,proto3,oneof" json:"include_derived_parties,omitempty"`
 }
 

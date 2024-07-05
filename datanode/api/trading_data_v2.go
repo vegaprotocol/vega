@@ -2508,6 +2508,9 @@ func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v
 
 	partyIDs := req.PartyIds
 	if req.IncludeDerivedParties != nil && *req.IncludeDerivedParties {
+		if len(partyIDs) == 0 {
+			return nil, formatE(ErrMissingPartyID)
+		}
 		subKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
 		if err != nil {
 			return nil, formatE(ErrInvalidFilter, err)
