@@ -805,9 +805,11 @@ func TestListAccounts(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	accountStore := smocks.NewMockAccountStore(ctrl)
 	balanceStore := smocks.NewMockBalanceStore(ctrl)
+	ammSvc := mocks.NewMockAMMService(ctrl)
 
 	apiService := api.TradingDataServiceV2{
 		AccountService: service.NewAccount(accountStore, balanceStore, logging.NewTestLogger()),
+		AMMPoolService: ammSvc,
 	}
 
 	ctx := context.Background()
@@ -843,6 +845,7 @@ func TestListAccounts(t *testing.T) {
 			MarketIDs: entities.NewMarketIDSlice(req.Filter.MarketIds...),
 		}
 
+		// ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(1).Return(nil, nil)
 		accountStore.EXPECT().QueryBalances(gomock.Any(), accountFilter, gomock.Any()).Times(1).Return(expect, entities.PageInfo{}, nil)
 
 		resp, err := apiService.ListAccounts(ctx, req)
@@ -878,6 +881,7 @@ func TestListAccounts(t *testing.T) {
 			"161c1c424215cff4f32154871c225dc9760bcac1d4d6783deeaacf7f8b6861ab": "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
 		}
 
+		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(maps.Keys(partyPerDerivedKey), nil)
 		for derivedKey := range partyPerDerivedKey {
 			expect = append(expect, entities.AccountBalance{
 				Account: &entities.Account{
@@ -923,9 +927,11 @@ func TestObserveAccountBalances(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	accountStore := smocks.NewMockAccountStore(ctrl)
 	balanceStore := smocks.NewMockBalanceStore(ctrl)
+	ammSvc := mocks.NewMockAMMService(ctrl)
 
 	apiService := api.TradingDataServiceV2{
 		AccountService: service.NewAccount(accountStore, balanceStore, logging.NewTestLogger()),
+		AMMPoolService: ammSvc,
 	}
 
 	apiService.SetLogger(logging.NewTestLogger())
@@ -1046,6 +1052,7 @@ func TestObserveAccountBalances(t *testing.T) {
 		partyPerDerivedKey := map[string]string{
 			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba": req.PartyId,
 		}
+		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(maps.Keys(partyPerDerivedKey), nil)
 
 		for derivedKey := range partyPerDerivedKey {
 			expect = append(expect, entities.AccountBalance{
@@ -1107,10 +1114,12 @@ func TestListRewards(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	marketStore := smocks.NewMockMarketStore(ctrl)
 	rewardStore := smocks.NewMockRewardStore(ctrl)
+	ammSvc := mocks.NewMockAMMService(ctrl)
 
 	apiService := api.TradingDataServiceV2{
 		MarketsService: service.NewMarkets(marketStore),
 		RewardService:  service.NewReward(rewardStore, logging.NewTestLogger()),
+		AMMPoolService: ammSvc,
 	}
 
 	ctx := context.Background()
@@ -1165,6 +1174,10 @@ func TestListRewards(t *testing.T) {
 				ID: entities.MarketID("af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"),
 			},
 		}
+		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]string{
+			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba",
+			"35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b",
+		}, nil)
 
 		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Times(1).Return(markets, entities.PageInfo{}, nil)
@@ -1193,10 +1206,12 @@ func TestListRewardSummaries(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	marketStore := smocks.NewMockMarketStore(ctrl)
 	rewardStore := smocks.NewMockRewardStore(ctrl)
+	ammSvc := mocks.NewMockAMMService(ctrl)
 
 	apiService := api.TradingDataServiceV2{
 		MarketsService: service.NewMarkets(marketStore),
 		RewardService:  service.NewReward(rewardStore, logging.NewTestLogger()),
+		AMMPoolService: ammSvc,
 	}
 
 	ctx := context.Background()
@@ -1237,6 +1252,7 @@ func TestListRewardSummaries(t *testing.T) {
 			},
 		}
 
+		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
 		rewardStore.EXPECT().GetSummaries(ctx, []string{}, req.AssetId).
 			Times(1).Return(expect, nil)
 
@@ -1305,6 +1321,10 @@ func TestListRewardSummaries(t *testing.T) {
 
 		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Times(1).Return(markets, entities.PageInfo{}, nil)
+		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return([]string{
+			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba",
+			"35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b",
+		}, nil)
 
 		rewardStore.EXPECT().GetSummaries(ctx, gomock.Any(), req.AssetId).
 			Do(func(_ context.Context, gotPartyIDs []string, _ *string) {
