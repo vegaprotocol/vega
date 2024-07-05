@@ -881,7 +881,18 @@ func TestListAccounts(t *testing.T) {
 			"161c1c424215cff4f32154871c225dc9760bcac1d4d6783deeaacf7f8b6861ab": "03f49799559c8fd87859edba4b95d40a22e93dedee64f9d7bdc586fa6bbb90e9",
 		}
 
-		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(maps.Keys(partyPerDerivedKey), nil)
+		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(expect)).DoAndReturn(func(_ context.Context, partyIDs []string, _ []string) ([]string, error) {
+			if len(partyIDs) == 0 {
+				return nil, nil
+			}
+			ret := make([]string, 0, 2)
+			for dk, pid := range partyPerDerivedKey {
+				if pid == partyIDs[0] {
+					ret = append(ret, dk)
+				}
+			}
+			return ret, nil
+		})
 		for derivedKey := range partyPerDerivedKey {
 			expect = append(expect, entities.AccountBalance{
 				Account: &entities.Account{
@@ -1166,21 +1177,10 @@ func TestListRewards(t *testing.T) {
 
 		pagination := entities.DefaultCursorPagination(true)
 
-		markets := []entities.Market{
-			{
-				ID: entities.MarketID("a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea"),
-			},
-			{
-				ID: entities.MarketID("af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"),
-			},
-		}
 		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]string{
 			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba",
 			"35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b",
 		}, nil)
-
-		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Times(1).Return(markets, entities.PageInfo{}, nil)
 
 		rewardStore.EXPECT().GetByCursor(ctx, gomock.Any(), req.AssetId, req.FromEpoch, req.ToEpoch,
 			pagination, req.TeamId, req.GameId).
@@ -1310,17 +1310,6 @@ func TestListRewardSummaries(t *testing.T) {
 			},
 		}
 
-		markets := []entities.Market{
-			{
-				ID: entities.MarketID("a7878862705cf303cae4ecc9e6cc60781672a9eb5b29eb62bb88b880821340ea"),
-			},
-			{
-				ID: entities.MarketID("af56a491ee1dc0576d8bf28e11d936eb744e9976ae0046c2ec824e2beea98ea0"),
-			},
-		}
-
-		marketStore.EXPECT().GetAllPaged(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Times(1).Return(markets, entities.PageInfo{}, nil)
 		ammSvc.EXPECT().GetSubKeysForParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return([]string{
 			"653f9a9850852ca541f20464893536e7986be91c4c364788f6d273fb452778ba",
 			"35c2dc44b391a5f27ace705b554cd78ba42412c3d2597ceba39642f49ebf5d2b",

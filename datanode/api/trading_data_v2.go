@@ -416,7 +416,7 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	var partyPerDerivedKey []string
+	var partyPerDerivedKey map[string]string
 
 	if req.Filter != nil {
 		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
@@ -433,12 +433,17 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		req.Filter.PartyIds = partyIDs
 
 		if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-			partyPerDerivedKey, err = t.AMMPoolService.GetSubKeysForParties(ctx, req.Filter.PartyIds, req.Filter.MarketIds)
-			if err != nil {
-				return nil, formatE(err)
+			partyPerDerivedKey = map[string]string{}
+			for _, pid := range req.Filter.PartyIds {
+				derivedKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, []string{pid}, req.Filter.MarketIds)
+				if err != nil {
+					return nil, formatE(err)
+				}
+				req.Filter.PartyIds = append(req.Filter.PartyIds, derivedKeys...)
+				for _, did := range derivedKeys {
+					partyPerDerivedKey[did] = pid
+				}
 			}
-
-			req.Filter.PartyIds = append(req.Filter.PartyIds, partyPerDerivedKey...)
 		}
 	}
 
