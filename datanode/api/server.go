@@ -121,11 +121,11 @@ type AssetService interface {
 type AMMService interface {
 	GetSubKeysForParties(ctx context.Context, partyIDs []string, marketIDs []string) ([]string, error)
 	ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListByMarket(ctx context.Context, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListByParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListByPool(ctx context.Context, poolID entities.AMMPoolID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByMarket(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByParty(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByPool(ctx context.Context, poolID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListBySubAccount(ctx context.Context, ammPartyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.

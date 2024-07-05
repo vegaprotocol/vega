@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	entities "code.vegaprotocol.io/vega/datanode/entities"
-
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -68,7 +67,7 @@ func (mr *MockAMMServiceMockRecorder) ListAll(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // ListByMarket mocks base method.
-func (m *MockAMMService) ListByMarket(arg0 context.Context, arg1 entities.MarketID, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (m *MockAMMService) ListByMarket(arg0 context.Context, arg1 string, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListByMarket", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]entities.AMMPool)
@@ -84,7 +83,7 @@ func (mr *MockAMMServiceMockRecorder) ListByMarket(arg0, arg1, arg2 interface{})
 }
 
 // ListByParty mocks base method.
-func (m *MockAMMService) ListByParty(arg0 context.Context, arg1 entities.PartyID, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (m *MockAMMService) ListByParty(arg0 context.Context, arg1 string, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListByParty", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]entities.AMMPool)
@@ -100,7 +99,7 @@ func (mr *MockAMMServiceMockRecorder) ListByParty(arg0, arg1, arg2 interface{}) 
 }
 
 // ListByPool mocks base method.
-func (m *MockAMMService) ListByPool(arg0 context.Context, arg1 entities.AMMPoolID, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (m *MockAMMService) ListByPool(arg0 context.Context, arg1 string, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListByPool", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]entities.AMMPool)
@@ -132,7 +131,7 @@ func (mr *MockAMMServiceMockRecorder) ListByStatus(arg0, arg1, arg2 interface{})
 }
 
 // ListBySubAccount mocks base method.
-func (m *MockAMMService) ListBySubAccount(arg0 context.Context, arg1 entities.PartyID, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (m *MockAMMService) ListBySubAccount(arg0 context.Context, arg1 string, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListBySubAccount", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]entities.AMMPool)

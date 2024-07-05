@@ -5510,13 +5510,13 @@ func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsReq
 	)
 
 	if req.PartyId != nil {
-		pools, pageInfo, err = t.AMMPoolService.ListByParty(ctx, entities.PartyID(*req.PartyId), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByParty(ctx, *req.PartyId, pagination)
 	} else if req.MarketId != nil {
-		pools, pageInfo, err = t.AMMPoolService.ListByMarket(ctx, entities.MarketID(*req.MarketId), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByMarket(ctx, *req.MarketId, pagination)
 	} else if req.Id != nil {
-		pools, pageInfo, err = t.AMMPoolService.ListByPool(ctx, entities.AMMPoolID(*req.Id), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByPool(ctx, *req.Id, pagination)
 	} else if req.AmmPartyId != nil {
-		pools, pageInfo, err = t.AMMPoolService.ListBySubAccount(ctx, entities.PartyID(*req.AmmPartyId), pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListBySubAccount(ctx, *req.AmmPartyId, pagination)
 	} else if req.Status != nil {
 		pools, pageInfo, err = t.AMMPoolService.ListByStatus(ctx, entities.AMMStatus(*req.Status), pagination)
 	} else {
