@@ -1561,7 +1561,7 @@ func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,
 
 func waitForSnapshotToComplete(sf segment.Unpublished) {
 	for {
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		// wait for snapshot current  file
 		_, err := os.Stat(sf.UnpublishedSnapshotDataDirectory())
 		if err != nil {
@@ -1589,7 +1589,7 @@ func waitForSnapshotToComplete(sf segment.Unpublished) {
 
 func waitForSnapshotToComplete2(sf segment.Unpublished, flush func()) {
 	for {
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		// wait for snapshot current  file
 		_, err := os.Stat(sf.UnpublishedSnapshotDataDirectory())
 		if err != nil {
