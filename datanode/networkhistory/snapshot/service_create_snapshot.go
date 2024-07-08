@@ -24,6 +24,8 @@ import (
 	"os"
 	"path"
 	"sort"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -34,7 +36,9 @@ import (
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/exp/maps"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -130,7 +134,7 @@ func (b *Service) createNewSnapshot(
 
 	snapshotData := func() {
 		defer func() { runAllInReverseOrder(cleanUp) }()
-		err = b.snapshotData(ctx, copyDataTx, dbMetaData, s)
+		err = b.snapshotData(ctx, copyDataTx, dbMetaData, s, b.connPool)
 		if err != nil {
 			b.log.Panic("failed to snapshot data", logging.Error(err))
 		}
@@ -218,7 +222,7 @@ func runAllInReverseOrder(functions []func()) {
 	}
 }
 
-func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData DatabaseMetadata, seg segment.Unpublished) error {
+func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData DatabaseMetadata, seg segment.Unpublished, pool *pgxpool.Pool) error {
 	defer func() {
 		// Calling rollback on a committed transaction has no effect, hence we can rollback in defer to ensure
 		// always rolled back if the transaction was not successfully committed
@@ -245,18 +249,30 @@ func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData Databa
 		return fmt.Errorf("failed to create history state directory:%w", err)
 	}
 
+	fmt.Printf("\n\nCURRENT STATE\n\n")
 	// Write Current State
-	currentSQL := currentStateCopySQL(dbMetaData)
-	currentRowsCopied, currentStateBytesCopied, err := copyTablesData(ctx, tx, currentSQL, currentStateDir, b.fw, b.tableSnapshotFileSizesCached)
+	currentSQL, lastSpan := currentStateCopySQL(dbMetaData)
+	// currentRowsCopied, currentStateBytesCopied, err := copyTablesData(ctx, tx, currentSQL, currentStateDir, b.fw, b.tableSnapshotFileSizesCached)
+	currentRowsCopied, currentStateBytesCopied, err := copyTablesDataAsync(ctx, pool, currentSQL, currentStateDir, b.fw, b.tableSnapshotFileSizesCached)
 	if err != nil {
 		return fmt.Errorf("failed to copy current state table data:%w", err)
 	}
 
+	fmt.Printf("\n\nCURRENT STATE DONE\n\n")
+
+	fmt.Printf("\n\nHISTORY STATE\n\n")
 	// Write History
 	historySQL := historyCopySQL(dbMetaData, seg)
-	historyRowsCopied, historyBytesCopied, err := copyTablesData(ctx, tx, historySQL, historyStateDir, b.fw, b.tableSnapshotFileSizesCached)
+	// historyRowsCopied, historyBytesCopied, err := copyTablesData(ctx, tx, historySQL, historyStateDir, b.fw, b.tableSnapshotFileSizesCached)
+	historyRowsCopied, historyBytesCopied, err := copyTablesDataAsync(ctx, pool, historySQL, historyStateDir, b.fw, b.tableSnapshotFileSizesCached)
 	if err != nil {
 		return fmt.Errorf("failed to copy history table data:%w", err)
+	}
+	fmt.Printf("\n\nHISTORY STATE DONE\n\n")
+
+	lastSpanCopied, lastSpanBytesCopied, err := copyTablesDataLastSpan(ctx, tx, lastSpan, currentStateDir, b.fw, b.tableSnapshotFileSizesCached)
+	if err != nil {
+		return fmt.Errorf("failed to copy last span table data:%w", err)
 	}
 
 	err = tx.Commit(ctx)
@@ -264,8 +280,8 @@ func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData Databa
 		return fmt.Errorf("failed to commit snapshot transaction:%w", err)
 	}
 
-	metrics.SetLastSnapshotRowcount(float64(currentRowsCopied + historyRowsCopied))
-	metrics.SetLastSnapshotCurrentStateBytes(float64(currentStateBytesCopied))
+	metrics.SetLastSnapshotRowcount(float64(currentRowsCopied + historyRowsCopied + lastSpanCopied))
+	metrics.SetLastSnapshotCurrentStateBytes(float64(currentStateBytesCopied + lastSpanBytesCopied))
 	metrics.SetLastSnapshotHistoryBytes(float64(historyBytesCopied))
 	metrics.SetLastSnapshotSeconds(time.Since(start).Seconds())
 
@@ -280,8 +296,9 @@ func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData Databa
 	return nil
 }
 
-func currentStateCopySQL(dbMetaData DatabaseMetadata) []TableCopySql {
+func currentStateCopySQL(dbMetaData DatabaseMetadata) ([]TableCopySql, TableCopySql) {
 	var copySQL []TableCopySql
+	var lastSpan TableCopySql
 	tablesNames := maps.Keys(dbMetaData.TableNameToMetaData)
 	sort.Strings(tablesNames)
 
@@ -290,10 +307,15 @@ func currentStateCopySQL(dbMetaData DatabaseMetadata) []TableCopySql {
 		if !dbMetaData.TableNameToMetaData[tableName].Hypertable {
 			tableCopySQL := fmt.Sprintf(`copy (select * from %s order by %s) TO STDOUT WITH (FORMAT csv, HEADER) `, tableName,
 				meta.SortOrder)
-			copySQL = append(copySQL, TableCopySql{meta, tableCopySQL})
+
+			if meta.Name == "last_snapshot_span" {
+				lastSpan = TableCopySql{meta, tableCopySQL}
+			} else {
+				copySQL = append(copySQL, TableCopySql{meta, tableCopySQL})
+			}
 		}
 	}
-	return copySQL
+	return copySQL, lastSpan
 }
 
 func historyCopySQL(dbMetaData DatabaseMetadata, segment interface{ GetFromHeight() int64 }) []TableCopySql {
@@ -316,42 +338,108 @@ func historyCopySQL(dbMetaData DatabaseMetadata, segment interface{ GetFromHeigh
 	return copySQL
 }
 
-func copyTablesData(
+// func copyTablesData(
+// 	ctx context.Context,
+// 	tx pgx.Tx,
+// 	copySQL []TableCopySql,
+// 	toDir string,
+// 	fw *FileWorker,
+// 	lenCache map[string]int,
+// ) (int64, int64, error) {
+// 	var totalRowsCopied int64
+// 	var totalBytesCopied int64
+
+// 	for _, tableSql := range copySQL {
+// 		filePath := path.Join(toDir, tableSql.metaData.Name)
+// 		// numRowsCopied, bytesCopied, err := writeTableToDataFile(ctx, tx, filePath, tableSql)
+// 		numRowsCopied, bytesCopied, err := extractTableData(ctx, tx, filePath, tableSql, fw, lenCache, nil)
+// 		if err != nil {
+// 			return 0, 0, fmt.Errorf("failed to write table %s to file %s:%w", tableSql.metaData.Name, filePath, err)
+// 		}
+
+// 		totalRowsCopied += numRowsCopied
+// 		totalBytesCopied += bytesCopied
+// 	}
+
+// 	return totalRowsCopied, totalBytesCopied, nil
+// }
+
+func copyTablesDataLastSpan(
 	ctx context.Context,
 	tx pgx.Tx,
+	tableSql TableCopySql,
+	toDir string,
+	fw *FileWorker,
+	lenCache map[string]int,
+) (int64, int64, error) {
+
+	filePath := path.Join(toDir, tableSql.metaData.Name)
+	var mtx sync.Mutex
+	return extractTableData2(ctx, tx, filePath, tableSql, fw, lenCache, &mtx)
+}
+
+func copyTablesDataAsync(
+	ctx context.Context,
+	pool *pgxpool.Pool,
 	copySQL []TableCopySql,
 	toDir string,
 	fw *FileWorker,
 	lenCache map[string]int,
 ) (int64, int64, error) {
-	var totalRowsCopied int64
-	var totalBytesCopied int64
+	var (
+		totalRowsCopied  atomic.Int64
+		totalBytesCopied atomic.Int64
+		mtx              sync.Mutex
+	)
 
-	for _, tableSql := range copySQL {
-		filePath := path.Join(toDir, tableSql.metaData.Name)
-		// numRowsCopied, bytesCopied, err := writeTableToDataFile(ctx, tx, filePath, tableSql)
-		numRowsCopied, bytesCopied, err := extractTableData(ctx, tx, filePath, tableSql, fw, lenCache)
-		if err != nil {
-			return 0, 0, fmt.Errorf("failed to write table %s to file %s:%w", tableSql.metaData.Name, filePath, err)
-		}
+	errg, newCtx := errgroup.WithContext(ctx)
 
-		totalRowsCopied += numRowsCopied
-		totalBytesCopied += bytesCopied
+	for _, tSql := range copySQL {
+		tableSql := tSql
+
+		errg.Go(func() error {
+
+			filePath := path.Join(toDir, tableSql.metaData.Name)
+			// numRowsCopied, bytesCopied, err := writeTableToDataFile(ctx, tx, filePath, tableSql)
+			numRowsCopied, bytesCopied, err := extractTableData(newCtx, pool, filePath, tableSql, fw, lenCache, &mtx)
+			if err != nil {
+				return fmt.Errorf("failed to write table %s to file %s:%w", tableSql.metaData.Name, filePath, err)
+			}
+
+			totalRowsCopied.Add(numRowsCopied)
+			totalBytesCopied.Add(bytesCopied)
+
+			return nil
+		})
 	}
 
-	return totalRowsCopied, totalBytesCopied, nil
+	fmt.Printf("\n\n\n\nWAITING\n\n\n\n")
+	if err := errg.Wait(); err != nil {
+		return 0, 0, err
+	}
+
+	fmt.Printf("ALL DONE BABY\n\n\n\n")
+
+	return totalRowsCopied.Load(), totalBytesCopied.Load(), nil
 }
 
 func extractTableData(
 	ctx context.Context,
-	tx pgx.Tx,
+	pool *pgxpool.Pool,
 	filePath string,
 	tableSql TableCopySql,
 	fw *FileWorker,
 	lenCache map[string]int,
+	cacheMu *sync.Mutex,
 ) (int64, int64, error) {
-	allocCap := lenCache[tableSql.metaData.Name]
 
+	if cacheMu != nil {
+		cacheMu.Lock()
+	}
+	allocCap := lenCache[tableSql.metaData.Name]
+	if cacheMu != nil {
+		cacheMu.Unlock()
+	}
 	fmt.Printf("DEBUGTEMP: %v - initialAllocCap(%v)\n", tableSql.metaData.Name, allocCap)
 
 	if allocCap == 0 {
@@ -363,11 +451,89 @@ func extractTableData(
 		allocCap += allocCap / 3
 	}
 
-	fmt.Printf("DEBUGTEMP: %v -   finalAllocCap(%v)", tableSql.metaData.Name, allocCap)
+	fmt.Printf("DEBUGTEMP: %v -   finalAllocCap(%v)\n", tableSql.metaData.Name, allocCap)
 
 	b := bytes.NewBuffer(make([]byte, 0, allocCap))
 
-	numRowsCopied, err := executeCopy(ctx, tx, tableSql, b)
+	numRowsCopied, err := executeCopy(ctx, pool, tableSql, b)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to execute copy: %w", err)
+	}
+
+	fmt.Printf("===============>>>> %v - %v - %v\n", filePath, numRowsCopied, b.Len())
+
+	len := int64(b.Len())
+	// schedule it
+	fw.Add(b, filePath)
+
+	// save the new len for this table
+	if cacheMu != nil {
+		cacheMu.Lock()
+	}
+	lenCache[tableSql.metaData.Name] = int(len)
+	if cacheMu != nil {
+		cacheMu.Unlock()
+	}
+	fmt.Printf("DEBUGTEMP: %v -       actualLen(%v)\n", tableSql.metaData.Name, len)
+
+	return numRowsCopied, len, nil
+}
+
+func executeCopy(ctx context.Context, pool *pgxpool.Pool, tableSql TableCopySql, w io.Writer) (int64, error) {
+	defer metrics.StartNetworkHistoryCopy(tableSql.metaData.Name)()
+
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		fmt.Sprintf("\n\n\n\nBOIIIIIIIIIIIIIIIIIIII couldn't acquire connection: %v\n\n\n\n\n", err)
+	}
+	defer conn.Release()
+
+	tag, err := conn.Conn().PgConn().CopyTo(ctx, w, tableSql.copySql)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute copy sql %s: %w", tableSql.copySql, err)
+	}
+
+	rowsCopied := tag.RowsAffected()
+
+	fmt.Printf("SQL: %v / COPIED: %v\n", tableSql.copySql, rowsCopied)
+	metrics.NetworkHistoryRowsCopied(tableSql.metaData.Name, rowsCopied)
+
+	return rowsCopied, nil
+}
+
+func extractTableData2(
+	ctx context.Context,
+	tx pgx.Tx,
+	filePath string,
+	tableSql TableCopySql,
+	fw *FileWorker,
+	lenCache map[string]int,
+	cacheMu *sync.Mutex,
+) (int64, int64, error) {
+
+	if cacheMu != nil {
+		cacheMu.Lock()
+	}
+	allocCap := lenCache[tableSql.metaData.Name]
+	if cacheMu != nil {
+		cacheMu.Unlock()
+	}
+	fmt.Printf("DEBUGTEMP: %v - initialAllocCap(%v)\n", tableSql.metaData.Name, allocCap)
+
+	if allocCap == 0 {
+		allocCap = 1000000 // roughly 1mb, because why not.
+	} else {
+		// if we already have something cached maybe this is growing
+		// a grow of 30% is not unreasonnable?
+		// should leave us some room
+		allocCap += allocCap / 3
+	}
+
+	fmt.Printf("DEBUGTEMP: %v -   finalAllocCap(%v)\n", tableSql.metaData.Name, allocCap)
+
+	b := bytes.NewBuffer(make([]byte, 0, allocCap))
+
+	numRowsCopied, err := executeCopy2(ctx, tx, tableSql, b)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to execute copy: %w", err)
 	}
@@ -377,22 +543,36 @@ func extractTableData(
 	fw.Add(b, filePath)
 
 	// save the new len for this table
+	if cacheMu != nil {
+		cacheMu.Lock()
+	}
 	lenCache[tableSql.metaData.Name] = int(len)
+	if cacheMu != nil {
+		cacheMu.Unlock()
+	}
 	fmt.Printf("DEBUGTEMP: %v -       actualLen(%v)\n", tableSql.metaData.Name, len)
 
 	return numRowsCopied, len, nil
 }
 
-func executeCopy(ctx context.Context, tx pgx.Tx, tableSql TableCopySql, w io.Writer) (int64, error) {
+func executeCopy2(ctx context.Context, tx pgx.Tx, tableSql TableCopySql, w io.Writer) (int64, error) {
 	defer metrics.StartNetworkHistoryCopy(tableSql.metaData.Name)()
 
 	tag, err := tx.Conn().PgConn().CopyTo(ctx, w, tableSql.copySql)
 	if err != nil {
+		// fmt.Printf("YOLOFAILURE: %v\n", err)
 		return 0, fmt.Errorf("failed to execute copy sql %s: %w", tableSql.copySql, err)
 	}
 
+	// fmt.Printf("YOLO: %v\n", string(tag))
+
 	rowsCopied := tag.RowsAffected()
 	metrics.NetworkHistoryRowsCopied(tableSql.metaData.Name, rowsCopied)
+
+	// _, err = w.Write(tag)
+	// if err != nil {
+	// 	return 0, fmt.Errorf("failed to execute copy sql %s: %w", tableSql.copySql, err)
+	// }
 
 	return rowsCopied, nil
 }
