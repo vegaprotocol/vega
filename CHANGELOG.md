@@ -33,6 +33,7 @@
 - [11028](https://github.com/vegaprotocol/vega/issues/11028) - Add API to estimate order book depth based on `vAMM`.
 - [11400](https://github.com/vegaprotocol/vega/issues/11400) - Add support for long block auction.
 - [11026](https://github.com/vegaprotocol/vega/issues/11026) - Add API flag to get paid liquidity fees for a `vAMM` using the parent key.
+- [10360](https://github.com/vegaprotocol/vega/issues/10360) - Scale funding payment by fraction of period spent outside of auction.
 
 ### 🐛 Fixes
 
