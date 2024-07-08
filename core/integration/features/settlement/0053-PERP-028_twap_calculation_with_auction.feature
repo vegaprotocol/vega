@@ -121,47 +121,47 @@ Feature: Test internal and external twap calculation
             | name           | value                | time offset |
             | perp.ETH.value | 30000000000000000000 | 0s          |
 
-        ### 6 mins in, still in monitoring auction
+        ### 6 mins in, still in monitoring auction (fraction outside auction is 5/6, hence the funding payment ends up being 5/6*1000=~833)
         Given the network moves ahead "60" blocks
         Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
         Then the product data for the market "ETH/DEC19" should be:
             | internal twap | external twap | funding payment |
-            | 10800         | 9800          | 1000            |
+            | 10800         | 9800          | 833             |
         Given the oracles broadcast data with block time signed with "0xCAFECAFE1":
             | name           | value                | time offset |
             | perp.ETH.value | 11000000000000000000 | 0s          |
 
-        # 7 mins in, the auction period will end
+        # 7 mins in, the auction period will end (fraction outside auction is 5/7, hence the funding payment ends up being 5/7*1000=~714)
         Given the network moves ahead "60" blocks
         Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
         Then the product data for the market "ETH/DEC19" should be:
             | internal twap | external twap | funding payment |
-            | 10800         | 9800          | 1000            |
+            | 10800         | 9800          | 714             |
         Then the network moves ahead "1" blocks
-
-        # 8 mins in, still in continuous traidng
+``
+        # 8 mins in, still in continuous trading (fraction outside auction is ~6/8, hence the funding payment ends up being 6/8*500=~374)
         Given the network moves ahead "60" blocks
         Then the product data for the market "ETH/DEC19" should be:
             | internal twap | external twap | funding payment |
-            | 10500         | 10000         | 500             |
+            | 10500         | 10000         | 374             |
         Given the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     |
             | party1 | ETH/DEC19 | buy  | 1      | 8     | 0                | TYPE_LIMIT | TIF_GTC |
             | party2 | ETH/DEC19 | sell | 1      | 8     | 1                | TYPE_LIMIT | TIF_GTC |
-    And the oracles broadcast data with block time signed with "0xCAFECAFE1":
+        And the oracles broadcast data with block time signed with "0xCAFECAFE1":
             | name           | value               | time offset |
             | perp.ETH.value | 8000000000000000000 | 0s          |
 
-        # 9 mins in, still in continuous traidng
+        # 9 mins in, still in continuous trading (fraction outside auction is ~7/9, hence the funding payment ends up being 7/9*500=~332)
         Given the network moves ahead "60" blocks
         Then the product data for the market "ETH/DEC19" should be:
             | internal twap | external twap | funding payment |
-            | 10142         | 9714          | 428             |
+            | 10142         | 9714          | 332             |
         Given the oracles broadcast data with block time signed with "0xCAFECAFE1":
             | name           | value                | time offset |
             | perp.ETH.value | 14000000000000000000 | 0s          |
 
-        # 10 mins in, still in continuous traidng
+        # 10 mins in, still in continuous trading (fraction outside auction is ~8/10, hence the funding payment ends up being 8/10*375=~299)
         Given the network moves ahead "60" blocks
         Then the markets are updated:
             | id        | price monitoring | linear slippage factor | quadratic slippage factor |
@@ -172,7 +172,4 @@ Feature: Test internal and external twap calculation
             | party2 | ETH/DEC19 | sell | 1      | 30    | 1                | TYPE_LIMIT | TIF_GTC |
         Then the product data for the market "ETH/DEC19" should be:
             | internal twap | external twap | funding payment |
-            | 9875          | 10250         | -375            |
-
-
-
+            | 9875          | 10250         | -299            |

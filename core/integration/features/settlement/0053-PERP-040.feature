@@ -61,18 +61,18 @@ Feature: Assert that the scaling factor is applied before the funding cap is app
 
     # send in external data to the perpetual market, it should not change anything and a MTM should not happen
     When the network moves ahead "1" blocks
+    Then system unix time is "1575072004"
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
       | perp.ETH.value   | 3000000000000000000000 | 0s          |
-      | perp.funding.cue | 1612998252             | 0s          |
+      | perp.funding.cue | 1575072004             | 0s          |
     When the network moves ahead "6" blocks
-
+    
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
       | perp.ETH.value   | 3000000000000000000000 | 0s          |
-      | perp.funding.cue | 1628766252             | 0s          |
-
+      | perp.funding.cue | 1575072012             | 0s          |
     # funding payments = s_twap * delta_t * interest_rate * fund rate scaling * dp = (3000-1200)*1*10.0*1000 = 18,000,000
     # funding rate will be funding payment / s_twap = 18,000,000/(3,000*dp) = 6
     # So having a lower/upper bound of -6/+6 will not change the result
@@ -143,17 +143,18 @@ Feature: Assert that the scaling factor is applied before the funding cap is app
 
     # send in external data to the perpetual market, it should not change anything and a MTM should not happen
     When the network moves ahead "1" blocks
-
+    Then system unix time is "1575072004"
+    
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
       | perp.ETH.value   | 3000000000000000000000 | 0s          |
-      | perp.funding.cue | 1612998252             | 0s          |
+      | perp.funding.cue | 1575072004             | 0s          |
     When the network moves ahead "6" blocks
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
       | perp.ETH.value   | 3000000000000000000000 | 0s          |
-      | perp.funding.cue | 1628766252             | 0s          |
+      | perp.funding.cue | 1575072012             | 0s          |
 
     # funding payments = s_twap * delta_t * interest_rate * fund rate scaling * dp = (3000-1200)*1*10.0*1000 = 18,000,000
     # funding rate will be funding payment / s_twap = 18,000,000/(3,000*dp) = 6

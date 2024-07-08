@@ -60,6 +60,10 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
 
     # back sure we end the block so we're in a new one after opening auction
     When the network moves ahead "1" blocks
+    Then the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value                  | time offset |
+      | perp.ETH.value   | 1000000000000000000000 | 0s          |
+
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -80,9 +84,12 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
     When the network moves ahead "1" blocks
     And the mark price should be "1000" for the market "ETH/DEC19"
 
+    When time is updated to "2021-02-10T23:04:12Z"
+    Then system unix time is "1612998252"
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
-      | perp.ETH.value   | 1000000000000000000000 | 0s          |
+      | perp.ETH.value   | 6200000000000000000000 | 0s          |
       | perp.funding.cue | 1612998252             | 0s          |
     
     When the network moves ahead "4" blocks
@@ -98,14 +105,14 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "200" for the market "ETH/DEC19"
     When the network moves ahead "1" blocks
-
     And the mark price should be "1200" for the market "ETH/DEC19"
+
+    When time is updated to "2021-08-12T11:04:12Z"
+    Then system unix time is "1628766252"
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                   | time offset |
-      | perp.ETH.value   | 6200000000000000000000  | 0s          |
       | perp.funding.cue | 1628766252              | 0s          |
-
 
     And the following funding period events should be emitted:
       | start      | end        | internal twap | external twap | funding payment |

@@ -88,9 +88,14 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party3 | USD   | ETH/DEC19 | 132000  | 99866000  |
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
 
+    When time is updated to "2021-02-11T16:35:24Z"
+    Then system unix time is "1613061324"
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
+    When time is updated to "2021-08-12T11:04:07Z"
+    Then system unix time is "1628766247"
 
     When the network moves ahead "5" blocks
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
@@ -171,9 +176,15 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party3 | USD   | ETH/DEC19 | 132000  | 99866000  |
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
 
+    When time is updated to "2021-02-11T16:35:24Z"
+    Then system unix time is "1613061324"
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE3":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
+
+    When time is updated to "2021-08-12T11:04:07Z"
+    Then system unix time is "1628766247"
 
     When the network moves ahead "5" blocks
     When the oracles broadcast data with block time signed with "0xCAFECAFE3":
@@ -182,6 +193,7 @@ Feature: check when settlement data precision is different/equal to the settleme
       | perp.funding.cue | 1628766252 | 0s          |
     #1628766252 is half year after the first oracel time
 
+    Then debug funding period events
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount | asset |
       | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 74700  | USD   |
@@ -253,9 +265,15 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party3 | USD   | ETH/DEC19 | 132000  | 99866000  |
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
 
+    When time is updated to "2021-02-11T16:35:24Z"
+    Then system unix time is "1613061324"
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE2":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
+      
+    When time is updated to "2021-08-12T11:04:07Z"
+    Then system unix time is "1628766247"
 
     When the network moves ahead "5" blocks
     When the oracles broadcast data with block time signed with "0xCAFECAFE2":
