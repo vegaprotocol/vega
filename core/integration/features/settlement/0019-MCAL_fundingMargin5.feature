@@ -79,16 +79,22 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
 
+    When time is updated to "2021-02-11T16:35:24Z"
+    Then system unix time is "1613061324"
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
     And the network moves ahead "5" blocks
 
+    When time is updated to "2021-08-12T11:04:12Z"
+    Then system unix time is "1628766252"
+
     Then the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.ETH.value   | 300000000  | 0s          |
       | perp.funding.cue | 1628766252 | 0s          |
-# #1628766252 is half year after the first oracel time
+    #1628766252 is half year after the first oracle time
 
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount | asset |
@@ -104,27 +110,35 @@ Feature: check when settlement data precision is different/equal to the settleme
       | id        | data source config | linear slippage factor | quadratic slippage factor |
       | ETH/DEC19 | perp-oracle-2      | 0.25                   | 0                         |
 
+    When time is updated to "2021-08-12T11:04:30Z"
+    Then system unix time is "1628766270"
+
     And the oracles broadcast data with block time signed with "0xCAFECAFE2":
       | name             | value      | time offset |
       | perp.funding.cue | 1628766270 | 0s          |
+      | perp.ETH.value   | 350000000  | 0s          |
 
-    When the network moves ahead "5" blocks
+    When time is updated to "2024-10-12T20:51:10Z"
+    Then system unix time is "1728766270"
 
     Then the oracles broadcast data with block time signed with "0xCAFECAFE2":
       | name             | value      | time offset |
-      | perp.ETH.value   | 350000000  | 0s          |
       | perp.funding.cue | 1728766270 | 0s          |
+
+    And the following funding period events should be emitted:
+      | start      | end        | internal twap | external twap | funding payment |
+      | 1628766270 | 1728766270 | 200000        | 350000000     | -174800000      |
 
     # funding loss, win, margin excess transfers:
     And the following transfers should happen:
-      | from   | to     | from account            | to account              | market id | amount    | asset |
-      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1080000   | USD   |
-      | aux    | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 297994700 | USD   |
-      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1680000   | USD   |
-      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 997469400 | USD   |
-      | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   |
-      | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741368 | USD   |
-      | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   |
-      | aux2   | aux2   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432666666 | USD   |
-      | party2 | party2 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432666666 | USD   |
-      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432666668 | USD   |
+      | from   | to     | from account            | to account              | market id | amount    | asset | type | 
+      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1080000   | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | 
+      | aux    | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 297994700 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | 
+      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1680000   | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | 
+      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 997469400 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | 
+      | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  | 
+      | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741368 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  | 
+      | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  | 
+      | aux2   | aux2   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432711486 | USD   | TRANSFER_TYPE_MARGIN_HIGH             | 
+      | party2 | party2 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432711486 | USD   | TRANSFER_TYPE_MARGIN_HIGH             | 
+      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432711488 | USD   | TRANSFER_TYPE_MARGIN_HIGH             | 

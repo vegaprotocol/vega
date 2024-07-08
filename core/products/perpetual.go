@@ -912,8 +912,8 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 	// scale funding payment by fraction of funding period spent outside of auction
 	timeSpentInAuction := p.auctions.timeSpent(p.startedAt, t)
 	if timeSpentInAuction > 0 && delta > 0 {
-		scaling := (delta - timeSpentInAuction) / delta
-		fundingPayment = fundingPayment.Mul(num.DecimalFromInt64(scaling))
+		scaling := num.DecimalFromInt64(delta - timeSpentInAuction).Div(num.DecimalFromInt64(delta))
+		fundingPayment = fundingPayment.Mul(scaling)
 	}
 
 	// apply funding scaling factor
