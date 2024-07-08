@@ -3115,6 +3115,8 @@ message ListPaidLiquidityFeesRequest {
   repeated string party_ids = 4;
   // Pagination controls.
   optional Pagination pagination = 5;
+  // Whether to return all derived parties from AMMs for the given party. If used, party ID is required.
+  optional bool include_derived_parties = 6;
 }
 
 // Paid liquidity fees response.

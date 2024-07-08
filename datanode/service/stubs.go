@@ -69,7 +69,6 @@ type (
 	TimeWeightedNotionalPosition struct {
 		*sqlstore.TimeWeightedNotionalPosition
 	}
-	AMMPools struct{ *sqlstore.AMMPools }
 )
 
 type (
