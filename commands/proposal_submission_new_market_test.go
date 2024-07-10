@@ -938,6 +938,27 @@ func testNewCappedMarketWithoutMaxPriceFails(t *testing.T) {
 	nmConf.TickSize = "10"
 	err = checkProposalSubmission(cmd)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMaxPriceMustRespectTickSize)
+
+	// submit with no max price but other fields set (0019-MCAL-170)
+	fCap.MaxPrice = ""
+	fCap.BinarySettlement = ptr.From(true)
+	fCap.FullyCollateralised = nil
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+
+	// submit with no max price but other fields set (0019-MCAL-171)
+	fCap.MaxPrice = ""
+	fCap.BinarySettlement = nil
+	fCap.FullyCollateralised = ptr.From(true)
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+
+	// max cap of zero is rejected
+	fCap.MaxPrice = "0"
+	fCap.BinarySettlement = nil
+	fCap.FullyCollateralised = ptr.From(true)
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
 }
 
 func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
