@@ -52,6 +52,7 @@
 - [11409](https://github.com/vegaprotocol/vega/issues/11409) - When updating a capped market - copy the cap from the existing market definition. 
 - [11415](https://github.com/vegaprotocol/vega/issues/11415) - End long block auction when expired. 
 - [11419](https://github.com/vegaprotocol/vega/issues/11419) - Fix long block auction extension to be calculated from current time. 
+- [11438](https://github.com/vegaprotocol/vega/issues/11438) - Add missing assignment to epoch to and from in `gameTeamScores` resolvers. 
 
 ## 0.76.1
 
