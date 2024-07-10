@@ -1283,7 +1283,7 @@ func checkNewFuture(future *protoTypes.FutureProduct, tickSize string) Errors {
 				tick = num.UintOne()
 			}
 			mp, err := num.UintFromString(future.Cap.MaxPrice, 10)
-			if err {
+			if err || mp.IsZero() {
 				errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrMustBePositive)
 			} else if !mp.Mod(mp, tick).IsZero() {
 				errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrMaxPriceMustRespectTickSize)
