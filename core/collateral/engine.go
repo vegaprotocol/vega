@@ -211,7 +211,10 @@ func (e *Engine) CheckOrderSpamAllMarkets(party string) error {
 func (e *Engine) CheckOrderSpam(party, market string, assets []string) error {
 	e.cacheLock.RLock()
 	defer e.cacheLock.RUnlock()
-	e.log.Info("CheckOrderSpam", logging.String("party", party), logging.String("market", market), logging.Strings("assets", assets))
+
+	if e.log.IsDebug() {
+		e.log.Debug("CheckOrderSpam", logging.String("party", party), logging.String("market", market), logging.Strings("assets", assets))
+	}
 	if assetBalances, ok := e.partyAssetCache[party]; !ok {
 		return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account in no asset)")
 	} else {
@@ -225,8 +228,10 @@ func (e *Engine) CheckOrderSpam(party, market string, assets []string) error {
 			}
 		}
 		if !found {
-			for ast, balance := range e.partyAssetCache[party] {
-				e.log.Info("party asset cache", logging.String("party", party), logging.String("asset", ast), logging.String("balance", balance.String()))
+			if e.log.IsDebug() {
+				for ast, balance := range e.partyAssetCache[party] {
+					e.log.Debug("party asset cache", logging.String("party", party), logging.String("asset", ast), logging.String("balance", balance.String()))
+				}
 			}
 			return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account found)")
 		}
