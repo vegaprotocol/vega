@@ -386,6 +386,8 @@ type CommonMarket interface {
 	OnMarketLiquidityV2BondPenaltyFactorUpdate(d num.Decimal)
 	OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t time.Duration)
 	OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d num.Decimal)
+	OnAMMMinCommitmentQuantumUpdate(context.Context, *num.Uint)
+	OnMarketAMMMaxCalculationLevels(context.Context, *num.Uint)
 
 	// liquidity provision
 	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error
