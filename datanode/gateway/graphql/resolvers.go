@@ -857,18 +857,29 @@ func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GameParty
 	gameIds := []string{}
 	teamIds := []string{}
 	partyIds := []string{}
+	var epochFrom, epochTo *uint64
 
 	if filter != nil {
 		gameIds = filter.GameIds
 		teamIds = filter.TeamIds
 		partyIds = filter.PartyIds
+		if filter.EpochFrom != nil {
+			ef := uint64(*filter.EpochFrom)
+			epochFrom = &ef
+		}
+		if filter.EpochTo != nil {
+			et := uint64(*filter.EpochTo)
+			epochTo = &et
+		}
 	}
 
 	req := v2.ListGamePartyScoresRequest{
 		Filter: &v2.GamePartyScoresFilter{
-			GameIds:  gameIds,
-			TeamIds:  teamIds,
-			PartyIds: partyIds,
+			GameIds:   gameIds,
+			TeamIds:   teamIds,
+			PartyIds:  partyIds,
+			EpochFrom: epochFrom,
+			EpochTo:   epochTo,
 		},
 		Pagination: pagination,
 	}
@@ -882,16 +893,27 @@ func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GameParty
 func (r *myQueryResolver) GameTeamScores(ctx context.Context, filter *GameTeamScoreFilter, pagination *v2.Pagination) (*v2.GameTeamScoresConnection, error) {
 	gameIds := []string{}
 	teamIds := []string{}
+	var epochFrom, epochTo *uint64
 
 	if filter != nil {
 		gameIds = filter.GameIds
 		teamIds = filter.TeamIds
+		if filter.EpochFrom != nil {
+			ef := uint64(*filter.EpochFrom)
+			epochFrom = &ef
+		}
+		if filter.EpochTo != nil {
+			et := uint64(*filter.EpochTo)
+			epochTo = &et
+		}
 	}
 
 	req := v2.ListGameTeamScoresRequest{
 		Filter: &v2.GameTeamScoresFilter{
-			GameIds: gameIds,
-			TeamIds: teamIds,
+			GameIds:   gameIds,
+			TeamIds:   teamIds,
+			EpochFrom: epochFrom,
+			EpochTo:   epochTo,
 		},
 		Pagination: pagination,
 	}
