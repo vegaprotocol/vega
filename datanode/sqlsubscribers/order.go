@@ -142,11 +142,15 @@ func (os *Order) cancelled(ctx context.Context, co CancelledOrdersEvent, seqNum 
 			ids = append(ids, id)
 		}
 	}
-	ncOrders, err := os.store.GetByMarketAndID(ctx, co.MarketID(), ids)
-	if err != nil {
-		return err
+
+	if len(ids) > 0 {
+		ncOrders, err := os.store.GetByMarketAndID(ctx, co.MarketID(), ids)
+		if err != nil {
+			return err
+		}
+		orders = append(orders, ncOrders...)
 	}
-	orders = append(orders, ncOrders...)
+
 	txHash := entities.TxHash(co.TxHash())
 	for _, o := range orders {
 		o.Status = entities.OrderStatusCancelled
