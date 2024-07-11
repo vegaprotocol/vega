@@ -465,6 +465,10 @@ func (e *Engine) OnMarketAMMMinCommitmentQuantum(ctx context.Context, c *num.Uin
 		)
 	}
 	e.npv.ammCommitmentQuantum = c
+	for _, m := range e.allMarketsCpy {
+		m.OnAMMMinCommitmentQuantumUpdate(ctx, c.Clone())
+	}
+
 	return nil
 }
 
@@ -475,6 +479,9 @@ func (e *Engine) OnMarketAMMMaxCalculationLevels(ctx context.Context, c *num.Uin
 		)
 	}
 	e.npv.ammCalculationLevels = c
+	for _, m := range e.allMarketsCpy {
+		m.OnMarketAMMMaxCalculationLevels(ctx, c.Clone())
+	}
 	return nil
 }
 

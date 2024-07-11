@@ -24,6 +24,10 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+func (m *Market) OnMarketAMMMaxCalculationLevels(ctx context.Context, c *num.Uint) {}
+
+func (m *Market) OnAMMMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) {}
+
 func (m *Market) OnMinimalHoldingQuantumMultipleUpdate(multiplier num.Decimal) error {
 	m.minHoldingQuantumMultiplier = multiplier
 	return nil
