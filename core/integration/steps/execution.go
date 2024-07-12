@@ -64,4 +64,8 @@ type Execution interface {
 	CancelAMM(ctx context.Context, cancel *types.CancelAMM) error
 	GetAMMSubAccountID(alias string) (string, bool)
 	SetAMMSubAccountIDAlias(alias, id string)
+
+	// Long block auction callback
+	OnNetworkWideAuctionDurationUpdated(ctx context.Context, v interface{}) error
+	BeginBlock(ctx context.Context, prevBlockDuration time.Duration)
 }

@@ -783,6 +783,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^clear trade events$`, func() error {
 		return steps.ClearTradeEvents(execsetup.broker)
 	})
+
+	// Long block auction steps
+	s.Step(`^the long block duration table is:$`, func(table *godog.Table) error {
+		return steps.TheLongBlockDurationTableIsUploaded(context.Background(), execsetup.executionEngine, table)
+	})
+
+	s.Step(`^the previous block duration was "([^"]+)"$`, func(duration string) error {
+		return steps.ThePreviousBlockDurationWas(context.Background(), execsetup.executionEngine, duration)
+	})
 }
 
 func reconcileAccounts() error {
