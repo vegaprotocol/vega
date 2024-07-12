@@ -138,7 +138,7 @@ Feature: Test internal and external twap calculation
             | internal twap | external twap | funding payment |
             | 10800         | 9800          | 714             |
         Then the network moves ahead "1" blocks
-``
+
         # 8 mins in, still in continuous trading (fraction outside auction is ~6/8, hence the funding payment ends up being 6/8*500=~374)
         Given the network moves ahead "60" blocks
         Then the product data for the market "ETH/DEC19" should be:
