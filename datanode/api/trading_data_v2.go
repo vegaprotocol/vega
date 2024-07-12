@@ -1903,15 +1903,19 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 	}
 
 	partyIDs := []string{req.PartyId}
+	var marketIDs []string
+	if req.MarketId != nil {
+		marketIDs = []string{*req.MarketId}
+	}
 	if includeDerivedParties := ptr.UnBox(req.IncludeDerivedParties); includeDerivedParties {
-		subKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, nil)
+		subKeys, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
 		if err != nil {
 			return nil, formatE(err)
 		}
 		partyIDs = append(partyIDs, subKeys...)
 	}
 
-	rewards, pageInfo, err := t.RewardService.GetByCursor(ctx, partyIDs, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
+	rewards, pageInfo, err := t.RewardService.GetByCursor(ctx, partyIDs, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrGetRewards, err)
 	}
@@ -2517,7 +2521,7 @@ func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v
 		}
 		partyIDs = append(partyIDs, subKeys...)
 	}
-	stats, pageInfo, err := t.paidLiquidityFeesStatsService.List(ctx, marketID, assetID, req.EpochSeq, partyIDs, pagination)
+	stats, pageInfo, err := t.paidLiquidityFeesStatsService.List(ctx, marketID, assetID, req.EpochSeq, partyIDs, pagination, req.EpochFrom, req.EpochTo)
 	if err != nil {
 		return nil, formatE(ErrListPaidLiquidityFees, err)
 	}
@@ -5208,7 +5212,7 @@ func (t *TradingDataServiceV2) GetFeesStats(ctx context.Context, req *v2.GetFees
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
 	}
 
-	stats, err := t.feesStatsService.GetFeesStats(ctx, marketID, assetID, req.EpochSeq, req.PartyId)
+	stats, err := t.feesStatsService.GetFeesStats(ctx, marketID, assetID, req.EpochSeq, req.PartyId, req.EpochFrom, req.EpochTo)
 	if err != nil {
 		return nil, formatE(ErrGetFeesStats, err)
 	}

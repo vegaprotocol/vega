@@ -180,18 +180,18 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	fromEpoch *uint64,
 	toEpoch *uint64,
 	pagination entities.CursorPagination,
-	teamIDHex, gameIDHex *string,
+	teamIDHex, gameIDHex, marketID *string,
 ) ([]entities.Reward, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
 	query := `
 	WITH cte_rewards AS (
 		SELECT r.*, grt.team_id
 		FROM rewards r
-		LEFT JOIN game_reward_totals grt ON r.game_id = grt.game_id AND r.party_id = grt.party_id and r.epoch_id = grt.epoch_id
+		LEFT JOIN game_reward_totals grt ON r.game_id = grt.game_id AND r.party_id = grt.party_id and r.epoch_id = grt.epoch_id AND r.market_id = grt.market_id
 	)
 	SELECT * from cte_rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch)
+	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch, marketID)
 
 	query, args, err := PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
@@ -213,7 +213,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 ) ([]entities.RewardSummary, error) {
 	query := `SELECT party_id, asset_id, SUM(amount) AS amount FROM rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, nil, nil, nil, nil)
+	query, args = addRewardWhereClause(query, args, partyIDs, assetIDHex, nil, nil, nil, nil, nil)
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id ORDER BY party_id", query)
 
 	summaries := []entities.RewardSummary{}
@@ -257,7 +257,7 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 
 // -------------------------------------------- Utility Methods
 
-func addRewardWhereClause(query string, args []interface{}, partyIDs []string, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
+func addRewardWhereClause(query string, args []interface{}, partyIDs []string, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64, marketID *string) (string, []interface{}) {
 	predicates := []string{}
 
 	if len(partyIDs) > 0 {
@@ -287,6 +287,10 @@ func addRewardWhereClause(query string, args []interface{}, partyIDs []string, a
 
 	if toEpoch != nil {
 		predicates = append(predicates, fmt.Sprintf("epoch_id <= %s", nextBindVar(&args, *toEpoch)))
+	}
+
+	if marketID != nil {
+		predicates = append(predicates, fmt.Sprintf("market_id = %s", nextBindVar(&args, *marketID)))
 	}
 
 	if len(predicates) > 0 {

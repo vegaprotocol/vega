@@ -26,7 +26,7 @@ type RewardStore interface {
 	Add(ctx context.Context, r entities.Reward) error
 	GetAll(ctx context.Context) ([]entities.Reward, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Reward, error)
-	GetByCursor(ctx context.Context, partyID []string, assetID *string, fromEpoch, toEpoch *uint64, p entities.CursorPagination, teamID, gameID *string) ([]entities.Reward, entities.PageInfo, error)
+	GetByCursor(ctx context.Context, partyID []string, assetID *string, fromEpoch, toEpoch *uint64, p entities.CursorPagination, teamID, gameID, marketID *string) ([]entities.Reward, entities.PageInfo, error)
 	GetSummaries(ctx context.Context, partyID []string, assetID *string) ([]entities.RewardSummary, error)
 	GetEpochSummaries(ctx context.Context, filter entities.RewardSummaryFilter, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error)
 }
@@ -57,8 +57,8 @@ func (r *Reward) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]ent
 	return r.store.GetByTxHash(ctx, txHash)
 }
 
-func (r *Reward) GetByCursor(ctx context.Context, partyIDs []string, assetID *string, fromEpoch, toEpoch *uint64, p entities.CursorPagination, teamID, gameID *string) ([]entities.Reward, entities.PageInfo, error) {
-	return r.store.GetByCursor(ctx, partyIDs, assetID, fromEpoch, toEpoch, p, teamID, gameID)
+func (r *Reward) GetByCursor(ctx context.Context, partyIDs []string, assetID *string, fromEpoch, toEpoch *uint64, p entities.CursorPagination, teamID, gameID, marketID *string) ([]entities.Reward, entities.PageInfo, error) {
+	return r.store.GetByCursor(ctx, partyIDs, assetID, fromEpoch, toEpoch, p, teamID, gameID, marketID)
 }
 
 func (r *Reward) GetSummaries(ctx context.Context, partyIDs []string, assetID *string) ([]entities.RewardSummary, error) {
