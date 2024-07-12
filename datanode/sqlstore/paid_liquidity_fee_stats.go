@@ -69,6 +69,7 @@ func (lfs *PaidLiquidityFeesStats) List(
 	epochSeq *uint64,
 	partyIDs []string,
 	pagination entities.CursorPagination,
+	epochFrom, epochTo *uint64,
 ) ([]entities.PaidLiquidityFeesStats, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("PaidLiquidityFeesStats", "List")()
 	var (
@@ -81,11 +82,22 @@ func (lfs *PaidLiquidityFeesStats) List(
 
 	whereClauses := []string{}
 
-	if (marketID == nil || assetID == nil) && epochSeq == nil {
+	if (marketID == nil || assetID == nil) && epochSeq == nil && epochFrom == nil && epochTo == nil {
 		whereClauses = append(whereClauses, "epoch_seq = (SELECT MAX(epoch_seq) FROM paid_liquidity_fees)")
 	}
 
-	if epochSeq != nil {
+	// to from range set, but wrong way around
+	if epochFrom != nil && epochTo != nil && *epochFrom > *epochTo {
+		epochTo, epochFrom = epochFrom, epochTo
+	}
+	if epochFrom != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("epoch_seq >= %s", nextBindVar(&args, *epochFrom)))
+	}
+	if epochTo != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("epoch_seq <= %s", nextBindVar(&args, *epochTo)))
+	}
+	// @TODO remove precise epoch sequence?
+	if epochFrom == nil && epochTo == nil && epochSeq != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf("epoch_seq = %s", nextBindVar(&args, *epochSeq)))
 	}
 

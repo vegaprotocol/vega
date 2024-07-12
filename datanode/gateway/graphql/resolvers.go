@@ -2084,19 +2084,27 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 }
 
 func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
-	partyID *string,
+	partyID *string, epochFrom, epochTo *int,
 ) (*v1.FeesStats, error) {
-	var epochSeq *uint64
+	var epochSeq, from, to *uint64
 
 	if epoch != nil {
 		epochSeq = ptr.From(uint64(*epoch))
 	}
+	if epochFrom != nil {
+		from = ptr.From(uint64(*epochFrom))
+	}
+	if epochTo != nil {
+		to = ptr.From(uint64(*epochTo))
+	}
 
 	req := &v2.GetFeesStatsRequest{
-		MarketId: marketID,
-		AssetId:  assetID,
-		EpochSeq: epochSeq,
-		PartyId:  partyID,
+		MarketId:  marketID,
+		AssetId:   assetID,
+		EpochSeq:  epochSeq,
+		PartyId:   partyID,
+		EpochFrom: from,
+		EpochTo:   to,
 	}
 
 	resp, err := r.tradingDataClientV2.GetFeesStats(ctx, req)
@@ -2140,11 +2148,18 @@ func (r *myQueryResolver) PaidLiquidityFees(
 	epoch *int,
 	partyIDs []string,
 	includeDerivedParties *bool,
+	from, to *int,
 ) (*v2.PaidLiquidityFeesConnection, error) {
-	var epochSeq *uint64
+	var epochSeq, epochFrom, epochTo *uint64
 
 	if epoch != nil {
 		epochSeq = ptr.From(uint64(*epoch))
+	}
+	if from != nil {
+		epochFrom = ptr.From(uint64(*from))
+	}
+	if to != nil {
+		epochTo = ptr.From(uint64(*to))
 	}
 
 	req := &v2.ListPaidLiquidityFeesRequest{
@@ -2153,6 +2168,8 @@ func (r *myQueryResolver) PaidLiquidityFees(
 		EpochSeq:              epochSeq,
 		PartyIds:              partyIDs,
 		IncludeDerivedParties: includeDerivedParties,
+		EpochFrom:             epochFrom,
+		EpochTo:               epochTo,
 	}
 
 	resp, err := r.tradingDataClientV2.ListPaidLiquidityFees(ctx, req)
@@ -2283,7 +2300,7 @@ func (r *myPartyResolver) TransfersConnection(
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
-	fromEpoch *int, toEpoch *int, teamID, gameID *string, includeDerivedParties *bool,
+	fromEpoch *int, toEpoch *int, teamID, gameID *string, includeDerivedParties *bool, marketID *string,
 ) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
@@ -2311,6 +2328,7 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 		TeamId:                teamID,
 		GameId:                gameID,
 		IncludeDerivedParties: includeDerivedParties,
+		MarketId:              marketID,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {

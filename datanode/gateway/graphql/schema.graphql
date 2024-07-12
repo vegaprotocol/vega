@@ -826,6 +826,10 @@ type Query {
     epoch: Int
     "Optional party ID to filter for"
     partyId: ID
+    "Optional epoch to filter from (included). If omitted, the last epoch will be used."
+    epochFrom: Int
+    "Optional epoch to filter to (included). If omitted, the last epoch will be used."
+    epochTo: Int
   ): FeesStats
 
   "Get fees statistics for a given party"
@@ -1069,6 +1073,10 @@ type Query {
     partyIDs: [String!]
     "Whether to return all derived parties from AMMs for the given party. If used, party ID is required"
     includeDerivedParties: Boolean
+    "Start epoch to return the results from (inclusive), if not provided the most recent epoch will be used."
+    epochFrom: Int
+    "End epoch to return the results to (inclusive), if not provided the most recent epoch will be used."
+    epochTo: Int
   ): PaidLiquidityFeesConnection
 
   "One or more entities that are trading on the Vega network"
@@ -3048,6 +3056,8 @@ type Party {
     gameId: ID
     "Whether to return rewards for all derived parties from AMMs for the given party. If used, party ID is required"
     includeDerivedParties: Boolean
+    "Optionally filter for rewards by market ID"
+    marketId: ID
   ): RewardsConnection
 
   "Return net reward information"

@@ -707,9 +707,9 @@ func (mr *MockRewardStoreMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 }
 
 // GetByCursor mocks base method.
-func (m *MockRewardStore) GetByCursor(arg0 context.Context, arg1 []string, arg2 *string, arg3, arg4 *uint64, arg5 entities.CursorPagination, arg6, arg7 *string) ([]entities.Reward, entities.PageInfo, error) {
+func (m *MockRewardStore) GetByCursor(arg0 context.Context, arg1 []string, arg2 *string, arg3, arg4 *uint64, arg5 entities.CursorPagination, arg6, arg7, arg8 *string) ([]entities.Reward, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByCursor", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+	ret := m.ctrl.Call(m, "GetByCursor", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 	ret0, _ := ret[0].([]entities.Reward)
 	ret1, _ := ret[1].(entities.PageInfo)
 	ret2, _ := ret[2].(error)
@@ -717,9 +717,9 @@ func (m *MockRewardStore) GetByCursor(arg0 context.Context, arg1 []string, arg2 
 }
 
 // GetByCursor indicates an expected call of GetByCursor.
-func (mr *MockRewardStoreMockRecorder) GetByCursor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
+func (mr *MockRewardStoreMockRecorder) GetByCursor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByCursor", reflect.TypeOf((*MockRewardStore)(nil).GetByCursor), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByCursor", reflect.TypeOf((*MockRewardStore)(nil).GetByCursor), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 }
 
 // GetByTxHash mocks base method.

@@ -137,13 +137,13 @@ func testGetFeesStatsForMarketAndEpoch(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[0]
-	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil)
+	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[3]
-	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil)
+	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
@@ -155,13 +155,13 @@ func testGetFeesStatsForAssetAndEpoch(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[0]
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[6]
-	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil)
+	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
@@ -173,13 +173,13 @@ func testGetFeesStatsForMarketLatest(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[2]
-	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil)
+	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[8]
-	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil)
+	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
@@ -191,13 +191,13 @@ func testGetFeesStatsForAssetLatest(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[2]
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[8]
-	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil)
+	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
@@ -206,7 +206,7 @@ func testGetFeesStatsNoAssetOrMarket(t *testing.T) {
 	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
 
-	_, err := stores.fs.GetFeesStats(ctx, ptr.From(entities.MarketID("deadbeef01")), ptr.From(entities.AssetID("deadbeef02")), nil, nil)
+	_, err := stores.fs.GetFeesStats(ctx, ptr.From(entities.MarketID("deadbeef01")), ptr.From(entities.AssetID("deadbeef02")), nil, nil, nil, nil)
 	require.Error(t, err)
 }
 
@@ -249,7 +249,7 @@ func testGetFeesStatsForPartyAndEpoch(t *testing.T) {
 		VegaTime:                expected.VegaTime,
 	}
 
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), &want.ReferrerRewardsGenerated[0].Referrer)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), &want.ReferrerRewardsGenerated[0].Referrer, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
@@ -292,7 +292,7 @@ func testGetFeesStatsForPartyLatest(t *testing.T) {
 		MakerFeesGenerated:      []*eventspb.MakerFeesGenerated{},
 		VegaTime:                expected.VegaTime,
 	}
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.ReferrerRewardsGenerated[0].Referrer)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.ReferrerRewardsGenerated[0].Referrer, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }

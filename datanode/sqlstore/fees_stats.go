@@ -148,7 +148,7 @@ func (rfs *FeesStats) StatsForParty(ctx context.Context, partyID entities.PartyI
 	return stats, nil
 }
 
-func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID, epochSeq *uint64, partyID *string) (*entities.FeesStats, error) {
+func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID, epochSeq *uint64, partyID *string, epochFrom, epochTo *uint64) (*entities.FeesStats, error) {
 	defer metrics.StartSQLQuery("FeesStats", "GetFeesStats")()
 	var (
 		stats []entities.FeesStats
@@ -175,7 +175,19 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 		where = append(where, fmt.Sprintf("market_id = %s", nextBindVar(&args, *marketID)))
 	}
 
-	if epochSeq == nil { // we want the most recent stat so order and limit the query
+	if epochFrom != nil && epochTo != nil && *epochFrom > *epochTo {
+		epochFrom, epochTo = epochTo, epochFrom
+	}
+	if epochFrom != nil {
+		where = append(where, fmt.Sprintf("epoch_seq >= %s", nextBindVar(&args, *epochFrom)))
+		epochSeq = nil
+	}
+	if epochTo != nil {
+		where = append(where, fmt.Sprintf("epoch_seq <= %s", nextBindVar(&args, *epochTo)))
+		epochSeq = nil
+	}
+
+	if epochSeq == nil && epochFrom == nil && epochTo == nil { // we want the most recent stat so order and limit the query
 		where = append(where, "epoch_seq = (SELECT MAX(epoch_seq) FROM fees_stats)")
 	}
 
