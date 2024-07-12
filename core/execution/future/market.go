@@ -5441,6 +5441,23 @@ func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) 
 	return false, types.SideUnspecified, nil
 }
 
+func VerifyAMMBounds(baseParam *num.Uint, lowerParam *num.Uint, upperParam *num.Uint, priceFactor num.Decimal) error {
+	base, _ := num.UintFromDecimal(baseParam.ToDecimal().Mul(priceFactor))
+	if lowerParam != nil {
+		lower, _ := num.UintFromDecimal(lowerParam.ToDecimal().Mul(priceFactor))
+		if lower.GTE(base) {
+			return fmt.Errorf(fmt.Sprintf("base (%s) as factored by market and asset decimals must be greater than lower bound (%s)", base.String(), lower.String()))
+		}
+	}
+	if upperParam != nil {
+		upper, _ := num.UintFromDecimal(upperParam.ToDecimal().Mul(priceFactor))
+		if base.GTE(upper) {
+			return fmt.Errorf(fmt.Sprintf("upper bound (%s) as factored by market and asset decimals must be greater than base (%s)", upper.String(), base.String()))
+		}
+	}
+	return nil
+}
+
 func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, deterministicID string) error {
 	if !m.canTrade() {
 		return common.ErrTradingNotAllowed
@@ -5451,6 +5468,10 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 
 	// create the AMM curves but do not confirm it with the engine
 	var order *types.Order
+	if err := VerifyAMMBounds(submit.Parameters.Base, submit.Parameters.LowerBound, submit.Parameters.UpperBound, m.priceFactor); err != nil {
+		return err
+	}
+
 	pool, err := m.amm.Create(ctx, submit, m.idgen.NextID(), m.risk.GetRiskFactors(), m.risk.GetScalingFactors(), m.risk.GetSlippage())
 	if err != nil {
 		return err
@@ -5524,6 +5545,12 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
+
+	if amend.Parameters != nil {
+		if err := VerifyAMMBounds(amend.Parameters.Base, amend.Parameters.LowerBound, amend.Parameters.UpperBound, m.priceFactor); err != nil {
+			return err
+		}
+	}
 
 	// get an amended AMM and the existing AMM
 	pool, existing, err := m.amm.Amend(ctx, amend, m.risk.GetRiskFactors(), m.risk.GetScalingFactors(), m.risk.GetSlippage())

@@ -6715,3 +6715,15 @@ func TestLiquidityFeeSettingsConstantFee(t *testing.T) {
 	// doesn't matter what the LP's set in their nomination, the fee is going to be a constant 0.8
 	assert.Equal(t, "0.8", fee)
 }
+
+func TestVerifyAMMBounds(t *testing.T) {
+	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
+	require.Equal(t, "upper bound (8) as factored by market and asset decimals must be greater than base (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
+	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(0.1)).Error())
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(0.1)))
+
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
+}
