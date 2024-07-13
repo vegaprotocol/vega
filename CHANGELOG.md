@@ -55,6 +55,7 @@
 - [11419](https://github.com/vegaprotocol/vega/issues/11419) - Fix long block auction extension to be calculated from current time. 
 - [11438](https://github.com/vegaprotocol/vega/issues/11438) - Add missing assignment to epoch to and from in `gameTeamScores` resolvers. 
 - [11442](https://github.com/vegaprotocol/vega/issues/11442) - Add validation to `submitAMM` to ensure the curves can be successfully generated. 
+- [11448](https://github.com/vegaprotocol/vega/issues/11448) - Fix team game score query with epoch filter. 
 
 ## 0.76.1
 

@@ -294,16 +294,16 @@ func (gs *GameScores) ListTeamScores(
 		query = `SELECT t1.* FROM game_team_scores t1 
 				 JOIN (
 					SELECT
-						party_id,
+						team_id,
 						epoch_id,
 						MAX(vega_time) AS latest_time
 					FROM
 						game_team_scores
 					WHERE ` + epochWhere + `						
 					GROUP BY
-						party,
-						epoch
-				) t2 ON t1.party_id = t2.party_id AND t1.epoch_id = t2.epoch_id AND t1.vega_time = t2.latest_time 
+						team_id,
+						epoch_id
+				) t2 ON t1.team_id = t2.team_id AND t1.epoch_id = t2.epoch_id AND t1.vega_time = t2.latest_time 
 		`
 	}
 	query = fmt.Sprintf("%s %s", query, where)
