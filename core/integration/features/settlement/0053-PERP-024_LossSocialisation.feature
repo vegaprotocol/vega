@@ -19,7 +19,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual @Liquidation
-  Scenario: (0053-PERP-024) Funding payment triggering loss soccialization
+  Scenario: (0053-PERP-024) Funding payment triggering loss socialization
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
@@ -80,10 +80,17 @@ Feature: Test funding payment triggering closeout for Perps market
     When the network moves ahead "1" blocks
     And the mark price should be "1000" for the market "ETH/DEC19"
 
+    When time is updated to "2021-02-10T23:04:12Z"
+    Then system unix time is "1612998252"
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
       | perp.ETH.value   | 3000000000000000000000 | 0s          |
       | perp.funding.cue | 1612998252             | 0s          |
+    
+    When time is updated to "2021-08-12T11:04:12Z"
+    Then system unix time is "1628766252"
+    
     When the network moves ahead "4" blocks
 
     #MTM for mark price 1000 to 1200
@@ -95,8 +102,6 @@ Feature: Test funding payment triggering closeout for Perps market
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 200000 | USD   |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-
-    When the network moves ahead "1" blocks
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |

@@ -64,9 +64,10 @@ func TestPerpetualSnapshot(t *testing.T) {
 	whenAuctionStateChanges(t, perps, points[2].t+int64(time.Second), false)
 
 	fundingPayment := getFundingPayment(t, perps, points[3].t)
-	assert.Equal(t, "1234", fundingPayment)
+	// 2/3 of funding period spent in auction so expecting funding payment of 1/3*1234=~411
+	assert.Equal(t, "411", fundingPayment)
 	fundingPayment = getFundingPayment(t, perps, points[3].t)
-	assert.Equal(t, "1234", fundingPayment)
+	assert.Equal(t, "411", fundingPayment)
 
 	// now get the serialised state, and try to load it
 	state1 := perps.perpetual.Serialize()
@@ -88,7 +89,7 @@ func TestPerpetualSnapshot(t *testing.T) {
 
 	// check funding payment comes out the same
 	fundingPayment = getFundingPayment(t, perps2, points[3].t)
-	assert.Equal(t, "1234", fundingPayment)
+	assert.Equal(t, "411", fundingPayment)
 
 	// check the the time-trigger has been set properly
 	cfg := scheduleSrc.Data.GetInternalTimeTriggerSpecConfiguration()
