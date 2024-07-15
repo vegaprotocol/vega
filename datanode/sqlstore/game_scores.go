@@ -36,15 +36,15 @@ type GameScores struct {
 }
 
 var gamesTeamOrderding = TableOrdering{
-	ColumnOrdering{Name: "t1.game_id", Sorting: ASC},
-	ColumnOrdering{Name: "t1.epoch_id", Sorting: DESC},
-	ColumnOrdering{Name: "t1.team_id", Sorting: ASC},
+	ColumnOrdering{Name: "game_id", Sorting: ASC},
+	ColumnOrdering{Name: "epoch_id", Sorting: DESC},
+	ColumnOrdering{Name: "team_id", Sorting: ASC},
 }
 
 var gamesPartyOrderding = TableOrdering{
-	ColumnOrdering{Name: "t1.game_id", Sorting: ASC},
-	ColumnOrdering{Name: "t1.epoch_id", Sorting: DESC},
-	ColumnOrdering{Name: "t1.party_id", Sorting: ASC},
+	ColumnOrdering{Name: "game_id", Sorting: ASC},
+	ColumnOrdering{Name: "epoch_id", Sorting: DESC},
+	ColumnOrdering{Name: "party_id", Sorting: ASC},
 }
 
 func NewGameScores(connectionSource *ConnectionSource) *GameScores {
