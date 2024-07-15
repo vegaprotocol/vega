@@ -2,7 +2,7 @@ Feature: check when settlement data precision is different/equal to the settleme
 
   Background:
 
-    And the following assets are registered:
+    Given the following assets are registered:
       | id  | decimal places |
       | USD | 2              |
 
@@ -24,17 +24,15 @@ Feature: check when settlement data precision is different/equal to the settleme
       | market.auction.minimumDuration | 1     |
       | limits.markets.maxPeggedOrders | 2     |
 
-  @Perpetual
+  @Perpetual @PBlock
   Scenario: 001 oracle data decimal > asset decimal 0070-MKTD-018, 0019-MCAL-091
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
       | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-1      | 0.25                   | 0                         | -1                      | perp        | default-futures |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
-      | limits.markets.maxPeggedOrders | 2     |
-    Given the following network parameters are set:
       | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | limits.markets.maxPeggedOrders          | 2     |
       | network.markPriceUpdateMaximumFrequency | 5s    |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -89,13 +87,11 @@ Feature: check when settlement data precision is different/equal to the settleme
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
 
     When time is updated to "2021-02-11T16:35:24Z"
-    Then system unix time is "1613061324"
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
     When time is updated to "2021-08-12T11:04:07Z"
-    Then system unix time is "1628766247"
 
     When the network moves ahead "5" blocks
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
@@ -114,7 +110,7 @@ Feature: check when settlement data precision is different/equal to the settleme
 
   @Perpetual
   Scenario: 002 oracle data decimal < asset decimal 0070-MKTD-019
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | decimal places | market type | sla params      |
       | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-3      | 0.25                   | 0                         | 1                       | 2              | perp        | default-futures |
     And the following network parameters are set:
@@ -177,14 +173,12 @@ Feature: check when settlement data precision is different/equal to the settleme
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
 
     When time is updated to "2021-02-11T16:35:24Z"
-    Then system unix time is "1613061324"
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE3":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
 
     When time is updated to "2021-08-12T11:04:07Z"
-    Then system unix time is "1628766247"
 
     When the network moves ahead "5" blocks
     When the oracles broadcast data with block time signed with "0xCAFECAFE3":
@@ -266,14 +260,12 @@ Feature: check when settlement data precision is different/equal to the settleme
       | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
 
     When time is updated to "2021-02-11T16:35:24Z"
-    Then system unix time is "1613061324"
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE2":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
       
     When time is updated to "2021-08-12T11:04:07Z"
-    Then system unix time is "1628766247"
 
     When the network moves ahead "5" blocks
     When the oracles broadcast data with block time signed with "0xCAFECAFE2":
