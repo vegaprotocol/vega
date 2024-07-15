@@ -74,17 +74,23 @@ func testDataPointInAuctionIgnored(t *testing.T) {
 
 	// submit the first point then enter an auction
 	submitPointWithDifference(t, perp, points[0], expectedTWAP)
-	whenAuctionStateChanges(t, perp, points[0].t+int64(time.Second), true)
+	auctionStart := points[0].t + int64(time.Second)
+	whenAuctionStateChanges(t, perp, auctionStart, true)
 
 	// submit a crazy point difference, then a normal point
 	submitPointWithDifference(t, perp, points[1], -9999999)
 	submitPointWithDifference(t, perp, points[2], expectedTWAP)
 
 	// now we leave auction and the crazy point difference will not affect the TWAP because it was in an auction period
-	whenAuctionStateChanges(t, perp, points[2].t+int64(time.Second), false)
+	auctionEnd := points[2].t + int64(time.Second)
+	whenAuctionStateChanges(t, perp, auctionEnd, false)
+
+	currentPeriodLength := float64(points[len(points)-1].t - points[0].t)
+	timeInAuction := float64(auctionEnd - auctionStart)
+	periodFractionOutsideAuction := 1 - timeInAuction/currentPeriodLength
 
 	fundingPayment := whenTheFundingPeriodEnds(t, perp, points[len(points)-1].t)
-	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+	assert.Equal(t, int64(periodFractionOutsideAuction*float64(expectedTWAP)), fundingPayment.Int64())
 }
 
 func testDataPointsInAuctionOutOfOrder(t *testing.T) {
@@ -107,18 +113,24 @@ func testDataPointsInAuctionOutOfOrder(t *testing.T) {
 	whenAuctionStateChanges(t, perp, a1, true)
 	whenAuctionStateChanges(t, perp, a2, false)
 
+	currentPeriodLength := float64(points[len(points)-1].t - points[0].t)
+	timeInAuction := float64(points[1].t - points[0].t + points[3].t - points[2].t)
+	periodFractionOutsideAuction := num.DecimalOne().Sub(num.DecimalFromFloat(timeInAuction).Div(num.DecimalFromFloat(currentPeriodLength)))
 	// funding payment will be the constant diff in the first point
-	assert.Equal(t, "100", getFundingPayment(t, perp, nd))
+	expected, _ := num.IntFromDecimal(periodFractionOutsideAuction.Mul(num.DecimalFromInt64(100)))
+	assert.Equal(t, num.IntToString(expected), getFundingPayment(t, perp, nd))
 
 	// now submit a point that is mid the auction period
 	submitPointWithDifference(t, perp, points[2], 200)
-	assert.Equal(t, "150", getFundingPayment(t, perp, nd))
+
+	expected, _ = num.IntFromDecimal(periodFractionOutsideAuction.Mul(num.DecimalFromInt64(150)))
+	assert.Equal(t, num.IntToString(expected), getFundingPayment(t, perp, nd))
 
 	// now submit a point also in before the previous point, also in an auction period
 	// and its contribution should be ignored.
 	crazy := &testDataPoint{t: between(a1, points[1].t), price: num.NewUint(1000)}
 	submitPointWithDifference(t, perp, crazy, 9999999)
-	assert.Equal(t, "150", getFundingPayment(t, perp, nd))
+	assert.Equal(t, "49", getFundingPayment(t, perp, nd))
 }
 
 func testAuctionFundingPeriodReset(t *testing.T) {
@@ -136,7 +148,8 @@ func testAuctionFundingPeriodReset(t *testing.T) {
 	whenAuctionStateChanges(t, perp, points[0].t+int64(time.Second), true)
 
 	fundingPayment := whenTheFundingPeriodEnds(t, perp, points[0].t+int64(2*time.Second))
-	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+	periodFractionOutsideAuction := 0.5
+	assert.Equal(t, int64(periodFractionOutsideAuction*float64(expectedTWAP)), fundingPayment.Int64())
 
 	// should still be on an auction to ending another funding period should give 0
 	submitPointWithDifference(t, perp, points[1], -999999)
@@ -148,7 +161,7 @@ func testAuctionFundingPeriodReset(t *testing.T) {
 	whenAuctionStateChanges(t, perp, between(points[2].t, points[3].t), false)
 
 	fundingPayment = whenTheFundingPeriodEnds(t, perp, points[3].t)
-	assert.Equal(t, int64(100), fundingPayment.Int64())
+	assert.Equal(t, int64(periodFractionOutsideAuction*100), fundingPayment.Int64())
 
 	// now we're not in an auction, ending the period again will preserve that
 	fundingPayment = whenTheFundingPeriodEnds(t, perp, points[3].t+int64(time.Hour))
@@ -171,7 +184,8 @@ func testFundingDataAtInAuctionPeriodStart(t *testing.T) {
 
 	end := points[0].t + int64(2*time.Second)
 	fundingPayment := whenTheFundingPeriodEnds(t, perp, end)
-	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+	periodFractionOutsideAuction := 0.5
+	assert.Equal(t, int64(periodFractionOutsideAuction*float64(expectedTWAP)), fundingPayment.Int64())
 
 	// but if we query the funding payment right now it'll be zero because this 0 length, just started
 	// funding period is all in auction
@@ -203,9 +217,15 @@ func testPastFundingPaymentInAuction(t *testing.T) {
 	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
 	require.NoError(t, perp.perpetual.SubmitDataPoint(context.Background(), points[2].price, points[2].t))
 
+	endPrev := end
 	end = points[2].t - int64(500*time.Millisecond)
 	fundingPayment = whenTheFundingPeriodEnds(t, perp, end)
-	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+
+	currentPeriodLength := float64(end - endPrev)
+	timeInAuction := float64(end - points[1].t)
+	periodFractionOutsideAuction := 1 - timeInAuction/currentPeriodLength
+
+	assert.Equal(t, int64(periodFractionOutsideAuction*float64(expectedTWAP)), fundingPayment.Int64())
 }
 
 func testPastFundingPayment(t *testing.T) {
