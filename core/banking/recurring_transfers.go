@@ -247,6 +247,14 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			continue
 		}
 
+		// if the transfer should have been ended and has not, end it now.
+		if v.EndEpoch != nil && *v.EndEpoch < e.currentEpoch {
+			v.Status = types.TransferStatusDone
+			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v, e.getGameID(v)))
+			doneIDs = append(doneIDs, v.ID)
+			continue
+		}
+
 		if v.DispatchStrategy != nil && v.DispatchStrategy.TransferInterval != nil &&
 			((newEpoch-v.StartEpoch+1) < uint64(*v.DispatchStrategy.TransferInterval) ||
 				(newEpoch-v.StartEpoch+1)%uint64(*v.DispatchStrategy.TransferInterval) != 0) {

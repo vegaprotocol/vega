@@ -34,6 +34,7 @@
 - [11400](https://github.com/vegaprotocol/vega/issues/11400) - Add support for long block auction.
 - [11026](https://github.com/vegaprotocol/vega/issues/11026) - Add API flag to get paid liquidity fees for a `vAMM` using the parent key.
 - [11027](https://github.com/vegaprotocol/vega/issues/11027) - Add API filters to get fees and rewards by market, across epochs.
+- [10360](https://github.com/vegaprotocol/vega/issues/10360) - Scale funding payment by fraction of period spent outside of auction.
 
 ### 🐛 Fixes
 
@@ -57,6 +58,8 @@
 - [11442](https://github.com/vegaprotocol/vega/issues/11442) - Add validation to `submitAMM` to ensure the curves can be successfully generated. 
 - [11448](https://github.com/vegaprotocol/vega/issues/11448) - Fix team game score query with epoch filter. 
 - [11457](https://github.com/vegaprotocol/vega/issues/11457) - Fix cursor column ordering for game scores. 
+- [11454](https://github.com/vegaprotocol/vega/issues/11454) - Ensure ended transfers proper handling. 
+  
 
 ## 0.76.1
 
