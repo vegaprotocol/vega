@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
@@ -76,6 +77,7 @@ func (c *curve) positionAtPrice(sqrt sqrtFn, price *num.Uint) int64 {
 }
 
 type Pool struct {
+	log         *logging.Logger
 	ID          string
 	AMMParty    string
 	Commitment  *num.Uint
@@ -111,6 +113,7 @@ type Pool struct {
 }
 
 func NewPool(
+	log *logging.Logger,
 	id,
 	ammParty,
 	asset string,
@@ -127,6 +130,7 @@ func NewPool(
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(priceFactor))
 	pool := &Pool{
+		log:                  log,
 		ID:                   id,
 		AMMParty:             ammParty,
 		Commitment:           submit.CommitmentAmount,
@@ -152,6 +156,7 @@ func NewPool(
 }
 
 func NewPoolFromProto(
+	log *logging.Logger,
 	sqrt sqrtFn,
 	collateral Collateral,
 	position Position,
@@ -214,6 +219,7 @@ func NewPoolFromProto(
 	}
 
 	return &Pool{
+		log:         log,
 		ID:          state.Id,
 		AMMParty:    state.AmmPartyId,
 		Commitment:  num.MustUintFromString(state.Commitment, 10),
@@ -319,6 +325,7 @@ func (p *Pool) Update(
 	}
 
 	updated := &Pool{
+		log:                  p.log,
 		ID:                   p.ID,
 		AMMParty:             p.AMMParty,
 		Commitment:           commitment,
@@ -503,212 +510,6 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l num.Decimal) num.Decimal
 
 	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
 	return numer.Div(denom)
-}
-
-// OrderbookShape returns slices of virtual buy and sell orders that the AMM has over a given range
-// and is essentially a view on the AMM's personal order-book.
-func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order) {
-	buys := make([]*types.Order, 0, p.maxCalculationLevels.Uint64())
-	sells := make([]*types.Order, 0, p.maxCalculationLevels.Uint64())
-
-	lower := p.lower.low
-	upper := p.upper.high
-	fairPrice := p.fairPrice()
-
-	if p.closing() {
-		// AMM is in reduce only mode so will only have orders between its fair-price and its base so shrink from/to to that region
-		pos := p.getPosition()
-		if pos == 0 {
-			// pool is closed and we're waiting for the next MTM to close, so it has no orders
-			return nil, nil
-		}
-
-		if pos > 0 {
-			// only orders between fair-price -> base
-			lower = fairPrice.Clone()
-			upper = p.lower.high.Clone()
-		} else {
-			// only orders between base -> fair-price
-			upper = fairPrice.Clone()
-			lower = p.lower.high.Clone()
-		}
-	}
-
-	if from.GT(upper) || to.LT(lower) {
-		return nil, nil
-	}
-
-	side := types.SideBuy
-
-	// cap the range to the pool's bounds, there will be no orders outside of this
-	from = num.Max(from, lower)
-	to = num.Min(to, upper)
-
-	switch {
-	case from.GT(fairPrice):
-		// if we are expanding entirely in the sell range to calculate the order at price `from`
-		// we need to ask the AMM for volume in the range `from - 1 -> from` so we simply
-		// sub one here to cover than.
-		side = types.SideSell
-		from.Sub(from, p.oneTick)
-	case to.LT(fairPrice):
-		// if we are expanding entirely in the buy range to calculate the order at price `to`
-		// we need to ask the AMM for volume in the range `to -> to + 1` so we simply
-		// add one here to cover than.
-		to.Add(to, p.oneTick)
-	case from.EQ(fairPrice):
-		// if we are starting the expansion at the fair-price all orders will be sells
-		side = types.SideSell
-	}
-
-	var approx bool
-	step := p.oneTick.Clone()
-
-	delta, _ := num.UintZero().Delta(from, to)
-	delta.Div(delta, p.oneTick)
-
-	// we always create accurate orders at the boundary so the approximate region will be two less
-	// because we'll step in one from each end
-	two := num.NewUint(2)
-	if delta.GT(two) {
-		delta.Sub(delta, two)
-	}
-
-	// if there are too many price levels across `from -> to` we have to approximate the orderbook
-	// shape using steps larger than tick size
-	if delta.GT(p.maxCalculationLevels) {
-		step.Div(delta, p.maxCalculationLevels)
-		step.AddSum(num.UintOne()) // if delta / maxcals = 1.9 we're going to want steps of 2
-		step.Mul(step, p.oneTick)
-		approx = true
-
-		// we need to make sure we have an accurate order at the boundaries of the range and we only approximate
-		// steps internally. For example if the AMM is expanded into orders approximately over the interval [100, 200]
-		// in steps of 10, the first order covering the range 100 -> 110 will be priced at ~105. It then looks like
-		// there is no tradable orders at 100. This causes problems in auction uncrossing where we could calculate
-		// an *accurate* crossed region as being [100, 200] but then an *approximate* expansion causes missing volume
-		// at the boundaries.
-		//
-		// We solve this by always creating an accurate order at the boundaries. So for [100, 200] we in-step and
-		// approximate orders over prices [101, 199] then create single orders priced at 100 and 200 exactly.
-
-		bnd := from.Clone()
-		from.Add(from, p.oneTick)
-		to.Sub(to, p.oneTick)
-
-		// create start boundary order
-		o := p.makeBoundaryOrder(bnd, from, fairPrice, idgen)
-		if o.Side == types.SideBuy {
-			buys = append(buys, o)
-		} else {
-			sells = append(sells, o)
-		}
-	}
-
-	ordersFromCurve := func(cu *curve, from, to *num.Uint) {
-		if cu.empty {
-			return
-		}
-
-		from = num.Max(from, cu.low)
-		to = num.Min(to, cu.high)
-
-		// quick check on whether its possibly that we might step over the AMM's fair-price
-		// it can only happen if the fair-price is *not* at the curve bounds
-		canSplit := fairPrice.NEQ(cu.low) && fairPrice.NEQ(cu.high)
-
-		// the price we have currently stepped to and the position of the AMM at that price
-		current := from
-		position := cu.positionAtPrice(p.sqrt, current)
-
-		for current.LT(to) && current.LT(cu.high) {
-			// take the next step
-			next := num.UintZero().AddSum(current, step)
-
-			if side == types.SideBuy && next.GT(fairPrice) && canSplit {
-				// we are in "approximation" mode with a step bigger than a tick and have stepped over the AMM's
-				// fair-price. We need to split this step into two, a buy order from current -> fp, and a sell
-				// from fp -> next
-
-				fairPosition := p.getPosition()
-				volume := uint64(num.DeltaV(position, fairPosition))
-
-				// our approximate bigger steps may be less than a price level away from the fair-price in which case
-				// the volume will be < 1 and we can just ignore an order for this segment since we are already *roughly* expanding into orders.
-				if volume != 0 {
-					price := p.priceForVolumeAtPosition(volume, types.OtherSide(side), fairPosition, fairPrice)
-					buys = append(buys, p.makeOrder(volume, price, side, idgen))
-				}
-
-				// we've step through fair-price now so orders will becomes sells
-				side = types.SideSell
-				current = fairPrice
-				position = fairPosition
-			}
-
-			nextPosition := cu.positionAtPrice(p.sqrt, num.Min(next, cu.high))
-			volume := uint64(num.DeltaV(position, nextPosition))
-
-			if volume != 0 {
-				if side == types.SideBuy {
-					price := current
-					if approx {
-						price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), nextPosition, next)
-					}
-					order := p.makeOrder(volume, price, side, idgen)
-					buys = append(buys, order)
-				} else {
-					price := next
-					if approx {
-						price = p.priceForVolumeAtPosition(volume, types.OtherSide(side), position, current)
-					}
-					order := p.makeOrder(volume, price, side, idgen)
-					sells = append(sells, order)
-				}
-			}
-
-			// if we're calculating buys and we hit fair price, switch to sells
-			if side == types.SideBuy && next.GTE(fairPrice) {
-				side = types.SideSell
-			}
-
-			current = next
-			position = nextPosition
-		}
-	}
-
-	ordersFromCurve(p.lower, from, to)
-	ordersFromCurve(p.upper, from, to)
-
-	if approx {
-		// create end boundary order
-		bnd := num.UintOne().Add(p.oneTick, to)
-		o := p.makeBoundaryOrder(to, bnd, fairPrice, idgen)
-		if o.Side == types.SideBuy {
-			buys = append(buys, o)
-		} else {
-			sells = append(sells, o)
-		}
-	}
-
-	return buys, sells
-}
-
-func (p *Pool) makeBoundaryOrder(st, nd, fairPrice *num.Uint, idgen *idgeneration.IDGenerator) *types.Order {
-	cu := p.lower
-	if st.GTE(p.lower.high) {
-		cu = p.upper
-	}
-
-	volume := num.DeltaV(
-		cu.positionAtPrice(p.sqrt, st),
-		cu.positionAtPrice(p.sqrt, nd),
-	)
-
-	if nd.GT(fairPrice) {
-		return p.makeOrder(uint64(volume), nd, types.SideSell, idgen)
-	}
-	return p.makeOrder(uint64(volume), st, types.SideBuy, idgen)
 }
 
 // PriceForVolume returns the price the AMM is willing to trade at to match with the given volume of an incoming order.
