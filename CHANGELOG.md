@@ -160,6 +160,7 @@
 - [11457](https://github.com/vegaprotocol/vega/issues/11457) - Fix cursor column ordering for game scores.
 - [11454](https://github.com/vegaprotocol/vega/issues/11454) - Ensure ended transfers proper handling.
 
+
 ## 0.76.1
 
 ### 🐛 Fixes

@@ -3891,6 +3891,7 @@ func calcPositionMarginCappedAndFullyCollateralised(
 	if totalVolume == 0 {
 		return num.DecimalZero()
 	}
+
 	averageEntryPrice := ongoing.Div(num.DecimalFromInt64(totalVolume))
 
 	if positionSize < 0 {
