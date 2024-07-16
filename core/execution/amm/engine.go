@@ -210,7 +210,7 @@ func NewFromProto(
 	}
 
 	for _, v := range state.Pools {
-		p, err := NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor)
+		p, err := NewPoolFromProto(log, e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor)
 		if err != nil {
 			return e, err
 		}
@@ -454,12 +454,15 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 
 		// calculate the price the pool wil give for the trading volume
 		price := p.PriceForVolume(volume, agg.Side)
-		e.log.Info("generated order at price",
-			logging.String("price", price.String()),
-			logging.Uint64("volume", volume),
-			logging.String("id", p.ID),
-			logging.String("side", types.OtherSide(agg.Side).String()),
-		)
+
+		if e.log.IsDebug() {
+			e.log.Debug("generated order at price",
+				logging.String("price", price.String()),
+				logging.Uint64("volume", volume),
+				logging.String("id", p.ID),
+				logging.String("side", types.OtherSide(agg.Side).String()),
+			)
+		}
 
 		// construct an order
 		o := p.makeOrder(volume, price, types.OtherSide(agg.Side), e.idgen)
@@ -653,6 +656,7 @@ func (e *Engine) Create(
 	}
 
 	pool, err := NewPool(
+		e.log,
 		poolID,
 		subAccount,
 		e.assetID,
