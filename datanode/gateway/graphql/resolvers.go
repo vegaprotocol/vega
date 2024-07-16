@@ -669,6 +669,14 @@ func (r *VegaResolverRoot) TimeWeightedNotionalPosition() TimeWeightedNotionalPo
 	return (*timeWeightedNotionalPositionResolver)(r)
 }
 
+func (r *VegaResolverRoot) GamePartyScore() GamePartyScoreResolver {
+	return (*gamePartyScoresResolver)(r)
+}
+
+func (r *VegaResolverRoot) GameTeamScore() GameTeamScoreResolver {
+	return (*gameTeamScoresResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -776,6 +784,23 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) EstimateAMMBounds(ctx context.Context, basePrice string, upperPrice, lowerPrice, leverageAtUpperPrice, leverageAtLowerPrice *string, commitmentAmount string, marketID string) (*v2.EstimateAMMBoundsResponse, error) {
+	res, err := r.tradingDataClientV2.EstimateAMMBounds(ctx, &v2.EstimateAMMBoundsRequest{
+		BasePrice:            basePrice,
+		UpperPrice:           upperPrice,
+		LowerPrice:           lowerPrice,
+		LeverageAtUpperPrice: leverageAtUpperPrice,
+		LeverageAtLowerPrice: leverageAtLowerPrice,
+		CommitmentAmount:     commitmentAmount,
+		MarketId:             marketID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, assetID, partyID, gameID string, epoch *int) (*v2.TimeWeightedNotionalPosition, error) {
 	var atEpoch *uint64
 	if epoch != nil {
@@ -796,6 +821,25 @@ func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, asse
 	return res.TimeWeightedNotionalPosition, nil
 }
 
+func (r *myQueryResolver) Amms(ctx context.Context, partyID *string, marketID *string, id *string,
+	ammPartyID *string, status *v1.AMM_Status, pagination *v2.Pagination,
+) (*v2.AMMConnection, error) {
+	req := &v2.ListAMMsRequest{
+		Id:         id,
+		PartyId:    partyID,
+		MarketId:   marketID,
+		AmmPartyId: ammPartyID,
+		Status:     status,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListAMMs(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Amms, nil
+}
+
 func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []string, pagination *v2.Pagination) (*v2.PartiesProfilesConnection, error) {
 	req := v2.ListPartiesProfilesRequest{
 		Parties:    ids,
@@ -807,6 +851,77 @@ func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []s
 		return nil, err
 	}
 	return res.Profiles, nil
+}
+
+func (r *myQueryResolver) GamePartyScores(ctx context.Context, filter *GamePartyScoreFilter, pagination *v2.Pagination) (*v2.GamePartyScoresConnection, error) {
+	gameIds := []string{}
+	teamIds := []string{}
+	partyIds := []string{}
+	var epochFrom, epochTo *uint64
+
+	if filter != nil {
+		gameIds = filter.GameIds
+		teamIds = filter.TeamIds
+		partyIds = filter.PartyIds
+		if filter.EpochFrom != nil {
+			ef := uint64(*filter.EpochFrom)
+			epochFrom = &ef
+		}
+		if filter.EpochTo != nil {
+			et := uint64(*filter.EpochTo)
+			epochTo = &et
+		}
+	}
+
+	req := v2.ListGamePartyScoresRequest{
+		Filter: &v2.GamePartyScoresFilter{
+			GameIds:   gameIds,
+			TeamIds:   teamIds,
+			PartyIds:  partyIds,
+			EpochFrom: epochFrom,
+			EpochTo:   epochTo,
+		},
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.ListGamePartyScores(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.PartyScores, nil
+}
+
+func (r *myQueryResolver) GameTeamScores(ctx context.Context, filter *GameTeamScoreFilter, pagination *v2.Pagination) (*v2.GameTeamScoresConnection, error) {
+	gameIds := []string{}
+	teamIds := []string{}
+	var epochFrom, epochTo *uint64
+
+	if filter != nil {
+		gameIds = filter.GameIds
+		teamIds = filter.TeamIds
+		if filter.EpochFrom != nil {
+			ef := uint64(*filter.EpochFrom)
+			epochFrom = &ef
+		}
+		if filter.EpochTo != nil {
+			et := uint64(*filter.EpochTo)
+			epochTo = &et
+		}
+	}
+
+	req := v2.ListGameTeamScoresRequest{
+		Filter: &v2.GameTeamScoresFilter{
+			GameIds:   gameIds,
+			TeamIds:   teamIds,
+			EpochFrom: epochFrom,
+			EpochTo:   epochTo,
+		},
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.ListGameTeamScores(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.TeamScores, nil
 }
 
 func (r *myQueryResolver) PartyMarginModes(ctx context.Context, marketID *string, partyID *string, pagination *v2.Pagination) (*v2.PartyMarginModesConnection, error) {
@@ -1059,6 +1174,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
 		Creation:      fmt.Sprintf("%d", res.Creation),
+		SourceChainID: res.SourceChainId,
 	}, nil
 }
 
@@ -1968,19 +2084,27 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 }
 
 func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
-	partyID *string,
+	partyID *string, epochFrom, epochTo *int,
 ) (*v1.FeesStats, error) {
-	var epochSeq *uint64
+	var epochSeq, from, to *uint64
 
 	if epoch != nil {
 		epochSeq = ptr.From(uint64(*epoch))
 	}
+	if epochFrom != nil {
+		from = ptr.From(uint64(*epochFrom))
+	}
+	if epochTo != nil {
+		to = ptr.From(uint64(*epochTo))
+	}
 
 	req := &v2.GetFeesStatsRequest{
-		MarketId: marketID,
-		AssetId:  assetID,
-		EpochSeq: epochSeq,
-		PartyId:  partyID,
+		MarketId:  marketID,
+		AssetId:   assetID,
+		EpochSeq:  epochSeq,
+		PartyId:   partyID,
+		EpochFrom: from,
+		EpochTo:   to,
 	}
 
 	resp, err := r.tradingDataClientV2.GetFeesStats(ctx, req)
@@ -2023,18 +2147,29 @@ func (r *myQueryResolver) PaidLiquidityFees(
 	assetID *string,
 	epoch *int,
 	partyIDs []string,
+	includeDerivedParties *bool,
+	from, to *int,
 ) (*v2.PaidLiquidityFeesConnection, error) {
-	var epochSeq *uint64
+	var epochSeq, epochFrom, epochTo *uint64
 
 	if epoch != nil {
 		epochSeq = ptr.From(uint64(*epoch))
 	}
+	if from != nil {
+		epochFrom = ptr.From(uint64(*from))
+	}
+	if to != nil {
+		epochTo = ptr.From(uint64(*to))
+	}
 
 	req := &v2.ListPaidLiquidityFeesRequest{
-		MarketId: marketID,
-		AssetId:  assetID,
-		EpochSeq: epochSeq,
-		PartyIds: partyIDs,
+		MarketId:              marketID,
+		AssetId:               assetID,
+		EpochSeq:              epochSeq,
+		PartyIds:              partyIDs,
+		IncludeDerivedParties: includeDerivedParties,
+		EpochFrom:             epochFrom,
+		EpochTo:               epochTo,
 	}
 
 	resp, err := r.tradingDataClientV2.ListPaidLiquidityFees(ctx, req)
@@ -2165,7 +2300,7 @@ func (r *myPartyResolver) TransfersConnection(
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
-	fromEpoch *int, toEpoch *int, teamID, gameID *string,
+	fromEpoch *int, toEpoch *int, teamID, gameID *string, includeDerivedParties *bool, marketID *string,
 ) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
@@ -2185,13 +2320,15 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 	}
 
 	req := v2.ListRewardsRequest{
-		PartyId:    party.Id,
-		AssetId:    assetID,
-		Pagination: pagination,
-		FromEpoch:  from,
-		ToEpoch:    to,
-		TeamId:     teamID,
-		GameId:     gameID,
+		PartyId:               party.Id,
+		AssetId:               assetID,
+		Pagination:            pagination,
+		FromEpoch:             from,
+		ToEpoch:               to,
+		TeamId:                teamID,
+		GameId:                gameID,
+		IncludeDerivedParties: includeDerivedParties,
+		MarketId:              marketID,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
@@ -2205,6 +2342,7 @@ func (r *myPartyResolver) RewardSummaries(
 	ctx context.Context,
 	party *vegapb.Party,
 	asset *string,
+	includeDerivedParties *bool,
 ) ([]*vegapb.RewardSummary, error) {
 	var assetID string
 	if asset != nil {
@@ -2212,8 +2350,9 @@ func (r *myPartyResolver) RewardSummaries(
 	}
 
 	req := &v2.ListRewardSummariesRequest{
-		PartyId: &party.Id,
-		AssetId: &assetID,
+		PartyId:               &party.Id,
+		AssetId:               &assetID,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 
 	resp, err := r.tradingDataClientV2.ListRewardSummaries(ctx, req)
@@ -2429,7 +2568,7 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *vegapb
 	return res.Positions, nil
 }
 
-func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.Party, marketID *string, asset *string, accType *vegapb.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error) {
+func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.Party, marketID *string, asset *string, accType *vegapb.AccountType, pagination *v2.Pagination, includeDerivedParties *bool) (*v2.AccountsConnection, error) {
 	if party == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -2470,7 +2609,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.
 		AccountTypes: accountTypes,
 	}
 
-	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination}
+	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination, IncludeDerivedParties: includeDerivedParties}
 	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
 	if err != nil {
 		r.log.Error("unable to get Party account",
@@ -3042,6 +3181,14 @@ func (r *myPriceLevelResolver) Volume(_ context.Context, obj *vegapb.PriceLevel)
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
+func (r *myPriceLevelResolver) AmmVolume(_ context.Context, obj *vegapb.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.AmmVolume, 10), nil
+}
+
+func (r *myPriceLevelResolver) AmmVolumeEstimated(_ context.Context, obj *vegapb.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.AmmVolumeEstimated, 10), nil
+}
+
 func (r *myPriceLevelResolver) NumberOfOrders(_ context.Context, obj *vegapb.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.NumberOfOrders, 10), nil
 }
@@ -3175,7 +3322,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vegapb.AccountType) (<-chan []*v2.AccountBalance, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vegapb.AccountType, includeDerivedParties *bool) (<-chan []*v2.AccountBalance, error) {
 	var (
 		mkt, pty, ast string
 		ty            vegapb.AccountType
@@ -3199,10 +3346,11 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	req := &v2.ObserveAccountsRequest{
-		Asset:    ast,
-		MarketId: mkt,
-		PartyId:  pty,
-		Type:     ty,
+		Asset:                 ast,
+		MarketId:              mkt,
+		PartyId:               pty,
+		Type:                  ty,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	stream, err := r.tradingDataClientV2.ObserveAccounts(ctx, req)
 	if err != nil {
@@ -3410,10 +3558,11 @@ func (r *mySubscriptionResolver) TradesStream(ctx context.Context, filter Trades
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan []*vegapb.Position, error) {
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string, includeDerivedParties *bool) (<-chan []*vegapb.Position, error) {
 	req := &v2.ObservePositionsRequest{
-		PartyId:  party,
-		MarketId: market,
+		PartyId:               party,
+		MarketId:              market,
+		IncludeDerivedParties: includeDerivedParties,
 	}
 	stream, err := r.tradingDataClientV2.ObservePositions(ctx, req)
 	if err != nil {
@@ -3889,6 +4038,13 @@ func (r *myAccountResolver) Party(ctx context.Context, acc *v2.AccountBalance) (
 		return nil, nil
 	}
 	return getParty(ctx, r.log, r.r.clt2, acc.Owner)
+}
+
+func (r *myAccountResolver) ParentPartyID(ctx context.Context, acc *v2.AccountBalance) (*vegapb.Party, error) {
+	if acc.ParentPartyId == nil || *acc.ParentPartyId == "" {
+		return nil, nil
+	}
+	return getParty(ctx, r.log, r.r.clt2, *acc.ParentPartyId)
 }
 
 func (r *myAccountResolver) Asset(ctx context.Context, obj *v2.AccountBalance) (*vegapb.Asset, error) {

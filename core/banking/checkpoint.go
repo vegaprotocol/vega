@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"sort"
 	"sync/atomic"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -96,13 +96,13 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	e.lastSeenPrimaryEthBlock = b.LastSeenPrimaryEthBlock
 	if e.lastSeenPrimaryEthBlock != 0 {
 		e.log.Info("restoring primary collateral bridge starting block", logging.Uint64("block", e.lastSeenPrimaryEthBlock))
-		e.primaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenPrimaryEthBlock)
+		e.ethEventSource.UpdateContractBlock(e.bridgeAddresses[e.primaryEthChainID], e.primaryEthChainID, e.lastSeenPrimaryEthBlock)
 	}
 
 	e.lastSeenSecondaryEthBlock = b.LastSeenSecondaryEthBlock
 	if e.lastSeenSecondaryEthBlock != 0 {
 		e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", e.lastSeenSecondaryEthBlock))
-		e.secondaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenSecondaryEthBlock)
+		e.ethEventSource.UpdateContractBlock(e.bridgeAddresses[e.secondaryEthChainID], e.secondaryEthChainID, e.lastSeenSecondaryEthBlock)
 	}
 
 	aa := make([]*types.AssetAction, 0, len(b.AssetActions))
@@ -241,7 +241,7 @@ func (e *Engine) loadScheduledGovernanceTransfers(ctx context.Context, r []*chec
 		for _, g := range v.Transfers {
 			transfer := types.GovernanceTransferFromProto(g)
 			transfers = append(transfers, transfer)
-			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
+			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, transfer.Config.MaxAmount, e.getGovGameID(transfer)))
 		}
 		e.scheduledGovernanceTransfers[v.DeliverOn] = transfers
 	}
@@ -272,6 +272,7 @@ func (e *Engine) loadRecurringTransfers(
 	ctx context.Context, r *checkpoint.RecurringTransfers,
 ) []events.Event {
 	evts := []events.Event{}
+	e.nextMetricUpdate = time.Unix(0, r.NextMetricUpdate)
 	for _, v := range r.RecurringTransfers {
 		transfer := types.RecurringTransferFromEvent(v)
 		e.recurringTransfers = append(e.recurringTransfers, transfer)
@@ -305,7 +306,7 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 		if transfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
 			e.registerDispatchStrategy(transfer.Config.RecurringTransferConfig.DispatchStrategy)
 		}
-		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
+		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, transfer.Config.MaxAmount, e.getGovGameID(transfer)))
 	}
 	return evts
 }
@@ -334,7 +335,7 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	for _, v := range e.recurringTransfers {
 		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(nil, e.getGameID(v)))
 	}
-
+	out.NextMetricUpdate = e.nextMetricUpdate.UnixNano()
 	return out
 }
 

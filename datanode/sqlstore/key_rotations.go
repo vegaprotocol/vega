@@ -45,7 +45,7 @@ func NewKeyRotations(connectionSource *ConnectionSource) *KeyRotations {
 
 func (store *KeyRotations) Upsert(ctx context.Context, kr *entities.KeyRotation) error {
 	defer metrics.StartSQLQuery("KeyRotations", "Upsert")()
-	_, err := store.Connection.Exec(ctx, `
+	_, err := store.Exec(ctx, `
 		INSERT INTO key_rotations(node_id, old_pub_key, new_pub_key, block_height, tx_hash, vega_time)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (node_id, vega_time) DO UPDATE SET
@@ -73,7 +73,7 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 		return nil, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, store.Connection, &keyRotations, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.ConnectionSource, &keyRotations, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve key rotations: %w", err)
 	}
 
@@ -88,7 +88,7 @@ func (store *KeyRotations) GetByTxHash(ctx context.Context, txHash entities.TxHa
 	var keyRotations []entities.KeyRotation
 	query := `SELECT * FROM key_rotations WHERE tx_hash = $1`
 
-	if err := pgxscan.Select(ctx, store.Connection, &keyRotations, query, txHash); err != nil {
+	if err := pgxscan.Select(ctx, store.ConnectionSource, &keyRotations, query, txHash); err != nil {
 		return nil, fmt.Errorf("failed to retrieve key rotations: %w", err)
 	}
 
@@ -116,7 +116,7 @@ func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeID
 	query := fmt.Sprintf(`SELECT * FROM key_rotations WHERE node_id = %s`, nextBindVar(&args, id))
 	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
 
-	if err := pgxscan.Select(ctx, store.Connection, &keyRotations, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, store.ConnectionSource, &keyRotations, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve key rotations: %w", err)
 	}
 

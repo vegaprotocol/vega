@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/execution/spot"
@@ -146,7 +147,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 		)
 		return nil, err
 	}
-
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.spotMarkets[marketConfig.ID] = mkt
 	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
@@ -156,8 +157,6 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 	}
 	// ensure this is set correctly
 	mkt.SetNextMTM(nextMTM)
-
-	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
 }
 
@@ -217,6 +216,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
 		e.banking,
+		e.parties,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -229,6 +229,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		mkt.SetSucceeded()
 	}
 
+	e.delayTransactionsTarget.MarketDelayRequiredUpdated(mkt.GetID(), marketConfig.EnableTxReordering)
 	e.futureMarkets[marketConfig.ID] = mkt
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
@@ -239,8 +240,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	// ensure this is set correctly
 	mkt.SetNextMTM(nextMTM)
 	mkt.SetNextInternalCompositePriceCalc(nextInternalCompositePriceCalc)
-
-	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
 }
 
@@ -402,6 +401,11 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
 		}
+
+		// let the core state API know about the market, but not the market data since that will get sent on the very next tick
+		// if we sent it now it will create market-data from the core state at the *end* of the block when it was originally
+		// created from core-state at the *start* of the block.
+		e.broker.Send(events.NewMarketCreatedEvent(ctx, *m.Mkt()))
 	}
 	// use the time as restored by the snapshot
 	t := e.timeService.GetTimeNow()

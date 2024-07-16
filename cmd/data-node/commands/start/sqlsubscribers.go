@@ -82,6 +82,8 @@ type SQLSubscribers struct {
 	gamesStore                        *sqlstore.Games
 	marginModesStore                  *sqlstore.MarginModes
 	timeWeightedNotionalPositionStore *sqlstore.TimeWeightedNotionalPosition
+	gameScoreStore                    *sqlstore.GameScores
+	ammPoolsStore                     *sqlstore.AMMPools
 
 	// Services
 	candleService                       *candlesv2.Svc
@@ -138,6 +140,8 @@ type SQLSubscribers struct {
 	gamesService                        *service.Games
 	marginModesService                  *service.MarginModes
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition
+	gameScoreService                    *service.GameScore
+	ammPoolsService                     *service.AMMPools
 
 	// Subscribers
 	accountSub                      *sqlsubscribers.Account
@@ -190,6 +194,8 @@ type SQLSubscribers struct {
 	transactionResultsSub           *sqlsubscribers.TransactionResults
 	marginModesSub                  *sqlsubscribers.MarginModes
 	timeWeightedNotionalPositionSub *sqlsubscribers.TimeWeightedNotionalPosition
+	gameScoreSub                    *sqlsubscribers.GameScore
+	ammPoolsSub                     *sqlsubscribers.AMMPools
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -246,6 +252,8 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.transactionResultsSub,
 		s.marginModesSub,
 		s.timeWeightedNotionalPositionSub,
+		s.gameScoreSub,
+		s.ammPoolsSub,
 	}
 }
 
@@ -307,9 +315,11 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.gamesStore = sqlstore.NewGames(transactionalConnectionSource)
 	s.marginModesStore = sqlstore.NewMarginModes(transactionalConnectionSource)
 	s.timeWeightedNotionalPositionStore = sqlstore.NewTimeWeightedNotionalPosition(transactionalConnectionSource)
+	s.gameScoreStore = sqlstore.NewGameScores(transactionalConnectionSource)
+	s.ammPoolsStore = sqlstore.NewAMMPools(transactionalConnectionSource)
 }
 
-func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
+func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, cfg service.Config, candlesConfig candlesv2.Config) error {
 	s.accountService = service.NewAccount(s.accountStore, s.balanceStore, log)
 	s.assetService = service.NewAsset(s.assetStore)
 	s.blockService = service.NewBlock(s.blockStore)
@@ -324,7 +334,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.ledgerService = service.NewLedger(s.ledger, log)
 	s.liquidityProvisionService = service.NewLiquidityProvision(s.liquidityProvisionStore)
 	s.marketDataService = service.NewMarketData(s.marketDataStore, log)
-	s.marketDepthService = service.NewMarketDepth(s.orderStore, log)
+	s.positionService = service.NewPosition(s.positionStore, log)
 	s.marketsService = service.NewMarkets(s.marketsStore)
 	s.multiSigService = service.NewMultiSig(s.multiSigSignerAddedStore)
 	s.networkLimitsService = service.NewNetworkLimits(s.networkLimitsStore)
@@ -335,7 +345,6 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.oracleSpecService = service.NewOracleSpec(s.oracleSpecStore)
 	s.orderService = service.NewOrder(s.orderStore, log)
 	s.partyService = service.NewParty(s.partyStore)
-	s.positionService = service.NewPosition(s.positionStore, log)
 	s.rewardService = service.NewReward(s.rewardStore, log)
 	s.riskFactorService = service.NewRiskFactor(s.riskFactorStore)
 	s.riskService = service.NewRisk(s.marginLevelsStore, s.accountStore, log)
@@ -363,6 +372,19 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.gamesService = service.NewGames(s.gamesStore)
 	s.marginModesService = service.NewMarginModes(s.marginModesStore)
 	s.timeWeightedNotionalPositionService = service.NewTimeWeightedNotionalPosition(s.timeWeightedNotionalPositionStore)
+	s.gameScoreService = service.NewGameScore(s.gameScoreStore, log)
+	s.ammPoolsService = service.NewAMMPools(s.ammPoolsStore)
+
+	s.marketDepthService = service.NewMarketDepth(
+		cfg.MarketDepth,
+		s.orderStore,
+		s.ammPoolsStore,
+		s.marketDataStore,
+		s.positionService,
+		s.assetStore,
+		s.marketsStore,
+		log,
+	)
 
 	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)
@@ -432,4 +454,6 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
 	s.marginModesSub = sqlsubscribers.NewMarginModes(s.marginModesService)
 	s.timeWeightedNotionalPositionSub = sqlsubscribers.NewTimeWeightedNotionalPosition(s.timeWeightedNotionalPositionService)
+	s.gameScoreSub = sqlsubscribers.NewGameScore(s.gameScoreStore)
+	s.ammPoolsSub = sqlsubscribers.NewAMMPools(s.ammPoolsService, s.marketDepthService)
 }

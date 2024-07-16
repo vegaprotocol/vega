@@ -62,3 +62,7 @@ func (od *OracleData) consume(ctx context.Context, event OracleDataEvent) error 
 
 	return errors.Wrap(od.store.Add(ctx, entity), "inserting oracle data proto to SQL store failed")
 }
+
+func (od *OracleData) Name() string {
+	return "OracleData"
+}

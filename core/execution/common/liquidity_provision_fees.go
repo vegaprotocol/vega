@@ -75,15 +75,43 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 		return nil
 	}
 
+	// if there are AMM's which were created during this epoch and we are distributing fees
+	// want want to using a mid-epoch ELS
+	newAMMs := []string{}
+	for ammParty, stats := range m.ammStats {
+		if !stats.stake.IsZero() && !m.equityShares.HasShares(ammParty) {
+			// add a temporary mid epoch share
+			stake, _ := num.UintFromDecimal(stats.stake)
+			m.equityShares.SetPartyStake(ammParty, stake)
+			newAMMs = append(newAMMs, ammParty)
+		}
+	}
+
 	// Get equity like shares per party.
 	sharesPerLp := m.equityShares.AllShares()
-	if len(sharesPerLp) == 0 {
+
+	// revert the temporary ELS for the new AMM
+	for _, ammParty := range newAMMs {
+		m.equityShares.SetPartyStake(ammParty, nil)
+	}
+
+	// get the LP scores
+	scoresPerLp := m.liquidityEngine.GetAverageLiquidityScores()
+	if len(sharesPerLp) == 0 && len(m.ammStats) == 0 && len(scoresPerLp) == 0 {
 		return nil
 	}
 
-	scoresPerLp := m.liquidityEngine.GetAverageLiquidityScores()
-	// Multiplies each equity like share with corresponding score.
+	// include AMM average LP scores
+	for id, av := range m.ammStats {
+		scoresPerLp[id] = av.score
+	}
+
+	// a map of all the LP scores, both AMM and LPs, scaled to 1.
+	scaledScores := m.scaleScores(scoresPerLp)
+	// Multiplies each equity like share with corresponding score, scaled to 1.
 	updatedShares := m.updateSharesWithLiquidityScores(sharesPerLp, scoresPerLp)
+	// now combine the above maps, multiply the ELS part with the fee factor, the score-based map by 1 - factor.
+	updatedShares = m.mergeScores(updatedShares, scaledScores)
 
 	feeTransfer := m.fee.BuildLiquidityFeeAllocationTransfer(updatedShares, acc)
 	if feeTransfer == nil {
@@ -104,6 +132,121 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	return nil
 }
 
+func (m *MarketLiquidity) updateAMMCommitment(count int64) {
+	if m.amm == nil {
+		// spot market, amm won't be set
+		return
+	}
+
+	minP, maxP, err := m.ValidOrdersPriceRange()
+	if err != nil {
+		m.log.Debug("get amm scores error", logging.Error(err))
+		// no price range -> we cannot determine the AMM scores.
+		return
+	}
+
+	skipScore := false
+	bestB, err := m.orderBook.GetBestStaticBidPrice()
+	if err != nil {
+		m.log.Debug("could not get best bid", logging.Error(err))
+		skipScore = true
+	}
+	bestA, err := m.orderBook.GetBestStaticAskPrice()
+	if err != nil {
+		m.log.Debug("could not get best ask", logging.Error(err))
+		skipScore = true
+	}
+
+	pools := m.amm.GetAMMPoolsBySubAccount()
+	for ammParty, pool := range pools {
+		buy, sell := pool.OrderbookShape(minP, maxP, nil)
+		buyTotal, sellTotal := num.UintZero(), num.UintZero()
+		for _, b := range buy {
+			size := num.UintFromUint64(b.Size)
+			buyTotal.AddSum(size.Mul(size, b.Price))
+		}
+		for _, s := range sell {
+			size := num.UintFromUint64(s.Size)
+			sellTotal.AddSum(size.Mul(size, s.Price))
+		}
+
+		// divide the lesser value by the market.liquidity.stakeToCcyVolume to get the equivalent bond
+		value := num.Min(buyTotal, sellTotal)
+		stake := num.DecimalFromUint(value).Div(m.stakeToCcyVolume)
+
+		as, ok := m.ammStats[ammParty]
+		if !ok {
+			as = newAMMState(count)
+			m.ammStats[ammParty] = as
+		}
+
+		score := as.score
+		if !skipScore {
+			bb, ba := num.DecimalFromUint(bestB), num.DecimalFromUint(bestA)
+			score = m.liquidityEngine.GetPartyLiquidityScore(append(buy, sell...), bb, ba, minP, maxP)
+		}
+
+		// set the stake and score
+		as.UpdateTick(stake, score)
+	}
+
+	// if we have an AMM that is in our stats but isn't in the current AMM engine then it has been cancelled so we give it a score of 0
+	for ammParty, stats := range m.ammStats {
+		if _, ok := pools[ammParty]; !ok {
+			stats.UpdateTick(num.DecimalZero(), num.DecimalZero())
+		}
+	}
+}
+
+func (m *MarketLiquidity) scaleScores(scores map[string]num.Decimal) map[string]num.Decimal {
+	if len(scores) == 0 {
+		return scores
+	}
+	total := num.DecimalZero()
+	for _, s := range scores {
+		total = total.Add(s)
+	}
+
+	if total.IsZero() {
+		return scores
+	}
+
+	for k, v := range scores {
+		scores[k] = v.Div(total)
+	}
+	return scores
+}
+
+func (m *MarketLiquidity) mergeScores(els, scores map[string]num.Decimal) map[string]num.Decimal {
+	if len(scores) == 0 {
+		return els
+	}
+	if len(els) == 0 {
+		return scores // this probably never happens
+	}
+	// len(scores) because every entry in the ELS map will have a score
+	// the other way around is not certain.
+	ret := make(map[string]num.Decimal, len(scores))
+	scoreFactor := num.DecimalOne().Sub(m.elsFeeFactor) // if amm is entitled to 0.2 of the fees, then ELS receives 0.8
+	for k, v := range els {
+		if v.IsZero() {
+			continue // omit zero values
+		}
+		ret[k] = v.Mul(m.elsFeeFactor) // the score * ELS map is entitled to the elsFeeFactor of the total fees
+	}
+	for k, v := range scores {
+		rv := v.Mul(scoreFactor)
+		if ev, ok := ret[k]; ok {
+			rv = rv.Add(ev) // party has ELS, just add the portion of fees they are entitled to from the second bucket
+		}
+		if rv.IsZero() {
+			continue // again, leave out the zero values
+		}
+		ret[k] = rv // add the entry to the map of either the score-based portion, or the sum of ELS and score.
+	}
+	return ret
+}
+
 func (m *MarketLiquidity) processBondPenalties(
 	ctx context.Context,
 	partyIDs []string,
@@ -116,9 +259,12 @@ func (m *MarketLiquidity) processBondPenalties(
 
 		provision := m.liquidityEngine.LiquidityProvisionByPartyID(partyID)
 
-		// bondPenalty x commitmentAmount.
-		amount := penalty.Bond.Mul(provision.CommitmentAmount.ToDecimal())
-		amountUint, _ := num.UintFromDecimal(amount)
+		amountUint := num.UintZero()
+		if provision != nil {
+			// bondPenalty x commitmentAmount.
+			amount := penalty.Bond.Mul(provision.CommitmentAmount.ToDecimal())
+			amountUint, _ = num.UintFromDecimal(amount)
+		}
 
 		if amountUint.IsZero() {
 			continue
@@ -314,6 +460,10 @@ func (m *MarketLiquidity) distributeFeesBonusesAndApplyPenalties(
 
 	// lastly distribute performance bonus.
 	m.distributePerformanceBonuses(ctx, partyIDs, bonusPerParty)
+}
+
+func (m *MarketLiquidity) SetELSFeeFraction(d num.Decimal) {
+	m.elsFeeFactor = d
 }
 
 func sortedKeys[K constraints.Ordered, V any](m map[K]V) []K {

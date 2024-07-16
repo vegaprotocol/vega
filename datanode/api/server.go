@@ -117,6 +117,17 @@ type AssetService interface {
 	GetAllWithCursorPagination(ctx context.Context, pagination entities.CursorPagination) ([]entities.Asset, entities.PageInfo, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/amm_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api AMMService
+type AMMService interface {
+	GetSubKeysForParties(ctx context.Context, partyIDs []string, marketIDs []string) ([]string, error)
+	ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByMarket(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByParty(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByPool(ctx context.Context, poolID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+}
+
 // GRPCServer represent the grpc api provided by the vega node.
 type GRPCServer struct {
 	Config
@@ -180,6 +191,8 @@ type GRPCServer struct {
 	gamesService                        *service.Games
 	marginModesService                  *service.MarginModes
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition
+	gameScoreService                    *service.GameScore
+	ammPoolService                      *service.AMMPools
 
 	eventObserver *eventObserver
 
@@ -250,6 +263,8 @@ func NewGRPCServer(
 	gameService *service.Games,
 	marginModesService *service.MarginModes,
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition,
+	gameScoreService *service.GameScore,
+	ammPoolService *service.AMMPools,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -319,6 +334,8 @@ func NewGRPCServer(
 		gamesService:                        gameService,
 		marginModesService:                  marginModesService,
 		timeWeightedNotionalPositionService: timeWeightedNotionalPositionService,
+		gameScoreService:                    gameScoreService,
+		ammPoolService:                      ammPoolService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -515,8 +532,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		partyService:                  g.partyService,
 		riskService:                   g.riskService,
 		positionService:               g.positionService,
-		accountService:                g.accountService,
-		rewardService:                 g.rewardService,
+		AccountService:                g.accountService,
+		RewardService:                 g.rewardService,
 		depositService:                g.depositService,
 		withdrawalService:             g.withdrawalService,
 		oracleSpecService:             g.oracleSpecService,
@@ -558,6 +575,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		gamesService:                  g.gamesService,
 		marginModesService:            g.marginModesService,
 		twNotionalPositionService:     g.timeWeightedNotionalPositionService,
+		gameScoreService:              g.gameScoreService,
+		AMMPoolService:                g.ammPoolService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

@@ -183,7 +183,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	preLog.Info("Enabling SQL stores")
 
-	l.transactionalConnectionSource, err = sqlstore.NewTransactionalConnectionSource(preLog, l.conf.SQLStore.ConnectionConfig)
+	l.transactionalConnectionSource, err = sqlstore.NewTransactionalConnectionSource(l.ctx, preLog, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create transactional connection source: %w", err)
 	}
@@ -193,7 +193,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	logService := l.Log.Named("service")
 	logService.SetLevel(l.conf.Service.Level.Get())
-	if err := l.SetupServices(l.ctx, logService, l.conf.CandlesV2); err != nil {
+	if err := l.SetupServices(l.ctx, logService, l.conf.Service, l.conf.CandlesV2); err != nil {
 		return err
 	}
 
@@ -211,7 +211,7 @@ func (l *NodeCommand) initialiseDatabase(preLog *logging.Logger) error {
 	var err error
 	conf := l.conf.SQLStore.ConnectionConfig
 	conf.MaxConnPoolSize = 1
-	pool, err := sqlstore.CreateConnectionPool(conf)
+	pool, err := sqlstore.CreateConnectionPool(l.ctx, conf)
 	if err != nil {
 		return fmt.Errorf("failed to create connection pool: %w", err)
 	}
@@ -333,7 +333,7 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 	connConfig.MaxConnPoolSize = 3
 	connConfig.MinConnPoolSize = 3
 
-	networkHistoryPool, err := sqlstore.CreateConnectionPool(connConfig)
+	networkHistoryPool, err := sqlstore.CreateConnectionPool(l.ctx, connConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create network history connection pool: %w", err)
 	}

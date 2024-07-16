@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	lru "github.com/hashicorp/golang-lru"
+	"golang.org/x/exp/slices"
 )
 
 type PositionStore interface {
@@ -166,6 +167,16 @@ func (p *Position) Observe(ctx context.Context, retries int, partyID, marketID s
 		func(pos entities.Position) bool {
 			return (len(marketID) == 0 || marketID == pos.MarketID.String()) &&
 				(len(partyID) == 0 || partyID == pos.PartyID.String())
+		})
+	return ch, ref
+}
+
+func (p *Position) ObserveMany(ctx context.Context, retries int, marketID string, parties ...string) (<-chan []entities.Position, uint64) {
+	ch, ref := p.observer.Observe(ctx,
+		retries,
+		func(pos entities.Position) bool {
+			return (len(marketID) == 0 || marketID == pos.MarketID.String()) &&
+				(len(parties) == 0 || slices.Contains(parties, pos.PartyID.String()))
 		})
 	return ch, ref
 }

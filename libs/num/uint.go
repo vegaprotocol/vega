@@ -371,6 +371,30 @@ func (u *Uint) Exp(x, y *Uint) *Uint {
 	return u
 }
 
+// Sqrt calculates the integer-square root of the given Uint.
+func (u *Uint) SqrtInt(x *Uint) *Uint {
+	u.u.Sqrt(&x.u)
+	return u
+}
+
+// Sqrt calculates the square root in decimals of the given Uint.
+func (u *Uint) Sqrt(x *Uint) Decimal {
+	if x.IsZero() {
+		return DecimalZero()
+	}
+	// integer sqrt is a good approximation
+	r := UintOne().SqrtInt(x).ToDecimal()
+
+	// so now lets do a few iterations using Heron's Method to get closer
+	// r_i = (r + u/r) / 2
+	ud := x.ToDecimal()
+	for i := 0; i < 6; i++ {
+		r = r.Add(ud.Div(r)).Div(DecimalFromInt64(2))
+	}
+
+	return r
+}
+
 // LT with check if the value stored in u is
 // lesser than oth
 // this is equivalent to:

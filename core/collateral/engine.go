@@ -89,8 +89,9 @@ type TimeService interface {
 // Engine is handling the power of the collateral.
 type Engine struct {
 	Config
-	log   *logging.Logger
-	cfgMu sync.Mutex
+	log       *logging.Logger
+	cfgMu     sync.Mutex
+	cacheLock sync.RWMutex
 
 	accs map[string]*types.Account
 	// map of partyID -> account ID -> account
@@ -103,6 +104,10 @@ type Engine struct {
 
 	partiesAccsBalanceCache     map[string]*num.Uint
 	partiesAccsBalanceCacheLock sync.RWMutex
+
+	// a block cache of the total value of general + margin + order margin accounts in quantum
+	partyMarketCache map[string]map[string]*num.Uint
+	partyAssetCache  map[string]map[string]*num.Uint
 
 	idbuf []byte
 
@@ -144,10 +149,106 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		vesting:                 map[string]map[string]*num.Uint{},
 		partiesAccsBalanceCache: map[string]*num.Uint{},
 		nextBalancesSnapshot:    time.Time{},
+		partyAssetCache:         map[string]map[string]*num.Uint{},
+		partyMarketCache:        map[string]map[string]*num.Uint{},
 	}
 }
 
+func (e *Engine) updatePartyAssetCache() {
+	e.cacheLock.Lock()
+	defer e.cacheLock.Unlock()
+	e.partyAssetCache = map[string]map[string]*num.Uint{}
+	e.partyMarketCache = map[string]map[string]*num.Uint{}
+	// initialise party market and general accounts
+	for k, v := range e.partiesAccs {
+		if k == "*" {
+			continue
+		}
+		general := map[string]*num.Uint{}
+		marketAccounts := map[string]*num.Uint{}
+		for _, a := range v {
+			if a.Type != types.AccountTypeGeneral && a.Type != types.AccountTypeHolding && a.Type != types.AccountTypeMargin && a.Type != types.AccountTypeOrderMargin {
+				continue
+			}
+			if a.Type == types.AccountTypeGeneral {
+				general[a.Asset] = a.Balance.Clone()
+			} else {
+				if _, ok := marketAccounts[a.MarketID]; !ok {
+					marketAccounts[a.MarketID] = num.UintZero()
+				}
+				marketAccounts[a.MarketID].AddSum(a.Balance)
+			}
+		}
+		e.partyAssetCache[k] = general
+		e.partyMarketCache[k] = marketAccounts
+	}
+}
+
+func (e *Engine) CheckOrderSpamAllMarkets(party string) error {
+	e.cacheLock.RLock()
+	defer e.cacheLock.RUnlock()
+	if _, ok := e.partyAssetCache[party]; !ok {
+		return fmt.Errorf("party " + party + " is not eligible to submit order transaction with no market in scope")
+	} else {
+		for _, asts := range e.partyAssetCache {
+			for _, balance := range asts {
+				if !balance.IsZero() {
+					return nil
+				}
+			}
+		}
+	}
+	if marketBalances, ok := e.partyMarketCache[party]; ok {
+		for _, marketBalance := range marketBalances {
+			if !marketBalance.IsZero() {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("party " + party + " is not eligible to submit order transaction with no market in scope")
+}
+
+func (e *Engine) CheckOrderSpam(party, market string, assets []string) error {
+	e.cacheLock.RLock()
+	defer e.cacheLock.RUnlock()
+
+	if e.log.IsDebug() {
+		e.log.Debug("CheckOrderSpam", logging.String("party", party), logging.String("market", market), logging.Strings("assets", assets))
+	}
+	if assetBalances, ok := e.partyAssetCache[party]; !ok {
+		return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account in no asset)")
+	} else {
+		found := false
+		for _, ast := range assets {
+			if balance, ok := assetBalances[ast]; ok {
+				found = true
+				if !balance.IsZero() {
+					return nil
+				}
+			}
+		}
+		if !found {
+			if e.log.IsDebug() {
+				for ast, balance := range e.partyAssetCache[party] {
+					e.log.Debug("party asset cache", logging.String("party", party), logging.String("asset", ast), logging.String("balance", balance.String()))
+				}
+			}
+			return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account found)")
+		}
+	}
+
+	if marketBalances, ok := e.partyMarketCache[party]; ok {
+		if marketBalance, ok := marketBalances[market]; ok && !marketBalance.IsZero() {
+			return nil
+		} else {
+			return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account balance in asset and no market accounts found)")
+		}
+	}
+	return fmt.Errorf("party " + party + " is not eligible to submit order transactions in market " + market + " (no general account balance in asset and no balance in market accounts)")
+}
+
 func (e *Engine) BeginBlock(ctx context.Context) {
+	e.updatePartyAssetCache()
 	// FIXME(jeremy): to be removed after the migration from
 	// 72.x to 73, this will ensure all per assets accounts are being
 	// created after the restart
@@ -219,8 +320,8 @@ func (e *Engine) GetPartyBalance(party string) *num.Uint {
 	return num.UintZero()
 }
 
-func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {
-	balance := num.UintZero()
+func (e *Engine) GetAllVestingQuantumBalance(party string) num.Decimal {
+	balance := num.DecimalZero()
 
 	for asset, details := range e.enabledAssets {
 		// vesting balance
@@ -229,14 +330,14 @@ func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {
 			quantum = details.Details.Quantum
 		}
 		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestingRewards)]; ok {
-			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(quantum))
-			balance.AddSum(quantumBalance)
+			quantumBalance := acc.Balance.ToDecimal().Div(quantum)
+			balance = balance.Add(quantumBalance)
 		}
 
 		// vested balance
 		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestedRewards)]; ok {
-			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(quantum))
-			balance.AddSum(quantumBalance)
+			quantumBalance := acc.Balance.ToDecimal().Div(quantum)
+			balance = balance.Add(quantumBalance)
 		}
 	}
 
@@ -863,9 +964,7 @@ func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, tr
 	return responses, nil
 }
 
-func (e *Engine) TransferVestedRewards(
-	ctx context.Context, transfers []*types.Transfer,
-) ([]*types.LedgerMovement, error) {
+func (e *Engine) TransferVestedRewards(ctx context.Context, transfers []*types.Transfer) ([]*types.LedgerMovement, error) {
 	if len(transfers) == 0 {
 		return nil, nil
 	}
@@ -3576,6 +3675,282 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
+// CreatePartyAMMSubAccounts ...
+func (e *Engine) CreatePartyAMMsSubAccounts(
+	ctx context.Context,
+	party, ammKey, asset, market string,
+) (general *types.Account, margin *types.Account, err error) {
+	generalID, err := e.CreatePartyGeneralAccount(ctx, ammKey, asset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	marginID, err := e.CreatePartyMarginAccount(ctx, ammKey, market, asset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	_, err = e.CreatePartyLiquidityFeeAccount(ctx, ammKey, market, asset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return e.accs[generalID].Clone(), e.accs[marginID].Clone(), nil
+}
+
+func (e *Engine) getSubAccounts(subAccount, owner, asset, market string) (*types.Account, *types.Account, *types.Account, error) {
+	ownerGeneral, err := e.GetAccountByID(e.accountID(noMarket, owner, asset, types.AccountTypeGeneral))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the party general account",
+			logging.String("owner-id", owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, nil, nil, err
+	}
+
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	subAccountGeneral, err := e.GetAccountByID(e.accountID(noMarket, subAccount, asset, types.AccountTypeGeneral))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the party sub account",
+			logging.String("owner-id", owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, nil, nil, err
+	}
+
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	subAccountMargin, err := e.GetAccountByID(e.accountID(market, subAccount, asset, types.AccountTypeMargin))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the party margin sub account",
+			logging.String("owner-id", owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, nil, nil, err
+	}
+
+	return ownerGeneral, subAccountGeneral, subAccountMargin, nil
+}
+
+func (e *Engine) getSubAccountTransferRequest(
+	party, subAccount, asset, market string,
+	amount *num.Uint,
+	typ types.TransferType,
+) (*types.TransferRequest, error) {
+	ownerGeneral, subAccountGeneral, subAccountMargin, err := e.getSubAccounts(subAccount, party, asset, market)
+	if err != nil {
+		return nil, err
+	}
+
+	treq := &types.TransferRequest{
+		Amount:    amount.Clone(),
+		MinAmount: amount.Clone(),
+		Asset:     asset,
+		Type:      typ,
+	}
+
+	switch typ {
+	case types.TransferTypeAMMLow:
+		// do we have enough in the general account to make the transfer?
+		if !amount.IsZero() && ownerGeneral.Balance.LT(amount) {
+			return nil, errors.New("not enough collateral in general account")
+		}
+		treq.FromAccount = []*types.Account{ownerGeneral}
+		treq.ToAccount = []*types.Account{subAccountGeneral}
+		return treq, nil
+	case types.TransferTypeAMMHigh:
+		treq.FromAccount = []*types.Account{subAccountGeneral, subAccountMargin}
+		treq.ToAccount = []*types.Account{ownerGeneral}
+		return treq, nil
+	default:
+		return nil, errors.New("unsupported transfer type for sub accounts")
+	}
+}
+
+func (e *Engine) SubAccountUpdate(
+	ctx context.Context,
+	party, subAccount, asset, market string,
+	transferType types.TransferType,
+	amount *num.Uint,
+) (*types.LedgerMovement, error) {
+	req, err := e.getSubAccountTransferRequest(party, subAccount, asset, market, amount, transferType)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range res.Entries {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("asset", v.ToAccount.AssetID),
+				logging.String("market", v.ToAccount.MarketID),
+				logging.String("owner", v.ToAccount.Owner),
+				logging.String("type", v.ToAccount.Type.String()),
+				logging.BigUint("amount", v.Amount),
+				logging.Error(err),
+			)
+		}
+	}
+
+	return res, nil
+}
+
+func (e *Engine) SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error) {
+	lMovements := make([]*types.LedgerMovement, 0, 2)
+	// NOTE: use subAccount as party ID here to release the margin sub-account to the general sub-account
+	mlm, err := e.ClearPartyMarginAccount(ctx, subAccount, market, asset)
+	if err != nil {
+		return nil, err
+	}
+	if mlm != nil {
+		lMovements = append(lMovements, mlm)
+	}
+	ownerGeneral, subAccountGeneral, _, err := e.getSubAccounts(subAccount, party, asset, market)
+	if err != nil {
+		return nil, err
+	}
+	// one transfer from general to general
+	treq := &types.TransferRequest{
+		Amount:      subAccountGeneral.Balance.Clone(),
+		MinAmount:   subAccountGeneral.Balance.Clone(),
+		Asset:       asset,
+		Type:        types.TransferTypeAMMRelease,
+		FromAccount: []*types.Account{subAccountGeneral},
+		ToAccount:   []*types.Account{ownerGeneral},
+	}
+
+	gres, err := e.getLedgerEntries(ctx, treq)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range gres.Entries {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("asset", v.ToAccount.AssetID),
+				logging.String("market", v.ToAccount.MarketID),
+				logging.String("owner", v.ToAccount.Owner),
+				logging.String("type", v.ToAccount.Type.String()),
+				logging.BigUint("amount", v.Amount),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+	}
+	lMovements = append(lMovements, gres)
+	// return ledger movements
+	return lMovements, nil
+}
+
+func (e *Engine) SubAccountRelease(
+	ctx context.Context,
+	party, subAccount, asset, market string,
+	pos events.MarketPosition,
+) ([]*types.LedgerMovement, events.Margin, error) {
+	ownerGeneral, subAccountGeneral, subAccountMargin, err := e.getSubAccounts(subAccount, party, asset, market)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// subaccount has a position so construct a margin-update thing which we can pass to
+	// the market to closeout its position.
+	var closeout events.Margin
+	if pos != nil && pos.Size() != 0 {
+		closeout = &marginUpdate{
+			MarketPosition:  pos,
+			asset:           asset,
+			marketID:        market,
+			marginShortFall: num.UintZero(),
+		}
+	}
+	// one transfer from general to general
+	treq := &types.TransferRequest{
+		Amount:      subAccountGeneral.Balance.Clone(),
+		MinAmount:   subAccountGeneral.Balance.Clone(),
+		Asset:       asset,
+		Type:        types.TransferTypeAMMRelease,
+		FromAccount: []*types.Account{subAccountGeneral},
+		ToAccount:   []*types.Account{ownerGeneral},
+	}
+
+	gres, err := e.getLedgerEntries(ctx, treq)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, v := range gres.Entries {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("asset", v.ToAccount.AssetID),
+				logging.String("market", v.ToAccount.MarketID),
+				logging.String("owner", v.ToAccount.Owner),
+				logging.String("type", v.ToAccount.Type.String()),
+				logging.BigUint("amount", v.Amount),
+				logging.Error(err),
+			)
+			return nil, nil, err
+		}
+	}
+
+	// if there's no margin balance to release, we're done
+	if subAccountMargin.Balance.IsZero() {
+		return []*types.LedgerMovement{gres}, closeout, nil
+	}
+
+	// non-zero balance -> confiscate
+	// one transfer from margin to market insurance
+	mktInsurance, err := e.GetMarketInsurancePoolAccount(market, asset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	treq = &types.TransferRequest{
+		Amount:      subAccountMargin.Balance.Clone(),
+		MinAmount:   subAccountMargin.Balance.Clone(),
+		Asset:       asset,
+		Type:        types.TransferTypeAMMRelease,
+		FromAccount: []*types.Account{subAccountMargin},
+		ToAccount:   []*types.Account{mktInsurance},
+	}
+
+	mres, err := e.getLedgerEntries(ctx, treq)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, v := range mres.Entries {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("asset", v.ToAccount.AssetID),
+				logging.String("market", v.ToAccount.MarketID),
+				logging.String("owner", v.ToAccount.Owner),
+				logging.String("type", v.ToAccount.Type.String()),
+				logging.BigUint("amount", v.Amount),
+				logging.Error(err),
+			)
+		}
+	}
+
+	return []*types.LedgerMovement{gres, mres}, closeout, nil
+}
+
 // GetPartyMarginAccount returns a margin account given the partyID and market.
 func (e *Engine) GetPartyMarginAccount(market, party, asset string) (*types.Account, error) {
 	margin := e.accountID(market, party, asset, types.AccountTypeMargin)
@@ -3640,10 +4015,10 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	return generalID, nil
 }
 
-// GetOrCreatePartyVestingAccount create the general account for a party.
+// GetOrCreatePartyVestingRewardAccount create the general account for a party.
 func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
 	if !e.AssetExists(asset) {
-		e.log.Panic("trying to use a nonexisting asset for reward accounts, something went very wrong somewhere",
+		e.log.Panic("trying to use a non-existent asset for reward accounts, something went very wrong somewhere",
 			logging.String("asset-id", asset))
 	}
 
@@ -3673,7 +4048,7 @@ func (e *Engine) GetPartyVestedRewardAccount(partyID, asset string) (*types.Acco
 	return e.GetAccountByID(vested)
 }
 
-// GetOrCreatePartyVestedAccount create the general account for a party.
+// GetOrCreatePartyVestedRewardAccount create the general account for a party.
 func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
 	if !e.AssetExists(asset) {
 		e.log.Panic("trying to use a nonexisting asset for reward accounts, something went very wrong somewhere",

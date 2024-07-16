@@ -478,11 +478,11 @@ func (n *Command) startBlockchainClients() error {
 
 	n.primaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.primaryEthClient, nil, ethclient.FinalityStateFinalized)
 
-	// for arbitrum we can use the weaker check for finality and only require that the block is marked as "safe".
-	// This is because "safe" means that the batch has been send to L1 Ethereum and from then on its "final" on
-	// Arbitrum. If the batched-transaction is part of a re-org on Ethereum, it doesn't matter to Vega because core
-	// is only looking at the Arbitrum blocks we don't track the batch, so we don't need to wait for full finality.
-	n.secondaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.secondaryEthClient, nil, ethclient.FinalityStateSafe)
+	// for arbitrum the finality state of a block is in now way connected to the Arbitrum network reaching consensus so Vega gains nothing
+	// from waiting for safe/finalized. Instead we just wait for the event to be seen in the latest block and rely on the consensus check
+	// Vega performs itself with node-votes. If each validator is running their own Arbitrum node, or is using a node that they need trustworthy
+	// then this is sufficient. A far as is know, block reorgs do not happen on Arbitrum.
+	n.secondaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.secondaryEthClient, nil, ethclient.FinalityStateLatest)
 
 	return nil
 }

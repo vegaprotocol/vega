@@ -144,13 +144,13 @@ func TestMain(t *testing.M) {
 		}
 	}()
 
-	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
+	exitCode := databasetest.TestMain(t, outerCtx, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
 		pgLog *bytes.Buffer,
 	) {
 		sqlConfig = config
 		log.Infof("DB Connection String: ", sqlConfig.ConnectionConfig.GetConnectionString())
 
-		pool, err := sqlstore.CreateConnectionPool(sqlConfig.ConnectionConfig)
+		pool, err := sqlstore.CreateConnectionPool(outerCtx, sqlConfig.ConnectionConfig)
 		if err != nil {
 			panic(fmt.Errorf("failed to create connection pool: %w", err))
 		}
@@ -203,7 +203,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		preUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		preUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -260,7 +260,7 @@ func TestMain(t *testing.M) {
 			return nil
 		})
 
-		postUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		postUpgradeBroker, err := setupSQLBroker(outerCtx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -379,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQqE56RWuyHEWm1rqcFNcEvCWiBpgMsSs1CAwABGfkSSh", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmNn42pXmiaxpDgLAAr2H1WTdz9YWYfyWgDBWajPb6m6Qd", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmcwwiZP3stVahfyLU4f6NjL3Spyn67JXV4RsPt2ieWL5i", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmP8LoArcevGNGoyMnfcLS82gErPfHHAukYJyax3hfvFd9", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmRJbm1dMajfEEMAzumsybuZ7hq6QcZJddT5QcNmGsFZir", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmQusPSJ5wq5gLjjCutX3hzUZ4yyY4uysyvqtq4K5disQE", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmVUyCPo1ugJPNbXC5jkDyeUWakrCd2Z55CnSjjT5P8wV2", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaDbBgBde1LQUTonyRt5tNTZ8SZbSG5F4qcvu6Qzj4U3s", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmX9KkisQMgcfYRcVVvQZiFFXXZn4p3gm4hjGerhhUs5dZ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmZ3rcAiVdzMv63o3iQSP4VgHLXkcpV8DnAjGpAChmddkJ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmSsFiETeLjhQ4SfwePgu88JxFYejZ5AiNRjJnafY4uvob", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmXCDj1KMkzx1KTuaDYE1fGGGq8sdac1Vztaz6Xopb5kZt", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -862,7 +862,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	assert.Equal(t, int64(2001), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(3000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -951,7 +951,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -1054,7 +1054,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
 
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+	connSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	require.NoError(t, err)
 	defer connSource.Close()
 
@@ -1310,7 +1310,7 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string,
 		lastCommittedBlockHeight int64, snapshotTaken bool), evtSource eventSource, protocolUpdateHandler ProtocolUpgradeHandler,
 ) (sqlStoreBroker, error) {
-	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), testDbConfig.ConnectionConfig)
+	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(ctx, logging.NewTestLogger(), testDbConfig.ConnectionConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -1321,9 +1321,10 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 	}()
 
 	candlesV2Config := candlesv2.NewDefaultConfig()
+	cfg := service.NewDefaultConfig()
 	subscribers := start.SQLSubscribers{}
 	subscribers.CreateAllStores(ctx, logging.NewTestLogger(), transactionalConnectionSource, candlesV2Config.CandleStore)
-	err = subscribers.SetupServices(ctx, logging.NewTestLogger(), candlesV2Config)
+	err = subscribers.SetupServices(ctx, logging.NewTestLogger(), cfg, candlesV2Config)
 	if err != nil {
 		return nil, err
 	}

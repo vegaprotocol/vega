@@ -42,6 +42,17 @@ message Future {
 
   // Binding between the data spec and the data source.
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
+  // If set, this product represents a capped future market.
+  optional FutureCap cap = 6;
+}
+
+message FutureCap {
+  // Set the maximum price for orders, and settlement data in market decimals.
+  string max_price = 1;
+  // If set to true, the settlement price must either be zero, or equal to the max price.
+  optional bool binary_settlement = 2;
+  // If set to true, positions must be fully collateralised so there is no default risk for any party.
+  optional bool fully_collateralised = 3;
 }
 
 // Perpetual product definition
@@ -132,6 +143,16 @@ message LogNormalRiskModel {
   double tau = 2;
   // Risk model parameters for log normal.
   LogNormalModelParams params = 3;
+  // And optional override for the risk factor calculated by the risk model.
+  optional RiskFactorOverride risk_factor_override = 4;
+}
+
+// Risk factor override to control stable leverage
+message RiskFactorOverride {
+  // Short Risk factor value.
+  string short = 1;
+  // Long Risk factor value.
+  string long = 2;
 }
 
 // Risk model parameters for log normal
@@ -182,6 +203,8 @@ message ScalingFactors {
 message MarginCalculator {
   // Scaling factors for margin calculation.
   ScalingFactors scaling_factors = 1;
+  // If set to true, positions must be fully collateralised so there is no default risk for any party (capped futures).
+  optional bool fully_collateralised = 2;
 }
 
 // Tradable Instrument definition
@@ -334,6 +357,8 @@ message Market {
     TRADING_MODE_NO_TRADING = 5;
     // Special auction mode triggered via governance
     TRADING_MODE_SUSPENDED_VIA_GOVERNANCE = 6;
+    // Auction triggered globally by long block
+    TRADING_MODE_LONG_BLOCK_AUCTION = 7;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -387,6 +412,8 @@ message Market {
   CompositePriceConfiguration mark_price_configuration = 20;
   // The market tick size defines the minimum change in quote price for the market
   string tick_size = 21;
+  // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
+  bool enable_transaction_reordering = 22;
 }
 
 // Time stamps for important times about creating, enacting etc the market

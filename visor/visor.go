@@ -29,7 +29,6 @@ import (
 
 const (
 	upgradeAPICallTickerDuration = time.Second * 2
-	maxUpgradeStatusErrs         = 10
 	namedLogger                  = "visor"
 )
 
@@ -114,8 +113,11 @@ func (v *Visor) Run(ctx context.Context) error {
 			runConf.Vega.RCP.HTTPPath,
 		)
 
+		// how many times to try and connect on the first start up of the binaries
 		maxNumberOfFirstConnectionRetries := v.conf.MaxNumberOfFirstConnectionRetries()
 
+		// how many times to try and connect in subsequent restarts of the binaries where it is expected to be much quicker
+		maxUpgradeStatusErrs := v.conf.MaxNumberOfRestartConnectionRetries()
 		numOfUpgradeStatusErrs := 0
 		maxNumRestarts := v.conf.MaxNumberOfRestarts()
 		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
@@ -162,12 +164,13 @@ func (v *Visor) Run(ctx context.Context) error {
 				upStatus, err := c.UpgradeStatus(ctx)
 				if err != nil {
 					// Binary has not started yet - waiting for first startup
-					if numOfRestarts == 0 {
-						if numOfUpgradeStatusErrs > maxNumberOfFirstConnectionRetries {
+					isFirstStartup := numOfRestarts == 0
+					if isFirstStartup {
+						if numOfUpgradeStatusErrs >= maxNumberOfFirstConnectionRetries {
 							return failedToGetStatusErr(maxNumberOfFirstConnectionRetries, err)
 						}
 					} else { // Binary has been started already. Something has failed after the startup
-						if numOfUpgradeStatusErrs > maxUpgradeStatusErrs {
+						if numOfUpgradeStatusErrs >= maxUpgradeStatusErrs {
 							return failedToGetStatusErr(maxUpgradeStatusErrs, err)
 						}
 					}
@@ -176,12 +179,17 @@ func (v *Visor) Run(ctx context.Context) error {
 
 					numOfUpgradeStatusErrs++
 
-					v.log.Info("Still waiting for vega to start...", logging.Int("attemptLeft", maxUpgradeStatusErrs-numOfUpgradeStatusErrs))
+					attemptsLeft := maxUpgradeStatusErrs - numOfUpgradeStatusErrs
+					if isFirstStartup {
+						attemptsLeft = maxNumberOfFirstConnectionRetries - numOfUpgradeStatusErrs
+					}
+					v.log.Info("Still waiting for vega to start...", logging.Int("attemptLeft", attemptsLeft))
 
 					break
 				}
 
 				if !upStatus.ReadyToUpgrade {
+					numOfUpgradeStatusErrs = 0
 					break
 				}
 

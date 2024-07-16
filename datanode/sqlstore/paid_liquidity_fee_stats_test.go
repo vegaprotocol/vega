@@ -86,7 +86,7 @@ func testAddPaidLiquidityFeesStatsEpochIfNotExists(t *testing.T) {
 
 	// Check that the stats were added
 	var got entities.PaidLiquidityFeesStats
-	err = pgxscan.Get(ctx, connectionSource.Connection, &got,
+	err = pgxscan.Get(ctx, connectionSource, &got,
 		`SELECT market_id, asset_id, epoch_seq, total_fees_paid, fees_paid_per_party as fees_per_party
 		FROM paid_liquidity_fees WHERE market_id = $1 AND asset_id = $2 AND epoch_seq = $3`,
 		market.ID, asset.ID, want.EpochSeq,
@@ -250,7 +250,7 @@ func testListPaidLiquidityFeesStatsForMarketAndEpoch(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[0:1]
-	got, _, err := stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination)
+	got, _, err := stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -258,7 +258,7 @@ func testListPaidLiquidityFeesStatsForMarketAndEpoch(t *testing.T) {
 
 	// get the stats for the second market and epoch
 	want = stats[3:4]
-	got, _, err = stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination)
+	got, _, err = stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -274,7 +274,7 @@ func testListPaidLiquidityFeesStatsForAssetAndEpoch(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[1:2]
-	got, _, err := stores.ls.List(ctx, nil, &want[0].AssetID, &want[0].EpochSeq, nil, pagination)
+	got, _, err := stores.ls.List(ctx, nil, &want[0].AssetID, &want[0].EpochSeq, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -282,7 +282,7 @@ func testListPaidLiquidityFeesStatsForAssetAndEpoch(t *testing.T) {
 
 	// get the stats for the second market and epoch
 	want = stats[4:5]
-	got, _, err = stores.ls.List(ctx, nil, &want[0].AssetID, &want[0].EpochSeq, nil, pagination)
+	got, _, err = stores.ls.List(ctx, nil, &want[0].AssetID, &want[0].EpochSeq, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -298,7 +298,7 @@ func testListPaidLiquidityFeesStatsForMarketLatest(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[2:3]
-	got, _, err := stores.ls.List(ctx, &want[0].MarketID, nil, nil, nil, pagination)
+	got, _, err := stores.ls.List(ctx, &want[0].MarketID, nil, nil, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -306,7 +306,7 @@ func testListPaidLiquidityFeesStatsForMarketLatest(t *testing.T) {
 
 	// get the stats for the second market and epoch
 	want = stats[5:6]
-	got, _, err = stores.ls.List(ctx, &want[0].MarketID, nil, nil, nil, pagination)
+	got, _, err = stores.ls.List(ctx, &want[0].MarketID, nil, nil, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -322,7 +322,7 @@ func testListPaidLiquidityFeesStatsForAssetLatest(t *testing.T) {
 
 	// get the stats for the first market and epoch
 	want := stats[2:3]
-	got, _, err := stores.ls.List(ctx, nil, &want[0].AssetID, nil, nil, pagination)
+	got, _, err := stores.ls.List(ctx, nil, &want[0].AssetID, nil, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -330,7 +330,7 @@ func testListPaidLiquidityFeesStatsForAssetLatest(t *testing.T) {
 
 	// get the stats for the second market and epoch
 	want = stats[5:6]
-	got, _, err = stores.ls.List(ctx, nil, &want[0].AssetID, nil, nil, pagination)
+	got, _, err = stores.ls.List(ctx, nil, &want[0].AssetID, nil, nil, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -349,7 +349,7 @@ func testListPaidLiquidityFeesStatsForPartyAndEpoch(t *testing.T) {
 	want[0].FeesPerParty = want[0].FeesPerParty[:1]
 	want[1].FeesPerParty = want[1].FeesPerParty[:1]
 
-	got, _, err := stores.ls.List(ctx, nil, nil, &want[0].EpochSeq, []string{want[0].FeesPerParty[0].Party}, pagination)
+	got, _, err := stores.ls.List(ctx, nil, nil, &want[0].EpochSeq, []string{want[0].FeesPerParty[0].Party}, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))
@@ -369,7 +369,7 @@ func testListPaidLiquidityFeesStatsForPartyLatest(t *testing.T) {
 	want[0].FeesPerParty = want[0].FeesPerParty[:1]
 	want[1].FeesPerParty = want[1].FeesPerParty[:1]
 
-	got, _, err := stores.ls.List(ctx, nil, nil, nil, []string{want[0].FeesPerParty[0].Party}, pagination)
+	got, _, err := stores.ls.List(ctx, nil, nil, nil, []string{want[0].FeesPerParty[0].Party}, pagination, nil, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(want))

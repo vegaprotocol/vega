@@ -97,7 +97,7 @@ func shouldWorkForAllValuesOfCompositePriceType(t *testing.T) {
 			addMarketData(t, ctx, "AUCTION_TRIGGER_LIQUIDITY", pt)
 			var got entities.MarketData
 
-			err := connectionSource.Connection.QueryRow(ctx, `select mark_price_type from market_data`).Scan(&got.MarkPriceType)
+			err := connectionSource.QueryRow(ctx, `select mark_price_type from market_data`).Scan(&got.MarkPriceType)
 			require.NoError(t, err)
 
 			mdProto := got.ToProto()
@@ -143,7 +143,7 @@ func addMarketData(t *testing.T, ctx context.Context, trigger, priceType string)
 func shouldWorkForAllValuesOfAuctionTrigger(t *testing.T) {
 	var auctionTrigger vegapb.AuctionTrigger
 	enums := getEnums(t, auctionTrigger)
-	assert.Len(t, enums, 8)
+	assert.Len(t, enums, 9)
 
 	for e, trigger := range enums {
 		t.Run(trigger, func(t *testing.T) {
@@ -152,7 +152,7 @@ func shouldWorkForAllValuesOfAuctionTrigger(t *testing.T) {
 			addMarketData(t, ctx, trigger, "COMPOSITE_PRICE_TYPE_LAST_TRADE")
 			var got entities.MarketData
 
-			err := connectionSource.Connection.QueryRow(ctx, `select auction_trigger from market_data`).Scan(&got.AuctionTrigger)
+			err := connectionSource.QueryRow(ctx, `select auction_trigger from market_data`).Scan(&got.AuctionTrigger)
 			require.NoError(t, err)
 
 			mdProto := got.ToProto()
@@ -170,7 +170,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 
 	var rowCount int
 
-	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
+	err := connectionSource.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
@@ -202,7 +202,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	_, err = md.Flush(ctx)
 	require.NoError(t, err)
 
-	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
+	err = connectionSource.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }

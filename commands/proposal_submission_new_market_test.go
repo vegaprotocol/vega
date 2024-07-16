@@ -51,6 +51,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a market change with negative slippage factor fails", testNewMarketChangeSubmissionWithSlippageFactorNegativeFails)
 	t.Run("Submitting a market change with empty max slippage factor succeeds", testNewMarketChangeSubmissionWithEmptySlippageFactorPasses)
 	t.Run("Submitting a market change with too large slippage factor fails", testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails)
+	t.Run("Submitting a new capped market with max price succeeds", testNewCappedMarketWithMaxPriceSucceeds)
+	t.Run("Submitting a new capped market without max price fails", testNewCappedMarketWithoutMaxPriceFails)
 
 	t.Run("Submitting a new market without price monitoring succeeds", testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new market with price monitoring succeeds", testNewMarketChangeSubmissionWithPriceMonitoringSucceeds)
@@ -189,6 +191,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new spot market with invalid liquidity fee settings", testLiquidityFeeSettingsSpot)
 	t.Run("Submitting a new market with invalid mark price configuration ", testCompositePriceConfiguration)
 	t.Run("Submitting a new market with invalid tick size fails and with valid tick size succeeds", testNewMarketTickSize)
+
+	t.Run("Log Normal risk factor overrides", testNewLogNormalRiskParametersChangeSubmissionWithOverrides)
 }
 
 type tickSizeCase struct {
@@ -872,6 +876,89 @@ func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *t
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.0.auction_extension"), commands.ErrMustBePositive)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.1.auction_extension"), commands.ErrMustBePositive)
+}
+
+func testNewCappedMarketWithMaxPriceSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									Cap: &vegapb.FutureCap{
+										MaxPrice: "100",
+									},
+								},
+							},
+						},
+						TickSize: "10", // ensure tick size is fine, too
+					},
+				},
+			},
+		},
+	})
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMaxPriceMustRespectTickSize)
+}
+
+func testNewCappedMarketWithoutMaxPriceFails(t *testing.T) {
+	fCap := &vegapb.FutureCap{
+		MaxPrice: "",
+	}
+	nmConf := &vegapb.NewMarketConfiguration{
+		Instrument: &vegapb.InstrumentConfiguration{
+			Product: &vegapb.InstrumentConfiguration_Future{
+				Future: &vegapb.FutureProduct{
+					Cap: fCap,
+				},
+			},
+		},
+	}
+	cmd := &commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: nmConf,
+				},
+			},
+		},
+	}
+	// submit with empty string:
+	err := checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMaxPriceMustRespectTickSize)
+	fCap.MaxPrice = "foobar" // invalid input
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
+	// submit with invalid value relative to tick size
+	fCap.MaxPrice = "123"
+	nmConf.TickSize = "10"
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMaxPriceMustRespectTickSize)
+
+	// submit with no max price but other fields set (0019-MCAL-170)
+	fCap.MaxPrice = ""
+	fCap.BinarySettlement = ptr.From(true)
+	fCap.FullyCollateralised = nil
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+
+	// submit with no max price but other fields set (0019-MCAL-171)
+	fCap.MaxPrice = ""
+	fCap.BinarySettlement = nil
+	fCap.FullyCollateralised = ptr.From(true)
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrIsRequired)
+
+	// max cap of zero is rejected
+	fCap.MaxPrice = "0"
+	fCap.BinarySettlement = nil
+	fCap.FullyCollateralised = ptr.From(true)
+	err = checkProposalSubmission(cmd)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.cap.max_price"), commands.ErrMustBePositive)
 }
 
 func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
@@ -2495,6 +2582,129 @@ func testNewLogNormalRiskParametersChangeSubmissionWithLogNormalRiskParametersSu
 	})
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal"), commands.ErrIsRequired)
+}
+
+func testNewLogNormalRiskParametersChangeSubmissionWithOverrides(t *testing.T) {
+	cases := []struct {
+		desc     string
+		get      string
+		override *vegapb.RiskFactorOverride
+		err      string
+	}{
+		{
+			desc:     "no override is valid",
+			get:      "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override",
+			override: nil,
+			err:      "",
+		},
+		{
+			desc:     "non nil, but with empty short",
+			get:      "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{},
+			err:      "is required",
+		},
+		{
+			desc: "non nil, but with bad value short",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{
+				Short: "asd",
+			},
+			err: "is not a valid number",
+		},
+		{
+			desc: "non nil, but with negative short",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{
+				Short: "-1",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "non nil, but with 0 short",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.short",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "non nil, but with empty long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+			},
+			err: "is required",
+		},
+		{
+			desc: "non nil, but with bad value long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "asd",
+			},
+			err: "is not a valid number",
+		},
+		{
+			desc: "non nil, but with negative long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "-1",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "non nil, but with 0 long",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override.long",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "0",
+			},
+			err: "must be positive",
+		},
+		{
+			desc: "both valid",
+			get:  "proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_factor_override",
+			override: &vegapb.RiskFactorOverride{
+				Short: "0.1",
+				Long:  "0.1",
+			},
+			err: "",
+		},
+	}
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+								LogNormal: &vegapb.LogNormalRiskModel{
+									RiskAversionParameter: 0.1,
+									Tau:                   1,
+									Params: &vegapb.LogNormalModelParams{
+										Mu:    0,
+										Sigma: 0.1,
+										R:     0,
+									},
+									RiskFactorOverride: c.override,
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		if len(c.err) <= 0 {
+			// no error
+			assert.Len(t, err.Get(c.get), 0, c.desc)
+			continue
+		}
+
+		assert.Contains(t, err.Get(c.get), errors.New(c.err), "test: %v, err: %v", c.desc, err)
+	}
 }
 
 func testNewLogNormalRiskParametersChangeSubmissionWithoutParamsFails(t *testing.T) {

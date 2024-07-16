@@ -63,6 +63,7 @@ import (
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/teams"
+	"code.vegaprotocol.io/vega/core/txcache"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
@@ -128,6 +129,7 @@ type allServices struct {
 	ethereumOraclesVerifier *ethverifier.Verifier
 
 	partiesEngine *parties.SnapshottedEngine
+	txCache       *txcache.TxCache
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -142,6 +144,7 @@ type allServices struct {
 	referralProgram *referral.SnapshottedEngine
 
 	primaryEventForwarder       *evtforward.Forwarder
+	forwarderHeartbeat          *evtforward.Tracker
 	primaryEventForwarderEngine EventForwarderEngine
 	primaryEthConfirmations     *ethclient.EthereumConfirmations
 	primaryEthClient            *ethclient.PrimaryClient
@@ -247,6 +250,7 @@ func newServices(
 	svcs.primaryMultisig.SetWitness(svcs.witness)
 	svcs.secondaryMultisig.SetWitness(svcs.witness)
 	svcs.primaryEventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
+	svcs.forwarderHeartbeat = evtforward.NewTracker(log, svcs.witness, svcs.timeService)
 
 	if svcs.conf.HaveEthClient() {
 		svcs.primaryBridgeView = bridges.NewERC20LogicView(primaryEthClient, primaryEthConfirmations)
@@ -277,11 +281,11 @@ func newServices(
 	svcs.oracleAdaptors = oracleAdaptors.New()
 
 	// this is done to go around circular deps again..s
-	svcs.primaryMultisig.SetEthereumEventSource(svcs.primaryEventForwarderEngine)
-	svcs.secondaryMultisig.SetEthereumEventSource(svcs.secondaryEventForwarderEngine)
+	svcs.primaryMultisig.SetEthereumEventSource(svcs.forwarderHeartbeat)
+	svcs.secondaryMultisig.SetEthereumEventSource(svcs.forwarderHeartbeat)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
-		svcs.log, svcs.conf.Staking, svcs.timeService, svcs.broker, svcs.witness, svcs.primaryEthClient, svcs.netParams, svcs.primaryEventForwarder, svcs.conf.HaveEthClient(), svcs.primaryEthConfirmations, svcs.primaryEventForwarderEngine,
+		svcs.log, svcs.conf.Staking, svcs.timeService, svcs.broker, svcs.witness, svcs.primaryEthClient, svcs.netParams, svcs.primaryEventForwarder, svcs.conf.HaveEthClient(), svcs.primaryEthConfirmations, svcs.forwarderHeartbeat,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
@@ -289,6 +293,7 @@ func newServices(
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
 
 	svcs.partiesEngine = parties.NewSnapshottedEngine(svcs.broker)
+	svcs.txCache = txcache.NewTxCache(svcs.commander)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts, svcs.broker)
@@ -326,12 +331,15 @@ func newServices(
 		svcs.volumeDiscount.OnEpochRestore,
 	)
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView, svcs.secondaryBridgeView, svcs.primaryEventForwarderEngine, svcs.secondaryEventForwarderEngine)
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService,
+		svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView,
+		svcs.secondaryBridgeView, svcs.forwarderHeartbeat, svcs.partiesEngine)
 
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
-		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking,
+		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking, svcs.partiesEngine,
+		svcs.txCache,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
@@ -376,7 +384,7 @@ func newServices(
 		svcs.activityStreak.OnEpochRestore,
 	)
 
-	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
+	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets, svcs.partiesEngine)
 	svcs.timeService.NotifyOnTick(svcs.vesting.OnTick)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
 
@@ -424,6 +432,7 @@ func newServices(
 	svcs.topology.NotifyOnKeyChange(svcs.governance.ValidatorKeyChanged)
 
 	svcs.snapshotEngine.AddProviders(
+		svcs.txCache,
 		svcs.checkpoint,
 		svcs.collateral,
 		svcs.governance,
@@ -452,7 +461,10 @@ func newServices(
 		svcs.volumeDiscount,
 		svcs.teamsEngine,
 		svcs.spam,
-		svcs.l2Verifiers)
+		svcs.l2Verifiers,
+		svcs.partiesEngine,
+		svcs.forwarderHeartbeat,
+	)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW)
 
@@ -526,6 +538,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 
 		svcs.ethereumOraclesVerifier.OnTick,
 		svcs.l2Verifiers.OnTick,
+		svcs.forwarderHeartbeat.OnTick,
 	)
 }
 
@@ -554,6 +567,7 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { svcs.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { svcs.stats.ReloadConf(cfg.Stats) },
+		func(cfg config.Config) { svcs.broker.ReloadConf(cfg.Broker) },
 	)
 
 	if svcs.conf.HaveEthClient() {
@@ -582,6 +596,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	spamWatchers := []netparams.WatchParam{}
 	if svcs.spam != nil {
 		spamWatchers = []netparams.WatchParam{
+			{
+				Param:   netparams.MarketAggressiveOrderBlockDelay,
+				Watcher: svcs.txCache.OnNumBlocksToDelayUpdated,
+			},
 			{
 				Param:   netparams.SpamProtectionMaxVotes,
 				Watcher: svcs.spam.OnMaxVotesChanged,
@@ -711,6 +729,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: dispatch.RewardAssetUpdate(svcs.log, svcs.assets),
 		},
 		{
+			Param:   netparams.MinimalMarginQuantumMultiple,
+			Watcher: svcs.executionEngine.OnMinimalMarginQuantumMultipleUpdate,
+		},
+		{
+			Param:   netparams.MinimalHoldingQuantumMultiple,
+			Watcher: svcs.executionEngine.OnMinimalHoldingQuantumMultipleUpdate,
+		},
+		{
 			Param:   netparams.MarketMarginScalingFactors,
 			Watcher: svcs.executionEngine.OnMarketMarginScalingFactorsUpdate,
 		},
@@ -727,6 +753,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
 		{
+			Param:   netparams.NetworkWideAuctionDuration,
+			Watcher: svcs.executionEngine.OnNetworkWideAuctionDurationUpdated,
+		},
+		{
 			Param: netparams.BlockchainsPrimaryEthereumConfig,
 			Watcher: func(ctx context.Context, cfg interface{}) error {
 				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
@@ -739,7 +769,23 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.assets.SetBridgeChainID(ethCfg.ChainID(), true)
-				return svcs.primaryEventForwarderEngine.SetupEthereumEngine(svcs.primaryEthClient, svcs.primaryEventForwarder, svcs.conf.EvtForward.Ethereum, ethCfg, svcs.assets)
+				if err := svcs.primaryEventForwarderEngine.SetupEthereumEngine(
+					svcs.primaryEthClient,
+					svcs.primaryEventForwarder,
+					svcs.conf.EvtForward.Ethereum,
+					ethCfg,
+					svcs.assets); err != nil {
+					return err
+				}
+				svcs.forwarderHeartbeat.RegisterForwarder(
+					svcs.primaryEventForwarderEngine,
+					ethCfg.ChainID(),
+					ethCfg.CollateralBridge().HexAddress(),
+					ethCfg.StakingBridge().HexAddress(),
+					ethCfg.VestingBridge().HexAddress(),
+					ethCfg.MultiSigControl().HexAddress(),
+				)
+				return nil
 			},
 		},
 		{
@@ -762,7 +808,25 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				if svcs.conf.HaveEthClient() {
 					bridgeCfg = svcs.conf.EvtForward.EVMBridges[0]
 				}
-				return svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(svcs.secondaryEthClient, svcs.primaryEventForwarder, bridgeCfg, ethCfg, svcs.assets)
+
+				if err := svcs.secondaryEventForwarderEngine.SetupSecondaryEthereumEngine(
+					svcs.secondaryEthClient,
+					svcs.primaryEventForwarder,
+					bridgeCfg,
+					ethCfg,
+					svcs.assets,
+				); err != nil {
+					return err
+				}
+
+				svcs.forwarderHeartbeat.RegisterForwarder(
+					svcs.secondaryEventForwarderEngine,
+					ethCfg.ChainID(),
+					ethCfg.CollateralBridge().HexAddress(),
+					ethCfg.MultiSigControl().HexAddress(),
+				)
+
+				return nil
 			},
 		},
 		{
@@ -892,6 +956,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.banking.OnTransferFeeFactorUpdate,
 		},
 		{
+			Param:   netparams.RewardsUpdateFrequency,
+			Watcher: svcs.banking.OnRewardsUpdateFrequencyUpdate,
+		},
+		{
 			Param:   netparams.TransferFeeMaxQuantumAmount,
 			Watcher: svcs.banking.OnMaxQuantumAmountUpdate,
 		},
@@ -979,7 +1047,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 					return fmt.Errorf("invalid primary ethereum configuration: %w", err)
 				}
 
-				svcs.banking.OnPrimaryEthChainIDUpdated(ethCfg.ChainID())
+				svcs.banking.OnPrimaryEthChainIDUpdated(ethCfg.ChainID(), ethCfg.CollateralBridge().HexAddress())
 				return nil
 			},
 		},
@@ -992,7 +1060,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				ethCfg := ethCfgs.Configs[0]
-				svcs.banking.OnSecondaryEthChainIDUpdated(ethCfg.ChainID())
+				svcs.banking.OnSecondaryEthChainIDUpdated(ethCfg.ChainID(), ethCfg.CollateralBridge().HexAddress())
 				svcs.witness.SetSecondaryDefaultConfirmations(ethCfg.ChainID(), ethCfg.Confirmations(), ethCfg.BlockTime())
 				return nil
 			},
@@ -1027,6 +1095,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.PerpsMarketTradingEnabled,
 			Watcher: svcs.limits.OnLimitsProposePerpsMarketEnabledFromUpdate,
+		},
+		{
+			Param:   netparams.AMMMarketTradingEnabled,
+			Watcher: svcs.limits.OnLimitsProposeAMMEnabledUpdate,
 		},
 		{
 			Param:   netparams.LimitsProposeAssetEnabledFrom,
@@ -1103,6 +1175,18 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.RewardsActivityStreakInactivityLimit,
 			Watcher: svcs.activityStreak.OnRewardsActivityStreakInactivityLimit,
+		},
+		{
+			Param:   netparams.MarketAMMMinCommitmentQuantum,
+			Watcher: svcs.executionEngine.OnMarketAMMMinCommitmentQuantum,
+		},
+		{
+			Param:   netparams.MarketAMMMaxCalculationLevels,
+			Watcher: svcs.executionEngine.OnMarketAMMMaxCalculationLevels,
+		},
+		{
+			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,
+			Watcher: svcs.executionEngine.OnMarketLiquidityEquityLikeShareFeeFractionUpdate,
 		},
 	}
 

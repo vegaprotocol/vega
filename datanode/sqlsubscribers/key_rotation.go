@@ -62,3 +62,7 @@ func (kr *KeyRotation) consume(ctx context.Context, event KeyRotationEvent) erro
 
 	return errors.Wrap(kr.store.Upsert(ctx, record), "Inserting key rotation to SQL store failed")
 }
+
+func (kr *KeyRotation) Name() string {
+	return "KeyRotation"
+}

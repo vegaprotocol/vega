@@ -120,7 +120,7 @@ func selectNodeQuery() string {
 func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 	defer metrics.StartSQLQuery("Node", "UpsertNode")()
 
-	_, err := store.Connection.Exec(ctx, `
+	_, err := store.Exec(ctx, `
 		INSERT INTO nodes (
 			id,
 			vega_pub_key,
@@ -166,7 +166,7 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 // AddNodeAnnouncedEvent store data about which epoch a particular node was added or removed from the roster of validators.
 func (store *Node) AddNodeAnnouncedEvent(ctx context.Context, nodeID string, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
 	defer metrics.StartSQLQuery("Node", "AddNodeAnnouncedEvent")()
-	_, err := store.Connection.Exec(ctx, `
+	_, err := store.Exec(ctx, `
 		INSERT INTO nodes_announced (
 			node_id,
 			epoch_seq,
@@ -190,7 +190,7 @@ func (store *Node) AddNodeAnnouncedEvent(ctx context.Context, nodeID string, veg
 func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore, aux *entities.RankingScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertRanking")()
 
-	_, err := store.Connection.Exec(ctx, `
+	_, err := store.Exec(ctx, `
 		INSERT INTO ranking_scores (
 			node_id,
 			epoch_seq,
@@ -232,7 +232,7 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, aux *entities.RewardScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertScore")()
 
-	_, err := store.Connection.Exec(ctx, `
+	_, err := store.Exec(ctx, `
 		INSERT INTO reward_scores (
 			node_id,
 			epoch_seq,
@@ -264,7 +264,7 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation) error {
 	defer metrics.StartSQLQuery("Node", "UpdatePublicKey")()
 
-	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET vega_pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
+	_, err := store.Exec(ctx, `UPDATE nodes SET vega_pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
 
 	return err
 }
@@ -272,7 +272,7 @@ func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation
 func (store *Node) UpdateEthereumAddress(ctx context.Context, kr entities.EthereumKeyRotation) error {
 	defer metrics.StartSQLQuery("Node", "UpdateEthereumPublicKey")()
 
-	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
+	_, err := store.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
 
 	return err
 }
@@ -312,7 +312,7 @@ func (store *Node) GetNodeData(ctx context.Context, epochSeq uint64) (entities.N
 	`
 
 	nodeData := entities.NodeData{}
-	err := pgxscan.Get(ctx, store.Connection, &nodeData, query, epochSeq)
+	err := pgxscan.Get(ctx, store.ConnectionSource, &nodeData, query, epochSeq)
 	if err != nil {
 		return nodeData, store.wrapE(err)
 	}
@@ -378,7 +378,7 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 		return nil, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, store.Connection, &nodes, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.ConnectionSource, &nodes, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get nodes: %w", err)
 	}
 
@@ -394,7 +394,7 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeID string, epochSeq uint
 	id := entities.NodeID(nodeID)
 
 	query := fmt.Sprintf("%s AND nodes.id=$2", selectNodeQuery())
-	return node, store.wrapE(pgxscan.Get(ctx, store.Connection, &node, query, epochSeq, id))
+	return node, store.wrapE(pgxscan.Get(ctx, store.ConnectionSource, &node, query, epochSeq, id))
 }
 
 func (store *Node) GetNodeTxHash(ctx context.Context, nodeID string, epochSeq uint64) (entities.Node, error) {
@@ -404,7 +404,7 @@ func (store *Node) GetNodeTxHash(ctx context.Context, nodeID string, epochSeq ui
 	id := entities.NodeID(nodeID)
 
 	query := fmt.Sprintf("%s AND nodes.id=$2", selectNodeQuery())
-	return node, store.wrapE(pgxscan.Get(ctx, store.Connection, &node, query, epochSeq, id))
+	return node, store.wrapE(pgxscan.Get(ctx, store.ConnectionSource, &node, query, epochSeq, id))
 }
 
 func (store *Node) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.NodeBasic, error) {
@@ -414,7 +414,7 @@ func (store *Node) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]e
 	query := `SELECT id, vega_pub_key, tendermint_pub_key, ethereum_address, name, location, 
 	info_url, avatar_url, status FROM nodes WHERE tx_hash = $1`
 
-	if err := pgxscan.Select(ctx, store.Connection, &nodes, query, txHash); err != nil {
+	if err := pgxscan.Select(ctx, store.ConnectionSource, &nodes, query, txHash); err != nil {
 		return nil, store.wrapE(err)
 	}
 

@@ -47,7 +47,7 @@ func NewDelegations(connectionSource *ConnectionSource) *Delegations {
 
 func (ds *Delegations) Add(ctx context.Context, d entities.Delegation) error {
 	defer metrics.StartSQLQuery("Delegations", "Add")()
-	_, err := ds.Connection.Exec(ctx,
+	_, err := ds.Exec(ctx,
 		`INSERT INTO delegations(
 			party_id,
 			node_id,
@@ -64,7 +64,7 @@ func (ds *Delegations) Add(ctx context.Context, d entities.Delegation) error {
 func (ds *Delegations) GetAll(ctx context.Context) ([]entities.Delegation, error) {
 	defer metrics.StartSQLQuery("Delegations", "GetAll")()
 	delegations := []entities.Delegation{}
-	err := pgxscan.Select(ctx, ds.Connection, &delegations, `
+	err := pgxscan.Select(ctx, ds.ConnectionSource, &delegations, `
 		SELECT * from delegations;`)
 	return delegations, err
 }
@@ -75,7 +75,7 @@ func (ds *Delegations) GetByTxHash(ctx context.Context, txHash entities.TxHash) 
 	var delegations []entities.Delegation
 	query := `SELECT * FROM delegations WHERE tx_hash = $1`
 
-	err := pgxscan.Select(ctx, ds.Connection, &delegations, query, txHash)
+	err := pgxscan.Select(ctx, ds.ConnectionSource, &delegations, query, txHash)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (ds *Delegations) Get(ctx context.Context,
 				return nil, pageInfo, err
 			}
 
-			err := pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
+			err := pgxscan.Select(ctx, ds.ConnectionSource, &delegations, query, args...)
 			if err != nil {
 				return nil, pageInfo, fmt.Errorf("querying delegations: %w", err)
 			}
@@ -137,7 +137,7 @@ func (ds *Delegations) Get(ctx context.Context,
 		}
 	}
 
-	err = pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
+	err = pgxscan.Select(ctx, ds.ConnectionSource, &delegations, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying delegations: %w", err)
 	}

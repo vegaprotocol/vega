@@ -148,6 +148,8 @@ message Payload {
     EthOracleVerifierMisc eth_oracle_verifier_misc = 85;
     BankingEVMBridgeStates banking_evm_bridge_states = 86;
     EVMMultisigTopologies evm_multisig_topologies = 87;
+    TxCache tx_cache = 88;
+    EVMFwdHeartbeats evm_fwd_heartbeats = 89;
   }
 }
 
@@ -299,6 +301,7 @@ message BankingAssetActions {
 
 message BankingRecurringTransfers {
   vega.checkpoint.v1.RecurringTransfers recurring_transfers = 1;
+  int64 next_metric_update = 2;
 }
 
 message BankingScheduledTransfers {
@@ -551,11 +554,49 @@ message Market {
   optional CompositePriceCalculator internal_composite_price_calculator = 30;
   int64 next_internal_composite_price_calc = 31;
   MarketLiquidity market_liquidity = 32;
+  AmmState amm = 33;
 }
 
 message PartyMarginFactor {
   string party = 1;
   string margin_factor = 2;
+}
+
+message AmmState {
+  repeated StringMapEntry sqrter = 1;
+  repeated StringMapEntry amm_party_ids = 2;
+  repeated PoolMapEntry pools = 3;
+}
+
+message PoolMapEntry {
+  message Curve {
+    string l = 1;
+    string high = 2;
+    string low = 3;
+    string pv = 4;
+    bool empty = 5;
+  }
+
+  message Pool {
+    string id = 1;
+    string amm_party_id = 2;
+    string commitment = 3;
+    vega.events.v1.AMM.ConcentratedLiquidityParameters parameters = 4;
+    string asset = 5;
+    string market = 6;
+    Curve lower = 7;
+    Curve upper = 8;
+    vega.events.v1.AMM.Status status = 9;
+    string proposed_fee = 10;
+  }
+
+  string party = 1;
+  Pool pool = 2;
+}
+
+message StringMapEntry {
+  string key = 1;
+  string value = 2;
 }
 
 // eventually support multiple products
@@ -705,6 +746,7 @@ message AppState {
   string chain_id = 4;
   string protocol_version = 5;
   bool protocol_upgrade = 6;
+  int64 prev_block_time = 7;
 }
 
 // EpochState details
@@ -761,6 +803,7 @@ message LimitState {
   int64 propose_asset_enabled_from = 8;
   bool propose_spot_market_enabled = 9;
   bool propose_perps_market_enabled = 10;
+  bool can_use_amm_enabled = 11;
 }
 
 message VoteSpamPolicy {
@@ -1368,8 +1411,45 @@ message PartyProfile {
   string party_id = 1;
   string alias = 2;
   repeated vega.Metadata metadata = 3;
+  repeated string derived_keys = 4;
+}
+
+message AMMValues {
+  string party = 1;
+  string stake = 2;
+  string score = 3;
+  int64 tick = 4;
 }
 
 message MarketLiquidity {
   string price_range = 1;
+  int64 tick = 2;
+  repeated AMMValues amm = 3;
+}
+
+message DelayedTx {
+  repeated bytes tx = 1;
+  uint64 height = 2;
+}
+
+message TxCache {
+  repeated DelayedTx txs = 1;
+}
+
+message EVMFwdPendingHeartbeat {
+  uint64 block_height = 1;
+  uint64 block_time = 2;
+  string contract_address = 3;
+  string chain_id = 4;
+}
+
+message EVMFwdLastSeen {
+  string chain_id = 1;
+  string contract_address = 2;
+  uint64 block_height = 3;
+}
+
+message EVMFwdHeartbeats {
+  repeated EVMFwdPendingHeartbeat pending_heartbeats = 1;
+  repeated EVMFwdLastSeen last_seen = 2;
 }

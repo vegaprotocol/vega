@@ -304,6 +304,12 @@ message Transfer {
   string amount = 5;
   // Reference to be attached to the transfer.
   string reference = 6;
+  // AMM key from which assets are to be transferred, if applicable.
+  // The submitter of the transaction must be the owner of this AMM key.
+  // If provided, the 'from_account_type' must be REWARDS_VESTED, and the asset in this account
+  // must match the asset specified in the transfer.
+  optional string from = 7;
+
   // Specific details of the transfer.
   oneof kind {
     // Details of a one-off transfer that is executed once at a specified time.
@@ -427,4 +433,79 @@ message UpdatePartyProfile {
   // Freeform data to associate to the party.
   // Support a maximum of 10 entries.
   repeated vega.Metadata metadata = 2;
+}
+
+// Command to create an automated market maker for a given market.
+message SubmitAMM {
+  // Market ID for which to create an AMM.
+  string market_id = 1;
+  // Amount to be committed to the AMM.
+  string commitment_amount = 2;
+  // Slippage tolerance used for rebasing the AMM if its base price crosses with existing order
+  string slippage_tolerance = 3;
+  // Concentrated liquidity parameters defining the shape of the AMM's volume curves.
+  ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
+  string proposed_fee = 5;
+  // Liquidity parameters that define the size and range of the AMM's tradeable volume.
+  message ConcentratedLiquidityParameters {
+    // Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
+    optional string upper_bound = 1;
+    // Price at which the AMM will stop quoting buy volume. If not supplied the AMM will never hold a long position.
+    optional string lower_bound = 2;
+    // Price that the AMM will quote as its "fair price" when its position is zero.
+    string base = 3;
+    // Leverage at upper bound. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_upper_bound = 4;
+    // Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_lower_bound = 5;
+  }
+}
+
+// Command to amend an existing automated market maker on a market.
+message AmendAMM {
+  // Market ID for the AMM to be amended.
+  string market_id = 1;
+  // Amount to be committed to the AMM. If not supplied the commitment will remain unchanged.
+  optional string commitment_amount = 2;
+  // Slippage tolerance for rebasing position when updating the AMM.
+  string slippage_tolerance = 3;
+  // Concentrated liquidity parameters defining the shape of the AMM's volume curves. If not supplied the parameters will remain unchanged.
+  optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market. If not supplied the proposed fee will remain unchanged.
+  optional string proposed_fee = 5;
+  // Liquidity parameters that define the size and range of the AMM's tradeable volume.
+  message ConcentratedLiquidityParameters {
+    // Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
+    optional string upper_bound = 1;
+    // Price at which the AMM will stop quoting buy volume. If not supplied the AMM will never hold a long position.
+    optional string lower_bound = 2;
+    // Price that the AMM will quote as its "fair price" when its position is zero.
+    string base = 3;
+    // Leverage at upper bound. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_upper_bound = 4;
+    // Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
+    optional string leverage_at_lower_bound = 5;
+  }
+}
+
+// Command to cancel an automated market maker for a given market.
+message CancelAMM {
+  enum Method {
+    METHOD_UNSPECIFIED = 0;
+    // Cancellation will be immediate and any open positions will be transferred to the network for liquidation.
+    METHOD_IMMEDIATE = 1;
+    // AMM will only trade to reduce its position, and will be cancelled once its position reaches zero.
+    METHOD_REDUCE_ONLY = 2;
+  }
+  // Market ID to cancel an AMM for.
+  string market_id = 1;
+  // Method to use to cancel the AMM.
+  Method method = 2;
+}
+
+// Internal transactions used to convey delayed transactions to be included in the next block.
+message DelayedTransactionsWrapper {
+  repeated bytes transactions = 1;
+  uint64 height = 2;
 }

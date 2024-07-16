@@ -62,3 +62,7 @@ func (d *Deposit) consume(ctx context.Context, event DepositEvent) error {
 
 	return errors.Wrap(d.store.Upsert(ctx, record), "inserting deposit to SQL store failed")
 }
+
+func (d *Deposit) Name() string {
+	return "Deposit"
+}

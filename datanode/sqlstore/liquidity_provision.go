@@ -88,7 +88,7 @@ func NewLiquidityProvision(connectionSource *ConnectionSource, log *logging.Logg
 
 func (lp *LiquidityProvision) Flush(ctx context.Context) error {
 	defer metrics.StartSQLQuery("LiquidityProvision", "Flush")()
-	flushed, err := lp.batcher.Flush(ctx, lp.Connection)
+	flushed, err := lp.batcher.Flush(ctx, lp.ConnectionSource)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (lp *LiquidityProvision) GetByTxHash(ctx context.Context, txHash entities.T
 	var liquidityProvisions []entities.LiquidityProvision
 	query := fmt.Sprintf(`SELECT %s FROM liquidity_provisions WHERE tx_hash = $1`, sqlOracleLiquidityProvisionColumns)
 
-	err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, txHash)
+	err := pgxscan.Select(ctx, lp.ConnectionSource, &liquidityProvisions, query, txHash)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (lp *LiquidityProvision) ListProviders(ctx context.Context, partyID *entiti
 	batch.Queue(feeQuery, feeArgs...)
 	batch.Queue(slaQuery, slaArgs...)
 
-	results := lp.Connection.SendBatch(ctx, batch)
+	results := lp.SendBatch(ctx, batch)
 	defer results.Close()
 
 	feeRows, err := results.Query()
@@ -335,7 +335,7 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 
 	var liquidityProvisions []entities.CurrentAndPreviousLiquidityProvisions
 
-	if err = pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...); err != nil {
+	if err = pgxscan.Select(ctx, lp.ConnectionSource, &liquidityProvisions, query, bindVars...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 

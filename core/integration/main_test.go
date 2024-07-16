@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/steps"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
@@ -344,6 +345,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesUndelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
 
+	s.Step(`^the starting auction time for market "([^"]+)" is "([^"]+)"`, func(marketID, startTime string) error {
+		return steps.MarketAuctionStartTime(execsetup.executionEngine, marketID, startTime)
+	})
+	s.Step(`^the ending auction time for market "([^"]+)" is "([^"]+)"`, func(marketID, endTime string) error {
+		return steps.MarketAuctionEndTime(execsetup.executionEngine, marketID, endTime)
+	})
+
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
 		return steps.MarketOpeningAuctionPeriodEnds(execsetup.executionEngine, execsetup.timeService, execsetup.markets, marketID)
 	})
@@ -400,13 +408,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesShouldHaveTheFollowingStakingAccountBalances(execsetup.stakingAccount, table)
 	})
 	s.Step(`^the parties should have the following account balances:$`, func(table *godog.Table) error {
-		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
+		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.executionEngine, execsetup.broker, table)
 	})
 	s.Step(`^the parties should have the following margin levels:$`, func(table *godog.Table) error {
 		return steps.ThePartiesShouldHaveTheFollowingMarginLevels(execsetup.broker, table)
 	})
 	s.Step(`^the parties should have the following profit and loss:$`, func(table *godog.Table) error {
-		return steps.PartiesHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
+		return steps.PartiesHaveTheFollowingProfitAndLoss(execsetup.executionEngine, execsetup.positionPlugin, table)
 	})
 	s.Step(`^the order book should have the following volumes for market "([^"]*)":$`, func(marketID string, table *godog.Table) error {
 		return steps.TheOrderBookOfMarketShouldHaveTheFollowingVolumes(execsetup.broker, marketID, table)
@@ -466,7 +474,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheFollowingNetworkTradesShouldBeExecuted(execsetup.broker, table)
 	})
 	s.Step(`^the following trades should be executed:$`, func(table *godog.Table) error {
-		return steps.TheFollowingTradesShouldBeExecuted(execsetup.broker, table)
+		return steps.TheFollowingTradesShouldBeExecuted(execsetup.executionEngine, execsetup.broker, table)
 	})
 	s.Step(`^the trading mode should be "([^"]*)" for the market "([^"]*)"$`, func(tradingMode, marketID string) error {
 		return steps.TheTradingModeShouldBeForMarket(execsetup.executionEngine, marketID, tradingMode)
@@ -493,7 +501,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheTransfersOfFollowingTypesShouldHappen(execsetup.broker, table)
 	})
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
-		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
+		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the mark price should be "([^"]*)" for the market "([^"]*)"$`, func(rawMarkPrice, marketID string) error {
 		return steps.TheMarkPriceForTheMarketIs(execsetup.executionEngine, marketID, rawMarkPrice)
@@ -586,6 +594,41 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`the average fill price is:`, func(table *godog.Table) error {
 		return steps.TheAverageFillPriceIs(execsetup.executionEngine, table)
+	})
+	// AMM steps
+	s.Step(`^the parties submit the following AMM:$`, func(table *godog.Table) error {
+		return steps.PartiesSubmitTheFollowingAMMs(execsetup.executionEngine, table)
+	})
+	s.Step(`^the parties amend the following AMM:$`, func(table *godog.Table) error {
+		return steps.PartiesAmendTheFollowingAMMs(execsetup.executionEngine, table)
+	})
+	s.Step(`^the parties cancel the following AMM:$`, func(table *godog.Table) error {
+		return steps.PartiesCancelTheFollowingAMMs(execsetup.executionEngine, table)
+	})
+	s.Step(`^the AMM pool status should be:$`, func(table *godog.Table) error {
+		return steps.AMMPoolStatusShouldBe(execsetup.broker, table)
+	})
+	s.Step(`^the following AMM pool events should be emitted:$`, func(table *godog.Table) error {
+		return steps.ExpectToSeeAMMEvents(execsetup.broker, table)
+	})
+	s.Step(`^set the following AMM sub account aliases:$`, func(table *godog.Table) error {
+		return steps.SetAMMPartyAlias(execsetup.broker, execsetup.executionEngine, table)
+	})
+	s.Step(`^parties have the following AMM account balances:$`, func(table *godog.Table) error {
+		return steps.PartiesHaveTheFollowingAMMBalances(execsetup.broker, execsetup.executionEngine, table)
+	})
+	// AMM specific debugging
+	s.Step(`^debug all AMM pool events$`, func() error {
+		return steps.DebugAMMPoolEvents(execsetup.broker, execsetup.log)
+	})
+	s.Step(`^debug AMM pool events for party "([^"]+)"$`, func(party string) error {
+		return steps.DebugAMMPoolEventsForPartyMarket(execsetup.broker, execsetup.log, ptr.From(party), nil)
+	})
+	s.Step(`^debug all AMM pool events for market "([^"]+)"$`, func(market string) error {
+		return steps.DebugAMMPoolEventsForPartyMarket(execsetup.broker, execsetup.log, nil, ptr.From(market))
+	})
+	s.Step(`^debug all AMM pool events for market "([^"]+)" and party "([^"]+)"$`, func(market, party string) error {
+		return steps.DebugAMMPoolEventsForPartyMarket(execsetup.broker, execsetup.log, ptr.From(party), ptr.From(market))
 	})
 
 	// Debug steps
@@ -717,9 +760,16 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the party "([^"]*)" has the following discount factor "([^"]*)"$`, func(party, discountFactor string) error {
 		return steps.PartyHasTheFollowingDiscountFactor(party, discountFactor, execsetup.volumeDiscountProgram)
 	})
+	s.Step(`^the AMM "([^"]*)" has the following discount factor "([^"]*)"$`, func(alias, discountFactor string) error {
+		return steps.AMMHasTheFollowingDiscountFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
+	})
 
 	s.Step(`^the party "([^"]*)" has the following taker notional "([^"]*)"$`, func(party, notional string) error {
 		return steps.PartyHasTheFollowingTakerNotional(party, notional, execsetup.volumeDiscountProgram)
+	})
+
+	s.Step(`^the AMM "([^"]+)" has the following taker notional "([^"]+)"$`, func(alias, notional string) error {
+		return steps.AMMHasTheFollowingNotionalValue(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, notional)
 	})
 
 	s.Step(`^create the network treasury account for asset "([^"]*)"$`, func(asset string) error {
@@ -732,6 +782,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^clear trade events$`, func() error {
 		return steps.ClearTradeEvents(execsetup.broker)
+	})
+
+	// Long block auction steps
+	s.Step(`^the long block duration table is:$`, func(table *godog.Table) error {
+		return steps.TheLongBlockDurationTableIsUploaded(context.Background(), execsetup.executionEngine, table)
+	})
+
+	s.Step(`^the previous block duration was "([^"]+)"$`, func(duration string) error {
+		return steps.ThePreviousBlockDurationWas(context.Background(), execsetup.executionEngine, duration)
 	})
 }
 

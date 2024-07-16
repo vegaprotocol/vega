@@ -31,6 +31,82 @@ message TimeWeightedNotionalPositionUpdated {
   string time_weighted_notional_position = 5;
 }
 
+message AMM {
+  // ID of the AMM.
+  string id = 1;
+  // Party ID of the owner of the AMM.
+  string party_id = 2;
+  // Market ID that the AMM provides liquidity for.
+  string market_id = 3;
+  // Party ID that the AMM operates as.
+  string amm_party_id = 4;
+  // Amount committed to the AMM.
+  string commitment = 5;
+  // Liquidity parameters that define the size and range of the AMM's tradeable volume.
+  ConcentratedLiquidityParameters parameters = 6;
+  // Current status of the AMM.
+  Status status = 7;
+  // Reason for the AMM's current status.
+  StatusReason status_reason = 8;
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
+  string proposed_fee = 9;
+  optional Curve lower_curve = 10;
+  optional Curve upper_curve = 11;
+
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // AMM is active on the market and is posting tradable volume.
+    STATUS_ACTIVE = 1;
+    // AMM submission was rejected.
+    STATUS_REJECTED = 2;
+    // AMM has been cancelled by the owner and is no longer trading.
+    STATUS_CANCELLED = 3;
+    // AMM has been stopped by the network and is no longer trading.
+    STATUS_STOPPED = 4;
+    // AMM will only trade such that it will reduce its position.
+    STATUS_REDUCE_ONLY = 5;
+  }
+
+  enum StatusReason {
+    STATUS_REASON_UNSPECIFIED = 0;
+    // AMM was cancelled by its owner.
+    STATUS_REASON_CANCELLED_BY_PARTY = 1;
+    // Party does not have enough funds in their general account to meet the AMM's commitment.
+    STATUS_REASON_CANNOT_FILL_COMMITMENT = 2;
+    // Party already has an AMM operating on this market and cannot create another one.
+    STATUS_REASON_PARTY_ALREADY_OWNS_AMM_FOR_MARKET = 3;
+    // AMM was liquidated and stopped by the network.
+    STATUS_REASON_PARTY_CLOSED_OUT = 4;
+    // AMM was stopped by the network because the market it operated in was closed.
+    STATUS_REASON_MARKET_CLOSED = 5;
+    // Commitment amount was below the network wide minimum, or its price bounds are too wide, such that the volume is spread thinly creating zero-volume price-levels.
+    STATUS_REASON_COMMITMENT_TOO_LOW = 6;
+    // AMM was unable to rebase its fair-price such that it does not cross with existing orders.
+    STATUS_REASON_CANNOT_REBASE = 7;
+  }
+
+  // Liquidity parameters that define the range and shape of the AMM's curve.
+  message ConcentratedLiquidityParameters {
+    // Base price bound configuration for the AMM.
+    string base = 1;
+    // Upper price bound configuration for the AMM. If unset, the AMM will never hold a short position.
+    optional string lower_bound = 2;
+    // Lower price bound configuration for the AMM. If unset, the AMM will never hold a long position.
+    optional string upper_bound = 3;
+    // Leverage at upper bounds.
+    optional string leverage_at_upper_bound = 4;
+    // Leverage at lower bounds.
+    optional string leverage_at_lower_bound = 5;
+  }
+
+  message Curve {
+    // Virtual liquidity for the given AMM curve.
+    string virtual_liquidity = 1;
+    // Maximum tradable volume on the AMM curve.
+    string theoretical_position = 2;
+  }
+}
+
 // Summary of the vesting and locked balances for an epoch
 message VestingBalancesSummary {
   // Epoch for which these balances are valid.
@@ -101,6 +177,10 @@ message PartyVestingStats {
   string reward_bonus_multiplier = 2;
   // The balance of the party, in quantum.
   string quantum_balance = 3;
+  // Bonus multiplier applied on the reward, summed across all derived accounts.
+  string summed_reward_bonus_multiplier = 4;
+  // The balance of the party and derived keys, in quantum.
+  string summed_quantum_balance = 5;
 }
 
 // Fees rewards and discounts paid / received per parties during an epoch
@@ -349,6 +429,7 @@ message RecurringGovernanceTransfer {
   uint64 start_epoch = 1;
   optional uint64 end_epoch = 2;
   optional DispatchStrategy dispatch_strategy = 3;
+  string factor = 4;
 }
 
 // StakeLinking - an event notifying of stake being deposited or removed for a given party
@@ -543,6 +624,9 @@ message TransactionResult {
     commands.v1.JoinTeam join_team = 128;
     commands.v1.BatchProposalSubmission batch_proposal = 129;
     commands.v1.UpdatePartyProfile update_party_profile = 130;
+    commands.v1.SubmitAMM submit_amm = 131;
+    commands.v1.AmendAMM amend_amm = 132;
+    commands.v1.CancelAMM cancel_amm = 133;
   }
 
   // extra details about the transaction processing
@@ -1136,6 +1220,51 @@ message TeamMemberStats {
   string notional_volume = 2;
 }
 
+// Scores per party per game with eligibility context.
+message GamePartyScore {
+  // Game ID.
+  string game_id = 1;
+  // The party ID.
+  string party = 2;
+  // Team the party belongs to. Unset if the party is not part of a team.
+  optional string team_id = 3;
+  // Epoch when these scores were generated.
+  int64 epoch = 4;
+  // Timestamp in Unix nanoseconds when these scores were generated.
+  int64 time = 5;
+  // Party's current score in the game.
+  string score = 6;
+  // Party's current staking balance. Only populated if the game has a requirement for it.
+  string staking_balance = 7;
+  // Party's current open volume. Only populated if the game has a requirement for it.
+  string open_volume = 8;
+  // Total fees paid by the party during the relevant period.
+  string total_fees_paid = 9;
+  // If the party is eligible for a reward for this game based on the current information.
+  bool is_eligible = 10;
+  // If the party is a member of a team, this is their relative position in the sorting order of the team.
+  // Empty if not a team, or if the party is not eligible.
+  optional uint64 rank = 11;
+}
+
+message GameTeamScore {
+  // Game ID.
+  string game_id = 1;
+  // Team ID
+  string team_id = 2;
+  // Epoch when these scores were generated.
+  int64 epoch = 3;
+  // Timestamp in Unix nanoseconds when these scores were generated.
+  int64 time = 4;
+  // Team's current collective score in the game.
+  string score = 5;
+}
+
+message GameScores {
+  repeated GameTeamScore team_scores = 1;
+  repeated GamePartyScore party_scores = 2;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -1355,6 +1484,12 @@ enum BusEventType {
   // Event containing the IDs of orders cancelled by a party on a market.
   BUS_EVENT_TYPE_CANCELLED_ORDERS = 89;
 
+  // Event containing the near realtime game scores for parties and teams.
+  BUS_EVENT_TYPE_GAME_SCORES = 90;
+
+  // Event use to notify for an AMM update.
+  BUS_EVENT_TYPE_AMM = 91;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1542,6 +1677,10 @@ message BusEvent {
     TimeWeightedNotionalPositionUpdated time_weighted_notional_position_updated = 186;
     // Event notifying of multiple orders being cancelled for a given party, on a given market.
     CancelledOrders cancelled_orders = 187;
+    // Event notifying on near realtime game scores for parties and teams.
+    GameScores game_scores = 188;
+    // Event notifying of AMM updates.
+    AMM amm = 189;
 
     // Market tick events
     MarketEvent market = 1001;

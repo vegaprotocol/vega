@@ -1534,7 +1534,7 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
+func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig, fCap *types.FutureCap) *types.ProposalTermsNewMarket {
 	var dt *dsdefinition.Definition
 	if termExt {
 		if termFilter == nil {
@@ -1598,6 +1598,7 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 							),
 							DataSourceSpecForTradingTermination: *dt,
 							DataSourceSpecBinding:               termBinding,
+							Cap:                                 fCap,
 						},
 					},
 				},
@@ -2030,12 +2031,34 @@ func (e *tstEngine) newProposalForNewPerpsMarket(
 	}
 }
 
+func (e *tstEngine) newProposalForCapped(
+	partyID string,
+	now time.Time,
+	_ *dstypes.SpecFilter,
+	_ *datasource.SpecBindingForFuture,
+	_ bool,
+	fCap *types.FutureCap,
+) types.Proposal {
+	return e.getMarketProposal(partyID, now, nil, nil, true, fCap)
+}
+
 func (e *tstEngine) newProposalForNewMarket(
 	partyID string,
 	now time.Time,
 	termFilter *dstypes.SpecFilter,
 	termBinding *datasource.SpecBindingForFuture,
 	termExt bool,
+) types.Proposal {
+	return e.getMarketProposal(partyID, now, termFilter, termBinding, termExt, nil)
+}
+
+func (e *tstEngine) getMarketProposal(
+	partyID string,
+	now time.Time,
+	termFilter *dstypes.SpecFilter,
+	termBinding *datasource.SpecBindingForFuture,
+	termExt bool,
+	fCap *types.FutureCap,
 ) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
@@ -2047,7 +2070,7 @@ func (e *tstEngine) newProposalForNewMarket(
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding, termExt, nil),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, nil, fCap),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
@@ -2066,7 +2089,7 @@ func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time,
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding, termExt, successor),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, successor, nil),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",

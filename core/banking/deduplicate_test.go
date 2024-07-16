@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,7 +33,7 @@ func TestAssetActionDeduplication(t *testing.T) {
 	ctx := context.Background()
 
 	eng := getTestEngine(t)
-	eng.OnPrimaryEthChainIDUpdated("1")
+	eng.OnPrimaryEthChainIDUpdated("1", "hello")
 
 	id1 := vgrand.RandomStr(5)
 	txHash1 := vgrand.RandomStr(5)
@@ -54,9 +55,9 @@ func TestAssetActionDeduplication(t *testing.T) {
 	asset1 := assets.NewAsset(erc20Asset)
 
 	t.Run("Generate asset list", func(t *testing.T) {
-		eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 		eng.assets.EXPECT().Get(assetID1).Times(1).Return(asset1, nil)
-		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, ""))
+		eng.ethSource.EXPECT().UpdateContractBlock(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, "1"))
 
 		// Validate the asset list.
 		eng.witness.f(eng.witness.r, true)
@@ -71,9 +72,8 @@ func TestAssetActionDeduplication(t *testing.T) {
 	})
 
 	t.Run("Generate duplicated asset list and ", func(t *testing.T) {
-		eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 		eng.assets.EXPECT().Get(assetID1).Times(1).Return(asset1, nil)
-		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, ""))
+		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, "1"))
 
 		// Validate the asset list.
 		eng.witness.f(eng.witness.r, true)
@@ -88,7 +88,6 @@ func TestAssetActionDeduplication(t *testing.T) {
 	// set, which might happen with the introduction of the second bridge. We have
 	// to ensure the event is acknowledge as a duplicate.
 	t.Run("Generate a duplicated event but updated with the chain ID", func(t *testing.T) {
-		eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 		eng.assets.EXPECT().Get(assetID1).Times(1).Return(asset1, nil)
 		require.NoError(t, eng.EnableERC20(ctx, assetList1, id1, 1000, 1000, txHash1, "1"))
 

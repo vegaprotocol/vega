@@ -710,3 +710,43 @@ func UnmarshalMarginMode(v interface{}) (vega.MarginMode, error) {
 
 	return vega.MarginMode(side), nil
 }
+
+func MarshalAMMStatus(s eventspb.AMM_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalAMMStatus(v interface{}) (eventspb.AMM_Status, error) {
+	s, ok := v.(string)
+	if !ok {
+		return eventspb.AMM_STATUS_UNSPECIFIED, fmt.Errorf("expected AMM status to be a string")
+	}
+
+	status, ok := eventspb.AMM_Status_value[s]
+	if !ok {
+		return eventspb.AMM_STATUS_UNSPECIFIED, fmt.Errorf("failed to convert AMM status from GraphQL to Proto: %v", s)
+	}
+
+	return eventspb.AMM_Status(status), nil
+}
+
+func MarshalAMMStatusReason(s eventspb.AMM_StatusReason) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalAMMStatusReason(v interface{}) (eventspb.AMM_StatusReason, error) {
+	s, ok := v.(string)
+	if !ok {
+		return eventspb.AMM_STATUS_REASON_UNSPECIFIED, fmt.Errorf("expected AMM status reason to be a string")
+	}
+
+	status, ok := eventspb.AMM_StatusReason_value[s]
+	if !ok {
+		return eventspb.AMM_STATUS_REASON_UNSPECIFIED, fmt.Errorf("failed to convert AMM status reason from GraphQL to Proto: %v", s)
+	}
+
+	return eventspb.AMM_StatusReason(status), nil
+}

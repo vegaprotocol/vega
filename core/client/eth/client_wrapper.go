@@ -18,6 +18,7 @@ package eth
 import (
 	"context"
 	"math/big"
+	"regexp"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/metrics"
@@ -82,17 +83,29 @@ func newEthClientWrapper(clt ETHClient) *ethClientWrapper {
 
 func (c *ethClientWrapper) ChainID(ctx context.Context) (*big.Int, error) {
 	metrics.EthereumRPCCallCounterInc("chain_id")
-	return c.clt.ChainID(ctx)
+	id, err := c.clt.ChainID(ctx)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return id, nil
 }
 
 func (c *ethClientWrapper) NetworkID(ctx context.Context) (*big.Int, error) {
 	metrics.EthereumRPCCallCounterInc("network_id")
-	return c.clt.NetworkID(ctx)
+	id, err := c.clt.NetworkID(ctx)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return id, nil
 }
 
 func (c *ethClientWrapper) BlockByHash(ctx context.Context, hash ethcommon.Hash) (*ethtypes.Block, error) {
 	metrics.EthereumRPCCallCounterInc("block_by_hash")
-	return c.clt.BlockByHash(ctx, hash)
+	byHash, err := c.clt.BlockByHash(ctx, hash)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return byHash, nil
 }
 
 func (c *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) (*ethtypes.Header, error) {
@@ -107,7 +120,7 @@ func (c *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) 
 	metrics.EthereumRPCCallCounterInc("header_by_number")
 	header, err := c.clt.HeaderByNumber(ctx, number)
 	if err != nil {
-		return nil, err
+		return nil, ErrorWithStrippedSecrets{err: err}
 	}
 
 	c.headerByNumberCache.Add(header.Number.String(), ethtypes.CopyHeader(header))
@@ -117,74 +130,143 @@ func (c *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) 
 
 func (c *ethClientWrapper) BlockByNumber(ctx context.Context, number *big.Int) (*ethtypes.Block, error) {
 	metrics.EthereumRPCCallCounterInc("block_by_number")
-	return c.clt.BlockByNumber(ctx, number)
+	byNumber, err := c.clt.BlockByNumber(ctx, number)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return byNumber, nil
 }
 
 func (c *ethClientWrapper) HeaderByHash(ctx context.Context, hash ethcommon.Hash) (*ethtypes.Header, error) {
 	metrics.EthereumRPCCallCounterInc("header_by_hash")
-	return c.clt.HeaderByHash(ctx, hash)
+	byHash, err := c.clt.HeaderByHash(ctx, hash)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return byHash, nil
 }
 
 func (c *ethClientWrapper) SubscribeNewHead(ctx context.Context, ch chan<- *ethtypes.Header) (ethereum.Subscription, error) {
-	return c.clt.SubscribeNewHead(ctx, ch)
+	head, err := c.clt.SubscribeNewHead(ctx, ch)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return head, nil
 }
 
 func (c *ethClientWrapper) TransactionCount(ctx context.Context, blockHash ethcommon.Hash) (uint, error) {
 	metrics.EthereumRPCCallCounterInc("transaction_count")
-	return c.clt.TransactionCount(ctx, blockHash)
+	count, err := c.clt.TransactionCount(ctx, blockHash)
+	if err != nil {
+		return 0, ErrorWithStrippedSecrets{err: err}
+	}
+	return count, nil
 }
 
 func (c *ethClientWrapper) TransactionInBlock(ctx context.Context, blockHash ethcommon.Hash, index uint) (*ethtypes.Transaction, error) {
 	metrics.EthereumRPCCallCounterInc("transaction_in_block")
-	return c.clt.TransactionInBlock(ctx, blockHash, index)
+	block, err := c.clt.TransactionInBlock(ctx, blockHash, index)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return block, nil
 }
 
 func (c *ethClientWrapper) CodeAt(ctx context.Context, contract ethcommon.Address, blockNumber *big.Int) ([]byte, error) {
 	metrics.EthereumRPCCallCounterInc("code_at")
-	return c.clt.CodeAt(ctx, contract, blockNumber)
+	at, err := c.clt.CodeAt(ctx, contract, blockNumber)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return at, nil
 }
 
 func (c *ethClientWrapper) CallContract(ctx context.Context, call ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	metrics.EthereumRPCCallCounterInc("call_contract")
-	return c.clt.CallContract(ctx, call, blockNumber)
+	contract, err := c.clt.CallContract(ctx, call, blockNumber)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return contract, nil
 }
 
 func (c *ethClientWrapper) EstimateGas(ctx context.Context, call ethereum.CallMsg) (gas uint64, err error) {
 	metrics.EthereumRPCCallCounterInc("estimate_gas")
-	return c.clt.EstimateGas(ctx, call)
+	estimateGas, err := c.clt.EstimateGas(ctx, call)
+	if err != nil {
+		return 0, ErrorWithStrippedSecrets{err: err}
+	}
+	return estimateGas, nil
 }
 
 func (c *ethClientWrapper) PendingCodeAt(ctx context.Context, account ethcommon.Address) ([]byte, error) {
 	metrics.EthereumRPCCallCounterInc("pending_code_at")
-	return c.clt.PendingCodeAt(ctx, account)
+	at, err := c.clt.PendingCodeAt(ctx, account)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return at, nil
 }
 
 func (c *ethClientWrapper) PendingNonceAt(ctx context.Context, account ethcommon.Address) (uint64, error) {
 	metrics.EthereumRPCCallCounterInc("pending_nonce_at")
-	return c.clt.PendingNonceAt(ctx, account)
+	at, err := c.clt.PendingNonceAt(ctx, account)
+	if err != nil {
+		return 0, ErrorWithStrippedSecrets{err: err}
+	}
+	return at, nil
 }
 
 func (c *ethClientWrapper) SendTransaction(ctx context.Context, tx *ethtypes.Transaction) error {
 	metrics.EthereumRPCCallCounterInc("send_transaction")
-	return c.clt.SendTransaction(ctx, tx)
+	err := c.clt.SendTransaction(ctx, tx)
+	return ErrorWithStrippedSecrets{err: err}
 }
 
 func (c *ethClientWrapper) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 	metrics.EthereumRPCCallCounterInc("suggest_gas_price")
-	return c.clt.SuggestGasPrice(ctx)
+	price, err := c.clt.SuggestGasPrice(ctx)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return price, nil
 }
 
 func (c *ethClientWrapper) SuggestGasTipCap(ctx context.Context) (*big.Int, error) {
 	metrics.EthereumRPCCallCounterInc("suggest_gas_tip_cap")
-	return c.clt.SuggestGasTipCap(ctx)
+	tipCap, err := c.clt.SuggestGasTipCap(ctx)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return tipCap, nil
 }
 
 func (c *ethClientWrapper) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]ethtypes.Log, error) {
 	metrics.EthereumRPCCallCounterInc("filter_logs")
-	return c.clt.FilterLogs(ctx, query)
+	logs, err := c.clt.FilterLogs(ctx, query)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return logs, nil
 }
 
 func (c *ethClientWrapper) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- ethtypes.Log) (ethereum.Subscription, error) {
 	metrics.EthereumRPCCallCounterInc("subscribe_filter_logs")
-	return c.clt.SubscribeFilterLogs(ctx, query, ch)
+	logs, err := c.clt.SubscribeFilterLogs(ctx, query, ch)
+	if err != nil {
+		return nil, ErrorWithStrippedSecrets{err: err}
+	}
+	return logs, nil
+}
+
+// ErrorWithStrippedSecrets is an extremely naïve implementation of an error that
+// will strip the API token from a URL.
+type ErrorWithStrippedSecrets struct {
+	err error
+}
+
+func (e ErrorWithStrippedSecrets) Error() string {
+	return regexp.
+		MustCompile(`(?i)(apitoken|token|apikey|key)=(.+)"`).
+		ReplaceAllString(e.err.Error(), "$1=xxx\"")
 }

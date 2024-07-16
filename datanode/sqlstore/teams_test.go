@@ -65,7 +65,7 @@ func TestTeams_AddTeams(t *testing.T) {
 		require.NoError(t, err)
 
 		var teamFromDB entities.Team
-		err = pgxscan.Get(ctx, connectionSource.Connection, &teamFromDB, `SELECT * FROM teams WHERE id=$1`, team.ID)
+		err = pgxscan.Get(ctx, connectionSource, &teamFromDB, `SELECT * FROM teams WHERE id=$1`, team.ID)
 		require.NoError(t, err)
 		require.Equal(t, team, teamFromDB)
 	})
@@ -129,7 +129,7 @@ func TestTeams_UpdateTeam(t *testing.T) {
 
 		var got entities.Team
 
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, `SELECT * FROM teams WHERE id=$1`, team.ID)
+		err = pgxscan.Get(ctx, connectionSource, &got, `SELECT * FROM teams WHERE id=$1`, team.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, want, got)
@@ -188,7 +188,7 @@ func testTeamsShouldAddReferee(t *testing.T) {
 	assert.NoError(t, ts.RefereeJoinedTeam(ctx, teamReferee))
 
 	var got entities.TeamMember
-	require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, `SELECT * FROM team_members WHERE team_id=$1 AND party_id=$2`, team.ID, referee.ID))
+	require.NoError(t, pgxscan.Get(ctx, connectionSource, &got, `SELECT * FROM team_members WHERE team_id=$1 AND party_id=$2`, team.ID, referee.ID))
 	assert.Equal(t, teamReferee, &got)
 }
 
@@ -235,7 +235,7 @@ func testTeamsShouldShowJoinedTeamAsCurrentTeam(t *testing.T) {
 	assert.NoError(t, ts.RefereeJoinedTeam(ctx, entities.TeamRefereeFromProto(joinEvent1, block.VegaTime)))
 
 	var got1 entities.TeamMember
-	require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got1, `SELECT * FROM current_team_members WHERE party_id=$1`, referee1.ID))
+	require.NoError(t, pgxscan.Get(ctx, connectionSource, &got1, `SELECT * FROM current_team_members WHERE party_id=$1`, referee1.ID))
 	assert.Equal(t, team1.ID, (&got1).TeamID)
 
 	referee2 := addTestParty(t, ctx, ps, block)
@@ -249,7 +249,7 @@ func testTeamsShouldShowJoinedTeamAsCurrentTeam(t *testing.T) {
 	assert.NoError(t, ts.RefereeJoinedTeam(ctx, entities.TeamRefereeFromProto(joinEvent2, block.VegaTime)))
 
 	var got2 entities.TeamMember
-	require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got2, `SELECT * FROM current_team_members WHERE party_id=$1`, referee2.ID))
+	require.NoError(t, pgxscan.Get(ctx, connectionSource, &got2, `SELECT * FROM current_team_members WHERE party_id=$1`, referee2.ID))
 	assert.Equal(t, team2.ID, (&got2).TeamID)
 }
 
@@ -300,7 +300,7 @@ func testTeamsShouldShowLastJoinedTeamAsCurrentTeam(t *testing.T) {
 	assert.NoError(t, ts.RefereeJoinedTeam(ctx, entities.TeamRefereeFromProto(joinEvent1, block.VegaTime)))
 
 	var got1 entities.TeamMember
-	require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got1, `SELECT * FROM current_team_members WHERE party_id=$1`, referee.ID))
+	require.NoError(t, pgxscan.Get(ctx, connectionSource, &got1, `SELECT * FROM current_team_members WHERE party_id=$1`, referee.ID))
 	assert.Equal(t, team1.ID, (&got1).TeamID)
 
 	joinEvent2 := &eventspb.RefereeJoinedTeam{
@@ -312,7 +312,7 @@ func testTeamsShouldShowLastJoinedTeamAsCurrentTeam(t *testing.T) {
 	assert.NoError(t, ts.RefereeJoinedTeam(ctx, entities.TeamRefereeFromProto(joinEvent2, block.VegaTime)))
 
 	var got2 entities.TeamMember
-	require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got2, `SELECT * FROM current_team_members WHERE party_id=$1`, referee.ID))
+	require.NoError(t, pgxscan.Get(ctx, connectionSource, &got2, `SELECT * FROM current_team_members WHERE party_id=$1`, referee.ID))
 	assert.Equal(t, team2.ID, (&got2).TeamID)
 }
 

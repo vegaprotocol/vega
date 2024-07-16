@@ -168,12 +168,12 @@ func TestPartyLockedBalance_Add(t *testing.T) {
 	var partyLockedBalances []entities.PartyLockedBalance
 	var partyLockedBalancesCurrent []entities.PartyLockedBalance
 
-	err := pgxscan.Select(ctx, connectionSource.Connection, &partyLockedBalances, "SELECT * from party_locked_balances")
+	err := pgxscan.Select(ctx, connectionSource, &partyLockedBalances, "SELECT * from party_locked_balances")
 	require.NoError(t, err)
 
 	assert.Len(t, partyLockedBalances, 0)
 
-	err = pgxscan.Select(ctx, connectionSource.Connection, &partyLockedBalancesCurrent, "SELECT * from party_locked_balances_current")
+	err = pgxscan.Select(ctx, connectionSource, &partyLockedBalancesCurrent, "SELECT * from party_locked_balances_current")
 	require.NoError(t, err)
 
 	assert.Len(t, partyLockedBalancesCurrent, 0)
@@ -193,14 +193,14 @@ func TestPartyLockedBalance_Add(t *testing.T) {
 		err := plbs.Add(ctx, want)
 		require.NoError(t, err)
 
-		err = pgxscan.Select(ctx, connectionSource.Connection, &partyLockedBalances, "SELECT * from party_locked_balances")
+		err = pgxscan.Select(ctx, connectionSource, &partyLockedBalances, "SELECT * from party_locked_balances")
 		require.NoError(t, err)
 
 		assert.Len(t, partyLockedBalances, 1)
 		assert.Equal(t, want, partyLockedBalances[0])
 
 		t.Run("And a record into the party_locked_balances_current table if it doesn't already exist", func(t *testing.T) {
-			err = pgxscan.Select(ctx, connectionSource.Connection, &partyLockedBalancesCurrent, "SELECT * from party_locked_balances_current")
+			err = pgxscan.Select(ctx, connectionSource, &partyLockedBalancesCurrent, "SELECT * from party_locked_balances_current")
 			require.NoError(t, err)
 
 			assert.Len(t, partyLockedBalancesCurrent, 1)
@@ -219,14 +219,14 @@ func TestPartyLockedBalance_Add(t *testing.T) {
 			}
 
 			err = plbs.Add(ctx, want2)
-			err = pgxscan.Select(ctx, connectionSource.Connection, &partyLockedBalances, "SELECT * from party_locked_balances order by vega_time")
+			err = pgxscan.Select(ctx, connectionSource, &partyLockedBalances, "SELECT * from party_locked_balances order by vega_time")
 			require.NoError(t, err)
 
 			assert.Len(t, partyLockedBalances, 2)
 			assert.Equal(t, want, partyLockedBalances[0])
 			assert.Equal(t, want2, partyLockedBalances[1])
 
-			err = pgxscan.Select(ctx, connectionSource.Connection, &partyLockedBalancesCurrent, "SELECT * from party_locked_balances_current")
+			err = pgxscan.Select(ctx, connectionSource, &partyLockedBalancesCurrent, "SELECT * from party_locked_balances_current")
 			require.NoError(t, err)
 
 			assert.Len(t, partyLockedBalancesCurrent, 1)

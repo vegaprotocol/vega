@@ -88,6 +88,14 @@ const (
 	BatchProposeCommand Command = 0x62
 	// UpdatePartyProfileCommand ...
 	UpdatePartyProfileCommand Command = 0x63
+	// SubmitAMMCommand ...
+	SubmitAMMCommand Command = 0x64
+	// AmendAMMCommand ...
+	AmendAMMCommand Command = 0x65
+	// CancelAMMCommand ...
+	CancelAMMCommand Command = 0x66
+	// DelayedTransactionsWrapper ...
+	DelayedTransactionsWrapper Command = 0x67
 )
 
 var commandName = map[Command]string{
@@ -125,11 +133,15 @@ var commandName = map[Command]string{
 	JoinTeamCommand:                    "Join Team",
 	BatchProposeCommand:                "Batch Proposal",
 	UpdatePartyProfileCommand:          "Update Party Profile",
+	SubmitAMMCommand:                   "Submit AMM",
+	AmendAMMCommand:                    "Amend AMM",
+	CancelAMMCommand:                   "Cancel AMM",
+	DelayedTransactionsWrapper:         "Delayed Transactions Wrapper",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
+	case DelayedTransactionsWrapper, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
 		return true
 	default:
 		return false

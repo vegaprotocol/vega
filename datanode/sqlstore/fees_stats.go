@@ -56,12 +56,7 @@ func NewFeesStats(src *ConnectionSource) *FeesStats {
 func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStats) error {
 	defer metrics.StartSQLQuery("FeesStats", "AddFeesStats")()
 
-	ctx, err := rfs.WithTransaction(ctx)
-	if err != nil {
-		return fmt.Errorf("could not initialise transaction: %w", err)
-	}
-
-	if _, err := rfs.Connection.Exec(
+	if _, err := rfs.Exec(
 		ctx,
 		`INSERT INTO fees_stats(
 			   market_id,
@@ -86,24 +81,16 @@ func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStat
 		stats.MakerFeesGenerated,
 		stats.VegaTime,
 	); err != nil {
-		_ = rfs.Rollback(ctx)
 		return fmt.Errorf("could not execute insertion in `fees_stats`: %w", err)
 	}
 
-	partiesStats := computePartiesStats(stats)
-
 	batcher := NewListBatcher[*feesStatsForPartyRow]("fees_stats_by_party", feesStatsByPartyColumn)
+	partiesStats := computePartiesStats(stats)
 	for _, s := range partiesStats {
 		batcher.Add(s)
 	}
-
-	if _, err := batcher.Flush(ctx, rfs.Connection); err != nil {
-		_ = rfs.Rollback(ctx)
-		return fmt.Errorf("could not flush the batch insertion in `fees_stats_by_party`: %w", err)
-	}
-
-	if err := rfs.Commit(ctx); err != nil {
-		return fmt.Errorf("an error occurred during transactions commit: %w", err)
+	if _, err := batcher.Flush(ctx, rfs.ConnectionSource); err != nil {
+		return err
 	}
 
 	return nil
@@ -143,7 +130,7 @@ func (rfs *FeesStats) StatsForParty(ctx context.Context, partyID entities.PartyI
 	)
 
 	var rows []feesStatsForPartyRow
-	if err := pgxscan.Select(ctx, rfs.Connection, &rows, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, rfs.ConnectionSource, &rows, query, args...); err != nil {
 		return nil, err
 	}
 
@@ -161,7 +148,7 @@ func (rfs *FeesStats) StatsForParty(ctx context.Context, partyID entities.PartyI
 	return stats, nil
 }
 
-func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID, epochSeq *uint64, partyID *string) (*entities.FeesStats, error) {
+func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID, epochSeq *uint64, partyID *string, epochFrom, epochTo *uint64) (*entities.FeesStats, error) {
 	defer metrics.StartSQLQuery("FeesStats", "GetFeesStats")()
 	var (
 		stats []entities.FeesStats
@@ -188,7 +175,19 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 		where = append(where, fmt.Sprintf("market_id = %s", nextBindVar(&args, *marketID)))
 	}
 
-	if epochSeq == nil { // we want the most recent stat so order and limit the query
+	if epochFrom != nil && epochTo != nil && *epochFrom > *epochTo {
+		epochFrom, epochTo = epochTo, epochFrom
+	}
+	if epochFrom != nil {
+		where = append(where, fmt.Sprintf("epoch_seq >= %s", nextBindVar(&args, *epochFrom)))
+		epochSeq = nil
+	}
+	if epochTo != nil {
+		where = append(where, fmt.Sprintf("epoch_seq <= %s", nextBindVar(&args, *epochTo)))
+		epochSeq = nil
+	}
+
+	if epochSeq == nil && epochFrom == nil && epochTo == nil { // we want the most recent stat so order and limit the query
 		where = append(where, "epoch_seq = (SELECT MAX(epoch_seq) FROM fees_stats)")
 	}
 
@@ -202,7 +201,7 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 
 	query = fmt.Sprintf("%s order by market_id, asset_id, epoch_seq desc", query)
 
-	if err = pgxscan.Select(ctx, rfs.Connection, &stats, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, rfs.ConnectionSource, &stats, query, args...); err != nil {
 		return nil, err
 	}
 

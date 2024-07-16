@@ -69,6 +69,13 @@ message InputData {
     BatchProposalSubmission batch_proposal_submission = 1023;
     // Command to update a party's profile.
     UpdatePartyProfile update_party_profile = 1024;
+    // Command to submit an AMM pool to a market
+    SubmitAMM submit_amm = 1025;
+    // Command to amend an AMM pool on a market
+    AmendAMM amend_amm = 1026;
+    // Command to cancel an AMM pool on a market
+    CancelAMM cancel_amm = 1027;
+
     // Validator command sent automatically to vote on that validity of an external resource.
     NodeVote node_vote = 2002;
     // Validator command sent automatically to provide signatures for the Ethereum bridge.
@@ -89,6 +96,8 @@ message InputData {
     IssueSignatures issue_signatures = 2010;
     // Command to submit external oracle data.
     OracleDataSubmission oracle_data_submission = 3001;
+    // Internal transactions used to convey delayed transactions to be included in the next block.
+    DelayedTransactionsWrapper delayed_transactions_wrapper = 4000;
   }
 }
 

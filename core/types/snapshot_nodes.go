@@ -408,6 +408,7 @@ type ExecMarket struct {
 	PartyMarginFactors               []*snapshot.PartyMarginFactor
 	MarkPriceCalculator              *snapshot.CompositePriceCalculator
 	InternalCompositePriceCalculator *snapshot.CompositePriceCalculator
+	Amm                              *snapshot.AmmState
 	MarketLiquidity                  *snapshot.MarketLiquidity
 }
 
@@ -526,6 +527,7 @@ type LimitState struct {
 	ProposeSpotMarketEnabled  bool
 	ProposePerpsMarketEnabled bool
 	ProposeAssetEnabled       bool
+	CanUseAMMEnabled          bool
 	ProposeMarketEnabledFrom  time.Time
 	ProposeAssetEnabledFrom   time.Time
 }
@@ -563,6 +565,7 @@ type AppState struct {
 	Height          uint64
 	Block           string
 	Time            int64
+	PrevBlockTime   int64
 	ChainID         string
 	ProtocolVersion string
 	ProtocolUpdgade bool
@@ -889,6 +892,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadEthOracleVerifierMisc(dt)
 	case *snapshot.Payload_EvmMultisigTopologies:
 		ret.Data = PayloadEVMMultisigTopologiesFromProto(dt)
+	case *snapshot.Payload_TxCache:
+		ret.Data = PayloadTxCacheFromProto(dt)
+	case *snapshot.Payload_EvmFwdHeartbeats:
+		ret.Data = PayloadEVMFwdHeartbeatsFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1081,6 +1088,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_EthOracleVerifierMisc:
 		ret.Data = dt
 	case *snapshot.Payload_EvmMultisigTopologies:
+		ret.Data = dt
+	case *snapshot.Payload_TxCache:
+		ret.Data = dt
+	case *snapshot.Payload_EvmFwdHeartbeats:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -2044,6 +2055,7 @@ func LimitFromProto(l *snapshot.LimitState) *LimitState {
 		ProposePerpsMarketEnabled: l.ProposePerpsMarketEnabled,
 		ProposeAssetEnabledFrom:   time.Time{},
 		ProposeMarketEnabledFrom:  time.Time{},
+		CanUseAMMEnabled:          l.CanUseAmmEnabled,
 	}
 
 	if l.ProposeAssetEnabledFrom != -1 {
@@ -2165,6 +2177,7 @@ func AppStateFromProto(as *snapshot.AppState) *AppState {
 	return &AppState{
 		Height:          as.Height,
 		Block:           as.Block,
+		PrevBlockTime:   as.PrevBlockTime,
 		Time:            as.Time,
 		ChainID:         as.ChainId,
 		ProtocolVersion: as.ProtocolVersion,
@@ -2177,6 +2190,7 @@ func (a AppState) IntoProto() *snapshot.AppState {
 		Height:          a.Height,
 		Block:           a.Block,
 		Time:            a.Time,
+		PrevBlockTime:   a.PrevBlockTime,
 		ChainId:         a.ChainID,
 		ProtocolVersion: a.ProtocolVersion,
 		ProtocolUpgrade: a.ProtocolUpdgade,
@@ -2646,6 +2660,7 @@ func (l *LimitState) IntoProto() *snapshot.LimitState {
 		ProposeAssetEnabled:       l.ProposeAssetEnabled,
 		ProposeMarketEnabledFrom:  l.ProposeMarketEnabledFrom.UnixNano(),
 		ProposeAssetEnabledFrom:   l.ProposeAssetEnabledFrom.UnixNano(),
+		CanUseAmmEnabled:          l.CanUseAMMEnabled,
 	}
 
 	// Use -1 to mean it hasn't been set
@@ -3034,6 +3049,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		PartyMarginFactors:               em.PartyMarginFactor,
 		MarkPriceCalculator:              em.MarkPriceCalculator,
 		InternalCompositePriceCalculator: em.InternalCompositePriceCalculator,
+		Amm:                              em.Amm,
 		MarketLiquidity:                  em.MarketLiquidity,
 	}
 
@@ -3079,6 +3095,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		MarkPriceCalculator:              e.MarkPriceCalculator,
 		InternalCompositePriceCalculator: e.InternalCompositePriceCalculator,
 		MarketLiquidity:                  e.MarketLiquidity,
+		Amm:                              e.Amm,
 	}
 
 	if e.CurrentMarkPrice != nil {
@@ -4278,4 +4295,64 @@ func (p *PayloadEVMMultisigTopologies) Namespace() SnapshotNamespace {
 
 func (p *PayloadEVMMultisigTopologies) Key() string {
 	return "all"
+}
+
+type PayloadTxCache struct {
+	TxCache *snapshot.TxCache
+}
+
+func (p *PayloadTxCache) Key() string {
+	return "txCache"
+}
+
+func (*PayloadTxCache) Namespace() SnapshotNamespace {
+	return TxCacheSnapshot
+}
+
+func (p *PayloadTxCache) IntoProto() *snapshot.Payload_TxCache {
+	return &snapshot.Payload_TxCache{
+		TxCache: p.TxCache,
+	}
+}
+
+func (*PayloadTxCache) isPayload() {}
+
+func (p *PayloadTxCache) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadTxCacheFromProto(txCachePayload *snapshot.Payload_TxCache) *PayloadTxCache {
+	return &PayloadTxCache{
+		TxCache: txCachePayload.TxCache,
+	}
+}
+
+type PayloadEVMFwdHeartbeats struct {
+	EVMFwdHeartbeats *snapshot.EVMFwdHeartbeats
+}
+
+func (p *PayloadEVMFwdHeartbeats) Key() string {
+	return "all"
+}
+
+func (*PayloadEVMFwdHeartbeats) Namespace() SnapshotNamespace {
+	return EVMHeartbeatSnapshot
+}
+
+func (p *PayloadEVMFwdHeartbeats) IntoProto() *snapshot.Payload_EvmFwdHeartbeats {
+	return &snapshot.Payload_EvmFwdHeartbeats{
+		EvmFwdHeartbeats: p.EVMFwdHeartbeats,
+	}
+}
+
+func (*PayloadEVMFwdHeartbeats) isPayload() {}
+
+func (p *PayloadEVMFwdHeartbeats) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadEVMFwdHeartbeatsFromProto(pl *snapshot.Payload_EvmFwdHeartbeats) *PayloadEVMFwdHeartbeats {
+	return &PayloadEVMFwdHeartbeats{
+		EVMFwdHeartbeats: pl.EvmFwdHeartbeats,
+	}
 }

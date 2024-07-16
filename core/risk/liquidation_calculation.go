@@ -28,6 +28,16 @@ type OrderInfo struct {
 	IsMarketOrder bool
 }
 
+// Clone - Not really necessary, just added to avoid future pointers
+// copy if some were added.
+func (o *OrderInfo) Clone() *OrderInfo {
+	return &OrderInfo{
+		TrueRemaining: o.TrueRemaining,
+		Price:         o.Price.Copy(),
+		IsMarketOrder: o.IsMarketOrder,
+	}
+}
+
 func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition num.Decimal, isolatedMarginMode bool, marginFactor num.Decimal) (liquidationPriceForOpenVolume, liquidationPriceWithBuyOrders, liquidationPriceWithSellOrders num.Decimal, err error) {
 	openVolume := num.DecimalFromInt64(sizePosition).Div(positionFactor)
 

@@ -28,6 +28,7 @@ import (
 )
 
 type MarketDepthService interface {
+	OnAMMUpdate(pool entities.AMMPool, vt time.Time, seqNum uint64)
 	AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64)
 	PublishAtEndOfBlock()
 }
@@ -58,12 +59,17 @@ type Order struct {
 	subscriber
 	store        OrderStore
 	depthService MarketDepthService
+	// the store uses the batcher type which could be used as a cache, provided we know the
+	// version and vegatime type for the orders we need to persist. This isn't the case
+	// but orders are ingested here, so we can cache them here, of course.
+	cache map[entities.OrderID]entities.Order
 }
 
 func NewOrder(store OrderStore, depthService MarketDepthService) *Order {
 	return &Order{
 		store:        store,
 		depthService: depthService,
+		cache:        map[entities.OrderID]entities.Order{},
 	}
 }
 
@@ -91,6 +97,8 @@ func (os *Order) Push(ctx context.Context, evt events.Event) error {
 }
 
 func (os *Order) Flush(ctx context.Context) error {
+	// clear cache
+	os.cache = map[entities.OrderID]entities.Order{}
 	return os.store.Flush(ctx)
 }
 
@@ -114,7 +122,7 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 		}
 		os.depthService.AddOrder(torder, os.vegaTime, seqNum)
 
-		if err := os.store.Add(o); err != nil {
+		if err := os.persist(o); err != nil {
 			return errors.Wrap(os.store.Add(o), "adding order to database")
 		}
 		// the next order will be insterted as though it was the next event on the bus, with a new sequence number:
@@ -124,10 +132,26 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 }
 
 func (os *Order) cancelled(ctx context.Context, co CancelledOrdersEvent, seqNum uint64) error {
-	orders, err := os.store.GetByMarketAndID(ctx, co.MarketID(), co.OrderIDs())
-	if err != nil {
-		return err
+	allIds := co.OrderIDs()
+	ids := make([]string, 0, len(allIds))
+	orders := make([]entities.Order, 0, len(allIds))
+	for _, id := range allIds {
+		k := entities.OrderID(id)
+		if o, ok := os.cache[k]; ok {
+			orders = append(orders, o)
+		} else {
+			ids = append(ids, id)
+		}
 	}
+
+	if len(ids) > 0 {
+		ncOrders, err := os.store.GetByMarketAndID(ctx, co.MarketID(), ids)
+		if err != nil {
+			return err
+		}
+		orders = append(orders, ncOrders...)
+	}
+
 	txHash := entities.TxHash(co.TxHash())
 	for _, o := range orders {
 		o.Status = entities.OrderStatusCancelled
@@ -142,7 +166,7 @@ func (os *Order) cancelled(ctx context.Context, co CancelledOrdersEvent, seqNum 
 		}
 		os.depthService.AddOrder(torder, os.vegaTime, seqNum)
 
-		if err := os.store.Add(o); err != nil {
+		if err := os.persist(o); err != nil {
 			return errors.Wrap(err, "adding order to database")
 		}
 		seqNum++
@@ -166,9 +190,18 @@ func (os *Order) consume(oe OrderEvent, seqNum uint64) error {
 	}
 	os.depthService.AddOrder(torder, os.vegaTime, seqNum)
 
-	return errors.Wrap(os.store.Add(order), "adding order to database")
+	return errors.Wrap(os.persist(order), "adding order to database")
 }
 
 func (os *Order) consumeEndBlock() {
 	os.depthService.PublishAtEndOfBlock()
+}
+
+func (os *Order) persist(o entities.Order) error {
+	os.cache[o.ID] = o
+	return os.store.Add(o)
+}
+
+func (os *Order) Name() string {
+	return "Order"
 }

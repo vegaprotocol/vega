@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.77.0
+## Unreleased 0.78.0
 
 ### 🚨 Breaking changes
 
@@ -19,6 +19,60 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.77.0
+
+### 🛠 Improvements
+
+- [11209](https://github.com/vegaprotocol/vega/issues/11209) - Publish ongoing games data.
+- [11242](https://github.com/vegaprotocol/vega/issues/11242) - Add configuration to visor to help control binary retries a bit better.
+- [11408](https://github.com/vegaprotocol/vega/issues/11408) - Relax finality check to allow instant deposits over the `Arbitrum` bridge.
+- [11196](https://github.com/vegaprotocol/vega/issues/11196) - Add an active field in the price monitoring bounds payload.
+- [11211](https://github.com/vegaprotocol/vega/issues/11211) - Liquidation engine includes `vAMM` shapes as available volume.
+- [11217](https://github.com/vegaprotocol/vega/issues/11217) - Allow market proposals to override risk factors.
+- [11285](https://github.com/vegaprotocol/vega/issues/11285) - Add support for trading transaction ordering.
+- [11282](https://github.com/vegaprotocol/vega/issues/11282) - Allow a party to withdraw rewards from an AMM vested account.
+- [11301](https://github.com/vegaprotocol/vega/issues/11301) - Sum vesting reward bonus multiplier across all derived keys for party.
+- [11329](https://github.com/vegaprotocol/vega/issues/11329) - Add source chain ID when available to transaction event attributes
+- [10634](https://github.com/vegaprotocol/vega/issues/10634) - Add spam checks for orders/liquidity provision
+- [11337](https://github.com/vegaprotocol/vega/issues/11337) - Enhance transaction reordering with per market control and configurable delay.
+- [11334](https://github.com/vegaprotocol/vega/issues/11334) - Heartbeat chain events are now sent to keep last seen block up to date.
+- [11344](https://github.com/vegaprotocol/vega/issues/11344) - Include derived parties in accounts API
+- [11268](https://github.com/vegaprotocol/vega/issues/11268) - Include derived parties vesting stats API
+- [11266](https://github.com/vegaprotocol/vega/issues/11266) - Include derived parties rewards API
+- [11357](https://github.com/vegaprotocol/vega/issues/11357) - Support historical game scores
+- [11023](https://github.com/vegaprotocol/vega/issues/11023) - Add proposed fees to `vAMM` data.
+- [11028](https://github.com/vegaprotocol/vega/issues/11028) - Add API to estimate order book depth based on `vAMM`.
+- [11400](https://github.com/vegaprotocol/vega/issues/11400) - Add support for long block auction.
+- [11026](https://github.com/vegaprotocol/vega/issues/11026) - Add API flag to get paid liquidity fees for a `vAMM` using the parent key.
+- [11027](https://github.com/vegaprotocol/vega/issues/11027) - Add API filters to get fees and rewards by market, across epochs.
+- [10360](https://github.com/vegaprotocol/vega/issues/10360) - Scale funding payment by fraction of period spent outside of auction.
+- [11452](https://github.com/vegaprotocol/vega/issues/11452) - Implement alternative estimations for fully collateralised capped future.
+
+### 🐛 Fixes
+
+- [11066](https://github.com/vegaprotocol/vega/issues/11066) - Ensure vesting statistics match vesting accounts numbers.
+- [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
+- [11293](https://github.com/vegaprotocol/vega/issues/11293) - Panic in data node with position estimate endpoint.
+- [11401](https://github.com/vegaprotocol/vega/issues/11401) - Ignore dispatch strategies with zero `ref-counts` when calculating payouts.
+- [11379](https://github.com/vegaprotocol/vega/issues/11379) - Source chain id is now populated in `GQL Erc20WithdrawalApproval` endpoint.
+- [11279](https://github.com/vegaprotocol/vega/issues/11279) - Handle properly the case of multiple transfers for the same game id.
+- [11297](https://github.com/vegaprotocol/vega/issues/11297) - Handle properly asset decimals < market decimals when uncrossing the order book upon leaving auction.
+- [11304](https://github.com/vegaprotocol/vega/issues/11304) - Correctly verify pegged order offset with respect to tick size in the right units.
+- [11319](https://github.com/vegaprotocol/vega/issues/11319) - Do not leak Ethereum client secrets in the logs.
+- [11336](https://github.com/vegaprotocol/vega/issues/11336) - Add support for decay factor in governance recurring transfers and report the proposal amount rather than 0 when the proposal gets enacted.
+- [11368](https://github.com/vegaprotocol/vega/issues/11368) - Add support for update vesting stats in REST API and fix summing the quantum balance for vesting stats.
+- [11380](https://github.com/vegaprotocol/vega/issues/11380) - Handle broken stop orders in prepare proposal.
+- [11136](https://github.com/vegaprotocol/vega/issues/11136) - Fix premature invocation of post commit hooks in case of fee stats event.
+- [11409](https://github.com/vegaprotocol/vega/issues/11409) - When updating a capped market - copy the cap from the existing market definition.
+- [11415](https://github.com/vegaprotocol/vega/issues/11415) - End long block auction when expired.
+- [11419](https://github.com/vegaprotocol/vega/issues/11419) - Fix long block auction extension to be calculated from current time.
+- [11438](https://github.com/vegaprotocol/vega/issues/11438) - Add missing assignment to epoch to and from in `gameTeamScores` resolvers.
+- [11442](https://github.com/vegaprotocol/vega/issues/11442) - Add validation to `submitAMM` to ensure the curves can be successfully generated.
+- [11448](https://github.com/vegaprotocol/vega/issues/11448) - Fix team game score query with epoch filter.
+- [11457](https://github.com/vegaprotocol/vega/issues/11457) - Fix cursor column ordering for game scores.
+- [11454](https://github.com/vegaprotocol/vega/issues/11454) - Ensure ended transfers proper handling.
+
+
 ## 0.76.1
 
 ### 🐛 Fixes
@@ -26,7 +80,7 @@
 - [11250](https://github.com/vegaprotocol/vega/issues/11250) - Add missing dispatch strategy in transfer proposal.
 - [11252](https://github.com/vegaprotocol/vega/issues/11252) - Treat no position as zero position when calculating stop order overrides.
 - [11249](https://github.com/vegaprotocol/vega/issues/11249) - Composite mark price oracles are now deactivated when a market is rejected.
-
+- [11262](https://github.com/vegaprotocol/vega/pull/11262) - Fix auction extensions after risk parameter update.
 
 ## 0.76.0
 
@@ -64,6 +118,7 @@
 - [11143](https://github.com/vegaprotocol/vega/issues/11143) - Add support for new asset proposal in batch governance proposal
 - [11182](https://github.com/vegaprotocol/vega/issues/11182) - Remove reduce only restriction on spot markets stop orders.
 - [11153](https://github.com/vegaprotocol/vega/issues/11153) - Add check on start-up that bridge `RPC-endpoints` are functional.
+- [11227](https://github.com/vegaprotocol/vega/issues/11227) - Add capped futures to `protos`.
 
 ### 🐛 Fixes
 
@@ -193,6 +248,7 @@
 
 - [10702](https://github.com/vegaprotocol/vega/pull/10700) - Use second precision in `GetMarginIncrease()` so that perpetual product uses second precision everywhere.
 - [10698](https://github.com/vegaprotocol/vega/issues/10698) - Prevent `L2` from making too many `RPC` calls.
+- [971](https://github.com/vegaprotocol/core-test-coverage/issues/971) - Add `AMM` support to the integration test framework.
 
 ## 0.74.2
 
@@ -227,6 +283,9 @@
 - [10611](https://github.com/vegaprotocol/vega/issues/10611) - Added internal config price to update `perps`.
 - [10615](https://github.com/vegaprotocol/vega/issues/10615) - Fix oracle scaling function in internal composite price.
 - [10621](https://github.com/vegaprotocol/vega/issues/10621) - Fix market activity tracker storing incorrect data for previous `epochMakerFeesPaid`.
+- [10643](https://github.com/vegaprotocol/vega/issues/10643) - Games `API` not showing quantum values and added filter for team and party.
+
+## 0.74.0
 
 ### 🚨 Breaking changes
 

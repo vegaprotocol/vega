@@ -697,6 +697,14 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 			return errs.FinalAddForProperty("new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
 		}
 
+		if f, ok := big.NewFloat(0).SetString(recurring.Factor); !ok {
+			errs.AddForProperty("new_transfer.changes.recurring.factor", ErrNotAValidFloat)
+		} else {
+			if f.Cmp(big.NewFloat(0)) <= 0 {
+				errs.AddForProperty("new_transfer.changes.recurring.factor", ErrMustBePositive)
+			}
+		}
+
 		if recurring.DispatchStrategy != nil {
 			if len(changes.Destination) > 0 {
 				errs.AddForProperty("new_transfer.changes.destination", ErrIsNotValid)
@@ -905,7 +913,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	}
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "new_spot_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument"))
+	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument", changes.TickSize))
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
 	errs.Merge(checkTickSize(changes.TickSize, "new_spot_market.changes"))
@@ -965,7 +973,7 @@ func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) 
 	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "new_market.changes"))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "new_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "new_market.changes.instrument"))
+	errs.Merge(checkNewInstrument(changes.Instrument, "new_market.changes.instrument", changes.TickSize))
 	errs.Merge(checkNewRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "new_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_market.changes.liquidity_fee_settings"))
@@ -1172,7 +1180,7 @@ func checkTargetStakeParams(targetStakeParameters *protoTypes.TargetStakeParamet
 	return errs
 }
 
-func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent string) Errors {
+func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent, tickSize string) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -1192,7 +1200,7 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
-		errs.Merge(checkNewFuture(product.Future))
+		errs.Merge(checkNewFuture(product.Future, tickSize))
 	case *protoTypes.InstrumentConfiguration_Perpetual:
 		errs.Merge(checkNewPerps(product.Perpetual, fmt.Sprintf("%s.product", parent)))
 	case *protoTypes.InstrumentConfiguration_Spot:
@@ -1250,7 +1258,7 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	return errs
 }
 
-func checkNewFuture(future *protoTypes.FutureProduct) Errors {
+func checkNewFuture(future *protoTypes.FutureProduct, tickSize string) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -1262,6 +1270,25 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	}
 	if len(future.QuoteName) == 0 {
 		errs.AddForProperty("new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+	}
+
+	if future.Cap != nil {
+		// convert to uint to ensure input is valid
+		if len(future.Cap.MaxPrice) == 0 {
+			errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrIsRequired)
+		} else {
+			// tick size is validated later on, ignore errors here
+			tick, _ := num.UintFromString(tickSize, 10)
+			if tick.IsZero() {
+				tick = num.UintOne()
+			}
+			mp, err := num.UintFromString(future.Cap.MaxPrice, 10)
+			if err || mp.IsZero() {
+				errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrMustBePositive)
+			} else if !mp.Mod(mp, tick).IsZero() {
+				errs.AddForProperty("new_market.changes.instrument.product.future.cap.max_price", ErrMaxPriceMustRespectTickSize)
+			}
+		}
 	}
 
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "new_market.changes.instrument.product.future", true))
@@ -2276,6 +2303,33 @@ func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_L
 		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-1,1]"))
 	}
 
+	// if not nil, both short and long must be specified and correct
+	if params.LogNormal.RiskFactorOverride != nil {
+		short := params.LogNormal.RiskFactorOverride.Short
+		long := params.LogNormal.RiskFactorOverride.Long
+		if len(short) <= 0 {
+			return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsRequired)
+		}
+
+		d, err := num.DecimalFromString(short)
+		if err != nil {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrMustBePositive)
+		}
+
+		if len(long) <= 0 {
+			return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsRequired)
+		}
+
+		d, err = num.DecimalFromString(long)
+		if err != nil {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("new_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrMustBePositive)
+		}
+	}
+
 	return errs
 }
 
@@ -2312,6 +2366,33 @@ func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfigura
 
 	if math.IsNaN(params.LogNormal.Params.R) {
 		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+	}
+
+	// if not nil, both short and long must be specified and correct
+	if params.LogNormal.RiskFactorOverride != nil {
+		short := params.LogNormal.RiskFactorOverride.Short
+		long := params.LogNormal.RiskFactorOverride.Long
+		if len(short) <= 0 {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsRequired)
+		}
+
+		d, err := num.DecimalFromString(short)
+		if err != nil {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.short", ErrMustBePositive)
+		}
+
+		if len(long) <= 0 {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsRequired)
+		}
+
+		d, err = num.DecimalFromString(long)
+		if err != nil {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrIsNotValidNumber)
+		} else if d.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("update_market.changes.risk_parameters.log_normal.risk_factor_override.long", ErrMustBePositive)
+		}
 	}
 
 	return errs

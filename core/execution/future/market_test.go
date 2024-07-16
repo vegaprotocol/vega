@@ -72,7 +72,7 @@ var defaultCollateralAssets = []types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
 			Symbol:  "ETH",
-			Quantum: num.DecimalZero(),
+			Quantum: num.DecimalOne(),
 		},
 	},
 	{
@@ -81,7 +81,7 @@ var defaultCollateralAssets = []types.Asset{
 			Name:     "VOTE",
 			Symbol:   "VOTE",
 			Decimals: 5,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -245,11 +245,12 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(tm.ctrl)
+	parties := mocks.NewMockParties(tm.ctrl)
 
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking,
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties,
 	)
 	require.NoError(tm.t, err)
 
@@ -601,7 +602,7 @@ func getTestMarket2WithDP(
 		Details: &types.AssetDetails{
 			Symbol:   "ETH",
 			Decimals: 0, // no decimals
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 		},
 	})
 	require.NoError(t, err)
@@ -619,7 +620,7 @@ func getTestMarket2WithDP(
 			Name:     "VOTE",
 			Symbol:   "VOTE",
 			Decimals: 5,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -657,11 +658,12 @@ func getTestMarket2WithDP(
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
+	parties := mocks.NewMockParties(ctrl)
 
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}
@@ -3353,7 +3355,20 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension) * time.Second)
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
-	require.Equal(t, 1, len(md.PriceMonitoringBounds))
+	// 2 in total
+	require.Equal(t, 2, len(md.PriceMonitoringBounds))
+	active, triggerd := 0, 0
+	for _, v := range md.PriceMonitoringBounds {
+		if v.Active {
+			active++
+			continue
+		}
+		triggerd++
+	}
+	// 1 active
+	require.Equal(t, 1, active)
+	// 1 triggered
+	require.Equal(t, 1, triggerd)
 
 	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
@@ -6699,4 +6714,16 @@ func TestLiquidityFeeSettingsConstantFee(t *testing.T) {
 	}
 	// doesn't matter what the LP's set in their nomination, the fee is going to be a constant 0.8
 	assert.Equal(t, "0.8", fee)
+}
+
+func TestVerifyAMMBounds(t *testing.T) {
+	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
+	require.Equal(t, "upper bound (8) as factored by market and asset decimals must be greater than base (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
+	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(0.1)).Error())
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(0.1)))
+
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
+	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
 }

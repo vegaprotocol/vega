@@ -10,6 +10,7 @@ import (
 	time "time"
 
 	types "code.vegaprotocol.io/vega/core/types"
+	vesting "code.vegaprotocol.io/vega/core/vesting"
 	num "code.vegaprotocol.io/vega/libs/num"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
@@ -373,19 +374,19 @@ func (mr *MockVestingMockRecorder) AddReward(arg0, arg1, arg2, arg3 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReward", reflect.TypeOf((*MockVesting)(nil).AddReward), arg0, arg1, arg2, arg3)
 }
 
-// GetRewardBonusMultiplier mocks base method.
-func (m *MockVesting) GetRewardBonusMultiplier(arg0 string) (*num.Uint, decimal.Decimal) {
+// GetSingleAndSummedRewardBonusMultipliers mocks base method.
+func (m *MockVesting) GetSingleAndSummedRewardBonusMultipliers(arg0 string) (vesting.MultiplierAndQuantBalance, vesting.MultiplierAndQuantBalance) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRewardBonusMultiplier", arg0)
-	ret0, _ := ret[0].(*num.Uint)
-	ret1, _ := ret[1].(decimal.Decimal)
+	ret := m.ctrl.Call(m, "GetSingleAndSummedRewardBonusMultipliers", arg0)
+	ret0, _ := ret[0].(vesting.MultiplierAndQuantBalance)
+	ret1, _ := ret[1].(vesting.MultiplierAndQuantBalance)
 	return ret0, ret1
 }
 
-// GetRewardBonusMultiplier indicates an expected call of GetRewardBonusMultiplier.
-func (mr *MockVestingMockRecorder) GetRewardBonusMultiplier(arg0 interface{}) *gomock.Call {
+// GetSingleAndSummedRewardBonusMultipliers indicates an expected call of GetSingleAndSummedRewardBonusMultipliers.
+func (mr *MockVestingMockRecorder) GetSingleAndSummedRewardBonusMultipliers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardBonusMultiplier", reflect.TypeOf((*MockVesting)(nil).GetRewardBonusMultiplier), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSingleAndSummedRewardBonusMultipliers", reflect.TypeOf((*MockVesting)(nil).GetSingleAndSummedRewardBonusMultipliers), arg0)
 }
 
 // MockActivityStreak is a mock of ActivityStreak interface.

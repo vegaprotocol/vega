@@ -99,6 +99,8 @@ func (g *Gastimator) GetPriority(tx abci.Tx) uint64 {
 
 func (g *Gastimator) CalcGasWantedForTx(tx abci.Tx) (uint64, error) {
 	switch tx.Command() {
+	case txn.DelayedTransactionsWrapper:
+		return 0, nil
 	case txn.SubmitOrderCommand:
 		s := &commandspb.OrderSubmission{}
 		if err := tx.Unmarshal(s); err != nil {

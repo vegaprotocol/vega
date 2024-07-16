@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.76.1";
+    version: "v0.77.0";
   }
   schemes: [
     HTTP,
@@ -101,6 +101,20 @@ service TradingDataService {
   // Get a list of stop orders that match the given filters
   rpc ListStopOrders(ListStopOrdersRequest) returns (ListStopOrdersResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
+  }
+
+  // List game team scores
+  //
+  // Get a list of team scores for the given filters
+  rpc ListGameTeamScores(ListGameTeamScoresRequest) returns (ListGameTeamScoresResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Games"};
+  }
+
+  // List game party scores
+  //
+  // Get a list of party scores for the given filters
+  rpc ListGamePartyScores(ListGamePartyScoresRequest) returns (ListGamePartyScoresResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Games"};
   }
 
   // Deprecated: List positions
@@ -246,21 +260,23 @@ service TradingDataService {
 
   // List candle data
   //
-  // Get a list of candle data for a given candle ID. Candle IDs can be obtained by calling list-candle-intervals
+  // Get a list of candle data for a given candle ID.
+  // A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
   rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
 
   // Observe candle data
   //
-  // Subscribe to a stream of candle updates
+  // Subscribe to a stream of candle updates given a candle ID.
+  // A candle ID encapsulates a market ID and candle interval. A list of available candle IDs, and therefore candle intervals can be found using the list-candle-intervals API.
   rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
 
   // List candle intervals
   //
-  // Get a list of all available intervals for a given market along with the corresponding candle ID
+  // Get a list of all available candle intervals for a given market along with the corresponding candle ID.
   rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Candles"};
   }
@@ -937,6 +953,20 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
   }
 
+  // List AMMs
+  //
+  // Get a list of AMM or filter by market ID, party ID or AMM ID
+  rpc ListAMMs(ListAMMsRequest) returns (ListAMMsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMs"};
+  }
+
+  // Estimate AMM bounds
+  //
+  // Get a list of AMMs or filter by market ID, party ID or AMM ID
+  rpc EstimateAMMBounds(EstimateAMMBoundsRequest) returns (EstimateAMMBoundsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMs"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -1078,6 +1108,10 @@ message GetPartyVestingStatsResponse {
   uint64 epoch_seq = 3;
   // The balance of the party, in quantum.
   string quantum_balance = 4;
+  // Bonus multiplier applied on the reward, summed across all derived accounts.
+  string summed_reward_bonus_multiplier = 5;
+  // The balance of the party and derived keys, in quantum.
+  string summed_quantum_balance = 6;
 }
 
 // Request sent to list the vesting and locked balances for a party
@@ -1118,6 +1152,9 @@ message AccountBalance {
   string market_id = 5;
   // Account type of this account.
   vega.AccountType type = 6;
+  // Parent party ID of the account.
+  // This field is optional and is used in cases where the account is derived from another party's account.
+  optional string parent_party_id = 7;
 }
 
 // Request that is sent when listing accounts.
@@ -1126,6 +1163,9 @@ message ListAccountsRequest {
   AccountFilter filter = 1;
   // Optional pagination control.
   optional Pagination pagination = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 3;
 }
 
 // Response that is received from listing accounts query.
@@ -1160,6 +1200,9 @@ message ObserveAccountsRequest {
   string asset = 3;
   // Account type to subscribe to, required field.
   vega.AccountType type = 4;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 5;
 }
 
 // Response that is received when subscribing to a stream of accounts.
@@ -1316,6 +1359,88 @@ message GetStopOrderResponse {
   vega.events.v1.StopOrderEvent order = 1;
 }
 
+// Request that is sent when executing a query for a list of team game scores.
+message ListGameTeamScoresRequest {
+  // Optional pagination control.
+  optional Pagination pagination = 1;
+  // Team games filter contains all filtering conditions and values that are applied to the team games score listing.
+  optional GameTeamScoresFilter filter = 2;
+}
+
+message GameTeamScoresFilter {
+  // Restrict game scores to the given ones.
+  repeated string game_ids = 1;
+  // Restrict game scores to those for the given teams.
+  repeated string team_ids = 2;
+  // Restrict game scores to those from a given epoch.
+  optional uint64 epoch_from = 3;
+  // Restrict game scores to those up to a given epoch.
+  optional uint64 epoch_to = 4;
+}
+
+// Response received from the query for getting a list of game scores for teams.
+message ListGameTeamScoresResponse {
+  // Page of team game scores data and corresponding page information.
+  GameTeamScoresConnection team_scores = 1;
+}
+
+// Page of team game scores data and corresponding page information.
+message GameTeamScoresConnection {
+  // Page of orders and their corresponding cursors.
+  repeated GameTeamScoresEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message GameTeamScoresEdge {
+  // Data associated with an order submitted to a Vega node.
+  vega.events.v1.GameTeamScore node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Request that is sent when executing a query for a list of party game scores.
+message ListGamePartyScoresRequest {
+  // Optional pagination control.
+  optional Pagination pagination = 1;
+  // Party games filter contains all filtering conditions and values that are applied to the party games score listing.
+  optional GamePartyScoresFilter filter = 2;
+}
+
+message GamePartyScoresFilter {
+  // Restrict game scores to those in the given games.
+  repeated string game_ids = 1;
+  // Restrict game scores to the parties in the given teams.
+  repeated string team_ids = 2;
+  // Restrict game scores to those relating to the given parties.
+  repeated string party_ids = 3;
+  // Restrict game scores to those from a given epoch.
+  optional uint64 epoch_from = 4;
+  // Restrict game scores to those up to a given epoch.
+  optional uint64 epoch_to = 5;
+}
+
+// Response received from the query for getting a list of game scores for teams.
+message ListGamePartyScoresResponse {
+  // Page of party game scores data and corresponding page information.
+  GamePartyScoresConnection party_scores = 1;
+}
+
+// Page of party game scores data and corresponding page information.
+message GamePartyScoresConnection {
+  // Page of orders and their corresponding cursors.
+  repeated GamePartyScoresEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message GamePartyScoresEdge {
+  // Data associated with an order submitted to a Vega node.
+  vega.events.v1.GamePartyScore node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
 // Request that is sent when executing a query for a list of stop orders.
 message ListStopOrdersRequest {
   // Optional pagination control.
@@ -1429,6 +1554,9 @@ message ObservePositionsRequest {
   optional string party_id = 1;
   // Restrict position updates to those related to the given markets.
   optional string market_id = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 3;
 }
 
 // Response received from a positions subscription request
@@ -2595,6 +2723,10 @@ message ListRewardsRequest {
   optional string team_id = 6;
   // Filter for rewards paid if the party participated in the given game
   optional string game_id = 7;
+  // Whether to return all derived parties from AMMs for the given party.
+  optional bool include_derived_parties = 8;
+  // Filter the rewards by market ID.
+  optional string market_id = 9;
 }
 
 // Response for listing reward details for a single party
@@ -2627,6 +2759,9 @@ message ListRewardSummariesRequest {
   optional string asset_id = 2;
   // Pagination controls.
   optional Pagination pagination = 3;
+  // Whether to return rewards for all derived parties from AMMs for the given party.
+  // If used, party ID is required.
+  optional bool include_derived_parties = 8;
 }
 
 // Response from listing reward details in for a single party
@@ -2982,6 +3117,12 @@ message ListPaidLiquidityFeesRequest {
   repeated string party_ids = 4;
   // Pagination controls.
   optional Pagination pagination = 5;
+  // Whether to return all derived parties from AMMs for the given party. If used, party ID is required.
+  optional bool include_derived_parties = 6;
+  // Restrict paid liquidity fees to those from a given epoch.
+  optional uint64 epoch_from = 7;
+  // Restrict paid liquidity fees to those up to a given epoch.
+  optional uint64 epoch_to = 8;
 }
 
 // Paid liquidity fees response.
@@ -4461,6 +4602,10 @@ message GetFeesStatsRequest {
   optional uint64 epoch_seq = 3;
   // Restrict fee statistics to those for the given party.
   optional string party_id = 4;
+  // Restrict fee statistics to epoch range starting with epoch from.
+  optional uint64 epoch_from = 5;
+  // Restrict fee statistics to epoch range ending with epoch to.
+  optional uint64 epoch_to = 6;
 }
 
 // Response that is sent when requesting fees statistics.
@@ -4607,6 +4752,9 @@ message EstimateTransferFeeRequest {
   string amount = 4;
   // Asset ID for the asset associated with the transaction.
   string asset_id = 5;
+  // AMM public key, if assets are being transferred from an AMM key to the AMM owner's public key.
+  // The `from_account` must be the owner of this AMM key.
+  optional string from_amm_key = 6;
 }
 
 // Results of estimation of transfer fee and the fee discount
@@ -4843,4 +4991,75 @@ message GetTimeWeightedNotionalPositionRequest {
 message GetTimeWeightedNotionalPositionResponse {
   // Time weighted notional position for the party and asset.
   TimeWeightedNotionalPosition time_weighted_notional_position = 1;
+}
+
+message ListAMMsRequest {
+  // AMM ID to filter for. If party ID or market ID is provided, the ID filter is ignored.
+  optional string id = 1;
+  // Party ID to filter for.
+  optional string party_id = 2;
+  // Market ID to filter for. If party ID is provided, the market filter is ignored
+  optional string market_id = 3;
+  // Party's underlying AMM sub-account to filter for. A party's AMM sub-account will remain the
+  // same regardless of the AMM.
+  optional string amm_party_id = 4;
+  // Filter for AMMs with the given status. This filter will be ignored if any of the other
+  // filters have been set.
+  optional vega.events.v1.AMM.Status status = 5;
+  // Pagination controls.
+  optional Pagination pagination = 6;
+}
+
+message ListAMMsResponse {
+  // Page of AMM data and corresponding page information.
+  AMMConnection amms = 1;
+}
+
+message AMMConnection {
+  // Page of AMM data and the corresponding cursors.
+  repeated AMMEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message AMMEdge {
+  // AMM pool data.
+  vega.events.v1.AMM node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+message EstimateAMMBoundsRequest {
+  // Base price of the AMM pool, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  string base_price = 1;
+  // Upper price of the AMM pool, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  optional string upper_price = 2;
+  // Lower price of the AMM pool, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  optional string lower_price = 3;
+  // Leverage at the upper price of the AMM pool.
+  optional string leverage_at_upper_price = 4;
+  // Leverage at the lower price of the AMM pool.
+  optional string leverage_at_lower_price = 5;
+  // Amount of the asset that the party is willing to commit to the AMM pool.
+  string commitment_amount = 6;
+  // Market ID to estimate the AMM for.
+  string market_id = 7;
+}
+
+message EstimateAMMBoundsResponse {
+  // Theoretical volume at the top of the upper bound.
+  string position_size_at_upper = 1;
+  // Theoretical volume at the top of the lower bound.
+  string position_size_at_lower = 2;
+  // Loss of commitment at the upper bound.
+  string loss_on_commitment_at_upper = 3;
+  // Loss of commitment at the lower bound.
+  string loss_on_commitment_at_lower = 4;
+  // Estimated price above upper bound at which the commitment will be lost.
+  string liquidation_price_at_upper = 5;
+  // Estimated price below the lower bound at which the commitment will be lost.
+  string liquidation_price_at_lower = 6;
 }

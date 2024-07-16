@@ -40,7 +40,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource,Parties
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
@@ -113,10 +113,15 @@ type MarketActivityTracker interface {
 	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
 	MarketTrackedForAsset(market, asset string) bool
 	TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint
+	PublishGameMetric(ctx context.Context, dispatchStrategy []*vega.DispatchStrategy, now time.Time)
 }
 
 type EthereumEventSource interface {
-	UpdateCollateralStartingBlock(uint64)
+	UpdateContractBlock(string, string, uint64)
+}
+
+type Parties interface {
+	CheckDerivedKeyOwnership(party types.PartyID, derivedKey string) bool
 }
 
 const (
@@ -142,6 +147,7 @@ type Engine struct {
 	notary      Notary
 	assets      Assets
 	top         Topology
+	parties     Parties
 
 	// assetActions tracks all the asset actions the engine must process on network
 	// tick.
@@ -158,7 +164,6 @@ type Engine struct {
 	lastSeenPrimaryEthBlock uint64
 	primaryBridgeState      *bridgeState
 	primaryBridgeView       ERC20BridgeView
-	primaryEthEventSource   EthereumEventSource
 
 	// lastSeenSecondaryEthBlock holds the block height of the latest ERC20 chain
 	// event, from the secondary chain, processed by the engine.
@@ -166,7 +171,11 @@ type Engine struct {
 	secondaryEthChainID       string
 	secondaryBridgeState      *bridgeState
 	secondaryBridgeView       ERC20BridgeView
-	secondaryEthEventSource   EthereumEventSource
+
+	// map from chain-id -> collateral contract address
+	bridgeAddresses map[string]string
+
+	ethEventSource EthereumEventSource
 
 	withdrawals   map[string]withdrawalRef
 	withdrawalCnt *big.Int
@@ -206,6 +215,12 @@ type Engine struct {
 
 	maxGovTransferQunatumMultiplier num.Decimal
 	maxGovTransferFraction          num.Decimal
+
+	metricUpdateFrequency time.Duration
+	nextMetricUpdate      time.Time
+
+	// transient cache used to market a dispatch strategy as checked for eligibility for this round so we don't check again.
+	dispatchRequiredCache map[string]bool
 }
 
 type withdrawalRef struct {
@@ -225,8 +240,8 @@ func New(log *logging.Logger,
 	marketActivityTracker MarketActivityTracker,
 	primaryBridgeView ERC20BridgeView,
 	secondaryBridgeView ERC20BridgeView,
-	primaryEthEventSource EthereumEventSource,
-	secondaryEthEventSource EthereumEventSource,
+	ethEventSource EthereumEventSource,
+	parties Parties,
 ) (e *Engine) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -241,8 +256,8 @@ func New(log *logging.Logger,
 		assets:                          assets,
 		notary:                          notary,
 		top:                             top,
-		primaryEthEventSource:           primaryEthEventSource,
-		secondaryEthEventSource:         secondaryEthEventSource,
+		ethEventSource:                  ethEventSource,
+		parties:                         parties,
 		assetActions:                    map[string]*assetAction{},
 		seenAssetActions:                treeset.NewWithStringComparator(),
 		withdrawals:                     map[string]withdrawalRef{},
@@ -259,6 +274,7 @@ func New(log *logging.Logger,
 		minTransferQuantumMultiple:      num.DecimalZero(),
 		minWithdrawQuantumMultiple:      num.DecimalZero(),
 		marketActivityTracker:           marketActivityTracker,
+		nextMetricUpdate:                time.Time{},
 		hashToStrategy:                  map[string]*dispatchStrategyCacheEntry{},
 		primaryBridgeState: &bridgeState{
 			active: true,
@@ -266,10 +282,12 @@ func New(log *logging.Logger,
 		secondaryBridgeState: &bridgeState{
 			active: true,
 		},
+		bridgeAddresses:                           map[string]string{},
 		feeDiscountPerPartyAndAsset:               map[partyAssetKey]*num.Uint{},
 		pendingPerAssetAndPartyFeeDiscountUpdates: map[string]map[string]*num.Uint{},
 		primaryBridgeView:                         primaryBridgeView,
 		secondaryBridgeView:                       secondaryBridgeView,
+		dispatchRequiredCache:                     map[string]bool{},
 	}
 }
 
@@ -288,12 +306,14 @@ func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal
 	return nil
 }
 
-func (e *Engine) OnPrimaryEthChainIDUpdated(chainID string) {
+func (e *Engine) OnPrimaryEthChainIDUpdated(chainID, collateralAddress string) {
 	e.primaryEthChainID = chainID
+	e.bridgeAddresses[chainID] = collateralAddress
 }
 
-func (e *Engine) OnSecondaryEthChainIDUpdated(chainID string) {
+func (e *Engine) OnSecondaryEthChainIDUpdated(chainID, collateralAddress string) {
 	e.secondaryEthChainID = chainID
+	e.bridgeAddresses[chainID] = collateralAddress
 }
 
 // ReloadConf updates the internal configuration.
@@ -310,6 +330,28 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfg = cfg
 }
 
+func (e *Engine) OnBlockEnd(ctx context.Context, now time.Time) {
+	if !now.Before(e.nextMetricUpdate) {
+		e.publishMetricData(ctx, now)
+		e.nextMetricUpdate = now.Add(e.metricUpdateFrequency)
+	}
+}
+
+// publishMetricData requests the market activity tracker to publish and event
+// for each game with the current metric data for each party.
+func (e *Engine) publishMetricData(ctx context.Context, now time.Time) {
+	hashes := make([]string, 0, len(e.hashToStrategy))
+	for hash := range e.hashToStrategy {
+		hashes = append(hashes, hash)
+	}
+	sort.Strings(hashes)
+	dss := make([]*vega.DispatchStrategy, 0, len(hashes))
+	for _, hash := range hashes {
+		dss = append(dss, e.hashToStrategy[hash].ds)
+	}
+	e.marketActivityTracker.PublishGameMetric(ctx, dss, now)
+}
+
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case proto.EpochAction_EPOCH_ACTION_START:
@@ -320,6 +362,9 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		e.distributeRecurringGovernanceTransfers(ctx)
 		e.applyPendingFeeDiscountsUpdates(ctx)
 		e.sendTeamsStats(ctx, ep.Seq)
+		e.dispatchRequiredCache = map[string]bool{}
+		// as the metrics are going to be published here, we want to progress the next update.
+		e.nextMetricUpdate = e.timeService.GetTimeNow().Add(e.metricUpdateFrequency)
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}
@@ -425,6 +470,11 @@ func (e *Engine) dedupAction(ctx context.Context, aa *assetAction) error {
 }
 
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction, now time.Time) error {
+	// tell the evt forwarder tracker about this block height
+	if addr, ok := e.bridgeAddresses[aa.chainID]; ok {
+		e.ethEventSource.UpdateContractBlock(addr, aa.chainID, aa.blockHeight)
+	}
+
 	switch {
 	case aa.IsBuiltinAssetDeposit():
 		dep := e.deposits[aa.id]
@@ -578,6 +628,10 @@ func (e *Engine) GetDispatchStrategy(hash string) *proto.DispatchStrategy {
 	ds, ok := e.hashToStrategy[hash]
 	if !ok {
 		e.log.Warn("could not find dispatch strategy in banking engine", logging.String("hash", hash))
+		return nil
+	}
+
+	if ds.refCount == 0 {
 		return nil
 	}
 

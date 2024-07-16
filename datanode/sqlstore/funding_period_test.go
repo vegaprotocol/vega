@@ -124,7 +124,7 @@ func testAddFundingPeriodShouldUpdateIfMarketExistsAndSequenceExists(t *testing.
 	require.NoError(t, err)
 
 	var dbResult entities.FundingPeriod
-	err = pgxscan.Get(ctx, stores.fp.Connection, &dbResult, `select * from funding_period where market_id = $1 and funding_period_seq = $2`, stores.markets[0].ID, 1)
+	err = pgxscan.Get(ctx, stores.fp, &dbResult, `select * from funding_period where market_id = $1 and funding_period_seq = $2`, stores.markets[0].ID, 1)
 	require.NoError(t, err)
 	assert.Equal(t, period, dbResult)
 
@@ -139,7 +139,7 @@ func testAddFundingPeriodShouldUpdateIfMarketExistsAndSequenceExists(t *testing.
 	err = stores.fp.AddFundingPeriod(ctx, &period)
 	require.NoError(t, err)
 
-	err = pgxscan.Get(ctx, stores.fp.Connection, &dbResult, `select * from funding_period where market_id = $1 and funding_period_seq = $2`, stores.markets[0].ID, 1)
+	err = pgxscan.Get(ctx, stores.fp, &dbResult, `select * from funding_period where market_id = $1 and funding_period_seq = $2`, stores.markets[0].ID, 1)
 	require.NoError(t, err)
 	assert.Equal(t, period, dbResult)
 }
@@ -241,7 +241,7 @@ func testShouldUpdateDataPointInSameBlock(t *testing.T) {
 	require.NoError(t, err)
 
 	var inserted []entities.FundingPeriodDataPoint
-	err = pgxscan.Select(ctx, connectionSource.Connection, &inserted,
+	err = pgxscan.Select(ctx, connectionSource, &inserted,
 		`SELECT * FROM funding_period_data_points where market_id = $1 and funding_period_seq = $2 and data_point_type = $3 and vega_time = $4`,
 		stores.markets[0].ID, 1, entities.FundingPeriodDataPointSourceExternal, stores.blocks[4].VegaTime)
 	require.NoError(t, err)
@@ -262,7 +262,7 @@ func testShouldUpdateDataPointInSameBlock(t *testing.T) {
 	err = stores.fp.AddDataPoint(ctx, &dp2)
 	require.NoError(t, err)
 
-	err = pgxscan.Select(ctx, connectionSource.Connection, &inserted,
+	err = pgxscan.Select(ctx, connectionSource, &inserted,
 		`SELECT * FROM funding_period_data_points where market_id = $1 and funding_period_seq = $2 and data_point_type = $3 and vega_time = $4`,
 		stores.markets[0].ID, 1, entities.FundingPeriodDataPointSourceExternal, stores.blocks[4].VegaTime)
 	require.NoError(t, err)
@@ -799,7 +799,7 @@ func TestFundingPeriodDataPointSource(t *testing.T) {
 			}
 			require.NoError(t, stores.fp.AddDataPoint(ctx, &dp))
 			got := entities.FundingPeriodDataPoint{}
-			require.NoError(t, pgxscan.Get(ctx, stores.fp.Connection, &got,
+			require.NoError(t, pgxscan.Get(ctx, stores.fp, &got,
 				`select * from funding_period_data_points where market_id = $1 and funding_period_seq = $2 and data_point_type = $3`,
 				dp.MarketID, dp.FundingPeriodSeq, dp.DataPointType),
 			)

@@ -419,6 +419,30 @@ type Filter struct {
 	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
+type GamePartyScoreFilter struct {
+	// Zero or more game IDs to filter by
+	GameIds []string `json:"gameIds,omitempty"`
+	// Zero or more team IDs to filter by
+	TeamIds []string `json:"teamIds,omitempty"`
+	// Zero or more party IDs to filter by
+	PartyIds []string `json:"partyIds,omitempty"`
+	// Optional 'from epoch' ID for scores epoch interval
+	EpochFrom *int `json:"epochFrom,omitempty"`
+	// Optional 'to epoch' ID for scores epoch interval
+	EpochTo *int `json:"epochTo,omitempty"`
+}
+
+type GameTeamScoreFilter struct {
+	// Zero or more game IDs to filter by
+	GameIds []string `json:"gameIds,omitempty"`
+	// Zero or more team IDs to filter by
+	TeamIds []string `json:"teamIds,omitempty"`
+	// Optional 'from epoch' ID for scores epoch interval
+	EpochFrom *int `json:"epochFrom,omitempty"`
+	// Optional 'to epoch' ID for scores epoch interval
+	EpochTo *int `json:"epochTo,omitempty"`
+}
+
 // Individual party participating in a game and their metrics
 type IndividualGameEntity struct {
 	// Party ID of the participant
@@ -635,6 +659,8 @@ type PriceMonitoringBounds struct {
 	Trigger *PriceMonitoringTrigger `json:"trigger"`
 	// Reference price used to calculate the valid price range
 	ReferencePrice string `json:"referencePrice"`
+	// Has this bound been triggered yet or is it still active
+	Active *bool `json:"active,omitempty"`
 }
 
 // PriceMonitoringParameters holds a list of triggers

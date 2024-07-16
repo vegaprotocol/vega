@@ -18,6 +18,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
@@ -62,4 +63,38 @@ func MarketOpeningAuctionPeriodEnds(execEngine Execution, timeStub *stubs.TimeSt
 
 func errMarketNotFound(marketID string) error {
 	return fmt.Errorf("market %s not found", marketID)
+}
+
+func MarketAuctionStartTime(execEngine Execution, marketID, startTime string) error {
+	data, err := execEngine.GetMarketData(marketID)
+	if err != nil {
+		return errMarketDataNotFound(marketID, err)
+	}
+
+	st, err := strconv.ParseInt(startTime, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to convert time to int64: %s", startTime)
+	}
+
+	if data.AuctionStart == st {
+		return nil
+	}
+	return fmt.Errorf("start auction time did not match %d != %d", data.AuctionStart, st)
+}
+
+func MarketAuctionEndTime(execEngine Execution, marketID, endTime string) error {
+	data, err := execEngine.GetMarketData(marketID)
+	if err != nil {
+		return errMarketDataNotFound(marketID, err)
+	}
+
+	et, err := strconv.ParseInt(endTime, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to convert time to int64: %s", endTime)
+	}
+
+	if data.AuctionEnd == et {
+		return nil
+	}
+	return fmt.Errorf("end auction time did not match %d != %d", data.AuctionEnd, et)
 }

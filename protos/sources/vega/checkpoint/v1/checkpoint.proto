@@ -146,6 +146,7 @@ message ScheduledTransferAtTime {
 
 message RecurringTransfers {
   repeated vega.events.v1.Transfer recurring_transfers = 1;
+  int64 next_metric_update = 2;
 }
 
 message GovernanceTransfer {
@@ -242,6 +243,8 @@ message MarketActivityTracker {
 
   repeated ReturnsData realised_returns = 21;
   repeated EpochReturnsData realised_returns_history = 22;
+
+  repeated string amm_parties = 23;
 }
 
 message EpochPartyTakerFees {

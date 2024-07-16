@@ -78,3 +78,7 @@ func (ts *FundingPaymentSubscriber) addFundingPayments(
 
 	return errors.Wrap(ts.store.Add(ctx, payments), "adding funding payment to store")
 }
+
+func (ts *FundingPaymentSubscriber) Name() string {
+	return "FundingPaymentSubscriber"
+}

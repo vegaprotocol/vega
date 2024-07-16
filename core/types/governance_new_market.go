@@ -412,6 +412,7 @@ type NewMarketConfiguration struct {
 	LiquidationStrategy    *LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *num.Uint
+	EnableTxReordering     bool
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -459,6 +460,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      n.TickSize.String(),
+		EnableTransactionReordering:   n.EnableTxReordering,
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -480,6 +482,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 		TickSize:                n.TickSize.Clone(),
+		EnableTxReordering:      n.EnableTxReordering,
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -512,7 +515,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 
 func (n NewMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), CompositePriceConfiguration(%s), TickSize(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), CompositePriceConfiguration(%s), TickSize(%s), EnableTxReordering(%v)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -524,6 +527,7 @@ func (n NewMarketConfiguration) String() string {
 		n.QuadraticSlippageFactor.String(),
 		stringer.PtrToString(n.MarkPriceConfiguration),
 		num.UintToString(n.TickSize),
+		n.EnableTxReordering,
 	)
 }
 
@@ -627,6 +631,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        markPriceConfig,
 		TickSize:                      tickSize,
+		EnableTxReordering:            p.EnableTransactionReordering,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -741,11 +746,19 @@ func (n NewMarketConfigurationLogNormal) String() string {
 }
 
 func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_LogNormal) *NewMarketConfigurationLogNormal {
+	var override *RiskFactorOverride
+	if p.LogNormal.RiskFactorOverride != nil {
+		override = &RiskFactorOverride{
+			Short: num.MustDecimalFromString(p.LogNormal.RiskFactorOverride.Short),
+			Long:  num.MustDecimalFromString(p.LogNormal.RiskFactorOverride.Long),
+		}
+	}
 	return &NewMarketConfigurationLogNormal{
 		LogNormal: &LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(p.LogNormal.RiskAversionParameter),
 			Tau:                   num.DecimalFromFloat(p.LogNormal.Tau),
 			Params:                LogNormalParamsFromProto(p.LogNormal.Params),
+			RiskFactorOverride:    override,
 		},
 	}
 }
@@ -904,6 +917,10 @@ func InstrumentConfigurationFromProto(
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse trading termination data source spec: %w", err)
 		}
+		fCap, err := FutureCapFromProto(pr.Future.Cap)
+		if err != nil {
+			return nil, err
+		}
 		r.Product = &InstrumentConfigurationFuture{
 			Future: &FutureProduct{
 				SettlementAsset:                     pr.Future.SettlementAsset,
@@ -911,6 +928,7 @@ func InstrumentConfigurationFromProto(
 				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settl),
 				DataSourceSpecForTradingTermination: *datasource.NewDefinitionWith(term),
 				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+				Cap:                                 fCap,
 			},
 		}
 	case *vegapb.InstrumentConfiguration_Perpetual:
@@ -996,42 +1014,99 @@ func InstrumentConfigurationFromProto(
 	return r, nil
 }
 
+type FutureCap struct {
+	MaxPrice            *num.Uint
+	Binary              bool
+	FullyCollateralised bool
+}
+
+func FutureCapFromProto(fc *vegapb.FutureCap) (*FutureCap, error) {
+	if fc == nil {
+		return nil, nil
+	}
+	mp, err := num.UintFromString(fc.MaxPrice, 10)
+	if err {
+		return nil, fmt.Errorf("invalid max price value")
+	}
+	return &FutureCap{
+		MaxPrice:            mp,
+		Binary:              ptr.UnBox(fc.BinarySettlement),
+		FullyCollateralised: ptr.UnBox(fc.FullyCollateralised),
+	}, nil
+}
+
+func (c FutureCap) IntoProto() *vegapb.FutureCap {
+	return &vegapb.FutureCap{
+		MaxPrice:            c.MaxPrice.String(),
+		BinarySettlement:    ptr.From(c.Binary),
+		FullyCollateralised: ptr.From(c.FullyCollateralised),
+	}
+}
+
+func (c FutureCap) DeepClone() *FutureCap {
+	return &FutureCap{
+		MaxPrice:            c.MaxPrice.Clone(),
+		Binary:              c.Binary,
+		FullyCollateralised: c.FullyCollateralised,
+	}
+}
+
+func (c FutureCap) String() string {
+	return fmt.Sprintf("max price(%s) binary(%t) fully collateralised(%t)", c.MaxPrice.String(), c.Binary, c.FullyCollateralised)
+}
+
 type FutureProduct struct {
 	SettlementAsset                     string
 	QuoteName                           string
 	DataSourceSpecForSettlementData     dsdefinition.Definition
 	DataSourceSpecForTradingTermination dsdefinition.Definition
 	DataSourceSpecBinding               *datasource.SpecBindingForFuture
+	Cap                                 *FutureCap
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
+	var fCap *vegapb.FutureCap
+	if f.Cap != nil {
+		fCap = f.Cap.IntoProto()
+	}
 	return &vegapb.FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
+		Cap:                                 fCap,
 	}
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
+	var fCap *FutureCap
+	if f.Cap != nil {
+		fCap = f.Cap.DeepClone()
+	}
 	return &FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     *f.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecForTradingTermination: *f.DataSourceSpecForTradingTermination.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
+		Cap:                                 fCap,
 	}
 }
 
 func (f FutureProduct) String() string {
+	fCap := "no"
+	if f.Cap != nil {
+		fCap = f.Cap.String()
+	}
 	return fmt.Sprintf(
-		"quote(%s) settlementAsset(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
+		"quote(%s) settlementAsset(%s) settlementData(%s) tradingTermination(%s) binding(%s) capped(%s)",
 		f.QuoteName,
 		f.SettlementAsset,
 		stringer.ObjToString(f.DataSourceSpecForSettlementData),
 		stringer.ObjToString(f.DataSourceSpecForTradingTermination),
 		stringer.PtrToString(f.DataSourceSpecBinding),
+		fCap,
 	)
 }
 

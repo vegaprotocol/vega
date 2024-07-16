@@ -258,6 +258,14 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkJoinTeam(cmd.JoinTeam))
 		case *commandspb.InputData_UpdatePartyProfile:
 			errs.Merge(checkUpdatePartyProfile(cmd.UpdatePartyProfile))
+		case *commandspb.InputData_SubmitAmm:
+			errs.Merge(checkSubmitAMM(cmd.SubmitAmm))
+		case *commandspb.InputData_AmendAmm:
+			errs.Merge(checkAmendAMM(cmd.AmendAmm))
+		case *commandspb.InputData_CancelAmm:
+			errs.Merge(checkCancelAMM(cmd.CancelAmm))
+		case *commandspb.InputData_DelayedTransactionsWrapper:
+			break
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

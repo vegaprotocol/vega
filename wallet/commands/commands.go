@@ -101,6 +101,12 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckJoinTeam(cmd.JoinTeam)
 	case *walletpb.SubmitTransactionRequest_UpdatePartyProfile:
 		cmdErr = commands.CheckUpdatePartyProfile(cmd.UpdatePartyProfile)
+	case *walletpb.SubmitTransactionRequest_SubmitAmm:
+		cmdErr = commands.CheckSubmitAMM(cmd.SubmitAmm)
+	case *walletpb.SubmitTransactionRequest_AmendAmm:
+		cmdErr = commands.CheckAmendAMM(cmd.AmendAmm)
+	case *walletpb.SubmitTransactionRequest_CancelAmm:
+		cmdErr = commands.CheckCancelAMM(cmd.CancelAmm)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -251,6 +257,18 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_UpdatePartyProfile:
 		data.Command = &commandspb.InputData_UpdatePartyProfile{
 			UpdatePartyProfile: req.GetUpdatePartyProfile(),
+		}
+	case *walletpb.SubmitTransactionRequest_SubmitAmm:
+		data.Command = &commandspb.InputData_SubmitAmm{
+			SubmitAmm: req.GetSubmitAmm(),
+		}
+	case *walletpb.SubmitTransactionRequest_AmendAmm:
+		data.Command = &commandspb.InputData_AmendAmm{
+			AmendAmm: req.GetAmendAmm(),
+		}
+	case *walletpb.SubmitTransactionRequest_CancelAmm:
+		data.Command = &commandspb.InputData_CancelAmm{
+			CancelAmm: req.GetCancelAmm(),
 		}
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))

@@ -62,3 +62,7 @@ func (rf *RiskFactor) consume(ctx context.Context, event RiskFactorEvent) error 
 
 	return errors.Wrap(rf.store.Upsert(ctx, record), "inserting risk factor to SQL store failed")
 }
+
+func (rf *RiskFactor) Name() string {
+	return "RiskFactor"
+}

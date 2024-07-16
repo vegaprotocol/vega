@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
@@ -599,6 +600,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		SpecBindingForCompositePrice: bindings,
 	}
 
+	pCap := row.getCapped()
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -625,6 +627,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 						DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(*settlSpec.Data.SetFilterDecimals(uint64(settlementDataDecimals))),
 						DataSourceSpecForTradingTermination: datasource.SpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
 						DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(&binding),
+						Cap:                                 pCap,
 					},
 				},
 			},
@@ -648,6 +651,9 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	}
 
 	tip := m.TradableInstrument.IntoProto()
+	if row.IsCapped() {
+		tip.MarginCalculator.FullyCollateralised = ptr.From(pCap.FullyCollateralised)
+	}
 	err = config.RiskModels.LoadModel(row.riskModel(), tip)
 	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
 	if err != nil {
@@ -704,6 +710,9 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"oracle4",
 		"oracle5",
 		"tick size",
+		"max price cap",
+		"binary",
+		"fully collateralised",
 	})
 }
 
@@ -1112,6 +1121,21 @@ func (r marketRow) isSuccessor() bool {
 		return false
 	}
 	return true
+}
+
+func (r marketRow) IsCapped() bool {
+	return r.row.HasColumn("max price cap")
+}
+
+func (r marketRow) getCapped() *types.FutureCap {
+	if !r.IsCapped() {
+		return nil
+	}
+	return &types.FutureCap{
+		MaxPrice:            r.row.MustUint("max price cap"),
+		Binary:              r.row.Bool("binary"),
+		FullyCollateralised: r.row.Bool("fully collateralised"),
+	}
 }
 
 func (r marketRow) isPerp() bool {

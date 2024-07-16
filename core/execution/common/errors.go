@@ -83,4 +83,11 @@ var (
 	ErrStopOrderNotAllowedSameExpiry = errors.New("stop order OCOs must not have the same expiry time")
 	// ErrStopOrderSizeOverrideNotSupportedForSpots is returned when a stop order is received with size override for a spot product.
 	ErrStopOrderSizeOverrideNotSupportedForSpots = errors.New("stop order size override is not supported for spot product")
+	ErrAMMCannotRebase                           = errors.New("not enough liquidity for AMM to rebase")
+	// ErrInvalidOrderPrice is returned when an order is submitted to a capped future with a price > max price.
+	ErrInvalidOrderPrice = errors.New("invalid order price")
+	// ErrIsolatedMarginFullyCollateralised is returned when a party tries to switch margin modes on a fully collateralised market.
+	ErrIsolatedMarginFullyCollateralised = errors.New("isolated margin not permitted on fully collateralised markets")
+	// ErrSettlementDataOutOfRange is returned when a capped future receives settlement data that is outside of the acceptable range (either > max price, or neither 0 nor max for binary settlements).
+	ErrSettlementDataOutOfRange = errors.New("settlement data is outside of the price cap")
 )

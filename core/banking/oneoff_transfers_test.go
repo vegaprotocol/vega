@@ -38,6 +38,9 @@ func TestTransfers(t *testing.T) {
 	t.Run("valid oneoff with deliverOn", testValidOneOffTransferWithDeliverOn)
 	t.Run("valid oneoff with deliverOn in the past is done straight away", testValidOneOffTransferWithDeliverOnInThePastStraightAway)
 	t.Run("rejected if doesn't reach minimal amount", testRejectedIfDoesntReachMinimalAmount)
+	t.Run("valid oneoff transfer from derived key", testValidOneOffTransferWithFromDerivedKey)
+	t.Run("onefoff invalid transfers from derived key", testOneOffTransferInvalidTransfersWithFromDerivedKey)
+	t.Run("onefoff invalid owner transfers from derived key", testOneOffTransferInvalidOwnerTransfersWithFromDerivedKey)
 }
 
 func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
@@ -62,7 +65,6 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
@@ -78,7 +80,6 @@ func testInvalidTransferKind(t *testing.T) {
 	transfer := &types.TransferFunds{
 		Kind: types.TransferCommandKind(-1),
 	}
-	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	assert.EqualError(t,
 		e.TransferFunds(ctx, transfer),
 		banking.ErrUnsupportedTransferKind.Error(),
@@ -87,8 +88,6 @@ func testInvalidTransferKind(t *testing.T) {
 
 func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	e := getTestEngine(t)
-
-	e.tsvc.EXPECT().GetTimeNow().Times(1)
 
 	ctx := context.Background()
 	transfer := &types.TransferFunds{
@@ -145,7 +144,6 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	var baseCpy types.TransferBase
 
 	t.Run("invalid from account", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy := transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -157,7 +155,6 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("invalid to account", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -169,7 +166,6 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsupported from account type", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -181,7 +177,6 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsuported to account type", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -193,7 +188,6 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("zero funds transfer", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -232,7 +226,6 @@ func testValidOneOffTransfer(t *testing.T) {
 	}
 
 	// asset exists
-	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
 		assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
@@ -277,17 +270,11 @@ func testValidOneOffTransfer(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(3)
-	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 }
 
 func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	e := getTestEngine(t)
-
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).AnyTimes()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
@@ -391,9 +378,6 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 		Balance: num.NewUint(100),
 	}
 
-	// Time given to e.Transferfunds - base time Unix(10,0)
-	e.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Unix(10, 0))
-
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
@@ -468,4 +452,208 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 
 	e.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e.OnTick(context.Background(), time.Unix(12, 0))
+}
+
+func testValidOneOffTransferWithFromDerivedKey(t *testing.T) {
+	e := getTestEngine(t)
+
+	// let's do a massive fee, easy to test
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+
+	partyKey := "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"
+	derivedKey := "c84fbf3442a2a9f9ca87c9cefe686aed241ff49981dd8ce819dd532cd42a8427"
+	amount := num.NewUint(10)
+
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindOneOff,
+		OneOff: &types.OneOffTransfer{
+			TransferBase: &types.TransferBase{
+				From:            partyKey,
+				FromDerivedKey:  &derivedKey,
+				FromAccountType: types.AccountTypeVestedRewards,
+				To:              partyKey,
+				ToAccountType:   types.AccountTypeGeneral,
+				Asset:           assetNameETH,
+				Amount:          amount,
+				Reference:       "someref",
+			},
+		},
+	}
+
+	// asset exists
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+		assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+
+	vestedAccount := types.Account{
+		Owner: derivedKey,
+		// The amount is the same as the transfer amount to ensure that no fee is charged for this type of transaction.
+		Balance: amount,
+		Asset:   assetNameETH,
+	}
+
+	e.col.EXPECT().GetPartyVestedRewardAccount(derivedKey, assetNameETH).Return(&vestedAccount, nil).Times(1)
+	e.parties.EXPECT().CheckDerivedKeyOwnership(types.PartyID(partyKey), derivedKey).Return(true).Times(1)
+
+	// assert the calculation of fees and transfer request are correct
+	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context,
+			transfers []*types.Transfer,
+			accountTypes []types.AccountType,
+			references []string,
+			feeTransfers []*types.Transfer,
+			feeTransfersAccountTypes []types.AccountType,
+		) ([]*types.LedgerMovement, error,
+		) {
+			t.Run("ensure transfers are correct", func(t *testing.T) {
+				// transfer is done fully instantly, we should have 2 transfer
+				assert.Len(t, transfers, 2)
+				assert.Equal(t, derivedKey, transfers[0].Owner)
+				assert.Equal(t, num.NewUint(10), transfers[0].Amount.Amount)
+				assert.Equal(t, assetNameETH, transfers[0].Amount.Asset)
+				assert.Equal(t, partyKey, transfers[1].Owner)
+				assert.Equal(t, transfers[1].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transfers[1].Amount.Asset, assetNameETH)
+
+				// 2 account types too
+				assert.Len(t, accountTypes, 2)
+				assert.Equal(t, accountTypes[0], types.AccountTypeVestedRewards)
+				assert.Equal(t, accountTypes[1], types.AccountTypeGeneral)
+			})
+
+			t.Run("ensure fee transfers are correct", func(t *testing.T) {
+				assert.Len(t, feeTransfers, 1)
+				assert.Equal(t, partyKey, feeTransfers[0].Owner)
+				assert.Equal(t, num.UintZero(), feeTransfers[0].Amount.Amount)
+				assert.Equal(t, assetNameETH, feeTransfers[0].Amount.Asset)
+
+				// then the fees account types
+				assert.Len(t, feeTransfersAccountTypes, 1)
+				assert.Equal(t, accountTypes[0], types.AccountTypeVestedRewards)
+			})
+			return nil, nil
+		})
+
+	e.broker.EXPECT().Send(gomock.Any()).Times(3)
+	assert.NoError(t, e.TransferFunds(ctx, transfer))
+}
+
+func testOneOffTransferInvalidTransfersWithFromDerivedKey(t *testing.T) {
+	e := getTestEngine(t)
+
+	ctx := context.Background()
+	transfer := types.TransferFunds{
+		Kind:   types.TransferCommandKindOneOff,
+		OneOff: &types.OneOffTransfer{},
+	}
+
+	partyKey := "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"
+	derivedKey := "c84fbf3442a2a9f9ca87c9cefe686aed241ff49981dd8ce819dd532cd42a8427"
+
+	transferBase := types.TransferBase{
+		From:            partyKey,
+		FromDerivedKey:  &derivedKey,
+		FromAccountType: types.AccountTypeVestedRewards,
+		To:              partyKey,
+		ToAccountType:   types.AccountTypeGeneral,
+		Asset:           assetNameETH,
+		Amount:          num.NewUint(10),
+		Reference:       "someref",
+	}
+
+	// asset exists
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	var baseCpy types.TransferBase
+
+	t.Run("invalid from account", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		baseCpy := transferBase
+		transfer.OneOff.TransferBase = &baseCpy
+		transfer.OneOff.From = ""
+		assert.EqualError(t,
+			e.TransferFunds(ctx, &transfer),
+			types.ErrInvalidFromAccount.Error(),
+		)
+	})
+
+	t.Run("invalid to account", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		baseCpy = transferBase
+		transfer.OneOff.TransferBase = &baseCpy
+		transfer.OneOff.To = ""
+		assert.EqualError(t,
+			e.TransferFunds(ctx, &transfer),
+			types.ErrInvalidToAccount.Error(),
+		)
+	})
+
+	t.Run("unsupported from account type", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		baseCpy = transferBase
+		transfer.OneOff.TransferBase = &baseCpy
+		transfer.OneOff.FromAccountType = types.AccountTypeGeneral
+		assert.EqualError(t,
+			e.TransferFunds(ctx, &transfer),
+			types.ErrUnsupportedFromAccountType.Error(),
+		)
+	})
+
+	t.Run("unsuported to account type", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		baseCpy = transferBase
+		transfer.OneOff.TransferBase = &baseCpy
+		transfer.OneOff.ToAccountType = types.AccountTypeVestedRewards
+		assert.EqualError(t,
+			e.TransferFunds(ctx, &transfer),
+			types.ErrUnsupportedToAccountType.Error(),
+		)
+	})
+
+	t.Run("zero funds transfer", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		baseCpy = transferBase
+		transfer.OneOff.TransferBase = &baseCpy
+		transfer.OneOff.Amount = num.UintZero()
+		assert.EqualError(t,
+			e.TransferFunds(ctx, &transfer),
+			types.ErrCannotTransferZeroFunds.Error(),
+		)
+	})
+}
+
+func testOneOffTransferInvalidOwnerTransfersWithFromDerivedKey(t *testing.T) {
+	e := getTestEngine(t)
+
+	// let's do a massive fee, easy to test
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+
+	partyKey := "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"
+	derivedKey := "c84fbf3442a2a9f9ca87c9cefe686aed241ff49981dd8ce819dd532cd42a8427"
+	amount := num.NewUint(10)
+
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindOneOff,
+		OneOff: &types.OneOffTransfer{
+			TransferBase: &types.TransferBase{
+				From:            partyKey,
+				FromDerivedKey:  &derivedKey,
+				FromAccountType: types.AccountTypeVestedRewards,
+				To:              partyKey,
+				ToAccountType:   types.AccountTypeGeneral,
+				Asset:           assetNameETH,
+				Amount:          amount,
+				Reference:       "someref",
+			},
+		},
+	}
+
+	// asset exists
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+		assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+
+	e.parties.EXPECT().CheckDerivedKeyOwnership(types.PartyID(partyKey), derivedKey).Return(false).Times(1)
+
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.ErrorContains(t, e.TransferFunds(ctx, transfer), "does not own derived key")
 }

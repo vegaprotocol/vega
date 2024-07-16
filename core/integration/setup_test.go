@@ -28,7 +28,6 @@ import (
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
-	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/integration/helpers"
@@ -70,6 +69,10 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	fmt.Printf("%s FATAL: %s", t.scenario, fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
+
+type DummyDelayTarget struct{}
+
+func (*DummyDelayTarget) MarketDelayRequiredUpdated(marketID string, required bool) {}
 
 type DummyASVM struct{}
 
@@ -168,7 +171,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.witness = validators.NewWitness(ctx, execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
 
-	eventForwarder := evtforward.NewNoopEngine(execsetup.log, ethereum.Config{})
+	eventHeartbeat := evtforward.NewTracker(execsetup.log, execsetup.witness, execsetup.timeService)
 
 	execsetup.oracleEngine = spec.NewEngine(execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	execsetup.builtinOracle = spec.NewBuiltin(execsetup.oracleEngine, execsetup.timeService)
@@ -194,7 +197,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, execsetup.marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventForwarder, nil)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventHeartbeat, execsetup.profilesEngine)
 
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
@@ -210,6 +213,8 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.referralProgram,
 			execsetup.volumeDiscountProgram,
 			execsetup.banking,
+			execsetup.profilesEngine,
+			&DummyDelayTarget{},
 		),
 		execsetup.broker,
 	)
@@ -222,7 +227,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.activityStreak = activitystreak.New(execsetup.log, execsetup.executionEngine, execsetup.broker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
 
-	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine)
+	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine, execsetup.profilesEngine)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
@@ -526,6 +531,18 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MinEpochsInTeamForMetricRewardEligibility,
 			Watcher: execsetup.marketActivityTracker.OnMinEpochsInTeamForRewardEligibilityUpdated,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityEquityLikeShareFeeFractionUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAMMMinCommitmentQuantum,
+			Watcher: execsetup.executionEngine.OnMarketAMMMinCommitmentQuantum,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAMMMaxCalculationLevels,
+			Watcher: execsetup.executionEngine.OnMarketAMMMaxCalculationLevels,
 		},
 	)
 }

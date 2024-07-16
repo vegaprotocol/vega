@@ -83,3 +83,7 @@ func (ml *MarginLevels) consume(ctx context.Context, event MarginLevelsEvent) er
 	err = ml.store.Add(entity)
 	return errors.Wrap(err, "add margin level to store")
 }
+
+func (ml *MarginLevels) Name() string {
+	return "MarginLevels"
+}

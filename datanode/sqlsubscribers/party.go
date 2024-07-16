@@ -83,3 +83,7 @@ func (ps *Party) consumePartyProfileUpdated(ctx context.Context, e PartyProfileU
 
 	return errors.Wrap(ps.store.UpdateProfile(ctx, updated), "updating party profile")
 }
+
+func (ps *Party) Name() string {
+	return "Party"
+}

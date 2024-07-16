@@ -105,6 +105,15 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 	a.end = d
 }
 
+func (a *AuctionState) StartLongBlockAuction(t time.Time, d int64) {
+	a.mode = types.MarketTradingModelLongBlockAuction
+	a.trigger = types.AuctionTriggerLongBlock
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = &types.AuctionDuration{Duration: d}
+}
+
 func (a *AuctionState) StartGovernanceSuspensionAuction(t time.Time) {
 	a.mode = types.MarketTradingModeSuspendedViaGovernance
 	a.trigger = types.AuctionTriggerGovernanceSuspension
@@ -153,6 +162,14 @@ func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration
 func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 	t := types.AuctionTriggerPrice
 	a.extension = &t
+	a.ExtendAuction(delta)
+}
+
+func (a *AuctionState) ExtendAuctionLongBlock(delta types.AuctionDuration) {
+	t := types.AuctionTriggerLongBlock
+	if a.trigger != t {
+		a.extension = &t
+	}
 	a.ExtendAuction(delta)
 }
 

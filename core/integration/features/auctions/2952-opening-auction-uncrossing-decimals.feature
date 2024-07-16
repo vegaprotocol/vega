@@ -1,4 +1,4 @@
-Feature: Set up a market, with an opening auction, then uncross the book. Make sure opening auction can end if we have remaingin volume in the uncrossing range
+Feature: Set up a market, with an opening auction, then uncross the book. Make sure opening auction can end if we have remaining volume in the uncrossing range
 
 
   Background:

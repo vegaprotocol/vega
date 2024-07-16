@@ -17,6 +17,7 @@ package banking_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -26,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
@@ -42,6 +44,62 @@ func TestRecurringTransfers(t *testing.T) {
 	t.Run("invalid recurring transfers, in the past", testInvalidRecurringTransfersInThePast)
 }
 
+func TestExpireOldTransfers(t *testing.T) {
+	e := getTestEngine(t)
+
+	ctx := context.Background()
+
+	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(10)}), nil)
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	fromAcc := types.Account{
+		Balance: num.NewUint(100000), // enough for the all
+	}
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
+
+	endEpoch := uint64(12)
+	transfers := []*types.TransferFunds{}
+	for i := 0; i < 10; i++ {
+		transfers = append(transfers, &types.TransferFunds{
+			Kind: types.TransferCommandKindRecurring,
+			Recurring: &types.RecurringTransfer{
+				TransferBase: &types.TransferBase{
+					ID:              fmt.Sprintf("TRANSFERID-%d", i),
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeGeneral,
+					To:              crypto.RandomHash(),
+					ToAccountType:   types.AccountTypeGeneral,
+					Asset:           assetNameETH,
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+				StartEpoch: 10,
+				EndEpoch:   &endEpoch,
+				Factor:     num.MustDecimalFromString("1"),
+			},
+		})
+		require.NoError(t, e.TransferFunds(ctx, transfers[i]))
+	}
+	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+
+	seenEvts := []events.Event{}
+	e.broker.EXPECT().SendBatch(gomock.Any()).DoAndReturn(func(evts []events.Event) {
+		seenEvts = append(seenEvts, evts...)
+	}).AnyTimes()
+
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 15, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 15, Action: vega.EpochAction_EPOCH_ACTION_END})
+
+	require.Equal(t, 10, len(seenEvts))
+	stoppedIDs := map[string]struct{}{}
+	for _, e2 := range seenEvts {
+		if e2.StreamMessage().GetTransfer().Status == types.TransferStatusDone {
+			stoppedIDs[e2.StreamMessage().GetTransfer().Id] = struct{}{}
+		}
+	}
+	require.Equal(t, 10, len(stoppedIDs))
+}
+
 func TestMaturation(t *testing.T) {
 	e := getTestEngine(t)
 
@@ -49,7 +107,6 @@ func TestMaturation(t *testing.T) {
 
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(10)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	fromAcc := types.Account{
 		Balance: num.NewUint(100000), // enough for the all
@@ -127,7 +184,6 @@ func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
@@ -165,7 +221,6 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.EqualError(t,
 		e.TransferFunds(ctx, transfer),
@@ -228,7 +283,6 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(3)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -313,11 +367,10 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	}
 
 	e.marketActivityTracker.EXPECT().CalculateMetricForIndividuals(gomock.Any(), gomock.Any()).AnyTimes().Return([]*types.PartyContributionScore{
-		{Party: "", Score: num.DecimalFromFloat(1)},
+		{Party: "", Score: num.DecimalFromFloat(1), StakingBalance: num.UintZero(), OpenVolume: num.UintZero(), TotalFeesPaid: num.UintZero(), IsEligible: true},
 	})
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(2)
-	e.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
 	// now let's move epochs to see the others transfers
@@ -432,7 +485,6 @@ func testValidRecurringTransfer(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(3)
 	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -571,7 +623,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	var baseCpy types.TransferBase
 
 	t.Run("invalid from account", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy := transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -583,7 +634,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("invalid to account", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -595,7 +645,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsupported from account type", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -607,7 +656,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsuported to account type", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -619,7 +667,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("zero funds transfer", func(t *testing.T) {
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -644,8 +691,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 
 	t.Run("bad start time", func(t *testing.T) {
 		transfer.Recurring.StartEpoch = 0
-
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -657,8 +702,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	t.Run("bad end time", func(t *testing.T) {
 		transfer.Recurring.StartEpoch = 90
 		transfer.Recurring.EndEpoch = &endEpoch0
-
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -670,8 +713,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	t.Run("negative factor", func(t *testing.T) {
 		transfer.Recurring.EndEpoch = &endEpoch100
 		transfer.Recurring.Factor = num.MustDecimalFromString("-1")
-
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -682,8 +723,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 
 	t.Run("zero factor", func(t *testing.T) {
 		transfer.Recurring.Factor = num.MustDecimalFromString("0")
-
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -695,8 +734,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	t.Run("start epoch after end epoch", func(t *testing.T) {
 		transfer.Recurring.Factor = num.MustDecimalFromString("1")
 		transfer.Recurring.EndEpoch = &endEpoch1
-
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -707,8 +744,6 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 
 	t.Run("end epoch nil", func(t *testing.T) {
 		transfer.Recurring.EndEpoch = nil
-
-		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.NoError(t,
@@ -725,7 +760,6 @@ func TestMarketAssetMismatchRejectsTransfer(t *testing.T) {
 	}
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -761,4 +795,73 @@ func TestMarketAssetMismatchRejectsTransfer(t *testing.T) {
 	// if in-scope market has a different asset it is rejected
 	eng.marketActivityTracker.EXPECT().MarketTrackedForAsset(gomock.Any(), gomock.Any()).Times(1).Return(false)
 	require.Error(t, eng.TransferFunds(context.Background(), recurring))
+}
+
+func TestDispatchStrategyRemoval(t *testing.T) {
+	e := getTestEngine(t)
+
+	dispatchStrat := &vega.DispatchStrategy{
+		AssetForMetric:       "zohar",
+		Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Markets:              []string{"mmm"},
+		EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+		IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+		WindowLength:         1,
+		LockPeriod:           1,
+		DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
+	}
+
+	p, err := proto.Marshal(dispatchStrat)
+	require.NoError(t, err)
+	dsHash := hex.EncodeToString(crypto.Hash(p))
+
+	var endEpoch uint64 = 100
+	party := "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID",
+				From:            party,
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "0000000000000000000000000000000000000000000000000000000000000000",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           assetNameETH,
+				Amount:          num.NewUint(100),
+				Reference:       "someref",
+			},
+			StartEpoch:       8,
+			EndEpoch:         &endEpoch,
+			Factor:           num.MustDecimalFromString("0.9"),
+			DispatchStrategy: dispatchStrat,
+		},
+	}
+
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	e.marketActivityTracker.EXPECT().MarketTrackedForAsset(gomock.Any(), gomock.Any()).Times(1).Return(true)
+	assert.NoError(t, e.TransferFunds(ctx, transfer))
+
+	// it exists
+	assert.NotNil(t, e.GetDispatchStrategy(dsHash))
+
+	// now cancel
+	require.NoError(t, e.CancelTransferFunds(ctx,
+		&types.CancelTransferFunds{
+			Party:      party,
+			TransferID: "TRANSFERID",
+		},
+	),
+	)
+
+	// it does not exist (secretly it does but has ref-count 0)
+	assert.Nil(t, e.GetDispatchStrategy(dsHash))
+
+	// roll into the next epoch end
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8, Action: vega.EpochAction_EPOCH_ACTION_END})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9, Action: vega.EpochAction_EPOCH_ACTION_START})
+
+	// still not there
+	assert.Nil(t, e.GetDispatchStrategy(dsHash))
 }

@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -89,7 +90,7 @@ type Teams interface {
 
 type Vesting interface {
 	AddReward(party, asset string, amount *num.Uint, lockedForEpochs uint64)
-	GetRewardBonusMultiplier(party string) (*num.Uint, num.Decimal)
+	GetSingleAndSummedRewardBonusMultipliers(party string) (vesting.MultiplierAndQuantBalance, vesting.MultiplierAndQuantBalance)
 }
 
 type ActivityStreak interface {
@@ -357,8 +358,18 @@ func (e *Engine) convertTakerFeesToRewardAsset(takerFees map[string]*num.Uint, f
 
 func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 	asMultiplier := e.activityStreak.GetRewardsDistributionMultiplier(party)
-	_, vsMultiplier := e.vesting.GetRewardBonusMultiplier(party)
-	return asMultiplier.Mul(vsMultiplier)
+	_, summed := e.vesting.GetSingleAndSummedRewardBonusMultipliers(party)
+	return asMultiplier.Mul(summed.Multiplier)
+}
+
+func filterEligible(ps []*types.PartyContributionScore) []*types.PartyContributionScore {
+	filtered := []*types.PartyContributionScore{}
+	for _, psEntry := range ps {
+		if psEntry.IsEligible {
+			filtered = append(filtered, psEntry)
+		}
+	}
+	return filtered
 }
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
@@ -391,7 +402,7 @@ func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asse
 			takerFeesPaidInRewardAsset = e.convertTakerFeesToRewardAsset(takerFeesPaid, ds.AssetForMetric, asset)
 		}
 		if ds.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
-			partyScores := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)
+			partyScores := filterEligible(e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds))
 			partyRewardFactors := map[string]num.Decimal{}
 			for _, pcs := range partyScores {
 				partyRewardFactors[pcs.Party] = e.getRewardMultiplierForParty(pcs.Party)
@@ -399,6 +410,14 @@ func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asse
 			return calculateRewardsByContributionIndividual(epochSeq, account.Asset, account.ID, account.Balance, partyScores, partyRewardFactors, timestamp, ds, takerFeesPaidInRewardAsset)
 		} else {
 			teamScores, partyScores := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
+			filteredPartyScore := map[string][]*types.PartyContributionScore{}
+			for t, team := range partyScores {
+				filtered := filterEligible(team)
+				if len(filtered) > 0 {
+					filteredPartyScore[t] = filtered
+				}
+			}
+			partyScores = filteredPartyScore
 			partyRewardFactors := map[string]num.Decimal{}
 			for _, team := range partyScores {
 				for _, pcs := range team {

@@ -93,6 +93,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 				Metadata: map[string]string{
 					"key1": "value1",
 				},
+				DerivedKeys: map[string]struct{}{},
 			},
 			{
 				PartyID: party2,
@@ -100,6 +101,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 				Metadata: map[string]string{
 					"key1": "value1",
 				},
+				DerivedKeys: map[string]struct{}{},
 			},
 			{
 				PartyID: party3,
@@ -107,6 +109,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 				Metadata: map[string]string{
 					"key1": "value1",
 				},
+				DerivedKeys: map[string]struct{}{},
 			},
 		}, te.engine.ListProfiles())
 	}

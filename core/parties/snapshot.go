@@ -107,6 +107,13 @@ func (e *SnapshottedEngine) serialiseParties() ([]byte, error) {
 			return strings.Compare(a.Key, b.Key)
 		})
 
+		for k := range profile.DerivedKeys {
+			profileSnapshot.DerivedKeys = append(profileSnapshot.DerivedKeys, k)
+		}
+
+		// Ensure deterministic order among the derived keys.
+		slices.Sort(profileSnapshot.DerivedKeys)
+
 		profilesSnapshot = append(profilesSnapshot, profileSnapshot)
 	}
 

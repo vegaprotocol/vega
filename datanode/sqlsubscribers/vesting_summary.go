@@ -102,3 +102,7 @@ func (v *VestingBalancesSummary) consumeVestingBalancesSummaryEvent(ctx context.
 
 	return v.lockedStore.Prune(ctx, evt.EpochSeq)
 }
+
+func (v *VestingBalancesSummary) Name() string {
+	return "VestingBalancesSummary"
+}

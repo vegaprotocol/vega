@@ -46,7 +46,7 @@ func setupOracleSpecTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleSpec, 
 	bs := sqlstore.NewBlocks(connectionSource)
 	os := sqlstore.NewOracleSpec(connectionSource)
 
-	return bs, os, connectionSource.Connection
+	return bs, os, connectionSource
 }
 
 func testInsertIntoNewBlock(t *testing.T) {

@@ -41,6 +41,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	tempDir, err := os.MkdirTemp("", "datanode")
 	if err != nil {
 		panic(err)
@@ -48,9 +50,11 @@ func TestMain(m *testing.M) {
 	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
 	defer os.RemoveAll(tempDir)
 
-	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource,
+	databasetest.TestMain(m, ctx, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource,
 		postgresLog *bytes.Buffer,
 	) {
+		// ensures nested transactions execute the post-commit hooks while the parent transaction still rolls back the overall changes.
+		source.ToggleTest()
 		testDBPort = cfg.ConnectionConfig.Port
 		connectionSource = source
 		testConfig = cfg

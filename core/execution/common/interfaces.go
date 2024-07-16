@@ -23,6 +23,7 @@ import (
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/risk"
@@ -33,7 +34,9 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking,Parties,DelayTransactionsTarget
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks_amm/mocks.go -package mocks_amm code.vegaprotocol.io/vega/core/execution/common AMMPool,AMM
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
@@ -52,6 +55,7 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, price *num.Uint, persistent bool, recordInHistory bool) bool
 	ResetPriceHistory(price *num.Uint)
 	GetCurrentBounds() []*types.PriceMonitoringBounds
+	GetBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 	// Snapshot
@@ -59,7 +63,7 @@ type PriceMonitor interface {
 	Changed() bool
 	IsBoundFactorsInitialised() bool
 	Initialised() bool
-	UpdateSettings(risk.Model, *types.PriceMonitoringSettings)
+	UpdateSettings(risk.Model, *types.PriceMonitoringSettings, price.AuctionState)
 }
 
 // TimeService ...
@@ -96,6 +100,7 @@ type AuctionState interface {
 	price.AuctionState
 	// are we in auction, and what auction are we in?
 	ExtendAuctionSuspension(delta types.AuctionDuration)
+	ExtendAuctionLongBlock(delta types.AuctionDuration)
 	InAuction() bool
 	IsOpeningAuction() bool
 	IsPriceAuction() bool
@@ -124,6 +129,7 @@ type AuctionState interface {
 	Changed() bool
 	UpdateMaxDuration(ctx context.Context, d time.Duration)
 	StartGovernanceSuspensionAuction(t time.Time)
+	StartLongBlockAuction(t time.Time, d int64)
 	EndGovernanceSuspensionAuction()
 }
 
@@ -187,6 +193,25 @@ type Collateral interface {
 	GetLiquidityFeesBonusDistributionAccount(marketID, asset string) (*types.Account, error)
 	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
+	CheckOrderSpam(party, market string, assets []string) error
+	CheckOrderSpamAllMarkets(party string) error
+
+	// amm stuff
+	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)
+	SubAccountUpdate(
+		ctx context.Context,
+		party, subAccount, asset, market string,
+		transferType types.TransferType,
+		amount *num.Uint,
+	) (*types.LedgerMovement, error)
+	SubAccountRelease(
+		ctx context.Context,
+		party, subAccount, asset, market string, pos events.MarketPosition,
+	) ([]*types.LedgerMovement, events.Margin, error)
+	CreatePartyAMMsSubAccounts(
+		ctx context.Context,
+		party, subAccount, asset, market string,
+	) (general *types.Account, margin *types.Account, err error)
 }
 
 type OrderReferenceCheck types.Order
@@ -216,6 +241,10 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 
 type Banking interface {
 	RegisterTradingFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint)
+}
+
+type Parties interface {
+	AssignDeriveKey(ctx context.Context, party types.PartyID, derivedKey string)
 }
 
 type LiquidityEngine interface {
@@ -252,6 +281,7 @@ type LiquidityEngine interface {
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 	OnProvidersFeeCalculationTimeStep(time.Duration)
 	IsProbabilityOfTradingInitialised() bool
+	GetPartyLiquidityScore(orders []*types.Order, bestBid, bestAsk num.Decimal, minP, maxP *num.Uint) num.Decimal
 
 	LiquidityProviderSLAStats(t time.Time) []*types.LiquidityProviderSLA
 
@@ -292,16 +322,31 @@ type MarketLiquidityEngine interface {
 	ProvisionsPerParty() liquidity.ProvisionsPerParty
 	OnMarketClosed(context.Context, time.Time)
 	CalculateSuppliedStake() *num.Uint
+	SetELSFeeFraction(d num.Decimal)
 }
 
 type EquityLikeShares interface {
 	AllShares() map[string]num.Decimal
 	SetPartyStake(id string, newStakeU *num.Uint)
+	HasShares(id string) bool
+}
+
+type AMMPool interface {
+	OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order)
+	LiquidityFee() num.Decimal
+	CommitmentAmount() *num.Uint
+}
+
+type AMM interface {
+	GetAMMPoolsBySubAccount() map[string]AMMPool
+	GetAllSubAccounts() []string
+	IsAMMPartyID(string) bool
 }
 
 type CommonMarket interface {
 	GetID() string
 	Hash() []byte
+	GetAssets() []string
 	Reject(context.Context) error
 	GetMarketData() types.MarketData
 	StartOpeningAuction(context.Context) error
@@ -317,6 +362,8 @@ type CommonMarket interface {
 	BeginBlock(context.Context)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 	GetFillPrice(volume uint64, side types.Side) (*num.Uint, error)
+	Mkt() *types.Market
+	EnterLongBlockAuction(ctx context.Context, duration int64)
 
 	IsOpeningAuction() bool
 
@@ -338,6 +385,9 @@ type CommonMarket interface {
 	OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal)
 	OnMarketLiquidityV2BondPenaltyFactorUpdate(d num.Decimal)
 	OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t time.Duration)
+	OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d num.Decimal)
+	OnAMMMinCommitmentQuantumUpdate(context.Context, *num.Uint)
+	OnMarketAMMMaxCalculationLevels(context.Context, *num.Uint)
 
 	// liquidity provision
 	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error
@@ -353,7 +403,12 @@ type CommonMarket interface {
 	CancelStopOrder(context.Context, string, string) error
 	SubmitStopOrdersWithIDGeneratorAndOrderIDs(context.Context, *types.StopOrdersSubmission, string, IDGenerator, *string, *string) (*types.OrderConfirmation, error)
 
+	SubmitAMM(context.Context, *types.SubmitAMM, string) error
+	AmendAMM(context.Context, *types.AmendAMM, string) error
+	CancelAMM(context.Context, *types.CancelAMM, string) error
+
 	PostRestore(context.Context) error
+	ValidateSettlementData(*num.Uint) bool
 }
 
 type AccountBalanceChecker interface {
@@ -364,4 +419,8 @@ type Teams interface {
 	GetTeamMembers(team string, minEpochsInTeam uint64) []string
 	GetAllPartiesInTeams(minEpochsInTeam uint64) []string
 	GetAllTeamsWithParties(minEpochsInTeam uint64) map[string][]string
+}
+
+type DelayTransactionsTarget interface {
+	MarketDelayRequiredUpdated(marketID string, required bool)
 }

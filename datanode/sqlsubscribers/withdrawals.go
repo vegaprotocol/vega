@@ -62,3 +62,7 @@ func (w *Withdrawal) consume(ctx context.Context, event WithdrawalEvent) error {
 
 	return errors.Wrap(w.store.Upsert(ctx, record), "inserting withdrawal to SQL store failed")
 }
+
+func (w *Withdrawal) Name() string {
+	return "Withdrawal"
+}

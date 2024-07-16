@@ -54,7 +54,7 @@ func TestVolumeDiscountStats_AddVolumeDiscountStats(t *testing.T) {
 		require.NoError(t, vds.Add(ctx, &stats))
 
 		var got entities.VolumeDiscountStats
-		require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_stats WHERE at_epoch = $1", epoch))
+		require.NoError(t, pgxscan.Get(ctx, connectionSource, &got, "SELECT * FROM volume_discount_stats WHERE at_epoch = $1", epoch))
 		assert.Equal(t, stats, got)
 	})
 
@@ -70,7 +70,7 @@ func TestVolumeDiscountStats_AddVolumeDiscountStats(t *testing.T) {
 		require.NoError(t, vds.Add(ctx, &stats))
 
 		var got entities.VolumeDiscountStats
-		require.NoError(t, pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_stats WHERE at_epoch = $1", epoch))
+		require.NoError(t, pgxscan.Get(ctx, connectionSource, &got, "SELECT * FROM volume_discount_stats WHERE at_epoch = $1", epoch))
 		assert.Equal(t, stats, got)
 
 		err := vds.Add(ctx, &stats)

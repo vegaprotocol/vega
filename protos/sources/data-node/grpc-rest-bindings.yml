@@ -79,6 +79,8 @@ http:
       get: "/api/v2/successor_markets/{market_id}"
     - selector: datanode.api.v2.TradingDataService.GetPartyActivityStreak
       get: "/api/v2/party/activity/streak/{party_id}"
+    - selector: datanode.api.v2.TradingDataService.GetPartyVestingStats
+      get: "/api/v2/party/vesting/stats/{party_id}"
     - selector: datanode.api.v2.TradingDataService.GetParty
       get: "/api/v2/party/{party_id}"
     - selector: datanode.api.v2.TradingDataService.ListParties
@@ -209,6 +211,14 @@ http:
       get: "/api/v2/margin-modes"
     - selector: datanode.api.v2.TradingDataService.GetTimeWeightedNotionalPosition
       get: "/api/v2/time-weighted-notional-position"
+    - selector: datanode.api.v2.TradingDataService.ListGamePartyScores
+      get: "/api/v2/games/party-scores"
+    - selector: datanode.api.v2.TradingDataService.ListGameTeamScores
+      get: "/api/v2/games/team-scores"
+    - selector: datanode.api.v2.TradingDataService.ListAMMs
+      get: "/api/v2/amms"
+    - selector: datanode.api.v2.TradingDataService.EstimateAMMBounds
+      get: "/api/v2/estimate/amm/bounds"
 
     # websockets
 
