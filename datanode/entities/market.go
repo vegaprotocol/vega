@@ -73,6 +73,18 @@ type Market struct {
 	EnableTXReordering     bool
 }
 
+func (m *Market) HasCap() (cap *vega.FutureCap, hasCap bool) {
+	if inst := m.TradableInstrument.Instrument; inst != nil {
+		if fut := inst.GetFuture(); fut != nil {
+			if cap := fut.GetCap(); cap != nil {
+				return cap, true
+			}
+		}
+	}
+
+	return nil, false
+}
+
 type MarketCursor struct {
 	VegaTime time.Time `json:"vegaTime"`
 	ID       MarketID  `json:"id"`

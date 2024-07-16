@@ -23,6 +23,7 @@ cleanup
 Cleanup
 clef
 codegen
+collateralised
 cometbft
 config
 cyclomatic
