@@ -193,7 +193,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	logService := l.Log.Named("service")
 	logService.SetLevel(l.conf.Service.Level.Get())
-	if err := l.SetupServices(l.ctx, logService, l.conf.CandlesV2); err != nil {
+	if err := l.SetupServices(l.ctx, logService, l.conf.Service, l.conf.CandlesV2); err != nil {
 		return err
 	}
 

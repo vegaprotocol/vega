@@ -35,12 +35,14 @@ type AMMPoolStore interface {
 
 type AMMPools struct {
 	subscriber
-	store AMMPoolStore
+	store       AMMPoolStore
+	marketDepth MarketDepthService
 }
 
-func NewAMMPools(store AMMPoolStore) *AMMPools {
+func NewAMMPools(store AMMPoolStore, marketDepth MarketDepthService) *AMMPools {
 	return &AMMPools{
-		store: store,
+		store:       store,
+		marketDepth: marketDepth,
 	}
 }
 
@@ -49,10 +51,10 @@ func (p *AMMPools) Types() []events.Type {
 }
 
 func (p *AMMPools) Push(ctx context.Context, evt events.Event) error {
-	return p.consume(ctx, evt.(AMMPoolEvent))
+	return p.consume(ctx, evt.(AMMPoolEvent), evt.Sequence())
 }
 
-func (p *AMMPools) consume(ctx context.Context, pe AMMPoolEvent) error {
+func (p *AMMPools) consume(ctx context.Context, pe AMMPoolEvent, seqNum uint64) error {
 	ammPool, err := entities.AMMPoolFromProto(pe.AMMPool(), p.vegaTime)
 	if err != nil {
 		return fmt.Errorf("cannot parse AMM Pool event from proto message: %w", err)
@@ -62,6 +64,13 @@ func (p *AMMPools) consume(ctx context.Context, pe AMMPoolEvent) error {
 	if err != nil {
 		return fmt.Errorf("could not save AMM Pool event: %w", err)
 	}
+
+	if ammPool.Status == entities.AMMStatusRejected || ammPool.Status == entities.AMMStatusUnspecified {
+		return nil
+	}
+
+	// send it to the market-depth service
+	p.marketDepth.OnAMMUpdate(ammPool, p.vegaTime, seqNum)
 
 	return nil
 }

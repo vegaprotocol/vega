@@ -79,6 +79,10 @@ func TestAMMPool_Upsert(t *testing.T) {
 				ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
 				CreatedAt:                      block.VegaTime,
 				LastUpdated:                    upsertTime,
+				LowerVirtualLiquidity:          num.DecimalOne(),
+				UpperVirtualLiquidity:          num.DecimalOne(),
+				LowerTheoreticalPosition:       num.DecimalOne(),
+				UpperTheoreticalPosition:       num.DecimalOne(),
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -116,6 +120,10 @@ func TestAMMPool_Upsert(t *testing.T) {
 				ParametersLeverageAtUpperBound: ptr.From(amount),
 				CreatedAt:                      block.VegaTime,
 				LastUpdated:                    upsertTime,
+				LowerVirtualLiquidity:          num.DecimalOne(),
+				UpperVirtualLiquidity:          num.DecimalOne(),
+				LowerTheoreticalPosition:       num.DecimalOne(),
+				UpperTheoreticalPosition:       num.DecimalOne(),
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -147,6 +155,10 @@ func TestAMMPool_Upsert(t *testing.T) {
 			ParametersLeverageAtUpperBound: nil,
 			CreatedAt:                      block.VegaTime,
 			LastUpdated:                    upsertTime,
+			LowerVirtualLiquidity:          num.DecimalOne(),
+			UpperVirtualLiquidity:          num.DecimalOne(),
+			LowerTheoreticalPosition:       num.DecimalOne(),
+			UpperTheoreticalPosition:       num.DecimalOne(),
 		}
 		require.NoError(t, ps.Upsert(ctx, pool))
 		var upserted entities.AMMPool
@@ -217,6 +229,10 @@ func setupAMMPoolsTest(ctx context.Context, t *testing.T) (
 					ParametersLeverageAtUpperBound: ptr.From(num.DecimalFromInt64(100)),
 					CreatedAt:                      block.VegaTime,
 					LastUpdated:                    block.VegaTime,
+					LowerVirtualLiquidity:          num.DecimalOne(),
+					UpperVirtualLiquidity:          num.DecimalOne(),
+					LowerTheoreticalPosition:       num.DecimalOne(),
+					UpperTheoreticalPosition:       num.DecimalOne(),
 				}
 				require.NoError(t, ps.Upsert(ctx, pool))
 				pools = append(pools, pool)
@@ -781,4 +797,21 @@ func TestAMMPools_ListByStatus(t *testing.T) {
 			EndCursor:       want[9].Cursor().Encode(),
 		}, pageInfo)
 	})
+}
+
+func TestAMMPools_ListActive(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	ps, in, _, _, _ := setupAMMPoolsTest(ctx, t)
+	var nActive int
+	for _, p := range in {
+		if p.Status == entities.AMMStatusActive || p.Status == entities.AMMStatusReduceOnly {
+			nActive++
+		}
+	}
+	require.NotEqual(t, 0, nActive)
+
+	out, err := ps.ListActive(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, nActive, len(out))
 }

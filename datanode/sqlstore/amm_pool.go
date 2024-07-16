@@ -31,13 +31,17 @@ type AMMPools struct {
 	*ConnectionSource
 }
 
-var ammPoolsOrdering = TableOrdering{
-	ColumnOrdering{Name: "created_at", Sorting: ASC},
-	ColumnOrdering{Name: "party_id", Sorting: DESC},
-	ColumnOrdering{Name: "amm_party_id", Sorting: DESC},
-	ColumnOrdering{Name: "market_id", Sorting: DESC},
-	ColumnOrdering{Name: "id", Sorting: DESC},
-}
+var (
+	ammPoolsOrdering = TableOrdering{
+		ColumnOrdering{Name: "created_at", Sorting: ASC},
+		ColumnOrdering{Name: "party_id", Sorting: DESC},
+		ColumnOrdering{Name: "amm_party_id", Sorting: DESC},
+		ColumnOrdering{Name: "market_id", Sorting: DESC},
+		ColumnOrdering{Name: "id", Sorting: DESC},
+	}
+
+	activeStates = []entities.AMMStatus{entities.AMMStatusActive, entities.AMMStatusReduceOnly}
+)
 
 func NewAMMPools(connectionSource *ConnectionSource) *AMMPools {
 	return &AMMPools{
@@ -52,7 +56,9 @@ insert into amms(party_id, market_id, id, amm_party_id,
 commitment, status, status_reason, 	parameters_base,
 parameters_lower_bound, parameters_upper_bound,
 parameters_leverage_at_lower_bound, parameters_leverage_at_upper_bound,
-created_at, last_updated, proposed_fee) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+created_at, last_updated, proposed_fee,
+lower_virtual_liquidity, lower_theoretical_position,
+upper_virtual_liquidity, upper_theoretical_position) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 on conflict (party_id, market_id, id, amm_party_id) do update set
 	commitment=excluded.commitment,
 	status=excluded.status,
@@ -63,7 +69,11 @@ on conflict (party_id, market_id, id, amm_party_id) do update set
 	parameters_leverage_at_lower_bound=excluded.parameters_leverage_at_lower_bound,
 	parameters_leverage_at_upper_bound=excluded.parameters_leverage_at_upper_bound,
 	last_updated=excluded.last_updated,
-	proposed_fee=excluded.proposed_fee;`,
+	proposed_fee=excluded.proposed_fee,
+	lower_virtual_liquidity=excluded.lower_virtual_liquidity,
+	lower_theoretical_position=excluded.lower_theoretical_position,
+	upper_virtual_liquidity=excluded.upper_virtual_liquidity,
+	upper_theoretical_position=excluded.upper_theoretical_position;`,
 		pool.PartyID,
 		pool.MarketID,
 		pool.ID,
@@ -79,6 +89,10 @@ on conflict (party_id, market_id, id, amm_party_id) do update set
 		pool.CreatedAt,
 		pool.LastUpdated,
 		pool.ProposedFee,
+		pool.LowerVirtualLiquidity,
+		pool.LowerTheoreticalPosition,
+		pool.UpperVirtualLiquidity,
+		pool.UpperTheoreticalPosition,
 	); err != nil {
 		return fmt.Errorf("could not upsert AMM Pool: %w", err)
 	}
@@ -99,7 +113,6 @@ func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connectio
 	if err != nil {
 		return nil, pageInfo, err
 	}
-
 	if err := pgxscan.Select(ctx, connection, &pools, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not list AMM Pools: %w", err)
 	}
@@ -185,4 +198,29 @@ func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagina
 
 	pools, pageInfo = entities.PageEntities[*v2.AMMEdge](pools, pagination)
 	return pools, pageInfo, nil
+}
+
+func (p *AMMPools) ListActive(ctx context.Context) ([]entities.AMMPool, error) {
+	defer metrics.StartSQLQuery("AMMs", "ListAll")
+	var (
+		pools       []entities.AMMPool
+		args        []interface{}
+		whereClause string
+	)
+
+	states := strings.Builder{}
+	for i, status := range activeStates {
+		if i > 0 {
+			states.WriteString(",")
+		}
+		states.WriteString(nextBindVar(&args, status))
+	}
+	whereClause += fmt.Sprintf("status IN (%s)", states.String())
+	query := fmt.Sprintf(`SELECT * from amms WHERE %s`, whereClause)
+
+	if err := pgxscan.Select(ctx, p.ConnectionSource, &pools, query, args...); err != nil {
+		return nil, fmt.Errorf("could not list active AMMs: %w", err)
+	}
+
+	return pools, nil
 }

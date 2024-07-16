@@ -28,6 +28,22 @@ type AMMPool struct {
 	pool *eventspb.AMM
 }
 
+type AMMCurve struct {
+	VirtualLiquidity    num.Decimal
+	TheoreticalPosition num.Decimal
+}
+
+func (a *AMMCurve) ToProtoEvent() *eventspb.AMM_Curve {
+	if a == nil {
+		return nil
+	}
+
+	return &eventspb.AMM_Curve{
+		VirtualLiquidity:    a.VirtualLiquidity.String(),
+		TheoreticalPosition: a.TheoreticalPosition.String(),
+	}
+}
+
 func NewAMMPoolEvent(
 	ctx context.Context,
 	party, market, ammParty, poolID string,
@@ -36,6 +52,8 @@ func NewAMMPoolEvent(
 	status types.AMMPoolStatus,
 	statusReason types.AMMStatusReason,
 	fees num.Decimal,
+	lowerCurve *AMMCurve,
+	upperCurve *AMMCurve,
 ) *AMMPool {
 	return &AMMPool{
 		Base: newBase(ctx, AMMPoolEvent),
@@ -49,6 +67,8 @@ func NewAMMPoolEvent(
 			Status:       status,
 			StatusReason: statusReason,
 			ProposedFee:  fees.String(),
+			LowerCurve:   lowerCurve.ToProtoEvent(),
+			UpperCurve:   upperCurve.ToProtoEvent(),
 		},
 	}
 }
