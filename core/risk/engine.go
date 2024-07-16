@@ -476,14 +476,13 @@ func (e *Engine) UpdateMarginsOnSettlement(ctx context.Context, evts []events.Ma
 
 		var trnsfr *types.Transfer
 		minAmount := num.UintZero()
+		// if we don't even have margin levels, the minimum amount must be non-zero.
+		if curMargin.LT(margins.MaintenanceMargin) {
+			minAmount.Sub(margins.MaintenanceMargin, curMargin)
+		}
+		// minAmount := num.UintZero().Sub(margins.MaintenanceMargin, curMargin)
 		// case 2 -> not enough margin
 		if curMargin.LT(margins.SearchLevel) {
-			// first calculate minimal amount, which will be specified in the case we are under
-			// the maintenance level
-			if curMargin.LT(margins.MaintenanceMargin) {
-				minAmount.Sub(margins.MaintenanceMargin, curMargin)
-			}
-
 			// then the rest is common if we are before or after MaintenanceLevel,
 			// we try to reach the InitialMargin level
 			trnsfr = &types.Transfer{
@@ -509,7 +508,7 @@ func (e *Engine) UpdateMarginsOnSettlement(ctx context.Context, evts []events.Ma
 					Asset:  evt.Asset(),
 					Amount: num.UintZero().Sub(curMargin, margins.InitialMargin),
 				},
-				MinAmount: minAmount,
+				MinAmount: num.UintZero().Sub(curMargin, margins.CollateralReleaseLevel),
 			}
 		}
 
