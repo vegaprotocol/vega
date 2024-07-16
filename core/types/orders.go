@@ -28,16 +28,20 @@ import (
 )
 
 type PriceLevel struct {
-	Price          *num.Uint
-	NumberOfOrders uint64
-	Volume         uint64
+	Price              *num.Uint
+	NumberOfOrders     uint64
+	Volume             uint64
+	AMMVolume          uint64
+	AMMVolumeEstimated uint64
 }
 
 func (p PriceLevel) IntoProto() *proto.PriceLevel {
 	return &proto.PriceLevel{
-		Price:          num.UintToString(p.Price),
-		NumberOfOrders: p.NumberOfOrders,
-		Volume:         p.Volume,
+		Price:              num.UintToString(p.Price),
+		NumberOfOrders:     p.NumberOfOrders,
+		Volume:             p.Volume,
+		AmmVolume:          p.AMMVolume,
+		AmmVolumeEstimated: p.AMMVolumeEstimated,
 	}
 }
 

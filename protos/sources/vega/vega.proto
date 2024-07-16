@@ -666,6 +666,10 @@ message PriceLevel {
   uint64 number_of_orders = 2;
   // Volume at the price level.
   uint64 volume = 3;
+  // Volume of AMM's at the price level.
+  uint64 amm_volume = 4;
+  // Estimated AMM volume at the price level.
+  uint64 amm_volume_estimated = 5;
 }
 
 // Represents market depth or order book data for the specified market on Vega

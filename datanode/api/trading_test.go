@@ -139,7 +139,6 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlKeyRotationsService := service.NewKeyRotations(sqlstore.NewKeyRotations(sqlConn))
 	sqlEthereumKeyRotationService := service.NewEthereumKeyRotation(sqlstore.NewEthereumKeyRotations(sqlConn), logger)
 	sqlNodeService := service.NewNode(sqlstore.NewNode(sqlConn))
-	sqlMarketDepthService := service.NewMarketDepth(sqlOrderService, logger)
 	sqlLedgerService := service.NewLedger(sqlstore.NewLedger(sqlConn), logger)
 	sqlProtocolUpgradeService := service.NewProtocolUpgrade(sqlstore.NewProtocolUpgradeProposals(sqlConn), logger)
 	sqlCoreSnapshotService := service.NewSnapshotData(sqlstore.NewCoreSnapshotData(sqlConn))
@@ -163,6 +162,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	timeWeightedNotionPositionService := service.NewTimeWeightedNotionalPosition(sqlstore.NewTimeWeightedNotionalPosition(sqlConn))
 	gameScoreService := service.NewGameScore(sqlstore.NewGameScores(sqlConn), logger)
 	ammPoolsService := service.NewAMMPools(sqlstore.NewAMMPools(sqlConn))
+	sqlMarketDepthService := service.NewMarketDepth(service.NewDefaultConfig().MarketDepth, sqlOrderService, ammPoolsService, nil, nil, nil, nil, logger)
 
 	g := api.NewGRPCServer(
 		logger,

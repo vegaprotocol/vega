@@ -28,6 +28,7 @@ import (
 )
 
 type MarketDepthService interface {
+	OnAMMUpdate(pool entities.AMMPool, vt time.Time, seqNum uint64)
 	AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64)
 	PublishAtEndOfBlock()
 }

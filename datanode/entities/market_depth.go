@@ -31,6 +31,10 @@ type PriceLevel struct {
 	TotalOrders uint64
 	// How much volume is at this level
 	TotalVolume uint64
+	// How much volume from AMM's are at this level
+	TotalAMMVolume uint64
+	// How much estimated volume from AMM's are at this level
+	TotalEstimatedAMMVolume uint64
 	// What side of the book is this level
 	Side types.Side
 }
@@ -69,17 +73,21 @@ func (md *MarketDepth) ToProto(limit uint64) *vega.MarketDepth {
 	// Copy the data across
 	for index, pl := range md.BuySide[:buyLimit] {
 		buyPtr[index] = &types.PriceLevel{
-			Volume:         pl.TotalVolume,
-			NumberOfOrders: pl.TotalOrders,
-			Price:          pl.Price.Clone(),
+			Volume:             pl.TotalVolume,
+			NumberOfOrders:     pl.TotalOrders,
+			Price:              pl.Price.Clone(),
+			AMMVolume:          pl.TotalAMMVolume,
+			AMMVolumeEstimated: pl.TotalEstimatedAMMVolume,
 		}
 	}
 
 	for index, pl := range md.SellSide[:sellLimit] {
 		sellPtr[index] = &types.PriceLevel{
-			Volume:         pl.TotalVolume,
-			NumberOfOrders: pl.TotalOrders,
-			Price:          pl.Price.Clone(),
+			Volume:             pl.TotalVolume,
+			NumberOfOrders:     pl.TotalOrders,
+			Price:              pl.Price.Clone(),
+			AMMVolume:          pl.TotalAMMVolume,
+			AMMVolumeEstimated: pl.TotalEstimatedAMMVolume,
 		}
 	}
 
@@ -91,7 +99,11 @@ func (md *MarketDepth) ToProto(limit uint64) *vega.MarketDepth {
 	}
 }
 
-func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
+func (md *MarketDepth) AddAMMOrder(order *types.Order, estimated bool) {
+	md.addOrder(order, estimated)
+}
+
+func (md *MarketDepth) AddOrderUpdate(order *types.Order, estimated bool) {
 	// Do we know about this order already?
 	originalOrder := md.orderExists(order.ID)
 	if originalOrder != nil {
@@ -103,13 +115,13 @@ func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
 			order.Status == types.OrderStatusPartiallyFilled ||
 			order.Status == types.OrderStatusRejected ||
 			order.Status == types.OrderStatusParked {
-			md.removeOrder(originalOrder)
+			md.removeOrder(originalOrder, estimated)
 		} else {
 			md.updateOrder(originalOrder, order)
 		}
 	} else {
 		if order.TrueRemaining() > 0 && order.Status == types.OrderStatusActive {
-			md.addOrder(order)
+			md.addOrder(order, estimated)
 		}
 	}
 }
@@ -118,7 +130,7 @@ func (md *MarketDepth) orderExists(orderID string) *types.Order {
 	return md.LiveOrders[orderID]
 }
 
-func (md *MarketDepth) addOrder(order *types.Order) {
+func (md *MarketDepth) addOrder(order *types.Order, estimated bool) {
 	// Cache the orderID
 	orderCopy := order.Clone()
 	md.LiveOrders[order.ID] = orderCopy
@@ -127,7 +139,13 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 	pl := md.GetPriceLevel(order.Side, order.Price)
 
 	if pl == nil {
-		pl = md.createNewPriceLevel(order)
+		pl = md.createNewPriceLevel(order, estimated)
+	} else if order.GeneratedOffbook {
+		if estimated {
+			pl.TotalEstimatedAMMVolume += order.TrueRemaining()
+		} else {
+			pl.TotalAMMVolume += order.TrueRemaining()
+		}
 	} else {
 		pl.TotalOrders++
 		pl.TotalVolume += order.TrueRemaining()
@@ -135,7 +153,7 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 	md.Changes = append(md.Changes, pl)
 }
 
-func (md *MarketDepth) removeOrder(order *types.Order) error {
+func (md *MarketDepth) removeOrder(order *types.Order, estimated bool) error {
 	// Find the price level
 	pl := md.GetPriceLevel(order.Side, order.Price)
 
@@ -143,8 +161,16 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 		return errors.New("unknown pricelevel")
 	}
 	// Update the values
-	pl.TotalOrders--
-	pl.TotalVolume -= order.TrueRemaining()
+	if order.GeneratedOffbook {
+		if estimated {
+			pl.TotalEstimatedAMMVolume -= order.TrueRemaining()
+		} else {
+			pl.TotalAMMVolume -= order.TrueRemaining()
+		}
+	} else {
+		pl.TotalOrders--
+		pl.TotalVolume -= order.TrueRemaining()
+	}
 
 	// See if we can remove this price level
 	if pl.TotalOrders == 0 {
@@ -162,7 +188,7 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
 	if originalOrder.Price.EQ(newOrder.Price) {
 		if newOrder.TrueRemaining() == 0 {
-			md.removeOrder(newOrder)
+			md.removeOrder(newOrder, false)
 		} else {
 			// Update
 			pl := md.GetPriceLevel(originalOrder.Side, originalOrder.Price)
@@ -175,19 +201,28 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 			md.Changes = append(md.Changes, pl)
 		}
 	} else {
-		md.removeOrder(originalOrder)
+		md.removeOrder(originalOrder, false)
 		if newOrder.TrueRemaining() > 0 {
-			md.addOrder(newOrder)
+			md.addOrder(newOrder, false)
 		}
 	}
 }
 
-func (md *MarketDepth) createNewPriceLevel(order *types.Order) *PriceLevel {
+func (md *MarketDepth) createNewPriceLevel(order *types.Order, estimated bool) *PriceLevel {
 	pl := &PriceLevel{
-		Price:       order.Price.Clone(),
-		TotalOrders: 1,
-		TotalVolume: order.TrueRemaining(),
-		Side:        order.Side,
+		Price: order.Price.Clone(),
+		Side:  order.Side,
+	}
+
+	if order.GeneratedOffbook {
+		if estimated {
+			pl.TotalEstimatedAMMVolume = order.TrueRemaining()
+		} else {
+			pl.TotalAMMVolume = order.TrueRemaining()
+		}
+	} else {
+		pl.TotalOrders = 1
+		pl.TotalVolume = order.TrueRemaining()
 	}
 
 	if order.Side == types.SideBuy {

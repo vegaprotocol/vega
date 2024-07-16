@@ -379,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQX6n82ex2XDh1tWL1gCv2viDttUwRSdyG1XaekYfLpJk", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaWdp5RPui6ePszzPvk48e7FxHmPGx2VMpbXD2NTgtFMT", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmRmAX4AfQ9xAdLN8GjVCBmDH7Cm6q1ts7TBF9UjLdjMG9", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmNM3M1bQWgY9VXKj1vAixm3xW6Z9hgUa2iqrZibzx2B9r", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmcynDS55pPV7YntUwyhhizvUKnV8pKsHr8LVKnR4JAb65", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmdMh6i3db5i7wvskqhXkFW3cGoq9CsLS3b26qjjuTu5kn", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmVUyCPo1ugJPNbXC5jkDyeUWakrCd2Z55CnSjjT5P8wV2", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaDbBgBde1LQUTonyRt5tNTZ8SZbSG5F4qcvu6Qzj4U3s", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmX9KkisQMgcfYRcVVvQZiFFXXZn4p3gm4hjGerhhUs5dZ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmZ3rcAiVdzMv63o3iQSP4VgHLXkcpV8DnAjGpAChmddkJ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmSsFiETeLjhQ4SfwePgu88JxFYejZ5AiNRjJnafY4uvob", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmXCDj1KMkzx1KTuaDYE1fGGGq8sdac1Vztaz6Xopb5kZt", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1321,9 +1321,10 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 	}()
 
 	candlesV2Config := candlesv2.NewDefaultConfig()
+	cfg := service.NewDefaultConfig()
 	subscribers := start.SQLSubscribers{}
 	subscribers.CreateAllStores(ctx, logging.NewTestLogger(), transactionalConnectionSource, candlesV2Config.CandleStore)
-	err = subscribers.SetupServices(ctx, logging.NewTestLogger(), candlesV2Config)
+	err = subscribers.SetupServices(ctx, logging.NewTestLogger(), cfg, candlesV2Config)
 	if err != nil {
 		return nil, err
 	}

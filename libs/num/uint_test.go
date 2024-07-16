@@ -248,6 +248,15 @@ func TestMedian(t *testing.T) {
 func TestSqrt(t *testing.T) {
 	n := num.NewUint(123456789)
 
-	n.Sqrt(n)
+	rt := n.Sqrt(n)
+	assert.Equal(t, "11111.1110605555554406", rt.String())
+
+	rt = n.Sqrt(num.UintZero())
+	assert.Equal(t, "0", rt.String())
+
+	rt = n.Sqrt(num.UintOne())
+	assert.Equal(t, "1", rt.String())
+
+	n.SqrtInt(n)
 	assert.Equal(t, "11111", n.String())
 }

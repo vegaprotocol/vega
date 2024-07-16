@@ -50,6 +50,8 @@ message AMM {
   StatusReason status_reason = 8;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   string proposed_fee = 9;
+  optional Curve lower_curve = 10;
+  optional Curve upper_curve = 11;
 
   enum Status {
     STATUS_UNSPECIFIED = 0;
@@ -95,6 +97,13 @@ message AMM {
     optional string leverage_at_upper_bound = 4;
     // Leverage at lower bounds.
     optional string leverage_at_lower_bound = 5;
+  }
+
+  message Curve {
+    // Virtual liquidity for the given AMM curve.
+    string virtual_liquidity = 1;
+    // Maximum tradable volume on the AMM curve.
+    string theoretical_position = 2;
   }
 }
 

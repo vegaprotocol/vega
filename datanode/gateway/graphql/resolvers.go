@@ -3181,6 +3181,14 @@ func (r *myPriceLevelResolver) Volume(_ context.Context, obj *vegapb.PriceLevel)
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
+func (r *myPriceLevelResolver) AmmVolume(_ context.Context, obj *vegapb.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.AmmVolume, 10), nil
+}
+
+func (r *myPriceLevelResolver) AmmVolumeEstimated(_ context.Context, obj *vegapb.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.AmmVolumeEstimated, 10), nil
+}
+
 func (r *myPriceLevelResolver) NumberOfOrders(_ context.Context, obj *vegapb.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.NumberOfOrders, 10), nil
 }
