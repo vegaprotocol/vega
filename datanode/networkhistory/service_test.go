@@ -94,6 +94,7 @@ var (
 )
 
 func TestMain(t *testing.M) {
+	dirs := map[string]string{}
 	outerCtx, cancelOuterCtx := context.WithCancel(context.Background())
 	defer cancelOuterCtx()
 
@@ -148,7 +149,7 @@ func TestMain(t *testing.M) {
 		pgLog *bytes.Buffer,
 	) {
 		sqlConfig = config
-		log.Infof("DB Connection String: ", sqlConfig.ConnectionConfig.GetConnectionString())
+		log.Infof("DB Connection String: %v", sqlConfig.ConnectionConfig.GetConnectionString())
 
 		pool, err := sqlstore.CreateConnectionPool(outerCtx, sqlConfig.ConnectionConfig)
 		if err != nil {
@@ -184,7 +185,11 @@ func TestMain(t *testing.M) {
 				panic(fmt.Errorf("failed to create snapshot: %w", err))
 			}
 
-			waitForSnapshotToComplete(ss)
+			dirs["dir1"] = ss.Directory
+			// fmt.Printf("unpublished: %v\n", ss.Directory)
+			// os.Exit(1)
+
+			waitForSnapshotToComplete2(ss, snapshotService.Flush)
 
 			snapshots = append(snapshots, ss)
 
@@ -211,7 +216,8 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToComplete(lastSnapshot)
+					dirs["dir2"] = lastSnapshot.Directory
+					waitForSnapshotToComplete2(lastSnapshot, snapshotService.Flush)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
@@ -268,7 +274,8 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToComplete(lastSnapshot)
+					dirs["dir3"] = lastSnapshot.Directory
+					waitForSnapshotToComplete2(lastSnapshot, snapshotService.Flush)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
@@ -378,7 +385,8 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[3000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
-
+		fmt.Printf("DIRECTORIES: %v\n", dirs)
+		os.Exit(1)
 		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQX6n82ex2XDh1tWL1gCv2viDttUwRSdyG1XaekYfLpJk", snapshots)
 		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaWdp5RPui6ePszzPvk48e7FxHmPGx2VMpbXD2NTgtFMT", snapshots)
 		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmRmAX4AfQ9xAdLN8GjVCBmDH7Cm6q1ts7TBF9UjLdjMG9", snapshots)
@@ -421,6 +429,7 @@ func TestLoadingDataFetchedAsynchronously(t *testing.T) {
 	require.Equal(t, int64(1000), fetched)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, snapshotService, networkHistoryStore, snapshotCopyToPath)
+
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
@@ -583,7 +592,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 				ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
 
-				waitForSnapshotToComplete(ss)
+				waitForSnapshotToComplete2(ss, snapshotService.Flush)
 
 				md5Hash, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 				require.NoError(t, err)
@@ -888,7 +897,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 				ss, err = service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
-				waitForSnapshotToComplete(ss)
+				waitForSnapshotToComplete2(ss, service.Flush)
 
 				if lastCommittedBlockHeight == 4000 {
 					newSnapshotFileHashAt4000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
@@ -993,7 +1002,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToComplete(ss)
+					waitForSnapshotToComplete2(ss, service.Flush)
 
 					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
@@ -1096,7 +1105,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToComplete(ss)
+					waitForSnapshotToComplete2(ss, service.Flush)
 
 					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
@@ -1562,6 +1571,36 @@ func waitForSnapshotToComplete(sf segment.Unpublished) {
 				panic(err)
 			}
 		}
+
+		// wait for snapshot data dump in progress file to be removed
+
+		_, err = os.Stat(sf.InProgressFilePath())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				break
+			} else {
+				panic(err)
+			}
+		} else {
+			continue
+		}
+	}
+}
+
+func waitForSnapshotToComplete2(sf segment.Unpublished, flush func()) {
+	for {
+		time.Sleep(10 * time.Millisecond)
+		// wait for snapshot current  file
+		_, err := os.Stat(sf.UnpublishedSnapshotDataDirectory())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			} else {
+				panic(err)
+			}
+		}
+
+		flush()
 
 		// wait for snapshot data dump in progress file to be removed
 

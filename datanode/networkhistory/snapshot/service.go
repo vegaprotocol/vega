@@ -40,6 +40,9 @@ type Service struct {
 
 	historyStore HistoryStore
 
+	fw                           *FileWorker
+	tableSnapshotFileSizesCached map[string]int
+
 	createSnapshotLock         mutex.CtxMutex
 	copyToPath                 string
 	migrateSchemaUpToVersion   func(version int64) error
@@ -59,14 +62,16 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 	}
 
 	s := &Service{
-		log:                        log,
-		config:                     config,
-		connPool:                   connPool,
-		createSnapshotLock:         mutex.New(),
-		copyToPath:                 snapshotsCopyToPath,
-		migrateSchemaUpToVersion:   migrateDatabaseToVersion,
-		migrateSchemaDownToVersion: migrateSchemaDownToVersion,
-		historyStore:               historyStore,
+		log:                          log,
+		config:                       config,
+		connPool:                     connPool,
+		createSnapshotLock:           mutex.New(),
+		copyToPath:                   snapshotsCopyToPath,
+		migrateSchemaUpToVersion:     migrateDatabaseToVersion,
+		migrateSchemaDownToVersion:   migrateSchemaDownToVersion,
+		historyStore:                 historyStore,
+		fw:                           NewFileWorker(),
+		tableSnapshotFileSizesCached: map[string]int{},
 	}
 
 	err = os.MkdirAll(s.copyToPath, fs.ModePerm)
@@ -75,6 +80,14 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 	}
 
 	return s, nil
+}
+
+func (b *Service) Flush() {
+	for !b.fw.Empty() {
+		if err := b.fw.Consume(); err != nil {
+			b.log.Error("failed to write all files to disk", logging.Error(err))
+		}
+	}
 }
 
 func (b *Service) SnapshotData(ctx context.Context, chainID string, toHeight int64) error {

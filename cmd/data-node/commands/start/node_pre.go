@@ -375,7 +375,8 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 		l.snapshotService,
 		networkHistoryStore,
 		l.conf.API.Port,
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
+		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create networkHistory service:%w", err)
 	}
