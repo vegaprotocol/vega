@@ -3526,6 +3526,9 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetByID, err)
 	}
+
+	cap, hasCap := mkt.HasCap()
+
 	collateralAvailable := marginAccountBalance
 	crossMarginMode := req.MarginMode == types.MarginModeCrossMargin
 	if crossMarginMode {
@@ -3666,6 +3669,8 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		req.MarginMode,
 		dMarginFactor,
 		auctionPrice,
+		cap,
+		avgEntryPrice,
 	)
 
 	marginEstimate := &v2.MarginEstimate{
@@ -3729,6 +3734,36 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		wWithSell = t.scaleDecimalFromAssetToMarketPrice(wWithSell, dPriceFactor)
 	}
 
+	f := func(volume int64) (worst, best decimal.Decimal) {
+		// if party is long, then liquidation is 0
+		if volume >= 0 {
+			return num.DecimalZero(), num.DecimalZero()
+		}
+
+		// if its short we use the size of capPrice
+		return num.MustDecimalFromString(cap.MaxPrice), num.MustDecimalFromString(cap.MaxPrice) // can't fail coming from the DB
+	}
+
+	// no worst or best case in this case, so just setting the same on boths
+	if hasCap && cap.FullyCollateralised != nil && *cap.FullyCollateralised {
+		// openVolume first
+		wPositionOnly, bPositionOnly = f(req.OpenVolume)
+
+		// then including buyOrders
+		incBuyOrders := req.OpenVolume
+		for _, v := range buyOrders {
+			incBuyOrders += int64(v.TrueRemaining)
+		}
+		wWithBuy, bWithBuy = f(incBuyOrders)
+
+		// then including sellOrders
+		incSellOrders := req.OpenVolume
+		for _, v := range sellOrders {
+			incSellOrders += int64(v.TrueRemaining)
+		}
+		wWithSell, bWithSell = f(incSellOrders)
+	}
+
 	liquidationEstimate := &v2.LiquidationEstimate{
 		WorstCase: &v2.LiquidationPrice{
 			OpenVolumeOnly:      wPositionOnly.Round(0).String(),
@@ -3761,6 +3796,8 @@ func (t *TradingDataServiceV2) computeMarginRange(
 	auction bool,
 	marginMode vega.MarginMode,
 	marginFactor, auctionPrice num.Decimal,
+	cap *vega.FutureCap,
+	averageEntryPrice num.Decimal,
 ) (num.Decimal, num.Decimal, num.Decimal) {
 	bOrders, sOrders := buyOrders, sellOrders
 	orderMargin := num.DecimalZero()
@@ -3776,6 +3813,7 @@ func (t *TradingDataServiceV2) computeMarginRange(
 			}
 		}
 		sOrders = []*risk.OrderInfo{}
+
 		sNonMarketOrders := []*risk.OrderInfo{}
 		for _, o := range sellOrders {
 			if o.IsMarketOrder {
@@ -3784,13 +3822,119 @@ func (t *TradingDataServiceV2) computeMarginRange(
 				sNonMarketOrders = append(sNonMarketOrders, o)
 			}
 		}
-		orderMargin = risk.CalcOrderMarginIsolatedMode(openVolume, bNonMarketOrders, sNonMarketOrders, positionFactor, marginFactor, auctionPrice)
+
+		// this is a special case for fully collateralised capped future markets
+		if cap != nil && cap.FullyCollateralised != nil && *cap.FullyCollateralised {
+			orderMargin = calcOrderMarginIsolatedModeCappedAndFullyCollateralised(bNonMarketOrders, sNonMarketOrders, cap)
+		} else {
+			orderMargin = risk.CalcOrderMarginIsolatedMode(openVolume, bNonMarketOrders, sNonMarketOrders, positionFactor, marginFactor, auctionPrice)
+		}
 	}
 
-	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction, auctionPrice)
-	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction, auctionPrice)
+	var worst, best num.Decimal
+	// this is a special case for fully collateralised capped future markets
+	if cap != nil && cap.FullyCollateralised != nil && *cap.FullyCollateralised {
+		worst = calcPositionMarginCappedAndFullyCollateralised(bOrders, sOrders, cap, openVolume, averageEntryPrice)
+		best = worst
+	} else {
+		worst = risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction, auctionPrice)
+		best = risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction, auctionPrice)
+	}
 
 	return worst, best, orderMargin
+}
+
+func calcPositionMarginCappedAndFullyCollateralised(
+	buyOrders []*risk.OrderInfo,
+	sellOrders []*risk.OrderInfo,
+	cap *vega.FutureCap,
+	openVolume int64,
+	openVolumeAverageEntryPrice decimal.Decimal,
+) decimal.Decimal {
+	// get average entry price over all orders
+	// and the final volume.
+	// then if long:
+	// - averageEntryPrice * positionSize
+	// if short:
+	// - (priceCap - averageEntryPrice) * positionSize
+
+	priceCap := num.MustDecimalFromString(cap.MaxPrice)
+
+	positionSize := openVolume
+	totalVolume := openVolume
+	ongoing := openVolumeAverageEntryPrice.Mul(num.DecimalFromInt64(openVolume))
+	for _, v := range buyOrders {
+		price := v.Price
+		if price.GreaterThan(priceCap) {
+			price = priceCap
+		}
+
+		size := int64(v.TrueRemaining)
+		positionSize += size
+		totalVolume += size
+		ongoing = ongoing.Add(v.Price.Mul(num.DecimalFromInt64(size)))
+	}
+
+	for _, v := range sellOrders {
+		price := v.Price
+		if price.GreaterThan(priceCap) {
+			price = priceCap
+		}
+
+		size := int64(v.TrueRemaining)
+		positionSize -= size // only thing changing here really
+		totalVolume += size
+		ongoing = ongoing.Add(v.Price.Mul(num.DecimalFromInt64(size)))
+	}
+
+	averageEntryPrice := ongoing.Div(num.DecimalFromInt64(totalVolume))
+
+	if positionSize < 0 {
+		// short position
+		positionSize = -positionSize
+		return priceCap.Sub(averageEntryPrice).Mul(num.DecimalFromInt64(positionSize))
+	}
+
+	return priceCap.Mul(num.DecimalFromInt64(positionSize))
+}
+
+func calcOrderMarginIsolatedModeCappedAndFullyCollateralised(
+	buyOrders []*risk.OrderInfo,
+	sellOrders []*risk.OrderInfo,
+	cap *vega.FutureCap,
+) decimal.Decimal {
+	// long order margin:
+	// - price * positionSize
+	// short order marign:
+	// - (cappedPrice - price) * positionSize
+
+	cappedPrice := num.MustDecimalFromString(cap.MaxPrice)
+	marginBuy, marginSell := num.DecimalZero(), num.DecimalZero()
+
+	for _, v := range buyOrders {
+		price := v.Price
+		if v.Price.GreaterThan(cappedPrice) {
+			price = cappedPrice
+		}
+
+		marginBuy.Add(price.Mul(num.DecimalFromInt64(int64(v.TrueRemaining))))
+	}
+
+	for _, v := range sellOrders {
+		price := v.Price
+		if v.Price.GreaterThan(cappedPrice) {
+			price = cappedPrice
+		}
+
+		price = cappedPrice.Sub(price)
+		marginSell.Add(price.Mul(num.DecimalFromInt64(int64(v.TrueRemaining))))
+	}
+
+	if marginBuy.GreaterThan(marginSell) {
+		return marginBuy
+	}
+
+	return marginSell
 }
 
 // ListNetworkParameters returns a list of network parameters.

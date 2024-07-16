@@ -35,6 +35,7 @@
 - [11026](https://github.com/vegaprotocol/vega/issues/11026) - Add API flag to get paid liquidity fees for a `vAMM` using the parent key.
 - [11027](https://github.com/vegaprotocol/vega/issues/11027) - Add API filters to get fees and rewards by market, across epochs.
 - [10360](https://github.com/vegaprotocol/vega/issues/10360) - Scale funding payment by fraction of period spent outside of auction.
+- [11452](https://github.com/vegaprotocol/vega/issues/11452) - Implement alternative estimations for fully collateralised capped future.
 
 ### 🐛 Fixes
 
@@ -49,17 +50,17 @@
 - [11319](https://github.com/vegaprotocol/vega/issues/11319) - Do not leak Ethereum client secrets in the logs.
 - [11336](https://github.com/vegaprotocol/vega/issues/11336) - Add support for decay factor in governance recurring transfers and report the proposal amount rather than 0 when the proposal gets enacted.
 - [11368](https://github.com/vegaprotocol/vega/issues/11368) - Add support for update vesting stats in REST API and fix summing the quantum balance for vesting stats.
-- [11380](https://github.com/vegaprotocol/vega/issues/11380) - Handle broken stop orders in prepare proposal. 
+- [11380](https://github.com/vegaprotocol/vega/issues/11380) - Handle broken stop orders in prepare proposal.
 - [11136](https://github.com/vegaprotocol/vega/issues/11136) - Fix premature invocation of post commit hooks in case of fee stats event.
-- [11409](https://github.com/vegaprotocol/vega/issues/11409) - When updating a capped market - copy the cap from the existing market definition. 
-- [11415](https://github.com/vegaprotocol/vega/issues/11415) - End long block auction when expired. 
-- [11419](https://github.com/vegaprotocol/vega/issues/11419) - Fix long block auction extension to be calculated from current time. 
-- [11438](https://github.com/vegaprotocol/vega/issues/11438) - Add missing assignment to epoch to and from in `gameTeamScores` resolvers. 
-- [11442](https://github.com/vegaprotocol/vega/issues/11442) - Add validation to `submitAMM` to ensure the curves can be successfully generated. 
-- [11448](https://github.com/vegaprotocol/vega/issues/11448) - Fix team game score query with epoch filter. 
-- [11457](https://github.com/vegaprotocol/vega/issues/11457) - Fix cursor column ordering for game scores. 
-- [11454](https://github.com/vegaprotocol/vega/issues/11454) - Ensure ended transfers proper handling. 
-  
+- [11409](https://github.com/vegaprotocol/vega/issues/11409) - When updating a capped market - copy the cap from the existing market definition.
+- [11415](https://github.com/vegaprotocol/vega/issues/11415) - End long block auction when expired.
+- [11419](https://github.com/vegaprotocol/vega/issues/11419) - Fix long block auction extension to be calculated from current time.
+- [11438](https://github.com/vegaprotocol/vega/issues/11438) - Add missing assignment to epoch to and from in `gameTeamScores` resolvers.
+- [11442](https://github.com/vegaprotocol/vega/issues/11442) - Add validation to `submitAMM` to ensure the curves can be successfully generated.
+- [11448](https://github.com/vegaprotocol/vega/issues/11448) - Fix team game score query with epoch filter.
+- [11457](https://github.com/vegaprotocol/vega/issues/11457) - Fix cursor column ordering for game scores.
+- [11454](https://github.com/vegaprotocol/vega/issues/11454) - Ensure ended transfers proper handling.
+
 
 ## 0.76.1
 
