@@ -518,15 +518,16 @@ func definitionFromEntity(ent entities.AMMPool, position int64, priceFactor num.
 
 	assetHigh, _ := num.UintFromDecimal(high.ToDecimal().Mul(priceFactor))
 	assetBase, _ := num.UintFromDecimal(base.ToDecimal().Mul(priceFactor))
-	assetlow, _ := num.UintFromDecimal(low.ToDecimal().Mul(priceFactor))
+	assetLow, _ := num.UintFromDecimal(low.ToDecimal().Mul(priceFactor))
 
 	return &ammDefn{
 		position: num.DecimalFromInt64(position),
 		lower: &curve{
 			low:       low,
 			high:      base,
-			assetLow:  assetlow,
+			assetLow:  assetLow,
 			assetHigh: assetBase,
+			sqrtLow:   num.UintOne().Sqrt(assetLow),
 			sqrtHigh:  num.UintOne().Sqrt(assetBase),
 			isLower:   true,
 			l:         ent.LowerVirtualLiquidity,
@@ -537,6 +538,7 @@ func definitionFromEntity(ent entities.AMMPool, position int64, priceFactor num.
 			high:      high,
 			assetLow:  assetBase,
 			assetHigh: assetHigh,
+			sqrtLow:   num.UintOne().Sqrt(assetBase),
 			sqrtHigh:  num.UintOne().Sqrt(assetHigh),
 			l:         ent.UpperVirtualLiquidity,
 			pv:        ent.UpperTheoreticalPosition,
