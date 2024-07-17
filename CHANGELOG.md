@@ -16,7 +16,7 @@
 
 ### 🐛 Fixes
 
-- [11453](https://github.com/vegaprotocol/vega/issues/11453) - Fix bug where margin check after `MTM` setlement used the previous average entry price.
+- [11453](https://github.com/vegaprotocol/vega/issues/11453) - Fix margin for fully collateralised markets.
 
 
 ## 0.77.0
