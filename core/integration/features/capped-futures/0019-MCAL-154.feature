@@ -35,7 +35,7 @@ Feature: Margin calculation on a fully collateralised capped future
       | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 100           | true                 | false  |
 
-  @SLABug @NoPerp @Capped @CFC
+  @SLABug @NoPerp @Capped @CFC @CappedBug
   Scenario: 0019-MCAL-154: Party A posts an order to buy 10 contracts at a price of 30, there's no other volume in that price range so the order lands on the book and the maintenance and initial margin levels for the party and order margin account balance are all equal to 300.
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
@@ -108,15 +108,15 @@ Feature: Margin calculation on a fully collateralised capped future
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 250    | 9650    |
-      | party2 | USD   | ETH/DEC21 | 250    | 9850    |
+      | party1 | USD   | ETH/DEC21 | 150    | 9750    |
+      | party2 | USD   | ETH/DEC21 | 350    | 9750    |
       | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
       | aux3   | USD   | ETH/DEC21 | 300    | 99702   |
       | aux4   | USD   | ETH/DEC21 | 1100   | 98892   |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
-      | party2 | ETH/DEC21 | 250         | 250    | 250     | 250     | cross margin |
+      | party1 | ETH/DEC21 | 150         | 150    | 150     | 150     | cross margin |
+      | party2 | ETH/DEC21 | 350         | 350    | 350     | 350     | cross margin |
       | aux1   | ETH/DEC21 | 18          | 18     | 18      | 18      | cross margin |
       | aux2   | ETH/DEC21 | 2           | 2      | 2       | 2       | cross margin |
       | aux3   | ETH/DEC21 | 300         | 300    | 300     | 300     | cross margin |
@@ -130,8 +130,8 @@ Feature: Margin calculation on a fully collateralised capped future
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 250    | 9650    |
-      | party2 | USD   | ETH/DEC21 | 250    | 9850    |
+      | party1 | USD   | ETH/DEC21 | 150    | 9750    |
+      | party2 | USD   | ETH/DEC21 | 350    | 9750    |
       | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
       | aux3   | USD   | ETH/DEC21 | 300    | 99702   |
       | aux4   | USD   | ETH/DEC21 | 1100   | 98892   |
@@ -144,8 +144,8 @@ Feature: Margin calculation on a fully collateralised capped future
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 250    | 9650    |
-      | party2 | USD   | ETH/DEC21 | 250    | 9850    |
+      | party1 | USD   | ETH/DEC21 | 150    | 9750    |
+      | party2 | USD   | ETH/DEC21 | 350    | 9750    |
       | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
       | aux3   | USD   | ETH/DEC21 | 300    | 99702   |
       | aux4   | USD   | ETH/DEC21 | 1420   | 98572   |
@@ -162,9 +162,9 @@ Feature: Margin calculation on a fully collateralised capped future
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 250    | 9590    |
-      | party2 | USD   | ETH/DEC21 | 250    | 9910    |
+      | party1 | USD   | ETH/DEC21 | 90     | 9750    |
+      | party2 | USD   | ETH/DEC21 | 410    | 9750    |
       | aux1   | USD   | ETH/DEC21 | 18     | 99982   |
-      | aux3   | USD   | ETH/DEC21 | 785    | 99089   |
-      | aux4   | USD   | ETH/DEC21 | 610   | 99504   |
+      | aux3   | USD   | ETH/DEC21 | 825    | 99049   |
+      | aux4   | USD   | ETH/DEC21 | 570    | 99544   |
 

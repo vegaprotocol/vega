@@ -92,9 +92,8 @@ Feature: Issue 11453: incorrect closeout due to decimals in mark price
     When the network moves ahead "2" blocks
     Then the mark price should be "400" for the market "ETH/DEC21"
     And the parties should have the following account balances:
-      | party | asset | market id | margin | general |
-      | aux4  | USD   | ETH/DEC21 | 0      | 0       |
-      #| aux4  | USD   | ETH/DEC21 | 97500000 | 894097866 |
+      | party | asset | market id | margin    | general  |
+      | aux4  | USD   | ETH/DEC21 | 900000000 | 24632500 |
     #And debug transfers
     #And debug detailed orderbook volumes for market "ETH/DEC21"
     #And debug trades

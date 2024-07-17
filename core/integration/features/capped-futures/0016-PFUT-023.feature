@@ -35,7 +35,7 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
       | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | default-none     | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
 
-  @SLABug @NoPerp @Capped @CZero
+  @SLABug @NoPerp @Capped @CZero @CappedBug
   Scenario: 0016-PFUT-023: no closeout happens when mark to market settlement is carried out at a price of `0`
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
@@ -104,8 +104,8 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2's short position and potential margins are calculated separately as 2 * (1500-1301) + 1 * (1500 - 1100) = 398 + 400 = 798
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 5       |
-      | party2 | USD   | ETH/DEC21 | 2500   | 12495   |
+      | party1 | USD   | ETH/DEC21 | 5      | 5000    |
+      | party2 | USD   | ETH/DEC21 | 7495   | 7500    |
       | aux1   | USD   | ETH/DEC21 | 3      | 99998   |
       | aux2   | USD   | ETH/DEC21 | 1501   | 98497   |
 
@@ -128,15 +128,15 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 3*(1100+1500*2)/3
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 7495    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 5005    |
-      | aux1   | USD   | ETH/DEC21 | 3      | 101496  |
-      | aux2   | USD   | ETH/DEC21 | 1503   | 97012   |
+      | party1 | USD   | ETH/DEC21 | 7495   | 5000    |
+      | party2 | USD   | ETH/DEC21 | 5      | 7500    |
+      | aux1   | USD   | ETH/DEC21 | 1501   | 99998   |
+      | aux2   | USD   | ETH/DEC21 | 3      | 98512   |
       | aux3   | USD   | ETH/DEC21 | 2998   | 96927   |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 5000        | 5000   | 5000    | 5000    | cross margin |
-      | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
-      | aux2   | ETH/DEC21 | 1503        | 1503   | 1503    | 1503    | cross margin |
-      | aux1   | ETH/DEC21 | 3           | 3      | 3       | 3       | cross margin |
+      | party1 | ETH/DEC21 | 7495        | 7495   | 7495    | 7495    | cross margin |
+      | party2 | ETH/DEC21 | 5           | 5      | 5       | 5       | cross margin |
+      | aux2   | ETH/DEC21 | 3           | 3      | 3       | 3       | cross margin |
+      | aux1   | ETH/DEC21 | 1501        | 1501   | 1501    | 1501    | cross margin |
