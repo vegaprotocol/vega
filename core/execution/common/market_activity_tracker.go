@@ -1186,8 +1186,11 @@ func (mat *MarketActivityTracker) getTWNotionalPosition(asset, party string, mar
 
 	for _, mkt := range mkts {
 		if tracker, ok := mat.getMarketTracker(asset, mkt); ok {
-			if twNotional, ok := tracker.twNotional[party]; ok {
-				total.AddSum(twNotional.currentEpochTWNotional)
+			if len(tracker.epochTimeWeightedNotional) <= 0 {
+				continue
+			}
+			if twNotional, ok := tracker.epochTimeWeightedNotional[len(tracker.epochTimeWeightedNotional)-1][party]; ok {
+				total.AddSum(twNotional)
 			}
 		}
 	}

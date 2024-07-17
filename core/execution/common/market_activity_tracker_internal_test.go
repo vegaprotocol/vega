@@ -321,6 +321,7 @@ func TestAverageNotional(t *testing.T) {
 	// (( 116 * 5000000 ) + ( 600 * 5000000 )) / 10000000 = 358
 	tracker.processNotionalEndOfEpoch(time.Unix(0, 0), time.Unix(60, 0))
 	require.Equal(t, "358", tracker.twNotional["p1"].currentEpochTWNotional.String())
+	require.Equal(t, "358", tracker.epochTimeWeightedNotional[len(tracker.epochTimeWeightedNotional)-1]["p1"].String())
 
 	// epoch 2
 	// (( 358 * 0 ) + ( 600 * 10000000 )) / 10000000 = 600
@@ -330,12 +331,14 @@ func TestAverageNotional(t *testing.T) {
 	// (( 600 * 5000000 ) + ( 300 * 5000000 )) / 10000000 = 450
 	tracker.processNotionalEndOfEpoch(time.Unix(60, 0), time.Unix(120, 0))
 	require.Equal(t, "450", tracker.twNotional["p1"].currentEpochTWNotional.String())
+	require.Equal(t, "450", tracker.epochTimeWeightedNotional[len(tracker.epochTimeWeightedNotional)-1]["p1"].String())
 
 	// epoch 3
 	// no position changes over the epoch
 	// (( 450 * 0 ) + ( 300 * 10000000 )) / 10000000 = 300
 	tracker.processNotionalEndOfEpoch(time.Unix(120, 0), time.Unix(180, 0))
 	require.Equal(t, "300", tracker.twNotional["p1"].currentEpochTWNotional.String())
+	require.Equal(t, "300", tracker.epochTimeWeightedNotional[len(tracker.epochTimeWeightedNotional)-1]["p1"].String())
 }
 
 func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {

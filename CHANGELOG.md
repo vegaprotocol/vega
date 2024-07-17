@@ -71,7 +71,7 @@
 - [11448](https://github.com/vegaprotocol/vega/issues/11448) - Fix team game score query with epoch filter.
 - [11457](https://github.com/vegaprotocol/vega/issues/11457) - Fix cursor column ordering for game scores.
 - [11454](https://github.com/vegaprotocol/vega/issues/11454) - Ensure ended transfers proper handling.
-
+- [11462](https://github.com/vegaprotocol/vega/issues/11462) - Update the time weighted notional when publishing live game scores.
 
 ## 0.76.1
 
