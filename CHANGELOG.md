@@ -12,7 +12,7 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11466](https://github.com/vegaprotocol/vega/issues/11466) - Update CometBFT to version `0.38.10`.
 
 ### 🐛 Fixes
 
