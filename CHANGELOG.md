@@ -16,7 +16,7 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11453](https://github.com/vegaprotocol/vega/issues/11453) - Fix margin for fully collateralised markets.
 
 
 ## 0.77.0

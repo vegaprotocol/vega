@@ -35,7 +35,7 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
       | id        | quote name | asset | risk model             | margin calculator                | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      | max price cap | fully collateralised | binary |
       | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-1 | default-capped-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures | 1500          | true                 | false  |
 
-  @NoPerp @Capped @CSettle
+  @NoPerp @Capped @CSettle @CappedBug
   Scenario: 0016-PFUT-022: Same as the settlement at price 0 test, only with a settlement at max price.
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
@@ -97,8 +97,8 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2's short position and potential margins are calculated separately as 2 * (1500-1301) + 1 * (1500 - 1100) = 398 + 400 = 798
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 5500    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 7000    |
+      | party1 | USD   | ETH/DEC21 | 5500   | 5000    |
+      | party2 | USD   | ETH/DEC21 | 2000   | 7500    |
       | aux1   | USD   | ETH/DEC21 | 3098   | 96908   |
       | aux2   | USD   | ETH/DEC21 | 402    | 99570   |
     # The market is fully collateralised, switching to isolated margin is not supported
@@ -126,18 +126,18 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
     # aux2: short position of size 2, traded price at 1500, then margin: postion size * (max price - average entry price) = 3*(1100+1500*2)/3
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 7495    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 5005    |
-      | aux1   | USD   | ETH/DEC21 | 3098   | 97307   |
-      | aux2   | USD   | ETH/DEC21 | 402    | 99186   |
+      | party1 | USD   | ETH/DEC21 | 7495   | 5000    |
+      | party2 | USD   | ETH/DEC21 | 5      | 7500    |
+      | aux1   | USD   | ETH/DEC21 | 3497   | 96908   |
+      | aux2   | USD   | ETH/DEC21 | 3      | 99585   |
       | aux3   | USD   | ETH/DEC21 | 2998   | 96927   |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  |
-      | party1 | ETH/DEC21 | 5000        | 5000   | 5000    | 5000    | cross margin |
-      | party2 | ETH/DEC21 | 2500        | 2500   | 2500    | 2500    | cross margin |
-      | aux2   | ETH/DEC21 | 402         | 402    | 402     | 402     | cross margin |
-      | aux1   | ETH/DEC21 | 3098        | 3098   | 3098    | 3098    | cross margin |
+      | party1 | ETH/DEC21 | 7495        | 7495   | 7495    | 7495    | cross margin |
+      | party2 | ETH/DEC21 | 5           | 5      | 5       | 5       | cross margin |
+      | aux2   | ETH/DEC21 | 3           | 3      | 3       | 3       | cross margin |
+      | aux1   | ETH/DEC21 | 3497        | 3497   | 3497    | 3497    | cross margin |
     #trade at max_price
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -178,12 +178,12 @@ Feature: When max_price is specified and the market is ran in a fully-collateral
       | market   | aux3     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 2      | USD   | TRANSFER_TYPE_WIN           |
       | market   | aux4     | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 2      | USD   | TRANSFER_TYPE_WIN           |
       | market   | party1   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC21 | 5      | USD   | TRANSFER_TYPE_WIN           |
-      | aux1     | aux1     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 3099   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
-      | aux2     | aux2     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 399    | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | aux1     | aux1     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 3498   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | aux2     | aux2     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 0      | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
       | aux3     | aux3     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 3000   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
       | aux4     | aux4     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 3000   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
       | aux5     | aux5     | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 0      | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
-      | party1   | party1   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 5005   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
+      | party1   | party1   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 7500   | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
       | party-lp | party-lp | ACCOUNT_TYPE_BOND       | ACCOUNT_TYPE_GENERAL    | ETH/DEC21 | 30000  | USD   | TRANSFER_TYPE_CLEAR_ACCOUNT |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |

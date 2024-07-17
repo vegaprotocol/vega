@@ -79,7 +79,7 @@ func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, _ 
 	)
 	// convert volumn to a decimal number from a * 10^pdp
 	openVolume := num.DecimalFromInt64(m.Size()).Div(e.positionFactor)
-	aep := m.AverageEntryPrice().ToDecimal()
+	op := m.Price().ToDecimal()
 	base := price.ToDecimal()
 	var (
 		riskiestLng = openVolume
@@ -98,16 +98,16 @@ func (e *Engine) calculateFullCollatMargins(m events.Margin, price *num.Uint, _ 
 		}
 	}
 	if riskiestLng.IsPositive() {
-		marginMaintenanceLng = riskiestLng.Mul(aep)
+		marginMaintenanceLng = riskiestLng.Mul(op)
 	} else {
 		// even our riskies position is short, get the sell AEP
-		marginMaintenanceLng = riskiestLng.Mul(base.Sub(aep)).Abs()
+		marginMaintenanceLng = riskiestLng.Mul(base.Sub(op)).Abs()
 	}
 	if riskiestSht.IsNegative() {
-		marginMaintenanceSht = riskiestSht.Mul(base.Sub(aep)).Abs()
+		marginMaintenanceSht = riskiestSht.Mul(base.Sub(op)).Abs()
 	} else {
 		// even the shortest position is long, get buy AEP
-		marginMaintenanceSht = riskiestSht.Mul(aep)
+		marginMaintenanceSht = riskiestSht.Mul(op)
 	}
 	if withPotential {
 		// add margins required to cover the buy and sell orders
