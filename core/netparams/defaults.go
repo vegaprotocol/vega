@@ -68,8 +68,8 @@ var (
 func defaultNetParams() map[string]value {
 	m := map[string]value{
 		NetworkWideAuctionDuration:    NewJSON(&proto.LongBlockAuctionDurationTable{}, checks.LongBlockAuctionDurationTable()).Mutable(true).MustUpdate(`{"threshold_and_duration": [{"threshold":"10s","duration":"1m"},{"threshold":"1m","duration":"5m"},{"threshold":"10m","duration":"1h"},{"threshold":"1h","duration":"1h"},{"threshold":"6h","duration":"3h"},{"threshold":"24h","duration":"6h"}]}`),
-		MinimalMarginQuantumMultiple:  NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
-		MinimalHoldingQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+		MinimumMarginQuantumMultiple:  NewDecimal(gteD0).Mutable(true).MustUpdate("0.01"),
+		MinimumHoldingQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.01"),
 
 		// spots
 		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("1"),
@@ -84,7 +84,7 @@ func defaultNetParams() map[string]value {
 		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
 		MarketAMMMinCommitmentQuantum: NewUint(gteU0).Mutable(true).MustUpdate("100"),
-		MarketAMMMaxCalculationLevels: NewUint(gteU1).Mutable(true).MustUpdate("1000"),
+		MarketAMMMaxCalculationLevels: NewUint(gteU1).Mutable(true).MustUpdate("100"),
 
 		// markets
 		MarketAggressiveOrderBlockDelay:           NewUint(gteU0).Mutable(true).MustUpdate("1"),
@@ -111,7 +111,7 @@ func defaultNetParams() map[string]value {
 		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
 		MarketLiquidityProvidersFeeCalculationTimeStep:   NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
-		MarketLiquidityEquityLikeShareFeeFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		MarketLiquidityEquityLikeShareFeeFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.1"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
