@@ -74,6 +74,7 @@ func (t *TxCache) OnNumBlocksToDelayUpdated(_ context.Context, blocks *num.Uint)
 // block being proposed + the configured network param indicating the target delay.
 func (t *TxCache) NewDelayedTransaction(ctx context.Context, delayed [][]byte, currentHeight uint64) []byte {
 	height := currentHeight + t.numBlocksToDelay
+	fmt.Println("WWW creating delayed transaction, height at", currentHeight, "target", height, "ntxns", len(delayed))
 	payload := &commandspb.DelayedTransactionsWrapper{Transactions: delayed, Height: height}
 	tx, err := t.commander.NewTransaction(ctx, txn.DelayedTransactionsWrapper, payload)
 	if err != nil {
@@ -83,14 +84,18 @@ func (t *TxCache) NewDelayedTransaction(ctx context.Context, delayed [][]byte, c
 }
 
 func (t *TxCache) SetRawTxs(rtx [][]byte, height uint64) {
+
 	if rtx == nil {
+		fmt.Println("WWW clear raw", height)
 		delete(t.heightToTxs, height)
 	} else {
+		fmt.Println("WWW set raw", height, len(rtx))
 		t.heightToTxs[height] = rtx
 	}
 }
 
 func (t *TxCache) GetRawTxs(height uint64) [][]byte {
+	fmt.Println("WWW get raw", height, len(t.heightToTxs[height]))
 	return t.heightToTxs[height]
 }
 

@@ -886,6 +886,8 @@ func (app *App) OnInitChain(req *tmtypes.RequestInitChain) (*tmtypes.ResponseIni
 // therefore a block generated with this method will never contain any transactions that would violate spam/pow constraints that would have previously
 // caused the party to get blocked.
 func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [][]byte {
+
+	fmt.Println("WWW preparing proposal for", height, "ntxn", len(txs))
 	var totalBytes int64
 	validationResults := []pow.ValidationEntry{}
 
@@ -900,9 +902,13 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 	// we still need to check that the transactions from previous block are passing pow and spam requirements.
 	addedFromPreviousHash := map[string]struct{}{}
 	delayedTxs := [][]byte{}
-	for _, txx := range app.txCache.GetRawTxs(height) {
+	delayed := app.txCache.GetRawTxs(height)
+	fmt.Println("WWW possible delayed txns", len(delayed))
+	for _, txx := range delayed {
+		fmt.Println("WWW checking delayed transaction")
 		tx, err := app.abci.GetTx(txx)
 		if err != nil {
+			fmt.Println("WWW failed?", err)
 			continue
 		}
 		if !app.nilPow {
@@ -910,6 +916,7 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 			validationResults = append(validationResults, pow.ValidationEntry{Tx: tx, Difficulty: d, ValResult: vr})
 			if vr != pow.ValidationResultSuccess && vr != pow.ValidationResultValidatorCommand {
 				app.log.Debug("pow failure", logging.Int64("validation-result", int64(vr)))
+				fmt.Println("WWW pow failure")
 				continue
 			}
 		}
@@ -917,13 +924,15 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 			err := app.spam.CheckBlockTx(tx)
 			if err != nil {
 				app.log.Debug("spam error", logging.Error(err))
+				fmt.Println("WWW spam error", err)
 				continue
 			}
 		}
 		if err := app.canSubmitTx(tx); err != nil {
+			fmt.Println("WWW cant submit error", err)
 			continue
 		}
-
+		fmt.Println("WWW delayed transaction added to proposal", hex.EncodeToString(tx.Hash()))
 		addedFromPreviousHash[hex.EncodeToString(tx.Hash())] = struct{}{}
 		delayedTxs = append(delayedTxs, txx)
 		totalBytes += int64(len(txx))
@@ -1052,6 +1061,7 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 			if s.PostOnly {
 				postOnly = append(postOnly, tx.raw)
 			} else if app.txCache.IsDelayRequired(s.MarketId) {
+				fmt.Println("WWW prepare-proposal submit order", hex.EncodeToString(tx.tx.Hash()))
 				nextBlockRtx = append(nextBlockRtx, tx.raw)
 			} else {
 				anythingElseFromThisBlock = append(anythingElseFromThisBlock, tx.raw)
@@ -1204,6 +1214,7 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 // 2. max gas limit is not exceeded
 // 3. (soft) max bytes is not exceeded.
 func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
+	fmt.Println("WWW processing proposal", height, "ntxn", len(txs))
 	totalGasWanted := 0
 	maxGas := app.gastimator.GetMaxGas()
 	maxBytes := tmtypesint.DefaultBlockParams().MaxBytes * 4
@@ -1212,10 +1223,14 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 
 	expectedDelayedAtHeight := app.txCache.GetRawTxs(height)
 	expectedDelayedTxs := make(map[string]struct{}, len(expectedDelayedAtHeight))
+	fmt.Println("WWW expected delays", len(expectedDelayedAtHeight))
 	for _, tx := range expectedDelayedAtHeight {
 		txx, err := app.abci.GetTx(tx)
 		if err == nil {
 			expectedDelayedTxs[hex.EncodeToString(txx.Hash())] = struct{}{}
+			fmt.Println("expect delayed txn", hex.EncodeToString(txx.Hash()))
+		} else {
+			fmt.Println("failed to get txn", err)
 		}
 	}
 	foundDelayedTxs := make(map[string]struct{}, len(expectedDelayedAtHeight))
@@ -1223,38 +1238,47 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 	for _, tx := range txs {
 		size += int64(tx.GetLength())
 		if size > maxBytes {
+			fmt.Println("TX too big", size, maxBytes)
 			return false
 		}
 		gw, err := app.getGasWanted(tx)
 		if err != nil {
+			fmt.Println("can't get gas", err)
 			return false
 		}
 		totalGasWanted += int(gw)
 		if totalGasWanted > int(maxGas) {
+			fmt.Println("can't get gas2", err)
 			return false
 		}
 		// allow only one delayed transaction wrapper in one block and its transactions must match what we expect.
 		if tx.Command() == txn.DelayedTransactionsWrapper {
 			if delayedTxCount > 0 {
 				app.log.Debug("more than one DelayedTransactionsWrapper")
+				fmt.Println("more than one delayed wrapper")
 				return false
 			}
 			delayedTxCount += 1
 		}
+		fmt.Println("WWW checking txn", hex.EncodeToString(tx.Hash()))
 		if _, ok := expectedDelayedTxs[hex.EncodeToString(tx.Hash())]; ok {
 			foundDelayedTxs[hex.EncodeToString(tx.Hash())] = struct{}{}
 		}
 	}
-
+	fmt.Println("WWW found", len(foundDelayedTxs), "expected", len(expectedDelayedAtHeight))
+	//delays found differ 0 1
 	if len(foundDelayedTxs) != len(expectedDelayedAtHeight) {
+		fmt.Println("delays found differ", len(foundDelayedTxs), len(expectedDelayedAtHeight))
 		return false
 	}
 
 	if !app.nilPow && !app.pow.ProcessProposal(txs) {
+		fmt.Println("pow no")
 		return false
 	}
 
 	if !app.nilSpam && !app.spam.ProcessProposal(txs) {
+		fmt.Println("spam no")
 		return false
 	}
 	return true
@@ -3139,6 +3163,7 @@ func (app *App) handleDelayedTransactionWrapper(ctx context.Context, tx abci.Tx)
 	if err := tx.Unmarshal(txs); err != nil {
 		return fmt.Errorf("could not deserialize DelayedTransactionsWrapper command: %w", err)
 	}
+	fmt.Println("WWW handling delayed transaction for height", txs.Height, "ntxn", len(txs.Transactions))
 	app.txCache.SetRawTxs(txs.Transactions, txs.Height)
 	return nil
 }

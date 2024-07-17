@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
@@ -406,6 +407,7 @@ func (e *Engine) CheckBlockTx(tx abci.Tx) (ValidationResult, *uint) {
 	state := e.activeStates[stateInd]
 	params := e.activeParams[stateInd]
 
+	fmt.Println("WWW POW check block adding", txHash)
 	e.seenTx[txHash] = struct{}{}
 
 	if tx.Command().IsValidatorCommand() {
@@ -521,6 +523,7 @@ func (e *Engine) verifyWithLock(tx abci.Tx) (byte, error) {
 
 	// check if the transaction was seen in scope
 	txHash := hex.EncodeToString(tx.Hash())
+	fmt.Println("WWW checking POW", txHash)
 	if _, ok := e.seenTx[txHash]; ok {
 		e.log.Error("replay attack: txHash already used", logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()), logging.String("command", tx.Command().String()))
 		return h, errors.New("transaction hash already used")

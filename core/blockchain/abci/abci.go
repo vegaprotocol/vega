@@ -18,6 +18,7 @@ package abci
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -84,17 +85,20 @@ func (app *App) ProcessProposal(_ context.Context, req *types.RequestProcessProp
 	for _, v := range req.Txs {
 		tx, _, err := app.getTx(v)
 		if err != nil {
+			fmt.Println("REJECT", err)
 			// if there's a transaction we can't decode or verify, reject it
 			return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, err
 		}
 		// if there's no handler for a transaction, reject it
 		if _, ok := app.deliverTxs[tx.Command()]; !ok {
+			fmt.Println("REJECT NO HANDLER")
 			return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
 		}
 		txs = append(txs, tx)
 	}
 	// let the application verify the block
 	if !app.OnProcessProposal(uint64(req.Height), txs) {
+		fmt.Println("REJECT PROCESS FAILED")
 		return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
 	}
 	return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_ACCEPT}, nil
