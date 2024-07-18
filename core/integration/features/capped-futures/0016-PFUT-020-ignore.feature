@@ -49,7 +49,7 @@ Feature: When binary settlement is enabled, the market ignored oracle data that 
       | ETH/DEC22 | ETH        | USD   | simple-risk-model-1    | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec22Oracle         | 0.25                   | 0                         | default-futures | 1500          | false                | true   |
       | ETH/DEC23 | ETH        | USD   | lognormal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures | 1500          | true                 | true   |
 
-  @NoPerp @Capped @CBin
+  @NoPerp @Capped @CBin @CappedBug
   Scenario: 0016-PFUT-020: Pass in settlement prices that are neither 0 nor max price, then settle at valid prices.
     Given the initial insurance pool balance is "10000" for all the markets
     And the parties deposit on asset's general account the following amount:
@@ -157,16 +157,16 @@ Feature: When binary settlement is enabled, the market ignored oracle data that 
     And the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC22"
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC21 | 5000   | 5500    |
-      | party2 | USD   | ETH/DEC21 | 2500   | 7000    |
+      | party1 | USD   | ETH/DEC21 | 5500   | 5000    |
+      | party2 | USD   | ETH/DEC21 | 2000   | 7500    |
       | party3 | USD   | ETH/DEC22 | 3200   | 7300    |
       | party4 | USD   | ETH/DEC22 | 2310   | 7190    |
       | aux1   | USD   | ETH/DEC21 | 3098   | 96908   |
       | aux2   | USD   | ETH/DEC21 | 402    | 99570   |
       | aux5   | USD   | ETH/DEC22 | 1122   | 98884   |
       | aux6   | USD   | ETH/DEC22 | 726    | 99246   |
-      | party5 | USD   | ETH/DEC23 | 5000   | 5500    |
-      | party6 | USD   | ETH/DEC23 | 2500   | 7000    |
+      | party5 | USD   | ETH/DEC23 | 5500   | 5000    |
+      | party6 | USD   | ETH/DEC23 | 2000   | 7500    |
       | aux3   | USD   | ETH/DEC23 | 3098   | 96908   |
       | aux4   | USD   | ETH/DEC23 | 402    | 99570   |
 

@@ -250,6 +250,33 @@ func TestAMMSmallBounds(t *testing.T) {
 	assert.Equal(t, 0, int(mds.service.GetVolumeAtPrice(marketID, types.SideSell, 2002)))
 }
 
+func TestEstimatedStepOverAMMBound(t *testing.T) {
+	ctx := context.Background()
+	mds := getServiceWithConfig(t,
+		service.MarketDepthConfig{
+			AmmFullExpansionPercentage: 5,
+			AmmEstimatedStepPercentage: 7.6, // make this a werid number so our estimated steps are not nice multiplies of 10
+			AmmMaxEstimatedSteps:       5,
+		},
+	)
+	defer mds.ctrl.Finish()
+
+	marketID := vgcrypto.RandomHash()
+	ensureLiveOrders(t, mds, marketID)
+	ensureDecimalPlaces(t, mds)
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
+
+	// data node is starting from network history, initialise market-depth based on whats aleady there
+	ensureAMMs(t, mds, marketID)
+	mds.service.Initialise(ctx)
+
+	assert.Equal(t, "1999", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "2001", mds.service.GetBestAskPrice(marketID).String())
+	assert.Equal(t, 3, int(mds.service.GetVolumeAtPrice(marketID, types.SideBuy, 1999)))
+	assert.Equal(t, 3, int(mds.service.GetVolumeAtPrice(marketID, types.SideSell, 2001)))
+}
+
 func ensureLiveOrders(t *testing.T, mds *MDS, marketID string) {
 	t.Helper()
 	mds.orders.EXPECT().GetLiveOrders(gomock.Any()).Return([]entities.Order{

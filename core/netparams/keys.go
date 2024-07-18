@@ -29,8 +29,8 @@ const (
 	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
 
-	MinimalMarginQuantumMultiple  = "spam.order.minimalMarginQuantumMultiple"
-	MinimalHoldingQuantumMultiple = "spam.order.minimalHoldingQuantumMultiple"
+	MinimumMarginQuantumMultiple  = "spam.order.minimumMarginQuantumMultiple"
+	MinimumHoldingQuantumMultiple = "spam.order.minimumHoldingQuantumMultiple"
 
 	MarketTargetStakeTimeWindow               = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor            = "market.stake.target.scalingFactor"
@@ -472,6 +472,6 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionApplyReferralMinFunds:                          {},
 	SpamProtectionReferralSetMinFunds:                            {},
 	BlockchainsEthereumL2Configs:                                 {},
-	MinimalMarginQuantumMultiple:                                 {},
-	MinimalHoldingQuantumMultiple:                                {},
+	MinimumMarginQuantumMultiple:                                 {},
+	MinimumHoldingQuantumMultiple:                                {},
 }
