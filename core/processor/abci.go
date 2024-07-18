@@ -198,6 +198,7 @@ type TxCache interface {
 	NewDelayedTransaction(ctx context.Context, delayed [][]byte, height uint64) []byte
 	IsDelayRequired(marketID string) bool
 	IsDelayRequiredAnyMarket() bool
+	IsTxInCache(tx []byte) bool
 }
 
 type App struct {
@@ -1576,6 +1577,12 @@ func (app *App) removeOldCheckpoints() error {
 // OnCheckTxSpam checks for spam and replay.
 func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	resp := tmtypes.ResponseCheckTx{}
+
+	if app.txCache.IsTxInCache(tx.Hash()) {
+		resp.Code = blockchain.AbciSpamError
+		resp.Data = []byte("delayed transaction already included in a block")
+		return resp
+	}
 
 	// verify proof of work and replay
 	if !app.nilPow {
