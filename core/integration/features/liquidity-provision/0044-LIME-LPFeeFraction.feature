@@ -95,13 +95,11 @@ Feature: Test market.liquidity.equityLikeShareFeeFraction
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 3s    |
 
-    # As we are still within the epoch, the change to 3s distributions should not occur yet, so we make a trade
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | party2 | ETH/MAR22 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
 
-    # Then forward enough blocks that the 3s setting would have caused a distribution and place another trade
     Then the network moves ahead "5" blocks
 
     Then the following transfers should happen:
