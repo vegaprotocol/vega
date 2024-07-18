@@ -17,8 +17,10 @@ package txcache
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sort"
+	"sync"
 
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/txn"
@@ -27,6 +29,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"github.com/cometbft/cometbft/crypto/tmhash"
 )
 
 func NewTxCache(commander *nodewallets.Commander) *TxCache {
@@ -34,6 +38,7 @@ func NewTxCache(commander *nodewallets.Commander) *TxCache {
 		commander:             commander,
 		marketToDelayRequired: map[string]bool{},
 		heightToTxs:           map[uint64][][]byte{},
+		cachedTxs:             map[string]struct{}{},
 	}
 }
 
@@ -44,6 +49,34 @@ type TxCache struct {
 	numBlocksToDelay uint64
 	// no need to include is snapshot - is updated when markets are created/updated/loaded from snapshot
 	marketToDelayRequired map[string]bool
+	// map of transactions that have been picked up for delay
+	cachedTxs map[string]struct{}
+	lock      sync.RWMutex
+}
+
+func (t *TxCache) IsTxInCache(txHash []byte) bool {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	_, ok := t.cachedTxs[hex.EncodeToString(txHash)]
+	return ok
+}
+
+func (t *TxCache) removeHeightFromCache(height uint64) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	if txs, ok := t.heightToTxs[height]; ok {
+		for _, tx := range txs {
+			delete(t.cachedTxs, hex.EncodeToString(tmhash.Sum(tx)))
+		}
+	}
+}
+
+func (t *TxCache) addHeightToCache(txs [][]byte) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	for _, tx := range txs {
+		t.cachedTxs[hex.EncodeToString(tmhash.Sum(tx))] = struct{}{}
+	}
 }
 
 // MarketDelayRequiredUpdated is called when the market configuration is created/updated with support for
@@ -84,9 +117,11 @@ func (t *TxCache) NewDelayedTransaction(ctx context.Context, delayed [][]byte, c
 
 func (t *TxCache) SetRawTxs(rtx [][]byte, height uint64) {
 	if rtx == nil {
+		t.removeHeightFromCache(height)
 		delete(t.heightToTxs, height)
 	} else {
 		t.heightToTxs[height] = rtx
+		t.addHeightToCache(rtx)
 	}
 }
 
@@ -139,6 +174,7 @@ func (t *TxCache) LoadState(_ context.Context, p *types.Payload) ([]types.StateP
 		t.heightToTxs = map[uint64][][]byte{}
 		for _, tx := range data.TxCache.Txs {
 			t.heightToTxs[tx.Height] = tx.Tx
+			t.addHeightToCache(tx.Tx)
 		}
 		return nil, nil
 	default:

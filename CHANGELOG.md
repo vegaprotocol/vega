@@ -29,7 +29,7 @@
 
 - [11453](https://github.com/vegaprotocol/vega/issues/11453) - Fix margin for fully collateralised markets.
 - [11462](https://github.com/vegaprotocol/vega/issues/11462) - Update the time weighted notional when publishing live game scores.
-
+- [11474](https://github.com/vegaprotocol/vega/issues/11474) - Fail `checkTx` downstream for delayed transactions so they don't get included in more than one block. 
 
 ## 0.77.0
 
