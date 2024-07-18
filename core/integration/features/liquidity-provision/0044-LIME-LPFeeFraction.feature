@@ -57,8 +57,8 @@ Feature: Test market.liquidity.equityLikeShareFeeFraction
       | party  | asset | amount  |
       | lp1    | USD   | 100000  |
       | lp2    | USD   | 1000000 |
-      | party1 | USD   | 1000000 |
-      | party2 | USD   | 1000000 |
+      | party1 | USD   | 100000000 |
+      | party2 | USD   | 100000000 |
     And the following network parameters are set:
       | name                                        | value |
       | market.liquidity.equityLikeShareFeeFraction | 0     |
@@ -72,12 +72,12 @@ Feature: Test market.liquidity.equityLikeShareFeeFraction
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | lp1    | ETH/MAR22 | buy  | 10     | 970   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
-      | lp2    | ETH/MAR22 | buy  | 30     | 970   | 0                | TYPE_LIMIT | TIF_GTC | lp2-b     |
+      | lp1    | ETH/MAR22 | buy  | 10     | 999   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | lp2    | ETH/MAR22 | buy  | 30     | 999   | 0                | TYPE_LIMIT | TIF_GTC | lp2-b     |
       | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | lp1    | ETH/MAR22 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
-      | lp2    | ETH/MAR22 | sell | 30     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | lp2-s     |
+      | lp1    | ETH/MAR22 | sell | 10     | 1001  | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
+      | lp2    | ETH/MAR22 | sell | 30     | 1001  | 0                | TYPE_LIMIT | TIF_GTC | lp2-s     |
       | party2 | ETH/MAR22 | sell | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     Then the opening auction period ends for market "ETH/MAR22"
@@ -97,15 +97,15 @@ Feature: Test market.liquidity.equityLikeShareFeeFraction
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/MAR22 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party2 | ETH/MAR22 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+      | party1 | ETH/MAR22 | sell | 200      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | buy  | 200      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
 
     Then the network moves ahead "5" blocks
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 15     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 15     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1500     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1500     | USD   |
 
 
 
