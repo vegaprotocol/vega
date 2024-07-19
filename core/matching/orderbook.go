@@ -86,6 +86,10 @@ type CumulativeVolumeLevel struct {
 	cumulativeBidVolume uint64
 	cumulativeAskVolume uint64
 	maxTradableAmount   uint64
+
+	// keep track of how much of the cumulative volume is from AMMs
+	cumulativeBidOffbook uint64
+	cumulativeAskOffbook uint64
 }
 
 func (b *OrderBook) Hash() []byte {
@@ -345,7 +349,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 	if buyMatch && sellMatch {
 		return true
 	}
-	_, v, _ := b.GetIndicativePriceAndVolume()
+	_, v, _, _ := b.GetIndicativePriceAndVolume()
 	// no buy orders remaining on the book after uncrossing, it buyMatches exactly
 	vol := uint64(0)
 	if !buyMatch {
@@ -394,14 +398,14 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 }
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state.
-func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol uint64, retside types.Side) {
+func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol uint64, retside types.Side, offbookVolume uint64) {
 	// Generate a set of price level pairs with their maximum tradable volumes
 	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
 	if err != nil {
 		if b.log.GetLevel() <= logging.DebugLevel {
 			b.log.Debug("could not get cumulative price levels", logging.Error(err))
 		}
-		return num.UintZero(), 0, types.SideUnspecified
+		return num.UintZero(), 0, types.SideUnspecified, 0
 	}
 
 	// Pull out all prices that match that volume
@@ -432,14 +436,17 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 		if ordersToFill == 0 {
 			// Buys fill exactly, uncross from the buy side
 			uncrossSide = types.SideBuy
+			offbookVolume = value.cumulativeBidOffbook
 			break
 		} else if ordersToFill < 0 {
 			// Buys are not exact, uncross from the sell side
 			uncrossSide = types.SideSell
+			offbookVolume = value.cumulativeAskOffbook
 			break
 		}
 	}
-	return uncrossPrice, maxTradableAmount, uncrossSide
+
+	return uncrossPrice, maxTradableAmount, uncrossSide, offbookVolume
 }
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state.
@@ -474,7 +481,7 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 
 func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	// Get the uncrossing price and which side has the most volume at that price
-	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
+	price, volume, uncrossSide, offbookVolume := b.GetIndicativePriceAndVolume()
 
 	// If we have no uncrossing price, we have nothing to do
 	if price.IsZero() && volume == 0 {
@@ -497,8 +504,7 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	}
 
 	// extract uncrossing orders from all AMMs
-	var offbookVolume uint64
-	uncrossOrders, offbookVolume = b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide)
+	uncrossOrders = b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
 
 	// the remaining volume should now come from the orderbook
 	volume -= offbookVolume
@@ -545,7 +551,7 @@ func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint6
 // if removeOrders is set to true then matched orders get removed from the book.
 func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	// Get the uncrossing price and which side has the most volume at that price
-	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
+	price, volume, uncrossSide, offbookVolume := b.GetIndicativePriceAndVolume()
 
 	// If we have no uncrossing price, we have nothing to do
 	if price.IsZero() && volume == 0 {
@@ -567,8 +573,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	}
 
 	// extract uncrossing orders from all AMMs
-	var offbookVolume uint64
-	uncrossOrders, offbookVolume := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide)
+	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
 
 	// the remaining volume should now come from the orderbook
 	volume -= offbookVolume
@@ -851,12 +856,12 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 
 	if volumeChange < 0 {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
-			amendedOrder.Price, uint64(-volumeChange), amendedOrder.Side)
+			amendedOrder.Price, uint64(-volumeChange), amendedOrder.Side, false)
 	}
 
 	if volumeChange > 0 {
 		b.indicativePriceAndVolume.AddVolumeAtPrice(
-			amendedOrder.Price, uint64(volumeChange), amendedOrder.Side)
+			amendedOrder.Price, uint64(volumeChange), amendedOrder.Side, false)
 	}
 
 	return nil
@@ -1008,7 +1013,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
 			b.indicativePriceAndVolume.AddVolumeAtPrice(
-				order.Price, order.TrueRemaining(), order.Side)
+				order.Price, order.TrueRemaining(), order.Side, false)
 		}
 	}
 
@@ -1095,7 +1100,7 @@ func (b *OrderBook) DeleteOrder(
 	// cancel the order if it expires it
 	if b.auction {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
-			dorder.Price, dorder.TrueRemaining(), dorder.Side)
+			dorder.Price, dorder.TrueRemaining(), dorder.Side, false)
 	}
 	return dorder, err
 }
