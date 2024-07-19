@@ -40,7 +40,7 @@ Feature: FCAP liquidations
     When the network moves ahead "2" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "FCAP-PM/USD-1-10"
 
-
+  @CappedF
   Scenario: Party places a limit order with not enough funds to cover fes
 
     Given the parties deposit on asset's general account the following amount:
@@ -57,7 +57,7 @@ Feature: FCAP liquidations
       | trader  | 50    | 1    | aux1   |
       | network | 50    | 1    | trader |
 
-
+  @CappedF
   Scenario: Party places a limit order which requires no fees in continuous trading but later requires fees in auction
 
     Given the parties deposit on asset's general account the following amount:
