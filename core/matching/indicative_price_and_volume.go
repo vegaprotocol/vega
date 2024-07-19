@@ -53,7 +53,8 @@ type ipvPriceLevel struct {
 }
 
 type ipvVolume struct {
-	volume uint64
+	volume        uint64
+	offbookVolume uint64 // how much of the above total volume is coming from AMMs
 }
 
 type ipvGeneratedOffbook struct {
@@ -131,13 +132,15 @@ func (ipv *IndicativePriceAndVolume) buildInitialOffbookShape(offbook OffbookSou
 	// expand all AMM's into orders within the crossed region and add them to the price-level cache
 	buys, sells := offbook.OrderbookShape(min, max, nil)
 
-	for _, o := range buys {
+	for i := len(buys) - 1; i >= 0; i-- {
+		o := buys[i]
 		mpl, ok := mplm[*o.Price]
 		if !ok {
-			mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0}, sellpl: ipvVolume{0}}
+			mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0, 0}, sellpl: ipvVolume{0, 0}}
 		}
 		// increment the volume at this level
 		mpl.buypl.volume += o.Size
+		mpl.buypl.offbookVolume += o.Size
 		mplm[*o.Price] = mpl
 
 		if ipv.generated[o.Party] == nil {
@@ -149,10 +152,11 @@ func (ipv *IndicativePriceAndVolume) buildInitialOffbookShape(offbook OffbookSou
 	for _, o := range sells {
 		mpl, ok := mplm[*o.Price]
 		if !ok {
-			mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0}, sellpl: ipvVolume{0}}
+			mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0, 0}, sellpl: ipvVolume{0, 0}}
 		}
 
 		mpl.sellpl.volume += o.Size
+		mpl.sellpl.offbookVolume += o.Size
 		mplm[*o.Price] = mpl
 
 		if ipv.generated[o.Party] == nil {
@@ -170,10 +174,10 @@ func (ipv *IndicativePriceAndVolume) removeOffbookShape(party string) {
 
 	// remove all the old volume for the AMM's
 	for _, o := range orders.buy {
-		ipv.RemoveVolumeAtPrice(o.Price, o.Size, o.Side)
+		ipv.RemoveVolumeAtPrice(o.Price, o.Size, o.Side, true)
 	}
 	for _, o := range orders.sell {
-		ipv.RemoveVolumeAtPrice(o.Price, o.Size, o.Side)
+		ipv.RemoveVolumeAtPrice(o.Price, o.Size, o.Side, true)
 	}
 
 	// clear it out the saved generated orders for the offbook shape
@@ -184,8 +188,10 @@ func (ipv *IndicativePriceAndVolume) addOffbookShape(party *string, minPrice, ma
 	// recalculate new orders for the shape and add the volume in
 	buys, sells := ipv.offbook.OrderbookShape(minPrice, maxPrice, party)
 
-	for _, o := range buys {
-		ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side)
+	// add buys backwards so that the best-bid is first
+	for i := len(buys) - 1; i >= 0; i-- {
+		o := buys[i]
+		ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side, true)
 
 		if ipv.generated[o.Party] == nil {
 			ipv.generated[o.Party] = &ipvGeneratedOffbook{}
@@ -193,8 +199,9 @@ func (ipv *IndicativePriceAndVolume) addOffbookShape(party *string, minPrice, ma
 		ipv.generated[o.Party].add(o)
 	}
 
+	// add buys fowards so that the best-ask is first
 	for _, o := range sells {
-		ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side)
+		ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side, true)
 
 		if ipv.generated[o.Party] == nil {
 			ipv.generated[o.Party] = &ipvGeneratedOffbook{}
@@ -223,7 +230,7 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 	mplm := map[num.Uint]ipvPriceLevel{}
 
 	for i := len(buy.levels) - 1; i >= 0; i-- {
-		mplm[*buy.levels[i].price] = ipvPriceLevel{price: buy.levels[i].price.Clone(), buypl: ipvVolume{buy.levels[i].volume}, sellpl: ipvVolume{0}}
+		mplm[*buy.levels[i].price] = ipvPriceLevel{price: buy.levels[i].price.Clone(), buypl: ipvVolume{buy.levels[i].volume, 0}, sellpl: ipvVolume{0, 0}}
 	}
 
 	// now we add all the sells
@@ -232,10 +239,10 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 	for i := len(sell.levels) - 1; i >= 0; i-- {
 		price := sell.levels[i].price.Clone()
 		if mpl, ok := mplm[*price]; ok {
-			mpl.sellpl = ipvVolume{sell.levels[i].volume}
+			mpl.sellpl = ipvVolume{sell.levels[i].volume, 0}
 			mplm[*price] = mpl
 		} else {
-			mplm[*price] = ipvPriceLevel{price: price, sellpl: ipvVolume{sell.levels[i].volume}, buypl: ipvVolume{0}}
+			mplm[*price] = ipvPriceLevel{price: price, sellpl: ipvVolume{sell.levels[i].volume, 0}, buypl: ipvVolume{0, 0}}
 		}
 	}
 
@@ -254,16 +261,22 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 	sort.Slice(ipv.levels, func(i, j int) bool { return ipv.levels[i].price.GT(ipv.levels[j].price) })
 }
 
-func (ipv *IndicativePriceAndVolume) incrementLevelVolume(idx int, volume uint64, side types.Side) {
+func (ipv *IndicativePriceAndVolume) incrementLevelVolume(idx int, volume uint64, side types.Side, isOffbook bool) {
 	switch side {
 	case types.SideBuy:
 		ipv.levels[idx].buypl.volume += volume
+		if isOffbook {
+			ipv.levels[idx].buypl.offbookVolume += volume
+		}
 	case types.SideSell:
 		ipv.levels[idx].sellpl.volume += volume
+		if isOffbook {
+			ipv.levels[idx].sellpl.offbookVolume += volume
+		}
 	}
 }
 
-func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price *num.Uint, volume uint64, side types.Side) {
+func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price *num.Uint, volume uint64, side types.Side, isOffbook bool) {
 	if price.GTE(ipv.lastMinPrice) || price.LTE(ipv.lastMaxPrice) {
 		// the new price added is in the range, that will require
 		// to recompute the whole range when we call GetCumulativePriceLevels
@@ -275,25 +288,31 @@ func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price *num.Uint, volume ui
 	})
 	if i < len(ipv.levels) && ipv.levels[i].price.EQ(price) {
 		// we found the price level, let's add the volume there, and we are done
-		ipv.incrementLevelVolume(i, volume, side)
+		ipv.incrementLevelVolume(i, volume, side, isOffbook)
 	} else {
 		ipv.levels = append(ipv.levels, ipvPriceLevel{})
 		copy(ipv.levels[i+1:], ipv.levels[i:])
 		ipv.levels[i] = ipvPriceLevel{price: price.Clone()}
-		ipv.incrementLevelVolume(i, volume, side)
+		ipv.incrementLevelVolume(i, volume, side, isOffbook)
 	}
 }
 
-func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64, side types.Side) {
+func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64, side types.Side, isOffbook bool) {
 	switch side {
 	case types.SideBuy:
 		ipv.levels[idx].buypl.volume -= volume
+		if isOffbook {
+			ipv.levels[idx].buypl.offbookVolume -= volume
+		}
 	case types.SideSell:
 		ipv.levels[idx].sellpl.volume -= volume
+		if isOffbook {
+			ipv.levels[idx].sellpl.offbookVolume -= volume
+		}
 	}
 }
 
-func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price *num.Uint, volume uint64, side types.Side) {
+func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price *num.Uint, volume uint64, side types.Side, isOffbook bool) {
 	if price.GTE(ipv.lastMinPrice) || price.LTE(ipv.lastMaxPrice) {
 		// the new price added is in the range, that will require
 		// to recompute the whole range when we call GetCumulativePriceLevels
@@ -305,7 +324,7 @@ func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price *num.Uint, volume
 	})
 	if i < len(ipv.levels) && ipv.levels[i].price.EQ(price) {
 		// we found the price level, let's add the volume there, and we are done
-		ipv.decrementLevelVolume(i, volume, side)
+		ipv.decrementLevelVolume(i, volume, side, isOffbook)
 	} else {
 		ipv.log.Panic("cannot remove volume from a non-existing level",
 			logging.String("side", side.String()),
@@ -379,6 +398,7 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 
 	var (
 		cumulativeVolumeSell, cumulativeVolumeBuy, maxTradable uint64
+		cumulativeOffbookSell, cumulativeOffbookBuy            uint64
 		// here the caching buf is already allocated, we can just resize it
 		// based on the required length
 		cumulativeVolumes = ipv.buf[:len(rangedLevels)]
@@ -404,18 +424,23 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		// if we had a price level in the buy side, use it
 		if rangedLevels[j].buypl.volume > 0 {
 			cumulativeVolumeBuy += rangedLevels[j].buypl.volume
+			cumulativeOffbookBuy += rangedLevels[j].buypl.offbookVolume
 			cumulativeVolumes[j].bidVolume = rangedLevels[j].buypl.volume
 		}
 
 		// same same
 		if rangedLevels[i].sellpl.volume > 0 {
 			cumulativeVolumeSell += rangedLevels[i].sellpl.volume
+			cumulativeOffbookSell += rangedLevels[i].sellpl.offbookVolume
 			cumulativeVolumes[i].askVolume = rangedLevels[i].sellpl.volume
 		}
 
 		// this will always erase the previous values
 		cumulativeVolumes[j].cumulativeBidVolume = cumulativeVolumeBuy
+		cumulativeVolumes[j].cumulativeBidOffbook = cumulativeOffbookBuy
+
 		cumulativeVolumes[i].cumulativeAskVolume = cumulativeVolumeSell
+		cumulativeVolumes[i].cumulativeAskOffbook = cumulativeOffbookSell
 
 		// we just do that
 		// price | sell | buy | vol | ibuy | isell
@@ -448,7 +473,11 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 
 // ExtractOffbookOrders returns the cached expanded orders of AMM's in the crossed region of the given side. These
 // are the order that we will send in aggressively to uncrossed the book.
-func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side types.Side) ([]*types.Order, uint64) {
+func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side types.Side, target uint64) []*types.Order {
+	if target == 0 {
+		return []*types.Order{}
+	}
+
 	var volume uint64
 	orders := []*types.Order{}
 	// the ipv keeps track of all the expand AMM orders in the crossed region
@@ -469,7 +498,22 @@ func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side 
 			}
 			orders = append(orders, o)
 			volume += o.Size
+
+			// if we're extracted enough we can stop now
+			if volume == target {
+				return orders
+			}
 		}
 	}
-	return orders, volume
+
+	if volume != target {
+		ipv.log.Panic("Failed to extract AMM orders for uncrossing",
+			logging.BigUint("price", price),
+			logging.Uint64("volume", volume),
+			logging.Uint64("extracted-volume", volume),
+			logging.Uint64("target-volume", target),
+		)
+	}
+
+	return orders
 }
