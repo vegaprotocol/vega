@@ -54,6 +54,7 @@ Feature: FCAP liquidations
 
 
 
+  @CappedF
   Scenario: Party opens a short position with a market order and is liquidiated at the next mark to market.
 
     And the following network parameters are set:
@@ -74,7 +75,7 @@ Feature: FCAP liquidations
       | trader | 60    | 1    | aux1   |
     And the parties should have the following account balances:
       | party  | asset    | market id     | margin | general |
-      | trader | USD-1-10 | FCAP/USD-1-10 | 50     | 0       |
+      | trader | USD-1-10 | FCAP/USD-1-10 | 0      | 50      |
 
     When the network moves ahead "5" blocks
     And the following trades should be executed:
@@ -85,6 +86,7 @@ Feature: FCAP liquidations
       | trader | USD-1-10 | FCAP/USD-1-10 | 0      | 0       |
 
 
+  @CappedF
   Scenario: Party place a limit order with not enough to cover fes
 
     And the following network parameters are set:
