@@ -66,24 +66,12 @@ Feature: FCAP liquidations
       | trader | USD-1-10 | 50     |
 
     Given the parties place the following orders:
-      | party  | market id     | side | volume | price | resulting trades | type        | tif     |
-      | aux1   | FCAP/USD-1-10 | sell | 1      | 60    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | trader | FCAP/USD-1-10 | buy  | 1      | 0     | 1                | TYPE_MARKET | TIF_FOK |
-    When the network moves ahead "1" blocks
-    And the following trades should be executed:
-      | buyer  | price | size | seller |
-      | trader | 60    | 1    | aux1   |
+      | party  | market id     | side | volume | price | resulting trades | type        | tif     | error               |
+      | aux1   | FCAP/USD-1-10 | sell | 1      | 60    | 0                | TYPE_LIMIT  | TIF_GTC |                     |
+      | trader | FCAP/USD-1-10 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK | margin check failed |
     And the parties should have the following account balances:
       | party  | asset    | market id     | margin | general |
       | trader | USD-1-10 | FCAP/USD-1-10 | 0      | 50      |
-
-    When the network moves ahead "5" blocks
-    And the following trades should be executed:
-      | buyer   | price | size | seller |
-      | network | 60    | 1    | trader |
-    Then the parties should have the following account balances:
-      | party  | asset    | market id     | margin | general |
-      | trader | USD-1-10 | FCAP/USD-1-10 | 0      | 0       |
 
 
   @CappedF

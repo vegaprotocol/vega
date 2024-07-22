@@ -73,8 +73,12 @@ func (p *MarketPosition) Closed() bool {
 
 // UpdateInPlaceOnTrades takes a clone of the receiver position, and updates it with the position from the given trades.
 func (p *MarketPosition) UpdateInPlaceOnTrades(log *logging.Logger, traderSide types.Side, trades []*types.Trade, order *types.Order) *MarketPosition {
+	isMO := order.Type == types.OrderTypeMarket
 	pos := p.Clone()
 	for _, t := range trades {
+		if isMO {
+			pos.price = CalcVWAP(pos.price, pos.size, int64(t.Size), t.Price)
+		}
 		pos.averageEntryPrice = CalcVWAP(pos.averageEntryPrice, pos.size, int64(t.Size), t.Price)
 		if traderSide == types.SideBuy {
 			pos.size += int64(t.Size)

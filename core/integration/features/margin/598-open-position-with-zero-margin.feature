@@ -72,7 +72,7 @@ Feature: Regression test for issue 598
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | edd   | BTC   | ETH/DEC19 | 571    | 429     |
-      | chris | BTC   | ETH/DEC19 | 109    | 790     |
+      | chris | BTC   | ETH/DEC19 | 108    | 791     |
     
     # next instruction will trade with barney
     When the parties place the following orders with ticks:

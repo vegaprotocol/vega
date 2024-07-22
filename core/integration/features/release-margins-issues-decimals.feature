@@ -115,7 +115,7 @@ Feature: Test margin release on order cancel
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 415800 | 9485200 |
+      | partyGuy | ETH   | ETH/DEC19 | 420000 | 9481000 |
 
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
