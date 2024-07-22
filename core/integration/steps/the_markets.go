@@ -94,7 +94,7 @@ func TheMarkets(
 			}
 		}
 		var mkt types.Market
-		if isPerp {
+		if isPerp && !mRow.IsCapped() {
 			mkt = newPerpMarket(config, mRow)
 		} else {
 			mkt = newMarket(config, mRow)
@@ -470,6 +470,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	pCap := row.getCapped()
 	specs, binding := row.oracles(config)
 	markPriceConfig := &types.CompositePriceConfiguration{
 		CompositePriceType:           row.markPriceType(),
@@ -526,6 +527,9 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 
 	tip := m.TradableInstrument.IntoProto()
 	err = config.RiskModels.LoadModel(row.riskModel(), tip)
+	if row.IsCapped() {
+		tip.MarginCalculator.FullyCollateralised = ptr.From(pCap.FullyCollateralised)
+	}
 	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
 	if err != nil {
 		panic(err)
