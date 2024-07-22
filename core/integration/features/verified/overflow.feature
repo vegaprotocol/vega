@@ -51,6 +51,7 @@ Feature: FCAP liquidations
     When the opening auction period ends for market "FCAP/USD-1-10"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "FCAP/USD-1-10"
 
+  @NoPerp
   Scenario Outline: Simple test case, party opens long position, margin correctly taken and party never closed out.
 
     Given the parties deposit on asset's general account the following amount:

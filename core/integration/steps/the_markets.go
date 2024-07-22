@@ -94,7 +94,7 @@ func TheMarkets(
 			}
 		}
 		var mkt types.Market
-		if isPerp && !mRow.IsCapped() {
+		if isPerp {
 			mkt = newPerpMarket(config, mRow)
 		} else {
 			mkt = newMarket(config, mRow)

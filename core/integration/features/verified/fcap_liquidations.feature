@@ -54,7 +54,7 @@ Feature: FCAP liquidations
 
 
 
-  @CappedF
+  @CappedF @NoPerp
   Scenario: Party opens a short position with a market order and is liquidiated at the next mark to market.
 
     And the following network parameters are set:
@@ -74,7 +74,7 @@ Feature: FCAP liquidations
       | trader | USD-1-10 | FCAP/USD-1-10 | 0      | 50      |
 
 
-  @CappedF
+  @CappedF @NoPerp
   Scenario: Party place a limit order with not enough to cover fes
 
     And the following network parameters are set:
