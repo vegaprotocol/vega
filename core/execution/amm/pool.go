@@ -128,7 +128,7 @@ func NewPool(
 	positionFactor num.Decimal,
 	maxCalculationLevels *num.Uint,
 ) (*Pool, error) {
-	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(priceFactor))
+	oneTick, _ := num.UintFromDecimal(priceFactor)
 	pool := &Pool{
 		log:                  log,
 		ID:                   id,
@@ -164,7 +164,7 @@ func NewPoolFromProto(
 	party string,
 	priceFactor num.Decimal,
 ) (*Pool, error) {
-	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(priceFactor))
+	oneTick, _ := num.UintFromDecimal(priceFactor)
 
 	var lowerLeverage, upperLeverage *num.Decimal
 	if state.Parameters.LeverageAtLowerBound != nil {
