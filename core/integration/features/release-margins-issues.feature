@@ -64,7 +64,7 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH   | ETH/DEC19 | 0      | 10000   |
 
 
-  @MarginRelease
+  @MarginRelease @Chris
   Scenario: a party place a new market order in the system, order, trade, party margin is updated, then place an GTC order which will trade, margin is 0ed
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount       |
@@ -109,7 +109,7 @@ Feature: Test margin release on order cancel
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 416    | 9485    |
+      | partyGuy | ETH   | ETH/DEC19 | 420    | 9481    |
 
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |

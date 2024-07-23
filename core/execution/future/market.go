@@ -2569,6 +2569,17 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				return nil, nil, err
 			}
 		}
+		if order.Type == types.OrderTypeMarket && marginMode == types.MarginModeCrossMargin && !order.ReduceOnly && !pos.OrderReducesExposure(order) {
+			if err := m.checkMarginForOrder(ctx, posWithTrades, order); err != nil {
+				if m.log.GetLevel() <= logging.DebugLevel {
+					m.log.Debug("Unable to check/add margin for party",
+						logging.Order(*order), logging.Error(err))
+				}
+				_ = m.unregisterAndReject(
+					ctx, order, types.OrderErrorMarginCheckFailed)
+				return nil, nil, common.ErrMarginCheckFailed
+			}
+		}
 	}
 
 	// Send the aggressive order into matching engine
