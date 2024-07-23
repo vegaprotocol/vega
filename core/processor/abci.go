@@ -92,6 +92,11 @@ var (
 	}
 )
 
+// Codec interface is here for mocking/testing.
+type Codec interface {
+	abci.Codec
+}
+
 type Checkpoint interface {
 	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
 	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
