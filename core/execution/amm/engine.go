@@ -328,7 +328,7 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 		fp := pool.BestPrice(nil)
 
 		// get the volume on the buy side by simulating an incoming sell order
-		bid := num.UintZero().Sub(fp, pool.oneTick)
+		bid := num.Max(pool.lower.low, num.UintZero().Sub(fp, pool.oneTick))
 		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
 
 		if volume != 0 {
@@ -341,7 +341,7 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 		}
 
 		// get the volume on the sell side by simulating an incoming buy order
-		ask := num.UintZero().Add(fp, pool.oneTick)
+		ask := num.Min(pool.upper.high, num.UintZero().Add(fp, pool.oneTick))
 		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
 		if volume != 0 {
 			if bestAsk == nil || ask.LT(bestAsk) {
