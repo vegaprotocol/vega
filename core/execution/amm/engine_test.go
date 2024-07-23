@@ -426,6 +426,49 @@ func testBestPricesAndVolume(t *testing.T) {
 	assert.Equal(t, avolume, avAt)
 }
 
+func TestBestPricesAndVolumeNearBound(t *testing.T) {
+	tst := getTestEngineWithFactors(t, num.DecimalFromInt64(100), num.DecimalFromFloat(10))
+
+	// create three pools
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	whenAMMIsSubmitted(t, tst, submit)
+
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(5).Return(
+		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
+	)
+
+	bid, bvolume, ask, avolume := tst.engine.BestPricesAndVolumes()
+	assert.Equal(t, "199900", bid.String())
+	assert.Equal(t, "200100", ask.String())
+	assert.Equal(t, 1250, int(bvolume))
+	assert.Equal(t, 1192, int(avolume))
+
+	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(5).Return(
+		[]events.MarketPosition{&marketPosition{size: -222000, averageEntry: num.NewUint(0)}},
+	)
+
+	bid, bvolume, ask, avolume = tst.engine.BestPricesAndVolumes()
+	assert.Equal(t, "219890", bid.String())
+	assert.Equal(t, "220000", ask.String()) // make sure we are capped to the boundary and not 220090
+	assert.Equal(t, 1034, int(bvolume))
+	assert.Equal(t, 103, int(avolume))
+
+	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(5).Return(
+		[]events.MarketPosition{&marketPosition{size: 270400, averageEntry: num.NewUint(0)}},
+	)
+
+	bid, bvolume, ask, avolume = tst.engine.BestPricesAndVolumes()
+	assert.Equal(t, "180000", bid.String()) // make sure we are capped to the boundary and not 179904
+	assert.Equal(t, "180104", ask.String())
+	assert.Equal(t, 58, int(bvolume))
+	assert.Equal(t, 1463, int(avolume))
+}
+
 func testClosingReduceOnlyPool(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
@@ -709,7 +752,7 @@ type tstEngine struct {
 	assetID  string
 }
 
-func getTestEngine(t *testing.T) *tstEngine {
+func getTestEngineWithFactors(t *testing.T, priceFactor, positionFactor num.Decimal) *tstEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
@@ -730,7 +773,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	parties := cmocks.NewMockParties(ctrl)
 	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	eng := New(logging.NewTestLogger(), broker, col, marketID, assetID, pos, num.DecimalOne(), num.DecimalOne(), mat, parties)
+	eng := New(logging.NewTestLogger(), broker, col, marketID, assetID, pos, priceFactor, positionFactor, mat, parties)
 
 	// do an ontick to initialise the idgen
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -746,6 +789,11 @@ func getTestEngine(t *testing.T) *tstEngine {
 		marketID: marketID,
 		assetID:  assetID,
 	}
+}
+
+func getTestEngine(t *testing.T) *tstEngine {
+	t.Helper()
+	return getTestEngineWithFactors(t, num.DecimalOne(), num.DecimalOne())
 }
 
 func getAccount(balance uint64) *types.Account {
