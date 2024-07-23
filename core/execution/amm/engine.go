@@ -130,6 +130,7 @@ type Engine struct {
 	// gets us from the price in the submission -> price in full asset dp
 	priceFactor    num.Decimal
 	positionFactor num.Decimal
+	oneTick        *num.Uint
 
 	// map of party -> pool
 	pools    map[string]*Pool
@@ -157,6 +158,7 @@ func New(
 	marketActivityTracker *common.MarketActivityTracker,
 	parties common.Parties,
 ) *Engine {
+	oneTick, _ := num.UintFromDecimal(priceFactor)
 	return &Engine{
 		log:                   log,
 		broker:                broker,
@@ -173,6 +175,7 @@ func New(
 		priceFactor:           priceFactor,
 		positionFactor:        positionFactor,
 		parties:               parties,
+		oneTick:               oneTick,
 	}
 }
 
@@ -491,6 +494,21 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 	// switch so that inner < outer to make it easier to reason with
 	if agg.Side == types.SideSell {
 		inner, outer = outer, inner
+	}
+
+	// if inner and outer are equal then we are wanting to trade with AMMs *only at* this given price
+	// this can happen quite easily during auction uncrossing where two AMMs have bases offset by 2
+	// and the crossed region is simply a point and not an interval. To be able to query the tradable
+	// volume of an AMM at a point, we need to first convert it to an interval by stepping one tick away first.
+	// This is because to get the BUY volume an AMM has at price P, we need to calculate the difference
+	// in its position between prices P -> P + 1. For SELL volume its the other way around and we
+	// need the difference in position from P - 1 -> P.
+	if inner.EQ(outer) {
+		if agg.Side == types.SideSell {
+			outer = num.UintZero().Add(outer, e.oneTick)
+		} else {
+			inner = num.UintZero().Sub(inner, e.oneTick)
+		}
 	}
 
 	if inner != nil {

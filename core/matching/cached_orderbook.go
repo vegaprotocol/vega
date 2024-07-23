@@ -200,7 +200,7 @@ func (b *CachedOrderBook) GetIndicativePriceAndVolume() (*num.Uint, uint64, type
 	volume, cachedVolOk := b.cache.GetIndicativeVolume()
 	side, cachedSideOk := b.cache.GetIndicativeUncrossingSide()
 	if !cachedPriceOk || !cachedVolOk || !cachedSideOk {
-		price, volume, side = b.OrderBook.GetIndicativePriceAndVolume()
+		price, volume, side, _ = b.OrderBook.GetIndicativePriceAndVolume()
 		b.cache.SetIndicativePrice(price.Clone())
 		b.cache.SetIndicativeVolume(volume)
 		b.cache.SetIndicativeUncrossingSide(side)

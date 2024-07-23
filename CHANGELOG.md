@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.77.2
+
+### 🐛 Fixes
+
+- [11481](https://github.com/vegaprotocol/vega/issues/11481) - Fix margin check for cross margin market orders.
+- [11474](https://github.com/vegaprotocol/vega/issues/11474) - Fail `checkTx` downstream for delayed transactions so they don't get included in more than one block.
+
 ## 0.77.1
 
 ### 🛠 Improvements
@@ -29,7 +36,8 @@
 
 - [11453](https://github.com/vegaprotocol/vega/issues/11453) - Fix margin for fully collateralised markets.
 - [11462](https://github.com/vegaprotocol/vega/issues/11462) - Update the time weighted notional when publishing live game scores.
-
+- [11474](https://github.com/vegaprotocol/vega/issues/11474) - Fail `checkTx` downstream for delayed transactions so they don't get included in more than one block.
+- [11481](https://github.com/vegaprotocol/vega/issues/11481) - Fix margin check for cross margin market orders.
 
 ## 0.77.0
 

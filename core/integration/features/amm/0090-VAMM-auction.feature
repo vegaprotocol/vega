@@ -107,6 +107,49 @@ Feature: vAMM rebasing when created or amended
 
 
   @VAMM
+  Scenario: two AMM's that cross at a single point i.e no overlap
+
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 95          | 105         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | 
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 95          | 105         | 
+
+    And the market data for the market "ETH/MAR22" should be:
+      | trading mode                 | indicative price | indicative volume |
+      | TRADING_MODE_OPENING_AUCTION | 0                | 0                 |
+   
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base  | lower bound | upper bound | proposed fee |
+      | vamm2 | ETH/MAR22 | 100000  | 0.05    | 102   | 97          | 107         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | 
+      | vamm2 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 102  | 97          | 107         | 
+
+    
+    And set the following AMM sub account aliases:
+      | party | market id | alias    |
+      | vamm1 | ETH/MAR22 | vamm1-id |
+      | vamm2 | ETH/MAR22 | vamm2-id |
+
+   And the market data for the market "ETH/MAR22" should be:
+      | trading mode                 | indicative price | indicative volume |
+      | TRADING_MODE_OPENING_AUCTION | 101              | 92                |
+
+   When the opening auction period ends for market "ETH/MAR22"
+    Then the following trades should be executed:
+      | buyer     | price | size | seller    | is amm |
+      | vamm2-id  | 101   | 92   | vamm1-id  | true   |
+      
+    Then the network moves ahead "1" blocks
+
+    # two AMMs are now prices at ~100 which is between their base values
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode             | best bid price | best offer price |
+      | 101        | TRADING_MODE_CONTINUOUS  | 100            | 102              |
+
+  @VAMM
   Scenario: AMM crossed with SELL orders
 
     Then the parties submit the following AMM:
@@ -368,3 +411,29 @@ Feature: vAMM rebasing when created or amended
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price |
       | 100        | TRADING_MODE_CONTINUOUS  | 99             | 101              |
+
+  Scenario: Stagnet auction uncrossing panic where uncrossing side has both AMM and orderbook volume at the same level but we only need the orderbook volume
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000  | 0.05    | 100  | 90          | 110         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | 
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 90          | 110         | 
+
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lp1    | ETH/MAR22 | sell | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | lp1    | ETH/MAR22 | sell | 160    | 95    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | lp2    | ETH/MAR22 | buy  | 2      | 98    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+
+   And the market data for the market "ETH/MAR22" should be:
+      | trading mode                 | indicative price | indicative volume | best bid price | best offer price |
+      | TRADING_MODE_OPENING_AUCTION | 96               | 160               | 99             | 95               |
+
+    
+    When the opening auction period ends for market "ETH/MAR22"
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price   | trading mode               | best bid price | best offer price |
+      | 96           | TRADING_MODE_CONTINUOUS    | 96             | 98               |

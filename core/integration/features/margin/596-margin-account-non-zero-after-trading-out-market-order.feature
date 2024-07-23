@@ -68,7 +68,7 @@ Feature: Regression test for issue 596
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1491   | 8449    |
-      | chris  | BTC   | ETH/DEC19 | 1048   | 8503    |
+      | chris  | BTC   | ETH/DEC19 | 1077   | 8474    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3041000"
     
@@ -169,7 +169,7 @@ Feature: Regression test for issue 596
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1491   | 8449    |
-      | chris  | BTC   | ETH/DEC19 | 1048   | 8503    |
+      | chris  | BTC   | ETH/DEC19 | 1077   | 8474    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3041000"
     
