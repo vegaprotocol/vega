@@ -108,7 +108,14 @@ func (m *MarketDepth) getActiveAMMs(ctx context.Context) map[string][]entities.A
 	return ammByMarket
 }
 
-func (m *MarketDepth) getCalculationBounds(reference num.Decimal, priceFactor num.Decimal) []*level {
+func (m *MarketDepth) getCalculationBounds(cache *ammCache, reference num.Decimal, priceFactor num.Decimal) []*level {
+	if levels, ok := cache.levels[reference.String()]; ok {
+		return levels
+	}
+
+	lowestBound := cache.lowestBound
+	highestBound := cache.highestBound
+
 	// first lets calculate the region we will expand accurately, this will be some percentage either side of the reference price
 	factor := num.DecimalFromFloat(m.cfg.AmmFullExpansionPercentage).Div(hundred)
 
@@ -138,6 +145,34 @@ func (m *MarketDepth) getCalculationBounds(reference num.Decimal, priceFactor nu
 	estLow := num.UintZero().Sub(accLow, num.Min(accLow, eRange))
 	estHigh := num.UintZero().Add(accHigh, eRange)
 
+	// cap steps to the lowest/highest boundaries of all AMMs
+	lowD, _ := num.UintFromDecimal(lowestBound)
+	if accLow.LTE(lowD) {
+		accLow = lowD.Clone()
+		estLow = lowD.Clone()
+	}
+
+	highD, _ := num.UintFromDecimal(highestBound)
+	if accHigh.GTE(highD) {
+		accHigh = highD.Clone()
+		estHigh = highD.Clone()
+	}
+
+	// need to find the first n such that
+	// accLow - (n * eStep) < lowD
+	// accLow
+	if estLow.LT(lowD) {
+		delta, _ := num.UintZero().Delta(accLow, lowD)
+		delta.Div(delta, eStep)
+		estLow = num.UintZero().Sub(accLow, delta.Mul(delta, eStep))
+	}
+
+	if estHigh.GT(highD) {
+		delta, _ := num.UintZero().Delta(accHigh, highD)
+		delta.Div(delta, eStep)
+		estHigh = num.UintZero().Add(accHigh, delta.Mul(delta, eStep))
+	}
+
 	levels := []*level{}
 
 	// we now have our four prices [estLow, accLow, accHigh, estHigh] where from
@@ -162,6 +197,10 @@ func (m *MarketDepth) getCalculationBounds(reference num.Decimal, priceFactor nu
 	for price.LTE(estHigh) {
 		levels = append(levels, newLevel(price, true, priceFactor))
 		price = num.UintZero().Add(price, eStep)
+	}
+
+	cache.levels = map[string][]*level{
+		reference.String(): levels,
 	}
 
 	return levels
@@ -268,7 +307,6 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 				v1 = ammDefn.position
 			}
 		}
-
 		// calculate the volume
 		volume := v1.Sub(v2).Abs().IntPart()
 
@@ -303,7 +341,7 @@ func (m *MarketDepth) InitialiseAMMs(ctx context.Context) {
 
 		// add it to our active list, we want to do this even if we fail to get a reference
 		for _, a := range amms {
-			cache.activeAMMs[a.AmmPartyID.String()] = a
+			cache.addAMM(a)
 		}
 
 		reference, err := m.getReference(ctx, marketID)
@@ -311,7 +349,7 @@ func (m *MarketDepth) InitialiseAMMs(ctx context.Context) {
 			continue
 		}
 
-		levels := m.getCalculationBounds(reference, priceFactor)
+		levels := m.getCalculationBounds(cache, reference, priceFactor)
 
 		for _, amm := range amms {
 			orders, estimated, err := m.expandByLevels(amm, levels, priceFactor)
@@ -345,7 +383,12 @@ func (m *MarketDepth) ExpandAMM(ctx context.Context, pool entities.AMMPool, pric
 		return nil, nil, err
 	}
 
-	levels := m.getCalculationBounds(reference, priceFactor)
+	cache, err := m.getAMMCache(string(pool.MarketID))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	levels := m.getCalculationBounds(cache, reference, priceFactor)
 
 	return m.expandByLevels(pool, levels, priceFactor)
 }
@@ -391,10 +434,11 @@ func (m *MarketDepth) refreshAMM(pool entities.AMMPool, depth *entities.MarketDe
 	}
 
 	if pool.Status == entities.AMMStatusCancelled || pool.Status == entities.AMMStatusStopped {
-		delete(cache.activeAMMs, ammParty)
-		delete(cache.ammOrders, ammParty)
+		cache.removeAMM(ammParty)
 		return
 	}
+
+	cache.addAMM(pool)
 
 	// expand it again into new orders and push them into the market depth
 	orders, estimated, _ := m.ExpandAMM(context.Background(), pool, cache.priceFactor)
@@ -404,9 +448,7 @@ func (m *MarketDepth) refreshAMM(pool entities.AMMPool, depth *entities.MarketDe
 			cache.estimatedOrder[orders[i].ID] = struct{}{}
 		}
 	}
-
 	cache.ammOrders[ammParty] = orders
-	cache.activeAMMs[ammParty] = pool
 }
 
 // refreshAMM is used when an AMM has either traded or its definition has changed.
@@ -484,6 +526,7 @@ func (m *MarketDepth) getAMMCache(marketID string) (*ammCache, error) {
 		ammOrders:      map[string][]*types.Order{},
 		activeAMMs:     map[string]entities.AMMPool{},
 		estimatedOrder: map[string]struct{}{},
+		levels:         map[string][]*level{},
 	}
 	m.ammCache[marketID] = cache
 

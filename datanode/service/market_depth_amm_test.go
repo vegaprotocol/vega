@@ -277,6 +277,82 @@ func TestEstimatedStepOverAMMBound(t *testing.T) {
 	assert.Equal(t, 3, int(mds.service.GetVolumeAtPrice(marketID, types.SideSell, 2001)))
 }
 
+func TestExpansionMuchBiggerThanAMMs(t *testing.T) {
+	ctx := context.Background()
+
+	cfg := service.MarketDepthConfig{
+		AmmFullExpansionPercentage: 1,
+		AmmMaxEstimatedSteps:       10,
+		AmmEstimatedStepPercentage: 5,
+	}
+
+	mds := getServiceWithConfig(t, cfg)
+	defer mds.ctrl.Finish()
+
+	marketID := vgcrypto.RandomHash()
+
+	ensureLiveOrders(t, mds, marketID)
+	ensureDecimalPlaces(t, mds)
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
+
+	// data node is starting from network history, initialise market-depth based on whats aleady there
+	ensureAMMs(t, mds, marketID)
+	mds.service.Initialise(ctx)
+
+	assert.Equal(t, 465, int(mds.service.GetTotalAMMVolume(marketID)))
+	assert.Equal(t, 345, int(mds.service.GetAMMVolume(marketID, true)))
+	assert.Equal(t, 120, int(mds.service.GetAMMVolume(marketID, false)))
+	assert.Equal(t, 485, int(mds.service.GetTotalVolume(marketID)))
+
+	assert.Equal(t, "1999", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "2001", mds.service.GetBestAskPrice(marketID).String())
+}
+
+func TestMidPriceMove(t *testing.T) {
+	ctx := context.Background()
+
+	mds := getService(t)
+	defer mds.ctrl.Finish()
+
+	marketID := vgcrypto.RandomHash()
+
+	ensureLiveOrders(t, mds, marketID)
+	ensureDecimalPlaces(t, mds)
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
+
+	// data node is starting from network history, initialise market-depth based on whats aleady there
+	pool := ensureAMMs(t, mds, marketID)
+	mds.service.Initialise(ctx)
+
+	assert.Equal(t, 240, int(mds.service.GetTotalAMMVolume(marketID)))
+	assert.Equal(t, 120, int(mds.service.GetAMMVolume(marketID, true)))
+	assert.Equal(t, 120, int(mds.service.GetAMMVolume(marketID, false)))
+	assert.Equal(t, 260, int(mds.service.GetTotalVolume(marketID)))
+
+	assert.Equal(t, "1999", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "2001", mds.service.GetBestAskPrice(marketID).String())
+
+	// now say the mid-price moves a little, we want to check we recalculate the levels properly
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 500}, nil)
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(1800)}, nil)
+	mds.service.AddOrder(
+		&types.Order{
+			ID:       vgcrypto.RandomHash(),
+			Party:    pool.AmmPartyID.String(),
+			MarketID: marketID,
+			Side:     types.SideBuy,
+			Status:   entities.OrderStatusFilled,
+		},
+		time.Date(2022, 3, 8, 16, 15, 39, 901022000, time.UTC),
+		37,
+	)
+
+	assert.Equal(t, "1828", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "3000", mds.service.GetBestAskPrice(marketID).String()) // this is an actual order volume not AMM volume
+}
+
 func ensureLiveOrders(t *testing.T, mds *MDS, marketID string) {
 	t.Helper()
 	mds.orders.EXPECT().GetLiveOrders(gomock.Any()).Return([]entities.Order{
@@ -285,7 +361,7 @@ func ensureLiveOrders(t *testing.T, mds *MDS, marketID string) {
 			MarketID:  entities.MarketID(marketID),
 			PartyID:   entities.PartyID(vgcrypto.RandomHash()),
 			Side:      types.SideBuy,
-			Price:     decimal.NewFromInt(1800),
+			Price:     decimal.NewFromInt(1000),
 			Size:      10,
 			Remaining: 10,
 			Type:      entities.OrderTypeLimit,
@@ -300,7 +376,7 @@ func ensureLiveOrders(t *testing.T, mds *MDS, marketID string) {
 			Side:      types.SideSell,
 			Type:      entities.OrderTypeLimit,
 			Status:    entities.OrderStatusActive,
-			Price:     decimal.NewFromInt(2200),
+			Price:     decimal.NewFromInt(3000),
 			Size:      10,
 			Remaining: 10,
 			VegaTime:  time.Date(2022, 3, 8, 14, 15, 39, 901022000, time.UTC),
