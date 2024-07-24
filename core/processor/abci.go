@@ -1395,7 +1395,7 @@ func (app *App) startProtocolUpgrade(ctx context.Context) {
 					break Loop
 				}
 			case err := <-errsCh:
-				app.log.Fatal("failed to wait for data node to get ready for upgrade", logging.Error(err))
+				app.log.Panic("failed to wait for data node to get ready for upgrade", logging.Error(err))
 			}
 		}
 	}

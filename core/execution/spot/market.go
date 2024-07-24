@@ -492,6 +492,11 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 		return
 	}
 
+	// markets in monitoring or governance auction are unaffected by long block auctions.
+	if m.mkt.TradingMode == types.MarketTradingModeSuspendedViaGovernance || m.mkt.TradingMode == types.MarketTradingModeMonitoringAuction {
+		return
+	}
+
 	m.mkt.State = types.MarketStateSuspended
 	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
 	if m.as.InAuction() {
