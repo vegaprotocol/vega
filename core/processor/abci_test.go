@@ -1039,7 +1039,7 @@ func getTestAppWithInit(t *testing.T, cfunc func(), stop func() error, PoW, Spam
 	return tstApp
 }
 
-// fake socket client
+// fake socket client.
 type brokerClient struct {
 	errCh chan error
 	evtCh chan events.Event
