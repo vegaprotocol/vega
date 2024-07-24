@@ -17,12 +17,14 @@ package evtforward
 
 import (
 	"context"
+	"slices"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -50,9 +52,11 @@ func (f *Forwarder) serialise() ([]byte, error) {
 	iter := f.ackedEvts.events.Iterator()
 	for iter.Next() {
 		v := iter.Value().(*ackedEvtBucket)
+		hashes := maps.Keys(v.hashes)
+		slices.Sort(hashes)
 		slice = append(slice, &snapshotpb.EventForwarderBucket{
 			Ts:     v.ts,
-			Hashes: v.hashes,
+			Hashes: hashes,
 		})
 	}
 
