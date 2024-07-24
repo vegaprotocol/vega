@@ -27,6 +27,7 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/ed25519"
 )
 
 func (t *Topology) Name() types.CheckpointName {
@@ -122,8 +123,11 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 		if err != nil {
 			continue
 		}
-
-		update := tmtypes.UpdateValidator(pubkey, vd.validatorPower, "")
+		update := tmtypes.ValidatorUpdate{
+			Power:       vd.validatorPower,
+			PubKeyType:  ed25519.KeyType,
+			PubKeyBytes: pubkey,
+		}
 		vUpdates = append(vUpdates, update)
 	}
 

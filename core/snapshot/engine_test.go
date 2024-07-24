@@ -101,8 +101,8 @@ func testRestoringStateSucceeds(t *testing.T) {
 
 	// Simulating the call to the engine from Tendermint ABCI `OfferSnapshot()`.
 	response := engine.ReceiveSnapshot(testSnapshot.snapshot)
-	require.Equal(t, tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
+	require.Equal(t, tmtypes.OfferSnapshotResponse{
+		Result: tmtypes.OFFER_SNAPSHOT_RESULT_ACCEPT,
 	}, response)
 
 	// When all the chunks are loaded, the state restoration is triggered by
@@ -120,8 +120,8 @@ func testRestoringStateSucceeds(t *testing.T) {
 	// triggered automatically.
 	for idx, rawChunk := range testSnapshot.rawChunks {
 		response := engine.ReceiveSnapshotChunk(ctx, rawChunk, vgrand.RandomStr(5))
-		require.Equal(t, tmtypes.ResponseApplySnapshotChunk{
-			Result: tmtypes.ResponseApplySnapshotChunk_ACCEPT,
+		require.Equal(t, tmtypes.ApplySnapshotChunkResponse{
+			Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_ACCEPT,
 		}, response, "The raw chunk with index %d should be accepted", idx)
 	}
 
@@ -203,13 +203,13 @@ func testRestoringStateSucceeds(t *testing.T) {
 	// from the local storage. This should not be possible.
 
 	response = engine.ReceiveSnapshot(testSnapshot.snapshot)
-	require.Equal(t, tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_ABORT,
+	require.Equal(t, tmtypes.OfferSnapshotResponse{
+		Result: tmtypes.OFFER_SNAPSHOT_RESULT_ABORT,
 	}, response)
 
 	responseForChunk := engine.ReceiveSnapshotChunk(ctx, testSnapshot.rawChunks[0], vgrand.RandomStr(5))
-	require.Equal(t, tmtypes.ResponseApplySnapshotChunk{
-		Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
+	require.Equal(t, tmtypes.ApplySnapshotChunkResponse{
+		Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_ABORT,
 	}, responseForChunk)
 
 	// Attempt to start the engine a second time to restore state once again
@@ -261,22 +261,22 @@ func testRestoringStateAtSpecificBlockHeightSucceeds(t *testing.T) {
 	// Simulating the call to the engine from Tendermint ABCI `OfferSnapshot()`.
 	// We are expecting the v1, so the v2 should be rejected.
 	response := engine.ReceiveSnapshot(testSnapshotV2.snapshot)
-	require.Equal(t, tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_REJECT,
+	require.Equal(t, tmtypes.OfferSnapshotResponse{
+		Result: tmtypes.OFFER_SNAPSHOT_RESULT_REJECT,
 	}, response)
 
 	// Simulating the call to the engine from Tendermint ABCI `OfferSnapshot()`.
 	response = engine.ReceiveSnapshot(testSnapshotV1.snapshot)
-	require.Equal(t, tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
+	require.Equal(t, tmtypes.OfferSnapshotResponse{
+		Result: tmtypes.OFFER_SNAPSHOT_RESULT_ACCEPT,
 	}, response)
 
 	// Attempting to load snapshot chunks that do not match the accepted snapshot
 	// to ensure the engine rejects them.
 	nodeSendingWrongChunk := vgrand.RandomStr(5)
 	responseForChunk := engine.ReceiveSnapshotChunk(ctx, testSnapshotV2.rawChunks[0], nodeSendingWrongChunk)
-	require.Equal(t, tmtypes.ResponseApplySnapshotChunk{
-		Result:        tmtypes.ResponseApplySnapshotChunk_RETRY,
+	require.Equal(t, tmtypes.ApplySnapshotChunkResponse{
+		Result:        tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_RETRY,
 		RejectSenders: []string{nodeSendingWrongChunk},
 	}, responseForChunk, "This raw chunk and its sender should be rejected")
 }
@@ -514,8 +514,8 @@ func TestSnapshotVersionCommunicatedToProviders(t *testing.T) {
 
 	// Simulating the call to the engine from Tendermint ABCI `OfferSnapshot()`.
 	response := engine.ReceiveSnapshot(testSnapshot.snapshot)
-	require.Equal(t, tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
+	require.Equal(t, tmtypes.OfferSnapshotResponse{
+		Result: tmtypes.OFFER_SNAPSHOT_RESULT_ACCEPT,
 	}, response)
 
 	// When all the chunks are loaded, the state restoration is triggered by
@@ -539,8 +539,8 @@ func TestSnapshotVersionCommunicatedToProviders(t *testing.T) {
 	// triggered automatically.
 	for idx, rawChunk := range testSnapshot.rawChunks {
 		response := engine.ReceiveSnapshotChunk(context.Background(), rawChunk, vgrand.RandomStr(5))
-		require.Equal(t, tmtypes.ResponseApplySnapshotChunk{
-			Result: tmtypes.ResponseApplySnapshotChunk_ACCEPT,
+		require.Equal(t, tmtypes.ApplySnapshotChunkResponse{
+			Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_ACCEPT,
 		}, response, "The raw chunk with index %d should be accepted", idx)
 	}
 

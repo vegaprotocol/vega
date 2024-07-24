@@ -61,8 +61,7 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/cometbft/cometbft/abci/types"
-	tmtypes1 "github.com/cometbft/cometbft/proto/tendermint/types"
-	types1 "github.com/cometbft/cometbft/proto/tendermint/types"
+	tmtypes1 "github.com/cometbft/cometbft/api/cometbft/types/v1"
 	tmtypesint "github.com/cometbft/cometbft/types"
 	"go.uber.org/zap"
 )
@@ -127,8 +126,8 @@ type SnapshotEngine interface {
 	// Calls related to state-sync
 
 	ListLatestSnapshots() ([]*tmtypes.Snapshot, error)
-	ReceiveSnapshot(*types.Snapshot) tmtypes.ResponseOfferSnapshot
-	ReceiveSnapshotChunk(context.Context, *types.RawChunk, string) tmtypes.ResponseApplySnapshotChunk
+	ReceiveSnapshot(*types.Snapshot) tmtypes.OfferSnapshotResponse
+	ReceiveSnapshotChunk(context.Context, *types.RawChunk, string) tmtypes.ApplySnapshotChunkResponse
 	RetrieveSnapshotChunk(uint64, uint32, uint32) (*types.RawChunk, error)
 	HasRestoredStateAlready() bool
 
@@ -718,7 +717,7 @@ func (app *App) cancel() {
 	}
 }
 
-func (app *App) Info(_ context.Context, _ *tmtypes.RequestInfo) (*tmtypes.ResponseInfo, error) {
+func (app *App) Info(_ context.Context, _ *tmtypes.InfoRequest) (*tmtypes.InfoResponse, error) {
 	if len(app.lastBlockAppHash) != 0 {
 		// we must've lost connection to tendermint for a bit, tell it where we got up to
 		height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
@@ -726,7 +725,7 @@ func (app *App) Info(_ context.Context, _ *tmtypes.RequestInfo) (*tmtypes.Respon
 			logging.Uint64("height", height),
 			logging.String("hash", hex.EncodeToString(app.lastBlockAppHash)),
 		)
-		return &tmtypes.ResponseInfo{
+		return &tmtypes.InfoResponse{
 			AppVersion:       AppVersion,
 			Version:          app.version,
 			LastBlockHeight:  int64(height),
@@ -738,7 +737,7 @@ func (app *App) Info(_ context.Context, _ *tmtypes.RequestInfo) (*tmtypes.Respon
 	old := app.broker.SetStreaming(false)
 	defer app.broker.SetStreaming(old)
 
-	resp := tmtypes.ResponseInfo{
+	resp := tmtypes.InfoResponse{
 		AppVersion: AppVersion,
 		Version:    app.version,
 	}
@@ -768,32 +767,32 @@ func (app *App) Info(_ context.Context, _ *tmtypes.RequestInfo) (*tmtypes.Respon
 	return &resp, nil
 }
 
-func (app *App) ListSnapshots(_ context.Context, _ *tmtypes.RequestListSnapshots) (*tmtypes.ResponseListSnapshots, error) {
+func (app *App) ListSnapshots(_ context.Context, _ *tmtypes.ListSnapshotsRequest) (*tmtypes.ListSnapshotsResponse, error) {
 	app.log.Debug("ABCI service ListSnapshots requested")
 	latestSnapshots, err := app.snapshotEngine.ListLatestSnapshots()
 	if err != nil {
 		app.log.Error("Could not list latest snapshots", logging.Error(err))
-		return &tmtypes.ResponseListSnapshots{}, err
+		return &tmtypes.ListSnapshotsResponse{}, err
 	}
-	return &tmtypes.ResponseListSnapshots{
+	return &tmtypes.ListSnapshotsResponse{
 		Snapshots: latestSnapshots,
 	}, nil
 }
 
-func (app *App) OfferSnapshot(_ context.Context, req *tmtypes.RequestOfferSnapshot) (*tmtypes.ResponseOfferSnapshot, error) {
+func (app *App) OfferSnapshot(_ context.Context, req *tmtypes.OfferSnapshotRequest) (*tmtypes.OfferSnapshotResponse, error) {
 	app.log.Debug("ABCI service OfferSnapshot start")
 	if app.snapshotEngine.HasRestoredStateAlready() {
 		app.log.Warn("The snapshot engine aborted the snapshot offer from state-sync since the state has already been restored")
-		return &tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_ABORT,
+		return &tmtypes.OfferSnapshotResponse{
+			Result: tmtypes.OFFER_SNAPSHOT_RESULT_ABORT,
 		}, nil
 	}
 
 	deserializedSnapshot, err := types.SnapshotFromTM(req.Snapshot)
 	if err != nil {
 		app.log.Error("Could not deserialize snapshot", logging.Error(err))
-		return &tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
+		return &tmtypes.OfferSnapshotResponse{
+			Result: tmtypes.OFFER_SNAPSHOT_RESULT_REJECT_SENDER,
 		}, err
 	}
 
@@ -802,8 +801,8 @@ func (app *App) OfferSnapshot(_ context.Context, req *tmtypes.RequestOfferSnapsh
 		app.log.Error("The hashes from the request and the deserialized snapshot mismatch",
 			logging.String("deserialized-hash", hex.EncodeToString(deserializedSnapshot.Hash)),
 			logging.String("request-hash", hex.EncodeToString(req.AppHash)))
-		return &tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		return &tmtypes.OfferSnapshotResponse{
+			Result: tmtypes.OFFER_SNAPSHOT_RESULT_REJECT,
 		}, fmt.Errorf("hash mismatch")
 	}
 
@@ -811,13 +810,13 @@ func (app *App) OfferSnapshot(_ context.Context, req *tmtypes.RequestOfferSnapsh
 	return &res, nil
 }
 
-func (app *App) ApplySnapshotChunk(ctx context.Context, req *tmtypes.RequestApplySnapshotChunk) (*tmtypes.ResponseApplySnapshotChunk, error) {
+func (app *App) ApplySnapshotChunk(ctx context.Context, req *tmtypes.ApplySnapshotChunkRequest) (*tmtypes.ApplySnapshotChunkResponse, error) {
 	app.log.Debug("ABCI service ApplySnapshotChunk start")
 
 	if app.snapshotEngine.HasRestoredStateAlready() {
 		app.log.Warn("The snapshot engine aborted the snapshot chunk from state-sync since the state has already been restored")
-		return &tmtypes.ResponseApplySnapshotChunk{
-			Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
+		return &tmtypes.ApplySnapshotChunkResponse{
+			Result: tmtypes.APPLY_SNAPSHOT_CHUNK_RESULT_ABORT,
 		}, nil // ???
 	}
 	chunk := &types.RawChunk{
@@ -829,19 +828,19 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req *tmtypes.RequestAppl
 	return &res, nil
 }
 
-func (app *App) LoadSnapshotChunk(_ context.Context, req *tmtypes.RequestLoadSnapshotChunk) (*tmtypes.ResponseLoadSnapshotChunk, error) {
+func (app *App) LoadSnapshotChunk(_ context.Context, req *tmtypes.LoadSnapshotChunkRequest) (*tmtypes.LoadSnapshotChunkResponse, error) {
 	app.log.Debug("ABCI service LoadSnapshotChunk start")
 	raw, err := app.snapshotEngine.RetrieveSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		app.log.Error("failed to load snapshot chunk", logging.Error(err), logging.Uint64("height", req.Height))
-		return &tmtypes.ResponseLoadSnapshotChunk{}, err
+		return &tmtypes.LoadSnapshotChunkResponse{}, err
 	}
-	return &tmtypes.ResponseLoadSnapshotChunk{
+	return &tmtypes.LoadSnapshotChunkResponse{
 		Chunk: raw.Data,
 	}, nil
 }
 
-func (app *App) OnInitChain(req *tmtypes.RequestInitChain) (*tmtypes.ResponseInitChain, error) {
+func (app *App) OnInitChain(req *tmtypes.InitChainRequest) (*tmtypes.InitChainResponse, error) {
 	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash([]byte(req.ChainId)))
 	app.abci.SetChainID(req.ChainId)
@@ -873,7 +872,7 @@ func (app *App) OnInitChain(req *tmtypes.RequestInitChain) (*tmtypes.ResponseIni
 
 	app.ethCallEngine.Start()
 
-	return &tmtypes.ResponseInitChain{
+	return &tmtypes.InitChainResponse{
 		Validators: app.top.GetValidatorPowerUpdates(),
 	}, nil
 }
@@ -1261,7 +1260,7 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 	return true
 }
 
-func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1.ConsensusParams) {
+func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, tmtypes1.ConsensusParams) {
 	app.log.Debug("entering end block", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving end block", logging.Time("at", time.Now())) }()
 
@@ -1282,8 +1281,8 @@ func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1
 	}
 
 	// update max gas based on the network parameter
-	consensusParamUpdates := types1.ConsensusParams{
-		Block: &types1.BlockParams{
+	consensusParamUpdates := tmtypes1.ConsensusParams{
+		Block: &tmtypes1.BlockParams{
 			MaxGas:   int64(app.gastimator.OnBlockEnd()),
 			MaxBytes: -1, // we tell comet that we always want to get the full mempool
 		},
@@ -1479,7 +1478,7 @@ func (app *App) Finalize() []byte {
 	return appHash
 }
 
-func (app *App) OnCommit() (*tmtypes.ResponseCommit, error) {
+func (app *App) OnCommit() (*tmtypes.CommitResponse, error) {
 	app.log.Debug("entering commit", logging.Time("at", time.Now()), logging.Uint64("height", app.stats.Height()))
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
 	app.updateStats()
@@ -1493,7 +1492,7 @@ func (app *App) OnCommit() (*tmtypes.ResponseCommit, error) {
 		}),
 	)
 
-	return &tmtypes.ResponseCommit{}, nil
+	return &tmtypes.CommitResponse{}, nil
 }
 
 func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
@@ -1575,8 +1574,8 @@ func (app *App) removeOldCheckpoints() error {
 }
 
 // OnCheckTxSpam checks for spam and replay.
-func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
-	resp := tmtypes.ResponseCheckTx{}
+func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.CheckTxResponse {
+	resp := tmtypes.CheckTxResponse{}
 
 	if app.txCache.IsTxInCache(tx.Hash()) {
 		resp.Code = blockchain.AbciSpamError
@@ -1608,8 +1607,8 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 }
 
 // OnCheckTx performs soft validations.
-func (app *App) OnCheckTx(ctx context.Context, _ *tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, *tmtypes.ResponseCheckTx) {
-	resp := tmtypes.ResponseCheckTx{}
+func (app *App) OnCheckTx(ctx context.Context, _ *tmtypes.CheckTxRequest, tx abci.Tx) (context.Context, *tmtypes.CheckTxResponse) {
+	resp := tmtypes.CheckTxResponse{}
 
 	if app.log.IsDebug() {
 		app.log.Debug("entering checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))

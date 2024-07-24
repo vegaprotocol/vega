@@ -51,9 +51,11 @@ func TestEngine(t *testing.T) {
 	forwarder := mocks.NewMockForwarder(ctrl)
 
 	log := logging.NewTestLogger()
-	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client, forwarder)
+	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client.Client(), forwarder)
 
-	currentEthTime := tc.client.Blockchain().CurrentBlock().Time
+	latestHeader, err := tc.client.Client().HeaderByNumber(context.Background(), nil)
+	require.NoError(t, err)
+	currentEthTime := latestHeader.Time
 
 	argsAsJson, err := ethcall.AnyArgsToJson([]any{big.NewInt(66)})
 	require.NoError(t, err)
@@ -97,9 +99,9 @@ func TestEngine(t *testing.T) {
 		cc := ce.GetContractCall()
 		require.NotNil(t, cc)
 
-		assert.Equal(t, cc.BlockHeight, uint64(3))
-		assert.Equal(t, cc.BlockTime, uint64(30))
-		assert.Equal(t, cc.SpecId, "testid")
+		require.Equal(t, cc.BlockHeight, uint64(3))
+		require.Equal(t, cc.BlockTime, uint64(30))
+		require.Equal(t, cc.SpecId, "testid")
 	})
 	tc.client.Commit()
 	e.Poll(ctx, time.Now())
@@ -114,17 +116,17 @@ func TestEngine(t *testing.T) {
 	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
 		cc := ce.GetContractCall()
 		require.NotNil(t, cc)
-		assert.Equal(t, cc.BlockHeight, uint64(5))
-		assert.Equal(t, cc.BlockTime, uint64(50))
-		assert.False(t, cc.Heartbeat)
+		require.Equal(t, cc.BlockHeight, uint64(5))
+		require.Equal(t, cc.BlockTime, uint64(50))
+		require.False(t, cc.Heartbeat)
 	})
 
 	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
 		cc := ce.GetContractCall()
 		require.NotNil(t, cc)
-		assert.Equal(t, cc.BlockHeight, uint64(7))
-		assert.Equal(t, cc.BlockTime, uint64(70))
-		assert.False(t, cc.Heartbeat)
+		require.Equal(t, cc.BlockHeight, uint64(7))
+		require.Equal(t, cc.BlockTime, uint64(70))
+		require.False(t, cc.Heartbeat)
 	})
 
 	e.Poll(ctx, time.Now())
@@ -146,9 +148,11 @@ func TestEngineWithErrorSpec(t *testing.T) {
 	forwarder := mocks.NewMockForwarder(ctrl)
 
 	log := logging.NewTestLogger()
-	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client, forwarder)
+	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client.Client(), forwarder)
 
-	currentEthTime := tc.client.Blockchain().CurrentBlock().Time
+	latestHeader, err := tc.client.Client().HeaderByNumber(context.Background(), nil)
+	require.NoError(t, err)
+	currentEthTime := latestHeader.Time
 
 	argsAsJson, err := ethcall.AnyArgsToJson([]any{big.NewInt(66)})
 	require.NoError(t, err)
@@ -221,7 +225,7 @@ func TestEngineHeartbeat(t *testing.T) {
 	forwarder := mocks.NewMockForwarder(ctrl)
 
 	log := logging.NewTestLogger()
-	e := ethcall.NewEngine(log, cfg, true, tc.client, forwarder)
+	e := ethcall.NewEngine(log, cfg, true, tc.client.Client(), forwarder)
 
 	// we expect nothing to happen for the first few blocks
 	for i := 0; i < 5; i++ {

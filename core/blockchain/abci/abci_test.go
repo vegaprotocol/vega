@@ -100,8 +100,8 @@ func TestABCICheckTx(t *testing.T) {
 			return errors.New("boom")
 		})
 
-	app.OnCheckTx = func(ctx context.Context, _ *types.RequestCheckTx, _ abci.Tx) (context.Context, *types.ResponseCheckTx) {
-		return context.WithValue(ctx, testKey, "val"), &types.ResponseCheckTx{}
+	app.OnCheckTx = func(ctx context.Context, _ *types.CheckTxRequest, _ abci.Tx) (context.Context, *types.CheckTxResponse) {
+		return context.WithValue(ctx, testKey, "val"), &types.CheckTxResponse{}
 	}
 
 	t.Run("CommandWithNoError", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestABCICheckTx(t *testing.T) {
 			command: testCommandA,
 		})
 
-		req := types.RequestCheckTx{Tx: tx}
+		req := types.CheckTxRequest{Tx: tx}
 		resp, _ := app.CheckTx(context.Background(), &req)
 		require.True(t, resp.IsOK())
 	})
@@ -121,7 +121,7 @@ func TestABCICheckTx(t *testing.T) {
 			command: testCommandB,
 		})
 
-		req := types.RequestCheckTx{Tx: tx}
+		req := types.CheckTxRequest{Tx: tx}
 		resp, _ := app.CheckTx(context.Background(), &req)
 		require.True(t, resp.IsErr())
 		require.Equal(t, blockchain.AbciTxnInternalError, resp.Code)
@@ -130,7 +130,7 @@ func TestABCICheckTx(t *testing.T) {
 	t.Run("TxDecodingError", func(t *testing.T) {
 		tx := []byte("tx-not-registered-on-the-codec")
 
-		req := types.RequestCheckTx{Tx: tx}
+		req := types.CheckTxRequest{Tx: tx}
 		resp, _ := app.CheckTx(context.Background(), &req)
 		require.True(t, resp.IsErr())
 		require.Equal(t, blockchain.AbciTxnDecodingFailure, resp.Code)

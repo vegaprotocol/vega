@@ -37,15 +37,15 @@ const (
 	AbciSpamError uint32 = 89
 )
 
-func NewResponseCheckTx(code uint32, info string) *types.ResponseCheckTx {
-	return &types.ResponseCheckTx{
+func NewResponseCheckTx(code uint32, info string) *types.CheckTxResponse {
+	return &types.CheckTxResponse{
 		Code: code,
 		Info: info,
 	}
 }
 
-func NewResponseCheckTxError(code uint32, err error) *types.ResponseCheckTx {
-	return &types.ResponseCheckTx{
+func NewResponseCheckTxError(code uint32, err error) *types.CheckTxResponse {
+	return &types.CheckTxResponse{
 		Code: code,
 		Info: err.Error(),
 		Data: []byte(err.Error()),

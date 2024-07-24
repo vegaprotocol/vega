@@ -26,7 +26,6 @@ import (
 	tmconfig "github.com/cometbft/cometbft/config"
 	tmcrypto "github.com/cometbft/cometbft/crypto"
 	tmjson "github.com/cometbft/cometbft/libs/json"
-	tmos "github.com/cometbft/cometbft/libs/os"
 	"github.com/cometbft/cometbft/privval"
 	tmtypes "github.com/cometbft/cometbft/types"
 )
@@ -43,9 +42,14 @@ func NewConfig(home string) *Config {
 	}
 }
 
+func FileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
+	return !os.IsNotExist(err)
+}
+
 func (c *Config) PublicValidatorKey() (tmcrypto.PubKey, error) {
 	privValKeyFile := c.config.PrivValidatorKeyFile()
-	if !tmos.FileExists(privValKeyFile) {
+	if !FileExists(privValKeyFile) {
 		return nil, fmt.Errorf("file \"%s\" not found", privValKeyFile)
 	}
 	// read private validator
