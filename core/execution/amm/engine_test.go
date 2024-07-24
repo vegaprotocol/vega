@@ -51,6 +51,7 @@ func TestAMMTrading(t *testing.T) {
 	t.Run("test basic submit order", testBasicSubmitOrder)
 	t.Run("test submit order at best price", testSubmitOrderAtBestPrice)
 	t.Run("test submit market order", testSubmitMarketOrder)
+	t.Run("test submit market order unbounded", testSubmitMarketOrderUnbounded)
 	t.Run("test submit order pro rata", testSubmitOrderProRata)
 	t.Run("test best prices and volume", testBestPricesAndVolume)
 
@@ -267,6 +268,31 @@ func testSubmitMarketOrder(t *testing.T) {
 	require.Len(t, orders, 1)
 	assert.Equal(t, "1994", orders[0].Price.String())
 	assert.Equal(t, 126420, int(orders[0].Size))
+}
+
+func testSubmitMarketOrderUnbounded(t *testing.T) {
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	whenAMMIsSubmitted(t, tst, submit)
+
+	// now submit an order against it
+	agg := &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideSell,
+		Price:     num.NewUint(0),
+		Type:      types.OrderTypeMarket,
+	}
+
+	ensurePosition(t, tst.pos, 0, num.NewUint(0))
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(1980), nil)
+	require.Len(t, orders, 1)
+	assert.Equal(t, "1960", orders[0].Price.String())
+	assert.Equal(t, 1000000, int(orders[0].Size))
 }
 
 func testSubmitOrderProRata(t *testing.T) {
