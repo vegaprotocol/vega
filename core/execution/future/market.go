@@ -1510,27 +1510,15 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 	m.mkt.State = types.MarketStateSuspended
 	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
 	if m.as.InAuction() {
-		ds := time.Duration(duration) * time.Second
-		lbaExpires := m.timeService.GetTimeNow().Add(ds)
-		expires := m.as.ExpiresAt()
-		if !expires.Before(lbaExpires) {
+		effDuration := int(m.timeService.GetTimeNow().UnixNano()/1e9) + int(duration) - int(m.as.ExpiresAt().UnixNano()/1e9)
+		if effDuration <= 0 {
 			return
 		}
-		extend := lbaExpires.Sub(*expires)
-		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: int64(extend / time.Second)})
+		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: int64(effDuration)})
 		evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
 		if evt != nil {
 			m.broker.Send(evt)
 		}
-		// effDuration := int(m.timeService.GetTimeNow().UnixNano()/1e9) + int(duration) - int(m.as.ExpiresAt().UnixNano()/1e9)
-		// if effDuration <= 0 {
-		// return
-		// }
-		// m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: int64(effDuration)})
-		// evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
-		// if evt != nil {
-		// m.broker.Send(evt)
-		// }
 	} else {
 		m.as.StartLongBlockAuction(m.timeService.GetTimeNow(), duration)
 		m.tradableInstrument.Instrument.UpdateAuctionState(ctx, true)

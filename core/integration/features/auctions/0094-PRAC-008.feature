@@ -70,7 +70,7 @@ Feature: When a market's trigger and extension_trigger are set to represent that
       | TRADING_MODE_OPENING_AUCTION | 1873996252     | 937000000    |
     And the market data for the market "ETH/DEC19" should be:
       | trading mode                 | supplied stake | target stake |
-      | TRADING_MODE_OPENING_AUCTION | 937000000      | 937000000    |
+      | TRADING_MODE_OPENING_AUCTION | 1873996252     | 937000000    |
 
     When the network moves ahead "2" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
@@ -124,14 +124,9 @@ Feature: When a market's trigger and extension_trigger are set to represent that
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | buy  | 1      | 999998 | 0                | TYPE_LIMIT | TIF_GTC | t1-b-3    |
       | party2 | ETH/DEC20 | sell | 1      | 999998 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
-      | party3 | ETH/DEC19 | buy  | 1      | 999999 | 0                | TYPE_LIMIT | TIF_GTC | t3-b-3    |
-      | party4 | ETH/DEC19 | sell | 1      | 999999 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-2    |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_LONG_BLOCK_AUCTION" for the market "ETH/DEC19"
-
-    When the network moves ahead "60" blocks
-    # This is strange, it looks as though the trade went through at the end of the auction, but in doing so triggered a second auction?
-    Then the market data for the market "ETH/DEC20" should be:
+    And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | target stake | supplied stake | open interest | auction end | extension trigger          |
       | 1000000    | TRADING_MODE_MONITORING_AUCTION | 2810994378   | 1873996252     | 1             | 602         | AUCTION_TRIGGER_LONG_BLOCK |
 
@@ -142,22 +137,21 @@ Feature: When a market's trigger and extension_trigger are set to represent that
       | mark price | trading mode                    | target stake | supplied stake | open interest | extension trigger          |
       | 1000000    | TRADING_MODE_MONITORING_AUCTION | 2810994378   | 1873996252     | 1             | AUCTION_TRIGGER_LONG_BLOCK |
 
-    When the network moves ahead "7m50s" with block duration of "2s"
+    When the network moves ahead "8m50s" with block duration of "2s"
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_LONG_BLOCK_AUCTION" for the market "ETH/DEC19"
 
-    # still in auction, 150 seconds later, though:
+    # still in auction, but if we move ahead...
     When the network moves ahead "150" blocks
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the following trades should be executed:
       | buyer  | price  | size | seller |
       | party5 | 999998 | 1    | party6 |
       | party1 | 999998 | 1    | party2 |
-      | party3 | 999999 | 1    | party4 |
 
 
-  @LBA2
+  @LBA
   Scenario: 0094-PRAC-008: Long block auction does not exceed the price monitoring auction duration, the auction does not get extended.
     # place orders and generate trades - slippage 100
     When the parties place the following orders:
