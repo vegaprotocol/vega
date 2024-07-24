@@ -18,6 +18,7 @@ package ethverifier
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/metrics"
@@ -26,6 +27,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -89,9 +92,11 @@ func (s *Verifier) serialiseMisc() ([]byte, error) {
 	iter := s.ackedEvts.events.Iterator()
 	for iter.Next() {
 		v := (iter.Value().(*ackedEvtBucket))
+		hashes := maps.Keys(v.hashes)
+		slices.Sort(hashes)
 		slice = append(slice, &snapshotpb.EthVerifierBucket{
 			Ts:     v.ts,
-			Hashes: v.hashes,
+			Hashes: hashes,
 		})
 	}
 

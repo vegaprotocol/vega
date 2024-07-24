@@ -25,6 +25,7 @@
 - [1343](https://github.com/vegaprotocol/core-test-coverage/issues/1343) - Added coverage for `0093-TRTO-011`.
 - [1344](https://github.com/vegaprotocol/core-test-coverage/issues/1344) - Added coverage for `0093-TRTO-012`.
 - [1382](https://github.com/vegaprotocol/core-test-coverage/issues/1382) - Added coverage for `0093-TRTO-013`.
+- [11497](https://github.com/vegaprotocol/vega/issues/11497) - Improve performance with the `ackedEvents` store.
 
 ### 🐛 Fixes
 
