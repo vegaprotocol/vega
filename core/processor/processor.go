@@ -37,7 +37,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,EvtForwarderHeartbeat,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint,Broker,SpamEngine,PoWEngine,SnapshotEngine,StateVarEngine,TeamsEngine,ReferralProgram,VolumeDiscountProgram,BlockchainClient,ProtocolUpgradeService,EthCallEngine,BalanceChecker,PartiesEngine,TxCache,EthereumOracleVerifier,Codec
 
 var (
 	ErrChainEventFromNonValidator             = errors.New("chain event emitted from a non-validator node")
@@ -115,6 +115,9 @@ type ExecutionEngine interface {
 	SubmitAMM(ctx context.Context, sub *types.SubmitAMM, deterministicID string) error
 	AmendAMM(ctx context.Context, sub *types.AmendAMM, deterministicID string) error
 	CancelAMM(ctx context.Context, sub *types.CancelAMM, deterministicID string) error
+
+	// add this method here for testing, this is the exec engine interface used by the gastimator.
+	GetMarketCounters() map[string]*types.MarketCounters
 }
 
 type GovernanceEngine interface {
