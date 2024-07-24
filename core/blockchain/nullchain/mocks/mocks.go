@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	types "github.com/cometbft/cometbft/abci/types"
+	v1 "github.com/cometbft/cometbft/api/cometbft/abci/v1"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -74,10 +74,10 @@ func (m *MockApplicationService) EXPECT() *MockApplicationServiceMockRecorder {
 }
 
 // Commit mocks base method.
-func (m *MockApplicationService) Commit(arg0 context.Context, arg1 *types.RequestCommit) (*types.ResponseCommit, error) {
+func (m *MockApplicationService) Commit(arg0 context.Context, arg1 *v1.CommitRequest) (*v1.CommitResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Commit", arg0, arg1)
-	ret0, _ := ret[0].(*types.ResponseCommit)
+	ret0, _ := ret[0].(*v1.CommitResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -89,10 +89,10 @@ func (mr *MockApplicationServiceMockRecorder) Commit(arg0, arg1 interface{}) *go
 }
 
 // FinalizeBlock mocks base method.
-func (m *MockApplicationService) FinalizeBlock(arg0 context.Context, arg1 *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error) {
+func (m *MockApplicationService) FinalizeBlock(arg0 context.Context, arg1 *v1.FinalizeBlockRequest) (*v1.FinalizeBlockResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FinalizeBlock", arg0, arg1)
-	ret0, _ := ret[0].(*types.ResponseFinalizeBlock)
+	ret0, _ := ret[0].(*v1.FinalizeBlockResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -104,10 +104,10 @@ func (mr *MockApplicationServiceMockRecorder) FinalizeBlock(arg0, arg1 interface
 }
 
 // Info mocks base method.
-func (m *MockApplicationService) Info(arg0 context.Context, arg1 *types.RequestInfo) (*types.ResponseInfo, error) {
+func (m *MockApplicationService) Info(arg0 context.Context, arg1 *v1.InfoRequest) (*v1.InfoResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Info", arg0, arg1)
-	ret0, _ := ret[0].(*types.ResponseInfo)
+	ret0, _ := ret[0].(*v1.InfoResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -119,10 +119,10 @@ func (mr *MockApplicationServiceMockRecorder) Info(arg0, arg1 interface{}) *gomo
 }
 
 // InitChain mocks base method.
-func (m *MockApplicationService) InitChain(arg0 context.Context, arg1 *types.RequestInitChain) (*types.ResponseInitChain, error) {
+func (m *MockApplicationService) InitChain(arg0 context.Context, arg1 *v1.InitChainRequest) (*v1.InitChainResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InitChain", arg0, arg1)
-	ret0, _ := ret[0].(*types.ResponseInitChain)
+	ret0, _ := ret[0].(*v1.InitChainResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -134,10 +134,10 @@ func (mr *MockApplicationServiceMockRecorder) InitChain(arg0, arg1 interface{}) 
 }
 
 // PrepareProposal mocks base method.
-func (m *MockApplicationService) PrepareProposal(arg0 context.Context, arg1 *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
+func (m *MockApplicationService) PrepareProposal(arg0 context.Context, arg1 *v1.PrepareProposalRequest) (*v1.PrepareProposalResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareProposal", arg0, arg1)
-	ret0, _ := ret[0].(*types.ResponsePrepareProposal)
+	ret0, _ := ret[0].(*v1.PrepareProposalResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

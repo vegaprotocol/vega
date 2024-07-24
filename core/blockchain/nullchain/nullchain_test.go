@@ -79,7 +79,7 @@ func testTransactionsCreateBlock(t *testing.T) {
 	now, _ := testChain.chain.GetGenesisTime(ctx)
 
 	// One round of block processing calls
-	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Do(func(_ context.Context, rr *abci.RequestFinalizeBlock) {
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Do(func(_ context.Context, rr *abci.FinalizeBlockRequest) {
 		require.Equal(t, now, rr.Time)
 		require.Equal(t, int64(1), rr.Height)
 	}).Times(1)
@@ -112,7 +112,7 @@ func testTimeForwardingCreatesBlocks(t *testing.T) {
 
 	// One round of block processing calls
 
-	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(10).Do(func(_ context.Context, r *abci.RequestFinalizeBlock) {
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(10).Do(func(_ context.Context, r *abci.FinalizeBlockRequest) {
 		beginBlockTime = r.Time
 		height = int(r.Height)
 	})
@@ -187,7 +187,7 @@ func testReplayWithSnapshotRestore(t *testing.T) {
 	restoredBlockTime := time.Unix(10000, 15)
 	restoreBlockHeight := int64(10)
 	testChain.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
-		&abci.ResponseInfo{
+		&abci.InfoResponse{
 			LastBlockHeight: restoreBlockHeight,
 		}, nil,
 	)
@@ -203,10 +203,10 @@ func testReplayWithSnapshotRestore(t *testing.T) {
 
 	// continue the chain and check we're at the right block height and stuff
 	// the next begin block should be at block height 16 (restored to 10, replayed 5, starting the next)
-	req := &abci.RequestFinalizeBlock{}
-	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r *abci.RequestFinalizeBlock) (*abci.ResponseFinalizeBlock, error) {
+	req := &abci.FinalizeBlockRequest{}
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r *abci.FinalizeBlockRequest) (*abci.FinalizeBlockResponse, error) {
 		req = r
-		return &abci.ResponseFinalizeBlock{}, nil
+		return &abci.FinalizeBlockResponse{}, nil
 	}).AnyTimes()
 	testChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(1)
 
@@ -234,14 +234,14 @@ func testReplayFromGenesis(t *testing.T) {
 
 	// protocol is starting from 0
 	newChain.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
-		&abci.ResponseInfo{
+		&abci.InfoResponse{
 			LastBlockHeight: 0,
 		}, nil,
 	)
 
 	// we'll replay 15 blocks
 	newChain.app.EXPECT().InitChain(gomock.Any(), gomock.Any()).Times(1)
-	newChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(15).Return(&abci.ResponseFinalizeBlock{}, nil)
+	newChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(15).Return(&abci.FinalizeBlockResponse{}, nil)
 	newChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(15)
 
 	// start the nullchain from genesis
@@ -260,7 +260,7 @@ func testReplayPanicBlock(t *testing.T) {
 
 	// send in a single transaction that works
 
-	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Do(func(_ context.Context, rr *abci.RequestFinalizeBlock) {
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Do(func(_ context.Context, rr *abci.FinalizeBlockRequest) {
 		panic("ah panic processing transaction")
 	}).Times(1)
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
@@ -278,7 +278,7 @@ func testReplayPanicBlock(t *testing.T) {
 
 	// protocol is starting from 0
 	newChain.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
-		&abci.ResponseInfo{
+		&abci.InfoResponse{
 			LastBlockHeight: 0,
 		}, nil,
 	)
@@ -323,8 +323,8 @@ func getTestUnstartedNullChain(t *testing.T, txnPerBlock uint64, d time.Duration
 	require.NotNil(t, n)
 
 	app.EXPECT().PrepareProposal(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, req *abci.RequestPrepareProposal) (*abci.ResponsePrepareProposal, error) {
-			ret := &abci.ResponsePrepareProposal{
+		func(_ context.Context, req *abci.PrepareProposalRequest) (*abci.PrepareProposalResponse, error) {
+			ret := &abci.PrepareProposalResponse{
 				Txs: req.Txs,
 			}
 			return ret, nil
@@ -344,7 +344,7 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 	t.Helper()
 	nc := getTestUnstartedNullChain(t, txnPerBlock, d, nil)
 
-	nc.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(&abci.ResponseInfo{}, nil)
+	nc.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(&abci.InfoResponse{}, nil)
 	nc.app.EXPECT().InitChain(gomock.Any(), gomock.Any()).Times(1)
 
 	err := nc.chain.StartChain()
@@ -372,10 +372,10 @@ func generateChain(t *testing.T, nc *testNullBlockChain, height int) {
 
 	ctx := context.Background()
 	nc.app.EXPECT().InitChain(gomock.Any(), gomock.Any()).Times(1)
-	nc.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(height).Return(&abci.ResponseFinalizeBlock{}, nil)
+	nc.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(height).Return(&abci.FinalizeBlockResponse{}, nil)
 	nc.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(height)
 	nc.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
-		&abci.ResponseInfo{
+		&abci.InfoResponse{
 			LastBlockHeight: 0,
 		}, nil,
 	)

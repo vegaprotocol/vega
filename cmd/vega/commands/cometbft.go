@@ -69,8 +69,9 @@ func (opts *cometbftCmd) Execute(_ []string) error {
 		cmtcmd.GenValidatorCmd,
 		cmtcmd.InitFilesCmd,
 		cmtcmd.LightCmd,
-		cmtcmd.ReplayCmd,
-		cmtcmd.ReplayConsoleCmd,
+		// unsupported
+		// cmtcmd.ReplayCmd,
+		// cmtcmd.ReplayConsoleCmd,
 		cmtcmd.ResetAllCmd,
 		cmtcmd.ResetPrivValidatorCmd,
 		cmtcmd.ResetStateCmd,
@@ -85,7 +86,7 @@ func (opts *cometbftCmd) Execute(_ []string) error {
 		cmtcli.NewCompletionCmd(rootCmd, true),
 	)
 
-	baseCmd := cmtcli.PrepareBaseCmd(rootCmd, "CMT", os.ExpandEnv(filepath.Join("$HOME", cmtcfg.DefaultTendermintDir)))
+	baseCmd := cmtcli.PrepareBaseCmd(rootCmd, "CMT", os.ExpandEnv(filepath.Join("$HOME", cmtcfg.DefaultCometDir)))
 	if err := baseCmd.Execute(); err != nil {
 		return err
 	}

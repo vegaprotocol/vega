@@ -61,6 +61,7 @@
 - [11266](https://github.com/vegaprotocol/vega/issues/11266) - Include derived parties rewards API
 - [11357](https://github.com/vegaprotocol/vega/issues/11357) - Support historical game scores
 - [11023](https://github.com/vegaprotocol/vega/issues/11023) - Add proposed fees to `vAMM` data.
+- [11393](https://github.com/vegaprotocol/vega/issues/11393) - Upgrade cometbft to `v1`.
 - [11028](https://github.com/vegaprotocol/vega/issues/11028) - Add API to estimate order book depth based on `vAMM`.
 - [11400](https://github.com/vegaprotocol/vega/issues/11400) - Add support for long block auction.
 - [11026](https://github.com/vegaprotocol/vega/issues/11026) - Add API flag to get paid liquidity fees for a `vAMM` using the parent key.

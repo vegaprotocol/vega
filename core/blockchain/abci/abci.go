@@ -27,14 +27,14 @@ import (
 	"github.com/cometbft/cometbft/abci/types"
 )
 
-func (app *App) Info(ctx context.Context, req *types.RequestInfo) (*types.ResponseInfo, error) {
+func (app *App) Info(ctx context.Context, req *types.InfoRequest) (*types.InfoResponse, error) {
 	if fn := app.OnInfo; fn != nil {
 		return fn(ctx, req)
 	}
 	return app.BaseApplication.Info(ctx, req)
 }
 
-func (app *App) InitChain(_ context.Context, req *types.RequestInitChain) (*types.ResponseInitChain, error) {
+func (app *App) InitChain(_ context.Context, req *types.InitChainRequest) (*types.InitChainResponse, error) {
 	_, err := LoadGenesisState(req.AppStateBytes)
 	if err != nil {
 		panic(err)
@@ -43,7 +43,7 @@ func (app *App) InitChain(_ context.Context, req *types.RequestInitChain) (*type
 	if fn := app.OnInitChain; fn != nil {
 		return fn(req)
 	}
-	return &types.ResponseInitChain{}, nil
+	return &types.InitChainResponse{}, nil
 }
 
 func (app *App) GetTx(tx []byte) (Tx, error) {
@@ -53,7 +53,7 @@ func (app *App) GetTx(tx []byte) (Tx, error) {
 
 // PrepareProposal will take the given transactions from the mempool and attempts to prepare a
 // proposal from them when it's our turn to do so while keeping the size, gas, pow, and spam constraints.
-func (app *App) PrepareProposal(_ context.Context, req *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
+func (app *App) PrepareProposal(_ context.Context, req *types.PrepareProposalRequest) (*types.PrepareProposalResponse, error) {
 	txs := make([]Tx, 0, len(req.Txs))
 	rawTxs := make([][]byte, 0, len(req.Txs))
 	for _, v := range req.Txs {
@@ -71,47 +71,47 @@ func (app *App) PrepareProposal(_ context.Context, req *types.RequestPrepareProp
 	}
 
 	// let the application decide on the order and the number of transactions it wants to pick up for this block
-	res := &types.ResponsePrepareProposal{Txs: app.OnPrepareProposal(uint64(req.Height), txs, rawTxs)}
+	res := &types.PrepareProposalResponse{Txs: app.OnPrepareProposal(uint64(req.Height), txs, rawTxs)}
 	return res, nil
 }
 
 // ProcessProposal implements part of the Application interface.
 // It accepts any proposal that does not contain a malformed transaction.
 // NB: processProposal will not be called if the node is fast-sync-ing so no state change is allowed here!!!.
-func (app *App) ProcessProposal(_ context.Context, req *types.RequestProcessProposal) (*types.ResponseProcessProposal, error) {
+func (app *App) ProcessProposal(_ context.Context, req *types.ProcessProposalRequest) (*types.ProcessProposalResponse, error) {
 	// check transaction signatures if any is wrong, reject the block
 	txs := make([]Tx, 0, len(req.Txs))
 	for _, v := range req.Txs {
 		tx, _, err := app.getTx(v)
 		if err != nil {
 			// if there's a transaction we can't decode or verify, reject it
-			return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, err
+			return &types.ProcessProposalResponse{Status: types.PROCESS_PROPOSAL_STATUS_REJECT}, err
 		}
 		// if there's no handler for a transaction, reject it
 		if _, ok := app.deliverTxs[tx.Command()]; !ok {
-			return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
+			return &types.ProcessProposalResponse{Status: types.PROCESS_PROPOSAL_STATUS_REJECT}, nil
 		}
 		txs = append(txs, tx)
 	}
 	// let the application verify the block
 	if !app.OnProcessProposal(uint64(req.Height), txs) {
-		return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
+		return &types.ProcessProposalResponse{Status: types.PROCESS_PROPOSAL_STATUS_REJECT}, nil
 	}
-	return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_ACCEPT}, nil
+	return &types.ProcessProposalResponse{Status: types.PROCESS_PROPOSAL_STATUS_ACCEPT}, nil
 }
 
-func (app *App) Commit(_ context.Context, req *types.RequestCommit) (*types.ResponseCommit, error) {
+func (app *App) Commit(_ context.Context, req *types.CommitRequest) (*types.CommitResponse, error) {
 	if fn := app.OnCommit; fn != nil {
 		return fn()
 	}
-	return &types.ResponseCommit{}, nil
+	return &types.CommitResponse{}, nil
 }
 
-func (app *App) CheckTx(_ context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
+func (app *App) CheckTx(_ context.Context, req *types.CheckTxRequest) (*types.CheckTxResponse, error) {
 	// first, only decode the transaction but don't validate
 	tx, code, err := app.getTx(req.GetTx())
 
-	var resp *types.ResponseCheckTx
+	var resp *types.CheckTxResponse
 	if err != nil {
 		// TODO I think we need to return error in this case as now the API allows for it
 		// return blockchain.NewResponseCheckTxError(code, err), err
@@ -150,7 +150,7 @@ func (app *App) CheckTx(_ context.Context, req *types.RequestCheckTx) (*types.Re
 }
 
 // FinalizeBlock lets the application process a whole block end to end.
-func (app *App) FinalizeBlock(_ context.Context, req *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error) {
+func (app *App) FinalizeBlock(_ context.Context, req *types.FinalizeBlockRequest) (*types.FinalizeBlockResponse, error) {
 	blockHeight := uint64(req.Height)
 	blockTime := req.Time
 
@@ -205,7 +205,7 @@ func (app *App) FinalizeBlock(_ context.Context, req *types.RequestFinalizeBlock
 	)
 
 	hash := app.OnFinalize()
-	return &types.ResponseFinalizeBlock{
+	return &types.FinalizeBlockResponse{
 		TxResults:             results,
 		ValidatorUpdates:      valUpdates,
 		ConsensusParamUpdates: &consensusUpdates,
@@ -214,35 +214,35 @@ func (app *App) FinalizeBlock(_ context.Context, req *types.RequestFinalizeBlock
 	}, nil
 }
 
-func (app *App) ListSnapshots(ctx context.Context, req *types.RequestListSnapshots) (*types.ResponseListSnapshots, error) {
+func (app *App) ListSnapshots(ctx context.Context, req *types.ListSnapshotsRequest) (*types.ListSnapshotsResponse, error) {
 	if app.OnListSnapshots != nil {
 		return app.OnListSnapshots(ctx, req)
 	}
-	return &types.ResponseListSnapshots{}, nil
+	return &types.ListSnapshotsResponse{}, nil
 }
 
-func (app *App) OfferSnapshot(ctx context.Context, req *types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error) {
+func (app *App) OfferSnapshot(ctx context.Context, req *types.OfferSnapshotRequest) (*types.OfferSnapshotResponse, error) {
 	if app.OnOfferSnapshot != nil {
 		return app.OnOfferSnapshot(ctx, req)
 	}
-	return &types.ResponseOfferSnapshot{}, nil
+	return &types.OfferSnapshotResponse{}, nil
 }
 
-func (app *App) LoadSnapshotChunk(ctx context.Context, req *types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error) {
+func (app *App) LoadSnapshotChunk(ctx context.Context, req *types.LoadSnapshotChunkRequest) (*types.LoadSnapshotChunkResponse, error) {
 	if app.OnLoadSnapshotChunk != nil {
 		return app.OnLoadSnapshotChunk(ctx, req)
 	}
-	return &types.ResponseLoadSnapshotChunk{}, nil
+	return &types.LoadSnapshotChunkResponse{}, nil
 }
 
-func (app *App) ApplySnapshotChunk(_ context.Context, req *types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error) {
+func (app *App) ApplySnapshotChunk(_ context.Context, req *types.ApplySnapshotChunkRequest) (*types.ApplySnapshotChunkResponse, error) {
 	if app.OnApplySnapshotChunk != nil {
 		return app.OnApplySnapshotChunk(app.ctx, req)
 	}
-	return &types.ResponseApplySnapshotChunk{}, nil
+	return &types.ApplySnapshotChunkResponse{}, nil
 }
 
-func AddCommonCheckTxEvents(resp *types.ResponseCheckTx, tx Tx) *types.ResponseCheckTx {
+func AddCommonCheckTxEvents(resp *types.CheckTxResponse, tx Tx) *types.CheckTxResponse {
 	resp.Events = getBaseTxEvents(tx)
 	return resp
 }

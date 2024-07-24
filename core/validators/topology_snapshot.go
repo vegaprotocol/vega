@@ -32,6 +32,7 @@ import (
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	tmtypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/ed25519"
 )
 
 var (
@@ -311,7 +312,11 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 			if err != nil {
 				t.log.Panic("failed to decode tendermint public key", logging.String("tm-pub-key", node.ValidatorUpdate.TmPubKey))
 			}
-			vUpdates = append(vUpdates, tmtypes.UpdateValidator(pubkey, node.ValidatorPower, ""))
+			vUpdates = append(vUpdates, tmtypes.ValidatorUpdate{
+				Power:       node.ValidatorPower,
+				PubKeyType:  ed25519.KeyType,
+				PubKeyBytes: pubkey,
+			})
 		}
 	}
 

@@ -36,15 +36,15 @@ func newAppW(app types.Application) *appW {
 	}
 }
 
-func (app *appW) Info(ctx context.Context, req *types.RequestInfo) (*types.ResponseInfo, error) {
+func (app *appW) Info(ctx context.Context, req *types.InfoRequest) (*types.InfoResponse, error) {
 	return app.impl.Info(ctx, req)
 }
 
-func (app *appW) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
+func (app *appW) CheckTx(ctx context.Context, req *types.CheckTxRequest) (*types.CheckTxResponse, error) {
 	return app.impl.CheckTx(ctx, req)
 }
 
-func (app *appW) Commit(ctx context.Context, req *types.RequestCommit) (*types.ResponseCommit, error) {
+func (app *appW) Commit(ctx context.Context, req *types.CommitRequest) (*types.CommitResponse, error) {
 	resp, err := app.impl.Commit(ctx, req)
 	// if we are scheduled for an upgrade of the protocol
 	// let's do it now.
@@ -55,46 +55,46 @@ func (app *appW) Commit(ctx context.Context, req *types.RequestCommit) (*types.R
 	return resp, err
 }
 
-func (app *appW) Query(ctx context.Context, req *types.RequestQuery) (*types.ResponseQuery, error) {
+func (app *appW) Query(ctx context.Context, req *types.QueryRequest) (*types.QueryResponse, error) {
 	return app.impl.Query(ctx, req)
 }
 
-func (app *appW) InitChain(ctx context.Context, req *types.RequestInitChain) (*types.ResponseInitChain, error) {
+func (app *appW) InitChain(ctx context.Context, req *types.InitChainRequest) (*types.InitChainResponse, error) {
 	return app.impl.InitChain(ctx, req)
 }
 
-func (app *appW) ListSnapshots(ctx context.Context, req *types.RequestListSnapshots) (*types.ResponseListSnapshots, error) {
+func (app *appW) ListSnapshots(ctx context.Context, req *types.ListSnapshotsRequest) (*types.ListSnapshotsResponse, error) {
 	return app.impl.ListSnapshots(ctx, req)
 }
 
-func (app *appW) OfferSnapshot(ctx context.Context, req *types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error) {
+func (app *appW) OfferSnapshot(ctx context.Context, req *types.OfferSnapshotRequest) (*types.OfferSnapshotResponse, error) {
 	return app.impl.OfferSnapshot(ctx, req)
 }
 
-func (app *appW) LoadSnapshotChunk(ctx context.Context, req *types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error) {
+func (app *appW) LoadSnapshotChunk(ctx context.Context, req *types.LoadSnapshotChunkRequest) (*types.LoadSnapshotChunkResponse, error) {
 	return app.impl.LoadSnapshotChunk(ctx, req)
 }
 
-func (app *appW) ApplySnapshotChunk(ctx context.Context, req *types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error) {
+func (app *appW) ApplySnapshotChunk(ctx context.Context, req *types.ApplySnapshotChunkRequest) (*types.ApplySnapshotChunkResponse, error) {
 	return app.impl.ApplySnapshotChunk(ctx, req)
 }
 
-func (app *appW) PrepareProposal(ctx context.Context, proposal *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
+func (app *appW) PrepareProposal(ctx context.Context, proposal *types.PrepareProposalRequest) (*types.PrepareProposalResponse, error) {
 	return app.impl.PrepareProposal(ctx, proposal)
 }
 
-func (app *appW) ProcessProposal(ctx context.Context, proposal *types.RequestProcessProposal) (*types.ResponseProcessProposal, error) {
+func (app *appW) ProcessProposal(ctx context.Context, proposal *types.ProcessProposalRequest) (*types.ProcessProposalResponse, error) {
 	return app.impl.ProcessProposal(ctx, proposal)
 }
 
-func (app *appW) FinalizeBlock(ctx context.Context, req *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error) {
+func (app *appW) FinalizeBlock(ctx context.Context, req *types.FinalizeBlockRequest) (*types.FinalizeBlockResponse, error) {
 	return app.impl.FinalizeBlock(ctx, req)
 }
 
-func (app *appW) ExtendVote(ctx context.Context, req *types.RequestExtendVote) (*types.ResponseExtendVote, error) {
+func (app *appW) ExtendVote(ctx context.Context, req *types.ExtendVoteRequest) (*types.ExtendVoteResponse, error) {
 	return app.impl.ExtendVote(ctx, req)
 }
 
-func (app *appW) VerifyVoteExtension(ctx context.Context, req *types.RequestVerifyVoteExtension) (*types.ResponseVerifyVoteExtension, error) {
+func (app *appW) VerifyVoteExtension(ctx context.Context, req *types.VerifyVoteExtensionRequest) (*types.VerifyVoteExtensionResponse, error) {
 	return app.impl.VerifyVoteExtension(ctx, req)
 }

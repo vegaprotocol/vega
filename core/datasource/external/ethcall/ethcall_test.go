@@ -26,10 +26,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient/simulated"
 	eth_log "github.com/ethereum/go-ethereum/log"
 )
 
@@ -45,7 +45,7 @@ type ToyChain struct {
 }
 
 type Client struct {
-	*backends.SimulatedBackend
+	*simulated.Backend
 }
 
 func (c *Client) ChainID(context.Context) (*big.Int, error) {
@@ -54,7 +54,7 @@ func (c *Client) ChainID(context.Context) (*big.Int, error) {
 
 func NewToyChain() (*ToyChain, error) {
 	// Stop go-ethereum writing loads of uninteresting logs
-	eth_log.Root().SetHandler(eth_log.DiscardHandler())
+	eth_log.New(eth_log.DiscardHandler())
 
 	// Setup keys
 	key, err := crypto.GenerateKey()
@@ -68,10 +68,10 @@ func NewToyChain() (*ToyChain, error) {
 	}
 
 	// Setup simulated backend (works a bit like ganache) with a balance so we can deploy contracts
-	client := backends.NewSimulatedBackend(
+	client := simulated.NewBackend(
 		core.GenesisAlloc{
 			addr: {Balance: big.NewInt(10000000000000000)},
-		}, 10000000,
+		},
 	)
 
 	// Read in contract ABI
@@ -92,7 +92,7 @@ func NewToyChain() (*ToyChain, error) {
 	}
 
 	// Deploy contract
-	contractAddr, _, _, err := bind.DeployContract(signer, contractAbi, common.FromHex(string(contractBytecodeBytes)), client)
+	contractAddr, _, _, err := bind.DeployContract(signer, contractAbi, common.FromHex(string(contractBytecodeBytes)), client.Client())
 	if err != nil {
 		return nil, fmt.Errorf("could not deploy contract")
 	}
