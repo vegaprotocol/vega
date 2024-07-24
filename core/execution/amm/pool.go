@@ -16,6 +16,7 @@
 package amm
 
 import (
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
@@ -322,6 +323,16 @@ func (p *Pool) Update(
 	parameters := p.Parameters.Clone()
 	if amend.Parameters != nil {
 		parameters = amend.Parameters
+	}
+
+	// if an AMM is amended so that it cannot be long (i.e it has no lower curve) but the existing AMM
+	// is already long then we cannot make the change since its fair-price will be undefined.
+	if parameters.LowerBound == nil && p.getPosition() > 0 {
+		return nil, errors.New("cannot remove lower bound when AMM is long")
+	}
+
+	if parameters.UpperBound == nil && p.getPosition() < 0 {
+		return nil, errors.New("cannot remove upper bound when AMM is short")
 	}
 
 	updated := &Pool{
