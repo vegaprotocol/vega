@@ -156,7 +156,7 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 			}
 
 			verifier.restorePatchBlock(ctx, patchBlock)
-			verifier.restoreSeen(v.Misc.Buckets)
+			verifier.restoreSeen(ctx, v.Misc.Buckets)
 		}
 		pending := []*ethcall.ContractCallEvent{}
 

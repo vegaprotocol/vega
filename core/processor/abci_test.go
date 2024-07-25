@@ -19,10 +19,12 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/processor"
@@ -701,6 +703,115 @@ type tstApp struct {
 	pChainID, sChainID uint64
 }
 
+func TestProtocolUpgradeFailedBrokerStreamError(t *testing.T) {
+	streamClient := newBrokerClient(0)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	stop := func() error {
+		wg.Done()
+		return nil
+	}
+	ctx, cfunc := context.WithCancel(context.Background())
+	app := getTestAppWithInit(t, cfunc, stop, false, false)
+	defer func() {
+		wg.Wait()
+		streamClient.finish()
+		app.ctrl.Finish()
+	}()
+
+	// vars
+	blockHeight := uint64(123)
+	blockHash := "0xDEADBEEF"
+	proposer := "0xCAFECAFE1"
+	updateTime := time.Now()
+	brokerErr := errors.Errorf("pretend something went wrong")
+
+	// let's make this look like a protocol upgrade
+	app.txCache.EXPECT().SetRawTxs(nil, blockHeight).Times(1)
+
+	// These are the calls made in the startProtocolUpgrade func:
+	app.puSvc.EXPECT().CoreReadyForUpgrade().Times(1).Return(true)
+	// broker streaming is enabled, so let's set up the channels and push some data
+	app.broker.EXPECT().StreamingEnabled().Times(1).Return(true)
+	app.broker.EXPECT().SocketClient().Times(1).Return(streamClient)
+	// we expect the protocol upgraded started event to be sent once at least.
+	app.broker.EXPECT().Send(gomock.Any()).Times(1)
+	// as part of the event data sent here, we call stats to get the height:
+	app.stats.EXPECT().Height().Times(1).Return(blockHeight - 1)
+	// now we set the upgrade service as ready:
+	app.puSvc.EXPECT().SetReadyForUpgrade().Times(0)
+
+	// start stream client routine, throw some events on the channels
+	go func() {
+		// this event should be read, but not have any effect on the logic.
+		streamClient.evtCh <- events.NewTime(ctx, updateTime)
+		require.True(t, blockHeight > 0) // just check we reach this part
+		streamClient.errCh <- brokerErr
+	}()
+
+	// see if we can recover here?
+	defer func() {
+		if r := recover(); r != nil {
+			expect := "failed to wait for data node to get ready for upgrade"
+			msg := fmt.Sprintf("Test likely passed, recovered: %v\n", r)
+			require.Contains(t, msg, expect, msg)
+		}
+	}()
+
+	// start upgrade
+	_ = app.OnBeginBlock(blockHeight, blockHash, updateTime, proposer, nil)
+}
+
+func TestOnBeginBlock(t *testing.T) {
+	// keeping the test for reference, as it can be used for reference with regular OnBeginBlock calls
+	// or error cases with for protocol upgrade stuff.
+	// set up stop call, so we can ensure the chain is stopped as part of protocol upgrade.
+	_, cfunc := context.WithCancel(context.Background())
+	app := getTestAppWithInit(t, cfunc, stopDummy, true, true)
+	defer app.ctrl.Finish()
+
+	// vars
+	blockHeight := uint64(123)
+	blockHash := "0xDEADBEEF"
+	proposer := "0xCAFECAFE1"
+	updateTime := time.Now()
+	prevTime := updateTime.Add(-1 * time.Second)
+
+	// let's make this look like a protocol upgrade
+	app.txCache.EXPECT().SetRawTxs(nil, blockHeight).Times(1)
+
+	// check for upgrade
+	app.puSvc.EXPECT().CoreReadyForUpgrade().Times(1).Return(false)
+
+	// now we're back to the OnBeginBlock call, set mocks for the remainder of that func:
+	app.broker.EXPECT().Send(gomock.Any()).Times(1)
+	// we're not passing any transactions ATM, so no setTxStats to worry about
+	// now PoW
+	app.pow.EXPECT().BeginBlock(blockHeight, blockHash, nil).Times(1)
+	// spam:
+	app.spam.EXPECT().BeginBlock(nil).Times(1)
+	// now do stats:
+	app.stats.EXPECT().SetHash(blockHash).Times(1)
+	app.stats.EXPECT().SetHeight(blockHeight).Times(1)
+	// now the calls to time service:
+	app.timeSvc.EXPECT().SetTimeNow(gomock.Any(), updateTime).Times(1)
+	app.timeSvc.EXPECT().GetTimeNow().Times(1).Return(updateTime)
+	app.timeSvc.EXPECT().GetTimeLastBatch().Times(1).Return(prevTime)
+	// begin upgrade:
+	app.puSvc.EXPECT().BeginBlock(gomock.Any(), blockHeight).Times(1)
+	// topology:
+	app.validator.EXPECT().BeginBlock(gomock.Any(), blockHeight, proposer).Times(1)
+	// balance checker:
+	app.balance.EXPECT().BeginBlock(gomock.Any()).Times(1)
+	// exec engine:
+	app.exec.EXPECT().BeginBlock(gomock.Any(), updateTime.Sub(prevTime)).Times(1)
+
+	// actually make the call now:
+	ctx := app.OnBeginBlock(blockHeight, blockHash, updateTime, proposer, nil)
+	// we should get a context back, this just checks the call returned.
+	require.NotNil(t, ctx)
+}
+
 func stopDummy() error {
 	return nil
 }
@@ -709,7 +820,10 @@ func getTestApp(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *
 	t.Helper()
 	pChain := "1"
 	sChain := "2"
-	gHandler := &genesis.Handler{}
+	gHandler := genesis.New(
+		logging.NewTestLogger(),
+		genesis.NewDefaultConfig(),
+	)
 	pChainID, err := strconv.ParseUint(pChain, 10, 64)
 	if err != nil {
 		t.Fatalf("Could not get test app instance, chain ID parse error: %v", err)
@@ -904,4 +1018,55 @@ func getTestApp(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *
 	tstApp.App = app
 	// return wrapper
 	return tstApp
+}
+
+func getTestAppWithInit(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *tstApp {
+	t.Helper()
+	tstApp := getTestApp(t, cfunc, stop, PoW, Spam)
+	// now set up the OnInitChain stuff
+	req := &tmtypes.RequestInitChain{
+		ChainId:       "1",
+		InitialHeight: 0,
+		Time:          time.Now().Add(-1 * time.Hour), // some time in the past
+	}
+	// set up mock calls:
+	tstApp.broker.EXPECT().Send(gomock.Any()).Times(2) // once before, and once after gHandler is called
+	tstApp.ethCallEng.EXPECT().Start().Times(1)
+	tstApp.validator.EXPECT().GetValidatorPowerUpdates().Times(1).Return(nil)
+	resp, err := tstApp.OnInitChain(req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	return tstApp
+}
+
+// fake socket client.
+type brokerClient struct {
+	errCh chan error
+	evtCh chan events.Event
+}
+
+func newBrokerClient(buf int) *brokerClient {
+	return &brokerClient{
+		errCh: make(chan error, buf),
+		evtCh: make(chan events.Event, buf),
+	}
+}
+
+func (b *brokerClient) finish() {
+	if b.errCh != nil {
+		close(b.errCh)
+		b.errCh = nil
+	}
+	if b.evtCh != nil {
+		close(b.evtCh)
+		b.evtCh = nil
+	}
+}
+
+func (b *brokerClient) SendBatch(events []events.Event) error {
+	return nil
+}
+
+func (b *brokerClient) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+	return b.evtCh, b.errCh
 }
