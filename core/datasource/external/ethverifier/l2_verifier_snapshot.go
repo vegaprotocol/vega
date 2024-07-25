@@ -17,6 +17,7 @@ package ethverifier
 
 import (
 	"context"
+	"slices"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
@@ -63,9 +64,11 @@ func (s *L2Verifiers) GetState(k string) ([]byte, []types.StateProvider, error) 
 		iter := v.ackedEvts.events.Iterator()
 		for iter.Next() {
 			v := (iter.Value().(*ackedEvtBucket))
+			hashes := maps.Keys(v.hashes)
+			slices.Sort(hashes)
 			slice = append(slice, &snapshotpb.EthVerifierBucket{
 				Ts:     v.ts,
-				Hashes: v.hashes,
+				Hashes: hashes,
 			})
 		}
 
@@ -153,7 +156,7 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 			}
 
 			verifier.restorePatchBlock(ctx, patchBlock)
-			verifier.restoreSeen(v.Misc.Buckets)
+			verifier.restoreSeen(ctx, v.Misc.Buckets)
 		}
 		pending := []*ethcall.ContractCallEvent{}
 

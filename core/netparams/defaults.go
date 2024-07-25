@@ -111,7 +111,7 @@ func defaultNetParams() map[string]value {
 		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
 		MarketLiquidityProvidersFeeCalculationTimeStep:   NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
-		MarketLiquidityEquityLikeShareFeeFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.1"),
+		MarketLiquidityEquityLikeShareFeeFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),

@@ -196,5 +196,29 @@ Feature: vAMM rebasing when created or amended
        | party  | market id | method           | error               |
        | party1 | ETH/MAR22 | METHOD_IMMEDIATE | trading not allowed |
 
+
+  @VAMM
+  Scenario: Cannot amend AMM to have only one side if its current position does not support it
+  
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | sell | 1      | 99    | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+
+    Then the parties amend the following AMM:
+      | party | market id | amount | slippage | base | upper bound | proposed fee | error                                      |
+      | vamm1 | ETH/MAR22 | 100000  | 0.05    | 100  | 105         | 0.03         | cannot remove lower bound when AMM is long |
+
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 2      | 200   | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the parties amend the following AMM:
+      | party | market id | amount | slippage | base | lower bound | proposed fee | error                                       |
+      | vamm1 | ETH/MAR22 | 100000  | 0.05    | 100  | 95          | 0.03         | cannot remove upper bound when AMM is short |
+
+
+
     
    

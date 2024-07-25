@@ -17,12 +17,15 @@ package evtforward
 
 import (
 	"context"
+	"slices"
 
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -50,9 +53,11 @@ func (f *Forwarder) serialise() ([]byte, error) {
 	iter := f.ackedEvts.events.Iterator()
 	for iter.Next() {
 		v := iter.Value().(*ackedEvtBucket)
+		hashes := maps.Keys(v.hashes)
+		slices.Sort(hashes)
 		slice = append(slice, &snapshotpb.EventForwarderBucket{
 			Ts:     v.ts,
-			Hashes: v.hashes,
+			Hashes: hashes,
 		})
 	}
 
@@ -91,13 +96,24 @@ func (f *Forwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.St
 	return nil, types.ErrUnknownSnapshotType
 }
 
-func (f *Forwarder) restore(_ context.Context, p *types.PayloadEventForwarder) {
+func (f *Forwarder) restore(ctx context.Context, p *types.PayloadEventForwarder) {
 	f.ackedEvts = &ackedEvents{
 		timeService: f.timeService,
 		events:      treeset.NewWith(ackedEvtBucketComparator),
 	}
 
+	// if we are executing a protocol upgrade,
+	// let's force bucketing things. This will reduce
+	// increase performance at startup, and everyone is starting
+	// from the same snapshot, so that will keep state consistent
+	if vgcontext.InProgressUpgrade(ctx) {
+		for _, v := range p.Buckets {
+			f.ackedEvts.AddAt(v.Ts, v.Hashes...)
+		}
+		return
+	}
+
 	for _, v := range p.Buckets {
-		f.ackedEvts.AddAt(v.Ts, v.Hashes...)
+		f.ackedEvts.RestoreExactAt(v.Ts, v.Hashes...)
 	}
 }

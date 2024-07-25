@@ -18,6 +18,7 @@ package ethverifier
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/metrics"
@@ -26,6 +27,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -89,9 +92,11 @@ func (s *Verifier) serialiseMisc() ([]byte, error) {
 	iter := s.ackedEvts.events.Iterator()
 	for iter.Next() {
 		v := (iter.Value().(*ackedEvtBucket))
+		hashes := maps.Keys(v.hashes)
+		slices.Sort(hashes)
 		slice = append(slice, &snapshotpb.EthVerifierBucket{
 			Ts:     v.ts,
-			Hashes: v.hashes,
+			Hashes: hashes,
 		})
 	}
 
@@ -181,9 +186,20 @@ func (s *Verifier) OnStateLoaded(ctx context.Context) error {
 	return nil
 }
 
-func (s *Verifier) restoreSeen(buckets []*snapshotpb.EthVerifierBucket) {
+func (s *Verifier) restoreSeen(ctx context.Context, buckets []*snapshotpb.EthVerifierBucket) {
+	// if we are executing a protocol upgrade,
+	// let's force bucketing things. This will reduce
+	// increase performance at startup, and everyone is starting
+	// from the same snapshot, so that will keep state consistent
+	if vgcontext.InProgressUpgrade(ctx) {
+		for _, v := range buckets {
+			s.ackedEvts.AddAt(v.Ts, v.Hashes...)
+		}
+		return
+	}
+
 	for _, v := range buckets {
-		s.ackedEvts.AddAt(v.Ts, v.Hashes...)
+		s.ackedEvts.RestoreExactAt(v.Ts, v.Hashes...)
 	}
 }
 
@@ -200,14 +216,14 @@ func (s *Verifier) restorePatchBlock(_ context.Context, patchBlock *types.EthBlo
 	s.patchBlock = patchBlock
 }
 
-func (s *Verifier) restoreMisc(_ context.Context, pl *snapshotpb.EthOracleVerifierMisc) {
+func (s *Verifier) restoreMisc(ctx context.Context, pl *snapshotpb.EthOracleVerifierMisc) {
 	if pl.PatchBlock != nil {
 		s.patchBlock = &types.EthBlock{
 			Height: pl.PatchBlock.BlockHeight,
 			Time:   pl.PatchBlock.BlockTime,
 		}
 	}
-	s.restoreSeen(pl.Buckets)
+	s.restoreSeen(ctx, pl.Buckets)
 }
 
 func (s *Verifier) restorePendingCallEvents(ctx context.Context,

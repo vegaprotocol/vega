@@ -328,7 +328,7 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 		fp := pool.BestPrice(nil)
 
 		// get the volume on the buy side by simulating an incoming sell order
-		bid := num.UintZero().Sub(fp, pool.oneTick)
+		bid := num.Max(pool.lower.low, num.UintZero().Sub(fp, pool.oneTick))
 		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
 
 		if volume != 0 {
@@ -341,7 +341,7 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 		}
 
 		// get the volume on the sell side by simulating an incoming buy order
-		ask := num.UintZero().Add(fp, pool.oneTick)
+		ask := num.Min(pool.upper.high, num.UintZero().Add(fp, pool.oneTick))
 		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
 		if volume != 0 {
 			if bestAsk == nil || ask.LT(bestAsk) {
@@ -474,7 +474,9 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 }
 
 // partition takes the given price range and returns which pools have volume in that region, and
-// divides that range into sub-levels where AMM boundaries end.
+// divides that range into sub-levels where AMM boundaries end. Note that `outer` can be nil for the case
+// where the incoming order is a market order (so we have no bound on the price), and we've already consumed
+// all volume on the orderbook.
 func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, []*num.Uint) {
 	active := []*Pool{}
 	bounds := map[string]*num.Uint{}
@@ -503,7 +505,7 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 	// This is because to get the BUY volume an AMM has at price P, we need to calculate the difference
 	// in its position between prices P -> P + 1. For SELL volume its the other way around and we
 	// need the difference in position from P - 1 -> P.
-	if inner.EQ(outer) {
+	if inner != nil && outer != nil && inner.EQ(outer) {
 		if agg.Side == types.SideSell {
 			outer = num.UintZero().Add(outer, e.oneTick)
 		} else {
