@@ -62,6 +62,18 @@ func (a *ackedEvents) AddAt(ts int64, hashes ...string) {
 	a.events.Add(&ackedEvtBucket{ts: ts, endTs: ts + oneHour, hashes: hashesM})
 }
 
+// RestoreExactAt - is to be used when loading a snapshot only
+// this prevent restoring in different buckets, which could happen
+// when events are received out of sync (e.g: timestamps 100 before 90) which could make gap between buckets.
+func (a *ackedEvents) RestoreExactAt(ts int64, hashes ...string) {
+	hashesM := map[string]struct{}{}
+	for _, v := range hashes {
+		hashesM[v] = struct{}{}
+	}
+
+	a.events.Add(&ackedEvtBucket{ts: ts, endTs: ts + oneHour, hashes: hashesM})
+}
+
 func (a *ackedEvents) Add(hash string) {
 	a.AddAt(a.timeService.GetTimeNow().Unix(), hash)
 }
