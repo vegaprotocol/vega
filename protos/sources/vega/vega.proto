@@ -934,6 +934,9 @@ enum AccountType {
   // Per asset market reward account for realised return
   ACCOUNT_TYPE_REWARD_REALISED_RETURN = 30;
 
+  // A unique account to store the governance staking asset
+  ACCOUNT_TYPE_STAKING = 31;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)

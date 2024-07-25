@@ -110,7 +110,7 @@ func (t *TransferBase) IsValid() error {
 
 	// check for any other transfers
 	switch t.FromAccountType {
-	case AccountTypeGeneral, AccountTypeVestedRewards /*, AccountTypeLockedForStaking*/ :
+	case AccountTypeGeneral, AccountTypeVestedRewards, AccountTypeStaking /*, AccountTypeLockedForStaking*/ :
 		break
 	default:
 		return ErrUnsupportedFromAccountType
@@ -122,7 +122,7 @@ func (t *TransferBase) IsValid() error {
 			return ErrInvalidToForRewardAccountType
 		}
 	case AccountTypeGeneral, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward,
-		AccountTypeAveragePositionReward, AccountTypeRelativeReturnReward, AccountTypeValidatorRankingReward, AccountTypeReturnVolatilityReward, AccountTypeRealisedReturnReward: /*, AccountTypeLockedForStaking*/
+		AccountTypeAveragePositionReward, AccountTypeRelativeReturnReward, AccountTypeValidatorRankingReward, AccountTypeReturnVolatilityReward, AccountTypeRealisedReturnReward, AccountTypeStaking: /*, AccountTypeLockedForStaking*/
 		break
 	default:
 		return ErrUnsupportedToAccountType

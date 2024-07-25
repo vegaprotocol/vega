@@ -72,6 +72,10 @@ var (
 	ErrInsufficientFundsInAsset = errors.New("insufficient funds for order")
 )
 
+type StakingAccounting interface {
+	AddEvent(ctx context.Context, evt *types.StakeLinking)
+}
+
 // Broker send events
 // we no longer need to generate this mock here, we can use the broker/mocks package instead.
 type Broker interface {
@@ -128,6 +132,8 @@ type Engine struct {
 	// we'll use it only once after an upgrade
 	// to make sure asset are being created
 	ensuredAssetAccounts bool
+
+	stakingAccounting StakingAccounting
 }
 
 // New instantiates a new collateral engine.
@@ -2001,6 +2007,47 @@ func (e *Engine) TransferFunds(
 					logging.BigUint("amount", v.Amount),
 					logging.Error(err),
 				)
+			}
+		}
+
+		// depositing to the staking account
+		if accType == types.AccountTypeStaking && transfer.Amount.Asset == "GOVERNANCE ASSET" {
+			ts := e.timeService.GetTimeNow().Unix()
+
+			if transfer.Type == types.TransferTypeTransferFundsDistribute {
+				// send event to staking account
+				e.stakingAccounting.AddEvent(ctx, &types.StakeLinking{
+					ID:              "TODO", // later
+					Type:            types.StakeLinkingTypeDeposited,
+					TS:              ts,
+					Party:           transfer.Owner,
+					Amount:          transfer.Amount.Amount.Clone(),
+					Status:          types.StakeLinkingStatusAccepted,
+					FinalizedAt:     ts,
+					TxHash:          "BLOCKHASH?", // to figure
+					BlockHeight:     42,           // to figure
+					BlockTime:       ts,
+					LogIndex:        1, // to figure
+					EthereumAddress: "nothing?",
+				})
+			}
+			// removing from the staking account
+			if transfer.Type == types.TransferTypeTransferFundsSend {
+				// send unlink event to staking account
+				e.stakingAccounting.AddEvent(ctx, &types.StakeLinking{
+					ID:              "TODO", // later
+					Type:            types.StakeLinkingTypeRemoved,
+					TS:              ts,
+					Party:           transfer.Owner,
+					Amount:          transfer.Amount.Amount.Clone(),
+					Status:          types.StakeLinkingStatusAccepted,
+					FinalizedAt:     ts,
+					TxHash:          "BLOCKHASH?", // to figure
+					BlockHeight:     42,           // to figure
+					BlockTime:       ts,
+					LogIndex:        1, // to figure
+					EthereumAddress: "nothing?",
+				})
 			}
 		}
 
