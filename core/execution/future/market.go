@@ -1507,21 +1507,24 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 		return
 	}
 
-	m.mkt.State = types.MarketStateSuspended
-	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
 	if m.as.InAuction() {
-		effDuration := int(m.timeService.GetTimeNow().UnixNano()/1e9) + int(duration) - int(m.as.ExpiresAt().UnixNano()/1e9)
-		if effDuration <= 0 {
+		// auction remaining:
+		now := m.timeService.GetTimeNow()
+		aRemaining := int64(m.as.ExpiresAt().Sub(now) / time.Second)
+		if aRemaining >= duration {
 			return
 		}
-		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: int64(effDuration)})
-		evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
-		if evt != nil {
+		m.as.ExtendAuctionLongBlock(types.AuctionDuration{
+			Duration: duration - aRemaining,
+		})
+		if evt := m.as.AuctionExtended(ctx, now); evt != nil {
 			m.broker.Send(evt)
 		}
 	} else {
 		m.as.StartLongBlockAuction(m.timeService.GetTimeNow(), duration)
 		m.tradableInstrument.Instrument.UpdateAuctionState(ctx, true)
+		m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
+		m.mkt.State = types.MarketStateSuspended
 		m.enterAuction(ctx)
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	}
@@ -1707,6 +1710,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			}
 
 			m.mkt.State = types.MarketStateActive
+			// this probably should get the default trading mode from the market definition.
 			m.mkt.TradingMode = types.MarketTradingModeContinuous
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 

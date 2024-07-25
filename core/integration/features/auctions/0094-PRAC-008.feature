@@ -131,20 +131,27 @@ Feature: When a market's trigger and extension_trigger are set to represent that
       | 1000000    | TRADING_MODE_MONITORING_AUCTION | 2810994378   | 1873996252     | 1             | 602         | AUCTION_TRIGGER_LONG_BLOCK |
 
     # move ahead another minute
-    When the network moves ahead "60" blocks
+    When the network moves ahead "1" blocks
     # This is strange, it looks as though the trade went through at the end of the auction, but in doing so triggered a second auction?
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | target stake | supplied stake | open interest | extension trigger          |
       | 1000000    | TRADING_MODE_MONITORING_AUCTION | 2810994378   | 1873996252     | 1             | AUCTION_TRIGGER_LONG_BLOCK |
 
-    When the network moves ahead "8m50s" with block duration of "2s"
+    When the network moves ahead "9m50s" with block duration of "2s"
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_LONG_BLOCK_AUCTION" for the market "ETH/DEC19"
 
     # still in auction, but if we move ahead...
-    When the network moves ahead "150" blocks
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    When the network moves ahead "11" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    # now move further ahead to leave price auction
+    # We have moved 1 blocks + 9m50s (9m51) + 11 blocks for a total of 10m2s, the total auction duration
+    # was 602s, or 10m2s. Leaving the auction will trigger an extension of another 61 seconds
+    # So the total time in auction would be 11m2s. At this point we're still 61s short.
+    When the network moves ahead "61" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the following trades should be executed:
       | buyer  | price  | size | seller |
       | party5 | 999998 | 1    | party6 |
