@@ -3351,16 +3351,20 @@ func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmiss
 	}
 
 	var price *num.Uint
-	if orderSubmission.PeggedOrder == nil {
-		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
-	} else {
+	if orderSubmission.PeggedOrder != nil || orderSubmission.Type == vega.Order_TYPE_MARKET {
 		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		offset := num.UintZero()
+		if orderSubmission.PeggedOrder != nil {
+			offset = orderSubmission.PeggedOrder.Offset
+		}
 		if orderSubmission.Side == types.SideBuy {
-			priceInMarket.AddSum(orderSubmission.PeggedOrder.Offset)
+			priceInMarket.AddSum(offset)
 		} else {
-			priceInMarket = priceInMarket.Sub(priceInMarket, orderSubmission.PeggedOrder.Offset)
+			priceInMarket = priceInMarket.Sub(priceInMarket, offset)
 		}
 		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	} else {
+		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
 	}
 
 	minQuantum := assetQuantum.Mul(quantumMultiplier)
