@@ -1502,6 +1502,10 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 	if !m.canTrade() {
 		return
 	}
+	// markets that are suspended via governance should be unaffected by long block auctions.
+	if m.mkt.TradingMode == types.MarketTradingModeSuspendedViaGovernance {
+		return
+	}
 
 	m.mkt.State = types.MarketStateSuspended
 	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction

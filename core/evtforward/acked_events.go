@@ -20,9 +20,12 @@ import (
 	"github.com/emirpasic/gods/utils"
 )
 
+const oneHour = 3600 // seconds
+
 type ackedEvtBucket struct {
 	ts     int64
-	hashes []string
+	endTs  int64
+	hashes map[string]struct{}
 }
 
 func ackedEvtBucketComparator(a, b interface{}) int {
@@ -39,30 +42,36 @@ type ackedEvents struct {
 func (a *ackedEvents) AddAt(ts int64, hashes ...string) {
 	_, value := a.events.Find(func(i int, value interface{}) bool {
 		bucket := value.(*ackedEvtBucket)
-		return bucket.ts == ts
+		return bucket.ts <= ts && bucket.endTs >= ts
 	})
 
 	if value != nil {
 		bucket := value.(*ackedEvtBucket)
 		for _, newHash := range hashes {
-			found := false
-			for _, v := range bucket.hashes {
-				// hash already exists
-				if v == newHash {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				bucket.hashes = append(bucket.hashes, newHash)
-			}
+			bucket.hashes[newHash] = struct{}{}
 		}
 
 		return
 	}
 
-	a.events.Add(&ackedEvtBucket{ts: ts, hashes: append([]string{}, hashes...)})
+	hashesM := map[string]struct{}{}
+	for _, v := range hashes {
+		hashesM[v] = struct{}{}
+	}
+
+	a.events.Add(&ackedEvtBucket{ts: ts, endTs: ts + oneHour, hashes: hashesM})
+}
+
+// RestoreExactAt - is to be used when loading a snapshot only
+// this prevent restoring in different buckets, which could happen
+// when events are received out of sync (e.g: timestamps 100 before 90) which could make gap between buckets.
+func (a *ackedEvents) RestoreExactAt(ts int64, hashes ...string) {
+	hashesM := map[string]struct{}{}
+	for _, v := range hashes {
+		hashesM[v] = struct{}{}
+	}
+
+	a.events.Add(&ackedEvtBucket{ts: ts, endTs: ts + oneHour, hashes: hashesM})
 }
 
 func (a *ackedEvents) Add(hash string) {
@@ -72,13 +81,8 @@ func (a *ackedEvents) Add(hash string) {
 func (a *ackedEvents) Contains(hash string) bool {
 	_, value := a.events.Find(func(index int, value interface{}) bool {
 		bucket := value.(*ackedEvtBucket)
-		for _, v := range bucket.hashes {
-			if hash == v {
-				return true
-			}
-		}
-
-		return false
+		_, ok := bucket.hashes[hash]
+		return ok
 	})
 
 	return value != nil
