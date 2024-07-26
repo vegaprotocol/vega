@@ -5346,7 +5346,7 @@ func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmiss
 	if err != nil {
 		return err
 	}
-	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
+	if margins.Mul(rf.Add(factor)).LessThan(quantumMultiplier.Mul(assetQuantum)) {
 		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
 	}
 	return nil

@@ -57,6 +57,7 @@
 
 - [11481](https://github.com/vegaprotocol/vega/issues/11481) - Fix margin check for cross margin market orders.
 - [11474](https://github.com/vegaprotocol/vega/issues/11474) - Fail `checkTx` downstream for delayed transactions so they don't get included in more than one block.
+- [11506](https://github.com/vegaprotocol/vega/issues/11506) - Fix margin spam check to remove division by asset quantum. 
 
 ## 0.77.1
 
