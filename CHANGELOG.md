@@ -12,6 +12,25 @@
 
 ### 🛠 Improvements
 
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+### 🐛 Fixes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+
+## 0.77.3
+
+### 🚨 Breaking changes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+### 🗑️ Deprecation
+
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+### 🛠 Improvements
+
 - [1333](https://github.com/vegaprotocol/core-test-coverage/issues/1333) - Added coverage for `0093-TRTO-001`.
 - [1334](https://github.com/vegaprotocol/core-test-coverage/issues/1334) - Added coverage for `0093-TRTO-002`.
 - [1335](https://github.com/vegaprotocol/core-test-coverage/issues/1335) - Added coverage for `0093-TRTO-003`.
@@ -25,10 +44,11 @@
 - [1343](https://github.com/vegaprotocol/core-test-coverage/issues/1343) - Added coverage for `0093-TRTO-011`.
 - [1344](https://github.com/vegaprotocol/core-test-coverage/issues/1344) - Added coverage for `0093-TRTO-012`.
 - [1382](https://github.com/vegaprotocol/core-test-coverage/issues/1382) - Added coverage for `0093-TRTO-013`.
+- [11497](https://github.com/vegaprotocol/vega/issues/11497) - Improve performance with the `ackedEvents` store.
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11496](https://github.com/vegaprotocol/vega/pull/11496) - Fix panic with long block auctions.
 
 
 ## 0.77.2
