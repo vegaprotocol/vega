@@ -251,8 +251,9 @@ func (sm *shapeMaker) expandCurve(cu *curve, from, to *num.Uint) {
 			}
 
 			if volume := uint64(num.DeltaV(position, sm.pos)); volume != 0 {
-				price := sm.priceForStep(current, fairPrice, position, sm.pos, volume)
-				sm.addOrder(volume, price, sm.side)
+				if price := sm.priceForStep(current, fairPrice, position, sm.pos, volume); price != nil {
+					sm.addOrder(volume, price, sm.side)
+				}
 			}
 
 			// we've step through fair-price now so orders will becomes sells
@@ -264,8 +265,9 @@ func (sm *shapeMaker) expandCurve(cu *curve, from, to *num.Uint) {
 		nextPosition := cu.positionAtPrice(sm.pool.sqrt, num.Min(next, cu.high))
 		volume := uint64(num.DeltaV(position, nextPosition))
 		if volume != 0 {
-			price := sm.priceForStep(current, next, position, nextPosition, volume)
-			sm.addOrder(volume, price, sm.side)
+			if price := sm.priceForStep(current, next, position, nextPosition, volume); price != nil {
+				sm.addOrder(volume, price, sm.side)
+			}
 		}
 
 		// if we're calculating buys and we hit fair price, switch to sells
