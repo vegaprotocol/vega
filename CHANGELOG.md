@@ -49,6 +49,7 @@
 ### 🐛 Fixes
 
 - [11496](https://github.com/vegaprotocol/vega/pull/11496) - Fix panic with long block auctions.
+- [11504](https://github.com/vegaprotocol/vega/pull/11504) - Fix panic with empty curves in `vAMM`.
 
 
 ## 0.77.2

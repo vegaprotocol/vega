@@ -448,6 +448,10 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 
 		// calculate the price the pool wil give for the trading volume
 		price := p.PriceForVolume(volume, agg.Side)
+		// a nil price indicates an empty curve, no orders to be generated, skip this pool
+		if price == nil {
+			continue
+		}
 
 		if e.log.IsDebug() {
 			e.log.Debug("generated order at price",

@@ -539,6 +539,14 @@ func (p *Pool) priceForVolumeAtPosition(volume uint64, side types.Side, pos int6
 	if volume == 0 {
 		panic("cannot calculate price for zero volume trade")
 	}
+	// first check for empty curves
+	if side == types.SideBuy {
+		if p.upper.empty {
+			return nil
+		}
+	} else if p.lower.empty {
+		return nil
+	}
 
 	x, y := p.virtualBalances(pos, fp, side)
 
