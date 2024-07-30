@@ -892,6 +892,11 @@ func (app *App) OnInitChain(req *tmtypes.RequestInitChain) (*tmtypes.ResponseIni
 // therefore a block generated with this method will never contain any transactions that would violate spam/pow constraints that would have previously
 // caused the party to get blocked.
 func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [][]byte {
+	t := time.Now()
+	app.log.Info("ZOHAR: Prepare proposal started:", logging.Time("start-time", time.Now()))
+	defer app.log.Info("ZOHAR: Prepare proposal finished:", logging.Time("finish-time", time.Now()))
+	defer app.log.Info("ZOHAR: Prepare proposal took:", logging.Float64("", time.Until(t).Seconds()))
+
 	var totalBytes int64
 	validationResults := []pow.ValidationEntry{}
 
@@ -1210,6 +1215,11 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 // 2. max gas limit is not exceeded
 // 3. (soft) max bytes is not exceeded.
 func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
+	t := time.Now()
+	app.log.Info("ZOHAR: Process proposal started:", logging.Time("start-time", time.Now()))
+	defer app.log.Info("ZOHAR: Process proposal finished:", logging.Time("finish-time", time.Now()))
+	defer app.log.Info("ZOHAR: Process proposal took:", logging.Float64("", time.Until(t).Seconds()))
+
 	totalGasWanted := 0
 	maxGas := app.gastimator.GetMaxGas()
 	maxBytes := tmtypesint.DefaultBlockParams().MaxBytes * 4
@@ -1267,6 +1277,11 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 }
 
 func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1.ConsensusParams) {
+	t := time.Now()
+	app.log.Info("ZOHAR: OnEndBlock started:", logging.Time("start-time", time.Now()))
+	defer app.log.Info("OnEndBlock finished:", logging.Time("finish-time", time.Now()))
+	defer app.log.Info("ZOHAR: OnEndBlock took:", logging.Float64("", time.Until(t).Seconds()))
+
 	app.log.Debug("entering end block", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving end block", logging.Time("at", time.Now())) }()
 
@@ -1303,6 +1318,11 @@ func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(blockHeight uint64, blockHash string, blockTime time.Time, proposer string, txs []abci.Tx) context.Context {
+	t := time.Now()
+	app.log.Info("ZOHAR: OnBeginBlock started:", logging.Time("start-time", time.Now()))
+	defer app.log.Info("ZOHAR: OnBeginBlock finished:", logging.Time("finish-time", time.Now()))
+	defer app.log.Info("ZOHAR: OnBeginBlock took:", logging.Float64("", time.Until(t).Seconds()))
+
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", blockHeight), logging.Time("time", blockTime), logging.String("blockHash", blockHash))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
@@ -1411,6 +1431,11 @@ func (app *App) startProtocolUpgrade(ctx context.Context) {
 
 // Finalize calculates the app hash for the block ending.
 func (app *App) Finalize() []byte {
+	t := time.Now()
+	app.log.Info("ZOHAR: Finalize started:", logging.Time("start-time", time.Now()))
+	defer app.log.Info("ZOHAR: Finalize finished:", logging.Time("finish-time", time.Now()))
+	defer app.log.Info("ZOHAR: Finalize took:", logging.Float64("", time.Until(t).Seconds()))
+
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
 
@@ -1485,6 +1510,11 @@ func (app *App) Finalize() []byte {
 }
 
 func (app *App) OnCommit() (*tmtypes.ResponseCommit, error) {
+	t := time.Now()
+	app.log.Info("ZOHAR: OnCommit started:", logging.Time("start-time", time.Now()))
+	defer app.log.Info("ZOHAR: OnCommit finished:", logging.Time("finish-time", time.Now()))
+	defer app.log.Info("ZOHAR: OnCommit took:", logging.Float64("", time.Until(t).Seconds()))
+
 	app.log.Debug("entering commit", logging.Time("at", time.Now()), logging.Uint64("height", app.stats.Height()))
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
 	app.updateStats()
