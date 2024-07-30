@@ -49,6 +49,62 @@ type ammCache struct {
 	ammOrders      map[string][]*types.Order   // map amm id -> expanded orders, so we can remove them if amended
 	activeAMMs     map[string]entities.AMMPool // map amm id -> amm definition, so we can refresh its expansion
 	estimatedOrder map[string]struct{}         // order-id -> whether it was an estimated order
+
+	// the lowest/highest bounds of all AMMs
+	lowestBound  num.Decimal
+	highestBound num.Decimal
+
+	// reference -> calculation levels, if the reference point hasn't changed we can avoid the busy task
+	// of recalculating them
+	levels map[string][]*level
+}
+
+func (c *ammCache) addAMM(a entities.AMMPool) {
+	c.activeAMMs[a.AmmPartyID.String()] = a
+
+	low := a.ParametersBase
+	if a.ParametersLowerBound != nil {
+		low = *a.ParametersLowerBound
+	}
+
+	if c.lowestBound.IsZero() {
+		c.lowestBound = low
+	} else {
+		c.lowestBound = num.MinD(c.lowestBound, low)
+	}
+
+	high := a.ParametersBase
+	if a.ParametersUpperBound != nil {
+		high = *a.ParametersUpperBound
+	}
+	c.highestBound = num.MaxD(c.highestBound, high)
+}
+
+func (c *ammCache) removeAMM(ammParty string) {
+	delete(c.activeAMMs, ammParty)
+	delete(c.ammOrders, ammParty)
+
+	// now we need to recalculate the lowest/highest
+
+	c.lowestBound = num.DecimalZero()
+	c.highestBound = num.DecimalZero()
+	for _, a := range c.activeAMMs {
+		low := a.ParametersBase
+		if a.ParametersLowerBound != nil {
+			low = *a.ParametersLowerBound
+		}
+		if c.lowestBound.IsZero() {
+			c.lowestBound = low
+		} else {
+			c.lowestBound = num.MinD(c.lowestBound, low)
+		}
+
+		high := a.ParametersBase
+		if a.ParametersUpperBound != nil {
+			high = *a.ParametersUpperBound
+		}
+		c.lowestBound = num.MaxD(c.highestBound, high)
+	}
 }
 
 type MarketDepth struct {

@@ -497,20 +497,22 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 		return
 	}
 
-	m.mkt.State = types.MarketStateSuspended
-	m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
 	if m.as.InAuction() {
-		effDuration := int(m.timeService.GetTimeNow().UnixNano()/1e9) + int(duration) - int(m.as.ExpiresAt().UnixNano()/1e9)
-		if effDuration <= 0 {
+		now := m.timeService.GetTimeNow()
+		aRemaining := int64(m.as.ExpiresAt().Sub(now) / time.Second)
+		if aRemaining >= duration {
 			return
 		}
-		m.as.ExtendAuctionLongBlock(types.AuctionDuration{Duration: int64(effDuration)})
-		evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
-		if evt != nil {
+		m.as.ExtendAuctionLongBlock(types.AuctionDuration{
+			Duration: duration - aRemaining,
+		})
+		if evt := m.as.AuctionExtended(ctx, now); evt != nil {
 			m.broker.Send(evt)
 		}
 	} else {
 		m.as.StartLongBlockAuction(m.timeService.GetTimeNow(), duration)
+		m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
+		m.mkt.State = types.MarketStateSuspended
 		m.enterAuction(ctx)
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	}
@@ -3356,21 +3358,25 @@ func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmiss
 	}
 
 	var price *num.Uint
-	if orderSubmission.PeggedOrder == nil {
-		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
-	} else {
+	if orderSubmission.PeggedOrder != nil || orderSubmission.Type == vega.Order_TYPE_MARKET {
 		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
+		offset := num.UintZero()
+		if orderSubmission.PeggedOrder != nil {
+			offset = orderSubmission.PeggedOrder.Offset
+		}
 		if orderSubmission.Side == types.SideBuy {
-			priceInMarket.AddSum(orderSubmission.PeggedOrder.Offset)
+			priceInMarket.AddSum(offset)
 		} else {
-			priceInMarket = priceInMarket.Sub(priceInMarket, orderSubmission.PeggedOrder.Offset)
+			priceInMarket = priceInMarket.Sub(priceInMarket, offset)
 		}
 		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+	} else {
+		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
 	}
 
 	minQuantum := assetQuantum.Mul(quantumMultiplier)
 	value := num.UintZero().Mul(num.NewUint(orderSubmission.Size), price).ToDecimal()
-	value = value.Div(m.positionFactor).Div(assetQuantum)
+	value = value.Div(m.positionFactor)
 	if value.LessThan(minQuantum.Mul(assetQuantum)) {
 		return fmt.Errorf("order value is less than minimum holding requirement for spam")
 	}
