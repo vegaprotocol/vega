@@ -60,6 +60,7 @@ func NewERC20MultisigTopology(
 				if err != nil {
 					return fmt.Errorf("ERC20 multisig didn't receive a valid Ethereum configuration: %w", err)
 				}
+				cfgs.String(log)
 				ethCfg := cfgs.Configs[0]
 				ocv.UpdateMultiSigAddress(ethCfg.MultiSigControl().Address(), ethCfg.ChainID())
 				top.SetChainID(ethCfg.ChainID())

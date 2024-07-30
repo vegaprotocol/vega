@@ -3227,6 +3227,7 @@ func (app *App) OnBlockchainEVMChainConfigUpdate(_ context.Context, conf any) er
 	if err != nil {
 		return err
 	}
+	cfg.String(app.log)
 	cID, err := strconv.ParseUint(cfg.Configs[0].ChainID(), 10, 64)
 	if err != nil {
 		return err

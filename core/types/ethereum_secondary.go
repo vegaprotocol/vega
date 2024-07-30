@@ -21,6 +21,7 @@ import (
 	"time"
 
 	vgreflect "code.vegaprotocol.io/vega/libs/reflect"
+	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -35,6 +36,21 @@ type EVMChainConfig struct {
 
 type EVMChainConfigs struct {
 	Configs []*EVMChainConfig
+}
+
+func (c *EVMChainConfigs) String(log *logging.Logger) {
+	for _, cc := range c.Configs {
+		log.Info("EVMChainConfigs",
+			logging.String("chain-id", cc.chainID),
+			logging.String("networkID", cc.networkID),
+			logging.Uint64("confirmations", cc.confirmations),
+			logging.String("collateralBridge-address", cc.collateralBridge.address),
+			logging.Uint64("collateralBridge-deploymentBlockHeight", cc.collateralBridge.deploymentBlockHeight),
+			logging.String("multiSigControl-address", cc.multiSigControl.address),
+			logging.Uint64("multiSigControl-deploymentBlockHeight", cc.multiSigControl.deploymentBlockHeight),
+			logging.Duration("block-time", cc.blockTime),
+		)
+	}
 }
 
 func EVMChainConfigFromUntypedProto(v interface{}) (*EVMChainConfigs, error) {

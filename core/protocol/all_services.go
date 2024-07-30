@@ -795,7 +795,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				if err != nil {
 					return fmt.Errorf("invalid secondary ethereum configuration: %w", err)
 				}
-
+				cfgs.String(svcs.log)
 				ethCfg := cfgs.Configs[0]
 
 				if err := svcs.secondaryEthClient.UpdateEthereumConfig(ctx, ethCfg); err != nil {
@@ -1014,7 +1014,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				if err != nil {
 					return fmt.Errorf("invalid secondary ethereum configuration: %w", err)
 				}
-
+				ethCfg.String(svcs.log)
 				svcs.secondaryEthConfirmations.UpdateConfirmations(ethCfg.Configs[0].Confirmations())
 				return nil
 			},
@@ -1058,7 +1058,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				if err != nil {
 					return fmt.Errorf("invalid secondary ethereum configuration: %w", err)
 				}
-
+				ethCfgs.String(svcs.log)
 				ethCfg := ethCfgs.Configs[0]
 				svcs.banking.OnSecondaryEthChainIDUpdated(ethCfg.ChainID(), ethCfg.CollateralBridge().HexAddress())
 				svcs.witness.SetSecondaryDefaultConfirmations(ethCfg.ChainID(), ethCfg.Confirmations(), ethCfg.BlockTime())
