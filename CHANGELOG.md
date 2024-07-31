@@ -19,12 +19,18 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.77.6
+
+### 🐛 Fixes
+
+- [11516](https://github.com/vegaprotocol/vega/issues/11516) - Fix order spam check for amends.
+
+
 ## 0.77.5
 
 ### 🐛 Fixes
 
 - [11513](https://github.com/vegaprotocol/vega/issues/11513) - Rollback CometBFT to version `v0.38.8`.
-- [11516](https://github.com/vegaprotocol/vega/issues/11516) - Fix order spam check for amends. 
 
 ## 0.77.4
 
