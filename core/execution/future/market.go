@@ -5281,79 +5281,66 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
 }
 
-func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+func (m *Market) checkOrderForSpam(side types.Side, orderPrice *num.Uint, orderSize uint64, peggedOrder *types.PeggedOrder, orderType vegapb.Order_Type, quantumMultiplier num.Decimal) error {
 	rf := num.DecimalOne()
 
 	factor := m.mkt.LinearSlippageFactor
 	if m.risk.IsRiskFactorInitialised() {
-		if order.Side == types.SideBuy {
+		if side == types.SideBuy {
 			rf = m.risk.GetRiskFactors().Long
 		} else {
 			rf = m.risk.GetRiskFactors().Short
 		}
 	}
 	var price *num.Uint
-	if order.PeggedOrder == nil {
-		price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
-	} else {
-		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
-		if order.Side == types.SideBuy {
-			priceInMarket.AddSum(order.PeggedOrder.Offset)
-		} else {
-			priceInMarket = priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
-		}
-		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
-	}
-	margins := num.UintZero().Mul(price, num.NewUint(order.TrueRemaining())).ToDecimal().Div(m.positionFactor)
-	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
-	if err != nil {
-		return err
-	}
-	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(m.minMaintenanceMarginQuantumMultiplier.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
-	}
-	return nil
-}
-
-func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
-	rf := num.DecimalOne()
-
-	factor := m.mkt.LinearSlippageFactor
-	if m.risk.IsRiskFactorInitialised() {
-		if orderSubmission.Side == types.SideBuy {
-			rf = m.risk.GetRiskFactors().Long
-		} else {
-			rf = m.risk.GetRiskFactors().Short
-		}
-	}
-
-	var price *num.Uint
-	if orderSubmission.PeggedOrder != nil || orderSubmission.Type == vega.Order_TYPE_MARKET {
+	if peggedOrder != nil || orderType == vega.Order_TYPE_MARKET {
 		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
 		offset := num.UintZero()
-		if orderSubmission.PeggedOrder != nil {
-			offset = orderSubmission.PeggedOrder.Offset
+		if peggedOrder != nil {
+			offset = peggedOrder.Offset
 		}
-		if orderSubmission.Side == types.SideBuy {
+		if side == types.SideBuy {
 			priceInMarket.AddSum(offset)
 		} else {
 			priceInMarket = priceInMarket.Sub(priceInMarket, offset)
 		}
 		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 	} else {
-		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
+		price, _ = num.UintFromDecimal(orderPrice.ToDecimal().Mul(m.priceFactor))
 	}
 
-	margins := num.UintZero().Mul(price, num.NewUint(orderSubmission.Size)).ToDecimal().Div(m.positionFactor)
+	margins := num.UintZero().Mul(price, num.NewUint(orderSize)).ToDecimal().Div(m.positionFactor)
 
 	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
 	if err != nil {
 		return err
 	}
-	if margins.Mul(rf.Add(factor)).LessThan(quantumMultiplier.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
+	value := margins.Mul(rf.Add(factor))
+	required := quantumMultiplier.Mul(assetQuantum)
+	if value.LessThan(required) {
+		return fmt.Errorf(fmt.Sprintf("order value (%s) is less than minimum maintenance margin for spam (%s)", value.String(), required.String()))
 	}
 	return nil
+}
+
+func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+	return m.checkOrderForSpam(
+		order.Side,
+		order.Price,
+		order.Size,
+		order.PeggedOrder,
+		order.Type,
+		m.minMaintenanceMarginQuantumMultiplier)
+}
+
+func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	return m.checkOrderForSpam(
+		orderSubmission.Side,
+		orderSubmission.Price,
+		orderSubmission.Size,
+		orderSubmission.PeggedOrder,
+		orderSubmission.Type,
+		quantumMultiplier)
 }
 
 func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {

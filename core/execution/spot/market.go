@@ -3323,62 +3323,55 @@ type IDGen interface {
 	NextID() string
 }
 
-func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+func (m *Market) checkOrderForSpam(side types.Side, orderPrice *num.Uint, orderSize uint64, peggedOrder *types.PeggedOrder, orderType vega.Order_Type, quantumMultiplier num.Decimal) error {
 	assetQuantum, err := m.collateral.GetAssetQuantum(m.quoteAsset)
 	if err != nil {
 		return err
 	}
 
 	var price *num.Uint
-	if order.PeggedOrder == nil {
-		price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
-	} else {
-		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
-		if order.Side == types.SideBuy {
-			priceInMarket.AddSum(order.PeggedOrder.Offset)
-		} else {
-			priceInMarket = priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
-		}
-		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
-	}
-
-	minQuantum := assetQuantum.Mul(m.minHoldingQuantumMultiplier)
-	value := num.UintZero().Mul(num.NewUint(order.Size), price).ToDecimal()
-	value = value.Div(m.positionFactor).Div(assetQuantum)
-	if value.LessThan(minQuantum.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum holding requirement for spam")
-	}
-	return nil
-}
-
-func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
-	assetQuantum, err := m.collateral.GetAssetQuantum(m.quoteAsset)
-	if err != nil {
-		return err
-	}
-
-	var price *num.Uint
-	if orderSubmission.PeggedOrder != nil || orderSubmission.Type == vega.Order_TYPE_MARKET {
+	if peggedOrder != nil || orderType == vega.Order_TYPE_MARKET {
 		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
 		offset := num.UintZero()
-		if orderSubmission.PeggedOrder != nil {
-			offset = orderSubmission.PeggedOrder.Offset
+		if peggedOrder != nil {
+			offset = peggedOrder.Offset
 		}
-		if orderSubmission.Side == types.SideBuy {
+		if side == types.SideBuy {
 			priceInMarket.AddSum(offset)
 		} else {
 			priceInMarket = priceInMarket.Sub(priceInMarket, offset)
 		}
 		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 	} else {
-		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
+		price, _ = num.UintFromDecimal(orderPrice.ToDecimal().Mul(m.priceFactor))
 	}
 
 	minQuantum := assetQuantum.Mul(quantumMultiplier)
-	value := num.UintZero().Mul(num.NewUint(orderSubmission.Size), price).ToDecimal()
+	value := num.UintZero().Mul(num.NewUint(orderSize), price).ToDecimal()
 	value = value.Div(m.positionFactor)
-	if value.LessThan(minQuantum.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum holding requirement for spam")
+	required := minQuantum.Mul(assetQuantum)
+	if value.LessThan(required) {
+		return fmt.Errorf(fmt.Sprintf("order value (%s) is less than minimum holding requirement for spam (%s)", value.String(), required.String()))
 	}
 	return nil
+}
+
+func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+	return m.checkOrderForSpam(
+		order.Side,
+		order.Price,
+		order.Size,
+		order.PeggedOrder,
+		order.Type,
+		m.minHoldingQuantumMultiplier)
+}
+
+func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	return m.checkOrderForSpam(
+		orderSubmission.Side,
+		orderSubmission.Price,
+		orderSubmission.Size,
+		orderSubmission.PeggedOrder,
+		orderSubmission.Type,
+		quantumMultiplier)
 }
