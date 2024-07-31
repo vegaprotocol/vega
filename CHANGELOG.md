@@ -16,7 +16,7 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11513](https://github.com/vegaprotocol/vega/issues/11513) - Rollback CometBFT to version `v0.38.8`.
 
 
 ## 0.77.4
