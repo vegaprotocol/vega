@@ -913,8 +913,7 @@ enum AccountType {
   // Account holding user's rewards after the vesting period
   ACCOUNT_TYPE_VESTED_REWARDS = 23;
 
-  // Per asset market reward account given for average position
-  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION = 24;
+  reserved 24;
 
   // Per asset market reward account given for relative return
   ACCOUNT_TYPE_REWARD_RELATIVE_RETURN = 25;
@@ -933,6 +932,9 @@ enum AccountType {
 
   // Per asset market reward account for realised return
   ACCOUNT_TYPE_REWARD_REALISED_RETURN = 30;
+
+  // Per asset market reward account given for average notional
+  ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL = 31;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
@@ -1087,8 +1089,7 @@ enum DispatchMetric {
   DISPATCH_METRIC_LP_FEES_RECEIVED = 3;
   // Dispatch metric that uses total value of the market if above the required threshold and not paid given proposer bonus yet
   DISPATCH_METRIC_MARKET_VALUE = 4;
-  // Dispatch metric that uses the time weighted average position
-  DISPATCH_METRIC_AVERAGE_POSITION = 5;
+  reserved 5;
   // Dispatch metric that uses the relative PNL of the party in the market
   DISPATCH_METRIC_RELATIVE_RETURN = 6;
   // Dispatch metric that uses return volatility of the party in the market
@@ -1097,6 +1098,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_VALIDATOR_RANKING = 8;
   // Dispatch metric that uses the realised return of the party in a market
   DISPATCH_METRIC_REALISED_RETURN = 9;
+  // Dispatch metric that uses the time weighted average notional
+  DISPATCH_METRIC_AVERAGE_NOTIONAL = 10;
 }
 
 enum EntityScope {

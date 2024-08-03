@@ -64,7 +64,7 @@ Feature: Calculation of average position during closeout trades
 
         Given the parties submit the following recurring transfers:
             | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset    | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | ranks        |
-            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | USD-1-10 | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | USD-1-10     |         | 1           | 1             | RANK                  | INDIVIDUALS  | ALL              | 0                   | 0                    | 1:10,2:5,4:1 |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | USD-1-10 | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | USD-1-10     |         | 1           | 1             | RANK                  | INDIVIDUALS  | ALL              | 0                   | 0                    | 1:10,2:5,4:1 |
         When the parties place the following orders:
             | party  | market id    | side | volume | price | resulting trades | type       | tif     |
             | aux1   | ETH/USD-1-10 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -101,9 +101,9 @@ Feature: Calculation of average position during closeout trades
         # At the beginning of the epoch the party had some position so they still get some reward at this epoch
         Then parties should have the following vesting account balances:
             | party  | asset    | balance |
-            | party1 | USD-1-10 | 4000    |
-            | aux1   | USD-1-10 | 4000    |
-            | aux2   | USD-1-10 | 2000    |
+            | party1 | USD-1-10 | 3846    |
+            | aux1   | USD-1-10 | 3846    |
+            | aux2   | USD-1-10 | 1923    |
 
         Given the network moves ahead "1" epochs
         # there are still rewards because while the position is 0 at the beginning of the epoch, the timeweighted position will only become 0
