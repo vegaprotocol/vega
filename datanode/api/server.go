@@ -126,6 +126,7 @@ type AMMService interface {
 	ListByPool(ctx context.Context, poolID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByPartyMarketStatus(ctx context.Context, party, market *string, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
