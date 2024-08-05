@@ -164,6 +164,7 @@ func NewPoolFromProto(
 	state *snapshotpb.PoolMapEntry_Pool,
 	party string,
 	priceFactor num.Decimal,
+	positionFactor num.Decimal,
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 
@@ -232,17 +233,18 @@ func NewPoolFromProto(
 			LeverageAtLowerBound: lowerLeverage,
 			LeverageAtUpperBound: upperLeverage,
 		},
-		owner:       party,
-		market:      state.Market,
-		asset:       state.Asset,
-		sqrt:        sqrt,
-		collateral:  collateral,
-		position:    position,
-		lower:       lowerCu,
-		upper:       upperCu,
-		priceFactor: priceFactor,
-		oneTick:     oneTick,
-		status:      state.Status,
+		owner:          party,
+		market:         state.Market,
+		asset:          state.Asset,
+		sqrt:           sqrt,
+		collateral:     collateral,
+		position:       position,
+		lower:          lowerCu,
+		upper:          upperCu,
+		priceFactor:    priceFactor,
+		positionFactor: positionFactor,
+		oneTick:        oneTick,
+		status:         state.Status,
 	}, nil
 }
 

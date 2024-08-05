@@ -204,7 +204,7 @@ func NewFromProto(
 	}
 
 	for _, v := range state.Pools {
-		p, err := NewPoolFromProto(log, e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor)
+		p, err := NewPoolFromProto(log, e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor, positionFactor)
 		if err != nil {
 			return e, err
 		}
