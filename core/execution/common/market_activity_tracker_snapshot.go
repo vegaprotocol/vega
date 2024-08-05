@@ -295,6 +295,8 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		LpFees:                          marketFeesToProto(mt.lpFees),
 		InfraFees:                       marketFeesToProto(mt.infraFees),
 		LpPaidFees:                      marketFeesToProto(mt.lpPaidFees),
+		BuyBackFees:                     marketFeesToProto(mt.buybackFeesPaid),
+		TreasuryFees:                    marketFeesToProto(mt.treasuryFeesPaid),
 		Proposer:                        mt.proposer,
 		BonusPaid:                       paid,
 		ValueTraded:                     mt.valueTraded.String(),
@@ -394,6 +396,8 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		makerFeesReceived:      map[string]*num.Uint{},
 		makerFeesPaid:          map[string]*num.Uint{},
 		lpFees:                 map[string]*num.Uint{},
+		buybackFeesPaid:        map[string]*num.Uint{},
+		treasuryFeesPaid:       map[string]*num.Uint{},
 		infraFees:              map[string]*num.Uint{},
 		lpPaidFees:             map[string]*num.Uint{},
 		totalMakerFeesReceived: num.UintZero(),
@@ -463,6 +467,22 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		for _, mf := range tracker.InfraFees {
 			fee, _ := num.UintFromString(mf.Fee, 10)
 			mft.infraFees[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
+		}
+	}
+
+	if len(tracker.BuyBackFees) > 0 {
+		for _, mf := range tracker.BuyBackFees {
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			mft.buybackFeesPaid[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
+		}
+	}
+
+	if len(tracker.TreasuryFees) > 0 {
+		for _, mf := range tracker.TreasuryFees {
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			mft.treasuryFeesPaid[mf.Party] = fee
 			mft.allPartiesCache[mf.Party] = struct{}{}
 		}
 	}

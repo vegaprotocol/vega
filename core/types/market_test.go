@@ -121,6 +121,8 @@ func TestMarketFromIntoProto(t *testing.T) {
 				MakerFee:          "0.002",
 				InfrastructureFee: "0.001",
 				LiquidityFee:      "0.003",
+				BuyBackFee:        "0.1",
+				TreasuryFee:       "0.2",
 			},
 			LiquidityFeeSettings: &vegapb.LiquidityFeeSettings{
 				Method: vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
@@ -283,6 +285,8 @@ func TestPerpMarketFromIntoProto(t *testing.T) {
 				MakerFee:          "0.002",
 				InfrastructureFee: "0.001",
 				LiquidityFee:      "0.003",
+				BuyBackFee:        "0.1",
+				TreasuryFee:       "0.2",
 			},
 			LiquidityFeeSettings: &vegapb.LiquidityFeeSettings{
 				Method: vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,

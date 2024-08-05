@@ -374,6 +374,8 @@ type CommonMarket interface {
 	OnMarketProbabilityOfTradingTauScalingUpdate(context.Context, num.Decimal)
 	OnMarketValueWindowLengthUpdate(time.Duration)
 	OnFeeFactorsInfrastructureFeeUpdate(context.Context, num.Decimal)
+	OnFeeFactorsTreasuryFeeUpdate(context.Context, num.Decimal)
+	OnFeeFactorsBuyBackFeeUpdate(context.Context, num.Decimal)
 	OnFeeFactorsMakerFeeUpdate(context.Context, num.Decimal)
 	OnMarkPriceUpdateMaximumFrequency(context.Context, time.Duration)
 	OnMarketAuctionMinimumDurationUpdate(context.Context, time.Duration)

@@ -37,7 +37,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,EvtForwarderHeartbeat,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint,Broker,SpamEngine,PoWEngine,SnapshotEngine,StateVarEngine,TeamsEngine,ReferralProgram,VolumeDiscountProgram,BlockchainClient,ProtocolUpgradeService,EthCallEngine,BalanceChecker,PartiesEngine,TxCache,EthereumOracleVerifier,Codec
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,EvtForwarderHeartbeat,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint,Broker,SpamEngine,PoWEngine,SnapshotEngine,StateVarEngine,TeamsEngine,ReferralProgram,VolumeDiscountProgram,VolumeRebateProgram,BlockchainClient,ProtocolUpgradeService,EthCallEngine,BalanceChecker,PartiesEngine,TxCache,EthereumOracleVerifier,Codec
 
 var (
 	ErrChainEventFromNonValidator             = errors.New("chain event emitted from a non-validator node")

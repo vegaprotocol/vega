@@ -28,9 +28,9 @@ Feature: Setting and applying referee benefit factors
 
     # Initalise the referral program then move forwards an epoch to start the program
     Given the referral benefit tiers "rbt":
-      | minimum running notional taker volume | minimum epochs | referral reward factor | referral discount factor |
-      | 2000                                  | 2              | 0.02                   | 0.02                     |
-      | 3000                                  | 3              | 0.20                   | 0.20                     |
+      | minimum running notional taker volume | minimum epochs | referral reward infra factor | referral reward maker factor | referral reward liquidity factor | referral discount infra factor | referral discount maker factor | referral discount liquidity factor |
+      | 2000                                  | 2              | 0.021                        | 0.022                        | 0.023                            | 0.024                          | 0.025                          | 0.026                              |
+      | 3000                                  | 3              | 0.21                         | 0.22                         | 0.23                             | 0.24                           | 0.25                           | 0.26                               |
     And the referral staking tiers "rst":
       | minimum staked tokens | referral reward multiplier |
       | 1                     | 1                          |
@@ -125,8 +125,8 @@ Feature: Setting and applying referee benefit factors
       | referee1 | ETH/USD.1.1 | sell | <initial volume> | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead <time in set> epochs
     Then the referral set stats for code "referral-code-1" at epoch <time in set> should have a running volume of <running volume>:
-      | party    | reward factor       | discount factor       |
-      | referee1 | <max reward factor> | <max discount factor> |
+      | party    | reward infra factor       | reward maker factor       | reward liquidity factor       | discount infra factor       | discount maker factor       | discount liquidity factor       |
+      | referee1 | <max infra reward factor> | <max maker reward factor> | <max liquidity reward factor> | <max infra discount factor> | <max maker discount factor> | <max liquidity discount factor> |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -134,13 +134,13 @@ Feature: Setting and applying referee benefit factors
       | referee1 | ETH/USD.1.1 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     Examples:
-      | initial volume | running volume | time in set | max reward factor | max discount factor |
-      | 10             | 1000           | "1"         | 0                 | 0                   |
-      | 10             | 1000           | "4"         | 0                 | 0                   |
-      | 20             | 2000           | "1"         | 0.02              | 0                   |
-      | 30             | 3000           | "2"         | 0.20              | 0.02                |
-      | 20             | 2000           | "3"         | 0.02              | 0.02                |
-      | 30             | 3000           | "3"         | 0.20              | 0.20                |
+      | initial volume | running volume | time in set | max infra reward factor | max maker reward factor | max liquidity reward factor | max infra discount factor | max maker discount factor | max liquidity discount factor |
+      | 10             | 1000           | "1"         | 0                       | 0                       | 0                           | 0                         | 0                         | 0                             |
+      | 10             | 1000           | "4"         | 0                       | 0                       | 0                           | 0                         | 0                         | 0                             |
+      | 20             | 2000           | "1"         | 0.021                   | 0.022                   | 0.023                       | 0                         | 0                         | 0                             |
+      | 30             | 3000           | "2"         | 0.21                    | 0.22                    | 0.23                        | 0.024                     | 0.025                     | 0.026                         |
+      | 20             | 2000           | "3"         | 0.021                   | 0.022                   | 0.023                       | 0.024                     | 0.025                     | 0.026                         |
+      | 30             | 3000           | "3"         | 0.21                    | 0.22                    | 0.23                        | 0.24                      | 0.25                      | 0.26                          |
 
 
   Scenario: Referee incurs fees during continuous trading (0029-FEES-023)(0029-FEES-025)
@@ -152,8 +152,8 @@ Feature: Setting and applying referee benefit factors
       | referee1 | ETH/USD.1.1 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.02          | 0.02            |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.021               | 0.022               | 0.023                   | 0.024                 | 0.025                 | 0.026                     |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -164,11 +164,11 @@ Feature: Setting and applying referee benefit factors
       | aux1  | 1000  | 100  | referee1 |
     Then the following transfers should happen:
       | from     | to        | from account                             | to account                               | market id   | amount | asset   |
-      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_MAKER                  | ETH/USD.1.1 | 97     | USD.1.1 |
-      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 97     | USD.1.1 |
-      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 97     | USD.1.1 |
-      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 3      | USD.1.1 |
-      |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 3      | USD.1.1 |
+      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_MAKER                  | ETH/USD.1.1 | 96     | USD.1.1 |
+      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 96     | USD.1.1 |
+      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 96     | USD.1.1 |
+      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 6      | USD.1.1 |
+      |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 6      | USD.1.1 |
 
 
   Scenario: Referrer incurs fees during continuous trading (0029-FEES-023)(0029-FEES-025)
@@ -180,8 +180,8 @@ Feature: Setting and applying referee benefit factors
       | referee1 | ETH/USD.1.1 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.02          | 0.02            |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.021               | 0.022               | 0.023                   | 0.024                 | 0.025                 | 0.026                     |
 
     Given the parties place the following orders:
       | party     | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -206,8 +206,8 @@ Feature: Setting and applying referee benefit factors
       | referrer1 | ETH/USD.1.1 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.02          | 0.02            |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.021               | 0.022               | 0.023                   | 0.024                 | 0.025                 | 0.026                     |
 
     # Cancel the liquidity commitment triggering an auction
     Given the parties submit the following liquidity provision:
@@ -232,9 +232,9 @@ Feature: Setting and applying referee benefit factors
     And the following transfers should happen:
       | from     | to        | from account                             | to account                               | market id   | amount | asset   |
       | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 0      | USD.1.1 |
-      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 193    | USD.1.1 |
-      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 6      | USD.1.1 |
-      |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 6      | USD.1.1 |
+      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 192    | USD.1.1 |
+      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 8      | USD.1.1 |
+      |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 8      | USD.1.1 |
 
 
   Scenario: Referrer incurs fees when exiting an auction (0029-FEES-024)(0029-FEES-026)
@@ -246,8 +246,8 @@ Feature: Setting and applying referee benefit factors
       | referee1 | ETH/USD.1.2 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.02          | 0.02            |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.021               | 0.022               | 0.023                   | 0.024                 | 0.025                 | 0.026                     |
     And the market data for the market "ETH/USD.1.2" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | horizon | min bound | max bound |
       | 1000       | TRADING_MODE_CONTINUOUS | 7469         | 1000000        | 21            | 3600    | 973       | 1027      |
@@ -286,8 +286,8 @@ Feature: Setting and applying referee benefit factors
       | referee1 | ETH/USD.1.1 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.02          | 0.02            |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.021               | 0.022               | 0.023                   | 0.024                 | 0.025                 | 0.026                     |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -298,9 +298,9 @@ Feature: Setting and applying referee benefit factors
       | aux1  | 1000  | 50   | referee1 |
     Then the following transfers should happen:
       | from     | to     | from account         | to account                       | market id   | amount | asset   |
-      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER          | ETH/USD.1.1 | 49     | USD.1.1 |
-      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.1 | 49     | USD.1.1 |
-      | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 49     | USD.1.1 |
+      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER          | ETH/USD.1.1 | 48     | USD.1.1 |
+      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.1 | 48     | USD.1.1 |
+      | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 48     | USD.1.1 |
 
 
   Scenario: Insufficent fees to be able to apply a referral discount discount for the referee (0029-FEES-030)
@@ -312,8 +312,8 @@ Feature: Setting and applying referee benefit factors
       | referee1 | ETH/USD.1.1 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.02          | 0.02            |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.021               | 0.022               | 0.023                   | 0.024                 | 0.025                 | 0.026                     |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -324,37 +324,37 @@ Feature: Setting and applying referee benefit factors
       | aux1  | 1000  | 40   | referee1 |
     Then the following transfers should happen:
       | from     | to     | from account         | to account                       | market id   | amount | asset   |
-      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER          | ETH/USD.1.1 | 40     | USD.1.1 |
-      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.1 | 40     | USD.1.1 |
+      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER          | ETH/USD.1.1 | 39     | USD.1.1 |
+      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.1 | 39     | USD.1.1 |
       | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 40     | USD.1.1 |
 
 
   Scenario: Referal reward factor set greater than referralProgram.maxReferralRewardProportion (0029-FEES-029, 0029-FEES-031)
-  # Expectation: the maximum reward proportion should be adhered to
+    # Expectation: the maximum reward proportion should be adhered to
 
-  Given the parties place the following orders:
-    | party     | market id   | side | volume | price | resulting trades | type       | tif     |
-    | aux1      | ETH/USD.1.1 | buy  | 30     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-    | referrer1 | ETH/USD.1.1 | sell | 30     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-  When the network moves ahead "3" epochs
-  Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of 3000:
-    | party    | reward factor | discount factor |
-    | referee1 | 0.20          | 0.20            |
+    Given the parties place the following orders:
+      | party     | market id   | side | volume | price | resulting trades | type       | tif     |
+      | aux1      | ETH/USD.1.1 | buy  | 30     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD.1.1 | sell | 30     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "3" epochs
+    Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of 3000:
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.21                | 0.22                | 0.23                    | 0.24                  | 0.25                  | 0.26                      |
 
-  Given the parties place the following orders:
-    | party    | market id   | side | volume | price | resulting trades | type       | tif     |
-    | aux1     | ETH/USD.1.1 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-    | referee1 | ETH/USD.1.1 | sell | 100    | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-  When the following trades should be executed:
-    | buyer | price | size | seller   |
-    | aux1  | 1000  | 100  | referee1 |
+    Given the parties place the following orders:
+      | party    | market id   | side | volume | price | resulting trades | type       | tif     |
+      | aux1     | ETH/USD.1.1 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1 | ETH/USD.1.1 | sell | 100    | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the following trades should be executed:
+      | buyer | price | size | seller   |
+      | aux1  | 1000  | 100  | referee1 |
 
-  # reward factor is 0.2, multiplier is 1 however the maxReferralRewardProportion is set to 0.1 therefore
-  # the actual reward given is 0.1 * 240 = 24
-  Then the following transfers should happen:
-    | from     | to        | from account                             | to account                               | market id   | amount | asset   |
-    | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_MAKER                  | ETH/USD.1.1 | 72     | USD.1.1 |
-    | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 72     | USD.1.1 |
-    | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 72     | USD.1.1 |
-    | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 24     | USD.1.1 |
-    |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 24     | USD.1.1 |
+    # reward factor is 0.21, multiplier is 1 however the maxReferralRewardProportion is set to 0.1 therefore
+    # the actual reward given is 0.1 * 240 = 24
+    Then the following transfers should happen:
+      | from     | to        | from account                             | to account                               | market id   | amount | asset   |
+      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_MAKER                  | ETH/USD.1.1 | 68     | USD.1.1 |
+      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 67     | USD.1.1 |
+      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 69     | USD.1.1 |
+      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 21     | USD.1.1 |
+      |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 21     | USD.1.1 |

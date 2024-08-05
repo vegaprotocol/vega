@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -187,10 +188,18 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 							EpochNotionalTakerVolume: "10",
 						},
 					},
-					VegaTime:                block.VegaTime,
-					RewardFactor:            "1",
-					RewardsMultiplier:       "1",
-					RewardsFactorMultiplier: "1",
+					VegaTime: block.VegaTime,
+					RewardFactors: &vegapb.RewardFactors{
+						InfrastructureRewardFactor: "-1",
+						LiquidityRewardFactor:      "-1",
+						MakerRewardFactor:          "-1",
+					},
+					RewardsMultiplier: "1",
+					RewardsFactorsMultiplier: &vegapb.RewardFactors{
+						InfrastructureRewardFactor: "-1",
+						LiquidityRewardFactor:      "-1",
+						MakerRewardFactor:          "-1",
+					},
 				}
 				require.NoError(t, rs.AddReferralSetStats(ctx, &stats))
 				feeStats := entities.FeesStats{
@@ -546,9 +555,17 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 			ReferrerTakerVolume:                   "100",
 			RefereesStats:                         getRefereeStats(t, refs, "0.01"),
 			VegaTime:                              block.VegaTime,
-			RewardFactor:                          "0.02",
-			RewardsMultiplier:                     "0.03",
-			RewardsFactorMultiplier:               "0.04",
+			RewardFactors: &vegapb.RewardFactors{
+				InfrastructureRewardFactor: "0.02",
+				LiquidityRewardFactor:      "0.02",
+				MakerRewardFactor:          "0.02",
+			},
+			RewardsMultiplier: "0.03",
+			RewardsFactorsMultiplier: &vegapb.RewardFactors{
+				InfrastructureRewardFactor: "0.04",
+				LiquidityRewardFactor:      "0.04",
+				MakerRewardFactor:          "0.04",
+			},
 		}
 
 		err := rs.AddReferralSetStats(ctx, &stats)
@@ -570,9 +587,17 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 			ReferrerTakerVolume:                   "100",
 			RefereesStats:                         getRefereeStats(t, refs, "0.01"),
 			VegaTime:                              block.VegaTime,
-			RewardFactor:                          "0.02",
-			RewardsMultiplier:                     "0.03",
-			RewardsFactorMultiplier:               "0.04",
+			RewardFactors: &vegapb.RewardFactors{
+				InfrastructureRewardFactor: "0.02",
+				LiquidityRewardFactor:      "0.02",
+				MakerRewardFactor:          "0.02",
+			},
+			RewardsMultiplier: "0.03",
+			RewardsFactorsMultiplier: &vegapb.RewardFactors{
+				InfrastructureRewardFactor: "0.04",
+				LiquidityRewardFactor:      "0.04",
+				MakerRewardFactor:          "0.04",
+			},
 		}
 
 		err := rs.AddReferralSetStats(ctx, &stats)
@@ -622,6 +647,9 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		block := addTestBlock(t, ctx, bs)
 		lastEpoch = uint64(i + 1)
 
+		rf := fmt.Sprintf("0.2%d", i+1)
+		rmf := fmt.Sprintf("0.4%d", i+1)
+
 		set := entities.ReferralSetStats{
 			SetID:                                 setID,
 			AtEpoch:                               lastEpoch,
@@ -633,10 +661,18 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 					EpochNotionalTakerVolume: strconv.Itoa((i+1)*100 + (j+1)*10),
 				}
 			}),
-			VegaTime:                block.VegaTime,
-			RewardFactor:            fmt.Sprintf("0.2%d", i+1),
-			RewardsMultiplier:       fmt.Sprintf("0.3%d", i+1),
-			RewardsFactorMultiplier: fmt.Sprintf("0.4%d", i+1),
+			VegaTime: block.VegaTime,
+			RewardFactors: &vegapb.RewardFactors{
+				InfrastructureRewardFactor: rf,
+				LiquidityRewardFactor:      rf,
+				MakerRewardFactor:          rf,
+			},
+			RewardsMultiplier: fmt.Sprintf("0.3%d", i+1),
+			RewardsFactorsMultiplier: &vegapb.RewardFactors{
+				InfrastructureRewardFactor: rmf,
+				LiquidityRewardFactor:      rmf,
+				MakerRewardFactor:          rmf,
+			},
 		}
 
 		require.NoError(t, rs.AddReferralSetStats(ctx, &set))
@@ -648,11 +684,11 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 				ReferralSetRunningNotionalTakerVolume: set.ReferralSetRunningNotionalTakerVolume,
 				VegaTime:                              block.VegaTime,
 				PartyID:                               stat.PartyId,
-				DiscountFactor:                        stat.DiscountFactor,
-				RewardFactor:                          set.RewardFactor,
+				DiscountFactors:                       stat.DiscountFactors,
+				RewardFactors:                         set.RewardFactors,
 				EpochNotionalTakerVolume:              stat.EpochNotionalTakerVolume,
 				RewardsMultiplier:                     set.RewardsMultiplier,
-				RewardsFactorMultiplier:               set.RewardsFactorMultiplier,
+				RewardsFactorsMultiplier:              set.RewardsFactorsMultiplier,
 			})
 		}
 	}

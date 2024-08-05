@@ -64,6 +64,7 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
 ) (*Market, error) {
 	mkt := em.Market
@@ -158,6 +159,7 @@ func NewMarketFromSnapshot(
 		fee:                           feeEngine,
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		volumeRebateService:           volumeRebateService,
 		liquidity:                     marketLiquidity,
 		liquidityEngine:               liquidity,
 		parties:                       map[string]struct{}{},

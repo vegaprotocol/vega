@@ -794,7 +794,7 @@ func getTestEngineWithFactors(t *testing.T, priceFactor, positionFactor num.Deci
 	teams := cmocks.NewMockTeams(ctrl)
 	balanceChecker := cmocks.NewMockAccountBalanceChecker(ctrl)
 
-	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, col)
 
 	parties := cmocks.NewMockParties(ctrl)
 	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()

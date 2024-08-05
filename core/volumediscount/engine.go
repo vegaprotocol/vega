@@ -92,17 +92,17 @@ func (e *Engine) HasProgramEnded() bool {
 	return e.programHasEnded
 }
 
-func (e *Engine) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
+func (e *Engine) VolumeDiscountFactorForParty(party types.PartyID) types.Factors {
 	if e.programHasEnded {
-		return num.DecimalZero()
+		return types.EmptyFactors
 	}
 
 	factors, ok := e.factorsByParty[party]
 	if !ok {
-		return num.DecimalZero()
+		return types.EmptyFactors
 	}
 
-	return factors.DiscountFactor
+	return factors.DiscountFactors
 }
 
 func (e *Engine) TakerNotionalForParty(party types.PartyID) num.Decimal {
@@ -196,12 +196,12 @@ func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
 			tier := e.currentProgram.VolumeBenefitTiers[i]
 			if notionalVolume.GreaterThanOrEqual(tier.MinimumRunningNotionalTakerVolume.ToDecimal()) {
 				e.factorsByParty[party] = types.VolumeDiscountStats{
-					DiscountFactor: tier.VolumeDiscountFactor,
+					DiscountFactors: tier.VolumeDiscountFactors,
 				}
 				evt.Stats = append(evt.Stats, &eventspb.PartyVolumeDiscountStats{
-					PartyId:        party.String(),
-					DiscountFactor: tier.VolumeDiscountFactor.String(),
-					RunningVolume:  notionalVolume.Round(0).String(),
+					PartyId:         party.String(),
+					DiscountFactors: tier.VolumeDiscountFactors.IntoDiscountFactorsProto(),
+					RunningVolume:   notionalVolume.Round(0).String(),
 				})
 				qualifiedForTier = true
 				break

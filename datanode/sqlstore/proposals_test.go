@@ -1557,7 +1557,7 @@ func TestProposalEnums(t *testing.T) {
 func testProposalError(t *testing.T) {
 	var proposalError vega.ProposalError
 	errs := getEnums(t, proposalError)
-	assert.Len(t, errs, 55)
+	assert.Len(t, errs, 56)
 
 	for e, err := range errs {
 		t.Run(err, func(t *testing.T) {

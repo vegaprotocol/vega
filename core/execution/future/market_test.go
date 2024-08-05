@@ -235,22 +235,24 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	teams := mocks.NewMockTeams(tm.ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
 	broker := bmocks.NewMockBroker(tm.ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker, collateralEngine)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
 	volumeDiscount := fmocks.NewMockVolumeDiscountService(tm.ctrl)
+	volumeRebate := fmocks.NewMockVolumeRebateService(tm.ctrl)
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	referralDiscountReward.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeRebate.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(tm.ctrl)
 	parties := mocks.NewMockParties(tm.ctrl)
 
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties,
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties,
 	)
 	require.NoError(tm.t, err)
 
@@ -648,22 +650,25 @@ func getTestMarket2WithDP(
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	teams := mocks.NewMockTeams(tm.ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker, collateralEngine)
 	epoch.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
 	volumeDiscount := fmocks.NewMockVolumeDiscountService(tm.ctrl)
+	volumeRebate := fmocks.NewMockVolumeRebateService(tm.ctrl)
+
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	referralDiscountReward.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeRebate.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
 	parties := mocks.NewMockParties(ctrl)
 
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}

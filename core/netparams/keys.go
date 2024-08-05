@@ -26,8 +26,11 @@ const (
 	MarketMarginScalingFactors        = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee          = "market.fee.factors.makerFee"
 	MarketFeeFactorsInfrastructureFee = "market.fee.factors.infrastructureFee"
-	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
-	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
+	MarketFeeFactorsTreasuryFee       = "market.fee.factors.treasuryFee"
+	MarketFeeFactorsBuyBackFee        = "market.fee.factors.buybackFee"
+
+	MarketAuctionMinimumDuration = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration = "market.auction.maximumDuration"
 
 	MinimumMarginQuantumMultiple  = "spam.order.minimumMarginQuantumMultiple"
 	MinimumHoldingQuantumMultiple = "spam.order.minimumHoldingQuantumMultiple"
@@ -151,6 +154,16 @@ const (
 	GovernanceProposalVolumeDiscountProgramMinProposerBalance    = "governance.proposal.VolumeDiscountProgram.minProposerBalance"
 	GovernanceProposalVolumeDiscountProgramMinVoterBalance       = "governance.proposal.VolumeDiscountProgram.minVoterBalance"
 
+	// Network parameters for referral program update.
+	GovernanceProposalVolumeRebateProgramMinClose              = "governance.proposal.VolumeRebateProgram.minClose"
+	GovernanceProposalVolumeRebateProgramMaxClose              = "governance.proposal.VolumeRebateProgram.maxClose"
+	GovernanceProposalVolumeRebateProgramMinEnact              = "governance.proposal.VolumeRebateProgram.minEnact"
+	GovernanceProposalVolumeRebateProgramMaxEnact              = "governance.proposal.VolumeRebateProgram.maxEnact"
+	GovernanceProposalVolumeRebateProgramRequiredParticipation = "governance.proposal.VolumeRebateProgram.requiredParticipation"
+	GovernanceProposalVolumeRebateProgramRequiredMajority      = "governance.proposal.VolumeRebateProgram.requiredMajority"
+	GovernanceProposalVolumeRebateProgramMinProposerBalance    = "governance.proposal.VolumeRebateProgram.minProposerBalance"
+	GovernanceProposalVolumeRebateProgramMinVoterBalance       = "governance.proposal.VolumeRebateProgram.minVoterBalance"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -265,6 +278,8 @@ const (
 	VolumeDiscountProgramMaxBenefitTiers         = "volumeDiscountProgram.maxBenefitTiers"
 	VolumeDiscountProgramMaxVolumeDiscountFactor = "volumeDiscountProgram.maxVolumeDiscountFactor"
 
+	VolumeRebateProgramMaxBenefitTiers = "volumeRebateProgram.maxBenefitTiers"
+
 	RewardsActivityStreakBenefitTiers          = "rewards.activityStreak.benefitTiers"
 	RewardsActivityStreakInactivityLimit       = "rewards.activityStreak.inactivityLimit"
 	RewardsActivityStreakMinQuantumOpenVolume  = "rewards.activityStreak.minQuantumOpenVolume"
@@ -320,6 +335,8 @@ var AllKeys = map[string]struct{}{
 	MarketMarginScalingFactors:                                   {},
 	MarketFeeFactorsMakerFee:                                     {},
 	MarketFeeFactorsInfrastructureFee:                            {},
+	MarketFeeFactorsTreasuryFee:                                  {},
+	MarketFeeFactorsBuyBackFee:                                   {},
 	MarketAuctionMinimumDuration:                                 {},
 	MarketAuctionMaximumDuration:                                 {},
 	MarketLiquidityBondPenaltyParameter:                          {},
@@ -395,6 +412,14 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalReferralProgramRequiredMajority:            {},
 	GovernanceProposalReferralProgramMinProposerBalance:          {},
 	GovernanceProposalReferralProgramMinVoterBalance:             {},
+	GovernanceProposalVolumeRebateProgramMinClose:                {},
+	GovernanceProposalVolumeRebateProgramMaxClose:                {},
+	GovernanceProposalVolumeRebateProgramMinEnact:                {},
+	GovernanceProposalVolumeRebateProgramMaxEnact:                {},
+	GovernanceProposalVolumeRebateProgramRequiredParticipation:   {},
+	GovernanceProposalVolumeRebateProgramRequiredMajority:        {},
+	GovernanceProposalVolumeRebateProgramMinProposerBalance:      {},
+	GovernanceProposalVolumeRebateProgramMinVoterBalance:         {},
 	BlockchainsPrimaryEthereumConfig:                             {},
 	BlockchainsEVMBridgeConfigs:                                  {},
 	MarketLiquidityProvisionShapesMaxSize:                        {},
@@ -472,6 +497,7 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionApplyReferralMinFunds:                          {},
 	SpamProtectionReferralSetMinFunds:                            {},
 	BlockchainsEthereumL2Configs:                                 {},
+	VolumeRebateProgramMaxBenefitTiers:                           {},
 	MinimumMarginQuantumMultiple:                                 {},
 	MinimumHoldingQuantumMultiple:                                {},
 }

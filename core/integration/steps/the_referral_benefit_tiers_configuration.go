@@ -34,8 +34,12 @@ func parseBenefitTiersConfigTable(table *godog.Table) []*types.BenefitTier {
 	rows := StrictParseTable(table, []string{
 		"minimum running notional taker volume",
 		"minimum epochs",
-		"referral reward factor",
-		"referral discount factor",
+		"referral reward infra factor",
+		"referral reward maker factor",
+		"referral reward liquidity factor",
+		"referral discount infra factor",
+		"referral discount maker factor",
+		"referral discount liquidity factor",
 	}, []string{})
 
 	benefitTiers := make([]*types.BenefitTier, 0, len(rows))
@@ -44,8 +48,16 @@ func parseBenefitTiersConfigTable(table *godog.Table) []*types.BenefitTier {
 		benefitTiers = append(benefitTiers, &types.BenefitTier{
 			MinimumRunningNotionalTakerVolume: specificRow.MinimumRunningNotionalTakerVolume(),
 			MinimumEpochs:                     specificRow.MinimumEpochs(),
-			ReferralRewardFactor:              specificRow.ReferralRewardFactor(),
-			ReferralDiscountFactor:            specificRow.ReferralDiscountFactor(),
+			ReferralRewardFactors: types.Factors{
+				Infra:     specificRow.ReferralRewardInfraFactor(),
+				Maker:     specificRow.ReferralRewardMakerFactor(),
+				Liquidity: specificRow.ReferralRewardLiqFactor(),
+			},
+			ReferralDiscountFactors: types.Factors{
+				Infra:     specificRow.ReferralDiscountInfraFactor(),
+				Maker:     specificRow.ReferralDiscountMakerFactor(),
+				Liquidity: specificRow.ReferralDiscountLiqFactor(),
+			},
 		})
 	}
 
@@ -64,10 +76,26 @@ func (r benefitTiersConfigRow) MinimumEpochs() *num.Uint {
 	return r.row.MustUint("minimum epochs")
 }
 
-func (r benefitTiersConfigRow) ReferralRewardFactor() num.Decimal {
-	return r.row.MustDecimal("referral reward factor")
+func (r benefitTiersConfigRow) ReferralRewardInfraFactor() num.Decimal {
+	return r.row.MustDecimal("referral reward infra factor")
 }
 
-func (r benefitTiersConfigRow) ReferralDiscountFactor() num.Decimal {
-	return r.row.MustDecimal("referral discount factor")
+func (r benefitTiersConfigRow) ReferralRewardMakerFactor() num.Decimal {
+	return r.row.MustDecimal("referral reward maker factor")
+}
+
+func (r benefitTiersConfigRow) ReferralRewardLiqFactor() num.Decimal {
+	return r.row.MustDecimal("referral reward liquidity factor")
+}
+
+func (r benefitTiersConfigRow) ReferralDiscountInfraFactor() num.Decimal {
+	return r.row.MustDecimal("referral discount infra factor")
+}
+
+func (r benefitTiersConfigRow) ReferralDiscountMakerFactor() num.Decimal {
+	return r.row.MustDecimal("referral discount maker factor")
+}
+
+func (r benefitTiersConfigRow) ReferralDiscountLiqFactor() num.Decimal {
+	return r.row.MustDecimal("referral discount liquidity factor")
 }

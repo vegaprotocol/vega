@@ -47,7 +47,7 @@ func TestPublishGameMetricAverageNotional(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -289,7 +289,7 @@ func TestPublishGameMetricReturnVolatility(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -537,7 +537,7 @@ func TestPublishGameMetricRelativeReturn(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(0, 0)})
@@ -757,7 +757,7 @@ func TestPublishGameMetricRealisedReturn(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(0, 0)})
@@ -879,7 +879,7 @@ func TestPublishGameMetricFees(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(0, 0)})

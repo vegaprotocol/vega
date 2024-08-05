@@ -24,11 +24,11 @@ import (
 
 type ReferralDiscountRewardService struct{}
 
-func (*ReferralDiscountRewardService) ReferralDiscountFactorForParty(party types.PartyID) num.Decimal {
+func (*ReferralDiscountRewardService) ReferralDiscountFactorsForParty(party types.PartyID) num.Decimal {
 	return num.DecimalZero()
 }
 
-func (*ReferralDiscountRewardService) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
+func (*ReferralDiscountRewardService) RewardsFactorsMultiplierAppliedForParty(party types.PartyID) num.Decimal {
 	return num.DecimalZero()
 }
 

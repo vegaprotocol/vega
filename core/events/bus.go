@@ -174,6 +174,10 @@ const (
 	CancelledOrdersEvent
 	GameScoresEvent
 	AMMPoolEvent
+	VolumeRebateProgramStartedEvent
+	VolumeRebateProgramEndedEvent
+	VolumeRebateProgramUpdatedEvent
+	VolumeRebateStatsUpdatedEvent
 )
 
 var (
@@ -277,6 +281,10 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS:                        CancelledOrdersEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_GAME_SCORES:                             GameScoresEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_AMM:                                     AMMPoolEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_STARTED:           VolumeRebateProgramStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_ENDED:             VolumeRebateProgramEndedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED:           VolumeRebateProgramUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED:             VolumeRebateStatsUpdatedEvent,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -371,6 +379,11 @@ var (
 		CancelledOrdersEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_CANCELLED_ORDERS,
 		GameScoresEvent:                          eventspb.BusEventType_BUS_EVENT_TYPE_GAME_SCORES,
 		AMMPoolEvent:                             eventspb.BusEventType_BUS_EVENT_TYPE_AMM,
+		VolumeRebateProgramStartedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_STARTED,
+		VolumeRebateProgramEndedEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_ENDED,
+		VolumeRebateProgramUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED,
+		VolumeRebateStatsUpdatedEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED,
+
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -464,6 +477,10 @@ var (
 		CancelledOrdersEvent:                     "CancelledOrdersEvent",
 		GameScoresEvent:                          "GameScoresEvent",
 		AMMPoolEvent:                             "AMMPoolEvent",
+		VolumeRebateProgramStartedEvent:          "VolumeRebateProgramStartedEvent",
+		VolumeRebateProgramEndedEvent:            "VolumeRebateProgramEndedEvent",
+		VolumeRebateProgramUpdatedEvent:          "VolumeRebateProgramUpdatedEvent",
+		VolumeRebateStatsUpdatedEvent:            "VolumeRebateStatsUpdatedEvent",
 	}
 )
 

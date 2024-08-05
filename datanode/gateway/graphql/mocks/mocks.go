@@ -480,6 +480,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetCurrentVolumeDiscountPr
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentVolumeDiscountProgram", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetCurrentVolumeDiscountProgram), varargs...)
 }
 
+// GetCurrentVolumeRebateProgram mocks base method.
+func (m *MockTradingDataServiceClientV2) GetCurrentVolumeRebateProgram(arg0 context.Context, arg1 *v2.GetCurrentVolumeRebateProgramRequest, arg2 ...grpc.CallOption) (*v2.GetCurrentVolumeRebateProgramResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCurrentVolumeRebateProgram", varargs...)
+	ret0, _ := ret[0].(*v2.GetCurrentVolumeRebateProgramResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCurrentVolumeRebateProgram indicates an expected call of GetCurrentVolumeRebateProgram.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetCurrentVolumeRebateProgram(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentVolumeRebateProgram", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetCurrentVolumeRebateProgram), varargs...)
+}
+
 // GetDeposit mocks base method.
 func (m *MockTradingDataServiceClientV2) GetDeposit(arg0 context.Context, arg1 *v2.GetDepositRequest, arg2 ...grpc.CallOption) (*v2.GetDepositResponse, error) {
 	m.ctrl.T.Helper()
@@ -1198,6 +1218,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetVolumeDiscountStats(arg
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVolumeDiscountStats", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetVolumeDiscountStats), varargs...)
+}
+
+// GetVolumeRebateStats mocks base method.
+func (m *MockTradingDataServiceClientV2) GetVolumeRebateStats(arg0 context.Context, arg1 *v2.GetVolumeRebateStatsRequest, arg2 ...grpc.CallOption) (*v2.GetVolumeRebateStatsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetVolumeRebateStats", varargs...)
+	ret0, _ := ret[0].(*v2.GetVolumeRebateStatsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVolumeRebateStats indicates an expected call of GetVolumeRebateStats.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetVolumeRebateStats(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVolumeRebateStats", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetVolumeRebateStats), varargs...)
 }
 
 // GetWithdrawal mocks base method.
