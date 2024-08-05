@@ -725,8 +725,9 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 }
 
 func (b *OrderBook) CheckBook() bool {
-	checkOBB, checkOBS := true, true
+	checkOBB, checkOBS := false, false
 	if len(b.buy.levels) > 0 {
+		checkOBB = true
 		for _, o := range b.buy.levels[len(b.buy.levels)-1].orders {
 			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestBid {
 				checkOBB = false
@@ -735,6 +736,7 @@ func (b *OrderBook) CheckBook() bool {
 		}
 	}
 	if len(b.sell.levels) > 0 {
+		checkOBS = true
 		for _, o := range b.sell.levels[len(b.sell.levels)-1].orders {
 			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestAsk {
 				checkOBS = false

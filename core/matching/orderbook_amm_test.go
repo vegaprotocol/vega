@@ -42,15 +42,43 @@ func TestOrderbookAMM(t *testing.T) {
 func testOnlyAMMOrders(t *testing.T) {
 	tst := getTestOrderBookWithAMM(t)
 	defer tst.ctrl.Finish()
+	sellPrice := num.NewUint(111)
+	buyPrice := num.NewUint(95)
+	// create some regular orders
+	sell := createOrder(t, tst, 10, sellPrice)
+	buy := createOrder(t, tst, 10, buyPrice)
+	buy.Side = types.SideBuy
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(4).Return(nil)
+	tst.obs.EXPECT().NotifyFinished().Times(3)
+	_, err := tst.book.SubmitOrder(sell)
+	require.NoError(t, err)
+	_, err = tst.book.SubmitOrder(buy)
+	require.NoError(t, err)
+	// create some pegged orders
+	pob := createOrder(t, tst, 100, nil)
+	pob.Party = "B"
+	pob.Side = types.SideBuy
+	pob.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReferenceBestBid,
+		Offset:    num.NewUint(10),
+	}
+	pos := createOrder(t, tst, 100, nil)
+	pos.Party = "S"
+	pos.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReferenceBestAsk,
+		Offset:    num.NewUint(10),
+	}
+	require.NoError(t, err)
+	_, err = tst.book.SubmitOrder(pos)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), tst.book.GetPeggedOrdersCount())
+	// now cancel the non-pegged orders
+	require.NoError(t, err)
 	one, zero := uint64(1), uint64(0)
+
 	// only buy orders
 	tst.obs.EXPECT().BestPricesAndVolumes().Times(1).Return(num.UintOne(), one, nil, zero)
 	check := tst.book.CheckBook()
-	require.False(t, check)
-
-	// only sell orders
-	tst.obs.EXPECT().BestPricesAndVolumes().Times(1).Return(nil, zero, num.UintOne(), one)
-	check = tst.book.CheckBook()
 	require.False(t, check)
 
 	// buy and sell orders
