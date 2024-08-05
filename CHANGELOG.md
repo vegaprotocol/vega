@@ -34,6 +34,7 @@
 
 - [11508](https://github.com/vegaprotocol/vega/issues/11508) - Handle market order for margin spam protection.
 - [11507](https://github.com/vegaprotocol/vega/issues/11507) - Margin spam check to remove division by asset quantum.
+- [11504](https://github.com/vegaprotocol/vega/issues/11504) - Fix bug causing panic when accounting for volume rounding with AMM orders.
 
 
 ## 0.77.3

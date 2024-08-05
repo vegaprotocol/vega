@@ -725,27 +725,35 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 }
 
 func (b *OrderBook) CheckBook() bool {
+	checkOBB, checkOBS := false, false
 	if len(b.buy.levels) > 0 {
-		allPegged := true
+		checkOBB = true
 		for _, o := range b.buy.levels[len(b.buy.levels)-1].orders {
 			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestBid {
-				allPegged = false
+				checkOBB = false
 				break
 			}
-		}
-		if allPegged {
-			return false
 		}
 	}
 	if len(b.sell.levels) > 0 {
-		allPegged := true
+		checkOBS = true
 		for _, o := range b.sell.levels[len(b.sell.levels)-1].orders {
 			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestAsk {
-				allPegged = false
+				checkOBS = false
 				break
 			}
 		}
-		if allPegged {
+	}
+	// if either buy or sell side is lacking non-pegged orders, check AMM orders.
+	if checkOBB || checkOBS {
+		// get best bid/ask price and volumes.
+		bb, bbv, bs, bsv := b.buy.offbook.BestPricesAndVolumes()
+		// if the buy side is lacking non-pegged orders, check if there are off-book orders.
+		if checkOBB && (bb == nil || bb.IsZero() || bbv == 0) {
+			return false
+		}
+		// same, but for sell side.
+		if checkOBS && (bs == nil || bs.IsZero() || bsv == 0) {
 			return false
 		}
 	}

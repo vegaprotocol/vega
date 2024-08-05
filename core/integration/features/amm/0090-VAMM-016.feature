@@ -22,11 +22,11 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
       | market.liquidity.equityLikeShareFeeFraction         | 1     |
-	    | market.amm.minCommitmentQuantum                     | 1     |
+      | market.amm.minCommitmentQuantum                     | 1     |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
-      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0   |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0     |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
       | validators.epoch.length                             | 10s   |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
@@ -85,7 +85,7 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 39           | 10000           | 0             | 100       | 100       | 100              |
+      | 100        | TRADING_MODE_CONTINUOUS | 39           | 10000          | 0             | 100       | 100       | 100              |
 
     When the parties submit the following liquidity provision:
       # Using 9788 instead of exactly 10,000 makes things easier because getting exactly 10,000 from an AMM pool as virtual stake can be tricky due to complex math.
@@ -103,7 +103,7 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
     Then the network moves ahead "1" epochs
@@ -141,7 +141,7 @@ Feature: vAMM has the same ELS as liquidity provision with the same commitment a
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
     Then the network moves ahead "1" epochs

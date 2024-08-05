@@ -97,25 +97,25 @@ Feature: Test vAMM submission works as expected (invalid submission)
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-       | vamm1 | ETH/MAR22 | 100000  | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
+       | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 0.25           | 0.25           | 0.01         |
      Then the AMM pool status should be:
        | party | market id | amount | status        | base | lower bound | lower leverage | upper bound | upper leverage |
-       | vamm1 | ETH/MAR22 | 100000  | STATUS_ACTIVE | 100  | 85          | 0.25               | 150         | 0.25               |
+       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 0.25           | 150         | 0.25           |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | lower leverage | error                        | proposed fee |
-      | vamm2 | ETH/MAR22 | 100000   | 0.1      | 90   | 85          | 0.25           | rebase target outside bounds | 0.01         |
+      | vamm2 | ETH/MAR22 | 100000 | 0.1      | 90   | 85          | 0.25           | rebase target outside bounds | 0.01         |
     # can't rebase because the target is 100 and thats outside of its bounds given there is no upper
     Then the AMM pool status should be:
-      | party | market id | amount | status          | base | lower bound | lower leverage |
-      | vamm2 | ETH/MAR22 | 100000   | STATUS_ACTIVE   | 90   | 85          | 0.25           |
+      | party | market id | amount | status        | base | lower bound | lower leverage |
+      | vamm2 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 90   | 85          | 0.25           |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | upper bound | upper leverage | error                        | proposed fee |
-      | vamm3 | ETH/MAR22 | 100000   | 0.1      | 110  | 150         | 0.25               | rebase target outside bounds | 0.01         |
+      | vamm3 | ETH/MAR22 | 100000 | 0.1      | 110  | 150         | 0.25           | rebase target outside bounds | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status          | base | upper bound | upper leverage |
-      | vamm3 | ETH/MAR22 | 100000   | STATUS_ACTIVE   | 110  | 150         | 0.25           |
+      | party | market id | amount | status        | base | upper bound | upper leverage |
+      | vamm3 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 110  | 150         | 0.25           |
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
@@ -133,10 +133,10 @@ Feature: Test vAMM submission works as expected (invalid submission)
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee | error |
-       | vamm6 | ETH/MAR22 | 100000  | 0.001    | 101  | 95          | 105         | 0.01          | 0.01           | 0.01         | blah |
+       | vamm6 | ETH/MAR22 | 100000 | 0.001    | 101  | 95          | 105         | 0.01           | 0.01           | 0.01         | blah  |
      Then the AMM pool status should be:
-       | party | market id | amount | status         | base | lower bound | lower leverage | upper bound | upper leverage | 
-       | vamm6 | ETH/MAR22 | 100000 | STATUS_ACTIVE  | 101  | 95          | 0.01           | 105         | 0.01           |
+       | party | market id | amount | status        | base | lower bound | lower leverage | upper bound | upper leverage |
+       | vamm6 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 101  | 95          | 0.01           | 105         | 0.01           |
 
      When the parties submit the following AMM:
        | party | market id | amount | slippage | base | lower bound | lower leverage | proposed fee |
