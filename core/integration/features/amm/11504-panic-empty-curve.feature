@@ -22,7 +22,7 @@
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
       | market.liquidity.equityLikeShareFeeFraction         | 1     |
-	  | market.amm.minCommitmentQuantum                     | 1     |
+      | market.amm.minCommitmentQuantum                     | 1     |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
