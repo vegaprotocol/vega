@@ -93,7 +93,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
   @VAMM

@@ -101,16 +101,16 @@ Feature: Ensure the vAMM contributes to fee factor setting
   
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 80   | 65          | 130         | 0.25               | 0.25               | 0.03         |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 80   | 65          | 130         | 0.25           | 0.25           | 0.03         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 80   | 65          | 130         | 0.25               | 0.25               |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 80   | 65          | 130         | 0.25           | 0.25           |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
     When the network moves ahead "4" blocks

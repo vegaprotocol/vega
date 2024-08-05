@@ -427,15 +427,27 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 
 	// if the pools consume the whole incoming order's volume, share it out pro-rata
 	if agg.Remaining < total {
+		maxVolumes := make([]uint64, 0, len(volumes))
+		// copy the available volumes for rounding.
+		maxVolumes = append(maxVolumes, volumes...)
 		var retotal uint64
 		for i := range volumes {
 			volumes[i] = agg.Remaining * volumes[i] / total
 			retotal += volumes[i]
 		}
 
-		// any lost crumbs due to integer division is given to the first pool
+		// any lost crumbs due to integer division is given to the pools that can accommodate it.
 		if d := agg.Remaining - retotal; d != 0 {
-			volumes[0] += d
+			for i, v := range volumes {
+				if delta := maxVolumes[i] - v; delta != 0 {
+					if delta >= d {
+						volumes[i] += d
+						break
+					}
+					volumes[i] += delta
+					d -= delta
+				}
+			}
 		}
 	}
 

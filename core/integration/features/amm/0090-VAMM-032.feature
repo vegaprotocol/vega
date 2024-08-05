@@ -101,7 +101,7 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
   @VAMM
@@ -123,8 +123,8 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
       | 100        | TRADING_MODE_CONTINUOUS | 101       | 101              | 1000           | 119          |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 2      | 0             | 0            |        |
-      | vamm1-id | -2     | 0            | 0            | true   |
+      | party4   | 2      | 0              | 0            |        |
+      | vamm1-id | -2     | 0              | 0            | true   |
     And the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
@@ -151,13 +151,13 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
     # and lastly a transfer of the general account back to the owner.
     Then debug transfers
     And the following transfers should happen:
-      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW             |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_LOSS                   |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1380   | USD   | true   | TRANSFER_TYPE_LOSS                   |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 28204  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_LOSS              |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1380   | USD   | true   | TRANSFER_TYPE_LOSS              |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 28204  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE       |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 28204   |        |        |

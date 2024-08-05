@@ -93,12 +93,12 @@ Feature: Test vAMM submission works as expected
       | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 150         | 0.25           | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | upper bound | upper leverage |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 150         | 0.25               |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 150         | 0.25           |
 
     And set the following AMM sub account aliases:
       | party | market id | alias     |
       | vamm1 | ETH/MAR22 | vamm1-acc |
     And the following transfers should happen:
-      | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to        | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-acc | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 

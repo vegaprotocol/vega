@@ -36,6 +36,27 @@ func TestOrderbookAMM(t *testing.T) {
 	t.Run("test empty book and matching AMM with incoming FOK", testEmptyBookMatchingAMMFOK)
 	t.Run("test matching between price levels", testMatchBetweenPriceLevels)
 	t.Run("test matching with orders on both sides", testMatchOrdersBothSide)
+	t.Run("test check book accounts for AMM volumes", testOnlyAMMOrders)
+}
+
+func testOnlyAMMOrders(t *testing.T) {
+	tst := getTestOrderBookWithAMM(t)
+	defer tst.ctrl.Finish()
+	one, zero := uint64(1), uint64(0)
+	// only buy orders
+	tst.obs.EXPECT().BestPricesAndVolumes().Times(1).Return(num.UintOne(), one, nil, zero)
+	check := tst.book.CheckBook()
+	require.False(t, check)
+
+	// only sell orders
+	tst.obs.EXPECT().BestPricesAndVolumes().Times(1).Return(nil, zero, num.UintOne(), one)
+	check = tst.book.CheckBook()
+	require.False(t, check)
+
+	// buy and sell orders
+	tst.obs.EXPECT().BestPricesAndVolumes().Times(1).Return(num.UintOne(), one, num.UintOne(), one)
+	check = tst.book.CheckBook()
+	require.True(t, check)
 }
 
 func testEmptyBookAndAMM(t *testing.T) {
