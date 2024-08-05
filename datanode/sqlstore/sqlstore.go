@@ -102,6 +102,8 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "time_weighted_notional_positions", DataRetentionPeriod: "1 month"},
 		{HypertableOrCaggName: "game_team_scores", DataRetentionPeriod: "1 month"},
 		{HypertableOrCaggName: "game_party_scores", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "volume_rebate_programs", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "volume_rebate_stats", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},

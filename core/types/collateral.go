@@ -321,4 +321,6 @@ const (
 	AccountTypePendingFeeReferralReward AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
 	// Account for realised return rewards.
 	AccountTypeRealisedReturnReward = proto.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN
+	// Account for buy back fees.
+	AccountTypeBuyBackFees AccountType = proto.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES
 )

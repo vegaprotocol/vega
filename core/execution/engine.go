@@ -86,8 +86,10 @@ type Engine struct {
 	assets                        common.Assets
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
-	banking                       common.Banking
-	parties                       common.Parties
+	volumeRebateService           fee.VolumeRebateService
+
+	banking common.Banking
+	parties common.Parties
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -137,6 +139,7 @@ func NewEngine(
 	assets common.Assets,
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
 	parties common.Parties,
 	delayTransactionsTarget common.DelayTransactionsTarget,
@@ -165,9 +168,11 @@ func NewEngine(
 		skipRestoreSuccessors:         map[string]struct{}{},
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
-		banking:                       banking,
-		parties:                       parties,
-		delayTransactionsTarget:       delayTransactionsTarget,
+		volumeRebateService:           volumeRebateService,
+
+		banking:                 banking,
+		parties:                 parties,
+		delayTransactionsTarget: delayTransactionsTarget,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -707,6 +712,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.volumeRebateService,
 		e.banking,
 		e.parties,
 	)
@@ -790,6 +796,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.volumeRebateService,
 		e.banking,
 	)
 	if err != nil {

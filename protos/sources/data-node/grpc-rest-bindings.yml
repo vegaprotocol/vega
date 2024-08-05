@@ -219,6 +219,10 @@ http:
       get: "/api/v2/amms"
     - selector: datanode.api.v2.TradingDataService.EstimateAMMBounds
       get: "/api/v2/estimate/amm/bounds"
+    - selector: datanode.api.v2.TradingDataService.GetCurrentVolumeRebateProgram
+      get: "/api/v2/volume-rebate-programs/current"
+    - selector: datanode.api.v2.TradingDataService.GetVolumeRebateStats
+      get: "/api/v2/volume-rebate-programs/stats"
 
     # websockets
 

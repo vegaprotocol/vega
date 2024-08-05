@@ -26,6 +26,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -103,9 +104,13 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 			AtEpoch: lastEpoch,
 			PartiesVolumeDiscountStats: setupPartyVolumeDiscountStatsMod(t, parties, func(j int, party entities.Party) *eventspb.PartyVolumeDiscountStats {
 				return &eventspb.PartyVolumeDiscountStats{
-					PartyId:        party.ID.String(),
-					DiscountFactor: fmt.Sprintf("0.%d%d", i+1, j+1),
-					RunningVolume:  strconv.Itoa((i+1)*100 + (j+1)*10),
+					PartyId: party.ID.String(),
+					DiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: fmt.Sprintf("0.%d%d", i+1, j+1),
+						MakerDiscountFactor:          fmt.Sprintf("0.%d%d", i+1, j+1),
+						LiquidityDiscountFactor:      fmt.Sprintf("0.%d%d", i+1, j+1),
+					},
+					RunningVolume: strconv.Itoa((i+1)*100 + (j+1)*10),
 				}
 			}),
 			VegaTime: block.VegaTime,
@@ -115,11 +120,11 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 
 		for _, stat := range stats.PartiesVolumeDiscountStats {
 			flattenStats = append(flattenStats, entities.FlattenVolumeDiscountStats{
-				AtEpoch:        lastEpoch,
-				VegaTime:       block.VegaTime,
-				PartyID:        stat.PartyId,
-				DiscountFactor: stat.DiscountFactor,
-				RunningVolume:  stat.RunningVolume,
+				AtEpoch:         lastEpoch,
+				VegaTime:        block.VegaTime,
+				PartyID:         stat.PartyId,
+				DiscountFactors: stat.DiscountFactors,
+				RunningVolume:   stat.RunningVolume,
 			})
 		}
 	}
@@ -240,9 +245,13 @@ func setupPartyVolumeDiscountStats(t *testing.T, ctx context.Context, ps *sqlsto
 
 	return setupPartyVolumeDiscountStatsMod(t, parties, func(i int, party entities.Party) *eventspb.PartyVolumeDiscountStats {
 		return &eventspb.PartyVolumeDiscountStats{
-			PartyId:        party.ID.String(),
-			DiscountFactor: fmt.Sprintf("0.%d", i+1),
-			RunningVolume:  strconv.Itoa((i + 1) * 100),
+			PartyId: party.ID.String(),
+			DiscountFactors: &vega.DiscountFactors{
+				MakerDiscountFactor:          fmt.Sprintf("0.%d", i+1),
+				LiquidityDiscountFactor:      fmt.Sprintf("0.%d", i+1),
+				InfrastructureDiscountFactor: fmt.Sprintf("0.%d", i+1),
+			},
+			RunningVolume: strconv.Itoa((i + 1) * 100),
 		}
 	})
 }
@@ -255,9 +264,13 @@ func setupPartyVolumeDiscountStatsMod(t *testing.T, parties []entities.Party, f 
 		// make the last party an unqualified party
 		if i == len(parties)-1 {
 			partiesStats = append(partiesStats, &eventspb.PartyVolumeDiscountStats{
-				PartyId:        p.ID.String(),
-				DiscountFactor: "0",
-				RunningVolume:  "99",
+				PartyId: p.ID.String(),
+				DiscountFactors: &vega.DiscountFactors{
+					InfrastructureDiscountFactor: "0",
+					LiquidityDiscountFactor:      "0",
+					MakerDiscountFactor:          "0",
+				},
+				RunningVolume: "99",
 			})
 			continue
 		}

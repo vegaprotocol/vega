@@ -21,6 +21,7 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -32,11 +33,11 @@ type (
 	}
 
 	FlattenVolumeDiscountStats struct {
-		AtEpoch        uint64
-		PartyID        string
-		DiscountFactor string
-		RunningVolume  string
-		VegaTime       time.Time
+		AtEpoch         uint64
+		PartyID         string
+		DiscountFactors *vega.DiscountFactors
+		RunningVolume   string
+		VegaTime        time.Time
 	}
 
 	VolumeDiscountStatsCursor struct {
@@ -64,10 +65,10 @@ func (s FlattenVolumeDiscountStats) ToProtoEdge(_ ...any) (*v2.VolumeDiscountSta
 
 func (s FlattenVolumeDiscountStats) ToProto() *v2.VolumeDiscountStats {
 	return &v2.VolumeDiscountStats{
-		AtEpoch:        s.AtEpoch,
-		PartyId:        s.PartyID,
-		DiscountFactor: s.DiscountFactor,
-		RunningVolume:  s.RunningVolume,
+		AtEpoch:         s.AtEpoch,
+		PartyId:         s.PartyID,
+		DiscountFactors: s.DiscountFactors,
+		RunningVolume:   s.RunningVolume,
 	}
 }
 

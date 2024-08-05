@@ -350,7 +350,8 @@ func TestCalculateMetricForIndividualsAveNotional(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -552,7 +553,8 @@ func TestCalculateMetricForPartyAveNotional(t *testing.T) {
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -790,7 +792,8 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -996,7 +999,8 @@ func TestCalculateMetricForIndividualsRelativeReturn(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -1217,7 +1221,8 @@ func TestCalculateMetricForPartyRelativeReturn(t *testing.T) {
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -1474,7 +1479,8 @@ func TestCalculateMetricForParty(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -1561,6 +1567,12 @@ type DummyEpochEngine struct {
 
 func (e *DummyEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), _ func(context.Context, types.Epoch)) {
 	e.target = f
+}
+
+type DummyCollateralEngine struct{}
+
+func (e DummyCollateralEngine) GetAssetQuantum(asset string) (num.Decimal, error) {
+	return num.DecimalOne(), nil
 }
 
 type DummyEligibilityChecker struct{}

@@ -200,6 +200,14 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.GameScoresEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_AMM:
 		return events.AMMPoolEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_STARTED:
+		return events.VolumeRebateProgramStartedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_ENDED:
+		return events.VolumeRebateProgramEndedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED:
+		return events.VolumeRebateProgramUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED:
+		return events.VolumeRebateStatsUpdatedEventFromStream(ctx, be)
 	}
 
 	return nil

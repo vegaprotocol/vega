@@ -108,10 +108,9 @@ func (e *SnapshottedEngine) serialiseReferralProgram() ([]byte, error) {
 
 	referralProgramData.FactorByReferee = make([]*snapshotpb.FactorByReferee, 0, len(e.factorsByReferee))
 	for pi, rs := range e.factorsByReferee {
-		df, _ := rs.DiscountFactor.MarshalBinary()
 		tv := rs.TakerVolume.Bytes()
 		referralProgramData.FactorByReferee = append(referralProgramData.FactorByReferee, &snapshotpb.FactorByReferee{
-			Party: pi.String(), DiscountFactor: df, TakerVolume: tv[:],
+			Party: pi.String(), DiscountFactors: rs.DiscountFactors.IntoDiscountFactorsProto(), TakerVolume: tv[:],
 		})
 	}
 
@@ -137,9 +136,9 @@ func (e *SnapshottedEngine) serialiseReferralProgram() ([]byte, error) {
 				JoinedAt:       set.Referrer.JoinedAt.UnixNano(),
 				StartedAtEpoch: set.Referrer.StartedAtEpoch,
 			},
-			CurrentRewardFactor:            set.CurrentRewardFactor.String(),
-			CurrentRewardsMultiplier:       set.CurrentRewardsMultiplier.String(),
-			CurrentRewardsFactorMultiplier: set.CurrentRewardsFactorMultiplier.String(),
+			CurrentRewardFactors:            set.CurrentRewardFactors.IntoRewardFactorsProto(),
+			CurrentRewardsMultiplier:        set.CurrentRewardsMultiplier.String(),
+			CurrentRewardsFactorsMultiplier: set.CurrentRewardsFactorMultiplier.IntoRewardFactorsProto(),
 		}
 
 		for _, r := range set.Referees {

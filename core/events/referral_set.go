@@ -71,15 +71,13 @@ type ReferralSetStatsUpdated struct {
 func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 	volume, _ := num.UintFromString(t.e.ReferralSetRunningNotionalTakerVolume, 10)
 	stats := map[types.PartyID]*types.RefereeStats{}
-	rewardFactor, _ := num.DecimalFromString(t.e.RewardFactor)
 	rewardsMultiplier, _ := num.DecimalFromString(t.e.RewardsMultiplier)
-	rewardsFactorMultiplier, _ := num.DecimalFromString(t.e.RewardsFactorMultiplier)
-
+	rewardsFactorsMultiplier := types.FactorsFromRewardFactorsWithDefault(t.e.RewardFactorsMultiplier, t.e.RewardsFactorMultiplier)
+	rewardFactors := types.FactorsFromRewardFactorsWithDefault(t.e.RewardFactors, t.e.RewardFactor)
 	for _, stat := range t.e.RefereesStats {
-		discountFactor, _ := num.DecimalFromString(stat.DiscountFactor)
-
+		discountFactors := types.FactorsFromDiscountFactorsWithDefault(stat.DiscountFactors, stat.DiscountFactor)
 		stats[types.PartyID(stat.PartyId)] = &types.RefereeStats{
-			DiscountFactor: discountFactor,
+			DiscountFactors: discountFactors,
 		}
 	}
 
@@ -89,9 +87,9 @@ func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 		WasEligible:              t.e.WasEligible,
 		ReferralSetRunningVolume: volume,
 		RefereesStats:            stats,
-		RewardFactor:             rewardFactor,
+		RewardFactors:            rewardFactors,
 		RewardsMultiplier:        rewardsMultiplier,
-		RewardsFactorMultiplier:  rewardsFactorMultiplier,
+		RewardsFactorsMultiplier: rewardsFactorsMultiplier,
 	}
 }
 
@@ -113,7 +111,7 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 	for partyID, stat := range update.RefereesStats {
 		refereesStats = append(refereesStats, &eventspb.RefereeStats{
 			PartyId:                  string(partyID),
-			DiscountFactor:           stat.DiscountFactor.String(),
+			DiscountFactors:          stat.DiscountFactors.IntoDiscountFactorsProto(),
 			EpochNotionalTakerVolume: stat.TakerVolume.String(),
 		})
 	}
@@ -131,9 +129,9 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 			ReferralSetRunningNotionalTakerVolume: update.ReferralSetRunningVolume.String(),
 			ReferrerTakerVolume:                   update.ReferrerTakerVolume.String(),
 			RefereesStats:                         refereesStats,
-			RewardFactor:                          update.RewardFactor.String(),
+			RewardFactors:                         update.RewardFactors.IntoRewardFactorsProto(),
 			RewardsMultiplier:                     update.RewardsMultiplier.String(),
-			RewardsFactorMultiplier:               update.RewardsFactorMultiplier.String(),
+			RewardFactorsMultiplier:               update.RewardsFactorsMultiplier.IntoRewardFactorsProto(),
 		},
 	}
 }

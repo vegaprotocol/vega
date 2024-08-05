@@ -26,10 +26,10 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the volume discount program tiers named "VDP-01":
-      | volume | factor |
-      | 1000   | 0.01   |
-      | 2000   | 0.02   |
-      | 3000   | 0.03   |
+      | volume | infra factor | liquidity factor | maker factor |
+      | 1000   | 0.011        | 0.012            | 0.013        |
+      | 2000   | 0.021        | 0.022            | 0.023        |
+      | 3000   | 0.031        | 0.032            | 0.033        |
     And the volume discount program:
       | id  | tiers  | closing timestamp | window length |
       | id1 | VDP-01 | 0                 | 4             |
@@ -95,7 +95,7 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 100000         | 1             |
     And the party "party3" has the following taker notional "0"
-    And the party "party3" has the following discount factor "0"
+    And the party "party3" has the following discount infra factor "0"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
@@ -103,7 +103,9 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
       | party3 | ETH/MAR24 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
     When the network moves ahead "1" epochs
     And the party "party3" has the following taker notional "2000"
-    And the party "party3" has the following discount factor "0.02"
+    And the party "party3" has the following discount infra factor "0.021"
+    And the party "party3" has the following discount liquidity factor "0.022"
+    And the party "party3" has the following discount maker factor "0.023"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
@@ -111,7 +113,9 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
       | party3 | ETH/MAR24 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
     When the network moves ahead "1" epochs
     And the party "party3" has the following taker notional "4000"
-    And the party "party3" has the following discount factor "0.03"
+    And the party "party3" has the following discount infra factor "0.031"
+    And the party "party3" has the following discount liquidity factor "0.032"
+    And the party "party3" has the following discount maker factor "0.033"
 
     # now that party3 has a discount, lets do a trade with fees
     # Volume discount rewards are correctly calculated and transferred for each taker fee component during continuous trading. (0029-FEES-027)
@@ -119,13 +123,13 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
       | party3 | ETH/MAR24 | buy  | 50     | 1000  | 1                | TYPE_MARKET | TIF_IOC |
 
-    # maker fee discount = floor(202 * 0.03) = 6
-    # infra fee discount - floor(51 *0.03) = 1
-    # lp fee discount - floor(1010 * 0.03) = 30
+    # maker fee discount = floor(202 * 0.033) = 6
+    # infra fee discount - floor(51 *0.031) = 1
+    # lp fee discount - floor(1010 * 0.032) = 32
     Then the following transfers should happen:
       | from   | to     | from account         | to account                       | market id | amount | asset |
       | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER          | ETH/MAR24 | 196    | ETH   |
-      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/MAR24 | 980    | ETH   |
+      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/MAR24 | 978    | ETH   |
       | party3 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 50     | ETH   |
 
     Given the parties submit the following liquidity provision:
@@ -134,7 +138,9 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
     And the network moves ahead "1" epochs
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR24"
 
-    And the party "party3" has the following discount factor "0.03"
+    And the party "party3" has the following discount infra factor "0.031"
+    And the party "party3" has the following discount liquidity factor "0.032"
+    And the party "party3" has the following discount maker factor "0.033"
 
     Given the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |

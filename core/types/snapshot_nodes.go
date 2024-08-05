@@ -270,6 +270,10 @@ type PayloadVolumeDiscountProgram struct {
 	VolumeDiscountProgram *snapshot.VolumeDiscountProgram
 }
 
+type PayloadVolumeRebateProgram struct {
+	VolumeRebateProgram *snapshot.VolumeRebateProgram
+}
+
 type Witness struct {
 	Resources []*Resource
 }
@@ -896,6 +900,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadTxCacheFromProto(dt)
 	case *snapshot.Payload_EvmFwdHeartbeats:
 		ret.Data = PayloadEVMFwdHeartbeatsFromProto(dt)
+	case *snapshot.Payload_VolumeRebateProgram:
+		ret.Data = PayloadVolumeRebateProgramFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1092,6 +1098,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_TxCache:
 		ret.Data = dt
 	case *snapshot.Payload_EvmFwdHeartbeats:
+		ret.Data = dt
+	case *snapshot.Payload_VolumeRebateProgram:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -4256,6 +4264,32 @@ func (*PayloadVolumeDiscountProgram) Key() string {
 
 func (*PayloadVolumeDiscountProgram) Namespace() SnapshotNamespace {
 	return VolumeDiscountProgramSnapshot
+}
+
+func (*PayloadVolumeRebateProgram) isPayload() {}
+
+func PayloadVolumeRebateProgramFromProto(t *snapshot.Payload_VolumeRebateProgram) *PayloadVolumeRebateProgram {
+	return &PayloadVolumeRebateProgram{
+		VolumeRebateProgram: t.VolumeRebateProgram,
+	}
+}
+
+func (p *PayloadVolumeRebateProgram) IntoProto() *snapshot.Payload_VolumeRebateProgram {
+	return &snapshot.Payload_VolumeRebateProgram{
+		VolumeRebateProgram: p.VolumeRebateProgram,
+	}
+}
+
+func (p *PayloadVolumeRebateProgram) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadVolumeRebateProgram) Key() string {
+	return "volumeRebateProgram"
+}
+
+func (*PayloadVolumeRebateProgram) Namespace() SnapshotNamespace {
+	return VolumeRebateProgramSnapshot
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.

@@ -45,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/core/volumediscount"
+	"code.vegaprotocol.io/vega/core/volumerebate"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	protos "code.vegaprotocol.io/vega/protos/vega"
@@ -84,6 +85,7 @@ var (
 	marketConfig          = market.NewMarketConfig()
 	referralProgramConfig = referralcfg.NewReferralProgramConfig()
 	volumeDiscountTiers   = map[string][]*types.VolumeBenefitTier{}
+	volumeRebateTiers     = map[string][]*types.VolumeRebateBenefitTier{}
 )
 
 type executionTestSetup struct {
@@ -130,6 +132,7 @@ type executionTestSetup struct {
 	activityStreak        *activitystreak.Engine
 	vesting               *vesting.Engine
 	volumeDiscountProgram *volumediscount.Engine
+	volumeRebateProgram   *volumerebate.Engine
 	marketActivityTracker *common.MarketActivityTracker
 }
 
@@ -185,7 +188,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	execsetup.marketActivityTracker = common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount, broker)
+	execsetup.marketActivityTracker = common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount, broker, execsetup.collateralEngine)
 
 	execsetup.notary = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 
@@ -196,6 +199,8 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, execsetup.marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
+	execsetup.volumeRebateProgram = volumerebate.New(execsetup.broker, execsetup.marketActivityTracker)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeRebateProgram.OnEpoch, execsetup.volumeRebateProgram.OnEpochRestore)
 
 	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventHeartbeat, execsetup.profilesEngine)
 
@@ -212,6 +217,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.assetsEngine, // assets
 			execsetup.referralProgram,
 			execsetup.volumeDiscountProgram,
+			execsetup.volumeRebateProgram,
 			execsetup.banking,
 			execsetup.profilesEngine,
 			&DummyDelayTarget{},
@@ -309,6 +315,14 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,
 			Watcher: e.executionEngine.OnMarketMarginScalingFactorsUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsBuyBackFee,
+			Watcher: e.executionEngine.OnMarketFeeFactorsBuyBackFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsTreasuryFee,
+			Watcher: e.executionEngine.OnMarketFeeFactorsTreasuryFeeUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketFeeFactorsMakerFee,

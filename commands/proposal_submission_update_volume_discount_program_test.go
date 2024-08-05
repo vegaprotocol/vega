@@ -220,11 +220,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithoutTierVolumeDiscountFactor
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
 					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
-							{
-								VolumeDiscountFactor: "",
-							}, {
-								VolumeDiscountFactor: "",
-							},
+							{}, {},
 						},
 					},
 				},
@@ -232,8 +228,8 @@ func testSubmissionForVolumeDiscountProgramUpdateWithoutTierVolumeDiscountFactor
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factor"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.1.volume_discount_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.1.volume_discount_factors"), commands.ErrIsRequired)
 }
 
 func testSubmissionForVolumeDiscountProgramUpdateWithBadFormatForTierVolumeDiscountFactorFails(t *testing.T) {
@@ -244,9 +240,17 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadFormatForTierVolumeDisco
 					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
-								VolumeDiscountFactor: "qbc",
+								VolumeDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "qbc",
+									LiquidityDiscountFactor:      "qbc",
+									MakerDiscountFactor:          "qbc",
+								},
 							}, {
-								VolumeDiscountFactor: "0x32",
+								VolumeDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "0x32",
+									LiquidityDiscountFactor:      "0x32",
+									MakerDiscountFactor:          "0x32",
+								},
 							},
 						},
 					},
@@ -255,8 +259,12 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadFormatForTierVolumeDisco
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factor"), commands.ErrIsNotValidNumber)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.1.volume_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.maker_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.liquidity_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.infrastructure_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.1.volume_discount_factors.maker_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.1.volume_discount_factors.liquidity_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.1.volume_discount_factors.infrastructure_discount_factor"), commands.ErrIsNotValidNumber)
 }
 
 func testSubmissionForVolumeDiscountProgramUpdateWithBadValueForTierVolumeDiscountFactorFails(t *testing.T) {
@@ -267,9 +275,17 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadValueForTierVolumeDiscou
 					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
-								VolumeDiscountFactor: "-10",
+								VolumeDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "-10",
+									LiquidityDiscountFactor:      "-5",
+									MakerDiscountFactor:          "-7",
+								},
 							}, {
-								VolumeDiscountFactor: "-1",
+								VolumeDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "-1",
+									LiquidityDiscountFactor:      "-3",
+									MakerDiscountFactor:          "-9",
+								},
 							},
 						},
 					},
@@ -278,6 +294,10 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadValueForTierVolumeDiscou
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factor"), commands.ErrMustBePositiveOrZero)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.1.volume_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.maker_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.liquidity_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.infrastructure_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.maker_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.liquidity_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.0.volume_discount_factors.infrastructure_discount_factor"), commands.ErrMustBePositiveOrZero)
 }

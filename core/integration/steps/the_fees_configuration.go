@@ -48,6 +48,8 @@ func TheFeesConfiguration(config *market.Config, name string, table *godog.Table
 		Factors: &types.FeeFactors{
 			InfrastructureFee: row.infrastructureFee(),
 			MakerFee:          row.makerFee(),
+			BuyBackFee:        row.buyBackFee(),
+			TreasuryFee:       row.treasuryFee(),
 		},
 		LiquidityFeeSettings: liquidityFeeSettings,
 	})
@@ -62,6 +64,8 @@ func parseFeesConfigTable(table *godog.Table) RowWrapper {
 		[]string{
 			"liquidity fee method",
 			"liquidity fee constant",
+			"buy back fee",
+			"treasury fee",
 		},
 	)
 }
@@ -76,6 +80,20 @@ func (r feesConfigRow) makerFee() string {
 
 func (r feesConfigRow) infrastructureFee() string {
 	return r.row.MustStr("infrastructure fee")
+}
+
+func (r feesConfigRow) buyBackFee() string {
+	if r.row.HasColumn("buy back fee") {
+		return r.row.MustStr("infrastructure fee")
+	}
+	return "0"
+}
+
+func (r feesConfigRow) treasuryFee() string {
+	if r.row.HasColumn("treasury fee") {
+		return r.row.MustStr("treasury fee")
+	}
+	return "0"
 }
 
 func (r feesConfigRow) liquidityFeeMethod() (types.LiquidityFeeSettings_Method, error) {

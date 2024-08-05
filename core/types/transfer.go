@@ -222,4 +222,11 @@ const (
 	TransferTypeAMMLow     TransferType = proto.TransferType_TRANSFER_TYPE_AMM_LOW
 	TransferTypeAMMHigh    TransferType = proto.TransferType_TRANSFER_TYPE_AMM_HIGH
 	TransferTypeAMMRelease TransferType = proto.TransferType_TRANSFER_TYPE_AMM_RELEASE
+	// additional fees transfers.
+	TransferTypeBuyBackFeePay TransferType = proto.TransferType_TRANSFER_TYPE_BUY_BACK_FEE_PAY
+	TransferTypeTreasuryPay   TransferType = proto.TransferType_TRANSFER_TYPE_TREASURY_FEE_PAY
+	// Pay high maker fee.
+	TransferTypeHighMakerRebatePay TransferType = proto.TransferType_TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_PAY
+	// Receive high maker rebate.
+	TransferTypeHighMakerRebateReceive TransferType = proto.TransferType_TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_RECEIVE
 )

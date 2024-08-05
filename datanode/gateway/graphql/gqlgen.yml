@@ -833,3 +833,11 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.FutureCap
   EstimatedAMMBounds:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateAMMBoundsResponse
+  VolumeRebateProgram:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateProgram
+  VolumeRebateStatsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStatsConnection
+  VolumeRebateStatsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStatsEdge
+  VolumeRebateStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStats

@@ -25,10 +25,10 @@ Feature: At the start of an epoch, each parties volume_discount_factor is reeval
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the volume discount program tiers named "VDP-01":
-      | volume | factor |
-      | 1000   | 0.001  |
-      | 2000   | 0.005  |
-      | 3000   | 0.010  |
+      | volume | infra factor | liquidity factor | maker factor |
+      | 1000   | 0.001        | 0.002            | 0.003        |
+      | 2000   | 0.005        | 0.006            | 0.007        |
+      | 3000   | 0.010        | 0.012            | 0.014        |
     And the volume discount program:
       | id  | tiers  | closing timestamp | window length |
       | id1 | VDP-01 | 0                 | 4             |
@@ -92,18 +92,22 @@ Feature: At the start of an epoch, each parties volume_discount_factor is reeval
     And the market data for the market "ETH/MAR24" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 100000         | 1             |
-    And the party "party3" has the following discount factor "0"
+    And the party "party3" has the following discount infra factor "0"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
       | party3 | ETH/MAR24 | buy  | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
       | party3 | ETH/MAR24 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
     When the network moves ahead "1" epochs
-    And the party "party3" has the following discount factor "0.005"
+    And the party "party3" has the following discount infra factor "0.005"
+    And the party "party3" has the following discount liquidity factor "0.006"
+    And the party "party3" has the following discount maker factor "0.007"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
       | party3 | ETH/MAR24 | buy  | 20     | 0     | 1                | TYPE_MARKET | TIF_IOC |
       | party3 | ETH/MAR24 | sell | 20     | 0     | 1                | TYPE_MARKET | TIF_IOC |
     When the network moves ahead "1" epochs
-    And the party "party3" has the following discount factor "0.01"
+    And the party "party3" has the following discount infra factor "0.01"
+    And the party "party3" has the following discount liquidity factor "0.012"
+    And the party "party3" has the following discount maker factor "0.014"

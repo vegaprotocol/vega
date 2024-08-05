@@ -23,10 +23,10 @@ Feature: If a party does not qualify for the lowest tier, their volume_discount_
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the volume discount program tiers named "VDP-01":
-      | volume | factor |
-      | 3000   | 0.01   |
-      | 4000   | 0.02   |
-      | 5000   | 0.03   |
+      | volume | infra factor | liquidity factor | maker factor |
+      | 3000   | 0.011        | 0.012            | 0.013        |
+      | 4000   | 0.021        | 0.022            | 0.023        |
+      | 5000   | 0.031        | 0.032            | 0.033        |
     And the volume discount program:
       | id  | tiers  | closing timestamp | window length |
       | id1 | VDP-01 | 0                 | 4             |
@@ -91,7 +91,7 @@ Feature: If a party does not qualify for the lowest tier, their volume_discount_
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 100000         | 1             |
     And the party "party3" has the following taker notional "0"
-    And the party "party3" has the following discount factor "0"
+    And the party "party3" has the following discount infra factor "0"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
@@ -104,4 +104,4 @@ Feature: If a party does not qualify for the lowest tier, their volume_discount_
     # The taker trades above are not enough for party3 to hit the first level of the discount tier
     # so we get a zero for the discount factor
     And the party "party3" has the following taker notional "2000"
-    And the party "party3" has the following discount factor "0"
+    And the party "party3" has the following discount infra factor "0"

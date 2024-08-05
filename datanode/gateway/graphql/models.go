@@ -238,6 +238,15 @@ type DataSourceSpec struct {
 	Status DataSourceSpecStatus `json:"status"`
 }
 
+type DiscountFactors struct {
+	// The proportion of the referee's taker infrastructure fees to be discounted
+	InfrastructureFactor string `json:"infrastructureFactor"`
+	// The proportion of the referee's taker maker fees to be discounted
+	MakerFactor string `json:"makerFactor"`
+	// The proportion of the referee's taker liquidity fees to be discounted
+	LiquidityFactor string `json:"liquidityFactor"`
+}
+
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
@@ -756,6 +765,15 @@ func (PubKey) IsSignerKind() {}
 type Query struct {
 }
 
+type RewardFactors struct {
+	// The proportion of the referee's taker infrastructure fees to be rewarded to the referrer
+	InfrastructureFactor string `json:"infrastructureFactor"`
+	// The proportion of the referee's taker maker fees to be rewarded to the referrer
+	MakerFactor string `json:"makerFactor"`
+	// The proportion of the referee's taker liquidity fees to be rewarded to the referrer
+	LiquidityFactor string `json:"liquidityFactor"`
+}
+
 // Connection type for retrieving cursor-based paginated reward summary information
 type RewardSummaryConnection struct {
 	// List of reward summaries available for the connection
@@ -886,6 +904,12 @@ type TradeFee struct {
 	InfrastructureFee string `json:"infrastructureFee"`
 	// The fee paid to the liquidity providers that committed liquidity to the market
 	LiquidityFee string `json:"liquidityFee"`
+	// The fee paid into the protocol buy-back account
+	BuyBackFee string `json:"buyBackFee"`
+	// The fee paid into the network treasury
+	TreasuryFee string `json:"treasuryFee"`
+	// The fee paid to a high-volume maker as a rebate
+	HighVolumeMakerFee string `json:"highVolumeMakerFee"`
 	// Referral discount on maker fees for the trade
 	MakerFeeReferralDiscount *string `json:"makerFeeReferralDiscount,omitempty"`
 	// Volume discount on maker fees for the trade
@@ -977,6 +1001,24 @@ type UpdateSpotInstrumentConfiguration struct {
 	Code string `json:"code"`
 	// Instrument name
 	Name string `json:"name"`
+}
+
+type UpdateVolumeRebateProgram struct {
+	// The benefit tiers for the program
+	BenefitTiers []*VolumeRebateBenefitTier `json:"benefitTiers"`
+	// Timestamp as Unix time in nanoseconds, after which program ends.
+	EndOfProgramTimestamp int64 `json:"endOfProgramTimestamp"`
+	// The window length to consider for the volume discount program
+	WindowLength int `json:"windowLength"`
+}
+
+func (UpdateVolumeRebateProgram) IsProposalChange() {}
+
+type VolumeRebateBenefitTier struct {
+	// The required volume fraction for a party to access this tier
+	MinimumPartyMakerVolumeFraction string `json:"minimumPartyMakerVolumeFraction"`
+	// The additional rebate factor (in percentage of trade_value_for_fee_purposes a party at this tier will receive when they are the maker side of a trade
+	AdditionalMakerRebate string `json:"additionalMakerRebate"`
 }
 
 // Event types
