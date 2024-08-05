@@ -58,6 +58,18 @@ func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Decimal) 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 }
 
+func (m *Market) OnFeeFactorsTreasuryFeeUpdate(ctx context.Context, d num.Decimal) {
+	m.fee.OnFeeFactorsTreasuryFeeUpdate(d)
+	m.mkt.Fees.Factors.TreasuryFee = d
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+}
+
+func (m *Market) OnFeeFactorsBuyBackFeeUpdate(ctx context.Context, d num.Decimal) {
+	m.fee.OnFeeFactorsBuyBackFeeUpdate(d)
+	m.mkt.Fees.Factors.BuyBackFee = d
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+}
+
 func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.Decimal) {
 	m.fee.OnFeeFactorsInfrastructureFeeUpdate(d)
 	m.mkt.Fees.Factors.InfrastructureFee = d

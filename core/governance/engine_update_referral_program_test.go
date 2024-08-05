@@ -67,13 +67,29 @@ func testSubmittingProposalForReferralProgramUpdateSucceeds(t *testing.T) {
 			{
 				MinimumEpochs:                     num.NewUint(1),
 				MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.001),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.001),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
 			}, {
 				MinimumEpochs:                     num.NewUint(7),
 				MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.005),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.005),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.005),
+					Maker:     num.DecimalFromFloat(0.005),
+					Liquidity: num.DecimalFromFloat(0.005),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.005),
+					Maker:     num.DecimalFromFloat(0.005),
+					Liquidity: num.DecimalFromFloat(0.005),
+				},
 			},
 		},
 	})
@@ -121,13 +137,29 @@ func testSubmittingProposalForReferralProgramUpdateWithTooManyTiersFails(t *test
 			{
 				MinimumEpochs:                     num.NewUint(1),
 				MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.001),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.001),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
 			}, {
 				MinimumEpochs:                     num.NewUint(7),
 				MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.005),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.005),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.005),
+					Maker:     num.DecimalFromFloat(0.005),
+					Liquidity: num.DecimalFromFloat(0.005),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.005),
+					Maker:     num.DecimalFromFloat(0.005),
+					Liquidity: num.DecimalFromFloat(0.005),
+				},
 			},
 		},
 	})
@@ -175,13 +207,29 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighRewardFactorFails(
 			{
 				MinimumEpochs:                     num.NewUint(1),
 				MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.001),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.001),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
 			}, {
 				MinimumEpochs:                     num.NewUint(7),
 				MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.015),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.005),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.015),
+					Maker:     num.DecimalFromFloat(0.015),
+					Liquidity: num.DecimalFromFloat(0.015),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.005),
+					Maker:     num.DecimalFromFloat(0.005),
+					Liquidity: num.DecimalFromFloat(0.005),
+				},
 			},
 		},
 	})
@@ -198,7 +246,7 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighRewardFactorFails(
 	// then
 	require.EqualError(t,
 		err,
-		"tier 2 defines a referral reward factor higher than the maximum allowed by the network parameter \"referralProgram.maxReferralRewardFactor\": maximum is 0.01, but got 0.015",
+		"tier 2 defines a referral reward infrastructure factor higher than the maximum allowed by the network parameter \"referralProgram.maxReferralRewardFactor\": maximum is 0.01, but got 0.015",
 	)
 	require.Nil(t, toSubmit)
 }
@@ -232,13 +280,29 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 			{
 				MinimumEpochs:                     num.NewUint(1),
 				MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.001),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.001),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
 			}, {
 				MinimumEpochs:                     num.NewUint(7),
 				MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-				ReferralRewardFactor:              num.DecimalFromFloat(0.010),
-				ReferralDiscountFactor:            num.DecimalFromFloat(0.015),
+				ReferralRewardFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.01),
+					Maker:     num.DecimalFromFloat(0.01),
+					Liquidity: num.DecimalFromFloat(0.01),
+				},
+				ReferralDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.015),
+					Maker:     num.DecimalFromFloat(0.015),
+					Liquidity: num.DecimalFromFloat(0.015),
+				},
 			},
 		},
 	})
@@ -255,7 +319,7 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 	// then
 	require.EqualError(t,
 		err,
-		"tier 2 defines a referral discount factor higher than the maximum allowed by the network parameter \"referralProgram.maxReferralDiscountFactor\": maximum is 0.01, but got 0.015",
+		"tier 2 defines a referral discount infrastructure factor higher than the maximum allowed by the network parameter \"referralProgram.maxReferralDiscountFactor\": maximum is 0.01, but got 0.015",
 	)
 	require.Nil(t, toSubmit)
 }
@@ -291,13 +355,29 @@ func testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails(t *test
 					{
 						MinimumEpochs:                     num.NewUint(1),
 						MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-						ReferralRewardFactor:              num.DecimalFromFloat(0.001),
-						ReferralDiscountFactor:            num.DecimalFromFloat(0.001),
+						ReferralRewardFactors: types.Factors{
+							Infra:     num.DecimalFromFloat(0.001),
+							Maker:     num.DecimalFromFloat(0.001),
+							Liquidity: num.DecimalFromFloat(0.001),
+						},
+						ReferralDiscountFactors: types.Factors{
+							Infra:     num.DecimalFromFloat(0.001),
+							Maker:     num.DecimalFromFloat(0.001),
+							Liquidity: num.DecimalFromFloat(0.001),
+						},
 					}, {
 						MinimumEpochs:                     num.NewUint(7),
 						MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-						ReferralRewardFactor:              num.DecimalFromFloat(0.010),
-						ReferralDiscountFactor:            num.DecimalFromFloat(0.015),
+						ReferralRewardFactors: types.Factors{
+							Infra:     num.DecimalFromFloat(0.01),
+							Maker:     num.DecimalFromFloat(0.01),
+							Liquidity: num.DecimalFromFloat(0.01),
+						},
+						ReferralDiscountFactors: types.Factors{
+							Infra:     num.DecimalFromFloat(0.015),
+							Maker:     num.DecimalFromFloat(0.015),
+							Liquidity: num.DecimalFromFloat(0.015),
+						},
 					},
 				},
 			},

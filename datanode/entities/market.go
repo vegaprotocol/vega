@@ -548,6 +548,8 @@ type FeeFactors struct {
 	MakerFee          string `json:"makerFee,omitempty"`
 	InfrastructureFee string `json:"infrastructureFee,omitempty"`
 	LiquidityFee      string `json:"liquidityFee,omitempty"`
+	BuyBackFee        string `json:"buyBackFee,omitempty"`
+	TreasuryFee       string `json:"treasuryFee,omitempty"`
 }
 
 type LiquidityFeeSettings struct {
@@ -578,6 +580,8 @@ func (f Fees) ToProto() *vega.Fees {
 			MakerFee:          f.Factors.MakerFee,
 			InfrastructureFee: f.Factors.InfrastructureFee,
 			LiquidityFee:      f.Factors.LiquidityFee,
+			BuyBackFee:        f.Factors.BuyBackFee,
+			TreasuryFee:       f.Factors.TreasuryFee,
 		},
 		LiquidityFeeSettings: liquidityFeeSettings,
 	}
@@ -601,6 +605,8 @@ func feesFromProto(fees *vega.Fees) (Fees, error) {
 			MakerFee:          fees.Factors.MakerFee,
 			InfrastructureFee: fees.Factors.InfrastructureFee,
 			LiquidityFee:      fees.Factors.LiquidityFee,
+			BuyBackFee:        fees.Factors.BuyBackFee,
+			TreasuryFee:       fees.Factors.TreasuryFee,
 		},
 		LiquidityFeeSettings: liquidityFeeSettings,
 	}, nil

@@ -48,9 +48,13 @@ type (
 	Teams                  struct{ *sqlstore.Teams }
 	VestingStats           struct{ *sqlstore.VestingStats }
 	VolumeDiscountStats    struct{ *sqlstore.VolumeDiscountStats }
+	VolumeRebateStats      struct{ *sqlstore.VolumeRebateStats }
 	FeesStats              struct{ *sqlstore.FeesStats }
 	VolumeDiscountPrograms struct {
 		*sqlstore.VolumeDiscountPrograms
+	}
+	VolumeRebatePrograms struct {
+		*sqlstore.VolumeRebatePrograms
 	}
 	PaidLiquidityFeesStats struct {
 		*sqlstore.PaidLiquidityFeesStats
@@ -184,12 +188,20 @@ func NewVolumeDiscountStats(store *sqlstore.VolumeDiscountStats) *VolumeDiscount
 	return &VolumeDiscountStats{VolumeDiscountStats: store}
 }
 
+func NewVolumeRebateStats(store *sqlstore.VolumeRebateStats) *VolumeRebateStats {
+	return &VolumeRebateStats{VolumeRebateStats: store}
+}
+
 func NewFeesStats(store *sqlstore.FeesStats) *FeesStats {
 	return &FeesStats{FeesStats: store}
 }
 
 func NewVolumeDiscountPrograms(store *sqlstore.VolumeDiscountPrograms) *VolumeDiscountPrograms {
 	return &VolumeDiscountPrograms{VolumeDiscountPrograms: store}
+}
+
+func NewVolumeRebatePrograms(store *sqlstore.VolumeRebatePrograms) *VolumeRebatePrograms {
+	return &VolumeRebatePrograms{VolumeRebatePrograms: store}
 }
 
 func NewPaidLiquidityFeesStats(store *sqlstore.PaidLiquidityFeesStats) *PaidLiquidityFeesStats {

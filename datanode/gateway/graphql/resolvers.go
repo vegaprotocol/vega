@@ -565,6 +565,10 @@ func (r *VegaResolverRoot) BenefitTier() BenefitTierResolver {
 	return (*benefitTierResolver)(r)
 }
 
+func (r *VegaResolverRoot) VolumeBenefitTier() VolumeBenefitTierResolver {
+	return (*volumeBenefitTierResolver)(r)
+}
+
 func (r *VegaResolverRoot) Team() TeamResolver {
 	return (*teamResolver)(r)
 }
@@ -619,6 +623,14 @@ func (r *VegaResolverRoot) VolumeDiscountStats() VolumeDiscountStatsResolver {
 
 func (r *VegaResolverRoot) UpdateVolumeDiscountProgram() UpdateVolumeDiscountProgramResolver {
 	return (*updateVolumeDiscountProgramResolver)(r)
+}
+
+func (r *VegaResolverRoot) VolumeRebateProgram() VolumeRebateProgramResolver {
+	return (*volumeRebateProgramResolver)(r)
+}
+
+func (r *VegaResolverRoot) VolumeRebateStats() VolumeRebateStatsResolver {
+	return (*volumeRebateStatsResolver)(r)
 }
 
 func (r *VegaResolverRoot) UpdateReferralProgram() UpdateReferralProgramResolver {
@@ -783,6 +795,33 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+// VolumeRebateStats implements QueryResolver.
+func (r *myQueryResolver) VolumeRebateStats(ctx context.Context, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.VolumeRebateStatsConnection, error) {
+	var epoch64p *uint64
+	if epoch != nil {
+		epoch64 := uint64(*epoch)
+		epoch64p = &epoch64
+	}
+	resp, err := r.tradingDataClientV2.GetVolumeRebateStats(ctx, &v2.GetVolumeRebateStatsRequest{
+		AtEpoch: epoch64p,
+		PartyId: partyID,
+	})
+	if err != nil {
+		return &v2.VolumeRebateStatsConnection{}, err
+	}
+	return resp.Stats, err
+}
+
+// CurrentVolumeRebateProgram implements QueryResolver.
+func (r *myQueryResolver) CurrentVolumeRebateProgram(ctx context.Context) (*v2.VolumeRebateProgram, error) {
+	resp, err := r.tradingDataClientV2.GetCurrentVolumeRebateProgram(ctx, &v2.GetCurrentVolumeRebateProgramRequest{})
+	if err != nil {
+		return &v2.VolumeRebateProgram{}, err
+	}
+
+	return resp.CurrentVolumeRebateProgram, nil
+}
 
 func (r *myQueryResolver) EstimateAMMBounds(ctx context.Context, basePrice string, upperPrice, lowerPrice, leverageAtUpperPrice, leverageAtLowerPrice *string, commitmentAmount string, marketID string) (*v2.EstimateAMMBoundsResponse, error) {
 	res, err := r.tradingDataClientV2.EstimateAMMBounds(ctx, &v2.EstimateAMMBoundsRequest{

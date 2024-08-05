@@ -154,9 +154,9 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 			   referrer_taker_volume,
 			   referees_stats,
 			   vega_time,
-			   reward_factor,
+			   reward_factors,
 			   rewards_multiplier,
-			   rewards_factor_multiplier)
+			   rewards_factors_multiplier)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		stats.SetID,
 		stats.AtEpoch,
@@ -165,9 +165,9 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 		stats.ReferrerTakerVolume,
 		refereesStats,
 		stats.VegaTime,
-		stats.RewardFactor,
+		stats.RewardFactors,
 		stats.RewardsMultiplier,
-		stats.RewardsFactorMultiplier,
+		stats.RewardsFactorsMultiplier,
 	)
 
 	return err
@@ -187,12 +187,12 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
        				vega_time,
        				referral_set_running_notional_taker_volume,
        				referrer_taker_volume,
-       				reward_factor,
+       				reward_factors,
        				referee_stats->>'party_id' AS party_id,
-       				referee_stats->>'discount_factor' AS discount_factor,
+       				referee_stats->>'discount_factors' AS discount_factors,
        				referee_stats->>'epoch_notional_taker_volume' AS epoch_notional_taker_volume,
 					rewards_multiplier,
-    				rewards_factor_multiplier
+    				rewards_factors_multiplier
 			  FROM referral_set_stats, JSONB_ARRAY_ELEMENTS(referees_stats) AS referee_stats`
 
 	whereClauses := []string{}

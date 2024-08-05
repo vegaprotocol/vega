@@ -528,6 +528,15 @@ type TradingDataServiceClient interface {
 	//
 	// Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as a filter.
 	GetFeesStatsForParty(ctx context.Context, in *GetFeesStatsForPartyRequest, opts ...grpc.CallOption) (*GetFeesStatsForPartyResponse, error)
+	// Get current volume rebate program
+	//
+	// Get the current volume rebate program for the network. This program may not be active if it has ended
+	// and has not been replaced by another.
+	GetCurrentVolumeRebateProgram(ctx context.Context, in *GetCurrentVolumeRebateProgramRequest, opts ...grpc.CallOption) (*GetCurrentVolumeRebateProgramResponse, error)
+	// Get volume rebate statistics
+	//
+	// Get the information about a party's running traded volume, and the rebate factor it earns them.
+	GetVolumeRebateStats(ctx context.Context, in *GetVolumeRebateStatsRequest, opts ...grpc.CallOption) (*GetVolumeRebateStatsResponse, error)
 	// Get current volume discount program
 	//
 	// Get the current volume discount program for the network. This program may not be active if it has ended
@@ -2002,6 +2011,24 @@ func (c *tradingDataServiceClient) GetFeesStatsForParty(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetCurrentVolumeRebateProgram(ctx context.Context, in *GetCurrentVolumeRebateProgramRequest, opts ...grpc.CallOption) (*GetCurrentVolumeRebateProgramResponse, error) {
+	out := new(GetCurrentVolumeRebateProgramResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetCurrentVolumeRebateProgram", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetVolumeRebateStats(ctx context.Context, in *GetVolumeRebateStatsRequest, opts ...grpc.CallOption) (*GetVolumeRebateStatsResponse, error) {
+	out := new(GetVolumeRebateStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetVolumeRebateStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetCurrentVolumeDiscountProgram(ctx context.Context, in *GetCurrentVolumeDiscountProgramRequest, opts ...grpc.CallOption) (*GetCurrentVolumeDiscountProgramResponse, error) {
 	out := new(GetCurrentVolumeDiscountProgramResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetCurrentVolumeDiscountProgram", in, out, opts...)
@@ -2683,6 +2710,15 @@ type TradingDataServiceServer interface {
 	//
 	// Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as a filter.
 	GetFeesStatsForParty(context.Context, *GetFeesStatsForPartyRequest) (*GetFeesStatsForPartyResponse, error)
+	// Get current volume rebate program
+	//
+	// Get the current volume rebate program for the network. This program may not be active if it has ended
+	// and has not been replaced by another.
+	GetCurrentVolumeRebateProgram(context.Context, *GetCurrentVolumeRebateProgramRequest) (*GetCurrentVolumeRebateProgramResponse, error)
+	// Get volume rebate statistics
+	//
+	// Get the information about a party's running traded volume, and the rebate factor it earns them.
+	GetVolumeRebateStats(context.Context, *GetVolumeRebateStatsRequest) (*GetVolumeRebateStatsResponse, error)
 	// Get current volume discount program
 	//
 	// Get the current volume discount program for the network. This program may not be active if it has ended
@@ -3140,6 +3176,12 @@ func (UnimplementedTradingDataServiceServer) GetFeesStats(context.Context, *GetF
 }
 func (UnimplementedTradingDataServiceServer) GetFeesStatsForParty(context.Context, *GetFeesStatsForPartyRequest) (*GetFeesStatsForPartyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeesStatsForParty not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetCurrentVolumeRebateProgram(context.Context, *GetCurrentVolumeRebateProgramRequest) (*GetCurrentVolumeRebateProgramResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentVolumeRebateProgram not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetVolumeRebateStats(context.Context, *GetVolumeRebateStatsRequest) (*GetVolumeRebateStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVolumeRebateStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetCurrentVolumeDiscountProgram(context.Context, *GetCurrentVolumeDiscountProgramRequest) (*GetCurrentVolumeDiscountProgramResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentVolumeDiscountProgram not implemented")
@@ -5244,6 +5286,42 @@ func _TradingDataService_GetFeesStatsForParty_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetCurrentVolumeRebateProgram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCurrentVolumeRebateProgramRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetCurrentVolumeRebateProgram(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetCurrentVolumeRebateProgram",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetCurrentVolumeRebateProgram(ctx, req.(*GetCurrentVolumeRebateProgramRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetVolumeRebateStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVolumeRebateStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetVolumeRebateStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetVolumeRebateStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetVolumeRebateStats(ctx, req.(*GetVolumeRebateStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetCurrentVolumeDiscountProgram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCurrentVolumeDiscountProgramRequest)
 	if err := dec(in); err != nil {
@@ -5892,6 +5970,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFeesStatsForParty",
 			Handler:    _TradingDataService_GetFeesStatsForParty_Handler,
+		},
+		{
+			MethodName: "GetCurrentVolumeRebateProgram",
+			Handler:    _TradingDataService_GetCurrentVolumeRebateProgram_Handler,
+		},
+		{
+			MethodName: "GetVolumeRebateStats",
+			Handler:    _TradingDataService_GetVolumeRebateStats_Handler,
 		},
 		{
 			MethodName: "GetCurrentVolumeDiscountProgram",

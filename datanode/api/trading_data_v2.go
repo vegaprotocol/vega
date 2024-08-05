@@ -126,6 +126,8 @@ type TradingDataServiceV2 struct {
 	feesStatsService              *service.FeesStats
 	volumeDiscountStatsService    *service.VolumeDiscountStats
 	volumeDiscountProgramService  *service.VolumeDiscountPrograms
+	volumeRebateStatsService      *service.VolumeRebateStats
+	volumeRebateProgramService    *service.VolumeRebatePrograms
 	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 	partyLockedBalances           *service.PartyLockedBalances
 	partyVestingBalances          *service.PartyVestingBalances
@@ -5407,6 +5409,48 @@ func (t *TradingDataServiceV2) GetCurrentVolumeDiscountProgram(ctx context.Conte
 
 	return &v2.GetCurrentVolumeDiscountProgramResponse{
 		CurrentVolumeDiscountProgram: volumeDiscountProgram.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetCurrentVolumeRebateProgram(ctx context.Context, _ *v2.GetCurrentVolumeRebateProgramRequest) (
+	*v2.GetCurrentVolumeRebateProgramResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetCurrentVolumeRebateProgram")()
+	volumeRebateProgram, err := t.volumeRebateProgramService.GetCurrentVolumeRebateProgram(ctx)
+	if err != nil {
+		return nil, formatE(ErrGetCurrentVolumeDiscountProgram, err)
+	}
+
+	return &v2.GetCurrentVolumeRebateProgramResponse{
+		CurrentVolumeRebateProgram: volumeRebateProgram.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetVolumeRebateStats(ctx context.Context, req *v2.GetVolumeRebateStatsRequest) (
+	*v2.GetVolumeRebateStatsResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetVolumeRebateStats")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	stats, pageInfo, err := t.volumeRebateStatsService.Stats(ctx, req.AtEpoch, req.PartyId, pagination)
+	if err != nil {
+		return nil, formatE(ErrGetVolumeRebateStats, err)
+	}
+
+	edges, err := makeEdges[*v2.VolumeRebateStatsEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetVolumeRebateStatsResponse{
+		Stats: &v2.VolumeRebateStatsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
 

@@ -35,6 +35,8 @@ type netParamsValues struct {
 	suppliedStakeToObligationFactor       num.Decimal
 	infrastructureFee                     num.Decimal
 	makerFee                              num.Decimal
+	treasuryFee                           num.Decimal
+	buyBackFee                            num.Decimal
 	scalingFactors                        *types.ScalingFactors
 	maxLiquidityFee                       num.Decimal
 	bondPenaltyFactor                     num.Decimal
@@ -76,6 +78,8 @@ func defaultNetParamsValues() netParamsValues {
 		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
 		infrastructureFee:               num.DecimalFromInt64(-1),
 		makerFee:                        num.DecimalFromInt64(-1),
+		buyBackFee:                      num.DecimalFromInt64(-1),
+		treasuryFee:                     num.DecimalFromInt64(-1),
 		scalingFactors:                  nil,
 		maxLiquidityFee:                 num.DecimalFromInt64(-1),
 		bondPenaltyFactor:               num.DecimalFromInt64(-1),
@@ -329,6 +333,34 @@ func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Dec
 	return nil
 }
 
+func (e *Engine) OnMarketFeeFactorsTreasuryFeeUpdate(ctx context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update treasury fee in market fee factors",
+			logging.Decimal("treasury-fee", d),
+		)
+	}
+
+	for _, mkt := range e.allMarketsCpy {
+		mkt.OnFeeFactorsTreasuryFeeUpdate(ctx, d)
+	}
+	e.npv.treasuryFee = d
+	return nil
+}
+
+func (e *Engine) OnMarketFeeFactorsBuyBackFeeUpdate(ctx context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update buy back fee in market fee factors",
+			logging.Decimal("buy-back-fee", d),
+		)
+	}
+
+	for _, mkt := range e.allMarketsCpy {
+		mkt.OnFeeFactorsBuyBackFeeUpdate(ctx, d)
+	}
+	e.npv.buyBackFee = d
+	return nil
+}
+
 func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update infrastructure fee in market fee factors",
@@ -503,6 +535,14 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 		mkt.OnFeeFactorsMakerFeeUpdate(ctx, e.npv.makerFee)
 	}
 
+	if !e.npv.buyBackFee.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnFeeFactorsBuyBackFeeUpdate(ctx, e.npv.buyBackFee)
+	}
+
+	if !e.npv.treasuryFee.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnFeeFactorsTreasuryFeeUpdate(ctx, e.npv.treasuryFee)
+	}
+
 	if e.npv.marketValueWindowLength != -1 {
 		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
 	}
@@ -565,6 +605,14 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 
 	if !e.npv.makerFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnFeeFactorsMakerFeeUpdate(ctx, e.npv.makerFee)
+	}
+
+	if !e.npv.buyBackFee.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnFeeFactorsBuyBackFeeUpdate(ctx, e.npv.buyBackFee)
+	}
+
+	if !e.npv.treasuryFee.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnFeeFactorsTreasuryFeeUpdate(ctx, e.npv.treasuryFee)
 	}
 
 	if e.npv.scalingFactors != nil {

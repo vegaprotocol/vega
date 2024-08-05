@@ -61,10 +61,18 @@ func testSubmittingProposalForVolumeDiscountProgramUpdateSucceeds(t *testing.T) 
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
 			{
 				MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-				VolumeDiscountFactor:              num.DecimalFromFloat(0.001),
+				VolumeDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
 			}, {
 				MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-				VolumeDiscountFactor:              num.DecimalFromFloat(0.005),
+				VolumeDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.005),
+					Maker:     num.DecimalFromFloat(0.005),
+					Liquidity: num.DecimalFromFloat(0.005),
+				},
 			},
 		},
 	})
@@ -108,10 +116,18 @@ func testSubmittingProposalForVolumeDiscountProgramUpdateWithTooManyTiersFails(t
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
 			{
 				MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-				VolumeDiscountFactor:              num.DecimalFromFloat(0.001),
+				VolumeDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
 			}, {
 				MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-				VolumeDiscountFactor:              num.DecimalFromFloat(0.005),
+				VolumeDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.005),
+					Maker:     num.DecimalFromFloat(0.005),
+					Liquidity: num.DecimalFromFloat(0.005),
+				},
 			},
 		},
 	})
@@ -155,10 +171,18 @@ func testSubmittingProposalForVolumeDiscountProgramUpdateWithTooHighDiscountFact
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
 			{
 				MinimumRunningNotionalTakerVolume: num.NewUint(10000),
-				VolumeDiscountFactor:              num.DecimalFromFloat(0.001),
+				VolumeDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.001),
+					Maker:     num.DecimalFromFloat(0.001),
+					Liquidity: num.DecimalFromFloat(0.001),
+				},
 			}, {
 				MinimumRunningNotionalTakerVolume: num.NewUint(20000),
-				VolumeDiscountFactor:              num.DecimalFromFloat(0.015),
+				VolumeDiscountFactors: types.Factors{
+					Infra:     num.DecimalFromFloat(0.015),
+					Maker:     num.DecimalFromFloat(0.015),
+					Liquidity: num.DecimalFromFloat(0.015),
+				},
 			},
 		},
 	})
@@ -175,7 +199,7 @@ func testSubmittingProposalForVolumeDiscountProgramUpdateWithTooHighDiscountFact
 	// then
 	require.EqualError(t,
 		err,
-		"tier 2 defines a volume discount factor higher than the maximum allowed by the network parameter \"volumeDiscountProgram.maxVolumeDiscountFactor\": maximum is 0.01, but got 0.015",
+		"tier 2 defines a volume discount infrastructure factor higher than the maximum allowed by the network parameter \"volumeDiscountProgram.maxVolumeDiscountFactor\": maximum is 0.01, but got 0.015",
 	)
 	require.Nil(t, toSubmit)
 }

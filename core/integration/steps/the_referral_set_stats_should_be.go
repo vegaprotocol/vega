@@ -53,7 +53,7 @@ func TheReferralSetStatsShouldBe(broker *stubs.BrokerStub, code, epochStr, volum
 				return fmt.Errorf("refferal set stats for set ID %q at epoch %q expect a running volume of %v, but got %v", code, epochStr, volumeStr, stat.ReferralSetRunningVolume)
 			}
 
-			return compareRefereesStats(expectedRefereesStats, stat.RefereesStats, stat.RewardFactor)
+			return compareRefereesStats(expectedRefereesStats, stat.RefereesStats, stat.RewardFactors)
 		}
 	}
 
@@ -61,15 +61,19 @@ func TheReferralSetStatsShouldBe(broker *stubs.BrokerStub, code, epochStr, volum
 }
 
 type refereeStats struct {
-	DiscountFactor num.Decimal
-	RewardFactor   num.Decimal
+	DiscountFactor types.Factors
+	RewardFactor   types.Factors
 }
 
 func parseReferralStatsShouldBeTable(table *godog.Table) (map[types.PartyID]*refereeStats, error) {
 	rows := StrictParseTable(table, []string{
 		"party",
-		"discount factor",
-		"reward factor",
+		"discount infra factor",
+		"discount maker factor",
+		"discount liquidity factor",
+		"reward infra factor",
+		"reward maker factor",
+		"reward liquidity factor",
 	}, []string{})
 
 	stats := map[types.PartyID]*refereeStats{}
@@ -81,8 +85,16 @@ func parseReferralStatsShouldBeTable(table *godog.Table) (map[types.PartyID]*ref
 			return nil, fmt.Errorf("cannot have more than one expectation for party %q", partyID)
 		}
 		stats[partyID] = &refereeStats{
-			DiscountFactor: specificRow.DiscountFactor(),
-			RewardFactor:   specificRow.RewardFactor(),
+			DiscountFactor: types.Factors{
+				Infra:     specificRow.DiscountInfraFactor(),
+				Maker:     specificRow.DiscountMakerFactor(),
+				Liquidity: specificRow.DiscountLiqFactor(),
+			},
+			RewardFactor: types.Factors{
+				Infra:     specificRow.RewardInfraFactor(),
+				Maker:     specificRow.RewardMakerFactor(),
+				Liquidity: specificRow.RewardLiqFactor(),
+			},
 		}
 	}
 
@@ -92,7 +104,7 @@ func parseReferralStatsShouldBeTable(table *godog.Table) (map[types.PartyID]*ref
 func compareRefereesStats(
 	expectedRefereesStats map[types.PartyID]*refereeStats,
 	foundRefereesStats map[types.PartyID]*types.RefereeStats,
-	foundRewardFactor num.Decimal,
+	foundRewardFactor types.Factors,
 ) error {
 	foundRefereesIDs := maps.Keys(foundRefereesStats)
 	expectedRefereesIDs := maps.Keys(expectedRefereesStats)
@@ -136,8 +148,8 @@ func compareRefereesStats(
 		if !expectedRefereeStats.RewardFactor.Equal(foundRewardFactor) {
 			return fmt.Errorf("expecting reward factor of %v but got %v for party %q", expectedRefereeStats.RewardFactor.String(), foundRewardFactor.String(), refereeIDStr)
 		}
-		if !foundRefereeStats.DiscountFactor.Equal(expectedRefereeStats.DiscountFactor) {
-			return fmt.Errorf("expecting discount factor of %v but got %v for party %q", expectedRefereeStats.DiscountFactor.String(), foundRefereeStats.DiscountFactor.String(), refereeIDStr)
+		if !foundRefereeStats.DiscountFactors.Equal(expectedRefereeStats.DiscountFactor) {
+			return fmt.Errorf("expecting discount factor of %v but got %v for party %q", expectedRefereeStats.DiscountFactor.String(), foundRefereeStats.DiscountFactors.String(), refereeIDStr)
 		}
 	}
 
@@ -159,10 +171,26 @@ func (r referralSetStatsShouldBeRow) Party() types.PartyID {
 	return types.PartyID(r.row.MustStr("party"))
 }
 
-func (r referralSetStatsShouldBeRow) DiscountFactor() num.Decimal {
-	return r.row.MustDecimal("discount factor")
+func (r referralSetStatsShouldBeRow) DiscountInfraFactor() num.Decimal {
+	return r.row.MustDecimal("discount infra factor")
 }
 
-func (r referralSetStatsShouldBeRow) RewardFactor() num.Decimal {
-	return r.row.MustDecimal("reward factor")
+func (r referralSetStatsShouldBeRow) DiscountMakerFactor() num.Decimal {
+	return r.row.MustDecimal("discount maker factor")
+}
+
+func (r referralSetStatsShouldBeRow) DiscountLiqFactor() num.Decimal {
+	return r.row.MustDecimal("discount liquidity factor")
+}
+
+func (r referralSetStatsShouldBeRow) RewardInfraFactor() num.Decimal {
+	return r.row.MustDecimal("reward infra factor")
+}
+
+func (r referralSetStatsShouldBeRow) RewardMakerFactor() num.Decimal {
+	return r.row.MustDecimal("reward maker factor")
+}
+
+func (r referralSetStatsShouldBeRow) RewardLiqFactor() num.Decimal {
+	return r.row.MustDecimal("reward liquidity factor")
 }

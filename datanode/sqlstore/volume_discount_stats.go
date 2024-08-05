@@ -17,12 +17,15 @@ package sqlstore
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -80,8 +83,14 @@ func (s *VolumeDiscountStats) Stats(ctx context.Context, atEpoch *uint64, partyI
 		filters = append(filters, "at_epoch = (SELECT MAX(at_epoch) FROM volume_discount_stats)")
 	}
 
-	stats := []entities.FlattenVolumeDiscountStats{}
-	query := `select at_epoch, stats->>'party_id' as party_id, stats->>'running_volume' as running_volume, stats->>'discount_factor' as discount_factor, vega_time from volume_discount_stats, jsonb_array_elements(parties_volume_discount_stats) AS stats`
+	stats := []struct {
+		AtEpoch         uint64
+		PartyID         string
+		RunningVolume   string
+		DiscountFactors string
+		VegaTime        time.Time
+	}{}
+	query := `select at_epoch, stats->>'party_id' as party_id, stats->>'running_volume' as running_volume, stats->>'discount_factors' as discount_factors, vega_time from volume_discount_stats, jsonb_array_elements(parties_volume_discount_stats) AS stats`
 
 	if len(filters) > 0 {
 		query = fmt.Sprintf("%s where %s", query, strings.Join(filters, " and "))
@@ -96,7 +105,23 @@ func (s *VolumeDiscountStats) Stats(ctx context.Context, atEpoch *uint64, partyI
 		return nil, pageInfo, err
 	}
 
-	stats, pageInfo = entities.PageEntities[*v2.VolumeDiscountStatsEdge](stats, pagination)
+	flattenStats := []entities.FlattenVolumeDiscountStats{}
+	for _, stat := range stats {
+		discountFactors := &vega.DiscountFactors{}
+		if err := json.Unmarshal([]byte(stat.DiscountFactors), discountFactors); err != nil {
+			return nil, pageInfo, err
+		}
 
-	return stats, pageInfo, nil
+		flattenStats = append(flattenStats, entities.FlattenVolumeDiscountStats{
+			AtEpoch:         stat.AtEpoch,
+			PartyID:         stat.PartyID,
+			DiscountFactors: discountFactors,
+			RunningVolume:   stat.RunningVolume,
+			VegaTime:        stat.VegaTime,
+		})
+	}
+
+	flattenStats, pageInfo = entities.PageEntities[*v2.VolumeDiscountStatsEdge](flattenStats, pagination)
+
+	return flattenStats, pageInfo, nil
 }

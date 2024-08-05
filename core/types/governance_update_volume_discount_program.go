@@ -119,7 +119,7 @@ func (v VolumeDiscountProgramChanges) IntoProto() *vegapb.VolumeDiscountProgramC
 	for _, tier := range v.VolumeBenefitTiers {
 		benefitTiers = append(benefitTiers, &vegapb.VolumeBenefitTier{
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.String(),
-			VolumeDiscountFactor:              tier.VolumeDiscountFactor.String(),
+			VolumeDiscountFactors:             tier.VolumeDiscountFactors.IntoDiscountFactorsProto(),
 		})
 	}
 
@@ -135,7 +135,7 @@ func (v VolumeDiscountProgramChanges) DeepClone() *VolumeDiscountProgramChanges 
 	for _, tier := range v.VolumeBenefitTiers {
 		benefitTiers = append(benefitTiers, &VolumeBenefitTier{
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.Clone(),
-			VolumeDiscountFactor:              tier.VolumeDiscountFactor,
+			VolumeDiscountFactors:             tier.VolumeDiscountFactors.Clone(),
 		})
 	}
 
@@ -155,10 +155,10 @@ func (c VolumeDiscountProgramChanges) String() string {
 		if i > 1 {
 			benefitTierStr += ", "
 		}
-		benefitTierStr += fmt.Sprintf("%d(minimumRunningNotionalTakerVolume(%s), volumeDiscountFactor(%s))",
+		benefitTierStr += fmt.Sprintf("%d(minimumRunningNotionalTakerVolume(%s), volumeDiscountFactors(%s))",
 			i,
 			tier.MinimumRunningNotionalTakerVolume.String(),
-			tier.VolumeDiscountFactor.String(),
+			tier.VolumeDiscountFactors.String(),
 		)
 	}
 
@@ -178,11 +178,10 @@ func NewVolumeDiscountProgramChangesFromProto(v *vegapb.VolumeDiscountProgramCha
 	benefitTiers := make([]*VolumeBenefitTier, 0, len(v.BenefitTiers))
 	for _, tier := range v.BenefitTiers {
 		minimumRunningVolume, _ := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
-		discountFactor, _ := num.DecimalFromString(tier.VolumeDiscountFactor)
 
 		benefitTiers = append(benefitTiers, &VolumeBenefitTier{
 			MinimumRunningNotionalTakerVolume: minimumRunningVolume,
-			VolumeDiscountFactor:              discountFactor,
+			VolumeDiscountFactors:             FactorsFromDiscountFactorsWithDefault(tier.VolumeDiscountFactors, tier.VolumeDiscountFactor),
 		})
 	}
 

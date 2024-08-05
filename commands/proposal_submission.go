@@ -454,14 +454,26 @@ func checkVolumeBenefitTier(index int, tier *vegapb.VolumeBenefitTier) Errors {
 			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrMustBePositive)
 		}
 	}
-	if len(tier.VolumeDiscountFactor) == 0 {
-		errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsRequired)
+	if tier.VolumeDiscountFactors == nil {
+		errs.AddForProperty(propertyPath+".volume_discount_factors", ErrIsRequired)
 	} else {
-		rdf, err := num.DecimalFromString(tier.VolumeDiscountFactor)
+		rdf, err := num.DecimalFromString(tier.VolumeDiscountFactors.MakerDiscountFactor)
 		if err != nil {
-			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsNotValidNumber)
+			errs.AddForProperty(propertyPath+".volume_discount_factors.maker_discount_factor", ErrIsNotValidNumber)
 		} else if rdf.IsNegative() {
-			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrMustBePositiveOrZero)
+			errs.AddForProperty(propertyPath+".volume_discount_factors.maker_discount_factor", ErrMustBePositiveOrZero)
+		}
+		rdf, err = num.DecimalFromString(tier.VolumeDiscountFactors.LiquidityDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.liquidity_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.liquidity_discount_factor", ErrMustBePositiveOrZero)
+		}
+		rdf, err = num.DecimalFromString(tier.VolumeDiscountFactors.InfrastructureDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.infrastructure_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.infrastructure_discount_factor", ErrMustBePositiveOrZero)
 		}
 	}
 	return errs
@@ -494,25 +506,73 @@ func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
 		}
 	}
 
-	if len(tier.ReferralRewardFactor) == 0 {
-		errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsRequired)
+	if tier.ReferralRewardFactors == nil {
+		errs.AddForProperty(propertyPath+".referral_reward_factors", ErrIsRequired)
 	} else {
-		rrf, err := num.DecimalFromString(tier.ReferralRewardFactor)
-		if err != nil {
-			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsNotValidNumber)
-		} else if rrf.IsNegative() {
-			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrMustBePositiveOrZero)
+		if len(tier.ReferralRewardFactors.InfrastructureRewardFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_reward_factors.infrastructure_reward_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralRewardFactors.InfrastructureRewardFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.infrastructure_reward_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.infrastructure_reward_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralRewardFactors.MakerRewardFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_reward_factors.maker_reward_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralRewardFactors.MakerRewardFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.maker_reward_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.maker_reward_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralRewardFactors.LiquidityRewardFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_reward_factors.liquidity_reward_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralRewardFactors.LiquidityRewardFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.liquidity_reward_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.liquidity_reward_factor", ErrMustBePositiveOrZero)
+			}
 		}
 	}
 
-	if len(tier.ReferralDiscountFactor) == 0 {
-		errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsRequired)
+	if tier.ReferralDiscountFactors == nil {
+		errs.AddForProperty(propertyPath+".referral_discount_factors", ErrIsRequired)
 	} else {
-		rdf, err := num.DecimalFromString(tier.ReferralDiscountFactor)
-		if err != nil {
-			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsNotValidNumber)
-		} else if rdf.IsNegative() {
-			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrMustBePositiveOrZero)
+		if len(tier.ReferralDiscountFactors.InfrastructureDiscountFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_discount_factors.infrastructure_discount_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralDiscountFactors.InfrastructureDiscountFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.infrastructure_discount_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.infrastructure_discount_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralDiscountFactors.MakerDiscountFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_discount_factors.maker_discount_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralDiscountFactors.MakerDiscountFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.maker_discount_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.maker_discount_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralDiscountFactors.LiquidityDiscountFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_discount_factors.liquidity_discount_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralDiscountFactors.LiquidityDiscountFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.liquidity_discount_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.liquidity_discount_factor", ErrMustBePositiveOrZero)
+			}
 		}
 	}
 

@@ -46,6 +46,18 @@ func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context,
 	m.liquidity.OnProbabilityOfTradingTauScalingUpdate(d)
 }
 
+func (m *Market) OnFeeFactorsTreasuryFeeUpdate(ctx context.Context, d num.Decimal) {
+	m.fee.OnFeeFactorsTreasuryFeeUpdate(d)
+	m.mkt.Fees.Factors.TreasuryFee = d
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+}
+
+func (m *Market) OnFeeFactorsBuyBackFeeUpdate(ctx context.Context, d num.Decimal) {
+	m.fee.OnFeeFactorsBuyBackFeeUpdate(d)
+	m.mkt.Fees.Factors.BuyBackFee = d
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+}
+
 func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Decimal) {
 	m.fee.OnFeeFactorsMakerFeeUpdate(d)
 	m.mkt.Fees.Factors.MakerFee = d

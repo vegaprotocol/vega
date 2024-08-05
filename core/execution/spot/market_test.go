@@ -210,7 +210,7 @@ func newTestMarket(
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	mat := common.NewMarketActivityTracker(log, teams, bc, broker)
+	mat := common.NewMarketActivityTracker(log, teams, bc, broker, collateral)
 	epoch.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 
 	baseAsset := NewAssetStub(base, baseDP)
@@ -218,13 +218,15 @@ func newTestMarket(
 
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscount := fmocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebate := fmocks.NewMockVolumeRebateService(ctrl)
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	referralDiscountReward.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeRebate.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
 
-	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking)
+	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking)
 
 	tm := &testMarket{
 		market:           market,

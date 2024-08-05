@@ -15,6 +15,8 @@ Feature: Fees calculations
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
+      | market.fee.factors.buybackFee           | 0.001 |
+      | market.fee.factors.treasuryFee          | 0.002 |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures |
@@ -34,9 +36,9 @@ Feature: Fees calculations
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | submission |
     When the network moves ahead "2" blocks
     And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | aux1 | ETH/DEC21 | 10 | 1 | buy  | BID | 10 | 10 |
-      | aux2 | ETH/DEC21 | 10 | 1 | sell | ASK | 10 | 10 |
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 10        | 1                    | buy  | BID              | 10     | 10     |
+      | aux2  | ETH/DEC21 | 10        | 1                    | sell | ASK              | 10     | 10     |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -75,22 +77,25 @@ Feature: Fees calculations
       | buyer   | price | size | seller  |
       | trader1 | 1002  | 2    | trader2 |
 
-# For trader1-
-# trade_value_for_fee_purposes for trader1 = size_of_trade * price_of_trade = 2 * 1002 = 2004
-# infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.003 * 2004 = 6.012 = 7 (rounded up to nearest whole value)
-# maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.004 * 2004 = 8.016 = 9 (rounded up to nearest whole value)
-# liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
+    # For trader1-
+    # trade_value_for_fee_purposes for trader1 = size_of_trade * price_of_trade = 2 * 1002 = 2004
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.003 * 2004 = 6.012 = 7 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.004 * 2004 = 8.016 = 9 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
+    # buy_back_fee = buy_back_factor * trade_value_for_fee_purposes = 0.001 * 2004 = 2.004 = 3
+    # treasury_fee = treasury_fee_factor * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5
 
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader2 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 9      | ETH   |
       | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_NETWORK_TREASURY    |           | 5      | ETH   |
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_BUY_BACK_FEES       |           | 3      | ETH   |
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
       | market  | trader1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 9      | ETH   |
 
-    # total_fee = maker_fee + infrastructure_fee + liquidity_fee =  9 + 7 + 5 = 21
-    # Trader1 margin + general account balance = 10000 + 9 ( Maker fees) = 10009
-    # Trader2  margin + general account balance = 10000 - (9) ( Maker fees) - 7 (Infra fee) - 5 (Liquidity Fee) = 9979
+    # total_fee = maker_fee + infrastructure_fee + liquidity_fee + buy back + treasury =  9 + 7 + 5 + 8 = 29
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC21 | 480    | 9529    |
-      | trader2 | ETH   | ETH/DEC21 | 480    | 9499    |
+      | trader2 | ETH   | ETH/DEC21 | 480    | 9491    |

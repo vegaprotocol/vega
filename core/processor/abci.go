@@ -171,6 +171,10 @@ type VolumeDiscountProgram interface {
 	UpdateProgram(program *types.VolumeDiscountProgram)
 }
 
+type VolumeRebateProgram interface {
+	UpdateProgram(program *types.VolumeRebateProgram)
+}
+
 type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
 	MaxMempoolSize() int64
@@ -257,6 +261,7 @@ type App struct {
 	partiesEngine                  PartiesEngine
 	referralProgram                ReferralProgram
 	volumeDiscountProgram          VolumeDiscountProgram
+	volumeRebateProgram            VolumeRebateProgram
 	protocolUpgradeService         ProtocolUpgradeService
 	primaryErc20MultiSigTopology   ERC20MultiSigTopology
 	secondaryErc20MultiSigTopology ERC20MultiSigTopology
@@ -304,6 +309,7 @@ func NewApp(log *logging.Logger,
 	teamsEngine TeamsEngine,
 	referralProgram ReferralProgram,
 	volumeDiscountProgram VolumeDiscountProgram,
+	volumeRebateProgram VolumeRebateProgram,
 	blockchainClient BlockchainClient,
 	primaryMultisig ERC20MultiSigTopology,
 	secondaryMultisig ERC20MultiSigTopology,
@@ -355,6 +361,7 @@ func NewApp(log *logging.Logger,
 		teamsEngine:                    teamsEngine,
 		referralProgram:                referralProgram,
 		volumeDiscountProgram:          volumeDiscountProgram,
+		volumeRebateProgram:            volumeRebateProgram,
 		version:                        version,
 		blockchainClient:               blockchainClient,
 		primaryErc20MultiSigTopology:   primaryMultisig,
@@ -2710,6 +2717,9 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsVolumeDiscountProgramUpdate():
 			prop.State = types.ProposalStateEnacted
 			app.volumeDiscountProgram.UpdateProgram(toEnact.VolumeDiscountProgramUpdate())
+		case toEnact.IsVolumeRebateProgramUpdate():
+			prop.State = types.ProposalStateEnacted
+			app.volumeRebateProgram.UpdateProgram(toEnact.VolumeRebateProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))

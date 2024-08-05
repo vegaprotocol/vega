@@ -47,6 +47,10 @@ var (
 	dScalingFactor = num.DecimalFromInt64(scalingFactor)
 )
 
+type QuantumGetter interface {
+	GetAssetQuantum(asset string) (num.Decimal, error)
+}
+
 type twPosition struct {
 	position               uint64    // abs last recorded position
 	t                      time.Time // time of last recorded position
@@ -67,6 +71,8 @@ type marketTracker struct {
 	lpFees            map[string]*num.Uint
 	infraFees         map[string]*num.Uint
 	lpPaidFees        map[string]*num.Uint
+	buybackFeesPaid   map[string]*num.Uint
+	treasuryFeesPaid  map[string]*num.Uint
 
 	totalMakerFeesReceived *num.Uint
 	totalMakerFeesPaid     *num.Uint
@@ -105,6 +111,7 @@ type MarketActivityTracker struct {
 	teams              Teams
 	balanceChecker     AccountBalanceChecker
 	eligibilityChecker EligibilityChecker
+	collateral         QuantumGetter
 
 	currentEpoch                        uint64
 	epochStartTime                      time.Time
@@ -120,7 +127,7 @@ type MarketActivityTracker struct {
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
-func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker AccountBalanceChecker, broker Broker) *MarketActivityTracker {
+func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker AccountBalanceChecker, broker Broker, collateral QuantumGetter) *MarketActivityTracker {
 	mat := &MarketActivityTracker{
 		log:                              log,
 		balanceChecker:                   balanceChecker,
@@ -132,6 +139,7 @@ func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker A
 		ss:                               &snapshotState{},
 		takerFeesPaidInEpoch:             []map[string]map[string]map[string]*num.Uint{},
 		broker:                           broker,
+		collateral:                       collateral,
 	}
 
 	return mat
@@ -187,6 +195,8 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		lpFees:                      map[string]*num.Uint{},
 		infraFees:                   map[string]*num.Uint{},
 		lpPaidFees:                  map[string]*num.Uint{},
+		buybackFeesPaid:             map[string]*num.Uint{},
+		treasuryFeesPaid:            map[string]*num.Uint{},
 		totalMakerFeesReceived:      num.UintZero(),
 		totalMakerFeesPaid:          num.UintZero(),
 		totalLpFees:                 num.UintZero(),
@@ -467,7 +477,7 @@ func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
 
 func (mt *marketTracker) aggregatedFees() map[string]*num.Uint {
 	totalFees := map[string]*num.Uint{}
-	fees := []map[string]*num.Uint{mt.infraFees, mt.lpPaidFees, mt.makerFeesPaid}
+	fees := []map[string]*num.Uint{mt.infraFees, mt.lpPaidFees, mt.makerFeesPaid, mt.buybackFeesPaid, mt.treasuryFeesPaid}
 	for _, fee := range fees {
 		for party, paid := range fee {
 			if _, ok := totalFees[party]; !ok {
@@ -517,6 +527,63 @@ func (mat *MarketActivityTracker) clearDeletedMarkets() {
 	}
 }
 
+func (mat *MarketActivityTracker) CalculateTotalMakerContributionInQuantum(windowSize int) (map[string]*num.Uint, map[string]num.Decimal) {
+	m := map[string]*num.Uint{}
+	total := num.UintZero()
+	for ast, trackers := range mat.assetToMarketTrackers {
+		quantum, err := mat.collateral.GetAssetQuantum(ast)
+		if err != nil {
+			continue
+		}
+		for _, trckr := range trackers {
+			for i := 0; i < windowSize; i++ {
+				idx := len(trckr.epochMakerFeesReceived) - i - 1
+				if idx < 0 {
+					break
+				}
+				partyFees := trckr.epochMakerFeesReceived[len(trckr.epochMakerFeesReceived)-i-1]
+				for party, fees := range partyFees {
+					if _, ok := m[party]; !ok {
+						m[party] = num.UintZero()
+					}
+					feesInQunatum, overflow := num.UintFromDecimal(fees.ToDecimal().Div(quantum))
+					if overflow {
+						continue
+					}
+					m[party].AddSum(feesInQunatum)
+					total.AddSum(feesInQunatum)
+				}
+			}
+		}
+	}
+	if total.IsZero() {
+		return m, map[string]decimal.Decimal{}
+	}
+	totalFrac := num.DecimalZero()
+	fractions := []*types.PartyContributionScore{}
+	for p, f := range m {
+		frac := f.ToDecimal().Div(total.ToDecimal())
+		fractions = append(fractions, &types.PartyContributionScore{Party: p, Score: frac})
+		totalFrac = totalFrac.Add(frac)
+	}
+	capAtOne(fractions, totalFrac)
+	fracMap := make(map[string]num.Decimal, len(fractions))
+	for _, partyFraction := range fractions {
+		fracMap[partyFraction.Party] = partyFraction.Score
+	}
+	return m, fracMap
+}
+
+func capAtOne(partyFractions []*types.PartyContributionScore, total num.Decimal) {
+	if total.LessThanOrEqual(num.DecimalOne()) {
+		return
+	}
+
+	sort.SliceStable(partyFractions, func(i, j int) bool { return partyFractions[i].Score.GreaterThan(partyFractions[j].Score) })
+	delta := total.Sub(num.DecimalFromInt64(1))
+	partyFractions[0].Score = num.MaxD(num.DecimalZero(), partyFractions[0].Score.Sub(delta))
+}
+
 func (mt *marketTracker) calcFeesAtMilestone() {
 	mt.epochMakerFeesReceived = append(mt.epochMakerFeesReceived, mt.makerFeesReceived)
 	mt.epochMakerFeesPaid = append(mt.epochMakerFeesPaid, mt.makerFeesPaid)
@@ -544,6 +611,8 @@ func (mt *marketTracker) clearFeeActivity() {
 	mt.lpFees = map[string]*num.Uint{}
 	mt.infraFees = map[string]*num.Uint{}
 	mt.lpPaidFees = map[string]*num.Uint{}
+	mt.treasuryFeesPaid = map[string]*num.Uint{}
+	mt.buybackFeesPaid = map[string]*num.Uint{}
 
 	mt.epochTotalMakerFeesReceived = append(mt.epochTotalMakerFeesReceived, mt.totalMakerFeesReceived)
 	mt.epochTotalMakerFeesPaid = append(mt.epochTotalMakerFeesPaid, mt.totalMakerFeesPaid)
@@ -573,6 +642,13 @@ func (mat *MarketActivityTracker) UpdateFeesFromTransfers(asset, market string, 
 			mat.addFees(mt.infraFees, t.Owner, t.Amount.Amount, num.UintZero())
 		case types.TransferTypeLiquidityFeePay:
 			mat.addFees(mt.lpPaidFees, t.Owner, t.Amount.Amount, num.UintZero())
+		case types.TransferTypeBuyBackFeePay:
+			mat.addFees(mt.buybackFeesPaid, t.Owner, t.Amount.Amount, num.UintZero())
+		case types.TransferTypeTreasuryPay:
+			mat.addFees(mt.treasuryFeesPaid, t.Owner, t.Amount.Amount, num.UintZero())
+		case types.TransferTypeHighMakerRebateReceive:
+			// we count high maker fee receive as maker fees for that purpose.
+			mat.addFees(mt.makerFeesReceived, t.Owner, t.Amount.Amount, mt.totalMakerFeesReceived)
 		default:
 		}
 	}

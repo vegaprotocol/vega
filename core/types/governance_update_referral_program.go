@@ -119,8 +119,8 @@ func (c ReferralProgramChanges) IntoProto() *vegapb.ReferralProgramChanges {
 		benefitTiers = append(benefitTiers, &vegapb.BenefitTier{
 			MinimumEpochs:                     tier.MinimumEpochs.String(),
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.String(),
-			ReferralRewardFactor:              tier.ReferralRewardFactor.String(),
-			ReferralDiscountFactor:            tier.ReferralDiscountFactor.String(),
+			ReferralRewardFactors:             tier.ReferralRewardFactors.IntoRewardFactorsProto(),
+			ReferralDiscountFactors:           tier.ReferralDiscountFactors.IntoDiscountFactorsProto(),
 		})
 	}
 
@@ -146,8 +146,8 @@ func (c ReferralProgramChanges) DeepClone() *ReferralProgramChanges {
 		benefitTiers = append(benefitTiers, &BenefitTier{
 			MinimumEpochs:                     tier.MinimumEpochs.Clone(),
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.Clone(),
-			ReferralRewardFactor:              tier.ReferralRewardFactor,
-			ReferralDiscountFactor:            tier.ReferralDiscountFactor,
+			ReferralRewardFactors:             tier.ReferralRewardFactors.Clone(),
+			ReferralDiscountFactors:           tier.ReferralDiscountFactors.Clone(),
 		})
 	}
 
@@ -174,12 +174,12 @@ func (c ReferralProgramChanges) String() string {
 		if i > 1 {
 			benefitTierStr += ", "
 		}
-		benefitTierStr += fmt.Sprintf("%d(minimumEpochs(%s), minimumRunningNotionalTakerVolume(%s), referralRewardFactor(%s), referralDiscountFactor(%s))",
+		benefitTierStr += fmt.Sprintf("%d(minimumEpochs(%s), minimumRunningNotionalTakerVolume(%s), referralRewardFactors(%s), referralDiscountFactors(%s))",
 			i,
 			tier.MinimumEpochs.String(),
 			tier.MinimumRunningNotionalTakerVolume.String(),
-			tier.ReferralRewardFactor.String(),
-			tier.ReferralDiscountFactor.String(),
+			tier.ReferralRewardFactors.String(),
+			tier.ReferralDiscountFactors.String(),
 		)
 	}
 
@@ -213,14 +213,12 @@ func NewReferralProgramChangesFromProto(c *vegapb.ReferralProgramChanges) *Refer
 	for _, tier := range c.BenefitTiers {
 		minimumEpochs, _ := num.UintFromString(tier.MinimumEpochs, 10)
 		minimumRunningVolume, _ := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
-		rewardFactor, _ := num.DecimalFromString(tier.ReferralRewardFactor)
-		discountFactor, _ := num.DecimalFromString(tier.ReferralDiscountFactor)
 
 		benefitTiers = append(benefitTiers, &BenefitTier{
 			MinimumEpochs:                     minimumEpochs,
 			MinimumRunningNotionalTakerVolume: minimumRunningVolume,
-			ReferralRewardFactor:              rewardFactor,
-			ReferralDiscountFactor:            discountFactor,
+			ReferralRewardFactors:             FactorsFromRewardFactorsWithDefault(tier.ReferralRewardFactors, tier.ReferralRewardFactor),
+			ReferralDiscountFactors:           FactorsFromDiscountFactorsWithDefault(tier.ReferralDiscountFactors, tier.ReferralDiscountFactor),
 		})
 	}
 

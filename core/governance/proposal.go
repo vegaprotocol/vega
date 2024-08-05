@@ -255,6 +255,7 @@ type ToEnact struct {
 	msu                    *ToEnactMarketStateUpdate
 	referralProgramChanges *types.ReferralProgram
 	volumeDiscountProgram  *types.VolumeDiscountProgram
+	volumeRebateProgram    *types.VolumeRebateProgram
 }
 
 type ToEnactMarketStateUpdate struct{}
@@ -276,6 +277,10 @@ type ToEnactFreeform struct{}
 
 func (t ToEnact) IsVolumeDiscountProgramUpdate() bool {
 	return t.volumeDiscountProgram != nil
+}
+
+func (t ToEnact) IsVolumeRebateProgramUpdate() bool {
+	return t.volumeRebateProgram != nil
 }
 
 func (t ToEnact) IsReferralProgramUpdate() bool {
@@ -361,6 +366,10 @@ func (t *ToEnact) ReferralProgramChanges() *types.ReferralProgram {
 
 func (t *ToEnact) VolumeDiscountProgramUpdate() *types.VolumeDiscountProgram {
 	return t.volumeDiscountProgram
+}
+
+func (t *ToEnact) VolumeRebateProgramUpdate() *types.VolumeRebateProgram {
+	return t.volumeRebateProgram
 }
 
 func (t *ToEnact) UpdateMarket() *types.Market {

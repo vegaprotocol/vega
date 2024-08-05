@@ -30,9 +30,9 @@ Feature: Discounts from multiple sources
 
     # Initalise the referral program
     Given the referral benefit tiers "rbt":
-      | minimum running notional taker volume | minimum epochs | referral reward factor | referral discount factor |
-      | 1000                                  | 2              | 0.0                    | 0.10                     |
-      | 10000                                 | 2              | 0.0                    | 1.0                      |
+      | minimum running notional taker volume | minimum epochs | referral reward infra factor | referral reward maker factor | referral reward liquidity factor | referral discount infra factor | referral discount maker factor | referral discount liquidity factor |
+      | 1000                                  | 2              | 0.0                          | 0.0                          | 0.0                              | 0.11                           | 0.12                           | 0.13                               |
+      | 10000                                 | 2              | 0.0                          | 0.0                          | 0.0                              | 1.0                            | 1.0                            | 1.0                                |
 
     And the referral staking tiers "rst":
       | minimum staked tokens | referral reward multiplier |
@@ -42,9 +42,9 @@ Feature: Discounts from multiple sources
       | 2023-12-12T12:12:12Z | 7             | rbt           | rst           |
     # Initialise the volume discount program
     And the volume discount program tiers named "vdt":
-      | volume | factor |
-      | 1000   | 0.10   |
-      | 1000   | 0.10   |
+      | volume | infra factor | liquidity factor | maker factor |
+      | 1000   | 0.11         | 0.12             | 0.13         |
+      | 1000   | 0.11         | 0.12             | 0.13         |
 
     And the volume discount program:
       | id  | tiers | closing timestamp | window length |
@@ -124,7 +124,7 @@ Feature: Discounts from multiple sources
 
 
   Scenario: When in continuous trading, fees discounted correctly when party has non-zero referral and volume discount factors (0029-FEES-032)
-    # Expectation: referral discount applied before volume discount 
+    # Expectation: referral discount applied before volume discount
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -132,10 +132,12 @@ Feature: Discounts from multiple sources
       | referee1 | ETH/USD.1.1 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0             | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0                   | 0                   | 0                       | 0.11                  | 0.12                  | 0.13                      |
     And the party "referee1" has the following taker notional "2000"
-    And the party "referee1" has the following discount factor "0.1"
+    And the party "referee1" has the following discount infra factor "0.11"
+    And the party "referee1" has the following discount liquidity factor "0.12"
+    And the party "referee1" has the following discount maker factor "0.13"
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -146,17 +148,19 @@ Feature: Discounts from multiple sources
       | aux1  | 1000  | 100  | referee1 |
     Then the following transfers should happen:
       | from     | to     | from account         | to account                       | market id   | amount | asset   |
-      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER          | ETH/USD.1.1 | 81     | USD.1.1 |
-      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.1 | 81     | USD.1.1 |
-      | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 81     | USD.1.1 |
+      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER          | ETH/USD.1.1 | 77     | USD.1.1 |
+      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.1 | 77     | USD.1.1 |
+      | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 80     | USD.1.1 |
 
     # Additionally check if referral discount fully discounts fees, core does not panic when trying to apply volume discounts
     Given the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of 12000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0             | 1.0             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0                   | 0                   | 0                       | 1.0                   | 1.0                   | 1.0                       |
     And the party "referee1" has the following taker notional "12000"
-    And the party "referee1" has the following discount factor "0.1"
+    And the party "referee1" has the following discount infra factor "0.11"
+    And the party "referee1" has the following discount liquidity factor "0.12"
+    And the party "referee1" has the following discount maker factor "0.13"
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -183,10 +187,12 @@ Feature: Discounts from multiple sources
       | 1000       | TRADING_MODE_CONTINUOUS | 7469         | 1000000        | 21            | 3600    | 973       | 1027      |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 2000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0             | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0                   | 0                   | 0                       | 0.11                  | 0.12                  | 0.13                      |
     And the party "referee1" has the following taker notional "2000"
-    And the party "referee1" has the following discount factor "0.1"
+    And the party "referee1" has the following discount infra factor "0.11"
+    And the party "referee1" has the following discount liquidity factor "0.12"
+    And the party "referee1" has the following discount maker factor "0.13"
 
     When the parties place the following orders:
       | party  | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -211,5 +217,5 @@ Feature: Discounts from multiple sources
       | aux3  | 1000  | 2    | ptsell   |
     And the following transfers should happen:
       | from     | to     | from account         | to account                       | market id   | amount | asset   |
-      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.2 | 81     | USD.1.1 |
-      | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 81     | USD.1.1 |
+      | referee1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/USD.1.2 | 77     | USD.1.1 |
+      | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 80     | USD.1.1 |

@@ -879,6 +879,21 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Fees"};
   }
 
+  // Get current volume rebate program
+  //
+  // Get the current volume rebate program for the network. This program may not be active if it has ended
+  // and has not been replaced by another.
+  rpc GetCurrentVolumeRebateProgram(GetCurrentVolumeRebateProgramRequest) returns (GetCurrentVolumeRebateProgramResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume rebate program"};
+  }
+
+  // Get volume rebate statistics
+  //
+  // Get the information about a party's running traded volume, and the rebate factor it earns them.
+  rpc GetVolumeRebateStats(GetVolumeRebateStatsRequest) returns (GetVolumeRebateStatsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume rebate program"};
+  }
+
   // Get current volume discount program
   //
   // Get the current volume discount program for the network. This program may not be active if it has ended
@@ -4310,20 +4325,26 @@ message ReferralSetStats {
   string referral_set_running_notional_taker_volume = 2;
   // Party ID.
   string party_id = 3;
-  // Discount factor applied to the party.
+  // deprecated
   string discount_factor = 4;
-  // Reward factor applied to the party.
+  // deprecated
   string reward_factor = 5;
   // Current referee notional taker volume.
   string epoch_notional_taker_volume = 6;
   // Multiplier applied to the referral reward factor when calculating referral rewards due to the referrer.
   string rewards_multiplier = 7;
-  // Proportion of the referee's taker fees to be rewarded to the referrer.
+  // deprecated
   string rewards_factor_multiplier = 8;
   // Indicates if the referral set was eligible to be part of the referral program.
   bool was_eligible = 9;
   // Referrer's taker volume
   string referrer_taker_volume = 10;
+  // Discount factors applied to the party.
+  vega.DiscountFactors discount_factors = 11;
+  // Reward factors applied to the party.
+  vega.RewardFactors reward_factors = 12;
+  // Proportion of the referee's taker fees to be rewarded to the referrer.
+  vega.RewardFactors rewards_factors_multiplier = 13;
 }
 
 // Team record containing the team information.
@@ -4679,10 +4700,12 @@ message VolumeDiscountStats {
   uint64 at_epoch = 1;
   // Party ID for which the statistics apply.
   string party_id = 2;
-  // Discount factor applied given the party's running volume.
+  // deprecated
   string discount_factor = 3;
   // The party's running volume.
   string running_volume = 4;
+  // Discount factor applied given the party's running volume.
+  vega.DiscountFactors discount_factors = 5;
 }
 
 // Volume discount program details.
@@ -5062,4 +5085,78 @@ message EstimateAMMBoundsResponse {
   string liquidation_price_at_upper = 5;
   // Estimated price below the lower bound at which the commitment will be lost.
   string liquidation_price_at_lower = 6;
+}
+
+// Request to get the current volume rebate program
+message GetCurrentVolumeRebateProgramRequest {}
+
+// Response containing the current volume rebate program
+message GetCurrentVolumeRebateProgramResponse {
+  // Volume discount program currently activated on the network.
+  VolumeRebateProgram current_volume_rebate_program = 1;
+}
+
+// Request to get the volume rebate statistics for a given epoch.
+message GetVolumeRebateStatsRequest {
+  // Epoch to get volume rebate statistics for. If not set, last epoch is used.
+  optional uint64 at_epoch = 1;
+  // Restrict volume discount statistics to those for the given party.
+  optional string party_id = 2;
+  // Pagination controls.
+  optional Pagination pagination = 3;
+}
+
+// Response containing the volume rebate statistics for the given epoch.
+message GetVolumeRebateStatsResponse {
+  // Volume rebate statistics for an epoch.
+  VolumeRebateStatsConnection stats = 1;
+}
+
+// Page of volume rebate stats data and corresponding page information.
+message VolumeRebateStatsConnection {
+  // Page of volume rebate statistics data and their corresponding cursors.
+  repeated VolumeRebateStatsEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Volume rebate stats data with the corresponding cursor.
+message VolumeRebateStatsEdge {
+  // Volume rebate stats data.
+  VolumeRebateStats node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Volume discount statistics for a given epoch for all parties.
+message VolumeRebateStats {
+  // Epoch at which the statistics apply.
+  uint64 at_epoch = 1;
+  // Party ID for which the statistics apply.
+  string party_id = 2;
+  // Rebate factor applied given the party's running volume fracation.
+  string additional_maker_rebate = 3;
+  // The party's volume fraction.
+  string maker_volume_fraction = 4;
+  // The party's total maker fees received over the relevant window.
+  string maker_fees_received = 5;
+}
+
+// Volume rebate program details.
+message VolumeRebateProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined benefit tiers ordered by increasing discounts. Determines the level of
+  // benefit a party can expect based on performance criteria.
+  repeated vega.VolumeRebateBenefitTier benefit_tiers = 3;
+  // Timestamp in Unix nanoseconds, after which when the current epoch
+  // ends, the program will end and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which a volume discount statistics' running volume is evaluated.
+  uint64 window_length = 5;
+  // Timestamp in Unix nanoseconds, at which the program ended.
+  optional int64 ended_at = 6;
 }

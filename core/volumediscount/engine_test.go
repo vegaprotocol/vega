@@ -72,10 +72,26 @@ func TestVolumeDiscountProgramLifecycle(t *testing.T) {
 		EndOfProgramTimestamp: now.Add(time.Hour * 1),
 		WindowLength:          1,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
-			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactor: num.DecimalFromFloat(0.1)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactor: num.DecimalFromFloat(0.2)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactor: num.DecimalFromFloat(0.5)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactor: num.DecimalFromFloat(1)},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactors: types.Factors{
+				Infra:     num.DecimalFromFloat(0.1),
+				Maker:     num.DecimalFromFloat(0.1),
+				Liquidity: num.DecimalFromFloat(0.1),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactors: types.Factors{
+				Infra:     num.DecimalFromFloat(0.2),
+				Maker:     num.DecimalFromFloat(0.2),
+				Liquidity: num.DecimalFromFloat(0.2),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactors: types.Factors{
+				Infra:     num.DecimalFromFloat(0.5),
+				Maker:     num.DecimalFromFloat(0.5),
+				Liquidity: num.DecimalFromFloat(0.5),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactors: types.Factors{
+				Infra:     num.DecimalFromFloat(1),
+				Maker:     num.DecimalFromFloat(1),
+				Liquidity: num.DecimalFromFloat(1),
+			}},
 		},
 	}
 	// add the program
@@ -102,10 +118,26 @@ func TestVolumeDiscountProgramLifecycle(t *testing.T) {
 		EndOfProgramTimestamp: now.Add(time.Hour * 2),
 		WindowLength:          1,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
-			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactor: num.DecimalFromFloat(0.2)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactor: num.DecimalFromFloat(0.5)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactor: num.DecimalFromFloat(0.1)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactor: num.DecimalFromFloat(1)},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.2),
+				Infra:     num.DecimalFromFloat(0.2),
+				Liquidity: num.DecimalFromFloat(0.2),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.5),
+				Infra:     num.DecimalFromFloat(0.5),
+				Liquidity: num.DecimalFromFloat(0.5),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.1),
+				Infra:     num.DecimalFromFloat(0.1),
+				Liquidity: num.DecimalFromFloat(0.1),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(1),
+				Infra:     num.DecimalFromFloat(1),
+				Liquidity: num.DecimalFromFloat(1),
+			}},
 		},
 	}
 	// add the new program
@@ -151,10 +183,26 @@ func TestDiscountFactor(t *testing.T) {
 		EndOfProgramTimestamp: currentTime.Add(time.Hour * 1),
 		WindowLength:          1,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
-			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactor: num.DecimalFromFloat(0.1)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactor: num.DecimalFromFloat(0.2)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactor: num.DecimalFromFloat(0.5)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactor: num.DecimalFromFloat(1)},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.1),
+				Infra:     num.DecimalFromFloat(0.1),
+				Liquidity: num.DecimalFromFloat(0.1),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.2),
+				Infra:     num.DecimalFromFloat(0.2),
+				Liquidity: num.DecimalFromFloat(0.2),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.5),
+				Infra:     num.DecimalFromFloat(0.5),
+				Liquidity: num.DecimalFromFloat(0.5),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(1),
+				Infra:     num.DecimalFromFloat(1),
+				Liquidity: num.DecimalFromFloat(1),
+			}},
 		},
 	}
 	// add the program
@@ -191,30 +239,30 @@ func TestDiscountFactor(t *testing.T) {
 	loadedEngine := assertSnapshotMatches(t, key, hashWithEpochNotionalsData)
 
 	// party does not exist
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p8"))
-	require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty("p8"))
+	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p8").Infra)
+	require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty("p8").Infra)
 	// party is not eligible
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p1"))
-	require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty("p1"))
+	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p1").Infra)
+	require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty("p1").Infra)
 	// volume between 1000/2000
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").String())
-	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p2").String())
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").String())
-	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p3").String())
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").Infra.String())
+	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p2").Infra.String())
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").Infra.String())
+	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p3").Infra.String())
 
 	// volume 2000<=x<3000
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").String())
-	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p4").String())
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").Infra.String())
+	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p4").Infra.String())
 
 	// volume 3000<=x<4000
-	require.Equal(t, "0.5", engine.VolumeDiscountFactorForParty("p5").String())
-	require.Equal(t, "0.5", loadedEngine.VolumeDiscountFactorForParty("p5").String())
+	require.Equal(t, "0.5", engine.VolumeDiscountFactorForParty("p5").Infra.String())
+	require.Equal(t, "0.5", loadedEngine.VolumeDiscountFactorForParty("p5").Infra.String())
 
 	// volume >=4000
-	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").String())
-	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p6").String())
-	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").String())
-	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p7").String())
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").Infra.String())
+	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p6").Infra.String())
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").Infra.String())
+	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p7").Infra.String())
 
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{}).Times(1)
 
@@ -233,8 +281,8 @@ func TestDiscountFactor(t *testing.T) {
 
 	// no discount for terminated program
 	for _, p := range []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"} {
-		require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty(types.PartyID(p)))
-		require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty(types.PartyID(p)))
+		require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty(types.PartyID(p)).Infra)
+		require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty(types.PartyID(p)).Infra)
 	}
 }
 
@@ -253,10 +301,26 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 		EndOfProgramTimestamp: currentTime.Add(time.Hour * 1),
 		WindowLength:          2,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
-			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactor: num.DecimalFromFloat(0.1)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactor: num.DecimalFromFloat(0.2)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactor: num.DecimalFromFloat(0.5)},
-			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactor: num.DecimalFromFloat(1)},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.1),
+				Infra:     num.DecimalFromFloat(0.1),
+				Liquidity: num.DecimalFromFloat(0.1),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(2000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.2),
+				Infra:     num.DecimalFromFloat(0.2),
+				Liquidity: num.DecimalFromFloat(0.2),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(3000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(0.5),
+				Infra:     num.DecimalFromFloat(0.5),
+				Liquidity: num.DecimalFromFloat(0.5),
+			}},
+			{MinimumRunningNotionalTakerVolume: num.NewUint(4000), VolumeDiscountFactors: types.Factors{
+				Maker:     num.DecimalFromFloat(1),
+				Infra:     num.DecimalFromFloat(1),
+				Liquidity: num.DecimalFromFloat(1),
+			}},
 		},
 	}
 	// add the program
@@ -285,21 +349,21 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 	// start a new epoch for the discount factors to be in place
 
 	// party does not exist
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p8"))
+	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p8").Infra)
 	// volume 900
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p1"))
+	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p1").Infra)
 	// volume 1000
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").String())
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").Infra.String())
 	// volume 1001
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").String())
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").Infra.String())
 	// volume 2000
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").String())
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").Infra.String())
 	// volume 3000
-	require.Equal(t, "0.5", engine.VolumeDiscountFactorForParty("p5").String())
+	require.Equal(t, "0.5", engine.VolumeDiscountFactorForParty("p5").Infra.String())
 	// volume 4000
-	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").String())
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").Infra.String())
 	// volume 5000
-	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").String())
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").Infra.String())
 
 	// running for another epoch
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{
@@ -321,29 +385,29 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 	loadedEngine := assertSnapshotMatches(t, key, hashAfter2Epochs)
 
 	// now p8 exists and the volume is 2000
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p8").String())
-	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p8").String())
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p8").Infra.String())
+	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p8").Infra.String())
 	// volume 2400
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p1").String())
-	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p1").String())
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p1").Infra.String())
+	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p1").Infra.String())
 	// volume 1000
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").String())
-	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p2").String())
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").Infra.String())
+	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p2").Infra.String())
 	// volume 1001
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").String())
-	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p3").String())
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").Infra.String())
+	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p3").Infra.String())
 	// volume 2000
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").String())
-	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p4").String())
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").Infra.String())
+	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p4").Infra.String())
 	// volume 7000
-	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p5").String())
-	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p5").String())
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p5").Infra.String())
+	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p5").Infra.String())
 	// volume 8000
-	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").String())
-	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p6").String())
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").Infra.String())
+	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p6").Infra.String())
 	// volume 5000
-	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").String())
-	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p7").String())
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").Infra.String())
+	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p7").Infra.String())
 
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{}).Times(1)
 
@@ -361,7 +425,7 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 
 	// no discount for terminated program
 	for _, p := range []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"} {
-		require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty(types.PartyID(p)))
-		require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty(types.PartyID(p)))
+		require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty(types.PartyID(p)).Infra)
+		require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty(types.PartyID(p)).Infra)
 	}
 }

@@ -184,9 +184,9 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, det
 			JoinedAt:       now,
 			StartedAtEpoch: e.currentEpoch,
 		},
-		CurrentRewardFactor:            num.DecimalZero(),
+		CurrentRewardFactors:           types.EmptyFactors,
 		CurrentRewardsMultiplier:       num.DecimalZero(),
-		CurrentRewardsFactorMultiplier: num.DecimalZero(),
+		CurrentRewardsFactorMultiplier: types.EmptyFactors,
 	}
 
 	e.sets[deterministicSetID] = &newSet
@@ -277,36 +277,36 @@ func (e *Engine) HasProgramEnded() bool {
 	return e.programHasEnded
 }
 
-func (e *Engine) ReferralDiscountFactorForParty(party types.PartyID) num.Decimal {
+func (e *Engine) ReferralDiscountFactorsForParty(party types.PartyID) types.Factors {
 	if e.programHasEnded {
-		return num.DecimalZero()
+		return types.EmptyFactors
 	}
 
 	factors, ok := e.factorsByReferee[party]
 	if !ok {
-		return num.DecimalZero()
+		return types.EmptyFactors
 	}
 
-	return factors.DiscountFactor
+	return factors.DiscountFactors
 }
 
-func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
+func (e *Engine) RewardsFactorForParty(party types.PartyID) types.Factors {
 	if e.programHasEnded {
-		return num.DecimalZero()
+		return types.EmptyFactors
 	}
 
 	setID, ok := e.referees[party]
 	if !ok {
-		return num.DecimalZero()
+		return types.EmptyFactors
 	}
 
-	return e.sets[setID].CurrentRewardFactor
+	return e.sets[setID].CurrentRewardFactors
 }
 
-func (e *Engine) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
+func (e *Engine) RewardsFactorsMultiplierAppliedForParty(party types.PartyID) types.Factors {
 	setID, ok := e.referees[party]
 	if !ok {
-		return num.DecimalZero()
+		return types.EmptyFactors
 	}
 
 	return e.sets[setID].CurrentRewardsFactorMultiplier
@@ -418,11 +418,23 @@ func (e *Engine) loadFactorsByReferee(factors []*snapshotpb.FactorByReferee) {
 	e.factorsByReferee = make(map[types.PartyID]*types.RefereeStats, len(factors))
 	for _, fbr := range factors {
 		party := types.PartyID(fbr.Party)
-		discountFactor, _ := num.UnmarshalBinaryDecimal(fbr.DiscountFactor)
 		takerVolume := num.UintFromBytes(fbr.TakerVolume)
+
+		factors := types.Factors{}
+		if fbr.DiscountFactors != nil {
+			factors.Infra, _ = num.UnmarshalBinaryDecimal([]byte(fbr.DiscountFactors.InfrastructureDiscountFactor))
+			factors.Liquidity, _ = num.UnmarshalBinaryDecimal([]byte(fbr.DiscountFactors.LiquidityDiscountFactor))
+			factors.Maker, _ = num.UnmarshalBinaryDecimal([]byte(fbr.DiscountFactors.MakerDiscountFactor))
+		}
+		if len(fbr.DiscountFactor) > 0 {
+			defaultDF, _ := num.UnmarshalBinaryDecimal(fbr.DiscountFactor)
+			factors.Infra = defaultDF
+			factors.Liquidity = defaultDF
+			factors.Maker = defaultDF
+		}
 		e.factorsByReferee[party] = &types.RefereeStats{
-			DiscountFactor: discountFactor,
-			TakerVolume:    takerVolume,
+			DiscountFactors: factors,
+			TakerVolume:     takerVolume,
 		}
 	}
 }
@@ -440,9 +452,9 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto []*snapshotpb.ReferralSe
 				JoinedAt:       time.Unix(0, setProto.Referrer.JoinedAt),
 				StartedAtEpoch: setProto.Referrer.StartedAtEpoch,
 			},
-			CurrentRewardFactor:            num.MustDecimalFromString(setProto.CurrentRewardFactor),
+			CurrentRewardFactors:           types.FactorsFromRewardFactorsWithDefault(setProto.CurrentRewardFactors, setProto.CurrentRewardFactor),
 			CurrentRewardsMultiplier:       num.MustDecimalFromString(setProto.CurrentRewardsMultiplier),
-			CurrentRewardsFactorMultiplier: num.MustDecimalFromString(setProto.CurrentRewardsFactorMultiplier),
+			CurrentRewardsFactorMultiplier: types.FactorsFromRewardFactorsWithDefault(setProto.CurrentRewardsFactorsMultiplier, setProto.CurrentRewardsFactorMultiplier),
 		}
 
 		e.referrers[types.PartyID(setProto.Referrer.PartyId)] = setID
@@ -530,9 +542,9 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 			ReferralSetRunningVolume: num.UintZero(),
 			RefereesStats:            map[types.PartyID]*types.RefereeStats{},
 			ReferrerTakerVolume:      referrerTakerVolume,
-			RewardFactor:             num.DecimalZero(),
+			RewardFactors:            types.EmptyFactors,
 			RewardsMultiplier:        num.DecimalOne(),
-			RewardsFactorMultiplier:  num.DecimalZero(),
+			RewardsFactorsMultiplier: types.EmptyFactors,
 		}
 
 		setStats.ReferralSetRunningVolume = e.referralSetsNotionalVolumes.RunningSetVolumeForWindow(setID, e.currentProgram.WindowLength)
@@ -541,17 +553,14 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 		setStats.WasEligible = stakingBalance.GTE(e.referralProgramMinStakedVegaTokens)
 
 		if setStats.WasEligible {
-			setStats.RewardFactor = e.matchRewardFactor(setStats.ReferralSetRunningVolume)
+			setStats.RewardFactors = e.matchRewardFactor(setStats.ReferralSetRunningVolume)
 			setStats.RewardsMultiplier = e.matchRewardMultiplier(stakingBalance)
-			setStats.RewardsFactorMultiplier = num.MinD(
-				setStats.RewardFactor.Mul(setStats.RewardsMultiplier),
-				e.referralProgramMaxRewardProportion,
-			)
+			setStats.RewardsFactorsMultiplier = setStats.RewardFactors.CapRewardFactors(setStats.RewardsMultiplier, e.referralProgramMaxRewardProportion)
 		}
 
-		set.CurrentRewardFactor = setStats.RewardFactor
+		set.CurrentRewardFactors = setStats.RewardFactors
 		set.CurrentRewardsMultiplier = setStats.RewardsMultiplier
-		set.CurrentRewardsFactorMultiplier = setStats.RewardsFactorMultiplier
+		set.CurrentRewardsFactorMultiplier = setStats.RewardsFactorsMultiplier
 
 		allStats[setID] = setStats
 	}
@@ -573,8 +582,8 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 		}
 
 		refereeStats := &types.RefereeStats{
-			TakerVolume:    partyTakerVolume,
-			DiscountFactor: num.DecimalZero(),
+			TakerVolume:     partyTakerVolume,
+			DiscountFactors: types.EmptyFactors,
 		}
 
 		setStats := allStats[setID]
@@ -582,7 +591,7 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 		e.factorsByReferee[referee] = refereeStats
 
 		if setStats.WasEligible {
-			refereeStats.DiscountFactor = e.matchDiscountFactor(epochCount, setStats.ReferralSetRunningVolume)
+			refereeStats.DiscountFactors = e.matchDiscountFactor(epochCount, setStats.ReferralSetRunningVolume)
 		}
 	}
 
@@ -593,30 +602,30 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 	}
 }
 
-func (e *Engine) matchDiscountFactor(epochCount uint64, setRunningVolume *num.Uint) num.Decimal {
-	factor := num.DecimalZero()
+func (e *Engine) matchDiscountFactor(epochCount uint64, setRunningVolume *num.Uint) types.Factors {
+	factors := types.EmptyFactors
 	for _, tier := range e.currentProgram.BenefitTiers {
 		if epochCount < tier.MinimumEpochs.Uint64() || setRunningVolume.LT(tier.MinimumRunningNotionalTakerVolume) {
 			break
 		}
-		factor = tier.ReferralDiscountFactor
+		factors = tier.ReferralDiscountFactors
 	}
 
-	return factor
+	return factors
 }
 
-func (e *Engine) matchRewardFactor(setRunningVolume *num.Uint) num.Decimal {
-	factor := num.DecimalZero()
+func (e *Engine) matchRewardFactor(setRunningVolume *num.Uint) types.Factors {
+	factors := types.EmptyFactors
 	for _, tier := range e.currentProgram.BenefitTiers {
 		// NB: intentionally only checking the running notional here ignoring the epochs.
 		// This way if there are multiple entries with identical running volume we'll choose the last one, i.e. having most epochs
 		if setRunningVolume.LT(tier.MinimumRunningNotionalTakerVolume) {
 			break
 		}
-		factor = tier.ReferralRewardFactor
+		factors = tier.ReferralRewardFactors
 	}
 
-	return factor
+	return factors
 }
 
 func (e *Engine) matchRewardMultiplier(stakingBalance *num.Uint) num.Decimal {

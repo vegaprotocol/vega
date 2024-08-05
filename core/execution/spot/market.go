@@ -82,6 +82,7 @@ type Market struct {
 	fee                           *fee.Engine
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
+	volumeRebateService           fee.VolumeRebateService
 	liquidity                     *common.MarketLiquidity
 	liquidityEngine               common.LiquidityEngine
 
@@ -159,6 +160,7 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
@@ -232,6 +234,7 @@ func NewMarket(
 		fee:                           feeEngine,
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		volumeRebateService:           volumeRebateService,
 		parties:                       map[string]struct{}{},
 		as:                            as,
 		pMonitor:                      pMonitor,
@@ -3177,15 +3180,15 @@ func (m *Market) calculateFeesForTrades(trades []*types.Trade) (events.FeesTrans
 		err  error
 	)
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else {
 		if !m.as.IsOpeningAuction() {
-			fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+			fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 		}
 	}
 	return fees, err

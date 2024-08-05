@@ -17,7 +17,6 @@ package volumediscount
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -103,12 +102,9 @@ func (e *SnapshottedEngine) restore(vdp *snapshotpb.VolumeDiscountProgram) error
 	}
 
 	for _, stats := range vdp.FactorsByParty {
-		factor, err := num.DecimalFromString(stats.DiscountFactor)
-		if err != nil {
-			return fmt.Errorf("could not parse string %q into decimal: %w", stats.DiscountFactor, err)
-		}
+		factors := types.FactorsFromDiscountFactorsWithDefault(stats.DiscountFactors, stats.DiscountFactor)
 		e.factorsByParty[types.PartyID(stats.Party)] = types.VolumeDiscountStats{
-			DiscountFactor: factor,
+			DiscountFactors: factors,
 		}
 	}
 
@@ -180,8 +176,8 @@ func (e *SnapshottedEngine) serialiseDiscountVolumeProgram() ([]byte, error) {
 	stats := make([]*snapshotpb.VolumeDiscountStats, 0, len(e.factorsByParty))
 	for partyID, discountStats := range e.factorsByParty {
 		stats = append(stats, &snapshotpb.VolumeDiscountStats{
-			Party:          partyID.String(),
-			DiscountFactor: discountStats.DiscountFactor.String(),
+			Party:           partyID.String(),
+			DiscountFactors: discountStats.DiscountFactors.IntoDiscountFactorsProto(),
 		})
 	}
 	slices.SortStableFunc(stats, func(a, b *snapshotpb.VolumeDiscountStats) int {

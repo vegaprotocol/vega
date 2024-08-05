@@ -27,8 +27,8 @@ Feature: Calculating referral set running volumes
 
     # Initalise the referral program
     Given the referral benefit tiers "rbt":
-      | minimum running notional taker volume | minimum epochs | referral reward factor | referral discount factor |
-      | 100                                   | 1              | 0.1                    | 0.1                      |
+      | minimum running notional taker volume | minimum epochs | referral reward infra factor | referral reward maker factor | referral reward liquidity factor | referral discount infra factor | referral discount maker factor | referral discount liquidity factor |
+      | 100                                   | 1              | 0.11                         | 0.12                         | 0.13                             | 0.14                           | 0.15                           | 0.16                               |
     And the referral staking tiers "rst":
       | minimum staked tokens | referral reward multiplier |
       | 1                     | 1                          |
@@ -125,16 +125,16 @@ Feature: Calculating referral set running volumes
 
   Scenario Outline: Referral set member is the maker of a trade during continuous trading (0083-RFPR-048)
     # Expectation: the members taker volume is not increased, and thus we see no increase in the sets taker volume
-    
+
     Given the parties place the following orders:
       | party   | market id   | side         | volume | price | resulting trades | type       | tif     |
       | <party> | ETH/USD-1-1 | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1    | ETH/USD-1-1 | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 0:
-      | party    | reward factor | discount factor |
-      | referee1 | 0             | 0               |
-      | referee2 | 0             | 0               |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0                   | 0                   | 0                       | 0                     | 0                     | 0                         |
+      | referee2 | 0                   | 0                   | 0                       | 0                     | 0                     | 0                         |
 
     # Check volume not counted for either referrer or referee contributions or for either buy or sell orders
     Examples:
@@ -147,16 +147,16 @@ Feature: Calculating referral set running volumes
 
   Scenario Outline: Referral set member is the taker of a trade during continuous trading (0083-RFPR-031)
     # Expectation: the members taker volume is increased, and thus we see an increase in the sets taker volume
-    
+
     Given the parties place the following orders:
       | party   | market id   | side         | volume | price | resulting trades | type       | tif     |
       | aux1    | ETH/USD-1-1 | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | <party> | ETH/USD-1-1 | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 100000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     # Check volume counted for both referrer and referee contributions and both buy and sell orders
     Examples:
@@ -192,9 +192,9 @@ Feature: Calculating referral set running volumes
     And the network moves ahead "1" epochs
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD-1-2"
     And the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 0:
-      | party    | reward factor | discount factor |
-      | referee1 | 0             | 0               |
-      | referee2 | 0             | 0               |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0                   | 0                   | 0                       | 0                     | 0                     | 0                         |
+      | referee2 | 0                   | 0                   | 0                       | 0                     | 0                     | 0                         |
 
     # Check volume not counted for either referrer or referee contributions or for either buy or sell orders
     Examples:
@@ -217,9 +217,9 @@ Feature: Calculating referral set running volumes
       | <party> | ETH/USD-1-1 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 1000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     # Check the correct cap is applied for both referrer and referee contributions
     Examples:
@@ -243,9 +243,9 @@ Feature: Calculating referral set running volumes
       | referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch | 5000  |
     And the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 5000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     # Check the correct cap is applied for both referrer and referee contributions
     Examples:
@@ -265,9 +265,9 @@ Feature: Calculating referral set running volumes
       | <party> | ETH/USD-2-10 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 20000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     # Check volume is counted for both referrer and referee contributions and for both buy and sell orders
     Examples:
@@ -297,9 +297,9 @@ Feature: Calculating referral set running volumes
       | referee2  | ETH/USD-2-10 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 60000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     # Check volume is counted for both referrer and referee contributions and for both buy and sell orders
     Examples:
@@ -321,9 +321,9 @@ Feature: Calculating referral set running volumes
       | referee1 | ETH/USD-1-1 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of <running volume 1>:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -331,9 +331,9 @@ Feature: Calculating referral set running volumes
       | referee1 | ETH/USD-1-1 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of <running volume 2>:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -341,9 +341,9 @@ Feature: Calculating referral set running volumes
       | referee1 | ETH/USD-1-1 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of <running volume 3>:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -351,9 +351,9 @@ Feature: Calculating referral set running volumes
       | referee1 | ETH/USD-1-1 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "4" should have a running volume of <running volume 4>:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.1           | 0.1             |
-      | referee2 | 0.1           | 0.1             |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
+      | referee2 | 0.11                | 0.12                | 0.13                    | 0.14                  | 0.15                  | 0.16                      |
 
     # Check running volume correctly calculated for a variety of window lengths
     Examples:

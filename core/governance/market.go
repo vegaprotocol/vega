@@ -226,6 +226,9 @@ func buildMarketFromProposal(
 	// get factors for the market
 	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
+	buybackFee, _ := netp.Get(netparams.MarketFeeFactorsBuyBackFee)
+	treasuryFee, _ := netp.Get(netparams.MarketFeeFactorsTreasuryFee)
+
 	// get the margin scaling factors
 	scalingFactors := proto.ScalingFactors{}
 	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
@@ -250,6 +253,8 @@ func buildMarketFromProposal(
 	}
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
+	buybackFeeDec, _ := num.DecimalFromString(buybackFee)
+	treasuryFeeDec, _ := num.DecimalFromString(treasuryFee)
 	// assign here, we want to update this after assigning market variable
 	marginCalc := &types.MarginCalculator{
 		ScalingFactors: types.ScalingFactorsFromProto(&scalingFactors),
@@ -262,6 +267,8 @@ func buildMarketFromProposal(
 			Factors: &types.FeeFactors{
 				MakerFee:          makerFeeDec,
 				InfrastructureFee: infraFeeDec,
+				TreasuryFee:       treasuryFeeDec,
+				BuyBackFee:        buybackFeeDec,
 			},
 			LiquidityFeeSettings: definition.Changes.LiquidityFeeSettings,
 		},
@@ -312,6 +319,8 @@ func buildSpotMarketFromProposal(
 	// get factors for the market
 	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
+	buybackFee, _ := netp.Get(netparams.MarketFeeFactorsBuyBackFee)
+	treasuryFee, _ := netp.Get(netparams.MarketFeeFactorsTreasuryFee)
 	// get price monitoring parameters
 	if definition.Changes.PriceMonitoringParameters == nil {
 		pmParams := &proto.PriceMonitoringParameters{}
@@ -332,6 +341,8 @@ func buildSpotMarketFromProposal(
 
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
+	buybackFeeDec, _ := num.DecimalFromString(buybackFee)
+	treasuryFeeDec, _ := num.DecimalFromString(treasuryFee)
 	market := &types.Market{
 		ID:                    marketID,
 		DecimalPlaces:         definition.Changes.PriceDecimalPlaces,
@@ -340,6 +351,8 @@ func buildSpotMarketFromProposal(
 			Factors: &types.FeeFactors{
 				MakerFee:          makerFeeDec,
 				InfrastructureFee: infraFeeDec,
+				TreasuryFee:       treasuryFeeDec,
+				BuyBackFee:        buybackFeeDec,
 			},
 			LiquidityFeeSettings: definition.Changes.LiquidityFeeSettings,
 		},
