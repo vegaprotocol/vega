@@ -48,7 +48,7 @@ var (
 		types.AccountTypeMakerReceivedFeeReward: {},
 		types.AccountTypeMarketProposerReward:   {},
 		types.AccountTypeLPFeeReward:            {},
-		types.AccountTypeAveragePositionReward:  {},
+		types.AccountTypeAverageNotionalReward:  {},
 		types.AccountTypeRelativeReturnReward:   {},
 		types.AccountTypeReturnVolatilityReward: {},
 		types.AccountTypeValidatorRankingReward: {},

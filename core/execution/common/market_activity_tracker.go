@@ -904,7 +904,6 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	if metric == vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING {
 		mat.log.Panic("unexpected dispatch metric validator ranking here")
 	}
-	uTotal := uint64(0)
 	total := num.DecimalZero()
 	marketTotal := num.DecimalZero()
 	returns := make([]*num.Decimal, windowSize)
@@ -930,10 +929,10 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 			continue
 		}
 		switch metric {
-		case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
-			if t, ok := marketTracker.getPositionMetricTotal(party, windowSize); ok {
+		case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL:
+			if t, ok := marketTracker.getNotionalMetricTotal(party, windowSize); ok {
 				found = true
-				uTotal += t
+				total = total.Add(t)
 			}
 		case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN:
 			if t, ok := marketTracker.getRelativeReturnMetricTotal(party, windowSize); ok {
@@ -988,9 +987,11 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	}
 
 	switch metric {
-	case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
+	case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL:
 		// descaling the total tw position metric by dividing by the scaling factor
-		return num.DecimalFromInt64(int64(uTotal)).Div(num.DecimalFromInt64(int64(windowSize) * scalingFactor)), found
+		v := total.Div(num.DecimalFromInt64(int64(windowSize) * scalingFactor))
+		println(party, v.String())
+		return v, found
 	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
 		return total.Div(num.DecimalFromInt64(int64(windowSize))), found
 	case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
@@ -1161,6 +1162,12 @@ func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, end
 		mt.epochTimeWeightedNotional = mt.epochTimeWeightedNotional[1:]
 	}
 	mt.epochTimeWeightedNotional = append(mt.epochTimeWeightedNotional, m)
+	for p, twp := range mt.twNotional {
+		// if the notional at the beginning of the epoch is 0 clear it so we don't keep zero notionals`` forever
+		if twp.currentEpochTWNotional.IsZero() && twp.notional.IsZero() {
+			delete(mt.twNotional, p)
+		}
+	}
 }
 
 func (mt *marketTracker) processNotionalAtMilestone(epochStartTime time.Time, milestoneTime time.Time) {
@@ -1390,6 +1397,11 @@ func (mt *marketTracker) getReturns(party string, windowSize int) ([]*num.Decima
 		}
 	}
 	return returns, found
+}
+
+// getNotionalMetricTotal returns the sum of the epoch's time weighted notional over the time window.
+func (mt *marketTracker) getNotionalMetricTotal(party string, windowSize int) (num.Decimal, bool) {
+	return calcTotalForWindowU(party, mt.epochTimeWeightedNotional, windowSize)
 }
 
 // getPositionMetricTotal returns the sum of the epoch's time weighted position over the time window.

@@ -781,7 +781,7 @@ func TestMarketAssetMismatchRejectsTransfer(t *testing.T) {
 			Factor:     num.MustDecimalFromString("0.9"),
 			DispatchStrategy: &vega.DispatchStrategy{
 				AssetForMetric:       "zohar",
-				Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 				Markets:              []string{"mmm"},
 				EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 				IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
@@ -802,7 +802,7 @@ func TestDispatchStrategyRemoval(t *testing.T) {
 
 	dispatchStrat := &vega.DispatchStrategy{
 		AssetForMetric:       "zohar",
-		Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		Markets:              []string{"mmm"},
 		EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 		IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,

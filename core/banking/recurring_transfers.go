@@ -194,7 +194,7 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 		vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
-		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:

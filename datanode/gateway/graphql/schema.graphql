@@ -1501,7 +1501,9 @@ enum DispatchMetric {
   "Dispatch metric that uses the total value of the market if above the required threshold and not paid given proposer bonus yet"
   DISPATCH_METRIC_MARKET_VALUE
   "Dispatch metric that uses the time weighted position of the party in the market"
-  DISPATCH_METRIC_AVERAGE_POSITION
+  DISPATCH_METRIC_AVERAGE_POSITION @deprecated
+  "Dispatch metric that uses the time weighted notional of the party in the market"
+  DISPATCH_METRIC_AVERAGE_NOTIONAL
   "Dispatch metric that uses the relative PNL of the party in the market"
   DISPATCH_METRIC_RELATIVE_RETURN
   "Dispatch metric that uses return volatility of the party in the market"
@@ -4577,7 +4579,7 @@ enum AccountType {
   "Vested reward account is a per party per asset account for vested reward funds"
   ACCOUNT_TYPE_VESTED_REWARDS
   "Average position reward account is a per asset per market account for average position reward funds"
-  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION
+  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION @deprecated
   "Relative return reward account is a per asset per market account for relative return reward funds"
   ACCOUNT_TYPE_REWARD_RELATIVE_RETURN
   "Return volatility reward account is a per asset per market account for return volatility reward funds"
@@ -4590,6 +4592,8 @@ enum AccountType {
   ACCOUNT_TYPE_ORDER_MARGIN
   "Realised return reward account is per asset per reward scheme"
   ACCOUNT_TYPE_REWARD_REALISED_RETURN
+  "Average notional reward account is a per asset per market account for average notional reward funds"
+  ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL
 }
 
 "Types that describe why a transfer has been made"

@@ -62,7 +62,7 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
@@ -72,7 +72,7 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
@@ -82,7 +82,7 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
@@ -92,13 +92,13 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
 			types.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN,
 		},
-		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION: {
+		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL: {
 			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
@@ -113,7 +113,7 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
 			types.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN,
@@ -123,7 +123,7 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
 			types.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN,
@@ -133,7 +133,7 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 			types.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN,
@@ -143,7 +143,7 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
@@ -187,7 +187,7 @@ func testInvalidAssetForMetric(t *testing.T) {
 		types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
-		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 		types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN,
 		types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY,
 		types.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN,
@@ -263,7 +263,7 @@ func testRecurringWithDispatchInvalidTypes(t *testing.T) {
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN)
-	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_INSURANCE)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_GENERAL)
 
@@ -671,7 +671,7 @@ func testNewTransferChangeSubmissionInvalidDestinationTypeFails(t *testing.T) {
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS))
-	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING))

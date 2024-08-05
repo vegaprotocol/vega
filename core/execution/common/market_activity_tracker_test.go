@@ -1182,7 +1182,7 @@ func TestMarketProposerBonusScenarios(t *testing.T) {
 	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "jeremy")))
 }
 
-func TestPositionMetric(t *testing.T) {
+func TestNotionalMetric(t *testing.T) {
 	epochService := &TestEpochEngine{}
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
@@ -1211,29 +1211,29 @@ func TestPositionMetric(t *testing.T) {
 	// pBar = (1 - 600/1000) * 75 + 200 * 600/1000 = 150
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime, EndTime: epochStartTime.Add(1000 * time.Second)})
 
-	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "150", scores[0].Score.String())
+	require.Equal(t, "0.000027", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "75", scores[0].Score.String())
+	require.Equal(t, "0.0000135", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "50", scores[0].Score.String())
+	require.Equal(t, "0.000009", scores[0].Score.String())
 
 	// qualifying the market to m1, expect the same result
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "50", scores[0].Score.String())
+	require.Equal(t, "0.000009", scores[0].Score.String())
 
 	// qualifying the market to m2, expect the same result
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime.Add(1000 * time.Second)})
@@ -1245,29 +1245,29 @@ func TestPositionMetric(t *testing.T) {
 	// end the epoch
 	// pBar = 0.6 * 200 + 0.4 * 100 = 160
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(1000 * time.Second), EndTime: epochStartTime.Add(2000 * time.Second)})
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "160", scores[0].Score.String())
+	require.Equal(t, "0.000036", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "155", scores[0].Score.String())
+	require.Equal(t, "0.0000315", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "62", scores[0].Score.String())
+	require.Equal(t, "0.0000126", scores[0].Score.String())
 
 	// qualify to m1
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m1"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "62", scores[0].Score.String())
+	require.Equal(t, "0.0000126", scores[0].Score.String())
 
 	// qualify to m2
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	// now lets lets at an epoch with no activity
@@ -1275,20 +1275,20 @@ func TestPositionMetric(t *testing.T) {
 	// end the epoch
 	// pBar = 0 * 160 + 1 * 100 = 100
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(2000 * time.Second), EndTime: epochStartTime.Add(3000 * time.Second)})
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "100", scores[0].Score.String())
+	require.Equal(t, "0.00003", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "130", scores[0].Score.String())
+	require.Equal(t, "0.000033", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "102.5", scores[0].Score.String())
+	require.Equal(t, "0.00002325", scores[0].Score.String())
 }
 
 func TestRealisedReturnMetric(t *testing.T) {

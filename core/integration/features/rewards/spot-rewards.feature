@@ -354,7 +354,7 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
 
   Examples:
       | account type                         | dispatch metric                  |
-      | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | DISPATCH_METRIC_AVERAGE_POSITION |
+      | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | DISPATCH_METRIC_AVERAGE_NOTIONAL |
       | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN  | DISPATCH_METRIC_RELATIVE_RETURN  |
       | ACCOUNT_TYPE_REWARD_REALISED_RETURN  | DISPATCH_METRIC_REALISED_RETURN  |
 

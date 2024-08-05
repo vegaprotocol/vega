@@ -21593,13 +21593,13 @@ func TestMarshalling(t *testing.T) {
 									"amount": "111000000",
 									"asset": "c9fe6fc24fce121b2cc72680543a886055abb560043fda394ba5376203b7527d",
 									"fractionOfBalance": "0.1",
-									"destinationType": "ACCOUNT_TYPE_REWARD_AVERAGE_POSITION",
+									"destinationType": "ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL",
 									"recurring": {
 										"startEpoch": "116951",
 										"endEpoch": "117051",
 										"dispatchStrategy": {
 											"assetForMetric": "c9fe6fc24fce121b2cc72680543a886055abb560043fda394ba5376203b7527d",
-											"metric": "DISPATCH_METRIC_AVERAGE_POSITION",
+											"metric": "DISPATCH_METRIC_AVERAGE_NOTIONAL",
 											"entityScope": "ENTITY_SCOPE_TEAMS",
 											"nTopPerformers": "0.5",
 											"notionalTimeWeightedAveragePositionRequirement": "25000000000",
@@ -21617,8 +21617,8 @@ func TestMarshalling(t *testing.T) {
 							}
 						},
 						"rationale": {
-							"description": "ACCOUNT_TYPE_REWARD_AVERAGE_POSITION rewards II AVG position",
-							"title": "Reward for ACCOUNT_TYPE_REWARD_AVERAGE_POSITION II AVG position"
+							"description": "ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL rewards II AVG position",
+							"title": "Reward for ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL II AVG position"
 						},
 						"requiredParticipation": "0.00001",
 						"requiredMajority": "0.66"

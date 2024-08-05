@@ -791,7 +791,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -799,7 +799,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:  "",
-							Metric:          vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 						},
@@ -840,7 +840,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -848,7 +848,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:     "",
-							Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:        vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:    vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							StakingRequirement: "banana",
@@ -865,7 +865,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -873,7 +873,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:     "",
-							Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:        vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:    vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							StakingRequirement: "-1",
@@ -915,7 +915,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -923,7 +923,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:     "",
-							Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:        vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:    vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							StakingRequirement: "1",
@@ -941,7 +941,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -949,7 +949,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:  "",
-							Metric:          vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							NotionalTimeWeightedAveragePositionRequirement: "-1",
@@ -1016,7 +1016,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1024,7 +1024,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:  "",
-							Metric:          vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							WindowLength:    101,
@@ -1041,7 +1041,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1049,7 +1049,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
@@ -1066,7 +1066,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1074,7 +1074,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
@@ -1094,7 +1094,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1102,7 +1102,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
@@ -1120,7 +1120,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1128,7 +1128,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
@@ -1150,7 +1150,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1158,7 +1158,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
@@ -1180,7 +1180,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1188,7 +1188,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
@@ -1208,7 +1208,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1216,7 +1216,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
@@ -1235,7 +1235,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1243,7 +1243,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
@@ -1278,7 +1278,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1286,7 +1286,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
 							EntityScope:          vega.EntityScope_ENTITY_SCOPE_TEAMS,
 							TeamScope:            []string{"team1"},
@@ -1306,7 +1306,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1314,7 +1314,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:   "",
-							Metric:           vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:           vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:      vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:  vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							WindowLength:     100,
@@ -1332,7 +1332,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1340,7 +1340,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:   "",
-							Metric:           vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:           vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:      vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:  vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							WindowLength:     100,
@@ -1358,7 +1358,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
@@ -1366,7 +1366,7 @@ func TestTransferFunds(t *testing.T) {
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:   "",
-							Metric:           vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							Metric:           vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 							EntityScope:      vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 							IndividualScope:  vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 							WindowLength:     100,
@@ -1458,7 +1458,7 @@ func TestTransferFunds(t *testing.T) {
 		vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
 		vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
 		vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
-		vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+		vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
 		vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN,
 		vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY,
 		vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING,

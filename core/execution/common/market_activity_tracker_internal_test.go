@@ -341,7 +341,7 @@ func TestAverageNotional(t *testing.T) {
 	require.Equal(t, "300", tracker.epochTimeWeightedNotional[len(tracker.epochTimeWeightedNotional)-1]["p1"].String())
 }
 
-func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
+func TestCalculateMetricForIndividualsAveNotional(t *testing.T) {
 	ctx := context.Background()
 	epochService := &DummyEpochEngine{}
 	ctrl := gomock.NewController(t)
@@ -379,48 +379,48 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 
 	// get metrics for market m1 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics := tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics := tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "9.166666", metrics[0].Score.String())
-	require.Equal(t, "75", metrics[1].Score.String())
+	require.Equal(t, "0.0000009", metrics[0].Score.String())
+	require.Equal(t, "0.000075", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "13.333332", metrics[0].Score.String())
-	require.Equal(t, "116.66666", metrics[1].Score.String())
+	require.Equal(t, "0.0000026", metrics[0].Score.String())
+	require.Equal(t, "0.0002333", metrics[1].Score.String())
 
 	// get metrics for market m3 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "15", metrics[0].Score.String())
-	require.Equal(t, "75", metrics[1].Score.String())
+	require.Equal(t, "0.0000045", metrics[0].Score.String())
+	require.Equal(t, "0.000225", metrics[1].Score.String())
 
 	// get metrics for market m1,m2 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "22.499998", metrics[0].Score.String())
-	require.Equal(t, "191.66666", metrics[1].Score.String())
+	require.Equal(t, "0.0000035", metrics[0].Score.String())
+	require.Equal(t, "0.0003083", metrics[1].Score.String())
 
 	// get metrics for all market window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "37.499998", metrics[0].Score.String())
-	require.Equal(t, "266.66666", metrics[1].Score.String())
+	require.Equal(t, "0.000008", metrics[0].Score.String())
+	require.Equal(t, "0.0005333", metrics[1].Score.String())
 
 	// start epoch2
 	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(60, 0)})
@@ -433,99 +433,99 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 
 	// get metrics for market m1 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "15", metrics[0].Score.String())
-	require.Equal(t, "100", metrics[1].Score.String())
+	require.Equal(t, "0.0000055", metrics[0].Score.String())
+	require.Equal(t, "0.0001", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "20", metrics[0].Score.String())
-	require.Equal(t, "57.5", metrics[1].Score.String())
+	require.Equal(t, "0.000004", metrics[0].Score.String())
+	require.Equal(t, "0.0001075", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "30", metrics[0].Score.String())
-	require.Equal(t, "300", metrics[1].Score.String())
+	require.Equal(t, "0.000009", metrics[0].Score.String())
+	require.Equal(t, "0.0009", metrics[1].Score.String())
 
 	// get metrics for market m1,m2 with window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "35", metrics[0].Score.String())
-	require.Equal(t, "157.5", metrics[1].Score.String())
+	require.Equal(t, "0.0000095", metrics[0].Score.String())
+	require.Equal(t, "0.0002075", metrics[1].Score.String())
 
 	// get metrics for all market window size=1
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 1, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "65", metrics[0].Score.String())
-	require.Equal(t, "457.5", metrics[1].Score.String())
+	require.Equal(t, "0.0000185", metrics[0].Score.String())
+	require.Equal(t, "0.0011075", metrics[1].Score.String())
 
 	// calc with window size = 2
 	// get metrics for market m1 with window size=2
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 2, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "12.083333", metrics[0].Score.String())
-	require.Equal(t, "87.5", metrics[1].Score.String())
+	require.Equal(t, "0.0000032", metrics[0].Score.String())
+	require.Equal(t, "0.0000875", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=2
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 2, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "16.666666", metrics[0].Score.String())
-	require.Equal(t, "87.08333", metrics[1].Score.String())
+	require.Equal(t, "0.0000033", metrics[0].Score.String())
+	require.Equal(t, "0.0001704", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=2
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 2, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "22.5", metrics[0].Score.String())
-	require.Equal(t, "187.5", metrics[1].Score.String())
+	require.Equal(t, "0.00000675", metrics[0].Score.String())
+	require.Equal(t, "0.0005625", metrics[1].Score.String())
 
 	// get metrics for market m1,m2 with window size=2
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 2, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "28.749999", metrics[0].Score.String())
-	require.Equal(t, "174.58333", metrics[1].Score.String())
+	require.Equal(t, "0.0000065", metrics[0].Score.String())
+	require.Equal(t, "0.0002579", metrics[1].Score.String())
 
 	// get metrics for all market window size=2
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.NewUint(0), nil).Times(2)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintZero(), num.UintZero(), 2, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	require.Equal(t, "51.249999", metrics[0].Score.String())
-	require.Equal(t, "362.08333", metrics[1].Score.String())
+	require.Equal(t, "0.00001325", metrics[0].Score.String())
+	require.Equal(t, "0.0008204", metrics[1].Score.String())
 
 	// now make p2 not eligible via not having sufficient governance token
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(nil, errors.New("some error")).Times(1)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.NewUint(1), num.UintZero(), 2, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.NewUint(1), num.UintZero(), 2, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -535,7 +535,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	// repeat now p2 has balance just not enough
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(num.NewUint(1), nil).Times(1)
-	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.NewUint(2), num.UintZero(), 2, gameID, 1)
+	metrics = tracker.calculateMetricForIndividuals(ctx, "a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.NewUint(2), num.UintZero(), 2, gameID, 1)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "2", metrics[0].StakingBalance.String())
@@ -545,7 +545,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "1", metrics[1].StakingBalance.String())
 }
 
-func TestCalculateMetricForPartyAvePosition(t *testing.T) {
+func TestCalculateMetricForPartyAveNotional(t *testing.T) {
 	epochService := &DummyEpochEngine{}
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
@@ -575,41 +575,41 @@ func TestCalculateMetricForPartyAvePosition(t *testing.T) {
 
 	// calculate metric for p1 with scope=[m1] for window size=1
 	// 0*(1-0.9166666666666667)+10*0.9166666666666667 = 9.1666666667
-	score, _ := tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "9.166666", score.String())
+	score, _ := tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0000009", score.String())
 	// calculate metric for p1 with scope=[m2] for window size=1
 	// 0*(1-0.6666666666666667)+20*0.6666666666666667 = 13.3333333333
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "13.333332", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0000026", score.String())
 	// calculate metric for p1 with scope=[m3] for window size=1
 	// 0*(1-0.5)+30*0.5 = 15
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "15", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0000045", score.String())
 	// calculate metric for p1 with scope=[m1, m2] for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "22.499998", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0000035", score.String())
 	// calculate metric for p1 with no scope for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "37.499998", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000008", score.String())
 
 	// calculate metric for p2 with scope=[m1] for window size=1
 	// 0*(1-0.75)+100*0.75 = 75
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "75", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000075", score.String())
 	// calculate metric for p2 with scope=[m2] for window size=1
 	// 0*(1-0.5833333333333333)+200*0.5833333333333333
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "116.66666", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0002333", score.String())
 	// calculate metric for p2 with scope=[m3] for window size=1
 	// 0*(1-0.25)+300*0.25
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "75", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000225", score.String())
 	// calculate metric for p2 with scope=[m1, m3] for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "150", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0003", score.String())
 	// calculate metric for p2 with no scope for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "266.66666", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0005333", score.String())
 
 	// start epoch2
 	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(60, 0)})
@@ -622,81 +622,81 @@ func TestCalculateMetricForPartyAvePosition(t *testing.T) {
 
 	// calculate metric for p1 with scope=[m1] for window size=1
 	// 10*(1-0.5)+20*0.5
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "15", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0000055", score.String())
 	// calculate metric for p1 with scope=[m2] for window size=1
 	// 13.333333333333334*(1-1)+20*1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "20", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000004", score.String())
 	// calculate metric for p1 with scope=[m3] for window size=1
 	// 15*(1-1)+30*1 = 30
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "30", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000009", score.String())
 	// calculate metric for p1 with scope=[m1, m3] for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "35", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0000095", score.String())
 	// calculate metric for p1 with no scope for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "65", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0000185", score.String())
 
 	// calculate metric for p2 with scope=[m1] for window size=1
 	// 75*(1-1)+100*1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "100", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0001", score.String())
 	// calculate metric for p1 with scope=[m2] for window size=1
 	// 200*(1-0.75)+10*0.75
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "57.5", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0001075", score.String())
 	// calculate metric for p1 with scope=[m3] for window size=1
 	// 75*(1-1)+300*1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "300", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0009", score.String())
 	// calculate metric for p1 with scope=[m1, m3] for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "157.5", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0002075", score.String())
 	// calculate metric for p1 with no scope for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "457.5", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0011075", score.String())
 
 	// now calculate for window size=2
 
 	// calculate metric for p1 with scope=[m1] for window size=2
 	// (15 + 9.166666666666667)/2
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "12.083333", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.0000032", score.String())
 	// calculate metric for p1 with scope=[m2] for window size=2
 	// (13.333333333333334" + 20)/2
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "16.666666", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.0000033", score.String())
 	// calculate metric for p1 with scope=[m3] for window size=2
 	// (15 + 30)/2
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "22.5", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.00000675", score.String())
 	// calculate metric for p1 with scope=[m1, m3] for window size=2
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "28.749999", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.0000065", score.String())
 	// calculate metric for p1 with no scope for window size=2
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "51.249999", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.00001325", score.String())
 
 	// calculate metric for p2 with scope=[m1] for window size=2
 	// (100 + 75)/2
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "87.5", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.0000875", score.String())
 	// calculate metric for p2 with scope=[m2] for window size=2
 	// (116.66666666666666 + 57.5)/2
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "87.08333", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.0001704", score.String())
 	// calculate metric for p2 with scope=[m3] for window size=2
 	// (300 + 75)/2
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "187.5", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.0005625", score.String())
 	// calculate metric for p2 with scope=[m1, m3] for window size=2
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "275", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.00065", score.String())
 	// calculate metric for p2 with no scope for window size=2
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 2)
-	require.Equal(t, "362.08333", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 2)
+	require.Equal(t, "0.0008204", score.String())
 
 	// start epoch3
 	epochService.target(context.Background(), types.Epoch{Seq: 3, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(120, 0)})
@@ -704,81 +704,81 @@ func TestCalculateMetricForPartyAvePosition(t *testing.T) {
 	epochService.target(context.Background(), types.Epoch{Seq: 3, Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: time.Unix(120, 0), EndTime: time.Unix(180, 0)})
 	// calculate metric for p1 with scope=[m1] for window size=1
 	// 15*(1-1)+20*1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "20", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.00001", score.String())
 	// calculate metric for p1 with scope=[m2] for window size=1
 	// 20*(1-1)+20*1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "20", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000004", score.String())
 	// calculate metric for p1 with scope=[m3] for window size=1
 	// 30*(1-1)+30*1 = 30
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "30", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000009", score.String())
 	// calculate metric for p1 with scope=[m1, m3] for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "40", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000014", score.String())
 	// calculate metric for p1 with no scope for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "70", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.000023", score.String())
 
 	// calculate metric for p2 with scope=[m1] for window size=1
 	// 100*(1-1)+100*1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "100", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0001", score.String())
 	// calculate metric for p2 with scope=[m2] for window size=1
 	// 57.5*(1-1)+10*1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "10", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.00001", score.String())
 	// calculate metric for p2 with scope=[m3] for window size=1
 	// 300*(1-1)+300*1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "300", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.0009", score.String())
 	// calculate metric for p2 with scope=[m1, m3] for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "110", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.00011", score.String())
 	// calculate metric for p2 with no scope for window size=1
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 1)
-	require.Equal(t, "410", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 1)
+	require.Equal(t, "0.00101", score.String())
 
 	// now calculate for window size=3
 
 	// calculate metric for p1 with scope=[m1] for window size=3
 	// (9.166666666666667 + 15 + 20)/3
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "14.722222", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0000054666666667", score.String())
 	// calculate metric for p1 with scope=[m2] for window size=3
 	// (13.333333333333334" + 20 + 20)/3
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "17.7777773333333333", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0000035333333333", score.String())
 	// calculate metric for p1 with scope=[m3] for window size=3
 	// (15 + 30 + 30)/3
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "25", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0000075", score.String())
 	// calculate metric for p1 with scope=[m1, m3] for window size=3
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "32.4999993333333333", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.000009", score.String())
 	// calculate metric for p1 with no scope for window size=3
-	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "57.4999993333333333", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0000165", score.String())
 
 	// calculate metric for p2 with scope=[m1] for window size=3
 	// (100 + 75+100)/3
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "91.6666666666666667", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0000916666666667", score.String())
 	// calculate metric for p2 with scope=[m2] for window size=3
 	// (116.66666666666666 + 57.5 + 10)/3
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "61.3888866666666667", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0001169333333333", score.String())
 	// calculate metric for p2 with scope=[m3] for window size=3
 	// (300 + 75 + 300)/3
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "225", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.000675", score.String())
 	// calculate metric for p2 with scope=[m1, m3] for window size=3
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "316.6666666666666667", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{"m1", "m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0007666666666667", score.String())
 	// calculate metric for p2 with no scope for window size=3
-	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, 3)
-	require.Equal(t, "378.0555533333333333", score.String())
+	score, _ = tracker.calculateMetricForParty("a1", "p2", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, 3)
+	require.Equal(t, "0.0008836", score.String())
 }
 
 func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
@@ -1530,7 +1530,7 @@ func TestCalculateMetricForTeamUtil(t *testing.T) {
 	}
 
 	gameID := "game123"
-	teamScore, partyScores := calculateMetricForTeamUtil(ctx, "asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.UintOne(), int(5), num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{})
+	teamScore, partyScores := calculateMetricForTeamUtil(ctx, "asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintOne(), num.UintOne(), int(5), num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{})
 	// we're indicating the the score of the team need to be the mean of the top 0.5 * number of participants = floor(0.5*5) = 2
 	// the top scores are 2.5 and 2 => team score should be 2.25
 	// 4 party scores expected (1-4) as party5 is not eligible
@@ -1548,7 +1548,7 @@ func TestCalculateMetricForTeamUtil(t *testing.T) {
 	require.Equal(t, false, partyScores[4].IsEligible)
 
 	// lets repeat the check when there is no one eligible
-	teamScore, partyScores = calculateMetricForTeamUtil(ctx, "asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{})
+	teamScore, partyScores = calculateMetricForTeamUtil(ctx, "asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{})
 	require.Equal(t, "0", teamScore.String())
 	require.Equal(t, 1, len(partyScores))
 	require.Equal(t, "party5", partyScores[0].Party)

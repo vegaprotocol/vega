@@ -120,7 +120,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
-				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
@@ -151,7 +151,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
-				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
@@ -183,7 +183,7 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS &&
-		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION &&
+		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY &&
@@ -213,7 +213,7 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
 		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
 	}
-	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION {
+	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL {
 		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
 	}
 	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN {

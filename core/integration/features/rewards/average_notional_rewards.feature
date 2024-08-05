@@ -65,7 +65,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 50                   |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 50                   |
 
   #   Then the network moves ahead "1" epochs
 
@@ -75,7 +75,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 0                    |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 0                    |
 
   #   When the parties submit the following liquidity provision:
   #     | id  | party  | market id | commitment amount | fee | lp type    |
@@ -111,7 +111,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 10000                |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 10000                |
 
   #   When the parties submit the following liquidity provision:
   #     | id  | party  | market id | commitment amount | fee | lp type    |
@@ -152,7 +152,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
   #   When the parties submit the following liquidity provision:
   #     | id  | party  | market id | commitment amount | fee | lp type    |
@@ -188,7 +188,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
   #   When the parties submit the following liquidity provision:
   #     | id  | party  | market id | commitment amount | fee | lp type    |
@@ -275,7 +275,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets   | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          | ETH/DEC21 | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          | ETH/DEC21 | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
   #   When the parties submit the following liquidity provision:
   #     | id  | party  | market id | commitment amount | fee | lp type    |
@@ -321,7 +321,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
   #   When the parties submit the following liquidity provision:
   #     | id  | party  | market id | commitment amount | fee | lp type    |
@@ -428,7 +428,7 @@ Feature: Average position metric rewards
   #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
   #   Given the parties submit the following recurring transfers:
   #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
   #   # the time is the beginning of the epoch
   #   Then the parties place the following orders:
@@ -470,7 +470,7 @@ Feature: Average position metric rewards
     # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_POSITION | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_POSITION | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
     # let the position update be in the middle of the epoch
     Given time is updated to "2023-09-23T00:00:30Z"
@@ -486,13 +486,13 @@ Feature: Average position metric rewards
 
     Then the network moves ahead "1" epochs
 
-    # aux1 - sells all of their position mid epoch - so their position metric is 5
-    # aux2 - sells half of its position mid epoch - so their position metric is 7.5
-    # party1 - got into position mid epoch so their position metric is 5
-    # party2 - got into position mid epoch so their position metric is 2.5
+    # aux1 - sells all of their position mid epoch - so their notional metric is 0.0005
+    # aux2 - sells half of its position mid epoch - so their notional metric is 0.0007497
+    # party1 - got into position mid epoch so their notional metric is 0.0005005
+    # party2 - got into position mid epoch so their notional metric is 0.0002497
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
     And "aux1" should have vesting account balance of "2500" for asset "VEGA"
-    And "aux2" should have vesting account balance of "3750" for asset "VEGA"
-    And "party1" should have vesting account balance of "2500" for asset "VEGA"
-    And "party2" should have vesting account balance of "1250" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3748" for asset "VEGA"
+    And "party1" should have vesting account balance of "2502" for asset "VEGA"
+    And "party2" should have vesting account balance of "1248" for asset "VEGA"
 
