@@ -16,6 +16,7 @@
 - [11468](https://github.com/vegaprotocol/vega/issues/11468) - Added support for volume rebate program.
 - [11523](https://github.com/vegaprotocol/vega/issues/11523) - Change method of caching to improve `AMM` snapshot performance.
 - [11459](https://github.com/vegaprotocol/vega/issues/11459) - Deprecate time weight position reward metric and replace it with time weighted notional. 
+- [11372](https://github.com/vegaprotocol/vega/issues/11372) - Support combined filters for the `AMM` API.
 
 ### 🐛 Fixes
 
