@@ -1,4 +1,4 @@
-  Feature: Ensure pegged orders are deployed, even if the book is empty (best bid/ask is based on AMM).
+Feature: 0090-VAMM-036: Ensure pegged orders are deployed, even if the book is empty (best bid/ask is based on AMM).
 
   Background:
     Given the average block duration is "1"
@@ -96,6 +96,7 @@
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
+  @VAMM
   Scenario: Simply submit pegged orders, cancel all orders on the orderbook, the pegged orders should be pegged to the AMM orders.
     When the parties place the following pegged iceberg orders:
       | party | market id | side | volume | peak size | minimum visible size | pegged reference | offset |

@@ -1,4 +1,4 @@
-  Feature: Ensure pegged orders are deployed, even if the book is empty (best bid/ask is based on AMM). Use market decimals to check market ticks are respected.
+Feature: 0090-VAMM-036: Ensure pegged orders are deployed, even if the book is empty (best bid/ask is based on AMM). Use market decimals to check market ticks are respected.
 
   Background:
     Given the average block duration is "1"
@@ -84,7 +84,7 @@
       | 100        | TRADING_MODE_CONTINUOUS | 399          | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
       | party | market id | amount  | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000000 | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
+      | vamm1 | ETH/MAR22 | 1000000 | 0.01     | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount  | status        | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 1000000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
@@ -96,6 +96,7 @@
       | from  | from account         | to       | to account           | market id | amount  | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 1000000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
+  @VAMM
   Scenario: Simply submit pegged orders, cancel all orders on the orderbook, the pegged orders should be pegged to the AMM orders, AMM orders may not stick to market ticks.
     When the parties place the following pegged iceberg orders:
       | party | market id | side | volume | peak size | minimum visible size | pegged reference | offset |
