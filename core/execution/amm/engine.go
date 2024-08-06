@@ -99,17 +99,16 @@ func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	if r, ok := s.cache[u.String()]; ok {
-		return r
-	}
+	// caching was disabled here since it caused problems with snapshots (https://github.com/vegaprotocol/vega/issues/11523)
+	// and we changed tact to instead cache constant terms in calculations that *involve* sqrt's instead of the sqrt result
+	// directly. I'm leaving the ghost of this cache here incase we need to introduce it again, maybe as a LRU cache instead.
+	// if r, ok := s.cache[u.String()]; ok {
+	//	return r
+	// }
 
-	// TODO that we may need to re-visit this depending on the performance impact
-	// but for now lets do it "properly" in full decimals and work out how we can
-	// improve it once we have reg-tests and performance data.
 	r := num.UintOne().Sqrt(u)
 
-	// and cache it -- we can also maybe be more clever here and use a LRU but thats for later
-	s.cache[u.String()] = r
+	// s.cache[u.String()] = r
 	return r
 }
 
@@ -198,11 +197,6 @@ func NewFromProto(
 		e.ammParties[v.Key] = v.Value
 	}
 
-	// TODO consider whether we want the cache in the snapshot, it might be pretty large/slow and I'm not sure what we gain
-	for _, v := range state.Sqrter {
-		e.rooter.cache[v.Key] = num.MustDecimalFromString(v.Value)
-	}
-
 	for _, v := range state.Pools {
 		p, err := NewPoolFromProto(log, e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor, positionFactor)
 		if err != nil {
@@ -216,18 +210,9 @@ func NewFromProto(
 
 func (e *Engine) IntoProto() *v1.AmmState {
 	state := &v1.AmmState{
-		Sqrter:      make([]*v1.StringMapEntry, 0, len(e.rooter.cache)),
 		AmmPartyIds: make([]*v1.StringMapEntry, 0, len(e.ammParties)),
 		Pools:       make([]*v1.PoolMapEntry, 0, len(e.pools)),
 	}
-
-	for k, v := range e.rooter.cache {
-		state.Sqrter = append(state.Sqrter, &v1.StringMapEntry{
-			Key:   k,
-			Value: v.String(),
-		})
-	}
-	sort.Slice(state.Sqrter, func(i, j int) bool { return state.Sqrter[i].Key < state.Sqrter[j].Key })
 
 	for k, v := range e.ammParties {
 		state.AmmPartyIds = append(state.AmmPartyIds, &v1.StringMapEntry{
