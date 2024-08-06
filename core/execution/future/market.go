@@ -5570,7 +5570,6 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	if err != nil {
 		return err
 	}
-
 	// if we failed to rebase the amended pool be sure to reinstante the old one
 	defer func() {
 		if err != nil {
@@ -5598,6 +5597,14 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	if order == nil {
 		m.amm.Confirm(ctx, pool)
 		m.matching.UpdateAMM(pool.AMMParty)
+		if pool.Parameters.LowerBound == nil || pool.Parameters.UpperBound == nil {
+			// pool has switched sides, or we no longer are quoting one side
+			if (existing.Parameters.LowerBound == nil && pool.Parameters.LowerBound != nil) ||
+				(existing.Parameters.UpperBound == nil && pool.Parameters.UpperBound != nil) ||
+				(existing.Parameters.UpperBound != nil && existing.Parameters.LowerBound != nil) {
+				m.checkForReferenceMoves(ctx, nil, true)
+			}
+		}
 		return nil
 	}
 
@@ -5615,6 +5622,16 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 
 	m.amm.Confirm(ctx, pool)
 	m.matching.UpdateAMM(pool.AMMParty)
+	// first check if the updated pool is one-sided
+	if pool.Parameters.LowerBound == nil || pool.Parameters.UpperBound == nil {
+		// pool has switched sides, or we no longer are quoting one side
+		if (existing.Parameters.LowerBound == nil && pool.Parameters.LowerBound != nil) ||
+			(existing.Parameters.UpperBound == nil && pool.Parameters.UpperBound != nil) ||
+			(existing.Parameters.UpperBound != nil && existing.Parameters.LowerBound != nil) {
+			m.checkForReferenceMoves(ctx, nil, true)
+		}
+	}
+
 	return nil
 }
 

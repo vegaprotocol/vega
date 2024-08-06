@@ -95,7 +95,7 @@ Feature: 0090-VAMM-037: Pegged orders are deployed using vAMM orders as pegs if 
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
-  @VAMM
+  @VAMMP
   Scenario: 0090-VAMM-037: With an existing book consisting solely of vAMM orders on one side, pegged orders referencing best bid/best ask remain deployed on the side with the vAMM orders. Pegged orders referencing the empty side of the book are parked.
     # LPs submit pegged iceberg orders
     When the parties place the following pegged iceberg orders:
@@ -137,3 +137,21 @@ Feature: 0090-VAMM-037: Pegged orders are deployed using vAMM orders as pegs if 
       | buy  | 35    | 0      |
       | sell | 106   | 10     |
       | sell | 160   | 0      |
+
+    # Switch sides, still on an empty book, the pegged orders on sell side are now parked
+    # but the buy order is deployed again.
+    When the parties amend the following AMM:
+      | party | market id | slippage | base | lower bound |
+      | vamm1 | ETH/MAR22 | 0.05     | 100  | 85          |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          |
+
+    When the network moves ahead "1" blocks
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 0      |
+      | buy  | 94    | 10     |
+      | sell | 106   | 0      |
+      | sell | 160   | 0      |
+
