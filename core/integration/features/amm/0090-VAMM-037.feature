@@ -1,5 +1,4 @@
-Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, pegged orders referencing best bid/best ask remain deployed, pegged to their pegs, where the best buy/sell vAMM order price acts as the best bid, or best ask peg respectively.
-
+Feature: 0090-VAMM-037: Pegged orders are deployed using vAMM orders as pegs if possible
   Background:
     Given the average block duration is "1"
     And the margin calculator named "margin-calculator-1":
@@ -11,18 +10,18 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
     And the liquidity monitoring parameters:
       | name       | triggering ratio | time window | scaling factor |
       | lqm-params | 1.00             | 20s         | 1              |
-
+      
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 60s   |
-      | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | network.markPriceUpdateMaximumFrequency             | 2s    |
       | limits.markets.maxPeggedOrders                      | 6     |
       | market.auction.minimumDuration                      | 1     |
       | market.fee.factors.infrastructureFee                | 0.001 |
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
       | market.liquidity.equityLikeShareFeeFraction         | 1     |
-      | market.amm.minCommitmentQuantum                     | 1     |
+	  | market.amm.minCommitmentQuantum                     | 1     |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
@@ -31,11 +30,11 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
       | validators.epoch.length                             | 10s   |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.25  |
-    #risk factor short:3.5569036
+    #risk factor short:3.5569037
     #risk factor long:0.801225765
     And the following assets are registered:
       | id  | decimal places |
-      | USD | 2              |
+      | USD | 0              |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.0004    | 0.001              |
@@ -45,8 +44,8 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
       | 0.5         | 0.6                          | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params | decimal places |
-      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     | 1              |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
     # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
@@ -81,23 +80,24 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 399          | 1000           | 1             | 100       | 100       | 100              |
+      | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount  | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 1000000 | 0.01     | 100  | 85          | 150         | 4              | 4              | 0.01         |
+      | party | market id | amount | slippage | base | upper bound | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 150         | 4              | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount  | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 1000000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | party | market id | amount | status        | base | upper bound | upper leverage |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 150         | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount  | asset | is amm | type                  |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 1000000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
   @VAMM
-  Scenario: Simply submit pegged orders, cancel all orders on the orderbook, the pegged orders should be pegged to the AMM orders, AMM orders may not stick to market ticks.
+  Scenario: 0090-VAMM-037: With an existing book consisting solely of vAMM orders on one side, pegged orders referencing best bid/best ask remain deployed on the side with the vAMM orders. Pegged orders referencing the empty side of the book are parked.
+    # LPs submit pegged iceberg orders
     When the parties place the following pegged iceberg orders:
       | party | market id | side | volume | peak size | minimum visible size | pegged reference | offset |
       | lp1   | ETH/MAR22 | buy  | 100    | 10        | 2                    | BID              | 5      |
@@ -105,20 +105,19 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | buy  | 40    | 20     |
-      | buy  | 94    | 10     |
+      | buy  | 35    | 10     |
       | sell | 106   | 10     |
       | sell | 160   | 10     |
 
-    # ensure moving the network by 1 block doesn't change a thing
+    # Make sure the book stays the same when moving ahead blocks
     When the network moves ahead "1" blocks
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | buy  | 40    | 20     |
-      | buy  | 94    | 10     |
+      | buy  | 35    | 10     |
       | sell | 106   | 10     |
       | sell | 160   | 10     |
 
-    # Now cancel the LP1BO and LP1SO orders, the pegged orders should remain where they are.
     When the parties cancel the following orders:
       | party | reference |
       | lp1   | LP1BO     |
@@ -126,29 +125,15 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | buy  | 40    | 0      |
-      | buy  | 94    | 10     |
+      | buy  | 35    | 0      |
       | sell | 106   | 10     |
       | sell | 160   | 0      |
 
-    # We pass through block end CheckBook call without problems, and the book volumes still check out.
+    # Move ahead 1 block to ensure the end block CheckBook call doesn't panic.
     When the network moves ahead "1" blocks
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | buy  | 40    | 0      |
-      | buy  | 94    | 10     |
+      | buy  | 35    | 0      |
       | sell | 106   | 10     |
       | sell | 160   | 0      |
-
-    # Now trade, but not necessarily at market tick-compatible price, let's see what happens to the pegged orders. Based on the book, we know there's a buy order at 99, and a sell order at 101
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party2 | ETH/MAR22 | sell | 5      | 99    | 1                | TYPE_LIMIT | TIF_GTC |           |
-    And the network moves ahead "1" blocks
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | buy  | 40    | 0      |
-      | buy  | 93    | 10     |
-      | sell | 99    | 0      |
-      | sell | 105   | 10     |
-      | sell | 160   | 0      |
-

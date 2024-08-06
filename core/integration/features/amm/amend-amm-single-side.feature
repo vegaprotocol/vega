@@ -11,7 +11,7 @@ Feature: vAMM amend single-sided commitments
     And the liquidity monitoring parameters:
       | name       | triggering ratio | time window | scaling factor |
       | lqm-params | 1.00             | 20s         | 1              |
-      
+
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 60s   |
@@ -85,7 +85,7 @@ Feature: vAMM amend single-sided commitments
       | buyer  | price | size | seller |
       | party1 | 100   | 1    | party2 |
       | party3 | 100   | 1    | party4 |
-      
+
     Then the network moves ahead "1" epochs
     And the current epoch is "1"
 
@@ -266,7 +266,6 @@ Feature: vAMM amend single-sided commitments
 
   @VAMM
   Scenario: vAMM can't amended from having a single bound to the other side, when the vAMM holds a short position.
-    # No trades because the sell vAMM places no sell orders.
     When the parties amend the following AMM:
       | party | market id | slippage | base | lower bound |
       | vamm1 | ETH/MAR22 | 0.05     | 100  | 90          |

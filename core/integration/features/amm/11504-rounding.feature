@@ -101,7 +101,7 @@ Feature: Ensure rounding errors do not cause empty curve panic.
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
       | vamm2 | ACCOUNT_TYPE_GENERAL | vamm2-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
-  @VAMMP2
+  @VAMM
   Scenario: both AMMs trade with a given order, the amount traded is distributed pro-rata.
     # Volume is 5, divided by 2 -> 1 party will trade 3, one will trade 2.
     When the parties place the following orders:

@@ -1,4 +1,4 @@
-Feature: 0090-VAMM-036: Ensure pegged orders are deployed, even if the book is empty (best bid/ask is based on AMM).
+Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, pegged orders referencing best bid/best ask remain deployed, pegged to their pegs, where the best buy/sell vAMM order price acts as the best bid, or best ask peg respectively.
 
   Background:
     Given the average block duration is "1"
