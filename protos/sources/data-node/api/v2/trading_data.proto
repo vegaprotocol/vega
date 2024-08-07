@@ -5073,7 +5073,6 @@ message EstimateAMMBoundsRequest {
 }
 
 message EstimateAMMBoundsResponse {
-
   enum AMMError {
     AMM_ERROR_UNSPECIFIED = 0;
     // Commitment is below the global limit set by the network parameter `market.amm.minCommitmentQuantum`.
