@@ -616,7 +616,7 @@ message TransactionResult {
   // Status of the transaction.
   // Backward compatible with previous events,
   // as this field will default to UNSPECIFIED.
-  Status statusDetail = 4;
+  Status status_detail = 4;
 
   // Transaction itself as received by the network
   oneof transaction {
