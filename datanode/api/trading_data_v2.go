@@ -3310,6 +3310,21 @@ func (t *TradingDataServiceV2) scaleDecimalFromAssetToMarketPrice(
 	return price.Div(priceFactor)
 }
 
+func (t *TradingDataServiceV2) getMarketAsset(ctx context.Context, mkt entities.Market) (entities.Asset, error) {
+	var asset entities.Asset
+	assetID, err := mkt.ToProto().GetAsset()
+	if err != nil {
+		return asset, errors.Wrap(err, "getting asset from market")
+	}
+
+	asset, err = t.AssetService.GetByID(ctx, assetID)
+	if err != nil {
+		return asset, errors.Wrapf(ErrAssetServiceGetByID, "assetID: %s", assetID)
+	}
+
+	return asset, nil
+}
+
 func (t *TradingDataServiceV2) getMarketPriceFactor(
 	ctx context.Context,
 	mkt entities.Market,
@@ -3332,6 +3347,42 @@ func (t *TradingDataServiceV2) getMarketPriceFactor(
 		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
 	}
 	return priceFactor, nil
+}
+
+func (t *TradingDataServiceV2) getMarketFactors(
+	ctx context.Context,
+	market entities.Market,
+	asset entities.Asset,
+) (
+	rf entities.RiskFactor,
+	initialMargin,
+	slippage,
+	priceFactor,
+	positionFactor num.Decimal,
+	err error,
+) {
+	if market.TradableInstrument.MarginCalculator == nil ||
+		market.TradableInstrument.MarginCalculator.ScalingFactors == nil ||
+		market.LinearSlippageFactor == nil {
+		err = ErrEstimateAMMBounds
+		return
+	}
+
+	initialMargin = num.DecimalFromFloat(market.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)
+	slippage = *market.LinearSlippageFactor
+
+	priceFactor = num.DecimalOne()
+	// this could be negative, use decimal
+	if exp := asset.Decimals - market.DecimalPlaces; exp != 0 {
+		priceFactor = num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(exp)))
+	}
+
+	positionFactor = num.DecimalFromInt64(10).
+		Pow(num.DecimalFromInt64(int64(market.PositionDecimalPlaces)))
+
+	rf, err = t.RiskFactorService.GetMarketRiskFactors(ctx, market.ID.String())
+
+	return
 }
 
 func (t *TradingDataServiceV2) estimateFee(
@@ -5751,31 +5802,63 @@ func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsReq
 func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.EstimateAMMBoundsRequest) (*v2.EstimateAMMBoundsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateAMMBounds")()
 
+	// validate the easy bits
 	if req.MarketId == "" {
-		return nil, formatE(ErrInvalidMarketID)
+		return nil, formatE(ErrEmptyMissingMarketID)
 	}
+
+	if req.UpperPrice == nil && req.LowerPrice == nil {
+		return nil, formatE(ErrInvalidLowerPrice)
+	}
+
+	// get the market details and extract all the factors for bits
+	market, err := t.MarketsService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrInvalidMarketID, err)
+	}
+
+	asset, err := t.getMarketAsset(ctx, market)
+	if err != nil {
+		return nil, formatE(ErrInvalidMarketID, err)
+	}
+
+	riskFactors, initialMargin, slippage, priceFactor, positionFactor, err := t.getMarketFactors(ctx, market, asset)
+	if err != nil {
+		return nil, formatE(ErrEstimateAMMBounds)
+	}
+
+	// now validate the parameters and scale to asset DP
 
 	basePrice, overflow := num.UintFromString(req.BasePrice, 10)
 	if overflow || basePrice.IsNegative() {
 		return nil, formatE(ErrInvalidBasePrice)
 	}
+	basePrice, _ = num.UintFromDecimal(basePrice.ToDecimal().Mul(priceFactor))
 
 	var upperPrice *num.Uint
 	if req.UpperPrice != nil {
 		upperP, overflow := num.UintFromString(*req.UpperPrice, 10)
-		if overflow || upperP.IsNegative() || upperP.LTE(basePrice) {
+		if overflow || upperP.IsNegative() {
 			return nil, formatE(ErrInvalidUpperPrice)
 		}
-		upperPrice = upperP
+		upperPrice, _ = num.UintFromDecimal(upperP.ToDecimal().Mul(priceFactor))
+
+		if upperPrice.LTE(basePrice) {
+			return nil, formatE(ErrInvalidUpperPrice)
+		}
 	}
 
 	var lowerPrice *num.Uint
 	if req.LowerPrice != nil {
 		lowerP, overflow := num.UintFromString(*req.LowerPrice, 10)
-		if overflow || lowerP.IsNegative() || lowerP.GTE(basePrice) {
+		if overflow || lowerP.IsNegative() {
 			return nil, formatE(ErrInvalidLowerPrice)
 		}
-		lowerPrice = lowerP
+		lowerPrice, _ = num.UintFromDecimal(lowerP.ToDecimal().Mul(priceFactor))
+
+		if lowerPrice.GTE(basePrice) {
+			return nil, formatE(ErrInvalidLowerPrice)
+		}
 	}
 
 	var leverageLowerPrice, leverageUpperPrice *num.Decimal
@@ -5800,37 +5883,11 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 		return nil, formatE(ErrInvalidCommitmentAmount)
 	}
 
-	if lowerPrice == nil && upperPrice == nil {
-		return nil, formatE(ErrInvalidLowerPrice)
-	}
-
-	// TODO Karel - make the market service and risk factor serices calls concurent
-	market, err := t.MarketsService.GetByID(ctx, req.MarketId)
-	if err != nil {
-		return nil, formatE(ErrEstimateAMMBounds, err)
-	}
-
-	if market.TradableInstrument.MarginCalculator == nil ||
-		market.TradableInstrument.MarginCalculator.ScalingFactors == nil {
-		return nil, formatE(ErrEstimateAMMBounds)
-	}
-
-	if market.LinearSlippageFactor == nil {
-		return nil, formatE(ErrEstimateAMMBounds)
-	}
-
-	initialMargin := num.DecimalFromFloat(market.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)
-	linearSlippageFactor := *market.LinearSlippageFactor
-
-	riskFactor, err := t.RiskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
-	if err != nil {
-		return nil, formatE(ErrEstimateAMMBounds, err)
-	}
 	if leverageLowerPrice == nil {
-		leverageLowerPrice = &riskFactor.Short
+		leverageLowerPrice = &riskFactors.Short
 	}
 	if leverageUpperPrice == nil {
-		leverageUpperPrice = &riskFactor.Long
+		leverageUpperPrice = &riskFactors.Long
 	}
 
 	sqrt := amm.NewSqrter()
@@ -5843,18 +5900,47 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 		*leverageLowerPrice,
 		*leverageUpperPrice,
 		commitmentAmount,
-		linearSlippageFactor,
+		slippage,
 		initialMargin,
-		riskFactor.Short,
-		riskFactor.Long,
+		riskFactors.Short,
+		riskFactors.Long,
+		priceFactor,
+		positionFactor,
 	)
 
+	// liquidation prices are in asset DP, convert back to market DP
+	lowerLiq := estimatedBounds.LiquidationPriceAtLower.Div(priceFactor).Truncate(0)
+	upperLiq := estimatedBounds.LiquidationPriceAtUpper.Div(priceFactor).Truncate(0)
+
+	var status *v2.EstimateAMMBoundsResponse_AMMError
+	switch {
+	case estimatedBounds.TooWideLower && estimatedBounds.TooWideUpper:
+		status = ptr.From(v2.EstimateAMMBoundsResponse_AMM_ERROR_BOTH_BOUNDS_TOO_WIDE)
+	case estimatedBounds.TooWideLower:
+		status = ptr.From(v2.EstimateAMMBoundsResponse_AMM_ERROR_LOWER_BOUND_TOO_WIDE)
+	case estimatedBounds.TooWideUpper:
+		status = ptr.From(v2.EstimateAMMBoundsResponse_AMM_ERROR_UPPER_BOUND_TOO_WIDE)
+	}
+
+	np, err := t.networkParameterService.GetByKey(ctx, netparams.MarketAMMMinCommitmentQuantum)
+	if err != nil {
+		return nil, formatE(ErrEstimateAMMBounds)
+	}
+
+	minQuantum, _ := num.DecimalFromString(np.Value)
+	quantumCommitment := commitmentAmount.ToDecimal().Div(asset.Quantum)
+
+	if quantumCommitment.LessThan(minQuantum) {
+		status = ptr.From(v2.EstimateAMMBoundsResponse_AMM_ERROR_COMMITMENT_BELOW_MINIMUM)
+	}
+
 	return &v2.EstimateAMMBoundsResponse{
-		PositionSizeAtUpper:     estimatedBounds.PositionSizeAtUpper.String(),
-		PositionSizeAtLower:     estimatedBounds.PositionSizeAtLower.String(),
-		LossOnCommitmentAtUpper: estimatedBounds.LossOnCommitmentAtUpper.String(),
-		LossOnCommitmentAtLower: estimatedBounds.LossOnCommitmentAtLower.String(),
-		LiquidationPriceAtUpper: estimatedBounds.LiquidationPriceAtUpper.String(),
-		LiquidationPriceAtLower: estimatedBounds.LiquidationPriceAtLower.String(),
+		PositionSizeAtUpper:     estimatedBounds.PositionSizeAtUpper.Truncate(0).String(),
+		PositionSizeAtLower:     estimatedBounds.PositionSizeAtLower.Truncate(0).String(),
+		LossOnCommitmentAtUpper: estimatedBounds.LossOnCommitmentAtUpper.Truncate(0).String(),
+		LossOnCommitmentAtLower: estimatedBounds.LossOnCommitmentAtLower.Truncate(0).String(),
+		LiquidationPriceAtUpper: upperLiq.String(),
+		LiquidationPriceAtLower: lowerLiq.String(),
+		AmmError:                status,
 	}, nil
 }

@@ -794,11 +794,11 @@ type Query {
     lowerPrice: String
     "Leverage at the upper price of the AMM pool."
     leverageAtUpperPrice: String
-   "Leverage at the lower price of the AMM pool."
+    "Leverage at the lower price of the AMM pool."
     leverageAtLowerPrice: String
     "Amount of the asset that the party is willing to commit to the AMM pool."
     commitmentAmount: String!
-    "Market ID to filter for."
+    "Market ID to estimate the AMM for."
     marketId: ID!
   ): EstimatedAMMBounds
 
@@ -1380,6 +1380,18 @@ type Query {
   ): PartyMarginModesConnection
 }
 
+enum EstimatedAMMError {
+  AMM_ERROR_UNSPECIFIED
+  "Commitment is below the global limit set by the network parameter `market.amm.minCommitmentQuantum`."
+  AMM_ERROR_COMMITMENT_BELOW_MINIMUM
+  "AMM's lower price is too far from the base price wide for the given commitment resulting in zero volume between price levels."
+  AMM_ERROR_LOWER_BOUND_TOO_WIDE
+  "AMM's upper price is too far from the base price wide for the given commitment resulting in zero volume between price levels."
+  AMM_ERROR_UPPER_BOUND_TOO_WIDE
+  "AMM bounds are too wide for the given commitment resulting in zero volume between price levels."
+  AMM_ERROR_BOTH_BOUNDS_TOO_WIDE
+}
+
 type EstimatedAMMBounds {
   "Theoretical volume at the top of the upper bound."
   positionSizeAtUpper: String
@@ -1393,6 +1405,9 @@ type EstimatedAMMBounds {
   liquidationPriceAtUpper: String
   "Estimated price below the lower bound at which the commitment will be lost."
   liquidationPriceAtLower: String
+  "If populated the bounds could be calculated but the AMM is invalid for other reasons."
+  ammError: EstimatedAMMError
+  
 }
 
 "Defines the types of a dispatch strategy's scope the API can filter on."
