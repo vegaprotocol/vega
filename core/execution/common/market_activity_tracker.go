@@ -121,6 +121,8 @@ type MarketActivityTracker struct {
 	partyTakerNotionalVolume            map[string]*num.Uint
 	marketToPartyTakerNotionalVolume    map[string]map[string]*num.Uint
 	takerFeesPaidInEpoch                []map[string]map[string]map[string]*num.Uint
+	// maps game id to eligible parties over time window
+	eligibilityInEpoch map[string][]map[string]struct{}
 
 	ss     *snapshotState
 	broker Broker
@@ -138,6 +140,7 @@ func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker A
 		marketToPartyTakerNotionalVolume: map[string]map[string]*num.Uint{},
 		ss:                               &snapshotState{},
 		takerFeesPaidInEpoch:             []map[string]map[string]map[string]*num.Uint{},
+		eligibilityInEpoch:               map[string][]map[string]struct{}{},
 		broker:                           broker,
 		collateral:                       collateral,
 	}
@@ -240,6 +243,9 @@ func (mat *MarketActivityTracker) PublishGameMetric(ctx context.Context, dispatc
 		}
 	}
 	mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, m)
+	for ds := range mat.eligibilityInEpoch {
+		mat.eligibilityInEpoch[ds] = append(mat.eligibilityInEpoch[ds], map[string]struct{}{})
+	}
 
 	for _, ds := range dispatchStrategy {
 		if ds.Metric == vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING || ds.Metric == vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED ||
@@ -265,6 +271,9 @@ func (mat *MarketActivityTracker) PublishGameMetric(ctx context.Context, dispatc
 	}
 	mat.takerFeesPaidInEpoch = mat.takerFeesPaidInEpoch[:len(mat.takerFeesPaidInEpoch)-1]
 	mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
+	for ds := range mat.eligibilityInEpoch {
+		mat.eligibilityInEpoch[ds] = mat.eligibilityInEpoch[ds][:len(mat.eligibilityInEpoch)-1]
+	}
 }
 
 func (mat *MarketActivityTracker) publishMetricForDispatchStrategy(ctx context.Context, ds *vega.DispatchStrategy, now time.Time) {
@@ -513,6 +522,9 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 			mat.takerFeesPaidInEpoch = mat.takerFeesPaidInEpoch[1:]
 		}
 		mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, m)
+		for ds := range mat.eligibilityInEpoch {
+			mat.eligibilityInEpoch[ds] = append(mat.eligibilityInEpoch[ds], map[string]struct{}{})
+		}
 	}
 	mat.currentEpoch = epoch.Seq
 }
@@ -732,19 +744,32 @@ func (mat *MarketActivityTracker) filterParties(
 	if len(mkts) == 0 {
 		includedMarkets = mat.GetAllMarketIDs()
 	}
-	if len(includedMarkets) > 0 {
-		trackers, ok := mat.assetToMarketTrackers[asset]
-		if !ok {
-			return map[string]struct{}{}
+	assets := []string{}
+	if len(asset) == 0 {
+		assets = make([]string, 0, len(mat.assetToMarketTrackers))
+		for k := range mat.assetToMarketTrackers {
+			assets = append(assets, k)
 		}
-		for _, mkt := range includedMarkets {
-			mt, ok := trackers[mkt]
+		sort.Strings(assets)
+	} else {
+		assets = append(assets, asset)
+	}
+
+	if len(includedMarkets) > 0 {
+		for _, ast := range assets {
+			trackers, ok := mat.assetToMarketTrackers[ast]
 			if !ok {
 				continue
 			}
-			mktParties := cacheFilter(mt)
-			for k := range mktParties {
-				parties[k] = struct{}{}
+			for _, mkt := range includedMarkets {
+				mt, ok := trackers[mkt]
+				if !ok {
+					continue
+				}
+				mktParties := cacheFilter(mt)
+				for k := range mktParties {
+					parties[k] = struct{}{}
+				}
 			}
 		}
 	}
@@ -780,6 +805,10 @@ func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) [
 func getGameID(ds *vega.DispatchStrategy) string {
 	p, _ := lproto.Marshal(ds)
 	return hex.EncodeToString(crypto.Hash(p))
+}
+
+func (mat *MarketActivityTracker) GameFinished(gameID string) {
+	delete(mat.eligibilityInEpoch, gameID)
 }
 
 // CalculateMetricForIndividuals calculates the metric corresponding to the dispatch strategy and returns a slice of the contribution scores of the parties.
@@ -856,6 +885,25 @@ func (mat *MarketActivityTracker) isEligibleForReward(ctx context.Context, asset
 	return isEligible, balance, notional
 }
 
+func getEligibilityScore(party, gameID string, eligibilityInEpoch map[string][]map[string]struct{}, balance *num.Uint, notional *num.Uint, paidFees map[string]*num.Uint, windowSize int) *types.PartyContributionScore {
+	if _, ok := eligibilityInEpoch[gameID]; !ok {
+		eligibilityInEpoch[gameID] = []map[string]struct{}{}
+		eligibilityInEpoch[gameID][0][party] = struct{}{}
+		return &types.PartyContributionScore{Party: party, Score: num.DecimalOne(), IsEligible: true, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1}
+	}
+	m := eligibilityInEpoch[gameID]
+	if len(m) > windowSize {
+		m = m[1:]
+	}
+	m[len(m)-1][party] = struct{}{}
+	for _, mm := range m {
+		if _, ok := mm[party]; !ok {
+			return &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: false, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1}
+		}
+	}
+	return &types.PartyContributionScore{Party: party, Score: num.DecimalOne(), IsEligible: true, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1}
+}
+
 func (mat *MarketActivityTracker) calculateMetricForIndividuals(ctx context.Context, asset string, parties []string, markets []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, gameID string, interval int32) []*types.PartyContributionScore {
 	ret := make([]*types.PartyContributionScore, 0, len(parties))
 	paidFees := mat.GetLastEpochTakeFees(asset, markets, interval)
@@ -863,6 +911,10 @@ func (mat *MarketActivityTracker) calculateMetricForIndividuals(ctx context.Cont
 		eligible, balance, notional := mat.isEligibleForReward(ctx, asset, party, markets, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID)
 		if !eligible {
 			ret = append(ret, &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: eligible, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
+			continue
+		}
+		if metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES {
+			ret = append(ret, getEligibilityScore(party, gameID, mat.eligibilityInEpoch, balance, notional, paidFees, windowSize))
 			continue
 		}
 		score, ok := mat.calculateMetricForParty(asset, party, markets, metric, windowSize)
@@ -898,7 +950,7 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(ctx context.Context, a
 
 // calculateMetricForTeam returns the metric score for team and a slice of the score for each of its members.
 func (mat *MarketActivityTracker) calculateMetricForTeam(ctx context.Context, asset string, parties []string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, windowSize int, topN num.Decimal, gameID string, paidFees map[string]*num.Uint) (num.Decimal, []*types.PartyContributionScore) {
-	return calculateMetricForTeamUtil(ctx, asset, parties, marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, mat.isEligibleForReward, mat.calculateMetricForParty, gameID, paidFees)
+	return calculateMetricForTeamUtil(ctx, asset, parties, marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, mat.isEligibleForReward, mat.calculateMetricForParty, gameID, paidFees, mat.eligibilityInEpoch)
 }
 
 func calculateMetricForTeamUtil(ctx context.Context,
@@ -914,6 +966,7 @@ func calculateMetricForTeamUtil(ctx context.Context,
 	calculateMetricForParty func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) (num.Decimal, bool),
 	gameID string,
 	paidFees map[string]*num.Uint,
+	eligibilityInEpoch map[string][]map[string]struct{},
 ) (num.Decimal, []*types.PartyContributionScore) {
 	teamPartyScores := []*types.PartyContributionScore{}
 	eligibleTeamPartyScores := []*types.PartyContributionScore{}
@@ -921,6 +974,15 @@ func calculateMetricForTeamUtil(ctx context.Context,
 		eligible, balance, notional := isEligibleForReward(ctx, asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, gameID)
 		if !eligible {
 			teamPartyScores = append(teamPartyScores, &types.PartyContributionScore{Party: party, Score: num.DecimalZero(), IsEligible: eligible, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1})
+			continue
+		}
+
+		if metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES {
+			score := getEligibilityScore(party, gameID, eligibilityInEpoch, balance, notional, paidFees, windowSize)
+			teamPartyScores = append(teamPartyScores, score)
+			if score.IsEligible {
+				eligibleTeamPartyScores = append(eligibleTeamPartyScores, score)
+			}
 			continue
 		}
 		if score, ok := calculateMetricForParty(asset, party, marketsInScope, metric, windowSize); ok {

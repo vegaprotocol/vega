@@ -514,6 +514,18 @@ func (mr *MockMarketActivityTrackerMockRecorder) CalculateMetricForTeams(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateMetricForTeams", reflect.TypeOf((*MockMarketActivityTracker)(nil).CalculateMetricForTeams), arg0, arg1)
 }
 
+// GameFinished mocks base method.
+func (m *MockMarketActivityTracker) GameFinished(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GameFinished", arg0)
+}
+
+// GameFinished indicates an expected call of GameFinished.
+func (mr *MockMarketActivityTrackerMockRecorder) GameFinished(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GameFinished", reflect.TypeOf((*MockMarketActivityTracker)(nil).GameFinished), arg0)
+}
+
 // GetMarketsWithEligibleProposer mocks base method.
 func (m *MockMarketActivityTracker) GetMarketsWithEligibleProposer(arg0 string, arg1 []string, arg2, arg3 string) []*types.MarketContributionScore {
 	m.ctrl.T.Helper()

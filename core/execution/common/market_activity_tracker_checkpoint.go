@@ -55,6 +55,7 @@ func (mat *MarketActivityTracker) Checkpoint() ([]byte, error) {
 		TakerNotionalVolume:              takerNotionalToProto(mat.partyTakerNotionalVolume),
 		MarketToPartyTakerNotionalVolume: marketToPartyTakerNotionalToProto(mat.marketToPartyTakerNotionalVolume),
 		EpochTakerFees:                   epochTakerFeesToProto(mat.takerFeesPaidInEpoch),
+		GameEligibilityTracker:           epochEligitbilityToProto(mat.eligibilityInEpoch),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -105,5 +106,17 @@ func (mat *MarketActivityTracker) Load(_ context.Context, data []byte) error {
 			mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, epochMap)
 		}
 	}
+	if b.GameEligibilityTracker != nil {
+		for _, get := range b.GameEligibilityTracker {
+			mat.eligibilityInEpoch[get.GameId] = make([]map[string]struct{}, len(get.EpochEligibility))
+			for i, epoch := range get.EpochEligibility {
+				mat.eligibilityInEpoch[get.GameId][i] = make(map[string]struct{}, len(epoch.EligibleParties))
+				for _, party := range epoch.EligibleParties {
+					mat.eligibilityInEpoch[get.GameId][i][party] = struct{}{}
+				}
+			}
+		}
+	}
+
 	return nil
 }

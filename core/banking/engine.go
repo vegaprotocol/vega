@@ -114,6 +114,7 @@ type MarketActivityTracker interface {
 	MarketTrackedForAsset(market, asset string) bool
 	TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint
 	PublishGameMetric(ctx context.Context, dispatchStrategy []*vega.DispatchStrategy, now time.Time)
+	GameFinished(gameID string)
 }
 
 type EthereumEventSource interface {

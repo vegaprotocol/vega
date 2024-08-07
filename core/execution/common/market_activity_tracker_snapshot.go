@@ -90,6 +90,34 @@ func epochReturnDataToProto(epochData []map[string]num.Decimal) []*checkpoint.Ep
 	return ret
 }
 
+func epochEligitbilityToProto(eligibilityData map[string][]map[string]struct{}) []*checkpoint.GameEligibilityTracker {
+	res := make([]*checkpoint.GameEligibilityTracker, 0, len(eligibilityData))
+	gameIDs := make([]string, 0, len(eligibilityData))
+	for k := range eligibilityData {
+		gameIDs = append(gameIDs, k)
+	}
+	sort.Strings(gameIDs)
+	for _, gameID := range gameIDs {
+		epochs := eligibilityData[gameID]
+		get := &checkpoint.GameEligibilityTracker{
+			GameId:           gameID,
+			EpochEligibility: make([]*checkpoint.EpochEligibility, 0, len(epochs)),
+		}
+		for _, epoch := range epochs {
+			epochEligibleParties := make([]string, 0, len(epoch))
+			for party := range epoch {
+				epochEligibleParties = append(epochEligibleParties, party)
+			}
+			sort.Strings(epochEligibleParties)
+			get.EpochEligibility = append(get.EpochEligibility, &checkpoint.EpochEligibility{
+				EligibleParties: epochEligibleParties,
+			})
+		}
+		res = append(res, get)
+	}
+	return res
+}
+
 func epochTakerFeesToProto(epochData []map[string]map[string]map[string]*num.Uint) []*checkpoint.EpochPartyTakerFees {
 	ret := make([]*checkpoint.EpochPartyTakerFees, 0, len(epochData))
 	for _, epoch := range epochData {
@@ -341,6 +369,7 @@ func (mat *MarketActivityTracker) serialiseFeesTracker() *snapshot.MarketTracker
 		TakerNotionalVolume:              takerNotionalToProto(mat.partyTakerNotionalVolume),
 		MarketToPartyTakerNotionalVolume: marketToPartyTakerNotionalToProto(mat.marketToPartyTakerNotionalVolume),
 		EpochTakerFees:                   epochTakerFeesToProto(mat.takerFeesPaidInEpoch),
+		GameEligibilityTracker:           epochEligitbilityToProto(mat.eligibilityInEpoch),
 	}
 }
 
@@ -654,6 +683,17 @@ func (mat *MarketActivityTracker) restore(tracker *snapshot.MarketTracker) {
 				}
 			}
 			mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, epochMap)
+		}
+	}
+	if tracker.GameEligibilityTracker != nil {
+		for _, get := range tracker.GameEligibilityTracker {
+			mat.eligibilityInEpoch[get.GameId] = make([]map[string]struct{}, len(get.EpochEligibility))
+			for i, epoch := range get.EpochEligibility {
+				mat.eligibilityInEpoch[get.GameId][i] = make(map[string]struct{}, len(epoch.EligibleParties))
+				for _, party := range epoch.EligibleParties {
+					mat.eligibilityInEpoch[get.GameId][i][party] = struct{}{}
+				}
+			}
 		}
 	}
 }

@@ -152,6 +152,7 @@ func (e *Engine) cleanupStaleDispatchStrategies() {
 	for hash, dsc := range e.hashToStrategy {
 		if dsc.refCount == 0 {
 			delete(e.hashToStrategy, hash)
+			e.marketActivityTracker.GameFinished(hash)
 		}
 	}
 }
@@ -215,7 +216,7 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 					break
 				}
 			}
-			required = hasNonZeroMetric || (hasEligibleParties && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
+			required = hasNonZeroMetric || (hasEligibleParties && (ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK || ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK_LOTTERY))
 			return required
 		} else {
 			tcs, pcs := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)

@@ -323,4 +323,6 @@ const (
 	AccountTypeRealisedReturnReward = proto.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN
 	// Account for buy back fees.
 	AccountTypeBuyBackFees AccountType = proto.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES
+	// Account for eligible entities rewards.
+	AccountTypeEligibleEntitiesReward = proto.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES
 )

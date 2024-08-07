@@ -204,7 +204,7 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 			distStrat := r.Str("distribution_strategy")
 			if distStrat == "PRO_RATA" {
 				distributionStrategy = proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
-			} else if distStrat == "RANK" {
+			} else if distStrat == "RANK" || distStrat == "RANK_LOTTERY" {
 				distributionStrategy = proto.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK
 				rankList := strings.Split(r.MustStr("ranks"), ",")
 				ranks = make([]*proto.Rank, 0, len(rankList))

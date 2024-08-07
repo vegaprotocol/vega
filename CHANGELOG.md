@@ -17,8 +17,9 @@
 - [11523](https://github.com/vegaprotocol/vega/issues/11523) - Change method of caching to improve `AMM` snapshot performance.
 - [11426](https://github.com/vegaprotocol/vega/issues/11426) - `EstimateAMMBounds` now reports issues with commitment.
 - [11459](https://github.com/vegaprotocol/vega/issues/11459) - Deprecate time weight position reward metric and replace it with time weighted notional. 
+- [11528](https://github.com/vegaprotocol/vega/issues/11528) - Added support for eligible entities reward. 
 - [11372](https://github.com/vegaprotocol/vega/issues/11372) - Support combined filters for the `AMM` API.
-
+- [11535](https://github.com/vegaprotocol/vega/issues/11535) - Added support for lottery rank distribution strategy.
 ### 🐛 Fixes
 
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
