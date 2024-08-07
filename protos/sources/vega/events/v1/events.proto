@@ -595,7 +595,7 @@ message TransactionResult {
     STATUS_SUCCESS = 1;
     // The transaction partially succeeded.
     STATUS_PARTIAL_SUCCESS = 2;
-    // The transaction final state is failure.
+    // The transaction's final state is failure.
     STATUS_FAILURE = 3;
   }
 
@@ -603,19 +603,19 @@ message TransactionResult {
   message KeyErrors {
     // The key.
     string key = 1;
-    // The errors mapped to this key
+    // The errors mapped to this key.
     repeated string errors = 2;
   }
 
   // Unique party ID for the related party
   string party_id = 1;
-  // Status of the transaction, did it succeed or an error was raised.
+  // Status of the transaction, if it succeeded or an error was raised.
   bool status = 2;
   // Hash of the transaction
   string hash = 3;
-  // Status of the transaction
-  // Backward compatible with previous events, as
-  // this field will default to UNSPECIEFIED by default.
+  // Status of the transaction.
+  // Backward compatible with previous events,
+  // as this field will default to UNSPECIFIED.
   Status statusDetail = 4;
 
   // Transaction itself as received by the network
@@ -667,7 +667,7 @@ message TransactionResult {
   message FailureDetails {
     // Error message explaining the reason for the transaction failing processing
     string error = 1;
-    // A map of the detailed errors if any
+    // Map of the detailed errors, if any.
     repeated KeyErrors errors = 2;
   }
 }
