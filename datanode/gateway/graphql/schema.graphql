@@ -1384,9 +1384,9 @@ enum EstimatedAMMError {
   AMM_ERROR_UNSPECIFIED
   "Commitment is below the global limit set by the network parameter `market.amm.minCommitmentQuantum`."
   AMM_ERROR_COMMITMENT_BELOW_MINIMUM
-  "AMM's lower price is too far from the base price wide for the given commitment resulting in zero volume between price levels."
+  "AMM's lower price is too far from the base price for the given commitment resulting in zero volume between price levels."
   AMM_ERROR_LOWER_BOUND_TOO_WIDE
-  "AMM's upper price is too far from the base price wide for the given commitment resulting in zero volume between price levels."
+  "AMM's upper price is too far from the base price for the given commitment resulting in zero volume between price levels."
   AMM_ERROR_UPPER_BOUND_TOO_WIDE
   "AMM bounds are too wide for the given commitment resulting in zero volume between price levels."
   AMM_ERROR_BOTH_BOUNDS_TOO_WIDE
