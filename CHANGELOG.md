@@ -12,27 +12,30 @@
 
 ### 🛠 Improvements
 
-- [11428](https://github.com/vegaprotocol/vega/issues/11428) - Add buy back and treasury fee and separate discount/reward factors. 
+- [11428](https://github.com/vegaprotocol/vega/issues/11428) - Add buy back and treasury fee and separate discount/reward factors.
 - [11468](https://github.com/vegaprotocol/vega/issues/11468) - Added support for volume rebate program.
 - [11523](https://github.com/vegaprotocol/vega/issues/11523) - Change method of caching to improve `AMM` snapshot performance.
 - [11426](https://github.com/vegaprotocol/vega/issues/11426) - `EstimateAMMBounds` now reports issues with commitment.
-- [11459](https://github.com/vegaprotocol/vega/issues/11459) - Deprecate time weight position reward metric and replace it with time weighted notional. 
-- [11528](https://github.com/vegaprotocol/vega/issues/11528) - Added support for eligible entities reward. 
+- [11459](https://github.com/vegaprotocol/vega/issues/11459) - Deprecate time weight position reward metric and replace it with time weighted notional.
+- [11528](https://github.com/vegaprotocol/vega/issues/11528) - Added support for eligible entities reward.
 - [11372](https://github.com/vegaprotocol/vega/issues/11372) - Support combined filters for the `AMM` API.
 - [11535](https://github.com/vegaprotocol/vega/issues/11535) - Added support for lottery rank distribution strategy.
+- [11536](https://github.com/vegaprotocol/vega/issues/11536) - Make the batch market instructions errors programmatically usable.
 
 ### 🐛 Fixes
+
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
 - [11526](https://github.com/vegaprotocol/vega/issues/11526) - `EstimateAMMBounds` now respects the market's decimal places.
 - [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking. 
+
 
 ## 0.77.5
 
 ### 🐛 Fixes
 
 - [11513](https://github.com/vegaprotocol/vega/issues/11513) - Rollback CometBFT to version `v0.38.8`.
-- [11516](https://github.com/vegaprotocol/vega/issues/11516) - Fix order spam check for amends. 
+- [11516](https://github.com/vegaprotocol/vega/issues/11516) - Fix order spam check for amends.
 
 ## 0.77.4
 

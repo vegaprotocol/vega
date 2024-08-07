@@ -20,15 +20,19 @@ import (
 	"errors"
 	"testing"
 
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/processor/mocks"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -502,4 +506,72 @@ func TestBatchMarketInstructionInvalidStopOrder(t *testing.T) {
 	assert.True(t, ok)
 	assert.True(t, perr.IsPartial())
 	assert.Equal(t, 1, stopCnt)
+}
+
+func TestConvertProto(t *testing.T) {
+	t.Run("with success", func(t *testing.T) {
+		txResult := events.NewTransactionResultEventSuccess(context.Background(), "0xDEADBEEF", "p1", &commandspb.BatchMarketInstructions{})
+		assert.Nil(t, ptr.From(txResult.Proto()).GetFailure())
+		assert.Equal(t, txResult.Proto().StatusDetail, eventspb.TransactionResult_STATUS_SUCCESS)
+	})
+
+	t.Run("with a normal error", func(t *testing.T) {
+		err := errors.New("not a bmi error")
+
+		txResult := events.NewTransactionResultEventFailure(context.Background(), "0xDEADBEEF", "p1", err, &commandspb.BatchMarketInstructions{})
+		assert.Nil(t, ptr.From(txResult.Proto()).GetSuccess())
+		assert.NotNil(t, ptr.From(txResult.Proto()).GetFailure())
+		assert.Nil(t, ptr.From(txResult.Proto()).GetFailure().Errors)
+		assert.NotNil(t, ptr.From(txResult.Proto()).GetFailure().Error)
+		assert.False(t, txResult.Proto().Status)
+		assert.Equal(t, txResult.Proto().StatusDetail, eventspb.TransactionResult_STATUS_FAILURE)
+	})
+
+	t.Run("with a partial BMI error", func(t *testing.T) {
+		errs := &processor.BMIError{
+			Errors: commands.NewErrors(),
+		}
+
+		errs.AddForProperty("1", errors.New("some error"))
+		errs.AddForProperty("1", errors.New("some other error"))
+		errs.AddForProperty("2", errors.New("another error again"))
+
+		errs.Partial = true
+
+		txResult := events.NewTransactionResultEventFailure(context.Background(), "0xDEADBEEF", "p1", errs, &commandspb.BatchMarketInstructions{})
+		assert.Nil(t, ptr.From(txResult.Proto()).GetSuccess())
+		assert.NotNil(t, ptr.From(txResult.Proto()).GetFailure())
+		assert.NotNil(t, ptr.From(txResult.Proto()).GetFailure().Errors)
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Error, "")
+		assert.False(t, txResult.Proto().Status)
+		assert.Equal(t, txResult.Proto().StatusDetail, eventspb.TransactionResult_STATUS_PARTIAL_SUCCESS)
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[0].Key, "1")
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[0].Errors, []string{"some error", "some other error"})
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[1].Key, "2")
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[1].Errors, []string{"another error again"})
+	})
+
+	t.Run("with a full BMI error", func(t *testing.T) {
+		errs := &processor.BMIError{
+			Errors: commands.NewErrors(),
+		}
+
+		errs.AddForProperty("1", errors.New("some error"))
+		errs.AddForProperty("1", errors.New("some other error"))
+		errs.AddForProperty("2", errors.New("another error again"))
+
+		errs.Partial = false
+
+		txResult := events.NewTransactionResultEventFailure(context.Background(), "0xDEADBEEF", "p1", errs, &commandspb.BatchMarketInstructions{})
+		assert.Nil(t, ptr.From(txResult.Proto()).GetSuccess())
+		assert.NotNil(t, ptr.From(txResult.Proto()).GetFailure())
+		assert.NotNil(t, ptr.From(txResult.Proto()).GetFailure().Errors)
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Error, "")
+		assert.False(t, txResult.Proto().Status)
+		assert.Equal(t, txResult.Proto().StatusDetail, eventspb.TransactionResult_STATUS_FAILURE)
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[0].Key, "1")
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[0].Errors, []string{"some error", "some other error"})
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[1].Key, "2")
+		assert.Equal(t, ptr.From(txResult.Proto()).GetFailure().Errors[1].Errors, []string{"another error again"})
+	})
 }

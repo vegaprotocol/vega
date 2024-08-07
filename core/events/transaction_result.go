@@ -18,6 +18,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -48,13 +49,61 @@ func NewTransactionResultEventSuccess(
 	evt := &TransactionResult{
 		Base: newBase(ctx, TransactionResultEvent),
 		evt: &eventspb.TransactionResult{
-			PartyId: party,
-			Hash:    hash,
-			Status:  true,
+			PartyId:      party,
+			Hash:         hash,
+			Status:       true,
+			StatusDetail: eventspb.TransactionResult_STATUS_SUCCESS,
 		},
 	}
 
 	return evt.setTx(tx)
+}
+
+type RawErrors interface {
+	GetRawErrors() map[string][]error
+}
+
+func makeFailureDetails(err error) *eventspb.TransactionResult_FailureDetails {
+	if rawErr, isRawErr := err.(RawErrors); isRawErr {
+		keyErrors := []*eventspb.TransactionResult_KeyErrors{}
+		for k, v := range rawErr.GetRawErrors() {
+			e := &eventspb.TransactionResult_KeyErrors{
+				Key: k,
+			}
+
+			for _, ve := range v {
+				e.Errors = append(e.Errors, ve.Error())
+			}
+
+			keyErrors = append(keyErrors, e)
+		}
+
+		sort.Slice(keyErrors, func(i, j int) bool {
+			return keyErrors[i].Key < keyErrors[j].Key
+		})
+
+		return &eventspb.TransactionResult_FailureDetails{
+			Errors: keyErrors,
+		}
+	}
+
+	return &eventspb.TransactionResult_FailureDetails{
+		Error: err.Error(),
+	}
+}
+
+type PartialError interface {
+	IsPartial() bool
+}
+
+func getErrorStatus(err error) eventspb.TransactionResult_Status {
+	if partialErr, isPartialErr := err.(PartialError); isPartialErr {
+		if partialErr.IsPartial() {
+			return eventspb.TransactionResult_STATUS_PARTIAL_SUCCESS
+		}
+	}
+
+	return eventspb.TransactionResult_STATUS_FAILURE
 }
 
 func NewTransactionResultEventFailure(
@@ -66,13 +115,12 @@ func NewTransactionResultEventFailure(
 	evt := &TransactionResult{
 		Base: newBase(ctx, TransactionResultEvent),
 		evt: &eventspb.TransactionResult{
-			PartyId: party,
-			Hash:    hash,
-			Status:  false,
+			PartyId:      party,
+			Hash:         hash,
+			Status:       false,
+			StatusDetail: getErrorStatus(err),
 			Extra: &eventspb.TransactionResult_Failure{
-				Failure: &eventspb.TransactionResult_FailureDetails{
-					Error: err.Error(),
-				},
+				Failure: makeFailureDetails(err),
 			},
 		},
 	}
