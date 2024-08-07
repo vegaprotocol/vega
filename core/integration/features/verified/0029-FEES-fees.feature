@@ -1,3 +1,4 @@
+integration/features/verified/0029-FEES-fees.feature
 Feature: Fees calculations
 
   Background:
@@ -19,52 +20,66 @@ Feature: Fees calculations
       | market.fee.factors.treasuryFee          | 0.002 |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/DEC21 | ETH/USD    | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures |
 
     And the average block duration is "2"
   Scenario: 001: Testing fees get collected when amended order trades (0029-FEES-005)
     Given the parties deposit on asset's general account the following amount:
-      | party   | asset | amount    |
-      | aux1    | ETH   | 100000000 |
-      | aux2    | ETH   | 100000000 |
-      | trader1 | ETH   | 10000     |
-      | trader2 | ETH   | 10000     |
+      | party   | asset | amount |
+      | aux1    | USD   | 100000 |
+      | aux2    | USD   | 100000 |
+      | aux3    | USD   | 100000 |
+      | aux4    | USD   | 100000 |
+      | trader1 | USD   | 10000  |
+      | trader2 | USD   | 10000  |
+      | trader3 | USD   | 490    |
+      | trader4 | USD   | 250    |
+      | trader5 | USD   | 490    |
+      | trader6 | USD   | 240    |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | submission |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | submission |
     When the network moves ahead "2" blocks
-    And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | aux1  | ETH/DEC21 | 10        | 1                    | buy  | BID              | 10     | 10     |
-      | aux2  | ETH/DEC21 | 10        | 1                    | sell | ASK              | 10     | 10     |
+
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux4  | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
 
+    And the following trades should be executed:
+      | buyer | price | size | seller |
+      | aux1  | 1000  | 1    | aux2   |
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin | general |
+      | aux1  | USD   | ETH/DEC21 | 540    | 89460   |
+    #no fees are paid during opening auction
+
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | buy  | 910   | 10     |
       | buy  | 920   | 1      |
       | sell | 1080  | 1      |
-      | sell | 1090  | 10     |
 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-01  |
-      | trader2 | ETH/DEC21 | sell | 4      | 1004  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-01  |
+      | trader2 | ETH/DEC21 | sell | 2      | 1004  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-01  |
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader1 | USD   | ETH/DEC21 | 480    | 9520    |
+      | trader2 | USD   | ETH/DEC21 | 240    | 9760    |
 
     And the parties amend the following orders:
       | party   | reference | price | size delta | tif     |
@@ -87,15 +102,30 @@ Feature: Fees calculations
 
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
-      | trader2 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 9      | ETH   |
-      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
-      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_NETWORK_TREASURY    |           | 5      | ETH   |
-      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_BUY_BACK_FEES       |           | 3      | ETH   |
-      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
-      | market  | trader1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 9      | ETH   |
+      | trader2 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 9      | USD   |
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | USD   |
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_NETWORK_TREASURY    |           | 5      | USD   |
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_BUY_BACK_FEES       |           | 3      | USD   |
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | USD   |
+      | market  | trader1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 9      | USD   |
 
     # total_fee = maker_fee + infrastructure_fee + liquidity_fee + buy back + treasury =  9 + 7 + 5 + 8 = 29
+    #0029-FEES-037: During normal auction (including market protection and opening auctions), each side in a matched trade should contribute `0.5*(infrastructure_fee + liquidity_fee + treasury_fee + buyback_fee)
+    #0029-FEES-038: In a matched trade, if the price taker has enough asset to cover the total fee in their general account, then the total fee should be taken from their general account.
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC21 | 480    | 9529    |
-      | trader2 | ETH   | ETH/DEC21 | 480    | 9491    |
+      | trader1 | USD   | ETH/DEC21 | 480    | 9529    |
+      | trader2 | USD   | ETH/DEC21 | 240    | 9731    |
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader3 | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-01  |
+      | trader4 | ETH/DEC21 | sell | 2      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | t2-s4-01  |
+
+    #trader4 started with asset of 250, and paid 29 for total trading fee
+    #0029-FEES-039:In a matched trade, if the price taker has insufficient asset to cover the total fee in their general account (but has enough in general + margin account), then the remainder will be taken from their margin account.
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC21 | 480    | 19      |
+      | trader4 | USD   | ETH/DEC21 | 221    | 0       |
+
