@@ -5523,6 +5523,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	if order == nil {
 		m.amm.Confirm(ctx, pool)
 		m.matching.UpdateAMM(pool.AMMParty)
+		m.checkForReferenceMoves(ctx, nil, false)
 		return nil
 	}
 
@@ -5548,6 +5549,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	m.amm.Confirm(ctx, pool)
 	// now tell the matching engine something new has appeared incase it needs to update its auction IPV cache
 	m.matching.UpdateAMM(pool.AMMParty)
+	m.checkForReferenceMoves(ctx, nil, false)
 	return nil
 }
 
@@ -5570,7 +5572,6 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	if err != nil {
 		return err
 	}
-
 	// if we failed to rebase the amended pool be sure to reinstante the old one
 	defer func() {
 		if err != nil {
@@ -5598,6 +5599,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	if order == nil {
 		m.amm.Confirm(ctx, pool)
 		m.matching.UpdateAMM(pool.AMMParty)
+		m.checkForReferenceMoves(ctx, nil, false)
 		return nil
 	}
 
@@ -5615,6 +5617,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 
 	m.amm.Confirm(ctx, pool)
 	m.matching.UpdateAMM(pool.AMMParty)
+	m.checkForReferenceMoves(ctx, nil, false)
 	return nil
 }
 
@@ -5635,6 +5638,9 @@ func (m *Market) CancelAMM(ctx context.Context, cancel *types.CancelAMM, determi
 
 	// tell matching incase it needs to remove the AMM's contribution to the IPV cache
 	m.matching.UpdateAMM(ammParty)
+
+	// rejig any pegged orders that might need re-pricing now an AMM is not longer there, or is no longer quoting one side
+	m.checkForReferenceMoves(ctx, nil, false)
 
 	if closeout == nil {
 		return nil

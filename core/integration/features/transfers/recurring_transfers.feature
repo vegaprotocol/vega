@@ -24,9 +24,9 @@ Background:
 
 Scenario: simple successful recurring transfers
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  1          |           | 0.5    |
-    | 2  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  20000 |  2          |     3     | 0.2    |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 1           |           | 0.5    |
+    | 2  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 20000  | 2           | 3         | 0.2    |
 
     # end of epoch 1 - transferring 10k from f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c to a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 + 5000 fees
     When the network moves ahead "14" blocks
@@ -67,50 +67,50 @@ Scenario: simple successful recurring transfers
 
 Scenario: invalid recurring transfers
     Given the parties submit the following recurring transfers:
-    | id | from   |              from_account_type           |   to   |         to_account_type          | asset | amount | start_epoch | end_epoch | factor |              error            |
-    | 1  |        |  ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | invalid from account          |
-    | 2  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    |        | ACCOUNT_TYPE_GENERAL             | VEGA  |  20000 | 1           |           |   0.5  | invalid to account            |
-    | 3  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  0     | 1           |           |   0.5  | cannot transfer zero funds    |
-    | 4  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_UNSPECIFIED                | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 5  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_INSURANCE                  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 6  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_SETTLEMENT                 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 7  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_MARGIN                     | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 8  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_FEES_INFRASTRUCTURE        | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 9  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_FEES_LIQUIDITY             | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 10 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_FEES_MAKER                 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 11 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_LOCK_WITHDRAW              | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 12 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_BOND                       | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 13 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_EXTERNAL                   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 14 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GLOBAL_INSURANCE           | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 15 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GLOBAL_REWARD              | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 16 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_PENDING_TRANSFERS          | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 17 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 18 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 19 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 20 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |           |   0.5  | unsupported from account type |
-    | 21 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_UNSPECIFIED         | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type   |
-    | 22 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_INSURANCE           | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type   |
-    | 23 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_SETTLEMENT          | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type   |
-    | 24 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_MARGIN              | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type   |
-    | 25 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 26 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_FEES_LIQUIDITY      | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 27 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_FEES_MAKER          | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 28 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_LOCK_WITHDRAW       | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 29 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_BOND                | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 30 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_EXTERNAL            | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 31 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GLOBAL_INSURANCE    | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 32 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_PENDING_TRANSFERS   | VEGA  |  10000 | 1           |           |   0.5  | unsupported to account type |
-    | 33 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |      0    |   0.5  | end epoch is zero             |
-    | 34 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 0           |           |   0.5  | start epoch is zero           |
+    | id | from                                                             | from_account_type                       | to                                                               | to_account_type                  | asset | amount | start_epoch | end_epoch | factor | error                         |
+    | 1  |                                                                  | ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | invalid from account          |
+    | 2  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    |                                                                  | ACCOUNT_TYPE_GENERAL             | VEGA  | 20000  | 1           |           | 0.5    | invalid to account            |
+    | 3  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 0      | 1           |           | 0.5    | cannot transfer zero funds    |
+    | 4  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_UNSPECIFIED                | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 5  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_INSURANCE                  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 6  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_SETTLEMENT                 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 7  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_MARGIN                     | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 8  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_FEES_INFRASTRUCTURE        | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 9  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_FEES_LIQUIDITY             | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 10 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_FEES_MAKER                 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 11 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_LOCK_WITHDRAW              | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 12 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_BOND                       | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 13 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_EXTERNAL                   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 14 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GLOBAL_INSURANCE           | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 15 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GLOBAL_REWARD              | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 16 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_PENDING_TRANSFERS          | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 17 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 18 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 19 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 20 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           |           | 0.5    | unsupported from account type |
+    | 21 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_UNSPECIFIED         | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 22 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_INSURANCE           | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 23 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_SETTLEMENT          | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 24 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_MARGIN              | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 25 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 26 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_FEES_LIQUIDITY      | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 27 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_FEES_MAKER          | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 28 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_LOCK_WITHDRAW       | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 29 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_BOND                | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 30 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_EXTERNAL            | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 31 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GLOBAL_INSURANCE    | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 32 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_PENDING_TRANSFERS   | VEGA  | 10000  | 1           |           | 0.5    | unsupported to account type   |
+    | 33 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 1           | 0         | 0.5    | end epoch is zero             |
+    | 34 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  | 10000  | 0           |           | 0.5    | start epoch is zero           |
 
 Scenario: As a user I can create a recurring transfer that decreases over time when start amount * transfer.fee.factor <= transfer.fee.maxQuantumAmount * quantum (0057-TRAN-050, 0057-TRAN-051)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset |  amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 1000000 |
+    | party                                                            | asset | amount  |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 1000000 |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  2          |     5     |   0.7  |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2           | 5         | 0.7    |
 
     # end of epoch 1
     When the network moves ahead "14" blocks
@@ -147,12 +147,12 @@ Scenario: As a user I can create a recurring transfer that decreases over time w
       | transfer.fee.maxQuantumAmount           |  0.1  |
     
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset |  amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 1000000 |
+    | party                                                            | asset | amount  |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 1000000 |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  2          |     5     |   0.7  |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2           | 5         | 0.7    |
     
     # end of epoch 1
     When the network moves ahead "14" blocks
@@ -179,18 +179,18 @@ Scenario: As a user I can create a recurring transfer that decreases over time w
     Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "25330" for asset "VEGA"
 
     When the parties submit the following transfer cancellations:
-    | party  | transfer_id |               error                |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |      1      | recurring transfer does not exists |
+    | party                                                            | transfer_id | error                              |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | 1           | recurring transfer does not exists |
 
 
 Scenario: As a user I can create a recurring transfer that recurs forever, with the same balance transferred each time (0057-TRAN-052)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset |  amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 1000000 |
+    | party                                                            | asset | amount  |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 1000000 |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  1000  |  2          |           |   1    |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 1000   | 2           |           | 1      |
 
      # end of epoch 1
     When the network moves ahead "14" blocks
@@ -203,12 +203,12 @@ Scenario: As a user I can create a recurring transfer that recurs forever, with 
 
 Scenario: As a user I can create a recurring transfer that recurs as long as the amount is transfer.minTransferQuantumMultiple x quantum, with the amount transfer decreasing. (0057-TRAN-053)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset | amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 40000  |
+    | party                                                            | asset | amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 40000  |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  2          |           |   0.1  |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2           |           | 0.1    |
 
     # end of epoch 1
     When the network moves ahead "14" blocks
@@ -235,12 +235,12 @@ Scenario: As a user I can create a recurring transfer that recurs as long as the
 
 Scenario: As a user I can cancel a recurring transfer (0057-TRAN-054)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset | amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 40000  |
+    | party                                                            | asset | amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 40000  |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  2          |           |   1    |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2           |           | 1      |
 
     # end of epoch 2
     When the network moves ahead "21" blocks
@@ -249,8 +249,8 @@ Scenario: As a user I can cancel a recurring transfer (0057-TRAN-054)
     And the reward account of type "ACCOUNT_TYPE_FEES_INFRASTRUCTURE" should have balance of "5000" for asset "VEGA"
 
     When the parties submit the following transfer cancellations:
-    | party  | transfer_id |               error                |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |      1      |                                    |
+    | party                                                            | transfer_id | error |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | 1           |       |
 
    # progress a few epoch - the balance of a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 and 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 should not have changed as the transfer has been cancelled
     When the network moves ahead "100" blocks
@@ -258,21 +258,21 @@ Scenario: As a user I can cancel a recurring transfer (0057-TRAN-054)
 
     # we can't cancel it again because it's already cancelled
     When the parties submit the following transfer cancellations:
-    | party  | transfer_id |               error                |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |      1      | recurring transfer does not exists |
+    | party                                                            | transfer_id | error                              |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | 1           | recurring transfer does not exists |
 
 Scenario: As a user I can cancel a recurring transfer before any transfers have executed (0057-TRAN-055)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset | amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 40000  |
+    | party                                                            | asset | amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 40000  |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  2          |           |   1    |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2           |           | 1      |
 
     When the parties submit the following transfer cancellations:
-    | party  | transfer_id |               error                |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |      1      |                                    |
+    | party                                                            | transfer_id | error |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | 1           |       |
 
     # progress a few epoch - the balance of a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 and 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 should not have changed as the transfer has been cancelled
     When the network moves ahead "100" blocks
@@ -280,18 +280,18 @@ Scenario: As a user I can cancel a recurring transfer before any transfers have 
 
     # we can't cancel it again because it's already cancelled
     When the parties submit the following transfer cancellations:
-    | party  | transfer_id |               error                |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |      1      | recurring transfer does not exists |
+    | party                                                            | transfer_id | error                              |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | 1           | recurring transfer does not exists |
 
 
 Scenario: A user's recurring transfer is cancelled if any transfer fails due to insufficient funds (0057-TRAN-054)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset | amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 40000  |
+    | party                                                            | asset | amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 40000  |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  2          |           |   1    |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2           |           | 1      |
 
     # end of epoch 0
     When the network moves ahead "7" blocks
@@ -320,18 +320,18 @@ Scenario: A user's recurring transfer is cancelled if any transfer fails due to 
     And the reward account of type "ACCOUNT_TYPE_FEES_INFRASTRUCTURE" should have balance of "10000" for asset "VEGA"
 
     When the parties submit the following transfer cancellations:
-    | party  | transfer_id |               error                |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |      1      | recurring transfer does not exists |
+    | party                                                            | transfer_id | error                              |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | 1           | recurring transfer does not exists |
 
 
 Scenario: As a user I can make a recurring transfer to Global Rewards account by specifying the "0" address and the account type (0013-ACCT-028)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset | amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 4000  |
+    | party                                                            | asset | amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 4000   |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  |  1000 |  1          |     2     |   1    |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type            | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 1000   | 1           | 2         | 1      |
 
     # end of epoch 0
     When the network moves ahead "7" blocks
@@ -347,12 +347,12 @@ Scenario: As a user I can make a recurring transfer to Global Rewards account by
 @networktreasury-recurring
 Scenario: As a user I can make a recurring transfer to Network Treasury account by specifying the "0" address and the account type (0013-ACCT-026)
     Given the parties deposit on asset's general account the following amount:
-    | party    | asset | amount |
-    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 4000  |
+    | party                                                            | asset | amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | VEGA  | 4000   |
 
     Given the parties submit the following recurring transfers:
-    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
-    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_NETWORK_TREASURY | VEGA  |  1000 |  1          |     2     |   1    |
+    | id | from                                                             | from_account_type    | to                                                               | to_account_type               | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_NETWORK_TREASURY | VEGA  | 1000   | 1           | 2         | 1      |
 
     # end of epoch 0
     When the network moves ahead "7" blocks

@@ -96,7 +96,7 @@
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
-  @VAMMP
+  @VAMM
   Scenario: AMM holds a long position, there should be no more buy orders created, when submitting a sell order at a lower price, a panic seemingly can occur.
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |

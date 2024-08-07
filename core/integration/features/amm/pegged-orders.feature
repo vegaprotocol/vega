@@ -1,4 +1,4 @@
-Feature: Ensure rounding errors do not cause empty curve panic.
+Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, pegged orders referencing best bid/best ask remain deployed, pegged to their pegs, where the best buy/sell vAMM order price acts as the best bid, or best ask peg respectively.
 
   Background:
     Given the average block duration is "1"
@@ -11,7 +11,7 @@ Feature: Ensure rounding errors do not cause empty curve panic.
     And the liquidity monitoring parameters:
       | name       | triggering ratio | time window | scaling factor |
       | lqm-params | 1.00             | 20s         | 1              |
-      
+
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 60s   |
@@ -22,7 +22,7 @@ Feature: Ensure rounding errors do not cause empty curve panic.
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
       | market.liquidity.equityLikeShareFeeFraction         | 1     |
-	  | market.amm.minCommitmentQuantum                     | 1000  |
+      | market.amm.minCommitmentQuantum                     | 1     |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
@@ -59,8 +59,7 @@ Feature: Ensure rounding errors do not cause empty curve panic.
       | party3 | USD   | 1000000 |
       | party4 | USD   | 1000000 |
       | party5 | USD   | 1000000 |
-      | vamm1  | USD   | 30000   |
-      | vamm2  | USD   | 30000   |
+      | vamm1  | USD   | 1000000 |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -71,10 +70,10 @@ Feature: Ensure rounding errors do not cause empty curve panic.
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | lp1    | ETH/MAR22 | buy  | 20     | 40    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      | lp1    | ETH/MAR22 | buy  | 20     | 40    | 0                | TYPE_LIMIT | TIF_GTC | LP1BO     |
       | party1 | ETH/MAR22 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
       | party2 | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | lp1    | ETH/MAR22 | sell | 10     | 160   | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
+      | lp1    | ETH/MAR22 | sell | 10     | 160   | 0                | TYPE_LIMIT | TIF_GTC | LP1SO     |
     When the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
       | buyer  | price | size | seller |
@@ -85,63 +84,57 @@ Feature: Ensure rounding errors do not cause empty curve panic.
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 30000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
-      | vamm2 | ETH/MAR22 | 30000  | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
-      | vamm2 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
-      | vamm2 | ETH/MAR22 | vamm2-id |
     And the following transfers should happen:
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
-      | vamm2 | ACCOUNT_TYPE_GENERAL | vamm2-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
   @VAMM
-  Scenario: both AMMs trade with a given order, the amount traded is distributed pro-rata.
-    # Volume is 5, divided by 2 -> 1 party will trade 3, one will trade 2.
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | buy  | 5      | 120   | 2                | TYPE_LIMIT | TIF_GTC |
-    # see the trades that make the vAMM go short
+  Scenario: Simply submit pegged orders, cancel all orders on the orderbook, the pegged orders should be pegged to the AMM orders.
+    When the parties place the following pegged iceberg orders:
+      | party | market id | side | volume | peak size | minimum visible size | pegged reference | offset |
+      | lp1   | ETH/MAR22 | buy  | 100    | 10        | 2                    | BID              | 5      |
+      | lp1   | ETH/MAR22 | sell | 100    | 10        | 2                    | ASK              | 5      |
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 20     |
+      | buy  | 94    | 10     |
+      | sell | 106   | 10     |
+      | sell | 160   | 10     |
 
-    Then the following trades should be executed:
-      | buyer  | price | size | seller   | is amm |
-      | party4 | 100   | 3    | vamm1-id | true   |
-      | party4 | 100   | 2    | vamm2-id | true   |
-
+    # ensure moving the network by 1 block doesn't change a thing
     When the network moves ahead "1" blocks
-    Then the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 101       | 101              |
-    And the parties should have the following profit and loss:
-      | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 5      | 0              | 0            |        |
-      | vamm1-id | -3     | 0              | 0            | true   |
-      | vamm2-id | -2     | 0              | 0            | true   |
-    And the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
-      | vamm2 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 20     |
+      | buy  | 94    | 10     |
+      | sell | 106   | 10     |
+      | sell | 160   | 10     |
 
-    # Now submit another order, the available volumes ought to be the other way around, the positions equal out.
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | buy  | 31     | 110   | 2                | TYPE_LIMIT | TIF_GTC |
-    Then the following trades should be executed:
-      | buyer  | price | size | seller   | is amm |
-      | party4 | 104   | 15   | vamm1-id | true   |
-      | party4 | 104   | 16   | vamm2-id | true   |
+    # Now cancel the LP1BO and LP1SO orders, the pegged orders should remain where they are.
+    When the parties cancel the following orders:
+      | party | reference |
+      | lp1   | LP1BO     |
+      | lp1   | LP1SO     |
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 0      |
+      | buy  | 94    | 10     |
+      | sell | 106   | 10     |
+      | sell | 160   | 0      |
+
+    # We pass through block end CheckBook call without problems, and the book volumes still check out.
     When the network moves ahead "1" blocks
-    Then the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | mid price | static mid price |
-      | 104        | TRADING_MODE_CONTINUOUS | 108       | 108              |
-    And the parties should have the following profit and loss:
-      | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 36     | 20             | 0            |        |
-      | vamm1-id | -18    | -12            | 0            | true   |
-      | vamm2-id | -18    | -8             | 0            | true   |
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 0      |
+      | buy  | 94    | 10     |
+      | sell | 106   | 10     |
+      | sell | 160   | 0      |
