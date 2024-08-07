@@ -53,6 +53,7 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
@@ -69,6 +70,7 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
@@ -84,6 +86,7 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
 }
 
@@ -744,7 +747,8 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN {
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES {
 			errs.AddForProperty("new_transfer.changes.destination_type", ErrIsNotValid)
 		}
 		if oneoff.DeliverOn < 0 {

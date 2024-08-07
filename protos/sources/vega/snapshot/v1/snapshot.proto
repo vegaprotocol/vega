@@ -1151,6 +1151,7 @@ message MarketTracker {
   repeated checkpoint.v1.TakerNotionalVolume taker_notional_volume = 2;
   repeated checkpoint.v1.MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
   repeated checkpoint.v1.EpochPartyTakerFees epoch_taker_fees = 4;
+  repeated checkpoint.v1.GameEligibilityTracker game_eligibility_tracker = 5;
 }
 
 message SignerEventsPerAddress {

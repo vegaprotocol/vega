@@ -26,7 +26,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/protos/vega"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
@@ -1516,7 +1515,7 @@ func TestCalculateMetricForTeamUtil(t *testing.T) {
 		}
 		return false, num.UintZero(), num.UintZero()
 	}
-	calculateMetricForParty := func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) (num.Decimal, bool) {
+	calculateMetricForParty := func(asset, party string, marketsInScope []string, metric vgproto.DispatchMetric, windowSize int) (num.Decimal, bool) {
 		if party == "party1" {
 			return num.DecimalFromFloat(1.5), true
 		}
@@ -1536,7 +1535,7 @@ func TestCalculateMetricForTeamUtil(t *testing.T) {
 	}
 
 	gameID := "game123"
-	teamScore, partyScores := calculateMetricForTeamUtil(ctx, "asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintOne(), num.UintOne(), int(5), num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{})
+	teamScore, partyScores := calculateMetricForTeamUtil(ctx, "asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintOne(), num.UintOne(), int(5), num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{}, map[string][]map[string]struct{}{})
 	// we're indicating the the score of the team need to be the mean of the top 0.5 * number of participants = floor(0.5*5) = 2
 	// the top scores are 2.5 and 2 => team score should be 2.25
 	// 4 party scores expected (1-4) as party5 is not eligible
@@ -1554,7 +1553,7 @@ func TestCalculateMetricForTeamUtil(t *testing.T) {
 	require.Equal(t, false, partyScores[4].IsEligible)
 
 	// lets repeat the check when there is no one eligible
-	teamScore, partyScores = calculateMetricForTeamUtil(ctx, "asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{})
+	teamScore, partyScores = calculateMetricForTeamUtil(ctx, "asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID, map[string]*num.Uint{}, map[string][]map[string]struct{}{})
 	require.Equal(t, "0", teamScore.String())
 	require.Equal(t, 1, len(partyScores))
 	require.Equal(t, "party5", partyScores[0].Party)

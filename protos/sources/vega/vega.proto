@@ -945,6 +945,9 @@ enum AccountType {
   // Per asset market reward account given for average notional
   ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL = 32;
 
+  // Reward account for the eligible entities metric.
+  ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES = 33;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -1117,6 +1120,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_REALISED_RETURN = 9;
   // Dispatch metric that uses the time weighted average notional
   DISPATCH_METRIC_AVERAGE_NOTIONAL = 10;
+  // Dispatch metric that uses the eligibility criteria of entities
+  DISPATCH_METRIC_ELIGIBLE_ENTITIES = 11;
 }
 
 enum EntityScope {
@@ -1145,6 +1150,8 @@ enum DistributionStrategy {
   DISTRIBUTION_STRATEGY_PRO_RATA = 1;
   // Rewards funded using the party rank.
   DISTRIBUTION_STRATEGY_RANK = 2;
+  // Rewards funded using the ranked lottery.
+  DISTRIBUTION_STRATEGY_RANK_LOTTERY = 3;
 }
 
 message DispatchStrategy {

@@ -34,11 +34,12 @@ const (
 	DispatchMetricMakerFeesReceived                = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)
 	DispatchMetricLPFeesReceived                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)
 	DispatchMetricMarketValue                      = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)
-	DispatchMetricAveragePosition                  = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL)
+	DispatchMetricAverageNotional                  = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL)
 	DispatchMetricRelativeReturn                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN)
 	DispatchMetricReturnVolatility                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY)
 	DispatchMetricValidatorRanking                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING)
 	DispatchMetricRealisedReturn                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN)
+	DispatchMetricEligibleEntities                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES)
 )
 
 func (m DispatchMetric) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

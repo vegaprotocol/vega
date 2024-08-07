@@ -1541,6 +1541,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_VALIDATOR_RANKING
   "Dispatch metric that uses the realised return of the party in the market"
   DISPATCH_METRIC_REALISED_RETURN
+  "Dispatch metric that uses the eligibility of entities"
+  DISPATCH_METRIC_ELIGIBLE_ENTITIES
 }
 
 enum EntityScope {
@@ -1566,6 +1568,9 @@ enum DistributionStrategy {
   DISTRIBUTION_STRATEGY_PRO_RATA
   "Rewards funded using the rank strategy"
   DISTRIBUTION_STRATEGY_RANK
+  "Rewards funded using the rank lottery strategy"
+  DISTRIBUTION_STRATEGY_RANK_LOTTERY
+
 }
 
 "Dispatch strategy for a recurring transfer"
@@ -4638,6 +4643,8 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_REALISED_RETURN
   "Average notional reward account is a per asset per market account for average notional reward funds"
   ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL
+  "Reward account for the eligible entities metric"
+  ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES
 }
 
 "Types that describe why a transfer has been made"
