@@ -60,8 +60,8 @@ func TestEstimateSeparateFunctions(t *testing.T) {
 	upperPriceD := upperPrice.ToDecimal()
 
 	// test position at bounds
-	lowerBoundPos := PositionAtLowerBound(riskFactorLower, balance.ToDecimal(), lowerPriceD, avgEntryLower)
-	upperBoundPos := PositionAtUpperBound(riskFactorUpper, balance.ToDecimal(), upperPriceD, avgEntryUpper)
+	lowerBoundPos := PositionAtLowerBound(riskFactorLower, balance.ToDecimal(), lowerPriceD, avgEntryLower, num.DecimalOne())
+	upperBoundPos := PositionAtUpperBound(riskFactorUpper, balance.ToDecimal(), upperPriceD, avgEntryUpper, num.DecimalOne())
 	assert.Equal(t, num.DecimalFromFloat(0.437).String(), lowerBoundPos.Round(3).String())
 	assert.Equal(t, num.DecimalFromFloat(-0.069).String(), upperBoundPos.Round(3).String())
 
@@ -116,6 +116,8 @@ func TestEstimate(t *testing.T) {
 			initialMargin,
 			riskFactorShort,
 			riskFactorLong,
+			num.DecimalOne(),
+			num.DecimalOne(),
 		)
 
 		assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
@@ -124,6 +126,8 @@ func TestEstimate(t *testing.T) {
 		assert.Equal(t, expectedMetrics.LossOnCommitmentAtLower.String(), metrics.LossOnCommitmentAtLower.Round(3).String())
 		assert.Equal(t, expectedMetrics.LiquidationPriceAtUpper.String(), metrics.LiquidationPriceAtUpper.Round(3).String())
 		assert.Equal(t, expectedMetrics.LiquidationPriceAtLower.String(), metrics.LiquidationPriceAtLower.Round(3).String())
+		assert.True(t, metrics.TooWideLower)
+		assert.True(t, metrics.TooWideUpper)
 	})
 
 	t.Run("test 0014-NP-VAMM-004", func(t *testing.T) {
@@ -155,6 +159,8 @@ func TestEstimate(t *testing.T) {
 			initialMargin,
 			riskFactorShort,
 			riskFactorLong,
+			num.DecimalOne(),
+			num.DecimalOne(),
 		)
 
 		assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
@@ -164,4 +170,45 @@ func TestEstimate(t *testing.T) {
 		assert.Equal(t, expectedMetrics.LiquidationPriceAtUpper.String(), metrics.LiquidationPriceAtUpper.Round(3).String())
 		assert.Equal(t, expectedMetrics.LiquidationPriceAtLower.String(), metrics.LiquidationPriceAtLower.Round(3).String())
 	})
+}
+
+func TestEstimatePositionFactor(t *testing.T) {
+	initialMargin := num.DecimalFromFloat(1.2)
+	riskFactorShort := num.DecimalFromFloat(0.05529953589167391)
+	riskFactorLong := num.DecimalFromFloat(0.05529953589167391)
+	linearSlippageFactor := num.DecimalFromFloat(0.01)
+	sqrter := NewSqrter()
+
+	lowerPrice := num.MustUintFromString("80000000000000000000", 10)
+	basePrice := num.MustUintFromString("100000000000000000000", 10)
+	upperPrice := num.MustUintFromString("120000000000000000000", 10)
+	leverageUpper := num.DecimalFromFloat(0.5)
+	leverageLower := num.DecimalFromFloat(0.5)
+	balance := num.MustUintFromString("390500000000000000000000000", 10)
+
+	expectedMetrics := EstimatedBounds{
+		PositionSizeAtUpper: num.DecimalFromFloat(-1559159.284),
+		PositionSizeAtLower: num.DecimalFromFloat(2304613.63),
+	}
+
+	metrics := EstimateBounds(
+		sqrter,
+		lowerPrice,
+		basePrice,
+		upperPrice,
+		leverageLower,
+		leverageUpper,
+		balance,
+		linearSlippageFactor,
+		initialMargin,
+		riskFactorShort,
+		riskFactorLong,
+		num.DecimalFromInt64(1000000000000000000),
+		num.DecimalOne(),
+	)
+
+	assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
+	assert.Equal(t, expectedMetrics.PositionSizeAtLower.String(), metrics.PositionSizeAtLower.Round(3).String())
+	assert.False(t, metrics.TooWideLower)
+	assert.False(t, metrics.TooWideUpper)
 }

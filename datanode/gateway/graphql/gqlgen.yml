@@ -827,6 +827,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMEdge
   AMMConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMConnection
+  EstimatedAMMError:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.EstimatedAMMError
   RiskFactorOverride:
     model: code.vegaprotocol.io/vega/protos/vega.RiskFactorOverride
   FutureCap:

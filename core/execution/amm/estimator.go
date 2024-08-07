@@ -20,12 +20,15 @@ import (
 )
 
 type EstimatedBounds struct {
-	PositionSizeAtUpper     num.Decimal
 	PositionSizeAtLower     num.Decimal
-	LossOnCommitmentAtUpper num.Decimal
 	LossOnCommitmentAtLower num.Decimal
-	LiquidationPriceAtUpper num.Decimal
 	LiquidationPriceAtLower num.Decimal
+	TooWideLower            bool
+
+	PositionSizeAtUpper     num.Decimal
+	LossOnCommitmentAtUpper num.Decimal
+	LiquidationPriceAtUpper num.Decimal
+	TooWideUpper            bool
 }
 
 func EstimateBounds(
@@ -34,37 +37,62 @@ func EstimateBounds(
 	leverageLower, leverageUpper num.Decimal,
 	balance *num.Uint,
 	linearSlippageFactor, initialMargin,
-	riskFactorShort, riskFactorLong num.Decimal,
+	riskFactorShort, riskFactorLong,
+	priceFactor, positionFactor num.Decimal,
 ) EstimatedBounds {
 	r := EstimatedBounds{}
 
 	balanceD := balance.ToDecimal()
+
+	oneTick, _ := num.UintFromDecimal(priceFactor)
+	oneTick = num.Max(num.UintOne(), oneTick)
+
 	if lowerPrice != nil {
 		unitLower := LiquidityUnit(sqrter, basePrice, lowerPrice)
+
 		avgEntryLower := AverageEntryPrice(sqrter, unitLower, basePrice)
 		riskFactorLower := RiskFactor(leverageLower, riskFactorLong, linearSlippageFactor, initialMargin)
 		lowerPriceD := lowerPrice.ToDecimal()
-		boundPosLower := PositionAtLowerBound(riskFactorLower, balanceD, lowerPriceD, avgEntryLower)
+		boundPosLower := PositionAtLowerBound(riskFactorLower, balanceD, lowerPriceD, avgEntryLower, positionFactor)
+
 		lossLower := LossOnCommitment(avgEntryLower, lowerPriceD, boundPosLower)
+
 		liquidationPriceAtLower := LiquidationPrice(balanceD, lossLower, boundPosLower, lowerPriceD, linearSlippageFactor, riskFactorLong)
 
-		r.PositionSizeAtLower = boundPosLower.Truncate(5)
-		r.LiquidationPriceAtLower = liquidationPriceAtLower.Truncate(5)
-		r.LossOnCommitmentAtLower = lossLower.Truncate(5)
+		r.PositionSizeAtLower = boundPosLower
+		r.LiquidationPriceAtLower = liquidationPriceAtLower
+		r.LossOnCommitmentAtLower = lossLower
+
+		// now lets check that the lower bound is not too wide that the volume is spread too thin
+		l := unitLower.Mul(boundPosLower).Abs()
+
+		pos := impliedPosition(sqrter.sqrt(num.UintZero().Sub(basePrice, oneTick)), sqrter.sqrt(basePrice), l)
+		if pos.LessThan(num.DecimalOne()) {
+			r.TooWideLower = true
+		}
 	}
 
 	if upperPrice != nil {
 		unitUpper := LiquidityUnit(sqrter, upperPrice, basePrice)
+
 		avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
 		riskFactorUpper := RiskFactor(leverageUpper, riskFactorShort, linearSlippageFactor, initialMargin)
 		upperPriceD := upperPrice.ToDecimal()
-		boundPosUpper := PositionAtUpperBound(riskFactorUpper, balanceD, upperPriceD, avgEntryUpper)
+		boundPosUpper := PositionAtUpperBound(riskFactorUpper, balanceD, upperPriceD, avgEntryUpper, positionFactor)
 		lossUpper := LossOnCommitment(avgEntryUpper, upperPriceD, boundPosUpper)
 		liquidationPriceAtUpper := LiquidationPrice(balanceD, lossUpper, boundPosUpper, upperPriceD, linearSlippageFactor, riskFactorShort)
 
-		r.PositionSizeAtUpper = boundPosUpper.Truncate(5)
-		r.LiquidationPriceAtUpper = liquidationPriceAtUpper.Truncate(5)
-		r.LossOnCommitmentAtUpper = lossUpper.Truncate(5)
+		r.PositionSizeAtUpper = boundPosUpper
+		r.LiquidationPriceAtUpper = liquidationPriceAtUpper
+		r.LossOnCommitmentAtUpper = lossUpper
+
+		// now lets check that the lower bound is not too wide that the volume is spread too thin
+		l := unitUpper.Mul(boundPosUpper).Abs()
+
+		pos := impliedPosition(sqrter.sqrt(num.UintZero().Sub(upperPrice, oneTick)), sqrter.sqrt(upperPrice), l)
+		if pos.LessThan(num.DecimalOne()) {
+			r.TooWideUpper = true
+		}
 	}
 
 	return r
@@ -93,33 +121,40 @@ func AverageEntryPrice(sqrter *Sqrter, lu num.Decimal, pu *num.Uint) num.Decimal
 }
 
 // Pvl = rf * b / (pl * (1 - rf) + rf * pa).
-func PositionAtLowerBound(rf, b, pl, pa num.Decimal) num.Decimal {
+func PositionAtLowerBound(rf, b, pl, pa, positionFactor num.Decimal) num.Decimal {
 	oneSubRf := num.DecimalOne().Sub(rf)
 	rfMulPa := rf.Mul(pa)
 
-	return rf.Mul(b).Div(
+	pv := rf.Mul(b).Div(
 		pl.Mul(oneSubRf).Add(rfMulPa),
 	)
+	return pv.Mul(positionFactor)
 }
 
 // Pvl = -rf * b / (pl * (1 + rf) - rf * pa).
-func PositionAtUpperBound(rf, b, pl, pa num.Decimal) num.Decimal {
+func PositionAtUpperBound(rf, b, pl, pa, positionFactor num.Decimal) num.Decimal {
 	onePlusRf := num.DecimalOne().Add(rf)
 	rfMulPa := rf.Mul(pa)
 
-	return rf.Neg().Mul(b).Div(
+	pv := rf.Neg().Mul(b).Div(
 		pl.Mul(onePlusRf).Sub(rfMulPa),
 	)
+	return pv.Mul(positionFactor)
 }
 
-// lc = |pa - pb * pB|.
+// lc = |(pa - pb) * pB|.
 func LossOnCommitment(pa, pb, pB num.Decimal) num.Decimal {
-	return pa.Sub(pb).Mul(pB).Abs()
+	res := pa.Sub(pb).Mul(pB).Abs()
+	return res
 }
 
 // Pliq = (b - lc - Pb * pb) / (|Pb| * (fl + mr) - Pb).
 func LiquidationPrice(b, lc, pB, pb, fl, mr num.Decimal) num.Decimal {
-	return b.Sub(lc).Sub(pB.Mul(pb)).Div(
-		pB.Abs().Mul(fl.Add(mr)).Sub(pB),
-	)
+	// (b - lc - Pb * pb)
+	numer := b.Sub(lc).Sub(pB.Mul(pb))
+
+	// (|Pb| * (fl + mr) - Pb)
+	denom := pB.Abs().Mul(fl.Add(mr)).Sub(pB)
+
+	return num.MaxD(num.DecimalZero(), numer.Div(denom))
 }

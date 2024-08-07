@@ -5073,6 +5073,18 @@ message EstimateAMMBoundsRequest {
 }
 
 message EstimateAMMBoundsResponse {
+  enum AMMError {
+    AMM_ERROR_UNSPECIFIED = 0;
+    // Commitment is below the global limit set by the network parameter `market.amm.minCommitmentQuantum`.
+    AMM_ERROR_COMMITMENT_BELOW_MINIMUM = 1;
+    // AMM's lower price is too far from the base price for the given commitment resulting in zero volume between price levels.
+    AMM_ERROR_LOWER_BOUND_TOO_WIDE = 2;
+    // AMM's upper price is too far from the base price for the given commitment resulting in zero volume between price levels.
+    AMM_ERROR_UPPER_BOUND_TOO_WIDE = 3;
+    // AMM bounds are too wide for the given commitment resulting in zero volume between price levels.
+    AMM_ERROR_BOTH_BOUNDS_TOO_WIDE = 4;
+  }
+
   // Theoretical volume at the top of the upper bound.
   string position_size_at_upper = 1;
   // Theoretical volume at the top of the lower bound.
@@ -5085,6 +5097,8 @@ message EstimateAMMBoundsResponse {
   string liquidation_price_at_upper = 5;
   // Estimated price below the lower bound at which the commitment will be lost.
   string liquidation_price_at_lower = 6;
+  // If populated the bounds could be calculated but the AMM is invalid for other reasons.
+  optional AMMError amm_error = 7;
 }
 
 // Request to get the current volume rebate program
