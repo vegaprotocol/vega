@@ -95,7 +95,7 @@ Feature: 0090-VAMM-037: Pegged orders are deployed using vAMM orders as pegs if 
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
-  @VAMMP
+  @VAMM
   Scenario: 0090-VAMM-037: With an existing book consisting solely of vAMM orders on one side, pegged orders referencing best bid/best ask remain deployed on the side with the vAMM orders. Pegged orders referencing the empty side of the book are parked.
     # LPs submit pegged iceberg orders
     When the parties place the following pegged iceberg orders:
@@ -155,3 +155,58 @@ Feature: 0090-VAMM-037: Pegged orders are deployed using vAMM orders as pegs if 
       | sell | 106   | 0      |
       | sell | 160   | 0      |
 
+ @VAMM
+ Scenario: 0090-VAMM-037: Cancelling an AMM with pegged orders hanging off its quotes causes them to be re-pegged
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | ref price | mid price | static mid price | best bid price | best offer price |
+      | 100        | TRADING_MODE_CONTINUOUS | 100       | 70        | 70               | 40             | 101              |
+
+
+    When the parties place the following pegged orders:
+      | party | market id | side | volume | pegged reference | offset |
+      | lp1   | ETH/MAR22 | buy  | 100    | BID              | 5      |
+      | lp1   | ETH/MAR22 | sell | 100    | ASK              | 5      |
+    
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 20     |
+      | buy  | 35    | 100    |
+      | sell | 106   | 100    |
+      | sell | 160   | 10     |
+
+    # cancel the AMM and the pegged order should get repriced
+    When the network moves ahead "1" blocks
+    When the parties cancel the following AMM:
+    | party  | market id | method           |
+    | vamm1 | ETH/MAR22 | METHOD_IMMEDIATE |
+
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | ref price | mid price | static mid price | best bid price | best offer price |
+      | 100        | TRADING_MODE_CONTINUOUS | 100       | 100       | 100              | 40             | 160              |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 20     |
+      | buy  | 35    | 100    |
+      | sell | 160   | 10     |
+      | sell | 165   | 100    |
+
+    # submit a new AMM that will cause a reprice again
+     When the network moves ahead "1" blocks
+     When the parties submit the following AMM:
+      | party | market id | amount | slippage | lower bound | base | upper bound | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 90          | 100  | 150         | 4              | 0.01         |
+
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | ref price | mid price | static mid price | best bid price | best offer price |
+      | 100        | TRADING_MODE_CONTINUOUS | 100       | 100       | 100              | 99             | 101              |
+
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 40    | 20     |
+      | buy  | 94    | 100    |
+      | sell | 106   | 100    |
+      | sell | 160   | 10     |
