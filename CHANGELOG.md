@@ -21,6 +21,7 @@
 - [11372](https://github.com/vegaprotocol/vega/issues/11372) - Support combined filters for the `AMM` API.
 - [11535](https://github.com/vegaprotocol/vega/issues/11535) - Added support for lottery rank distribution strategy.
 - [11536](https://github.com/vegaprotocol/vega/issues/11536) - Make the batch market instructions errors programmatically usable.
+- [11546](https://github.com/vegaprotocol/vega/issues/11546) - Add validation to market proposals metadata.
 
 ### 🐛 Fixes
 
@@ -28,7 +29,7 @@
 - [11526](https://github.com/vegaprotocol/vega/issues/11526) - `EstimateAMMBounds` now respects the market's decimal places.
 - [11486](https://github.com/vegaprotocol/vega/issues/11486) - `AMMs` can now be submitted on markets with more decimal places than asset decimal places.
 - [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
-- [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking. 
+- [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
 
 
 ## 0.77.5
