@@ -950,6 +950,8 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 
 	isCorrectProduct := false
 
+	errs.Merge(checkMetadata(changes, "new_market.changes"))
+
 	if changes.Instrument == nil {
 		return errs.FinalAddForProperty("new_spot_market.changes.instrument", ErrIsRequired)
 	}
@@ -1000,8 +1002,31 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	return checkNewMarketChangesConfiguration(change.NewMarket.Changes).AddPrefix("proposal_submission.terms.change.")
 }
 
+func checkMetadata(
+	m interface{ GetMetadata() []string },
+	pre string,
+) Errors {
+	errs := NewErrors()
+
+	meta := m.GetMetadata()
+
+	if len(meta) > 100 {
+		errs.AddForProperty(fmt.Sprintf("%s.metadata", pre), ErrMustBeAtMost100)
+	}
+
+	for i, v := range meta {
+		if len(v) > 2048 {
+			errs.AddForProperty(fmt.Sprintf("%s.metadata.%d", pre, i), ErrMustBeAtMost2048)
+		}
+	}
+
+	return errs
+}
+
 func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) Errors {
 	errs := NewErrors()
+
+	errs.Merge(checkMetadata(changes, "new_market.changes"))
 
 	if changes.DecimalPlaces >= 150 {
 		errs.AddForProperty("new_market.changes.decimal_places", ErrMustBeLessThan150)
