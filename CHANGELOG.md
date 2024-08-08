@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.77.7
+
+### 🐛 Fixes
+
+- [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
+
+
 ## 0.77.6
 
 ### 🐛 Fixes

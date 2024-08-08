@@ -3346,10 +3346,9 @@ func (m *Market) checkOrderForSpam(side types.Side, orderPrice *num.Uint, orderS
 		price, _ = num.UintFromDecimal(orderPrice.ToDecimal().Mul(m.priceFactor))
 	}
 
-	minQuantum := assetQuantum.Mul(quantumMultiplier)
 	value := num.UintZero().Mul(num.NewUint(orderSize), price).ToDecimal()
 	value = value.Div(m.positionFactor)
-	required := minQuantum.Mul(assetQuantum)
+	required := assetQuantum.Mul(quantumMultiplier)
 	if value.LessThan(required) {
 		return fmt.Errorf(fmt.Sprintf("order value (%s) is less than minimum holding requirement for spam (%s)", value.String(), required.String()))
 	}
