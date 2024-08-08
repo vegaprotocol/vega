@@ -86,11 +86,15 @@ func NewBMIProcessor(
 // BMIError implements blockchain/abci.MaybePartialError.
 type BMIError struct {
 	commands.Errors
-	isPartial bool
+	Partial bool
+}
+
+func (e *BMIError) GetRawErrors() map[string][]error {
+	return e.Errors
 }
 
 func (e *BMIError) IsPartial() bool {
-	return e.isPartial
+	return e.Partial
 }
 
 func (e *BMIError) Error() string {
@@ -326,7 +330,7 @@ func (p *BMIProcessor) ProcessBatch(
 		idx++
 	}
 
-	errs.isPartial = errCnt != len(batch.UpdateMarginMode)+len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)+len(batch.StopOrdersCancellation)+len(batch.StopOrdersSubmission)
+	errs.Partial = errCnt != len(batch.UpdateMarginMode)+len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)+len(batch.StopOrdersCancellation)+len(batch.StopOrdersSubmission)
 
 	return errs.ErrorOrNil()
 }

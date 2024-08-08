@@ -588,14 +588,37 @@ message TransferFeesDiscount {
 }
 
 message TransactionResult {
+  enum Status {
+    // Default value, always invalid
+    STATUS_UNSPECIFIED = 0;
+    // The transaction succeeded.
+    STATUS_SUCCESS = 1;
+    // The transaction partially succeeded.
+    STATUS_PARTIAL_SUCCESS = 2;
+    // The transaction's final state is failure.
+    STATUS_FAILURE = 3;
+  }
+
+  // A mapping of a key to a list of errors.
+  message KeyErrors {
+    // The key.
+    string key = 1;
+    // The errors mapped to this key.
+    repeated string errors = 2;
+  }
+
   // Unique party ID for the related party
   string party_id = 1;
-  // Status of the transaction, did it succeed or an error was raised.
+  // Status of the transaction, if it succeeded or an error was raised.
   bool status = 2;
   // Hash of the transaction
   string hash = 3;
-  // Transaction itself as received by the network
+  // Status of the transaction.
+  // Backward compatible with previous events,
+  // as this field will default to UNSPECIFIED.
+  Status status_detail = 4;
 
+  // Transaction itself as received by the network
   oneof transaction {
     commands.v1.OrderSubmission order_submission = 101;
     commands.v1.OrderAmendment order_amendment = 102;
@@ -644,6 +667,8 @@ message TransactionResult {
   message FailureDetails {
     // Error message explaining the reason for the transaction failing processing
     string error = 1;
+    // Map of the detailed errors, if any.
+    repeated KeyErrors errors = 2;
   }
 }
 
