@@ -5358,7 +5358,8 @@ func (m *Market) getRebasingOrder(
 ) (*types.Order, error) {
 	var volume uint64
 	fairPrice := pool.BestPrice(nil)
-	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(m.priceFactor))
+	oneTick, _ := num.UintFromDecimal(m.priceFactor)
+	oneTick = num.Max(num.UintOne(), oneTick)
 
 	var until *num.Uint
 	switch side {

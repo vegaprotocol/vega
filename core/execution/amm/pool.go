@@ -150,7 +150,7 @@ func NewPool(
 		position:             position,
 		priceFactor:          priceFactor,
 		positionFactor:       positionFactor,
-		oneTick:              oneTick,
+		oneTick:              num.Max(num.UintOne(), oneTick),
 		status:               types.AMMPoolStatusActive,
 		maxCalculationLevels: maxCalculationLevels,
 		fpCache:              map[int64]*num.Uint{},
@@ -249,7 +249,7 @@ func NewPoolFromProto(
 		upper:          upperCu,
 		priceFactor:    priceFactor,
 		positionFactor: positionFactor,
-		oneTick:        oneTick,
+		oneTick:        num.Max(num.UintOne(), oneTick),
 		status:         state.Status,
 	}, nil
 }
