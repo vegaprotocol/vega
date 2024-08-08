@@ -20,6 +20,7 @@
 - [11528](https://github.com/vegaprotocol/vega/issues/11528) - Added support for eligible entities reward. 
 - [11372](https://github.com/vegaprotocol/vega/issues/11372) - Support combined filters for the `AMM` API.
 - [11535](https://github.com/vegaprotocol/vega/issues/11535) - Added support for lottery rank distribution strategy.
+- [11545](https://github.com/vegaprotocol/vega/issues/11545) - Support filtering for multiple party IDs in fees and rewards endpoints.
 
 ### 🐛 Fixes
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.

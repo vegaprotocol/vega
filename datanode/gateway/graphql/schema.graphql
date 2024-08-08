@@ -827,8 +827,8 @@ type Query {
     assetId: ID
     "Optional epoch to filter for. If omitted, the most recent epoch's data is returned."
     epoch: Int
-    "Optional party ID to filter for"
-    partyId: ID
+    "Optional party IDs to filter for"
+    partyIds: [ID!]
     "Optional epoch to filter from (included). If omitted, the last epoch will be used."
     epochFrom: Int
     "Optional epoch to filter to (included). If omitted, the last epoch will be used."

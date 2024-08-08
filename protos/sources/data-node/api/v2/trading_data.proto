@@ -2724,8 +2724,8 @@ message MarginConnection {
 
 // Request to get reward details for a party
 message ListRewardsRequest {
-  // Restrict rewards data to those that were received by the given party.
-  string party_id = 1;
+  // Restrict rewards data to those that were received by the given parties.
+  repeated string party_ids = 1;
   // Restrict rewards data to those that were paid with the given asset ID.
   optional string asset_id = 2;
   // Pagination control.
@@ -4621,8 +4621,8 @@ message GetFeesStatsRequest {
   optional string asset_id = 2;
   // Epoch to get referral fee statistics for. If not set, the last complete epoch is used.
   optional uint64 epoch_seq = 3;
-  // Restrict fee statistics to those for the given party.
-  optional string party_id = 4;
+  // Restrict fee statistics to those for the given parties.
+  repeated string party_ids = 4;
   // Restrict fee statistics to epoch range starting with epoch from.
   optional uint64 epoch_from = 5;
   // Restrict fee statistics to epoch range ending with epoch to.

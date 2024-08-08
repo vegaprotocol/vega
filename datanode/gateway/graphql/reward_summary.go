@@ -31,7 +31,7 @@ func (r *rewardSummaryResolver) Asset(ctx context.Context, obj *vega.RewardSumma
 
 func (r *rewardSummaryResolver) RewardsConnection(ctx context.Context, summary *vega.RewardSummary, assetID *string, pagination *v2.Pagination, includeDerivedParties *bool) (*v2.RewardsConnection, error) {
 	req := v2.ListRewardsRequest{
-		PartyId:               summary.PartyId,
+		PartyIds:              []string{summary.PartyId},
 		AssetId:               assetID,
 		Pagination:            pagination,
 		IncludeDerivedParties: includeDerivedParties,

@@ -2123,7 +2123,7 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 }
 
 func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
-	partyID *string, epochFrom, epochTo *int,
+	partyIDs []string, epochFrom, epochTo *int,
 ) (*v1.FeesStats, error) {
 	var epochSeq, from, to *uint64
 
@@ -2141,7 +2141,7 @@ func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, asset
 		MarketId:  marketID,
 		AssetId:   assetID,
 		EpochSeq:  epochSeq,
-		PartyId:   partyID,
+		PartyIds:  partyIDs,
 		EpochFrom: from,
 		EpochTo:   to,
 	}
@@ -2359,7 +2359,7 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 	}
 
 	req := v2.ListRewardsRequest{
-		PartyId:               party.Id,
+		PartyIds:              []string{party.Id},
 		AssetId:               assetID,
 		Pagination:            pagination,
 		FromEpoch:             from,

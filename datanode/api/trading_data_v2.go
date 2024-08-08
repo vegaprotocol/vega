@@ -1904,7 +1904,7 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	partyIDs := []string{req.PartyId}
+	partyIDs := req.PartyIds
 	var marketIDs []string
 	if req.MarketId != nil {
 		marketIDs = []string{*req.MarketId}
@@ -5413,7 +5413,7 @@ func (t *TradingDataServiceV2) GetFeesStats(ctx context.Context, req *v2.GetFees
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
 	}
 
-	stats, err := t.feesStatsService.GetFeesStats(ctx, marketID, assetID, req.EpochSeq, req.PartyId, req.EpochFrom, req.EpochTo)
+	stats, err := t.feesStatsService.GetFeesStats(ctx, marketID, assetID, req.EpochSeq, req.PartyIds, req.EpochFrom, req.EpochTo)
 	if err != nil {
 		return nil, formatE(ErrGetFeesStats, err)
 	}
