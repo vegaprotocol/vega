@@ -1,4 +1,3 @@
-integration/features/verified/0029-FEES-fees.feature
 Feature: Fees calculations
 
   Background:
@@ -7,7 +6,7 @@ Feature: Fees calculations
       | 0.004     | 0.003              |
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
-      | 1       | 0.99        | 3                 |
+      | 60      | 0.99        | 2                 |
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
@@ -34,8 +33,8 @@ Feature: Fees calculations
       | trader2 | USD   | 10000  |
       | trader3 | USD   | 490    |
       | trader4 | USD   | 250    |
-      | trader5 | USD   | 490    |
-      | trader6 | USD   | 240    |
+      | trader5 | USD   | 5000   |
+      | trader6 | USD   | 5000   |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
@@ -47,8 +46,8 @@ Feature: Fees calculations
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux3  | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux4  | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC21 | buy  | 1      | 820   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux4  | ETH/DEC21 | sell | 1      | 1180  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -60,12 +59,12 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | aux1  | USD   | ETH/DEC21 | 540    | 89460   |
-    #no fees are paid during opening auction
+    #0029-FEES-036:no fees are collected during opening auction
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | buy  | 920   | 1      |
-      | sell | 1080  | 1      |
+      | buy  | 820   | 1      |
+      | sell | 1180  | 1      |
 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -98,19 +97,24 @@ Feature: Fees calculations
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.004 * 2004 = 8.016 = 9 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
     # buy_back_fee = buy_back_factor * trade_value_for_fee_purposes = 0.001 * 2004 = 2.004 = 3
-    # treasury_fee = treasury_fee_factor * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5
+    # treasury_fee = treasury_fee_factor * trade
+    #_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5
 
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
+      #0029-FEES-046:Once total fee is collected, `maker_fee = fee_factor[maker]  * trade_value_for_fee_purposes` is transferred to maker at the end of fee distribution time.
       | trader2 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 9      | USD   |
+      #0029-FEES-045:Once total fee is collected, `infrastructure_fee = fee_factor[infrastucture]  * trade_value_for_fee_purposes` is transferred to infrastructure fee pool for that asset at the end of fee distribution time.
       | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | USD   |
+      #0029-FEES-048:Once total fee is collected, `liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes` (with appropriate fraction of `high_volume_maker_fee` deducted) is transferred to the treasury fee pool for that asset
+      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 5      | USD   |
+      #0029-FEES-049:Once total fee is collected, `treasury_fee = fee_factor[treasury] * trade_value_for_fee_purposes` (with appropriate fraction of `high_volume_maker_fee` deducted) is transferred to the treasury fee pool for that asset
       | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_NETWORK_TREASURY    |           | 5      | USD   |
+      #0029-FEES-050:Once total fee is collected, `buyback_fee = fee_factor[buyback] * trade_value_for_fee_purposes` (with with appropriate fraction of `high_volume_maker_fee` deducted) is transferred to the buyback fee pool for that asset
       | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_BUY_BACK_FEES       |           | 3      | USD   |
-      | trader2 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | USD   |
       | market  | trader1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 9      | USD   |
 
     # total_fee = maker_fee + infrastructure_fee + liquidity_fee + buy back + treasury =  9 + 7 + 5 + 8 = 29
-    #0029-FEES-037: During normal auction (including market protection and opening auctions), each side in a matched trade should contribute `0.5*(infrastructure_fee + liquidity_fee + treasury_fee + buyback_fee)
     #0029-FEES-038: In a matched trade, if the price taker has enough asset to cover the total fee in their general account, then the total fee should be taken from their general account.
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
@@ -128,4 +132,43 @@ Feature: Fees calculations
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/DEC21 | 480    | 19      |
       | trader4 | USD   | ETH/DEC21 | 221    | 0       |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound |
+      | 1000       | TRADING_MODE_CONTINUOUS | 60      | 900       | 1100      |
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader5 | ETH/DEC21 | buy  | 2      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-01  |
+      | trader6 | ETH/DEC21 | sell | 2      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-01  |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 60      | 900       | 1100      |
+
+    When the network moves ahead "4" blocks
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound |
+      | 1101       | TRADING_MODE_CONTINUOUS | 60      | 1002      | 1200      |
+
+    # trade_value_for_fee_purposes for trader1 = size_of_trade * price_of_trade = 2 * 1101 = 2202
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.003 * 2202 = 6.606 = 7 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.004 * 2202 = 8.808 = 9 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.002 * 2202 = 4.404 = 5 (rounded up to nearest whole value)
+    # buy_back_fee = buy_back_factor * trade_value_for_fee_purposes = 0.001 * 2202 = 2.202 = 3
+    # treasury_fee = treasury_fee_factor * trade
+    #_value_for_fee_purposes = 0.002 * 2202 = 4.404 = 5
+
+    And the following transfers should happen:
+      | from    | to | from account         | to account                       | market id | amount | asset |
+      #0029-FEES-037:During normal auction (including market protection), each side in a matched trade should contribute `0.5*(infrastructure_fee + liquidity_fee + treasury_fee + buyback_fee)`
+      | trader5 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 4      | USD   |
+      | trader6 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 4      | USD   |
+      | trader5 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 3      | USD   |
+      | trader6 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 3      | USD   |
+      | trader5 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_NETWORK_TREASURY    | ETH/DEC21 | 3      | USD   |
+      | trader6 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_NETWORK_TREASURY    | ETH/DEC21 | 3      | USD   |
+      | trader5 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_BUY_BACK_FEES       |           | 2      | USD   |
+      | trader6 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_BUY_BACK_FEES       |           | 2      | USD   |
 
