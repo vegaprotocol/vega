@@ -26,16 +26,18 @@ import (
 )
 
 func TestLotteryRewardScoreSorting(t *testing.T) {
-	adjustedRewardScores := []*types.PartyContributionScore{
-		{Party: "p1", Score: num.DecimalOne()},
-		{Party: "p2", Score: num.DecimalTwo()},
-		{Party: "p3", Score: num.DecimalFromFloat(0.01)},
-	}
-	const layout = "Jan 2, 2006 at 3:04pm"
+	for i := 0; i < 100; i++ {
+		adjustedRewardScores := []*types.PartyContributionScore{
+			{Party: "p1", Score: num.DecimalOne()},
+			{Party: "p2", Score: num.DecimalTwo()},
+			{Party: "p3", Score: num.DecimalFromFloat(0.01)},
+		}
+		const layout = "Jan 2, 2006 at 3:04pm"
 
-	timestamp, _ := time.Parse(layout, "Aug 7, 2024 at 12:00pm")
-	lottery := lotteryRewardScoreSorting(adjustedRewardScores, timestamp)
-	require.Equal(t, "p2", lottery[0].Party)
-	require.Equal(t, "p1", lottery[1].Party)
-	require.Equal(t, "p3", lottery[2].Party)
+		timestamp, _ := time.Parse(layout, "Aug 7, 2024 at 12:00pm")
+		lottery := lotteryRewardScoreSorting(adjustedRewardScores, timestamp)
+		require.Equal(t, "p2", lottery[0].Party)
+		require.Equal(t, "p1", lottery[1].Party)
+		require.Equal(t, "p3", lottery[2].Party)
+	}
 }

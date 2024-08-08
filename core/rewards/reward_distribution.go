@@ -128,6 +128,11 @@ func selectIndex(rng *rand.Rand, probabilities []num.Decimal) int {
 	return len(probabilities) - 1
 }
 
+type PartyProbability struct {
+	Probability num.Decimal
+	Party       string
+}
+
 func lotteryRewardScoreSorting(adjustedPartyScores []*types.PartyContributionScore, timestamp time.Time) []*types.PartyContributionScore {
 	source := rand.NewSource(uint64(timestamp.UnixNano()))
 	rng := rand.New(source)
@@ -148,12 +153,28 @@ func lotteryRewardScoreSorting(adjustedPartyScores []*types.PartyContributionSco
 		if len(unselectedParties) < 1 {
 			break
 		}
-		probabilities := make([]num.Decimal, 0, len(unselectedParties))
-		parties := make([]string, 0, len(unselectedParties))
+		pp := make([]PartyProbability, 0, len(unselectedParties))
 		for _, ps := range unselectedParties {
-			probabilities = append(probabilities, ps.Score.Div(totalScores))
-			parties = append(parties, ps.Party)
+			pp = append(pp, PartyProbability{
+				Probability: ps.Score.Div(totalScores),
+				Party:       ps.Party,
+			})
 		}
+		sort.Slice(pp, func(i, j int) bool {
+			if pp[i].Probability.Equal(pp[j].Probability) {
+				return pp[i].Party < pp[j].Party
+			}
+			return pp[i].Probability.LessThan(pp[j].Probability)
+		})
+
+		probabilities := make([]num.Decimal, len(pp))
+		parties := make([]string, len(pp))
+
+		for i, partyProb := range pp {
+			probabilities[i] = partyProb.Probability
+			parties[i] = partyProb.Party
+		}
+
 		selected := selectIndex(rng, probabilities)
 		selectedParty := unselectedParties[parties[selected]]
 		delete(unselectedParties, selectedParty.Party)

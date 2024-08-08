@@ -25,6 +25,7 @@
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
 - [11526](https://github.com/vegaprotocol/vega/issues/11526) - `EstimateAMMBounds` now respects the market's decimal places.
 - [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
+- [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking. 
 
 ## 0.77.5
 
