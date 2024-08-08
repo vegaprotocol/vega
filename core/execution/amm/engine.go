@@ -174,7 +174,7 @@ func New(
 		priceFactor:           priceFactor,
 		positionFactor:        positionFactor,
 		parties:               parties,
-		oneTick:               oneTick,
+		oneTick:               num.Max(num.UintOne(), oneTick),
 	}
 }
 
