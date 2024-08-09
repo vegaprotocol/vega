@@ -55,13 +55,17 @@ func EstimateBounds(
 		lowerPriceD := lowerPrice.ToDecimal()
 		boundPosLower := PositionAtLowerBound(riskFactorLower, balanceD, lowerPriceD, avgEntryLower, positionFactor)
 
-		lossLower := LossOnCommitment(avgEntryLower, lowerPriceD, boundPosLower)
+		// if the commitment is *so low* that the position at the bound is 0 then we will panic trying to calculate the rest
+		// and the "too wide" check below will flag it up as an invalid AMM defn
+		if !boundPosLower.IsZero() {
+			lossLower := LossOnCommitment(avgEntryLower, lowerPriceD, boundPosLower)
 
-		liquidationPriceAtLower := LiquidationPrice(balanceD, lossLower, boundPosLower, lowerPriceD, linearSlippageFactor, riskFactorLong)
+			liquidationPriceAtLower := LiquidationPrice(balanceD, lossLower, boundPosLower, lowerPriceD, linearSlippageFactor, riskFactorLong)
 
-		r.PositionSizeAtLower = boundPosLower
-		r.LiquidationPriceAtLower = liquidationPriceAtLower
-		r.LossOnCommitmentAtLower = lossLower
+			r.PositionSizeAtLower = boundPosLower.Mul(positionFactor)
+			r.LiquidationPriceAtLower = liquidationPriceAtLower
+			r.LossOnCommitmentAtLower = lossLower
+		}
 
 		// now lets check that the lower bound is not too wide that the volume is spread too thin
 		l := unitLower.Mul(boundPosLower).Abs()
@@ -78,13 +82,19 @@ func EstimateBounds(
 		avgEntryUpper := AverageEntryPrice(sqrter, unitUpper, upperPrice)
 		riskFactorUpper := RiskFactor(leverageUpper, riskFactorShort, linearSlippageFactor, initialMargin)
 		upperPriceD := upperPrice.ToDecimal()
-		boundPosUpper := PositionAtUpperBound(riskFactorUpper, balanceD, upperPriceD, avgEntryUpper, positionFactor)
-		lossUpper := LossOnCommitment(avgEntryUpper, upperPriceD, boundPosUpper)
-		liquidationPriceAtUpper := LiquidationPrice(balanceD, lossUpper, boundPosUpper, upperPriceD, linearSlippageFactor, riskFactorShort)
 
-		r.PositionSizeAtUpper = boundPosUpper
-		r.LiquidationPriceAtUpper = liquidationPriceAtUpper
-		r.LossOnCommitmentAtUpper = lossUpper
+		boundPosUpper := PositionAtUpperBound(riskFactorUpper, balanceD, upperPriceD, avgEntryUpper, positionFactor)
+
+		// if the commitment is *so low* that the position at the bound is 0 then we will panic trying to calculate the rest
+		// and the "too wide" check below will flag it up as an invalid AMM defn
+		if !boundPosUpper.IsZero() {
+			lossUpper := LossOnCommitment(avgEntryUpper, upperPriceD, boundPosUpper)
+
+			liquidationPriceAtUpper := LiquidationPrice(balanceD, lossUpper, boundPosUpper, upperPriceD, linearSlippageFactor, riskFactorShort)
+			r.PositionSizeAtUpper = boundPosUpper.Mul(positionFactor)
+			r.LiquidationPriceAtUpper = liquidationPriceAtUpper
+			r.LossOnCommitmentAtUpper = lossUpper
+		}
 
 		// now lets check that the lower bound is not too wide that the volume is spread too thin
 		l := unitUpper.Mul(boundPosUpper).Abs()
@@ -128,7 +138,7 @@ func PositionAtLowerBound(rf, b, pl, pa, positionFactor num.Decimal) num.Decimal
 	pv := rf.Mul(b).Div(
 		pl.Mul(oneSubRf).Add(rfMulPa),
 	)
-	return pv.Mul(positionFactor)
+	return pv
 }
 
 // Pvl = -rf * b / (pl * (1 + rf) - rf * pa).
@@ -139,7 +149,7 @@ func PositionAtUpperBound(rf, b, pl, pa, positionFactor num.Decimal) num.Decimal
 	pv := rf.Neg().Mul(b).Div(
 		pl.Mul(onePlusRf).Sub(rfMulPa),
 	)
-	return pv.Mul(positionFactor)
+	return pv
 }
 
 // lc = |(pa - pb) * pB|.
