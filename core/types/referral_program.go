@@ -44,6 +44,10 @@ var EmptyFactors = Factors{
 	Maker:     num.DecimalZero(),
 }
 
+func (f Factors) IsEmpty() bool {
+	return f.Equal(EmptyFactors)
+}
+
 func (f Factors) String() string {
 	return fmt.Sprintf("infra(%s),liquidity(%s),maker(%s)", f.Infra.String(), f.Liquidity.String(), f.Maker.String())
 }
