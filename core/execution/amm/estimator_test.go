@@ -211,4 +211,26 @@ func TestEstimatePositionFactor(t *testing.T) {
 	assert.Equal(t, expectedMetrics.PositionSizeAtLower.String(), metrics.PositionSizeAtLower.Round(3).String())
 	assert.False(t, metrics.TooWideLower)
 	assert.False(t, metrics.TooWideUpper)
+
+	// if commitment is super low then we could panic, so test that we don't
+	metrics = EstimateBounds(
+		sqrter,
+		lowerPrice,
+		basePrice,
+		upperPrice,
+		leverageLower,
+		leverageUpper,
+		num.UintOne(),
+		linearSlippageFactor,
+		initialMargin,
+		riskFactorShort,
+		riskFactorLong,
+		num.DecimalFromInt64(1000000000000000000),
+		num.DecimalOne(),
+	)
+
+	assert.Equal(t, "0", metrics.PositionSizeAtUpper.Round(3).String())
+	assert.Equal(t, "0", metrics.PositionSizeAtLower.Round(3).String())
+	assert.True(t, metrics.TooWideLower)
+	assert.True(t, metrics.TooWideUpper)
 }
