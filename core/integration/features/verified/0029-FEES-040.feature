@@ -30,10 +30,10 @@ Feature: Fees calculations
       | aux2    | USD   | 100000 |
       | aux3    | USD   | 100000 |
       | aux4    | USD   | 100000 |
-      | trader1 | USD   | 480    |
-      | trader2 | USD   | 240    |
-      | trader3 | USD   | 490    |
-      | trader4 | USD   | 250    |
+      | trader1 | USD   | 9000   |
+      | trader2 | USD   | 300    |
+      | trader3 | USD   | 2000   |
+      | trader4 | USD   | 2000   |
       | trader5 | USD   | 5000   |
       | trader6 | USD   | 5000   |
 
@@ -60,24 +60,73 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | aux1  | USD   | ETH/DEC21 | 540    | 89460   |
-    #0029-FEES-036:no fees are collected during opening auction
 
-    And the order book should have the following volumes for market "ETH/DEC21":
-      | side | price | volume |
-      | buy  | 820   | 1      |
-      | sell | 1180  | 1      |
+    #0029-FEES-040:In continuous trading mode, if the price taker has insufficient asset to cover the total fee in their general + margin account, then the trade should be discarded, the orders on the book that would have been hit should remain in place with previous remaining size intact and the incoming order should be rejected (not enough fees error).
 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                      |
       | trader1 | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-01  |                                            |
-      | trader2 | ETH/DEC21 | sell | 2      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | t2-s4-01  | party has insufficient funds to cover fees |
+      | trader2 | ETH/DEC21 | sell | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-01  | party has insufficient funds to cover fees |
 
-# Then the market data for the market "ETH/DEC21" should be:
-#   | mark price | trading mode            |
-#   | 1000       | TRADING_MODE_CONTINUOUS |
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 1002  | 2      |
+      | sell | 1002  | 0      |
 
-# Then the parties should have the following account balances:
-#   | party   | asset | market id | margin | general |
-#   | trader1 | USD   | ETH/DEC21 | 480    | 11504   |
-#   | trader2 | USD   | ETH/DEC21 | 240    | 5779    |
+    Then the parties cancel the following orders:
+      | party   | reference |
+      | trader1 | t1-b2-01  |
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader3 | ETH/DEC21 | buy  | 2      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-03  |
+      | trader4 | ETH/DEC21 | sell | 2      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-04  |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 60      | 900       | 1100      |
+
+    Then the parties cancel the following orders:
+      | party   | reference |
+      | trader3 | t1-b2-03  |
+      | trader4 | t2-s4-04  |
+
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 1002  | 0      |
+      | buy  | 1101  | 0      |
+      | sell | 1002  | 0      |
+      | buy  | 1101  | 0      |
+
+    #0029-FEES-041:In auction mode, if the price taker has insufficient asset to cover the total fee in their general + margin account, then the shortfall should be ignored, the orders should remain (instead of being rejected)
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-05  |
+      | trader2 | ETH/DEC21 | sell | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-06  |
+
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 1002  | 2      |
+      | buy  | 1101  | 0      |
+      | sell | 1002  | 2      |
+      | buy  | 1101  | 0      |
+
+    When the network moves ahead "4" blocks
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            |
+      | 1002       | TRADING_MODE_CONTINUOUS |
+
+    And the orders should have the following status:
+      | party   | reference | status        |
+      | trader2 | t2-s4-06  | STATUS_FILLED |
+
+    #trader2 is closed out, after paying infra fee, trader2 does not have enough left to cover margin
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader1 | USD   | ETH/DEC21 | 1082   | 7308    |
+      | trader2 | USD   | ETH/DEC21 | 0      | 0       |
+
+
+
 
