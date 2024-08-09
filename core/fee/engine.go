@@ -694,7 +694,7 @@ func (e *Engine) applyDiscountsAndRewards(taker string, maker string, tradeValue
 
 	// calculate rewards
 	factors := referral.RewardsFactorsMultiplierAppliedForParty(types.PartyID(taker))
-	if factors == types.EmptyFactors {
+	if factors.IsEmpty() {
 		return f, nil
 	}
 
