@@ -68,6 +68,10 @@ Feature: Fees calculations
       | trader1 | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-01  |                                            |
       | trader2 | ETH/DEC21 | sell | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-01  | party has insufficient funds to cover fees |
 
+    And the orders should have the following status:
+      | party   | reference | status          |
+      | trader2 | t2-s4-01  | STATUS_REJECTED |
+
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 1002  | 2      |
