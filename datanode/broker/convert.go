@@ -208,6 +208,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.VolumeRebateProgramUpdatedEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED:
 		return events.VolumeRebateStatsUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_COMMUNITY_TAG:
+		return events.MarketCommunityTagsEventFromStream(ctx, be)
 	}
 
 	return nil

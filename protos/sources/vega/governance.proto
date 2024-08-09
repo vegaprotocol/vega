@@ -345,6 +345,22 @@ message UpdateAsset {
 // proposal once parsed.
 message NewFreeform {}
 
+message MarketCommunityTags {
+  // The market ID.
+  string market_id = 1;
+  // A list of tags to associate to the market.
+  repeated string add_tags = 2;
+  // A list of tags to remove.
+  repeated string remove_tags = 3;
+}
+
+// Update community tags proposal
+// This message will provide a list of tags to add or remove
+// to a list of tags associated to a market.
+message UpdateMarketCommunityTags {
+  MarketCommunityTags changes = 1;
+}
+
 // Terms for a governance proposal on Vega
 message ProposalTerms {
   // Timestamp as Unix time in seconds when voting closes for this proposal,
@@ -386,6 +402,8 @@ message ProposalTerms {
     UpdateVolumeDiscountProgram update_volume_discount_program = 113;
     // Proposal change for updating the volume rebate program.
     UpdateVolumeRebateProgram update_volume_rebate_program = 114;
+    // Proposal change for updating community tag for a market.
+    UpdateMarketCommunityTags update_market_community_tags = 115;
   }
 }
 
@@ -428,6 +446,8 @@ message BatchProposalTermsChange {
     NewAsset new_asset = 113;
     // Proposal change for updating the volume rebate program.
     UpdateVolumeRebateProgram update_volume_rebate_program = 114;
+    // Proposal change for updating community tag for a market.
+    UpdateMarketCommunityTags update_market_community_tags = 115;
   }
 }
 
@@ -689,6 +709,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES = 60;
   // Volume rebate program proposal is invalid
   PROPOSAL_ERROR_INVALID_VOLUME_REBATE_PROGRAM = 61;
+  // The market ID used in the proposal is unknown to vega
+  PROPOSAL_ERROR_UNKNOWN_MARKET_ID = 62;
 }
 
 // Governance vote

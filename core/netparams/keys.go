@@ -114,6 +114,16 @@ const (
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
 
+	// updateCommunityTags proposal parameters.
+	GovernanceProposalUpdateCommunityTagsMinClose              = "governance.proposal.updateCommunityTags.minClose"
+	GovernanceProposalUpdateCommunityTagsMaxClose              = "governance.proposal.updateCommunityTags.maxClose"
+	GovernanceProposalUpdateCommunityTagsMinEnact              = "governance.proposal.updateCommunityTags.minEnact"
+	GovernanceProposalUpdateCommunityTagsMaxEnact              = "governance.proposal.updateCommunityTags.maxEnact"
+	GovernanceProposalUpdateCommunityTagsRequiredParticipation = "governance.proposal.updateCommunityTags.requiredParticipation"
+	GovernanceProposalUpdateCommunityTagsRequiredMajority      = "governance.proposal.updateCommunityTags.requiredMajority"
+	GovernanceProposalUpdateCommunityTagsMinProposerBalance    = "governance.proposal.updateCommunityTags.minProposerBalance"
+	GovernanceProposalUpdateCommunityTagsMinVoterBalance       = "governance.proposal.updateCommunityTags.minVoterBalance"
+
 	// freeform proposal parameters.
 	GovernanceProposalFreeformMinClose              = "governance.proposal.freeform.minClose"
 	GovernanceProposalFreeformMaxClose              = "governance.proposal.freeform.maxClose"
@@ -353,6 +363,14 @@ var AllKeys = map[string]struct{}{
 	MarketPriceMonitoringDefaultParameters:                       {},
 	MarketMinLpStakeQuantumMultiple:                              {},
 	RewardAsset:                                                  {},
+	GovernanceProposalUpdateCommunityTagsMinClose:                {},
+	GovernanceProposalUpdateCommunityTagsMaxClose:                {},
+	GovernanceProposalUpdateCommunityTagsMinEnact:                {},
+	GovernanceProposalUpdateCommunityTagsMaxEnact:                {},
+	GovernanceProposalUpdateCommunityTagsRequiredParticipation:   {},
+	GovernanceProposalUpdateCommunityTagsRequiredMajority:        {},
+	GovernanceProposalUpdateCommunityTagsMinProposerBalance:      {},
+	GovernanceProposalUpdateCommunityTagsMinVoterBalance:         {},
 	GovernanceProposalMarketMinClose:                             {},
 	GovernanceProposalMarketMaxClose:                             {},
 	GovernanceProposalMarketMinEnact:                             {},
