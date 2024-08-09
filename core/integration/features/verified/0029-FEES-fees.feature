@@ -17,6 +17,7 @@ Feature: Fees calculations
       | limits.markets.maxPeggedOrders          | 2     |
       | market.fee.factors.buybackFee           | 0.001 |
       | market.fee.factors.treasuryFee          | 0.002 |
+
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/DEC21 | ETH/USD    | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures |
