@@ -4942,7 +4942,7 @@ type DispatchStrategy struct {
 	LockPeriod uint64 `protobuf:"varint,11,opt,name=lock_period,json=lockPeriod,proto3" json:"lock_period,omitempty"`
 	// Controls how the reward is distributed between qualifying parties
 	DistributionStrategy DistributionStrategy `protobuf:"varint,12,opt,name=distribution_strategy,json=distributionStrategy,proto3,enum=vega.DistributionStrategy" json:"distribution_strategy,omitempty"`
-	// Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank distribution strategy.
+	// Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank and rank lottery distribution strategies.
 	RankTable []*Rank `protobuf:"bytes,13,rep,name=rank_table,json=rankTable,proto3" json:"rank_table,omitempty"`
 	// If set, the actual amount of rewards transferred to each public key during distribution for this transfer will be `min(calculated_reward_in_quantum, cap_reward_fee_multiple × fees_paid_this_epoch_in_quantum).
 	CapRewardFeeMultiple *string `protobuf:"bytes,14,opt,name=cap_reward_fee_multiple,json=capRewardFeeMultiple,proto3,oneof" json:"cap_reward_fee_multiple,omitempty"`
