@@ -197,7 +197,7 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 		}
 
 		for _, candle := range candles {
-			if candle.PeriodStart.After(lastCandle.PeriodStart) {
+			if candle.LastUpdateInPeriod.After(lastCandle.LastUpdateInPeriod) || candle.PeriodStart.After(lastCandle.PeriodStart) {
 				updates = append(updates, candle)
 			}
 		}
