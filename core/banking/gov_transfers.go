@@ -53,6 +53,7 @@ var (
 		types.AccountTypeReturnVolatilityReward: {},
 		types.AccountTypeValidatorRankingReward: {},
 		types.AccountTypeRealisedReturnReward:   {},
+		types.AccountTypeEligibleEntitiesReward: {},
 	}
 )
 
