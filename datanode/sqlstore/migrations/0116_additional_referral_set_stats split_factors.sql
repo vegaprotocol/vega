@@ -1,15 +1,24 @@
 -- +goose Up
-alter table referral_set_stats ALTER COLUMN reward_factor DROP NOT NULL;
-alter table referral_set_stats ALTER COLUMN rewards_factor_multiplier DROP NOT NULL;
+DROP TABLE IF EXISTS referral_set_stats;
 
-alter table referral_set_stats
-    add column reward_factors jsonb;
+-- create the new version of referral_set_stats
+CREATE TABLE IF NOT EXISTS referral_set_stats
+(
+    set_id bytea NOT NULL,
+    at_epoch bigint NOT NULL,
+    referral_set_running_notional_taker_volume text NOT NULL,
+    referees_stats jsonb NOT NULL,
+    vega_time timestamp with time zone NOT NULL,
+    rewards_multiplier text NOT NULL DEFAULT '0',
+    was_eligible boolean NOT NULL DEFAULT true,
+    referrer_taker_volume text NOT NULL DEFAULT '0',
+    reward_factors jsonb NOT NULL,
+    rewards_factors_multiplier jsonb NOT NULL,
+    CONSTRAINT referral_set_stats_pkey PRIMARY KEY (vega_time, set_id)
+);
 
-alter table referral_set_stats
-    add column rewards_factors_multiplier jsonb;
+SELECT create_hypertable('referral_set_stats', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
-update referral_set_stats set reward_factors = json_build_object('rewardInfraFactor', reward_factor, 'rewardMakerFactor', reward_factor, 'rewardLiquidityFactor', reward_factor);
-update referral_set_stats set rewards_factors_multiplier = json_build_object('rewardInfraFactor', rewards_factor_multiplier, 'rewardMakerFactor', rewards_factor_multiplier, 'rewardLiquidityFactor', rewards_factor_multiplier);
 
 UPDATE volume_discount_stats
 SET parties_volume_discount_stats = (
@@ -27,12 +36,6 @@ SET parties_volume_discount_stats = (
   FROM jsonb_array_elements(parties_volume_discount_stats) AS party_stats
 );
 
-
-alter table referral_set_stats DROP COLUMN reward_factor;
-alter table referral_set_stats DROP COLUMN rewards_factor_multiplier;
-
-alter table referral_set_stats ALTER COLUMN reward_factors SET NOT NULL;
-alter table referral_set_stats ALTER COLUMN rewards_factors_multiplier SET NOT NULL;
 
 alter table trades ADD COLUMN buyer_buy_back_fee HUGEINT NOT NULL DEFAULT(0),
                    ADD COLUMN buyer_treasury_fee HUGEINT NOT NULL DEFAULT(0),
@@ -87,17 +90,26 @@ drop table if exists volume_rebate_stats;
 drop view if exists current_volume_rebate_program;
 drop table if exists volume_rebate_programs;
 
-alter table referral_set_stats
-    add column reward_factor text not null default '0';
+-- drop the new schema, restore the old one.
+DROP TABLE IF EXISTS referral_set_stats;
 
-alter table referral_set_stats
-    add column rewards_factor_multiplier text not null default '0';
+-- create the new version of referral_set_stats
+CREATE TABLE IF NOT EXISTS referral_set_stats
+(
+    set_id bytea NOT NULL,
+    at_epoch bigint NOT NULL,
+    referral_set_running_notional_taker_volume text NOT NULL,
+    referees_stats jsonb NOT NULL,
+    vega_time timestamp with time zone NOT NULL,
+    rewards_multiplier text NOT NULL DEFAULT '0',
+    was_eligible boolean NOT NULL DEFAULT true,
+    referrer_taker_volume text NOT NULL DEFAULT '0',
+    reward_factor text NOT NULL DEFAULT '0',
+    rewards_factor_multiplier text NOT NULL DEFAULT '0',
+    CONSTRAINT referral_set_stats_pkey PRIMARY KEY (vega_time, set_id)
+);
 
-update referral_set_stats set reward_factor = 'reward_factor->rewardInfraFactor';
-update referral_set_stats set rewards_factor_multiplier = 'rewards_factors_multiplier->rewardInfraFactor';
-
-alter table referral_set_stats DROP COLUMN reward_factors;
-alter table referral_set_stats DROP COLUMN rewards_factors_multiplier;
+SELECT create_hypertable('referral_set_stats', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 alter table trades DROP COLUMN buyer_buy_back_fee,
                    DROP COLUMN buyer_treasury_fee,
