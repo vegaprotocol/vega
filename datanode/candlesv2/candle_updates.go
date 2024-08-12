@@ -74,6 +74,7 @@ func (s *CandleUpdates) run(ctx context.Context) {
 	defer closeAllSubscriptions(subscriptions)
 
 	ticker := time.NewTicker(s.config.CandleUpdatesStreamInterval.Duration)
+	defer ticker.Stop()
 	var lastCandle *entities.Candle
 
 	errorGettingCandleUpdates := false
@@ -83,37 +84,28 @@ func (s *CandleUpdates) run(ctx context.Context) {
 			return
 		case subscriptionMsg := <-s.subscriptionMsgChan:
 			s.handleSubscription(subscriptions, subscriptionMsg, lastCandle)
-		default:
-			select {
-			case <-ctx.Done():
-				return
-			case subscription := <-s.subscriptionMsgChan:
-				s.handleSubscription(subscriptions, subscription, lastCandle)
-			case <-ticker.C:
-				if len(subscriptions) > 0 {
-					candles, err := s.getCandleUpdates(ctx, lastCandle)
-					if err != nil {
-						if !errorGettingCandleUpdates {
-							s.log.Errorf("failed to get candles for candle id", logging.String("candle", s.candleID), logging.Error(err))
-						}
-
-						errorGettingCandleUpdates = true
-					} else {
-						if errorGettingCandleUpdates {
-							s.log.Infof("successfully got candles for candle", logging.String("candle", s.candleID))
-						}
-						errorGettingCandleUpdates = false
-
-						if len(candles) > 0 {
-							lastCandle = &candles[len(candles)-1]
-						}
-
-						s.sendCandlesToSubscribers(candles, subscriptions)
-					}
-				} else {
-					lastCandle = nil
-				}
+		case now := <-ticker.C:
+			if len(subscriptions) == 0 {
+				lastCandle = nil
+				continue
 			}
+			candles, err := s.getCandleUpdates(ctx, lastCandle, now)
+			if err != nil {
+				if !errorGettingCandleUpdates {
+					s.log.Errorf("failed to get candles for candle id", logging.String("candle", s.candleID), logging.Error(err))
+				}
+				errorGettingCandleUpdates = true
+				continue
+			}
+			if errorGettingCandleUpdates {
+				s.log.Infof("Successfully got candles for candle", logging.String("candle", s.candleID))
+				errorGettingCandleUpdates = false
+			}
+			if len(candles) > 0 {
+				lastCandle = &candles[len(candles)-1]
+			}
+
+			s.sendCandlesToSubscribers(candles, subscriptions)
 		}
 	}
 }
@@ -189,7 +181,7 @@ func (s *CandleUpdates) sendSubscriptionMessage(msg subscriptionMsg) error {
 	return nil
 }
 
-func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entities.Candle) ([]entities.Candle, error) {
+func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entities.Candle, now time.Time) ([]entities.Candle, error) {
 	ctx, cancelFn := context.WithTimeout(ctx, s.config.CandlesFetchTimeout.Duration)
 	defer cancelFn()
 
@@ -198,7 +190,7 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	if lastCandle != nil {
 		start := lastCandle.PeriodStart
 		var candles []entities.Candle
-		candles, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, &start, nil, entities.CursorPagination{})
+		candles, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, &start, &now, entities.CursorPagination{})
 
 		if err != nil {
 			return nil, fmt.Errorf("getting candle updates:%w", err)
@@ -215,7 +207,7 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 		if err != nil {
 			return nil, err
 		}
-		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, nil, nil, pagination)
+		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, nil, &now, pagination)
 
 		if err != nil {
 			return nil, fmt.Errorf("getting candle updates:%w", err)
