@@ -134,6 +134,15 @@ Feature: Fees calculations
       | trader3 | USD   | ETH/DEC21 | 480    | 19      |
       | trader4 | USD   | ETH/DEC21 | 221    | 0       |
 
+    And the following transfers should happen:
+      | from    | to      | from account            | to account                       | market id | amount | asset |
+      | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 9      | USD   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 9      | USD   |
+      | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_BUY_BACK_FEES       |           | 1      | USD   |
+      | trader4 |         | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 7      | USD   |
+      | trader4 |         | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 5      | USD   |
+      | trader4 |         | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_NETWORK_TREASURY    | ETH/DEC21 | 5      | USD   |
+
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
       | 1000       | TRADING_MODE_CONTINUOUS | 60      | 900       | 1100      |

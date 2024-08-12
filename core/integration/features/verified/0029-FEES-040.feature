@@ -38,9 +38,10 @@ Feature: Fees calculations
       | trader6 | USD   | 5000   |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | submission |
+      | id      | party   | market id | commitment amount | fee   | lp type    |
+      | lp1     | aux1    | ETH/DEC21 | 10000             | 0.002 | submission |
+      | lp1     | aux1    | ETH/DEC21 | 10000             | 0.002 | submission |
+      | trader2 | trader2 | ETH/DEC21 | 100               | 0.002 | submission |
     When the network moves ahead "2" blocks
 
     And the parties place the following orders:
@@ -58,8 +59,8 @@ Feature: Fees calculations
       | buyer | price | size | seller |
       | aux1  | 1000  | 1    | aux2   |
     Then the parties should have the following account balances:
-      | party | asset | market id | margin | general |
-      | aux1  | USD   | ETH/DEC21 | 540    | 89460   |
+      | party | asset | market id | margin | general | bond |
+      | aux1  | USD   | ETH/DEC21 | 540    | 89460   |      |
 
     #0029-FEES-040:In continuous trading mode, if the price taker has insufficient asset to cover the total fee in their general + margin account, then the trade should be discarded, the orders on the book that would have been hit should remain in place with previous remaining size intact and the incoming order should be rejected (not enough fees error).
 
@@ -67,6 +68,11 @@ Feature: Fees calculations
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                      |
       | trader1 | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t1-b2-01  |                                            |
       | trader2 | ETH/DEC21 | sell | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t2-s4-01  | party has insufficient funds to cover fees |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond |
+      | trader1 | USD   | ETH/DEC21 | 480    | 8520    |      |
+      | trader2 | USD   | ETH/DEC21 | 0      | 240     | 60   |
 
     And the orders should have the following status:
       | party   | reference | status          |
@@ -127,10 +133,8 @@ Feature: Fees calculations
 
     #trader2 is closed out, after paying infra fee, trader2 does not have enough left to cover margin
     Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader1 | USD   | ETH/DEC21 | 1082   | 7308    |
-      | trader2 | USD   | ETH/DEC21 | 0      | 0       |
-
-
+      | party   | asset | market id | margin | general | bond |
+      | trader1 | USD   | ETH/DEC21 | 1082   | 7308    |      |
+      | trader2 | USD   | ETH/DEC21 | 0      | 0       | 0    |
 
 
