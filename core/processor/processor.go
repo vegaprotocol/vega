@@ -118,6 +118,8 @@ type ExecutionEngine interface {
 
 	// add this method here for testing, this is the exec engine interface used by the gastimator.
 	GetMarketCounters() map[string]*types.MarketCounters
+
+	UpdateCommunityTags(ctx context.Context, market string, addTags []string, removeTags []string)
 }
 
 type GovernanceEngine interface {

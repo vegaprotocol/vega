@@ -301,6 +301,8 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.volumeDiscountProgram = updatedVolumeDiscountProgramFromProposal(p)
 	case types.ProposalTermsTypeUpdateVolumeRebateProgram:
 		te.volumeRebateProgram = updatedVolumeRebateProgramFromProposal(p)
+	case types.ProposalTermsTypeUpdateMarketCommunityTags:
+		te.updateMarketCommunityTags = p.UpdateMarketCommunityTags()
 	}
 	return //nolint:nakedret
 }

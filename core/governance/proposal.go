@@ -240,22 +240,23 @@ func (p *proposal) purgeBlankVotes(votes map[string]*types.Vote) {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p                      *proposal
-	m                      *ToEnactNewMarket
-	s                      *ToEnactNewSpotMarket
-	newAsset               *types.Asset
-	updatedAsset           *types.Asset
-	n                      *types.NetworkParameter
-	as                     *types.AssetDetails
-	updatedMarket          *types.Market
-	updatedSpotMarket      *types.Market
-	f                      *ToEnactFreeform
-	t                      *ToEnactTransfer
-	c                      *ToEnactCancelTransfer
-	msu                    *ToEnactMarketStateUpdate
-	referralProgramChanges *types.ReferralProgram
-	volumeDiscountProgram  *types.VolumeDiscountProgram
-	volumeRebateProgram    *types.VolumeRebateProgram
+	p                         *proposal
+	m                         *ToEnactNewMarket
+	s                         *ToEnactNewSpotMarket
+	newAsset                  *types.Asset
+	updatedAsset              *types.Asset
+	n                         *types.NetworkParameter
+	as                        *types.AssetDetails
+	updatedMarket             *types.Market
+	updatedSpotMarket         *types.Market
+	f                         *ToEnactFreeform
+	t                         *ToEnactTransfer
+	c                         *ToEnactCancelTransfer
+	msu                       *ToEnactMarketStateUpdate
+	referralProgramChanges    *types.ReferralProgram
+	volumeDiscountProgram     *types.VolumeDiscountProgram
+	volumeRebateProgram       *types.VolumeRebateProgram
+	updateMarketCommunityTags *types.UpdateMarketCommunityTags
 }
 
 type ToEnactMarketStateUpdate struct{}
@@ -274,6 +275,10 @@ type ToEnactNewSpotMarket struct{}
 
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
+
+func (t ToEnact) IsUpdateMarketCommunityTags() bool {
+	return t.updateMarketCommunityTags != nil
+}
 
 func (t ToEnact) IsVolumeDiscountProgramUpdate() bool {
 	return t.volumeDiscountProgram != nil
@@ -370,6 +375,10 @@ func (t *ToEnact) VolumeDiscountProgramUpdate() *types.VolumeDiscountProgram {
 
 func (t *ToEnact) VolumeRebateProgramUpdate() *types.VolumeRebateProgram {
 	return t.volumeRebateProgram
+}
+
+func (t *ToEnact) UpdateMarketCommunityTags() *types.UpdateMarketCommunityTags {
+	return t.updateMarketCommunityTags
 }
 
 func (t *ToEnact) UpdateMarket() *types.Market {

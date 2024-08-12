@@ -597,6 +597,18 @@ func (mr *MockExecutionEngineMockRecorder) SucceedMarket(arg0, arg1, arg2 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SucceedMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SucceedMarket), arg0, arg1, arg2)
 }
 
+// UpdateCommunityTags mocks base method.
+func (m *MockExecutionEngine) UpdateCommunityTags(arg0 context.Context, arg1 string, arg2, arg3 []string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateCommunityTags", arg0, arg1, arg2, arg3)
+}
+
+// UpdateCommunityTags indicates an expected call of UpdateCommunityTags.
+func (mr *MockExecutionEngineMockRecorder) UpdateCommunityTags(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCommunityTags", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateCommunityTags), arg0, arg1, arg2, arg3)
+}
+
 // UpdateMarginMode mocks base method.
 func (m *MockExecutionEngine) UpdateMarginMode(arg0 context.Context, arg1, arg2 string, arg3 vega.MarginMode, arg4 decimal.Decimal) error {
 	m.ctrl.T.Helper()

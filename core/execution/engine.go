@@ -1564,3 +1564,17 @@ func (e *Engine) GetFillPriceForMarket(marketID string, volume uint64, side type
 	}
 	return nil, types.ErrInvalidMarketID
 }
+
+func (e *Engine) UpdateCommunityTags(
+	ctx context.Context,
+	market string,
+	addTags []string,
+	removeTags []string,
+) {
+	// has the market been removed since the proposal was created?
+	if !e.MarketExists(market) {
+		return
+	}
+
+	e.communityTags.UpdateTags(ctx, market, addTags, removeTags)
+}
