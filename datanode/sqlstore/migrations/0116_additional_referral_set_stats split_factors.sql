@@ -8,8 +8,8 @@ alter table referral_set_stats
 alter table referral_set_stats
     add column rewards_factors_multiplier jsonb;
 
-update referral_set_stats set reward_factors = json_build_object('rewardInfraFactor', reward_factor, 'rewardMakerFactor', reward_factor, 'rewardLiquidityFactor', reward_factor);
-update referral_set_stats set rewards_factors_multiplier = json_build_object('rewardInfraFactor', rewards_factor_multiplier, 'rewardMakerFactor', rewards_factor_multiplier, 'rewardLiquidityFactor', rewards_factor_multiplier);
+update referral_set_stats set reward_factors = json_build_object('infrastructure_reward_factor', reward_factor, 'maker_reward_factor', reward_factor, 'liquidity_reward_factor', reward_factor);
+update referral_set_stats set rewards_factors_multiplier = json_build_object('infrastructure_reward_factor', rewards_factor_multiplier, 'maker_reward_factor', rewards_factor_multiplier, 'liquidity_reward_factor', rewards_factor_multiplier);
 
 UPDATE volume_discount_stats
 SET parties_volume_discount_stats = (
@@ -93,8 +93,8 @@ alter table referral_set_stats
 alter table referral_set_stats
     add column rewards_factor_multiplier text not null default '0';
 
-update referral_set_stats set reward_factor = 'reward_factor->rewardInfraFactor';
-update referral_set_stats set rewards_factor_multiplier = 'rewards_factors_multiplier->rewardInfraFactor';
+update referral_set_stats set reward_factor = 'reward_factor->infrastructure_reward_factor';
+update referral_set_stats set rewards_factor_multiplier = 'rewards_factors_multiplier->infrastructure_reward_factor';
 
 alter table referral_set_stats DROP COLUMN reward_factors;
 alter table referral_set_stats DROP COLUMN rewards_factors_multiplier;
