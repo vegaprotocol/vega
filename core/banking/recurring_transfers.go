@@ -198,7 +198,8 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
-		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
+		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN,
+		vegapb.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES:
 		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
 			hasNonZeroMetric := false
 			partyMetrics := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)

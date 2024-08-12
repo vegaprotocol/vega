@@ -67,6 +67,7 @@ var partyOverrides = map[string]types.AccountType{
 	systemOwner + types.AccountTypeFeesInfrastructure.String():     types.AccountTypeFeesInfrastructure,
 	systemOwner + types.AccountTypePendingTransfers.String():       types.AccountTypePendingTransfers,
 	systemOwner + types.AccountTypeRealisedReturnReward.String():   types.AccountTypeRealisedReturnReward,
+	systemOwner + types.AccountTypeEligibleEntitiesReward.String(): types.AccountTypeEligibleEntitiesReward,
 }
 
 var tradingRewardAccountTypes = map[types.AccountType]struct{}{
@@ -79,6 +80,7 @@ var tradingRewardAccountTypes = map[types.AccountType]struct{}{
 	types.AccountTypeReturnVolatilityReward: {},
 	types.AccountTypeValidatorRankingReward: {},
 	types.AccountTypeRealisedReturnReward:   {},
+	types.AccountTypeEligibleEntitiesReward: {},
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
@@ -195,7 +197,7 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers,
 			types.AccountTypeNetworkTreasury, types.AccountTypeGlobalInsurance, types.AccountTypeVestedRewards,
 			types.AccountTypeAverageNotionalReward, types.AccountTypeRelativeReturnReward, types.AccountTypeRealisedReturnReward,
-			types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
+			types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward, types.AccountTypeEligibleEntitiesReward:
 			owner := acc.Owner
 			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
 			// similarly LP Fee bonus distribution bonus account would fall over into the network treasury of the asset.
@@ -220,7 +222,8 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 				acc.Type == types.AccountTypeRelativeReturnReward ||
 				acc.Type == types.AccountTypeReturnVolatilityReward ||
 				acc.Type == types.AccountTypeValidatorRankingReward ||
-				acc.Type == types.AccountTypeRealisedReturnReward {
+				acc.Type == types.AccountTypeRealisedReturnReward ||
+				acc.Type == types.AccountTypeEligibleEntitiesReward {
 				owner += separator + acc.MarketID
 			}
 
