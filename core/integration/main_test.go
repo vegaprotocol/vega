@@ -803,6 +803,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.ClearTradeEvents(execsetup.broker)
 	})
 
+	s.Step(`^the volume rebate program tiers named "([^"]*)":$`, func(vrp string, table *godog.Table) error {
+		return steps.VolumeRebateProgramTiers(volumeRebateTiers, vrp, table)
+	})
+
 	s.Step(`^the volume rebate program:$`, func(table *godog.Table) error {
 		return steps.VolumeRebateProgram(execsetup.volumeRebateProgram, volumeRebateTiers, table)
 	})

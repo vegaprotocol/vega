@@ -27,14 +27,14 @@ Feature: Discounts from multiple sources
       | referralProgram.maxReferralRewardProportion             | 0.1        |
       | validators.epoch.length                                 | 10s        |
 
-    And the volume rebate tiers "vrt":
+    And the volume rebate program tiers named "vrt":
       | fraction | rebate |
       | 0.1      | 0.2    |
 
     And the volume rebate program:
       | id  | tiers | closing timestamp | window length |
       | id1 | vrt   | 0                 | 7             |
-    # Move to the next epoch to start the programs
+ 
     And the network moves ahead "1" epochs
 
     # Initialse the assets and markets
