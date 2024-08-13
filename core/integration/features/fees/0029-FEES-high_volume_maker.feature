@@ -110,6 +110,12 @@ Feature: Discounts from multiple sources
       | trader3 | ETH/USD   | sell | 480    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1    | ETH/USD   | buy  | 1000   | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
 
+    Then the following trades should be executed:
+      | buyer | price | size | seller  |
+      | aux1  | 1000  | 210  | trader1 |
+      | aux1  | 1000  | 310  | trader2 |
+      | aux1  | 1000  | 480  | trader3 |
+
     And the network moves ahead "1" epochs
 
     # trade_value_for_fee_purposes for trade between aux1 and trader1 = size_of_trade * price_of_trade = 21 * 100 = 2100
@@ -125,7 +131,7 @@ Feature: Discounts from multiple sources
     # buyback_fee = buyback_fee*(1 - high_volume_maker_fee / (treasury_fee + buyback_fee)) =3.1*(1-6.2/(6.2+3.1))=1.03
 
 
-    # trade_value_for_fee_purposes for trade between aux1 and trader2 = size_of_trade * price_of_trade = 48 * 100 = 4800
+    # trade_value_for_fee_purposes for trade between aux1 and trader3 = size_of_trade * price_of_trade = 48 * 100 = 4800
     # treasury_fee = 0.002*4800=9.6
     # buyback_fee = 0.001*4800=4.8
     # treasury_fee = treasury_fee *(1 - high_volume_maker_fee / (treasury_fee + buyback_fee)) = 9.6*(1-9.6/(9.6+4.8))=3.2
@@ -157,6 +163,7 @@ Feature: Discounts from multiple sources
       | market | trader2 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL          | ETH/USD   | 62     | USD   |
       | market | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL          | ETH/USD   | 480    | USD   |
       | market | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL          | ETH/USD   | 96     | USD   |
+
 
 
 
