@@ -67,6 +67,74 @@ func getServiceWithConfig(t *testing.T, cfg service.MarketDepthConfig) *MDS {
 	}
 }
 
+func Test_0015_NP_OBES_002(t *testing.T) {
+	/*
+		0015-NP-OBES-002:
+			With amm_full_expansion_percentage set to 3%, amm_estimate_step_percentage set to 5% and amm_max_estimated_steps set to 2, when the mid-price is 100 then the order book expansion should return:
+
+			    Volume levels at every valid tick between 97 and 103
+			    Volume levels outside that at every 1 increment from 108 to 116 and 92 to 87
+			    No volume levels above 116 or below 87
+	*/
+	ctx := context.Background()
+	mds := getServiceWithConfig(t,
+		service.MarketDepthConfig{
+			AmmFullExpansionPercentage: 3,
+			AmmEstimatedStepPercentage: 5,
+			AmmMaxEstimatedSteps:       2,
+		},
+	)
+	defer mds.ctrl.Finish()
+
+	marketID := vgcrypto.RandomHash()
+
+	mds.orders.EXPECT().GetLiveOrders(gomock.Any()).Return([]entities.Order{}, nil)
+	ensureDecimalPlaces(t, mds)
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
+
+	// mid-price is 100
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(100)}, nil)
+
+	// data node is starting from network history, initialise market-depth based on whats aleady there
+	pool := getAMMDefinitionMid100(t, marketID)
+	mds.amm.EXPECT().ListActive(gomock.Any()).Return([]entities.AMMPool{pool}, nil).Times(1)
+	mds.service.Initialise(ctx)
+
+	// buys estimates at 87, 92, accurate ones at  97, 98, 99
+	prices := map[uint64]bool{
+		87: true,
+		92: true,
+		97: false,
+		98: false,
+		99: false,
+	}
+	assert.Equal(t, 5, mds.service.GetBuyPriceLevels(marketID))
+	for p, estimated := range prices {
+		volume := mds.service.GetVolumeAtPrice(marketID, types.SideBuy, p)
+		if estimated {
+			volume = mds.service.GetEstimatedVolumeAtPrice(marketID, types.SideBuy, p)
+		}
+		assert.NotEqual(t, uint64(0), volume)
+	}
+
+	// sell estimates at 109, 104, accurate ones at  103, 102, 101
+	prices = map[uint64]bool{
+		109: true,
+		104: true,
+		103: false,
+		102: false,
+		101: false,
+	}
+	assert.Equal(t, 5, mds.service.GetSellPriceLevels(marketID))
+	for p, estimated := range prices {
+		volume := mds.service.GetVolumeAtPrice(marketID, types.SideSell, p)
+		if estimated {
+			volume = mds.service.GetEstimatedVolumeAtPrice(marketID, types.SideSell, p)
+		}
+		assert.NotEqual(t, uint64(0), volume)
+	}
+}
+
 func TestAMMMarketDepth(t *testing.T) {
 	ctx := context.Background()
 	mds := getService(t)
@@ -398,6 +466,22 @@ func getAMMDefinition(t *testing.T, marketID string) entities.AMMPool {
 		ParametersUpperBound:     ptr.From(num.DecimalFromInt64(2200)),
 		UpperVirtualLiquidity:    num.DecimalFromFloat(610600.1174758454383959875699679680084),
 		UpperTheoreticalPosition: num.DecimalFromFloat(635.3954521864637116),
+	}
+}
+
+func getAMMDefinitionMid100(t *testing.T, marketID string) entities.AMMPool {
+	t.Helper()
+	return entities.AMMPool{
+		PartyID:                  entities.PartyID(vgcrypto.RandomHash()),
+		AmmPartyID:               entities.PartyID(vgcrypto.RandomHash()),
+		MarketID:                 entities.MarketID(marketID),
+		ParametersLowerBound:     ptr.From(num.DecimalFromInt64(50)),
+		LowerVirtualLiquidity:    num.DecimalFromFloat(109933.47060272754448304259594317590451),
+		LowerTheoreticalPosition: num.DecimalFromFloat(4553.5934482393695541),
+		ParametersBase:           num.DecimalFromInt64(100),
+		ParametersUpperBound:     ptr.From(num.DecimalFromInt64(150)),
+		UpperVirtualLiquidity:    num.DecimalFromFloat(174241.4190625882586702427011885011744),
+		UpperTheoreticalPosition: num.DecimalFromFloat(3197.389614198983918),
 	}
 }
 
