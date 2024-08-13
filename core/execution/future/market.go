@@ -1005,6 +1005,7 @@ func (m *Market) PostRestore(ctx context.Context) error {
 			}
 		}
 	}
+	m.marketActivityTracker.RestoreMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 
 	// Disposal slippage was set as part of this upgrade, send event to ensure datanode is updated.
 	if vegacontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
@@ -1156,6 +1157,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.risk.GetRiskFactors().Long,
 			true, false)
 		m.markPriceLock.Unlock()
+		m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 		if err != nil {
 			// start the  monitoring auction if required
 			if m.as.AuctionStart() {
@@ -1786,6 +1788,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 		m.pMonitor.ResetPriceHistory(m.lastTradedPrice)
 	}
+	m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
 			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
@@ -4668,6 +4671,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				false,
 				false)
 			m.markPriceLock.Unlock()
+			m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(
