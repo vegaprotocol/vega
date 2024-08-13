@@ -705,6 +705,8 @@ func whenAMMIsSubmitted(t *testing.T, tst *tstEngine, submission *types.SubmitAM
 	subAccount := DeriveAMMParty(party, tst.marketID, "AMMv1", 0)
 	expectBalanceChecks(t, tst, party, subAccount, submission.CommitmentAmount.Uint64())
 
+	ensurePosition(t, tst.pos, 0, nil)
+
 	ctx := context.Background()
 	pool, err := tst.engine.Create(ctx, submission, vgcrypto.RandomHash(), riskFactors, scalingFactors, slippage)
 	require.NoError(t, err)
