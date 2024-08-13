@@ -1885,8 +1885,7 @@ Feature: stop orders
       | party2 | ETH/DEC19 | STATUS_EXPIRED   | stop2-1   |
 
 
-  Scenario: A party with a long position cannot enter a buy stop order,
-            and a party with a short position cannot enter a sell stop order. (0014-ORDT-137)
+  Scenario: A party with a long or short position CAN increase their position with stop orders. (0014-ORDT-137)
 
     # setup accounts
     Given time is updated to "2019-11-30T00:00:00Z"
@@ -1933,14 +1932,77 @@ Feature: stop orders
 
     # We should not be able to place a but stop order for party2 as they have a long position and it would make it more long
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error                                               |
-      | party2 | ETH/DEC19 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | side used in stop order does not close the position |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error |
+      | party2 | ETH/DEC19 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      |       |
 
     # We should not be able to place a sell stop order for party1 as they have a short position and it would make it more short
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error                                               |
-      | party1 | ETH/DEC19 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | side used in stop order does not close the position |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error |
+      | party1 | ETH/DEC19 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      |       |
 
+  Scenario: A party with a long position cannot flip to short by placing a stop order.
+    Given time is updated to "2019-11-30T00:00:00Z"
+    And the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000000 |
+      | party2 | BTC   | 10000000 |
+      | party3 | BTC   | 10000000 |
+      | aux    | BTC   | 10000000 |
+      | aux2   | BTC   | 10000000 |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+ 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer  | seller | price | size |
+      | party2 | party1 | 50    | 10   |
+    
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 1      | 75    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC19 | buy  | 50     | 75    | 1                | TYPE_LIMIT | TIF_GTC |
+    And the network moves ahead "1" blocks
+    Then the following trades should be executed:
+      | buyer  | seller | price | size |
+      | party3 | party1 | 75    | 1    |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error |
+      | party2 | ETH/DEC19 | sell | 20     | 0     | 1                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      |       |
+    Then the following trades should be executed:
+      | buyer  | seller | price | size |
+      | party3 | party2 | 75    | 10   |
+
+    # Ensure the party has closed its position, despite the stop order being for a larger volume than their open position.
+    When the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | -11    | -250           | 0            |
+      | party2 | 0      | 0              | 250          |
+      | party3 | 11     | 0              | 0            |
 
   Scenario: If a stop order is placed with a position_fraction equal to 0.5 and the position
             size is 5 then the rounding should be equal to 3 (0014-ORDT-138)
