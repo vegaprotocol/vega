@@ -1574,6 +1574,10 @@ func (e DummyCollateralEngine) GetAssetQuantum(asset string) (num.Decimal, error
 	return num.DecimalOne(), nil
 }
 
+func (e DummyCollateralEngine) GetAllParties() []string {
+	return []string{}
+}
+
 type DummyEligibilityChecker struct{}
 
 func (e *DummyEligibilityChecker) IsEligibleForProposerBonus(marketID string, volumeTraded *num.Uint) bool {

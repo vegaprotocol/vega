@@ -195,6 +195,7 @@ type Collateral interface {
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
 	CheckOrderSpam(party, market string, assets []string) error
 	CheckOrderSpamAllMarkets(party string) error
+	GetAllParties() []string
 
 	// amm stuff
 	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)
@@ -415,6 +416,7 @@ type CommonMarket interface {
 
 type AccountBalanceChecker interface {
 	GetAvailableBalance(party string) (*num.Uint, error)
+	GetAllStakingParties() []string
 }
 
 type Teams interface {

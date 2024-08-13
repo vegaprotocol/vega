@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/contracts/erc20"
@@ -323,6 +324,15 @@ func (a *Accounting) getStakeAssetTotalSupply(address ethcmn.Address) (*num.Uint
 	)
 
 	return totalSupply, nil
+}
+
+func (a *Accounting) GetAllStakingParties() []string {
+	keys := make([]string, 0, len(a.accounts))
+	for k := range a.accounts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {
