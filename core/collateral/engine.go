@@ -208,6 +208,15 @@ func (e *Engine) CheckOrderSpamAllMarkets(party string) error {
 	return fmt.Errorf("party " + party + " is not eligible to submit order transaction with no market in scope")
 }
 
+func (e *Engine) GetAllParties() []string {
+	keys := make([]string, 0, len(e.partiesAccsBalanceCache))
+	for k := range e.partiesAccsBalanceCache {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func (e *Engine) CheckOrderSpam(party, market string, assets []string) error {
 	e.cacheLock.RLock()
 	defer e.cacheLock.RUnlock()
@@ -447,6 +456,14 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 	e.cfgMu.Unlock()
 }
+
+func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+		e.snapshotBalances()
+	}
+}
+
+func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
 
 // EnableAsset adds a new asset in the collateral engine
 // this enable the asset to be used by new markets or

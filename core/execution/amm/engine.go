@@ -55,6 +55,7 @@ const (
 
 type Collateral interface {
 	GetAssetQuantum(asset string) (num.Decimal, error)
+	GetAllParties() []string
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	SubAccountUpdate(

@@ -167,6 +167,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.collateralEngine = collateral.New(execsetup.log, collateral.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	enableAssets(ctx, execsetup.collateralEngine)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.collateralEngine.OnEpochEvent, execsetup.collateralEngine.OnEpochRestore)
 
 	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
 
