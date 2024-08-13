@@ -1,4 +1,4 @@
-Feature: Discounts from multiple sources
+Feature: high volume maker fee rebate 
 
   Background:
 
