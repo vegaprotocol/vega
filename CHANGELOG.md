@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [8777](https://github.com/vegaprotocol/vega/issues/8777) - Stop orders can now be used to create or increase a position.
 
 ### 🗑️ Deprecation
 
