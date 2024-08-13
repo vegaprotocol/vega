@@ -375,6 +375,19 @@ func (m *MarketDepth) GetVolumeAtPrice(market string, side types.Side, price uin
 	return 0
 }
 
+// GetVolumeAtPrice returns the order volume at the given price level.
+func (m *MarketDepth) GetEstimatedVolumeAtPrice(market string, side types.Side, price uint64) uint64 {
+	md := m.marketDepths[market]
+	if md != nil {
+		pl := md.GetPriceLevel(side, num.NewUint(price))
+		if pl == nil {
+			return 0
+		}
+		return pl.TotalEstimatedAMMVolume
+	}
+	return 0
+}
+
 // GetTotalVolume returns the total volume in the order book.
 func (m *MarketDepth) GetTotalVolume(market string) int64 {
 	var volume int64
