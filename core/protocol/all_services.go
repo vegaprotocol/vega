@@ -231,7 +231,7 @@ func newServices(
 
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
-
+	svcs.epochService.NotifyOnEpoch(svcs.collateral.OnEpochEvent, svcs.collateral.OnEpochRestore)
 	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
 
 	svcs.netParams = netparams.New(svcs.log, svcs.conf.NetworkParameters, svcs.broker)

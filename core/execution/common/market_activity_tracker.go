@@ -49,6 +49,7 @@ var (
 
 type QuantumGetter interface {
 	GetAssetQuantum(asset string) (num.Decimal, error)
+	GetAllParties() []string
 }
 
 type twPosition struct {
@@ -819,7 +820,25 @@ func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) [
 	if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM {
 		parties = mat.teams.GetAllPartiesInTeams(mat.minEpochsInTeamForRewardEligibility)
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_ALL {
-		parties = sortedK(mat.getAllParties(ds.AssetForMetric, ds.Markets))
+		if ds.Metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES {
+			notionalReq := num.UintZero()
+			stakingReq := num.UintZero()
+			if len(ds.NotionalTimeWeightedAveragePositionRequirement) > 0 {
+				notionalReq = num.MustUintFromString(ds.NotionalTimeWeightedAveragePositionRequirement, 10)
+			}
+			if len(ds.StakingRequirement) > 0 {
+				stakingReq = num.MustUintFromString(ds.StakingRequirement, 10)
+			}
+			if !notionalReq.IsZero() {
+				parties = sortedK(mat.getAllParties(ds.AssetForMetric, ds.Markets))
+			} else if !stakingReq.IsZero() {
+				parties = mat.balanceChecker.GetAllStakingParties()
+			} else {
+				parties = mat.collateral.GetAllParties()
+			}
+		} else {
+			parties = sortedK(mat.getAllParties(ds.AssetForMetric, ds.Markets))
+		}
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM {
 		parties = sortedK(excludePartiesInTeams(mat.getAllParties(ds.AssetForMetric, ds.Markets), mat.teams.GetAllPartiesInTeams(mat.minEpochsInTeamForRewardEligibility)))
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_AMM {
