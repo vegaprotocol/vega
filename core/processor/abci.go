@@ -2720,6 +2720,11 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsVolumeRebateProgramUpdate():
 			prop.State = types.ProposalStateEnacted
 			app.volumeRebateProgram.UpdateProgram(toEnact.VolumeRebateProgramUpdate())
+		case toEnact.IsUpdateMarketCommunityTags():
+			prop.State = types.ProposalStateEnacted
+			tags := toEnact.UpdateMarketCommunityTags()
+			app.exec.UpdateCommunityTags(
+				ctx, tags.MarketID, tags.AddTags, tags.RemoveTags)
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))

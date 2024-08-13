@@ -115,6 +115,16 @@ func defaultNetParams() map[string]value {
 		MarketLiquidityProvidersFeeCalculationTimeStep:   NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
 		MarketLiquidityEquityLikeShareFeeFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
 
+		// updateCommunityTags proposal parameters.
+		GovernanceProposalUpdateCommunityTagsMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("24h0m0s"),
+		GovernanceProposalUpdateCommunityTagsMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateCommunityTagsMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("24h0m0s"),
+		GovernanceProposalUpdateCommunityTagsMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateCommunityTagsRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.025"),
+		GovernanceProposalUpdateCommunityTagsRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateCommunityTagsMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
+		GovernanceProposalUpdateCommunityTagsMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
+
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
 		GovernanceProposalMarketMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),

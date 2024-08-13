@@ -373,11 +373,12 @@ type SLANetworkParams struct {
 }
 
 type ExecutionMarkets struct {
-	Markets        []*ExecMarket
-	SpotMarkets    []*ExecSpotMarket
-	SettledMarkets []*CPMarketState
-	Successors     []*Successors
-	AllMarketIDs   []string
+	Markets             []*ExecMarket
+	SpotMarkets         []*ExecSpotMarket
+	SettledMarkets      []*CPMarketState
+	Successors          []*Successors
+	AllMarketIDs        []string
+	MarketCommunityTags []*eventspb.MarketCommunityTags
 }
 
 type ExecMarket struct {

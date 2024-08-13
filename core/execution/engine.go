@@ -82,6 +82,7 @@ type Engine struct {
 	allMarkets    map[string]common.CommonMarket
 	allMarketsCpy []common.CommonMarket
 
+	communityTags                 *MarketCommunityTags
 	collateral                    common.Collateral
 	assets                        common.Assets
 	referralDiscountRewardService fee.ReferralDiscountRewardService
@@ -169,10 +170,10 @@ func NewEngine(
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
 		volumeRebateService:           volumeRebateService,
-
-		banking:                 banking,
-		parties:                 parties,
-		delayTransactionsTarget: delayTransactionsTarget,
+		banking:                       banking,
+		parties:                       parties,
+		delayTransactionsTarget:       delayTransactionsTarget,
+		communityTags:                 NewMarketCommunityTags(broker),
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -1562,4 +1563,18 @@ func (e *Engine) GetFillPriceForMarket(marketID string, volume uint64, side type
 		return mkt.GetFillPrice(volume, side)
 	}
 	return nil, types.ErrInvalidMarketID
+}
+
+func (e *Engine) UpdateCommunityTags(
+	ctx context.Context,
+	market string,
+	addTags []string,
+	removeTags []string,
+) {
+	// has the market been removed since the proposal was created?
+	if !e.MarketExists(market) {
+		return
+	}
+
+	e.communityTags.UpdateTags(ctx, market, addTags, removeTags)
 }

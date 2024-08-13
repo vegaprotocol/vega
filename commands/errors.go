@@ -56,6 +56,7 @@ var (
 	ErrInvalidSignature                                = errors.New("invalid signature")
 	ErrUnsupportedAlgorithm                            = errors.New("unsupported algorithm")
 	ErrEmptyBatchMarketInstructions                    = errors.New("empty batch market instructions")
+	ErrIsNotValidVegaID                                = errors.New("is not a valid vega id")
 	ErrIsNotValidVegaPubkey                            = errors.New("is not a valid vega public key")
 	ErrIsNotValidEthereumAddress                       = errors.New("is not a valid ethereum address")
 	ErrEmptyEthereumCallSpec                           = errors.New("ethereum call spec is required")

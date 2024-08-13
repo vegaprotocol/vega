@@ -317,14 +317,17 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 		allMarketIDs = append(allMarketIDs, cm.GetID())
 	}
 
+	tags := e.communityTags.serialize()
+
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
 			ExecutionMarkets: &types.ExecutionMarkets{
-				Markets:        mkts,
-				SpotMarkets:    spotMkts,
-				SettledMarkets: cpStates,
-				Successors:     successors,
-				AllMarketIDs:   allMarketIDs,
+				Markets:             mkts,
+				SpotMarkets:         spotMkts,
+				SettledMarkets:      cpStates,
+				Successors:          successors,
+				AllMarketIDs:        allMarketIDs,
+				MarketCommunityTags: tags,
 			},
 		},
 	}
@@ -383,6 +386,9 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 				e.allMarketsCpy = append(e.allMarketsCpy, mkt)
 			}
 		}
+
+		e.communityTags = NewMarketCommunityTagFromProto(e.broker, pl.ExecutionMarkets.MarketCommunityTags)
+
 		return append(providers, spotProviders...), err
 	default:
 		return nil, types.ErrUnknownSnapshotType

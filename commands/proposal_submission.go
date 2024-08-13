@@ -214,8 +214,30 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(checkUpdateReferralProgram(terms, c))
 	case *protoTypes.ProposalTerms_UpdateVolumeDiscountProgram:
 		errs.Merge(checkVolumeDiscountProgram(terms, c))
+	case *protoTypes.ProposalTerms_UpdateMarketCommunityTags:
+		errs.Merge(checkUpdateMarketCommunityTagsChanges(c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
+	}
+
+	return errs
+}
+
+func checkUpdateMarketCommunityTagsChanges(change *protoTypes.ProposalTerms_UpdateMarketCommunityTags) Errors {
+	errs := NewErrors()
+
+	if change.UpdateMarketCommunityTags == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_community_tags", ErrIsRequired)
+	}
+
+	if change.UpdateMarketCommunityTags.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_community_tags.changes", ErrIsRequired)
+	}
+
+	c := change.UpdateMarketCommunityTags.Changes
+
+	if !crypto.IsValidVegaID(c.MarketId) {
+		errs.AddForProperty("proposal_submission.terms.change.update_market_community_tags.changes", ErrIsNotValidVegaID)
 	}
 
 	return errs
