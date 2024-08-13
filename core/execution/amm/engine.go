@@ -692,6 +692,14 @@ func (e *Engine) Create(
 		return nil, err
 	}
 
+	// sanity check, a *new* AMM should not already have a position. If it does it means that the party
+	// previously had an AMM but it was stopped/cancelled while still holding a position which should not happen.
+	// It should have either handed its position over to the liquidation engine, or be in reduce-only mode
+	// and only be removed when its position is 0.
+	if pool.getPosition() != 0 {
+		e.log.Panic("AMM has position before existing")
+	}
+
 	e.log.Debug("AMM created",
 		logging.String("owner", submit.Party),
 		logging.String("poolID", pool.ID),
