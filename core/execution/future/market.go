@@ -5611,9 +5611,11 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 			logging.Error(err),
 		)
 		if amend.CommitmentAmount != nil {
-			_, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.AMMParty, prevCommitment)
+			if _, err := m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.AMMParty, prevCommitment); err != nil {
+				m.log.Panic("unable to restore AMM balances after failed amend", logging.Error(err))
+			}
 		}
-		return err
+		return common.ErrAMMCannotRebase
 	}
 
 	m.amm.Confirm(ctx, pool)
