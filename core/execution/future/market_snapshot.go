@@ -319,7 +319,6 @@ func NewMarketFromSnapshot(
 		}
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
-
 	return market, nil
 }
 

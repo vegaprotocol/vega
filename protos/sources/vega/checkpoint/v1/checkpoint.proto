@@ -328,6 +328,7 @@ message TWNotionalData {
   bytes notional = 2;
   int64 time = 3;
   bytes tw_notional = 4;
+  bytes price = 5;
 }
 
 message PartyFees {

@@ -22,7 +22,8 @@
 - [11535](https://github.com/vegaprotocol/vega/issues/11535) - Added support for lottery rank distribution strategy.
 - [11536](https://github.com/vegaprotocol/vega/issues/11536) - Make the batch market instructions errors programmatically usable.
 - [11546](https://github.com/vegaprotocol/vega/issues/11546) - Add validation to market proposals metadata.
-
+- [11562](https://github.com/vegaprotocol/vega/issues/11562) - Update average notional metric with mark price at the end of the epoch and when calculating live score. 
+  
 ### 🐛 Fixes
 
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
