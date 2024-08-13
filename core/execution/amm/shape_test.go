@@ -35,6 +35,7 @@ func TestOrderbookShape(t *testing.T) {
 	t.Run("test orderbook shape AMM reduce only", testOrderbookShapeReduceOnly)
 	t.Run("test orderbook shape boundary order when approx", testOrderbookShapeBoundaryOrder)
 	t.Run("test orderbook shape region not divisible by tick", testOrderbookSubTick)
+	t.Run("test orderbook shape closing pool close to base", testClosingCloseToBase)
 }
 
 func testOrderbookShapeZeroPosition(t *testing.T) {
@@ -357,5 +358,61 @@ func testOrderbookSubTick(t *testing.T) {
 	assert.Equal(t, 4, len(buys))
 	assert.Equal(t, bp.String(), buys[3].Price.String())
 
+	assert.Equal(t, 0, len(sells))
+}
+
+func testClosingCloseToBase(t *testing.T) {
+	p := newTestPoolWithSubmission(t, num.DecimalFromFloat(1), num.DecimalFromFloat(100),
+		&types.SubmitAMM{
+			CommitmentAmount: num.NewUint(10000000),
+			Parameters: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(10),
+				Base:       num.NewUint(15),
+				UpperBound: num.NewUint(20),
+			},
+		},
+	)
+
+	defer p.ctrl.Finish()
+
+	// its reducing
+	p.pool.status = types.AMMPoolStatusReduceOnly
+
+	// and it is long one
+	position := int64(1)
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
+
+	// now pretend we are in auction and we have a sell order at 1000, so we need to expand the crossed
+	// region of 1000 -> 1383
+	from := num.NewUint(1000)
+	to := num.NewUint(2000)
+	buys, sells := p.pool.OrderbookShape(from, to, nil)
+
+	// should have one sell of volume 1
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 1, len(sells))
+	assert.Equal(t, 1, int(sells[0].Size))
+	assert.Equal(t, "14", sells[0].OriginalPrice.String())
+
+	// and it is short one
+	position = int64(-1)
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
+
+	buys, sells = p.pool.OrderbookShape(from, to, nil)
+
+	// should have one sell of volume 1
+	assert.Equal(t, 1, len(buys))
+	assert.Equal(t, 0, len(sells))
+	assert.Equal(t, 1, int(buys[0].Size))
+	assert.Equal(t, "16", buys[0].OriginalPrice.String())
+
+	// no position
+	position = int64(0)
+	ensurePositionN(t, p.pos, position, num.UintZero(), 2)
+
+	buys, sells = p.pool.OrderbookShape(from, to, nil)
+
+	// should have one sell of volume 1
+	assert.Equal(t, 0, len(buys))
 	assert.Equal(t, 0, len(sells))
 }
