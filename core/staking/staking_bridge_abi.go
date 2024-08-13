@@ -45,7 +45,7 @@ var (
 
 // StakingMetaData contains all meta data concerning the Staking contract.
 var StakingMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Removed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Transferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"staking_token\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"stake_balance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"total_staked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"StakeDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"StakeRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Transferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"staking_token\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"stake_balance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"total_staked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // StakingABI is the input ABI used to generate the binding from.
@@ -358,7 +358,7 @@ type StakingStakeDeposited struct {
 
 // FilterStakeDeposited is a free log retrieval operation binding the contract event 0x9e3e33edf5dcded4adabc51b1266225d00fa41516bfcad69513fa4eca69519da.
 //
-// Solidity: event Stake_Deposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
+// Solidity: event StakeDeposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) FilterStakeDeposited(opts *bind.FilterOpts, user []common.Address, vega_public_key [][32]byte) (*StakingStakeDepositedIterator, error) {
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -370,16 +370,16 @@ func (_Staking *StakingFilterer) FilterStakeDeposited(opts *bind.FilterOpts, use
 		vega_public_keyRule = append(vega_public_keyRule, vega_public_keyItem)
 	}
 
-	logs, sub, err := _Staking.contract.FilterLogs(opts, "Stake_Deposited", userRule, vega_public_keyRule)
+	logs, sub, err := _Staking.contract.FilterLogs(opts, "StakeDeposited", userRule, vega_public_keyRule)
 	if err != nil {
 		return nil, err
 	}
-	return &StakingStakeDepositedIterator{contract: _Staking.contract, event: "Stake_Deposited", logs: logs, sub: sub}, nil
+	return &StakingStakeDepositedIterator{contract: _Staking.contract, event: "StakeDeposited", logs: logs, sub: sub}, nil
 }
 
 // WatchStakeDeposited is a free log subscription operation binding the contract event 0x9e3e33edf5dcded4adabc51b1266225d00fa41516bfcad69513fa4eca69519da.
 //
-// Solidity: event Stake_Deposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
+// Solidity: event StakeDeposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) WatchStakeDeposited(opts *bind.WatchOpts, sink chan<- *StakingStakeDeposited, user []common.Address, vega_public_key [][32]byte) (event.Subscription, error) {
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -391,7 +391,7 @@ func (_Staking *StakingFilterer) WatchStakeDeposited(opts *bind.WatchOpts, sink 
 		vega_public_keyRule = append(vega_public_keyRule, vega_public_keyItem)
 	}
 
-	logs, sub, err := _Staking.contract.WatchLogs(opts, "Stake_Deposited", userRule, vega_public_keyRule)
+	logs, sub, err := _Staking.contract.WatchLogs(opts, "StakeDeposited", userRule, vega_public_keyRule)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func (_Staking *StakingFilterer) WatchStakeDeposited(opts *bind.WatchOpts, sink 
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(StakingStakeDeposited)
-				if err := _Staking.contract.UnpackLog(event, "Stake_Deposited", log); err != nil {
+				if err := _Staking.contract.UnpackLog(event, "StakeDeposited", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -425,10 +425,10 @@ func (_Staking *StakingFilterer) WatchStakeDeposited(opts *bind.WatchOpts, sink 
 
 // ParseStakeDeposited is a log parse operation binding the contract event 0x9e3e33edf5dcded4adabc51b1266225d00fa41516bfcad69513fa4eca69519da.
 //
-// Solidity: event Stake_Deposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
+// Solidity: event StakeDeposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) ParseStakeDeposited(log types.Log) (*StakingStakeDeposited, error) {
 	event := new(StakingStakeDeposited)
-	if err := _Staking.contract.UnpackLog(event, "Stake_Deposited", log); err != nil {
+	if err := _Staking.contract.UnpackLog(event, "StakeDeposited", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -512,7 +512,7 @@ type StakingStakeRemoved struct {
 
 // FilterStakeRemoved is a free log retrieval operation binding the contract event 0xa131d16963736e4c641f27a7f82f2e350b5971e555ae06ae906892bbba0a0939.
 //
-// Solidity: event Stake_Removed(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
+// Solidity: event StakeRemoved(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) FilterStakeRemoved(opts *bind.FilterOpts, user []common.Address, vega_public_key [][32]byte) (*StakingStakeRemovedIterator, error) {
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -524,16 +524,16 @@ func (_Staking *StakingFilterer) FilterStakeRemoved(opts *bind.FilterOpts, user 
 		vega_public_keyRule = append(vega_public_keyRule, vega_public_keyItem)
 	}
 
-	logs, sub, err := _Staking.contract.FilterLogs(opts, "Stake_Removed", userRule, vega_public_keyRule)
+	logs, sub, err := _Staking.contract.FilterLogs(opts, "StakeRemoved", userRule, vega_public_keyRule)
 	if err != nil {
 		return nil, err
 	}
-	return &StakingStakeRemovedIterator{contract: _Staking.contract, event: "Stake_Removed", logs: logs, sub: sub}, nil
+	return &StakingStakeRemovedIterator{contract: _Staking.contract, event: "StakeRemoved", logs: logs, sub: sub}, nil
 }
 
 // WatchStakeRemoved is a free log subscription operation binding the contract event 0xa131d16963736e4c641f27a7f82f2e350b5971e555ae06ae906892bbba0a0939.
 //
-// Solidity: event Stake_Removed(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
+// Solidity: event StakeRemoved(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) WatchStakeRemoved(opts *bind.WatchOpts, sink chan<- *StakingStakeRemoved, user []common.Address, vega_public_key [][32]byte) (event.Subscription, error) {
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -545,7 +545,7 @@ func (_Staking *StakingFilterer) WatchStakeRemoved(opts *bind.WatchOpts, sink ch
 		vega_public_keyRule = append(vega_public_keyRule, vega_public_keyItem)
 	}
 
-	logs, sub, err := _Staking.contract.WatchLogs(opts, "Stake_Removed", userRule, vega_public_keyRule)
+	logs, sub, err := _Staking.contract.WatchLogs(opts, "StakeRemoved", userRule, vega_public_keyRule)
 	if err != nil {
 		return nil, err
 	}
@@ -556,7 +556,7 @@ func (_Staking *StakingFilterer) WatchStakeRemoved(opts *bind.WatchOpts, sink ch
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(StakingStakeRemoved)
-				if err := _Staking.contract.UnpackLog(event, "Stake_Removed", log); err != nil {
+				if err := _Staking.contract.UnpackLog(event, "StakeRemoved", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -579,10 +579,10 @@ func (_Staking *StakingFilterer) WatchStakeRemoved(opts *bind.WatchOpts, sink ch
 
 // ParseStakeRemoved is a log parse operation binding the contract event 0xa131d16963736e4c641f27a7f82f2e350b5971e555ae06ae906892bbba0a0939.
 //
-// Solidity: event Stake_Removed(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
+// Solidity: event StakeRemoved(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) ParseStakeRemoved(log types.Log) (*StakingStakeRemoved, error) {
 	event := new(StakingStakeRemoved)
-	if err := _Staking.contract.UnpackLog(event, "Stake_Removed", log); err != nil {
+	if err := _Staking.contract.UnpackLog(event, "StakeRemoved", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

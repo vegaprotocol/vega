@@ -21,7 +21,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "Stake_Deposited",
+      "name": "StakeDeposited",
       "type": "event"
     },
     {
@@ -46,7 +46,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "Stake_Removed",
+      "name": "StakeRemoved",
       "type": "event"
     },
     {
