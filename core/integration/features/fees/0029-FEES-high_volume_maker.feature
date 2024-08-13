@@ -29,12 +29,12 @@ Feature: Discounts from multiple sources
 
     And the volume rebate program tiers named "vrt":
       | fraction | rebate |
-      | 0.1      | 0.2    |
+      | 0.2      | 0.001   |
 
     And the volume rebate program:
       | id  | tiers | closing timestamp | window length |
-      | id1 | vrt   | 0                 | 7             |
- 
+      | id1 | vrt   | 0                 | 2             |
+
     And the network moves ahead "1" epochs
 
     # Initialse the assets and markets
@@ -58,26 +58,40 @@ Feature: Discounts from multiple sources
       | lpprov2 | USD   | 1000000000 |
       | aux1    | USD   | 1000000000 |
       | aux2    | USD   | 1000000000 |
+      | trader1 | USD   | 1000000000 |
+      | trader2 | USD   | 1000000000 |
+      | trader3 | USD   | 1000000000 |
 
     # Exit the opening auction
     Given the parties submit the following liquidity provision:
-      | id  | party   | market id   | commitment amount | fee  | lp type    |
-      | lp1 | lpprov  | ETH/USD | 1000000           | 0.01 | submission |
-   
+      | id  | party  | market id | commitment amount | fee  | lp type    |
+      | lp1 | lpprov | ETH/USD   | 1000000           | 0.01 | submission |
+
     And the parties place the following pegged iceberg orders:
-      | party   | market id   | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov  | ETH/USD | 5000      | 1000                 | buy  | BID              | 10000  | 1      |
-      | lpprov  | ETH/USD | 5000      | 1000                 | sell | ASK              | 10000  | 1      |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/USD   | 5000      | 1000                 | buy  | BID              | 10000  | 1      |
+      | lpprov | ETH/USD   | 5000      | 1000                 | sell | ASK              | 10000  | 1      |
 
     When the parties place the following orders:
-      | party | market id   | side | volume | price | resulting trades | type       | tif     |
-      | aux1  | ETH/USD | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/USD | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/USD | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/USD | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/USD   | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/USD   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/USD   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/USD   | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/USD"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD"
 
+  Scenario: When there is `high_volume_market_maker_rebate`, `high_volume_maker_fee` should be taken from the `treasury/buyback_fee` components with value `high_volume_maker_fee = high_volume_factor * trade_value_for_fee_purposes` (0029-FEES-042)
 
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/USD   | sell | 210    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/USD   | sell | 310    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/USD   | sell | 480    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD   | buy  | 1000   | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
+
+    And the network moves ahead "1" epochs
+
+    Then debug transfers
 
