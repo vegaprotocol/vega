@@ -187,6 +187,91 @@ func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeS
 	return nil
 }
 
+func PartiesPlaceTheFollowingHackedOrders(
+	exec Execution,
+	ts *stubs.TimeStub,
+	table *godog.Table,
+) error {
+	now := ts.GetTimeNow()
+	for _, r := range parseSubmitHackedOrderTable(table) {
+		row := newHackedOrderRow(r)
+		orderSubmission := types.OrderSubmission{
+			MarketID:    row.MarketID(),
+			Side:        row.Side(),
+			Price:       row.Price(),
+			Size:        row.Volume(),
+			ExpiresAt:   row.ExpirationDate(now),
+			Type:        row.OrderType(),
+			TimeInForce: row.TimeInForce(),
+			Reference:   row.Reference(),
+		}
+		party := row.Party()
+		if row.IsAMM() {
+			if ammP, ok := exec.GetAMMSubAccountID(party); ok {
+				party = ammP
+			}
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
+		}
+
+		// check for pegged orders
+		if row.PeggedReference() != types.PeggedReferenceUnspecified {
+			orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: row.PeggedReference(), Offset: row.PeggedOffset()}
+		}
+
+		// check for stop orders
+		stopOrderSubmission, err := buildStopOrder(&orderSubmission, row.submitOrderRow, now)
+		if err != nil {
+			return err
+		}
+
+		var resp *types.OrderConfirmation
+		if stopOrderSubmission != nil {
+			resp, err = exec.SubmitStopOrder(
+				context.Background(),
+				stopOrderSubmission,
+				party,
+			)
+		} else {
+			resp, err = exec.SubmitOrder(context.Background(), &orderSubmission, party)
+		}
+		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
+			return ceerr
+		}
+
+		if !row.ExpectResultingTrades() || err != nil {
+			continue
+		}
+
+		if resp == nil {
+			continue
+		}
+
+		// If we have a reference, add a reference -> orderID lookup
+		if len(resp.Order.Reference) > 0 {
+			refToOrderId[resp.Order.Reference] = resp.Order.ID
+		}
+
+		actualTradeCount := int64(len(resp.Trades))
+		if actualTradeCount != row.ResultingTrades() {
+			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
+				map[string]string{
+					"total": i64ToS(row.ResultingTrades()),
+				},
+				map[string]string{
+					"total": i64ToS(actualTradeCount),
+				},
+			)
+		}
+	}
+	return nil
+}
+
 func PartiesPlaceTheFollowingOrders(
 	exec Execution,
 	ts *stubs.TimeStub,
@@ -488,6 +573,39 @@ func buildStopOrder(
 	return sub, nil
 }
 
+func parseSubmitHackedOrderTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"market id",
+		"side",
+		"volume",
+		"price",
+		"type",
+		"tif",
+	}, []string{
+		"reference",
+		"error",
+		"resulting trades",
+		"expires in",
+		"only",
+		"fb price trigger",
+		"fb trailing",
+		"ra price trigger",
+		"ra trailing",
+		"ra expires in",
+		"ra expiry strategy",
+		"fb expires in",
+		"fb expiry strategy",
+		"pegged reference",
+		"pegged offset",
+		"ra size override setting",
+		"ra size override percentage",
+		"fb size override setting",
+		"fb size override percentage",
+		"is amm",
+	})
+}
+
 func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
@@ -643,6 +761,25 @@ func (r amendOrderInBatchRow) Reference() string {
 
 type submitOrderRow struct {
 	row RowWrapper
+}
+
+type submitHackedRow struct {
+	submitOrderRow
+	row RowWrapper
+}
+
+func newHackedOrderRow(r RowWrapper) submitHackedRow {
+	return submitHackedRow{
+		submitOrderRow: newSubmitOrderRow(r),
+		row:            r,
+	}
+}
+
+func (h submitHackedRow) IsAMM() bool {
+	if !h.row.HasColumn("is amm") {
+		return false
+	}
+	return h.row.MustBool("is amm")
 }
 
 func newSubmitOrderRow(r RowWrapper) submitOrderRow {

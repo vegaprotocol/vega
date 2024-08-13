@@ -286,6 +286,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, execsetup.timeService, table)
 	})
+	s.Step(`^the parties place the following hacked orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingHackedOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
 	s.Step(`^the party "([^"]+)" adds the following orders to a batch:$`, func(party string, table *godog.Table) error {
 		return steps.PartyAddsTheFollowingOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
 	})

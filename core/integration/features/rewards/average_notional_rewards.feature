@@ -317,136 +317,136 @@ Feature: Average position metric rewards
   #   And "aux1" should have vesting account balance of "5000" for asset "VEGA"
   #   And "aux2" should have vesting account balance of "5000" for asset "VEGA"
 
-  # Scenario: If an eligible party held positions in multiple in-scope markets, their average position reward metric should be the sum of the size of their time-weighted-average-position in each market (0056-REWA-082)
-  #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
-  #   Given the parties submit the following recurring transfers:
-  #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+  Scenario: If an eligible party held positions in multiple in-scope markets, their average notional position reward metric should be the sum of their time-weighted-average-notional-position in each market (0056-REWA-198). f a window_length>1 is specified in the recurring transfer, an eligible parties average notional position reward metric should be the average of their reward metrics over the last window_length epochs (0056-REWA-199).
+    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
-  #   When the parties submit the following liquidity provision:
-  #     | id  | party  | market id | commitment amount | fee | lp type    |
-  #     | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-  #     | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-  #     | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
-  #     | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
 
-  #   And the parties place the following pegged iceberg orders:
-  #     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-  #     | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-  #     | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
-  #     | lpprov | ETH/DEC22 | 90        | 1                    | buy  | BID              | 90     | 10     |
-  #     | lpprov | ETH/DEC22 | 90        | 1                    | sell | ASK              | 90     | 10     |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
+      | lpprov | ETH/DEC22 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC22 | 90        | 1                    | sell | ASK              | 90     | 10     |
 
-  #   Then the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-  #     | aux1   | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | aux2   | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | aux1   | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-  #     | aux2   | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
-  #     | party1 | ETH/DEC22 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | party2 | ETH/DEC22 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | aux1   | ETH/DEC22 | buy  | 1      | 910   | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
-  #     | aux2   | ETH/DEC22 | sell | 1      | 1110  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1   | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux2   | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1   | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
+      | aux2   | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
+      | party1 | ETH/DEC22 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/DEC22 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1   | ETH/DEC22 | buy  | 1      | 910   | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
+      | aux2   | ETH/DEC22 | sell | 1      | 1110  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
 
-  #   # let the position update be in the middle of the epoch
-  #   Given time is updated to "2023-09-23T00:00:18Z"
+    # let the position update be in the middle of the epoch
+    Given time is updated to "2023-09-23T00:00:18Z"
 
-  #   Then the network moves ahead "1" epochs
+    Then the network moves ahead "1" epochs
 
-  #   # only ETH/DEC21 is inscope
-  #   # aux1 has a position of 10 => time weighted notional = 5, window = 2 => 2.5 => 10000 * 2.5/15 = 1666
-  #   # aux2 has a position of -10 => time weighted notional = 5, window = 2 => 2.5 => 10000 * 2.5/15 = 1666
-  #   # party1 has a position of 20 => time weighted notional = 10, window = 2 => 5 => 10000 * 5/15 = 3333
-  #   # party2 has a position of -20 => time weighted notional = 10, window = 2 => 5 => 10000 * 5/15 = 3333
-  #   And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-  #   And "aux1" should have vesting account balance of "1666" for asset "VEGA"
-  #   And "aux2" should have vesting account balance of "1666" for asset "VEGA"
-  #   And "party1" should have vesting account balance of "3333" for asset "VEGA"
-  #   And "party2" should have vesting account balance of "3333" for asset "VEGA"
+    # only ETH/DEC21 is inscope
+    # aux1 has a position of 10 => time weighted notional = 0.0005, window = 2 => 0.00025 => 10000 * 0.00025/0.00151 = 1655
+    # aux2 has a position of -10 => time weighted notional = 0.0005, window = 2 => 0.00025  => 10000 * 0.00025/0.00151 = 1655
+    # party1 has a position of 20 => time weighted notional = 0.00101, window = 2 => 0.000505 => 10000 * 0.000505/0.00151 = 3344
+    # party2 has a position of -20 => time weighted notional = 0.00101, window = 2 => 0.000505 => 10000 * 0.000505/0.00151 = 3344
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "1655" for asset "VEGA"
+    And "aux2" should have vesting account balance of "1655" for asset "VEGA"
+    And "party1" should have vesting account balance of "3344" for asset "VEGA"
+    And "party2" should have vesting account balance of "3344" for asset "VEGA"
 
-  #   # 20% into the epoch, lets get a trade done
-  #   Given time is updated to "2023-09-23T00:00:26Z"
+    # 20% into the epoch, lets get a trade done
+    Given time is updated to "2023-09-23T00:00:26Z"
 
-  #   Then the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-  #     | party1 | ETH/DEC21 | buy  | 5      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | aux1-buy1  |
-  #     | aux2   | ETH/DEC21 | sell | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC | aux2-sell1 |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/DEC21 | buy  | 5      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | aux1-buy1  |
+      | aux2   | ETH/DEC21 | sell | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC | aux2-sell1 |
 
-  #   # 80% into the epoch do another trade
-  #   Given time is updated to "2023-09-23T00:00:34Z"
+    # 80% into the epoch do another trade
+    Given time is updated to "2023-09-23T00:00:34Z"
 
-  #   Then the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-  #     | aux1   | ETH/DEC21 | sell | 20     | 1002  | 0                | TYPE_LIMIT | TIF_GTC | aux1-sell2 |
-  #     | party1 | ETH/DEC21 | buy  | 20     | 1002  | 1                | TYPE_LIMIT | TIF_GTC | aux2-buy2  |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | aux1   | ETH/DEC21 | sell | 20     | 1002  | 0                | TYPE_LIMIT | TIF_GTC | aux1-sell2 |
+      | party1 | ETH/DEC21 | buy  | 20     | 1002  | 1                | TYPE_LIMIT | TIF_GTC | aux2-buy2  |
 
-  #   Then the network moves ahead "1" epochs
+    Then the network moves ahead "1" epochs
 
-  #   And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "980000" for asset "VEGA"
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "980000" for asset "VEGA"
 
-  #   # epoch1
-  #   # market1: aux1 = 5, aux2 = 5
-  #   # market2: party1 = 10, party2 = 10
-  #   # epoch2
-  #   # market1: aux1 = 10, aux2 = 14.1666666667, party1 = 7.5
-  #   # market2: party1 = 20, party2 = 20
-  #   # considering the window=2:
-  #   # aux1 = [5,10] = 7.5
-  #   # aux2 = [5,14.1666666667] = 9.5833333334
-  #   # party1 = [10, 27.5] = 18.75
-  #   # part2 = [10,20] = 15
-  #   # aux1 reward = 10000*7.5/50.8333333334 = 1475
-  #   # aux2 reward = 10000*9.5833333334/50.8333333334 = 1885
-  #   # party1 reward = 10000*18.75/50.8333333334 = 3688
-  #   # party2 reward = 10000*15/50.8333333334 = 2950
-  #   And "aux1" should have vesting account balance of "3141" for asset "VEGA"
-  #   And "aux2" should have vesting account balance of "3551" for asset "VEGA"
-  #   And "party1" should have vesting account balance of "7022" for asset "VEGA"
-  #   And "party2" should have vesting account balance of "6284" for asset "VEGA"
+    # epoch1
+    # market1: aux1 = 5000, aux2 = 5000
+    # market2: party1 = 10100, party2 = 10100
+    # epoch2
+    # market1: aux1 = 10003, aux2 = 14179, party1 = 7511
+    # market2: party1 = 20200, party2 = 20200
+    # considering the window=2:
+    # aux1 = [5000,10003] => 0.00075015
+    # aux2 = [5000,14179] => 0.00095895
+    # party1 = [10100, 27711] => 0.00189055
+    # part2 = [10100,20200] = 0.001515
+    # aux1 reward = 10000*0.00075015/0.00511465 = 1466 + 1655 => 3121
+    # aux2 reward = 10000*0.00095895/0.00511465 = 1875 + 1655 => 3530
+    # party1 reward = 10000*0.00189055/0.00511465 = 3697 + 3344 => 7041
+    # party2 reward = 10000*0.001515/0.00511465 = 2962 + 3344 => 6306
+    And "aux1" should have vesting account balance of "3121" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3530" for asset "VEGA"
+    And "party1" should have vesting account balance of "7041" for asset "VEGA"
+    And "party2" should have vesting account balance of "6306" for asset "VEGA"
 
-  # Scenario: If an eligible party opens a position at the beginning of the epoch, their average position reward metric should be equal to the size of the position at the end of the epoch (0056-REWA-078). If an eligible party held an open position at the start of the epoch, their average position reward metric should be equal to the size of the position at the end of the epoch (0056-REWA-079).
-  #   When the parties submit the following liquidity provision:
-  #     | id  | party  | market id | commitment amount | fee | lp type    |
-  #     | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-  #     | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+  Scenario: If an eligible party opens a position at the beginning of the epoch, their average notional reward metric should be equal to the size of the notional at the end of the epoch (0056-REWA-192). If an eligible party held an open position at the start of the epoch, their average position notional metric should be equal to the size of the notional at the end of the epoch (0056-REWA-194).
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
 
-  #   And the parties place the following pegged iceberg orders:
-  #     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-  #     | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-  #     | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
 
-  #   Then the parties place the following orders:
-  #     | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-  #     | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-  #     | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-  #     | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
+      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
 
-  #   # leave opening auction
-  #   Then the network moves ahead "1" epochs
+    # leave opening auction
+    Then the network moves ahead "1" epochs
 
-  #   # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
-  #   Given the parties submit the following recurring transfers:
-  #     | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-  #     | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
-  #   # the time is the beginning of the epoch
-  #   Then the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-  #     | party1 | ETH/DEC21 | buy  | 5      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
-  #     | party2 | ETH/DEC21 | sell | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC | p2-sell1  |
+    # the time is the beginning of the epoch
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | buy  | 5      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | party2 | ETH/DEC21 | sell | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC | p2-sell1  |
 
-  #   Then the network moves ahead "1" epochs
+    Then the network moves ahead "1" epochs
 
-  #   # aux1 and aux2 have a position of 10 - which is equal to their position held at the beginning of the epoch
-  #   # party1 and party2 has position of 5 - which is equal to the position opened at the beginning of the epoch
-  #   And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-  #   And "aux1" should have vesting account balance of "3333" for asset "VEGA"
-  #   And "aux2" should have vesting account balance of "3333" for asset "VEGA"
-  #   And "party1" should have vesting account balance of "1666" for asset "VEGA"
-  #   And "party2" should have vesting account balance of "1666" for asset "VEGA"
+    # aux1 and aux2 have a position of 10 - which is equal to their position held at the beginning of the epoch
+    # party1 and party2 has position of 5 - which is equal to the position opened at the beginning of the epoch
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "3332" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3332" for asset "VEGA"
+    And "party1" should have vesting account balance of "1667" for asset "VEGA"
+    And "party2" should have vesting account balance of "1667" for asset "VEGA"
 
-  Scenario: If an eligible party opens a position half way through the epoch, their average position reward metric should be half the size of the position at the end of the epoch (0056-REWA-080). If an eligible party held an open position at the start of the epoch and closes it half-way through the epoch, their average position reward metric should be equal to the size of that position at the end of the epoch (0056-REWA-081).
+  Scenario: If an eligible party opens a position half way through the epoch, their average notional reward metric should be half the size of the position at the end of the epoch (0056-REWA-196). If an eligible party held an open position at the start of the epoch and closes it half-way through the epoch, their average notional reward metric should be equal to the size of that position at the end of the epoch (0056-REWA-197).
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |

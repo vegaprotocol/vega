@@ -887,7 +887,7 @@ func (mat *MarketActivityTracker) isEligibleForReward(ctx context.Context, asset
 
 func getEligibilityScore(party, gameID string, eligibilityInEpoch map[string][]map[string]struct{}, balance *num.Uint, notional *num.Uint, paidFees map[string]*num.Uint, windowSize int) *types.PartyContributionScore {
 	if _, ok := eligibilityInEpoch[gameID]; !ok {
-		eligibilityInEpoch[gameID] = []map[string]struct{}{}
+		eligibilityInEpoch[gameID] = []map[string]struct{}{{}}
 		eligibilityInEpoch[gameID][0][party] = struct{}{}
 		return &types.PartyContributionScore{Party: party, Score: num.DecimalOne(), IsEligible: true, StakingBalance: balance, OpenVolume: notional, TotalFeesPaid: paidFees[party], RankingIndex: -1}
 	}
@@ -1128,7 +1128,6 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL:
 		// descaling the total tw position metric by dividing by the scaling factor
 		v := total.Div(num.DecimalFromInt64(int64(windowSize) * scalingFactor))
-		println(party, v.String())
 		return v, found
 	case vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, vega.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
 		return total.Div(num.DecimalFromInt64(int64(windowSize))), found
