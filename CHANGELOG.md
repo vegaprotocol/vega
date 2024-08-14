@@ -22,20 +22,24 @@
 - [11535](https://github.com/vegaprotocol/vega/issues/11535) - Added support for lottery rank distribution strategy.
 - [11536](https://github.com/vegaprotocol/vega/issues/11536) - Make the batch market instructions errors programmatically usable.
 - [11546](https://github.com/vegaprotocol/vega/issues/11546) - Add validation to market proposals metadata.
-- [11562](https://github.com/vegaprotocol/vega/issues/11562) - Update average notional metric with mark price at the end of the epoch and when calculating live score. 
+- [11562](https://github.com/vegaprotocol/vega/issues/11562) - Update average notional metric with mark price at the end of the epoch and when calculating live score.
 - [11570](https://github.com/vegaprotocol/vega/issues/11570) - Include the required set of parties for evaluation for eligible entities reward.
 - [11576](https://github.com/vegaprotocol/vega/issues/11576) - Replace additional rebate validation with a cap. 
-  
+
+
 ### 🐛 Fixes
 
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
 - [11526](https://github.com/vegaprotocol/vega/issues/11526) - `EstimateAMMBounds` now respects the market's decimal places.
 - [11486](https://github.com/vegaprotocol/vega/issues/11486) - `AMMs` can now be submitted on markets with more decimal places than asset decimal places.
 - [11561](https://github.com/vegaprotocol/vega/issues/11561) - Failing amends on `AMMs` now restore original properly.
+- [11583](https://github.com/vegaprotocol/vega/issues/11583) - Remove `AMMs` entirely from engine when market closes.
 - [11568](https://github.com/vegaprotocol/vega/issues/11568) - order book shape on closing `AMM` no longer panics.
 - [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
+- [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
+- [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.
 
 
 ## 0.77.5
