@@ -310,6 +310,14 @@ func (e *executionTestSetup) registerTimeServiceCallbacks() {
 func (e *executionTestSetup) registerNetParamsCallbacks() error {
 	return e.netParams.Watch(
 		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsBuyBackFee,
+			Watcher: e.volumeRebateProgram.OnMarketFeeFactorsBuyBackFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsTreasuryFee,
+			Watcher: e.volumeRebateProgram.OnMarketFeeFactorsTreasuryFeeUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
 			Watcher: e.topology.OnMinDelegationUpdated,
 		},

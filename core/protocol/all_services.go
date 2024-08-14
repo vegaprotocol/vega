@@ -766,6 +766,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsBuyBackFeeUpdate,
 		},
 		{
+			Param:   netparams.MarketFeeFactorsTreasuryFee,
+			Watcher: svcs.volumeRebate.OnMarketFeeFactorsTreasuryFeeUpdate,
+		},
+		{
+			Param:   netparams.MarketFeeFactorsBuyBackFee,
+			Watcher: svcs.volumeRebate.OnMarketFeeFactorsBuyBackFeeUpdate,
+		},
+		{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
 		},

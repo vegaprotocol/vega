@@ -142,7 +142,8 @@ func TestRebateFactor(t *testing.T) {
 	broker := mocks.NewMockBroker(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	engine := volumerebate.NewSnapshottedEngine(broker, marketActivityTracker)
-
+	engine.OnMarketFeeFactorsBuyBackFeeUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
+	engine.OnMarketFeeFactorsTreasuryFeeUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
 	currentTime := time.Now()
 
 	p1 := &types.VolumeRebateProgram{
@@ -198,6 +199,8 @@ func TestRebateFactor(t *testing.T) {
 	hashWithEpochNotionalsData, _, err := engine.GetState(key)
 	require.NoError(t, err)
 	loadedEngine := assertSnapshotMatches(t, key, hashWithEpochNotionalsData)
+	loadedEngine.OnMarketFeeFactorsBuyBackFeeUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
+	loadedEngine.OnMarketFeeFactorsTreasuryFeeUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
 
 	// party does not exist
 	require.Equal(t, num.DecimalZero(), engine.VolumeRebateFactorForParty("p8"))
@@ -253,6 +256,8 @@ func TestRebateFactorWithWindow(t *testing.T) {
 	broker := mocks.NewMockBroker(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	engine := volumerebate.NewSnapshottedEngine(broker, marketActivityTracker)
+	engine.OnMarketFeeFactorsBuyBackFeeUpdate(context.Background(), num.DecimalFromFloat(0.5))
+	engine.OnMarketFeeFactorsTreasuryFeeUpdate(context.Background(), num.DecimalFromFloat(0.5))
 	currentTime := time.Now()
 
 	p1 := &types.VolumeRebateProgram{
@@ -318,6 +323,9 @@ func TestRebateFactorWithWindow(t *testing.T) {
 	// volume 5000
 	require.Equal(t, "1", engine.VolumeRebateFactorForParty("p7").String())
 
+	engine.OnMarketFeeFactorsBuyBackFeeUpdate(context.Background(), num.DecimalFromFloat(0.1))
+	engine.OnMarketFeeFactorsTreasuryFeeUpdate(context.Background(), num.DecimalFromFloat(0.2))
+
 	// running for another epoch
 	marketActivityTracker.EXPECT().CalculateTotalMakerContributionInQuantum(gomock.Any()).Return(map[string]*num.Uint{
 		"p8": num.NewUint(2000),
@@ -342,6 +350,8 @@ func TestRebateFactorWithWindow(t *testing.T) {
 	hashAfter2Epochs, _, err := engine.GetState(key)
 	require.NoError(t, err)
 	loadedEngine := assertSnapshotMatches(t, key, hashAfter2Epochs)
+	loadedEngine.OnMarketFeeFactorsBuyBackFeeUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
+	loadedEngine.OnMarketFeeFactorsTreasuryFeeUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
 
 	// fraction 0.2 => rebate 0.2
 	require.Equal(t, "0.2", engine.VolumeRebateFactorForParty("p8").String())
@@ -358,12 +368,12 @@ func TestRebateFactorWithWindow(t *testing.T) {
 	// nothing this time
 	require.Equal(t, "0", engine.VolumeRebateFactorForParty("p4").String())
 	require.Equal(t, "0", loadedEngine.VolumeRebateFactorForParty("p4").String())
-	// fraction 0.4 => rebate 0.5
-	require.Equal(t, "1", engine.VolumeRebateFactorForParty("p5").String())
-	require.Equal(t, "1", loadedEngine.VolumeRebateFactorForParty("p5").String())
-	// fraction 0.4 => rebate 0.5
-	require.Equal(t, "1", engine.VolumeRebateFactorForParty("p6").String())
-	require.Equal(t, "1", loadedEngine.VolumeRebateFactorForParty("p6").String())
+	// fraction 0.4 => rebate 1 => capped at 0.3
+	require.Equal(t, "0.3", engine.VolumeRebateFactorForParty("p5").String())
+	require.Equal(t, "0.3", loadedEngine.VolumeRebateFactorForParty("p5").String())
+	// fraction 0.4 => rebate 1 => capped at 0.3
+	require.Equal(t, "0.3", engine.VolumeRebateFactorForParty("p6").String())
+	require.Equal(t, "0.3", loadedEngine.VolumeRebateFactorForParty("p6").String())
 	// nothing this time
 	require.Equal(t, "0", engine.VolumeRebateFactorForParty("p7").String())
 	require.Equal(t, "0", loadedEngine.VolumeRebateFactorForParty("p7").String())

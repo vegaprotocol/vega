@@ -27,16 +27,6 @@ func validateUpdateVolumeRebateProgram(netp NetParams, p *types.UpdateVolumeReba
 	if len(p.Changes.VolumeRebateBenefitTiers) > int(maxTiers.Uint64()) {
 		return types.ProposalErrorInvalidVolumeRebateProgram, fmt.Errorf("the number of tiers in the proposal is higher than the maximum allowed by the network parameter %q: maximum is %s, but got %d", netparams.VolumeRebateProgramMaxBenefitTiers, maxTiers.String(), len(p.Changes.VolumeRebateBenefitTiers))
 	}
-
-	treasuryFee, _ := netp.GetDecimal(netparams.MarketFeeFactorsTreasuryFee)
-	buybackFee, _ := netp.GetDecimal(netparams.MarketFeeFactorsBuyBackFee)
-	maxRebate := treasuryFee.Add(buybackFee)
-
-	for i, tier := range p.Changes.VolumeRebateBenefitTiers {
-		if tier.AdditionalMakerRebate.GreaterThan(maxRebate) {
-			return types.ProposalErrorInvalidVolumeRebateProgram, fmt.Errorf("tier %d defines an additional rebate factor higher than the maximum allowed by the network parameters: maximum is (%s+%s), but got %s", i+1, buybackFee.String(), treasuryFee.String(), tier.AdditionalMakerRebate.String())
-		}
-	}
 	return 0, nil
 }
 
