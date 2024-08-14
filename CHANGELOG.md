@@ -36,6 +36,7 @@
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
 - [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
+- [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.
 
 
 ## 0.77.5
