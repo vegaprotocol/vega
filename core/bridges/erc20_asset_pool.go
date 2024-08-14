@@ -74,7 +74,7 @@ func (e ERC20AssetPool) SetBridgeAddress(
 
 	newAddressEth := ethcmn.HexToAddress(newAddress)
 	buf, err := args.Pack([]interface{}{
-		newAddressEth, nonce.BigInt(), "set_bridge_address",
+		newAddressEth, nonce.BigInt(), "setBridgeAddress",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -122,7 +122,7 @@ func (e ERC20AssetPool) SetMultiSigControl(
 
 	newAddressEth := ethcmn.HexToAddress(newAddress)
 	buf, err := args.Pack([]interface{}{
-		newAddressEth, nonce.BigInt(), "set_multisig_control",
+		newAddressEth, nonce.BigInt(), "setMultisigControl",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)

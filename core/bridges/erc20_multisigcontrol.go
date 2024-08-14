@@ -60,7 +60,7 @@ func (e *ERC20MultiSigControl) BurnNonce(
 		},
 	})
 
-	buf, err := args.Pack([]interface{}{nonce.BigInt(), "burn_nonce"}...)
+	buf, err := args.Pack([]interface{}{nonce.BigInt(), "burnNonce"}...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (e *ERC20MultiSigControl) SetThreshold(
 
 	args := abi.Arguments([]abi.Argument{
 		{
-			Name: "new_threshold",
+			Name: "newThreshold",
 			Type: typU16,
 		},
 		{
@@ -106,7 +106,7 @@ func (e *ERC20MultiSigControl) SetThreshold(
 		},
 	})
 
-	buf, err := args.Pack([]interface{}{newThreshold, nonce.BigInt(), "set_threshold"}...)
+	buf, err := args.Pack([]interface{}{newThreshold, nonce.BigInt(), "setThreshold"}...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (e *ERC20MultiSigControl) AddSigner(
 	})
 
 	newSignerAddr := ethcmn.HexToAddress(newSigner)
-	buf, err := args.Pack([]interface{}{newSignerAddr, nonce.BigInt(), "add_signer"}...)
+	buf, err := args.Pack([]interface{}{newSignerAddr, nonce.BigInt(), "addSigner"}...)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (e *ERC20MultiSigControl) RemoveSigner(
 	})
 
 	oldSignerAddr := ethcmn.HexToAddress(oldSigner)
-	buf, err := args.Pack([]interface{}{oldSignerAddr, nonce.BigInt(), "remove_signer"}...)
+	buf, err := args.Pack([]interface{}{oldSignerAddr, nonce.BigInt(), "removeSigner"}...)
 	if err != nil {
 		return nil, err
 	}
