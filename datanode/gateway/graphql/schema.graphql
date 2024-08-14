@@ -5191,9 +5191,9 @@ type BenefitTier {
   "The minimum running notional for the given benefit tier"
   minimumRunningNotionalTakerVolume: String!
   "The proportion of the referee's taker fees to be discounted"
-  referralDiscountFactor: String! @deprecated(reason: "Use referralRewardFactors")
+  referralDiscountFactor: String! @deprecated(reason: "Use referralDiscountFactors")
   "The proportion of the referee's taker fees to be discounted"
-  referrals: DiscountFactors!
+  referralDiscountFactors: DiscountFactors!
   "The proportion of the referee's taker fees to be rewarded to the referrer"
   referralRewardFactor: String! @deprecated(reason: "Use referralRewardFactors")
   "The proportion of the referee's taker fees to be rewarded to the referrer"
