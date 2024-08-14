@@ -33,7 +33,6 @@ import (
 func TestProposalForUpdateVolumeRebateProgram(t *testing.T) {
 	t.Run("Submitting a proposal for referral program update succeeds", testSubmittingProposalForVolumeRebateProgramUpdateSucceeds)
 	t.Run("Submitting a proposal for referral program update with too many tiers fails", testSubmittingProposalForVolumeRebateProgramUpdateWithTooManyTiersFails)
-	t.Run("Submitting a proposal for referral program update with too high rebate factor fails", testSubmittingProposalForVolumeRebateProgramUpdateWithTooHighRebateFactorFails)
 }
 
 func testSubmittingProposalForVolumeRebateProgramUpdateSucceeds(t *testing.T) {
@@ -121,52 +120,5 @@ func testSubmittingProposalForVolumeRebateProgramUpdateWithTooManyTiersFails(t *
 
 	// then
 	require.Error(t, err)
-	require.Nil(t, toSubmit)
-}
-
-func testSubmittingProposalForVolumeRebateProgramUpdateWithTooHighRebateFactorFails(t *testing.T) {
-	now := time.Now()
-	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomPositiveI64())
-	eng := getTestEngine(t, now)
-
-	// setup
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
-	eng.netp.Update(ctx, netparams.GovernanceProposalVolumeRebateProgramMinClose, "48h")
-	eng.netp.Update(ctx, netparams.GovernanceProposalVolumeRebateProgramMinEnact, "48h")
-	eng.netp.Update(ctx, netparams.GovernanceProposalVolumeRebateProgramMinProposerBalance, "1000")
-
-	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.VolumeRebateProgramMaxBenefitTiers, "2")).Times(1)
-	require.NoError(t, eng.netp.Update(ctx, netparams.VolumeRebateProgramMaxBenefitTiers, "2"))
-
-	// given
-	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForVolumeRebateProgramUpdate(proposer, now, &types.VolumeRebateProgramChanges{
-		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
-		WindowLength:          15,
-		VolumeRebateBenefitTiers: []*types.VolumeRebateBenefitTier{
-			{
-				MinimumPartyMakerVolumeFraction: num.DecimalFromFloat(0.1),
-				AdditionalMakerRebate:           num.DecimalFromFloat(0.01),
-			}, {
-				MinimumPartyMakerVolumeFraction: num.DecimalFromFloat(0.2),
-				AdditionalMakerRebate:           num.DecimalFromFloat(0.02),
-			},
-		},
-	})
-
-	// setup
-	eng.ensureTokenBalanceForParty(t, proposer, 1000)
-
-	// expect
-	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidVolumeRebateProgram)
-
-	// when
-	toSubmit, err := eng.submitProposal(t, proposal)
-
-	// then
-	require.EqualError(t,
-		err,
-		"tier 1 defines an additional rebate factor higher than the maximum allowed by the network parameters: maximum is (0.0001+0.0001), but got 0.01",
-	)
 	require.Nil(t, toSubmit)
 }

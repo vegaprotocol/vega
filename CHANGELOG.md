@@ -24,6 +24,7 @@
 - [11546](https://github.com/vegaprotocol/vega/issues/11546) - Add validation to market proposals metadata.
 - [11562](https://github.com/vegaprotocol/vega/issues/11562) - Update average notional metric with mark price at the end of the epoch and when calculating live score. 
 - [11570](https://github.com/vegaprotocol/vega/issues/11570) - Include the required set of parties for evaluation for eligible entities reward.
+- [11576](https://github.com/vegaprotocol/vega/issues/11576) - Replace additional rebate validation with a cap. 
   
 ### 🐛 Fixes
 
