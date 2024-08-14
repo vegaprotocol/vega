@@ -194,6 +194,8 @@ type GRPCServer struct {
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition
 	gameScoreService                    *service.GameScore
 	ammPoolService                      *service.AMMPools
+	volumeRebateStatsService            *service.VolumeRebateStats
+	volumeRebateProgramService          *service.VolumeRebatePrograms
 
 	eventObserver *eventObserver
 
@@ -266,6 +268,8 @@ func NewGRPCServer(
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition,
 	gameScoreService *service.GameScore,
 	ammPoolService *service.AMMPools,
+	volumeRebateStatsService *service.VolumeRebateStats,
+	volumeRebateProgramsService *service.VolumeRebatePrograms,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -337,7 +341,8 @@ func NewGRPCServer(
 		timeWeightedNotionalPositionService: timeWeightedNotionalPositionService,
 		gameScoreService:                    gameScoreService,
 		ammPoolService:                      ammPoolService,
-
+		volumeRebateStatsService:            volumeRebateStatsService,
+		volumeRebateProgramService:          volumeRebateProgramsService,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -578,6 +583,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		twNotionalPositionService:     g.timeWeightedNotionalPositionService,
 		gameScoreService:              g.gameScoreService,
 		AMMPoolService:                g.ammPoolService,
+		volumeRebateStatsService:      g.volumeRebateStatsService,
+		volumeRebateProgramService:    g.volumeRebateProgramService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
