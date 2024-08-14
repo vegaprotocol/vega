@@ -91,8 +91,8 @@ func defaultNetParams() map[string]value {
 		MarketMarginScalingFactors:                NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
 		MarketFeeFactorsInfrastructureFee:         NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),
-		MarketFeeFactorsBuyBackFee:                NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0001"), // TODO set default value
-		MarketFeeFactorsTreasuryFee:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0001"), // TODO set default value
+		MarketFeeFactorsBuyBackFee:                NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		MarketFeeFactorsTreasuryFee:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		MarketAuctionMinimumDuration:              NewDuration(gte1s, lte1d).Mutable(true).MustUpdate("30m0s"),
 		MarketAuctionMaximumDuration:              NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
 		MarketLiquidityTargetStakeTriggeringRatio: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
