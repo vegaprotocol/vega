@@ -2377,12 +2377,12 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 		existingHoldingQty, existingHoldingFee := m.orderHoldingTracker.GetCurrentHolding(order.ID)
 		oldHoldingRequirement := num.Sum(existingHoldingQty, existingHoldingFee)
 		newFeesRequirement := num.UintZero()
-		if m.as.InAuction() {
-			newFeesRequirement, _ = m.calculateFees(order.Party, remaining, amendment.Price, order.Side)
-		}
 		price := order.Price
 		if amendment.Price != nil {
 			price, _ = num.UintFromDecimal(amendment.Price.ToDecimal().Mul(m.priceFactor))
+		}
+		if m.as.InAuction() {
+			newFeesRequirement, _ = m.calculateFees(order.Party, remaining, price, order.Side)
 		}
 		if order.PeggedOrder != nil {
 			p, err := m.getNewPeggedPrice(order)

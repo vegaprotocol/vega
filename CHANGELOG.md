@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.77.8
+
+### 🐛 Fixes
+
+- [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
+
+
 ## 0.77.7
 
 ### 🐛 Fixes
