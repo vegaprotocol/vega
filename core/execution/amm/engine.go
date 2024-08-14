@@ -820,6 +820,10 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 		e.sendUpdate(ctx, p)
 		e.marketActivityTracker.RemoveAMMParty(e.assetID, e.marketID, p.AMMParty)
 	}
+
+	e.pools = nil
+	e.poolsCpy = nil
+	e.ammParties = nil
 	return nil
 }
 
