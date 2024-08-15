@@ -48,6 +48,29 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// VolumeDiscountService ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/volume_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api VolumeDiscountService
+type VolumeDiscountService interface {
+	Stats(ctx context.Context, atEpoch *uint64, partyID *string, pagination entities.CursorPagination) ([]entities.FlattenVolumeDiscountStats, entities.PageInfo, error)
+}
+
+// EpochService
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api EpochService
+type EpochService interface {
+	GetCurrent(ctx context.Context) (entities.Epoch, error)
+	GetByBlock(ctx context.Context, height uint64) (entities.Epoch, error)
+	Get(ctx context.Context, ID uint64) (entities.Epoch, error)
+	GetAll(ctx context.Context) ([]entities.Epoch, error)
+}
+
+type ReferralSetService interface {
+	GetReferralSetStats(ctx context.Context, setID *entities.ReferralSetID, atEpoch *uint64, referee *entities.PartyID, pagination entities.CursorPagination) ([]entities.FlattenReferralSetStats, entities.PageInfo, error)
+	ListReferralSets(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination) ([]entities.ReferralSet, entities.PageInfo, error)
+	ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination, aggregationEpochs uint32) ([]entities.ReferralSetRefereeStats, entities.PageInfo, error)
+}
+
 // EventService ...
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api EventService
@@ -550,7 +573,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		delegationService:             g.delegationService,
 		marketDepthService:            g.marketDepthService,
 		nodeService:                   g.nodeService,
-		epochService:                  g.epochService,
+		EpochService:                  g.epochService,
 		RiskFactorService:             g.riskFactorService,
 		networkParameterService:       g.networkParameterService,
 		checkpointService:             g.checkpointService,
@@ -567,11 +590,11 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		fundingPeriodService:          g.fundingPeriodService,
 		partyActivityStreak:           g.partyActivityStreak,
 		referralProgramService:        g.referralProgramService,
-		referralSetsService:           g.referralSetsService,
+		ReferralSetsService:           g.referralSetsService,
 		teamsService:                  g.teamsService,
 		feesStatsService:              g.FeesStatsService,
 		fundingPaymentService:         g.fundingPaymentService,
-		volumeDiscountStatsService:    g.volumeDiscountStatsService,
+		VolumeDiscountStatsService:    g.volumeDiscountStatsService,
 		volumeDiscountProgramService:  g.volumeDiscountProgramService,
 		paidLiquidityFeesStatsService: g.paidLiquidityFeesStatsService,
 		partyLockedBalances:           g.partyLockedBalances,
