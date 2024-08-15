@@ -210,9 +210,9 @@ func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
 		// if the party hasn't qualified, then still send the stats but with a zero factor
 		if !qualifiedForTier {
 			evt.Stats = append(evt.Stats, &eventspb.PartyVolumeDiscountStats{
-				PartyId:        party.String(),
-				DiscountFactor: "0",
-				RunningVolume:  notionalVolume.Round(0).String(),
+				PartyId:         party.String(),
+				DiscountFactors: types.EmptyFactors.IntoDiscountFactorsProto(),
+				RunningVolume:   notionalVolume.Round(0).String(),
 			})
 		}
 	}
