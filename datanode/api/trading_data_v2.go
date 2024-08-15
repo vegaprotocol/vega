@@ -104,7 +104,7 @@ type TradingDataServiceV2 struct {
 	delegationService             *service.Delegation
 	marketDepthService            *service.MarketDepth
 	nodeService                   *service.Node
-	epochService                  *service.Epoch
+	EpochService                  EpochService
 	RiskFactorService             RiskFactorService
 	networkParameterService       *service.NetworkParameter
 	checkpointService             *service.Checkpoint
@@ -121,10 +121,10 @@ type TradingDataServiceV2 struct {
 	partyActivityStreak           *service.PartyActivityStreak
 	fundingPaymentService         *service.FundingPayment
 	referralProgramService        *service.ReferralPrograms
-	referralSetsService           *service.ReferralSets
+	ReferralSetsService           ReferralSetService
 	teamsService                  *service.Teams
 	feesStatsService              *service.FeesStats
-	volumeDiscountStatsService    *service.VolumeDiscountStats
+	VolumeDiscountStatsService    VolumeDiscountService
 	volumeDiscountProgramService  *service.VolumeDiscountPrograms
 	volumeRebateStatsService      *service.VolumeRebateStats
 	volumeRebateProgramService    *service.VolumeRebatePrograms
@@ -3073,7 +3073,7 @@ func (t *TradingDataServiceV2) marketExistsForID(ctx context.Context, marketID s
 func (t *TradingDataServiceV2) GetNetworkData(ctx context.Context, _ *v2.GetNetworkDataRequest) (*v2.GetNetworkDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkDataV2")()
 
-	epoch, err := t.epochService.GetCurrent(ctx)
+	epoch, err := t.EpochService.GetCurrent(ctx)
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)
 	}
@@ -3124,7 +3124,7 @@ func (t *TradingDataServiceV2) GetNode(ctx context.Context, req *v2.GetNodeReque
 		return nil, formatE(ErrMissingNodeID)
 	}
 
-	epoch, err := t.epochService.GetCurrent(ctx)
+	epoch, err := t.EpochService.GetCurrent(ctx)
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)
 	}
@@ -3148,9 +3148,9 @@ func (t *TradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 		err   error
 	)
 	if req.EpochSeq == nil || *req.EpochSeq > math.MaxInt64 {
-		epoch, err = t.epochService.GetCurrent(ctx)
+		epoch, err = t.EpochService.GetCurrent(ctx)
 	} else {
-		epoch, err = t.epochService.Get(ctx, *req.EpochSeq)
+		epoch, err = t.EpochService.Get(ctx, *req.EpochSeq)
 	}
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)
@@ -3223,11 +3223,11 @@ func (t *TradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 		err   error
 	)
 	if req.GetId() > 0 {
-		epoch, err = t.epochService.Get(ctx, req.GetId())
+		epoch, err = t.EpochService.Get(ctx, req.GetId())
 	} else if req.GetBlock() > 0 {
-		epoch, err = t.epochService.GetByBlock(ctx, req.GetBlock())
+		epoch, err = t.EpochService.GetByBlock(ctx, req.GetBlock())
 	} else {
-		epoch, err = t.epochService.GetCurrent(ctx)
+		epoch, err = t.EpochService.GetCurrent(ctx)
 	}
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)
@@ -3275,7 +3275,7 @@ func (t *TradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.Estimate
 		return nil, formatE(ErrMissingPrice)
 	}
 
-	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size)
+	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size, req.Party)
 	if err != nil {
 		return nil, formatE(ErrEstimateFee, err)
 	}
@@ -3389,6 +3389,7 @@ func (t *TradingDataServiceV2) estimateFee(
 	ctx context.Context,
 	market, priceS string,
 	size uint64,
+	party *string,
 ) (*vega.Fee, error) {
 	mkt, err := t.MarketsService.GetByID(ctx, market)
 	if err != nil {
@@ -3417,26 +3418,94 @@ func (t *TradingDataServiceV2) estimateFee(
 		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
 
 	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size))).Div(mdpd)
-	maker, infra, liquidity, err := t.feeFactors(mkt)
+	maker, infra, liquidity, bb, treasury, err := t.feeFactors(mkt)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting fee factors")
 	}
 
-	return &vega.Fee{
-		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).Round(0).String(),
-		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).Round(0).String(),
-		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).Round(0).String(),
-	}, nil
+	mf, _ := num.UintFromDecimal(base.Mul(num.NewDecimalFromFloat(maker)).Ceil())
+	inf, _ := num.UintFromDecimal(base.Mul(num.NewDecimalFromFloat(infra)).Ceil())
+	lf, _ := num.UintFromDecimal(base.Mul(num.NewDecimalFromFloat(liquidity)).Ceil())
+	treasuryFee, _ := num.UintFromDecimal(base.Mul(num.NewDecimalFromFloat(treasury)).Ceil())
+	buyBackFee, _ := num.UintFromDecimal(base.Mul(num.NewDecimalFromFloat(bb)).Ceil())
+
+	fees := &vega.Fee{
+		MakerFee:          mf.String(),
+		InfrastructureFee: inf.String(),
+		LiquidityFee:      lf.String(),
+		BuyBackFee:        buyBackFee.String(),
+		TreasuryFee:       treasuryFee.String(),
+	}
+
+	var referee *entities.PartyID
+	referrerDiscount := types.EmptyFactors
+	volumeDiscountFactors := types.EmptyFactors
+	if party != nil {
+		epoch, err := t.EpochService.GetCurrent(ctx)
+		if err != nil {
+			return nil, formatE(ErrGetEpoch, err)
+		}
+		// NB: we need to use the previous epoch because the stats is published at the end of the epoch so we won't have
+		// information for the current epoch only the previous one.
+		atEpoch := uint64(epoch.ID) - 1
+		referee = ptr.From(entities.PartyID(*party))
+		stats, _, err := t.ReferralSetsService.GetReferralSetStats(ctx, nil, &atEpoch, referee, entities.DefaultCursorPagination(true))
+		if err == nil && len(stats) > 0 {
+			referrerDiscount = types.FactorsFromDiscountFactorsWithDefault(stats[0].DiscountFactors, "0")
+		}
+		vdStats, _, err := t.VolumeDiscountStatsService.Stats(ctx, &atEpoch, party, entities.DefaultCursorPagination(true))
+		if err == nil && len(vdStats) > 0 {
+			volumeDiscountFactors = types.FactorsFromDiscountFactorsWithDefault(vdStats[0].DiscountFactors, "0")
+		}
+		referralMakerDiscount, _ := num.UintFromDecimal(mf.ToDecimal().Mul(referrerDiscount.Maker).Floor())
+		referralInfDiscount, _ := num.UintFromDecimal(inf.ToDecimal().Mul(referrerDiscount.Infra).Floor())
+		referralLfDiscount, _ := num.UintFromDecimal(lf.ToDecimal().Mul(referrerDiscount.Liquidity).Floor())
+
+		fees.MakerFeeReferrerDiscount = referralMakerDiscount.String()
+		fees.InfrastructureFeeReferrerDiscount = referralInfDiscount.String()
+		fees.LiquidityFeeReferrerDiscount = referralLfDiscount.String()
+
+		// apply referral discounts
+		mf = mf.Sub(mf, referralMakerDiscount)
+		inf = inf.Sub(inf, referralInfDiscount)
+		lf = lf.Sub(lf, referralLfDiscount)
+
+		volumeMakerDiscount, _ := num.UintFromDecimal(mf.ToDecimal().Mul(volumeDiscountFactors.Maker).Floor())
+		volumeInfDiscount, _ := num.UintFromDecimal(inf.ToDecimal().Mul(volumeDiscountFactors.Infra).Floor())
+		volumeLfDiscount, _ := num.UintFromDecimal(lf.ToDecimal().Mul(volumeDiscountFactors.Liquidity).Floor())
+
+		fees.MakerFeeVolumeDiscount = volumeMakerDiscount.String()
+		fees.InfrastructureFeeVolumeDiscount = volumeInfDiscount.String()
+		fees.LiquidityFeeVolumeDiscount = volumeLfDiscount.String()
+
+		mf = mf.Sub(mf, volumeMakerDiscount)
+		inf = inf.Sub(inf, volumeInfDiscount)
+		lf = lf.Sub(lf, volumeLfDiscount)
+
+		fees.MakerFee = mf.String()
+		fees.InfrastructureFee = inf.String()
+		fees.LiquidityFee = lf.String()
+	}
+
+	return fees, nil
 }
 
-func (t *TradingDataServiceV2) feeFactors(mkt entities.Market) (maker, infra, liquidity float64, err error) {
+func (t *TradingDataServiceV2) feeFactors(mkt entities.Market) (maker, infra, liquidity, bb, treaury float64, err error) {
 	if maker, err = strconv.ParseFloat(mkt.Fees.Factors.MakerFee, 64); err != nil {
 		return
 	}
 	if infra, err = strconv.ParseFloat(mkt.Fees.Factors.InfrastructureFee, 64); err != nil {
 		return
 	}
-	liquidity, err = strconv.ParseFloat(mkt.Fees.Factors.LiquidityFee, 64)
+	if liquidity, err = strconv.ParseFloat(mkt.Fees.Factors.LiquidityFee, 64); err != nil {
+		return
+	}
+	if bb, err = strconv.ParseFloat(mkt.Fees.Factors.BuyBackFee, 64); err != nil {
+		return
+	}
+	if treaury, err = strconv.ParseFloat(mkt.Fees.Factors.TreasuryFee, 64); err != nil {
+		return
+	}
 	return
 }
 
@@ -5068,7 +5137,7 @@ func (t *TradingDataServiceV2) ListReferralSets(ctx context.Context, req *v2.Lis
 		referee = ptr.From(entities.PartyID(*req.Referee))
 	}
 
-	sets, pageInfo, err := t.referralSetsService.ListReferralSets(ctx, id, referrer, referee, pagination)
+	sets, pageInfo, err := t.ReferralSetsService.ListReferralSets(ctx, id, referrer, referee, pagination)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -5121,7 +5190,7 @@ func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req 
 		epochsToAggregate = *req.AggregationEpochs
 	}
 
-	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, referrer, referee, pagination, epochsToAggregate)
+	referees, pageInfo, err := t.ReferralSetsService.ListReferralSetReferees(ctx, id, referrer, referee, pagination, epochsToAggregate)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -5161,7 +5230,7 @@ func (t *TradingDataServiceV2) GetReferralSetStats(ctx context.Context, req *v2.
 		referee = ptr.From(entities.PartyID(*req.Referee))
 	}
 
-	stats, pageInfo, err := t.referralSetsService.GetReferralSetStats(ctx, setID, req.AtEpoch, referee, pagination)
+	stats, pageInfo, err := t.ReferralSetsService.GetReferralSetStats(ctx, setID, req.AtEpoch, referee, pagination)
 	if err != nil {
 		return nil, formatE(ErrGetReferralSetStats, err)
 	}
@@ -5515,7 +5584,7 @@ func (t *TradingDataServiceV2) GetVolumeDiscountStats(ctx context.Context, req *
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	stats, pageInfo, err := t.volumeDiscountStatsService.Stats(ctx, req.AtEpoch, req.PartyId, pagination)
+	stats, pageInfo, err := t.VolumeDiscountStatsService.Stats(ctx, req.AtEpoch, req.PartyId, pagination)
 	if err != nil {
 		return nil, formatE(ErrGetVolumeDiscountStats, err)
 	}
