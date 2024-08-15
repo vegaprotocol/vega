@@ -58,10 +58,20 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 						{
 							MinimumRunningNotionalTakerVolume: "1000",
 							VolumeDiscountFactor:              "0.01",
+							VolumeDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.004",
+								LiquidityDiscountFactor:      "0.002",
+								MakerDiscountFactor:          "0.004",
+							},
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "10000",
 							VolumeDiscountFactor:              "0.1",
+							VolumeDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.04",
+								LiquidityDiscountFactor:      "0.02",
+								MakerDiscountFactor:          "0.04",
+							},
 						},
 					},
 					EndOfProgramTimestamp: endTime.Unix(),
@@ -76,10 +86,20 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 						{
 							MinimumRunningNotionalTakerVolume: "2000",
 							VolumeDiscountFactor:              "0.02",
+							VolumeDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.008",
+								LiquidityDiscountFactor:      "0.002",
+								MakerDiscountFactor:          "0.004",
+							},
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "20000",
 							VolumeDiscountFactor:              "0.2",
+							VolumeDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.08",
+								LiquidityDiscountFactor:      "0.04",
+								MakerDiscountFactor:          "0.08",
+							},
 						},
 					},
 					EndOfProgramTimestamp: endTime2.Unix(),
@@ -122,10 +142,20 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 				{
 					MinimumRunningNotionalTakerVolume: "1000",
 					VolumeDiscountFactor:              "0.01",
+					VolumeDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.004",
+						LiquidityDiscountFactor:      "0.002",
+						MakerDiscountFactor:          "0.004",
+					},
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "10000",
 					VolumeDiscountFactor:              "0.1",
+					VolumeDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.04",
+						LiquidityDiscountFactor:      "0.02",
+						MakerDiscountFactor:          "0.04",
+					},
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
@@ -143,10 +173,20 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 				{
 					MinimumRunningNotionalTakerVolume: "2000",
 					VolumeDiscountFactor:              "0.02",
+					VolumeDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.008",
+						LiquidityDiscountFactor:      "0.004",
+						MakerDiscountFactor:          "0.008",
+					},
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "20000",
 					VolumeDiscountFactor:              "0.2",
+					VolumeDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.08",
+						LiquidityDiscountFactor:      "0.04",
+						MakerDiscountFactor:          "0.08",
+					},
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
