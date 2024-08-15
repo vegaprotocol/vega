@@ -49,12 +49,12 @@ func testSetThreshold(t *testing.T) {
 		{
 			name:     "v1 scheme",
 			v1:       true,
-			expected: "a2c61b473f15a1729e8593d65748e7a9813102e0d7304598af556525206db599fb79b9750349c6cb564a2f3ecdf233dd19b1598302e0cb91218adff1c609ac09",
+			expected: "537eee3a9151d3f9a0a076c9521d3ca014efaefb20fd9be1b36c1e2475897f82b79b0de759b24a52a1a66c272c85628acd182a3cef2ae92b91a595f8d8123c06",
 		},
 		{
 			name:     "v2 scheme",
 			v1:       false,
-			expected: "aa79559d350a9b139d04d7883b7ec26b3948bba503fddcc55f8a868a69ef48dad32ffb4233a041401e482e71232fc339aa6deffda31bcd978596a6a0a6d64b0c",
+			expected: "e1bc702b74ca31f08d1d3534b6b147f641cf94713a809dd5b7ed5cb6e61b1892f1d2327ef14194bac488f41a661b805c6ca2f3daba7108eee46949229a126c0e",
 		},
 	}
 
@@ -84,12 +84,12 @@ func testAddSigner(t *testing.T) {
 		{
 			name:     "v1 scheme",
 			v1:       true,
-			expected: "7bdc018935610f23667b31d4eee248160ab39caa1e70ad20da49bf8971d5a16b30f71a09d9aaf5b532defdb7710d85c226e98cb90a49bc4b4401b33f3c5a1601",
+			expected: "52201353f14009c7638a6460af9340871de8d34a198d4957a142aa8098922829d4963eff0e6951fdecfe04566c865225b4c41dd2393b40d4de76fb9819142d0c",
 		},
 		{
 			name:     "v2 scheme",
 			v1:       false,
-			expected: "f86654970ab8aa7b8f1ac72cd1349cd667acd21b7ff2078653d488f3ab65a446df1b4878692d7f07e2f0111bed069fd7cf5c32f07ae88ed059624480cd0edd07",
+			expected: "67e5a71935eaf134f4cbfadbefa96e510c97d6198accfcec76b046ee46ecd59fe4ae6f371973a8f4be7a67dd20b38c421b0f24061f1c95fe1e9322d04997e407",
 		},
 	}
 
@@ -120,12 +120,12 @@ func testRemoveSigner(t *testing.T) {
 		{
 			name:     "v1 scheme",
 			v1:       true,
-			expected: "98ea2303c68dbb0a88bdb7dad8c6e2db9698cd992667399a378e682dbdf16e74a9d304a32e36b48de81c0e99449a7a37c1a7ef94af1e85aa88a808f8d7126c0c",
+			expected: "4bf8057aa87a4ec5049766b0eb40426c9ba0464cda2ce203d16c590f3153657689143161908923b0c6ab32dec57c4c5aca7e4aaef24b8d22362413908868ea00",
 		},
 		{
 			name:     "v2 scheme",
 			v1:       false,
-			expected: "e17efd360ce488a7299175473f257544391e3823db314e31cc69e6ae2730ead994e89bfab5813ea1379c4b6e499d131308ebe516ba6142f9f77479083685020b",
+			expected: "648f08b810bcbe589b79f7476f48de6e2c3528fbb059427f3876745dec51128952210d5e509e307d0dc2f6ba67f65bda7a28d96a8d31a365d04398cdde78150b",
 		},
 	}
 

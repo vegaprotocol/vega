@@ -179,12 +179,12 @@ func (s *ERC20Signatures) offerValidatorAddedSignatures(resID string) []byte {
 		s.log.Panic("expected added signature but got removed signature instead", logging.String("ethereumAddress", sig.EthAddress))
 	}
 
-	isBridge, isEthereum := s.isBridge(sig.chainID)
+	isBridge, _ := s.isBridge(sig.chainID)
 	if !isBridge {
 		s.log.Panic("unexpected bridge chainID", logging.String("chain-id", sig.chainID))
 	}
 
-	signature, err := bridges.NewERC20MultiSigControl(s.signer, sig.chainID, isEthereum).AddSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
+	signature, err := bridges.NewERC20MultiSigControl(s.signer, sig.chainID, false).AddSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
 	if err != nil {
 		s.log.Panic("could not sign remove signer event, wallet not configured properly",
 			logging.Error(err))
@@ -207,12 +207,12 @@ func (s *ERC20Signatures) offerValidatorRemovedSignatures(resID string) []byte {
 		s.log.Panic("expected removed signature but got added signature instead", logging.String("ethereumAddress", sig.EthAddress))
 	}
 
-	isBridge, isEthereum := s.isBridge(sig.chainID)
+	isBridge, _ := s.isBridge(sig.chainID)
 	if !isBridge {
 		s.log.Panic("unexpected bridge chainID", logging.String("chain-id", sig.chainID))
 	}
 
-	signature, err := bridges.NewERC20MultiSigControl(s.signer, sig.chainID, isEthereum).RemoveSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
+	signature, err := bridges.NewERC20MultiSigControl(s.signer, sig.chainID, false).RemoveSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
 	if err != nil {
 		s.log.Panic("could not sign remove signer event, wallet not configured properly",
 			logging.Error(err))
@@ -335,7 +335,7 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 		return ErrNoPendingSignaturesForNodeID
 	}
 
-	isBridge, isEthereum := s.isBridge(chainID)
+	isBridge, _ := s.isBridge(chainID)
 	if !isBridge {
 		return ErrUnknownChainID
 	}
@@ -357,7 +357,7 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 		}
 
 		if s.isValidatorSetup {
-			signature, err := bridges.NewERC20MultiSigControl(s.signer, chainID, isEthereum).AddSigner(pending.EthAddress, submitter, nonce)
+			signature, err := bridges.NewERC20MultiSigControl(s.signer, chainID, false).AddSigner(pending.EthAddress, submitter, nonce)
 			if err != nil {
 				s.log.Panic("could not sign remove signer event, wallet not configured properly",
 					logging.Error(err))
@@ -398,7 +398,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		return ErrNoPendingSignaturesForNodeID
 	}
 
-	isBridge, isEthereum := s.isBridge(chainID)
+	isBridge, _ := s.isBridge(chainID)
 	if !isBridge {
 		return ErrUnknownChainID
 	}
@@ -419,7 +419,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		}
 
 		if s.isValidatorSetup {
-			signature, err := bridges.NewERC20MultiSigControl(s.signer, chainID, isEthereum).RemoveSigner(pending.EthAddress, submitter, nonce)
+			signature, err := bridges.NewERC20MultiSigControl(s.signer, chainID, false).RemoveSigner(pending.EthAddress, submitter, nonce)
 			if err != nil {
 				s.log.Panic("could not sign remove signer event, wallet not configured properly",
 					logging.Error(err))
