@@ -132,12 +132,12 @@ type NodeIDAddress struct {
 }
 
 // isBridge returns whether the given chainID corresponds to one of the bridges, and returns if it is the Ethereum bridge.
-func (s *ERC20Signatures) isBridge(chainID string) (isBridge bool, isEthereum bool) {
+func (s *ERC20Signatures) isBridge(chainID string) (isBridge bool) {
 	switch chainID {
 	case s.primaryMultisig.ChainID():
-		isBridge, isEthereum = true, true
+		isBridge = true
 	case s.secondaryMultisig.ChainID():
-		isBridge, isEthereum = true, false
+		isBridge = true
 	}
 	return
 }
@@ -179,7 +179,7 @@ func (s *ERC20Signatures) offerValidatorAddedSignatures(resID string) []byte {
 		s.log.Panic("expected added signature but got removed signature instead", logging.String("ethereumAddress", sig.EthAddress))
 	}
 
-	isBridge, _ := s.isBridge(sig.chainID)
+	isBridge := s.isBridge(sig.chainID)
 	if !isBridge {
 		s.log.Panic("unexpected bridge chainID", logging.String("chain-id", sig.chainID))
 	}
@@ -207,7 +207,7 @@ func (s *ERC20Signatures) offerValidatorRemovedSignatures(resID string) []byte {
 		s.log.Panic("expected removed signature but got added signature instead", logging.String("ethereumAddress", sig.EthAddress))
 	}
 
-	isBridge, _ := s.isBridge(sig.chainID)
+	isBridge := s.isBridge(sig.chainID)
 	if !isBridge {
 		s.log.Panic("unexpected bridge chainID", logging.String("chain-id", sig.chainID))
 	}
@@ -335,7 +335,7 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 		return ErrNoPendingSignaturesForNodeID
 	}
 
-	isBridge, _ := s.isBridge(chainID)
+	isBridge := s.isBridge(chainID)
 	if !isBridge {
 		return ErrUnknownChainID
 	}
@@ -398,7 +398,7 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		return ErrNoPendingSignaturesForNodeID
 	}
 
-	isBridge, _ := s.isBridge(chainID)
+	isBridge := s.isBridge(chainID)
 	if !isBridge {
 		return ErrUnknownChainID
 	}
