@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.77.9
+
+### 🐛 Fixes
+
+- [11452](https://github.com/vegaprotocol/vega/issues/11452) - Implement alternative estimations for fully collateralised capped future.
+
+
 ## 0.77.8
 
 ### 🐛 Fixes
