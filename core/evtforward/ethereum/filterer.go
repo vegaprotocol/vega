@@ -42,18 +42,18 @@ import (
 const (
 	logFiltererLogger = "log-filterer"
 
-	eventAssetListed        = "Asset_Listed"
-	eventAssetRemoved       = "Asset_Removed"
-	eventAssetDeposited     = "Asset_Deposited"
-	eventAssetWithdrawn     = "Asset_Withdrawn"
+	eventAssetListed        = "AssetListed"
+	eventAssetRemoved       = "AssetRemoved"
+	eventAssetDeposited     = "AssetDeposited"
+	eventAssetWithdrawn     = "AssetWithdrawn"
 	eventStakeDeposited     = "StakeDeposited"
 	eventStakeRemoved       = "StakeRemoved"
 	eventSignerAdded        = "SignerAdded"
 	eventSignerRemoved      = "SignerRemoved"
 	eventThresholdSet       = "ThresholdSet"
-	eventAssetLimitsUpdated = "Asset_Limits_Updated"
-	eventBridgeStopped      = "Bridge_Stopped"
-	eventBridgeResumed      = "Bridge_Resumed"
+	eventAssetLimitsUpdated = "AssetLimitsUpdated"
+	eventBridgeStopped      = "BridgeStopped"
+	eventBridgeResumed      = "BridgeResumed"
 )
 
 // Assets ...
