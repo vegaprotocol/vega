@@ -47,12 +47,12 @@ func testListAsset(t *testing.T) {
 		{
 			name:     "v1 scheme",
 			v1:       true,
-			expected: "7df8b88552c2f981e64b13f1ce3ee5dcb71e8f59ec057010b7b469120afff7d479f234714785cfc605230dfb2d17f9cc7858143196a13f357ce008e3f3f78a00",
+			expected: "a39fa614b7b4bb0cf5819840164ca48472d1bda98a49053f891dfb004f053d2c29a60df5423927dad057f1d3d6a04c6e6d82f1bf128db5d5a7a01bcc8b70ab0e",
 		},
 		{
 			name:     "v2 scheme",
 			v1:       false,
-			expected: "03d8d648da4402bebd096f067cebf3e3b70f2c4e1cad6ca9eb757f554b6ca9efb84010887aeef543cf72cb5d78a741d0683befc6f5e0ca2d0347832232af610c",
+			expected: "d6810cef5534e232396ab0c572ca079fa41f728a20d98da3bfb59b81f183a96adee103d5f94348e9a8ce823446392109bc8bf10a27076cd0e232a1f808e0810c",
 		},
 	}
 
@@ -86,12 +86,12 @@ func testRemoveAsset(t *testing.T) {
 		{
 			name:     "v1 scheme",
 			v1:       true,
-			expected: "9012eb20763500caf1a4d7640470449c7220872d7136e17c70231c269051cf80e08760d60850578ebf494e24610a54225c7d994f15f57d9f451e8f717eb3f904",
+			expected: "a1c183d1c076c518297fa75f0fa3fddf6e5e83e76800a2efdbce36be12d4a23e2b61bce8097fea701f5a274ec89d70f92ffdd83a82a4d2c65f82b905109c3d0f",
 		},
 		{
 			name:     "v2 scheme",
 			v1:       false,
-			expected: "aa07e175a9a4c3dcb0f5dcbd24cc6636e699ee6a1daa9a80267cec8f0be130b86465fa56296743879f56d94d6be64a0b10b76bcee40d0d09ec078b2814b89500",
+			expected: "f11d5e0fa1c68edd1b43db30a0d02aaff8cef26c6140d30a4570615fa12a0e4e858a30b73a3763590a88614f366e9f433978653445b901e058dc07fe77595901",
 		},
 	}
 
@@ -122,12 +122,12 @@ func testWithdrawAsset(t *testing.T) {
 		{
 			name:     "v1 scheme",
 			v1:       true,
-			expected: "0ff08571ab504acdce063a5a5a00dd8878d64ccb09ea6887aacd1fd41b517cd13f4e12edfaa4d06fef5d24087ba9e7c980532daa0a6f1fa329b8d75961f4ab03",
+			expected: "8c70e1bb8a74a9112ef475cdca37f63149453f5d3729164847aabf329c8932774922bb3cf41dfd7112fa8a0bdbe3f845b170e8f38406ae51fd7da00177dbc807",
 		},
 		{
 			name:     "v2 scheme",
 			v1:       false,
-			expected: "9f2d7ec17059fd5d4697337a46899f73681dece748ea1342b3be24b5f34f0b934ad448f7e9bd3a113102d46d8433dd26458cf06c3fd7a1622d086faab1a77b08",
+			expected: "057bcb000d6961d4c8cd67f5a8a8ffac501f7077c23dcb4aab0127f1f4530e865d8627bccfb71559b9ddca0cb938b96c709fdf419d2f350ec9ab6416b888c70f",
 		},
 	}
 

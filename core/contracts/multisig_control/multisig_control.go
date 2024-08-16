@@ -31,7 +31,7 @@ var (
 
 // MultisigControlMetaData contains all meta data concerning the MultisigControl contract.
 var MultisigControlMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"NonceBurnt\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"new_signer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"SignerAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"old_signer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"SignerRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"new_threshold\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"ThresholdSet\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"new_signer\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"add_signer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"burn_nonce\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"get_current_threshold\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"get_valid_signer_count\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"is_nonce_used\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"signer_address\",\"type\":\"address\"}],\"name\":\"is_valid_signer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"old_signer\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"remove_signer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint16\",\"name\":\"new_threshold\",\"type\":\"uint16\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"set_threshold\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"signers\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"verify_signatures\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"addSigner\",\"inputs\":[{\"name\":\"newSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"burnNonce\",\"inputs\":[{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getCurrentThreshold\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getValidSignerCount\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"uint8\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"isNonceUsed\",\"inputs\":[{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"isValidSigner\",\"inputs\":[{\"name\":\"signer_address\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"removeSigner\",\"inputs\":[{\"name\":\"oldSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setThreshold\",\"inputs\":[{\"name\":\"newThreshold\",\"type\":\"uint16\",\"internalType\":\"uint16\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifySignatures\",\"inputs\":[{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"message\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"NonceBurnt\",\"inputs\":[{\"name\":\"nonce\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SignerAdded\",\"inputs\":[{\"name\":\"newSigner\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SignerRemoved\",\"inputs\":[{\"name\":\"oldSigner\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ThresholdSet\",\"inputs\":[{\"name\":\"newThreshold\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false}]",
 }
 
 // MultisigControlABI is the input ABI used to generate the binding from.
@@ -180,12 +180,12 @@ func (_MultisigControl *MultisigControlTransactorRaw) Transact(opts *bind.Transa
 	return _MultisigControl.Contract.contract.Transact(opts, method, params...)
 }
 
-// GetCurrentThreshold is a free data retrieval call binding the contract method 0xdbe528df.
+// GetCurrentThreshold is a free data retrieval call binding the contract method 0x1b71bf6e.
 //
-// Solidity: function get_current_threshold() view returns(uint16)
+// Solidity: function getCurrentThreshold() view returns(uint16)
 func (_MultisigControl *MultisigControlCaller) GetCurrentThreshold(opts *bind.CallOpts) (uint16, error) {
 	var out []interface{}
-	err := _MultisigControl.contract.Call(opts, &out, "get_current_threshold")
+	err := _MultisigControl.contract.Call(opts, &out, "getCurrentThreshold")
 
 	if err != nil {
 		return *new(uint16), err
@@ -197,26 +197,26 @@ func (_MultisigControl *MultisigControlCaller) GetCurrentThreshold(opts *bind.Ca
 
 }
 
-// GetCurrentThreshold is a free data retrieval call binding the contract method 0xdbe528df.
+// GetCurrentThreshold is a free data retrieval call binding the contract method 0x1b71bf6e.
 //
-// Solidity: function get_current_threshold() view returns(uint16)
+// Solidity: function getCurrentThreshold() view returns(uint16)
 func (_MultisigControl *MultisigControlSession) GetCurrentThreshold() (uint16, error) {
 	return _MultisigControl.Contract.GetCurrentThreshold(&_MultisigControl.CallOpts)
 }
 
-// GetCurrentThreshold is a free data retrieval call binding the contract method 0xdbe528df.
+// GetCurrentThreshold is a free data retrieval call binding the contract method 0x1b71bf6e.
 //
-// Solidity: function get_current_threshold() view returns(uint16)
+// Solidity: function getCurrentThreshold() view returns(uint16)
 func (_MultisigControl *MultisigControlCallerSession) GetCurrentThreshold() (uint16, error) {
 	return _MultisigControl.Contract.GetCurrentThreshold(&_MultisigControl.CallOpts)
 }
 
-// GetValidSignerCount is a free data retrieval call binding the contract method 0xb04e3dd1.
+// GetValidSignerCount is a free data retrieval call binding the contract method 0x86778ed0.
 //
-// Solidity: function get_valid_signer_count() view returns(uint8)
+// Solidity: function getValidSignerCount() view returns(uint8)
 func (_MultisigControl *MultisigControlCaller) GetValidSignerCount(opts *bind.CallOpts) (uint8, error) {
 	var out []interface{}
-	err := _MultisigControl.contract.Call(opts, &out, "get_valid_signer_count")
+	err := _MultisigControl.contract.Call(opts, &out, "getValidSignerCount")
 
 	if err != nil {
 		return *new(uint8), err
@@ -228,26 +228,26 @@ func (_MultisigControl *MultisigControlCaller) GetValidSignerCount(opts *bind.Ca
 
 }
 
-// GetValidSignerCount is a free data retrieval call binding the contract method 0xb04e3dd1.
+// GetValidSignerCount is a free data retrieval call binding the contract method 0x86778ed0.
 //
-// Solidity: function get_valid_signer_count() view returns(uint8)
+// Solidity: function getValidSignerCount() view returns(uint8)
 func (_MultisigControl *MultisigControlSession) GetValidSignerCount() (uint8, error) {
 	return _MultisigControl.Contract.GetValidSignerCount(&_MultisigControl.CallOpts)
 }
 
-// GetValidSignerCount is a free data retrieval call binding the contract method 0xb04e3dd1.
+// GetValidSignerCount is a free data retrieval call binding the contract method 0x86778ed0.
 //
-// Solidity: function get_valid_signer_count() view returns(uint8)
+// Solidity: function getValidSignerCount() view returns(uint8)
 func (_MultisigControl *MultisigControlCallerSession) GetValidSignerCount() (uint8, error) {
 	return _MultisigControl.Contract.GetValidSignerCount(&_MultisigControl.CallOpts)
 }
 
-// IsNonceUsed is a free data retrieval call binding the contract method 0x5b9fe26b.
+// IsNonceUsed is a free data retrieval call binding the contract method 0x5d00bb12.
 //
-// Solidity: function is_nonce_used(uint256 nonce) view returns(bool)
+// Solidity: function isNonceUsed(uint256 nonce) view returns(bool)
 func (_MultisigControl *MultisigControlCaller) IsNonceUsed(opts *bind.CallOpts, nonce *big.Int) (bool, error) {
 	var out []interface{}
-	err := _MultisigControl.contract.Call(opts, &out, "is_nonce_used", nonce)
+	err := _MultisigControl.contract.Call(opts, &out, "isNonceUsed", nonce)
 
 	if err != nil {
 		return *new(bool), err
@@ -259,26 +259,26 @@ func (_MultisigControl *MultisigControlCaller) IsNonceUsed(opts *bind.CallOpts, 
 
 }
 
-// IsNonceUsed is a free data retrieval call binding the contract method 0x5b9fe26b.
+// IsNonceUsed is a free data retrieval call binding the contract method 0x5d00bb12.
 //
-// Solidity: function is_nonce_used(uint256 nonce) view returns(bool)
+// Solidity: function isNonceUsed(uint256 nonce) view returns(bool)
 func (_MultisigControl *MultisigControlSession) IsNonceUsed(nonce *big.Int) (bool, error) {
 	return _MultisigControl.Contract.IsNonceUsed(&_MultisigControl.CallOpts, nonce)
 }
 
-// IsNonceUsed is a free data retrieval call binding the contract method 0x5b9fe26b.
+// IsNonceUsed is a free data retrieval call binding the contract method 0x5d00bb12.
 //
-// Solidity: function is_nonce_used(uint256 nonce) view returns(bool)
+// Solidity: function isNonceUsed(uint256 nonce) view returns(bool)
 func (_MultisigControl *MultisigControlCallerSession) IsNonceUsed(nonce *big.Int) (bool, error) {
 	return _MultisigControl.Contract.IsNonceUsed(&_MultisigControl.CallOpts, nonce)
 }
 
-// IsValidSigner is a free data retrieval call binding the contract method 0x5f061559.
+// IsValidSigner is a free data retrieval call binding the contract method 0xd5f50582.
 //
-// Solidity: function is_valid_signer(address signer_address) view returns(bool)
+// Solidity: function isValidSigner(address signer_address) view returns(bool)
 func (_MultisigControl *MultisigControlCaller) IsValidSigner(opts *bind.CallOpts, signer_address common.Address) (bool, error) {
 	var out []interface{}
-	err := _MultisigControl.contract.Call(opts, &out, "is_valid_signer", signer_address)
+	err := _MultisigControl.contract.Call(opts, &out, "isValidSigner", signer_address)
 
 	if err != nil {
 		return *new(bool), err
@@ -290,152 +290,121 @@ func (_MultisigControl *MultisigControlCaller) IsValidSigner(opts *bind.CallOpts
 
 }
 
-// IsValidSigner is a free data retrieval call binding the contract method 0x5f061559.
+// IsValidSigner is a free data retrieval call binding the contract method 0xd5f50582.
 //
-// Solidity: function is_valid_signer(address signer_address) view returns(bool)
+// Solidity: function isValidSigner(address signer_address) view returns(bool)
 func (_MultisigControl *MultisigControlSession) IsValidSigner(signer_address common.Address) (bool, error) {
 	return _MultisigControl.Contract.IsValidSigner(&_MultisigControl.CallOpts, signer_address)
 }
 
-// IsValidSigner is a free data retrieval call binding the contract method 0x5f061559.
+// IsValidSigner is a free data retrieval call binding the contract method 0xd5f50582.
 //
-// Solidity: function is_valid_signer(address signer_address) view returns(bool)
+// Solidity: function isValidSigner(address signer_address) view returns(bool)
 func (_MultisigControl *MultisigControlCallerSession) IsValidSigner(signer_address common.Address) (bool, error) {
 	return _MultisigControl.Contract.IsValidSigner(&_MultisigControl.CallOpts, signer_address)
 }
 
-// Signers is a free data retrieval call binding the contract method 0x736c0d5b.
+// AddSigner is a paid mutator transaction binding the contract method 0xea72ebd0.
 //
-// Solidity: function signers(address ) view returns(bool)
-func (_MultisigControl *MultisigControlCaller) Signers(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
-	var out []interface{}
-	err := _MultisigControl.contract.Call(opts, &out, "signers", arg0)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
+// Solidity: function addSigner(address newSigner, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlTransactor) AddSigner(opts *bind.TransactOpts, newSigner common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.contract.Transact(opts, "addSigner", newSigner, nonce, signatures)
 }
 
-// Signers is a free data retrieval call binding the contract method 0x736c0d5b.
+// AddSigner is a paid mutator transaction binding the contract method 0xea72ebd0.
 //
-// Solidity: function signers(address ) view returns(bool)
-func (_MultisigControl *MultisigControlSession) Signers(arg0 common.Address) (bool, error) {
-	return _MultisigControl.Contract.Signers(&_MultisigControl.CallOpts, arg0)
+// Solidity: function addSigner(address newSigner, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlSession) AddSigner(newSigner common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.Contract.AddSigner(&_MultisigControl.TransactOpts, newSigner, nonce, signatures)
 }
 
-// Signers is a free data retrieval call binding the contract method 0x736c0d5b.
+// AddSigner is a paid mutator transaction binding the contract method 0xea72ebd0.
 //
-// Solidity: function signers(address ) view returns(bool)
-func (_MultisigControl *MultisigControlCallerSession) Signers(arg0 common.Address) (bool, error) {
-	return _MultisigControl.Contract.Signers(&_MultisigControl.CallOpts, arg0)
+// Solidity: function addSigner(address newSigner, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlTransactorSession) AddSigner(newSigner common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.Contract.AddSigner(&_MultisigControl.TransactOpts, newSigner, nonce, signatures)
 }
 
-// AddSigner is a paid mutator transaction binding the contract method 0xf8e3a660.
+// BurnNonce is a paid mutator transaction binding the contract method 0xc15ce890.
 //
-// Solidity: function add_signer(address new_signer, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlTransactor) AddSigner(opts *bind.TransactOpts, new_signer common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.contract.Transact(opts, "add_signer", new_signer, nonce, signatures)
-}
-
-// AddSigner is a paid mutator transaction binding the contract method 0xf8e3a660.
-//
-// Solidity: function add_signer(address new_signer, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlSession) AddSigner(new_signer common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.Contract.AddSigner(&_MultisigControl.TransactOpts, new_signer, nonce, signatures)
-}
-
-// AddSigner is a paid mutator transaction binding the contract method 0xf8e3a660.
-//
-// Solidity: function add_signer(address new_signer, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlTransactorSession) AddSigner(new_signer common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.Contract.AddSigner(&_MultisigControl.TransactOpts, new_signer, nonce, signatures)
-}
-
-// BurnNonce is a paid mutator transaction binding the contract method 0x5ec51639.
-//
-// Solidity: function burn_nonce(uint256 nonce, bytes signatures) returns()
+// Solidity: function burnNonce(uint256 nonce, bytes signatures) returns()
 func (_MultisigControl *MultisigControlTransactor) BurnNonce(opts *bind.TransactOpts, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.contract.Transact(opts, "burn_nonce", nonce, signatures)
+	return _MultisigControl.contract.Transact(opts, "burnNonce", nonce, signatures)
 }
 
-// BurnNonce is a paid mutator transaction binding the contract method 0x5ec51639.
+// BurnNonce is a paid mutator transaction binding the contract method 0xc15ce890.
 //
-// Solidity: function burn_nonce(uint256 nonce, bytes signatures) returns()
+// Solidity: function burnNonce(uint256 nonce, bytes signatures) returns()
 func (_MultisigControl *MultisigControlSession) BurnNonce(nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _MultisigControl.Contract.BurnNonce(&_MultisigControl.TransactOpts, nonce, signatures)
 }
 
-// BurnNonce is a paid mutator transaction binding the contract method 0x5ec51639.
+// BurnNonce is a paid mutator transaction binding the contract method 0xc15ce890.
 //
-// Solidity: function burn_nonce(uint256 nonce, bytes signatures) returns()
+// Solidity: function burnNonce(uint256 nonce, bytes signatures) returns()
 func (_MultisigControl *MultisigControlTransactorSession) BurnNonce(nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _MultisigControl.Contract.BurnNonce(&_MultisigControl.TransactOpts, nonce, signatures)
 }
 
-// RemoveSigner is a paid mutator transaction binding the contract method 0x98c5f73e.
+// RemoveSigner is a paid mutator transaction binding the contract method 0xa3dd8ff2.
 //
-// Solidity: function remove_signer(address old_signer, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlTransactor) RemoveSigner(opts *bind.TransactOpts, old_signer common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.contract.Transact(opts, "remove_signer", old_signer, nonce, signatures)
+// Solidity: function removeSigner(address oldSigner, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlTransactor) RemoveSigner(opts *bind.TransactOpts, oldSigner common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.contract.Transact(opts, "removeSigner", oldSigner, nonce, signatures)
 }
 
-// RemoveSigner is a paid mutator transaction binding the contract method 0x98c5f73e.
+// RemoveSigner is a paid mutator transaction binding the contract method 0xa3dd8ff2.
 //
-// Solidity: function remove_signer(address old_signer, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlSession) RemoveSigner(old_signer common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.Contract.RemoveSigner(&_MultisigControl.TransactOpts, old_signer, nonce, signatures)
+// Solidity: function removeSigner(address oldSigner, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlSession) RemoveSigner(oldSigner common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.Contract.RemoveSigner(&_MultisigControl.TransactOpts, oldSigner, nonce, signatures)
 }
 
-// RemoveSigner is a paid mutator transaction binding the contract method 0x98c5f73e.
+// RemoveSigner is a paid mutator transaction binding the contract method 0xa3dd8ff2.
 //
-// Solidity: function remove_signer(address old_signer, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlTransactorSession) RemoveSigner(old_signer common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.Contract.RemoveSigner(&_MultisigControl.TransactOpts, old_signer, nonce, signatures)
+// Solidity: function removeSigner(address oldSigner, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlTransactorSession) RemoveSigner(oldSigner common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.Contract.RemoveSigner(&_MultisigControl.TransactOpts, oldSigner, nonce, signatures)
 }
 
-// SetThreshold is a paid mutator transaction binding the contract method 0x50ac8df8.
+// SetThreshold is a paid mutator transaction binding the contract method 0xee9aea8a.
 //
-// Solidity: function set_threshold(uint16 new_threshold, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlTransactor) SetThreshold(opts *bind.TransactOpts, new_threshold uint16, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.contract.Transact(opts, "set_threshold", new_threshold, nonce, signatures)
+// Solidity: function setThreshold(uint16 newThreshold, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlTransactor) SetThreshold(opts *bind.TransactOpts, newThreshold uint16, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.contract.Transact(opts, "setThreshold", newThreshold, nonce, signatures)
 }
 
-// SetThreshold is a paid mutator transaction binding the contract method 0x50ac8df8.
+// SetThreshold is a paid mutator transaction binding the contract method 0xee9aea8a.
 //
-// Solidity: function set_threshold(uint16 new_threshold, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlSession) SetThreshold(new_threshold uint16, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.Contract.SetThreshold(&_MultisigControl.TransactOpts, new_threshold, nonce, signatures)
+// Solidity: function setThreshold(uint16 newThreshold, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlSession) SetThreshold(newThreshold uint16, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.Contract.SetThreshold(&_MultisigControl.TransactOpts, newThreshold, nonce, signatures)
 }
 
-// SetThreshold is a paid mutator transaction binding the contract method 0x50ac8df8.
+// SetThreshold is a paid mutator transaction binding the contract method 0xee9aea8a.
 //
-// Solidity: function set_threshold(uint16 new_threshold, uint256 nonce, bytes signatures) returns()
-func (_MultisigControl *MultisigControlTransactorSession) SetThreshold(new_threshold uint16, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _MultisigControl.Contract.SetThreshold(&_MultisigControl.TransactOpts, new_threshold, nonce, signatures)
+// Solidity: function setThreshold(uint16 newThreshold, uint256 nonce, bytes signatures) returns()
+func (_MultisigControl *MultisigControlTransactorSession) SetThreshold(newThreshold uint16, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _MultisigControl.Contract.SetThreshold(&_MultisigControl.TransactOpts, newThreshold, nonce, signatures)
 }
 
-// VerifySignatures is a paid mutator transaction binding the contract method 0xba73659a.
+// VerifySignatures is a paid mutator transaction binding the contract method 0x3fef2806.
 //
-// Solidity: function verify_signatures(bytes signatures, bytes message, uint256 nonce) returns(bool)
+// Solidity: function verifySignatures(bytes signatures, bytes message, uint256 nonce) returns(bool)
 func (_MultisigControl *MultisigControlTransactor) VerifySignatures(opts *bind.TransactOpts, signatures []byte, message []byte, nonce *big.Int) (*types.Transaction, error) {
-	return _MultisigControl.contract.Transact(opts, "verify_signatures", signatures, message, nonce)
+	return _MultisigControl.contract.Transact(opts, "verifySignatures", signatures, message, nonce)
 }
 
-// VerifySignatures is a paid mutator transaction binding the contract method 0xba73659a.
+// VerifySignatures is a paid mutator transaction binding the contract method 0x3fef2806.
 //
-// Solidity: function verify_signatures(bytes signatures, bytes message, uint256 nonce) returns(bool)
+// Solidity: function verifySignatures(bytes signatures, bytes message, uint256 nonce) returns(bool)
 func (_MultisigControl *MultisigControlSession) VerifySignatures(signatures []byte, message []byte, nonce *big.Int) (*types.Transaction, error) {
 	return _MultisigControl.Contract.VerifySignatures(&_MultisigControl.TransactOpts, signatures, message, nonce)
 }
 
-// VerifySignatures is a paid mutator transaction binding the contract method 0xba73659a.
+// VerifySignatures is a paid mutator transaction binding the contract method 0x3fef2806.
 //
-// Solidity: function verify_signatures(bytes signatures, bytes message, uint256 nonce) returns(bool)
+// Solidity: function verifySignatures(bytes signatures, bytes message, uint256 nonce) returns(bool)
 func (_MultisigControl *MultisigControlTransactorSession) VerifySignatures(signatures []byte, message []byte, nonce *big.Int) (*types.Transaction, error) {
 	return _MultisigControl.Contract.VerifySignatures(&_MultisigControl.TransactOpts, signatures, message, nonce)
 }
@@ -650,7 +619,7 @@ type MultisigControlSignerAdded struct {
 
 // FilterSignerAdded is a free log retrieval operation binding the contract event 0x50999ebf9b59bf3157a58816611976f2d723378ad51457d7b0413209e0cdee59.
 //
-// Solidity: event SignerAdded(address new_signer, uint256 nonce)
+// Solidity: event SignerAdded(address newSigner, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) FilterSignerAdded(opts *bind.FilterOpts) (*MultisigControlSignerAddedIterator, error) {
 
 	logs, sub, err := _MultisigControl.contract.FilterLogs(opts, "SignerAdded")
@@ -662,7 +631,7 @@ func (_MultisigControl *MultisigControlFilterer) FilterSignerAdded(opts *bind.Fi
 
 // WatchSignerAdded is a free log subscription operation binding the contract event 0x50999ebf9b59bf3157a58816611976f2d723378ad51457d7b0413209e0cdee59.
 //
-// Solidity: event SignerAdded(address new_signer, uint256 nonce)
+// Solidity: event SignerAdded(address newSigner, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) WatchSignerAdded(opts *bind.WatchOpts, sink chan<- *MultisigControlSignerAdded) (event.Subscription, error) {
 
 	logs, sub, err := _MultisigControl.contract.WatchLogs(opts, "SignerAdded")
@@ -699,7 +668,7 @@ func (_MultisigControl *MultisigControlFilterer) WatchSignerAdded(opts *bind.Wat
 
 // ParseSignerAdded is a log parse operation binding the contract event 0x50999ebf9b59bf3157a58816611976f2d723378ad51457d7b0413209e0cdee59.
 //
-// Solidity: event SignerAdded(address new_signer, uint256 nonce)
+// Solidity: event SignerAdded(address newSigner, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) ParseSignerAdded(log types.Log) (*MultisigControlSignerAdded, error) {
 	event := new(MultisigControlSignerAdded)
 	if err := _MultisigControl.contract.UnpackLog(event, "SignerAdded", log); err != nil {
@@ -785,7 +754,7 @@ type MultisigControlSignerRemoved struct {
 
 // FilterSignerRemoved is a free log retrieval operation binding the contract event 0x99c1d2c0ed8107e4db2e5dbfb10a2549cd2a63cbe39cf99d2adffbcd03954418.
 //
-// Solidity: event SignerRemoved(address old_signer, uint256 nonce)
+// Solidity: event SignerRemoved(address oldSigner, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) FilterSignerRemoved(opts *bind.FilterOpts) (*MultisigControlSignerRemovedIterator, error) {
 
 	logs, sub, err := _MultisigControl.contract.FilterLogs(opts, "SignerRemoved")
@@ -797,7 +766,7 @@ func (_MultisigControl *MultisigControlFilterer) FilterSignerRemoved(opts *bind.
 
 // WatchSignerRemoved is a free log subscription operation binding the contract event 0x99c1d2c0ed8107e4db2e5dbfb10a2549cd2a63cbe39cf99d2adffbcd03954418.
 //
-// Solidity: event SignerRemoved(address old_signer, uint256 nonce)
+// Solidity: event SignerRemoved(address oldSigner, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) WatchSignerRemoved(opts *bind.WatchOpts, sink chan<- *MultisigControlSignerRemoved) (event.Subscription, error) {
 
 	logs, sub, err := _MultisigControl.contract.WatchLogs(opts, "SignerRemoved")
@@ -834,7 +803,7 @@ func (_MultisigControl *MultisigControlFilterer) WatchSignerRemoved(opts *bind.W
 
 // ParseSignerRemoved is a log parse operation binding the contract event 0x99c1d2c0ed8107e4db2e5dbfb10a2549cd2a63cbe39cf99d2adffbcd03954418.
 //
-// Solidity: event SignerRemoved(address old_signer, uint256 nonce)
+// Solidity: event SignerRemoved(address oldSigner, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) ParseSignerRemoved(log types.Log) (*MultisigControlSignerRemoved, error) {
 	event := new(MultisigControlSignerRemoved)
 	if err := _MultisigControl.contract.UnpackLog(event, "SignerRemoved", log); err != nil {
@@ -920,7 +889,7 @@ type MultisigControlThresholdSet struct {
 
 // FilterThresholdSet is a free log retrieval operation binding the contract event 0xf6d24c23627520a3b70e5dc66aa1249844b4bb407c2c153d9000a2b14a1e3c11.
 //
-// Solidity: event ThresholdSet(uint16 new_threshold, uint256 nonce)
+// Solidity: event ThresholdSet(uint16 newThreshold, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) FilterThresholdSet(opts *bind.FilterOpts) (*MultisigControlThresholdSetIterator, error) {
 
 	logs, sub, err := _MultisigControl.contract.FilterLogs(opts, "ThresholdSet")
@@ -932,7 +901,7 @@ func (_MultisigControl *MultisigControlFilterer) FilterThresholdSet(opts *bind.F
 
 // WatchThresholdSet is a free log subscription operation binding the contract event 0xf6d24c23627520a3b70e5dc66aa1249844b4bb407c2c153d9000a2b14a1e3c11.
 //
-// Solidity: event ThresholdSet(uint16 new_threshold, uint256 nonce)
+// Solidity: event ThresholdSet(uint16 newThreshold, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) WatchThresholdSet(opts *bind.WatchOpts, sink chan<- *MultisigControlThresholdSet) (event.Subscription, error) {
 
 	logs, sub, err := _MultisigControl.contract.WatchLogs(opts, "ThresholdSet")
@@ -969,7 +938,7 @@ func (_MultisigControl *MultisigControlFilterer) WatchThresholdSet(opts *bind.Wa
 
 // ParseThresholdSet is a log parse operation binding the contract event 0xf6d24c23627520a3b70e5dc66aa1249844b4bb407c2c153d9000a2b14a1e3c11.
 //
-// Solidity: event ThresholdSet(uint16 new_threshold, uint256 nonce)
+// Solidity: event ThresholdSet(uint16 newThreshold, uint256 nonce)
 func (_MultisigControl *MultisigControlFilterer) ParseThresholdSet(log types.Log) (*MultisigControlThresholdSet, error) {
 	event := new(MultisigControlThresholdSet)
 	if err := _MultisigControl.contract.UnpackLog(event, "ThresholdSet", log); err != nil {
