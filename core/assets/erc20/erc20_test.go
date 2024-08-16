@@ -99,8 +99,7 @@ func testWithdrawAsset(t *testing.T) {
 	assert.NotNil(t, msg)
 	assert.NotNil(t, sig)
 	assert.True(t, verifySignature(msg, sig))
-	assert.Equal(t,
-		"68154aa30a66d8546a338e2f50ac3e0bde710975755562e12c8508c5e4e43aa741b98d1f7384d8cf6a33e86fc1ed6f833ad627a9fb9b5a56aaaf0024511a2402",
+	assert.Equal(t, "4b7423e2f005a25150f56fdcea72ccabfb466d94a4a3d1aa3541eed2f1292deabd9de643ccc00d64561806c302c8c9773a028fd0e2778e2b2a6f6b3948c95b06",
 		hex.EncodeToString(sig),
 	)
 }
@@ -113,8 +112,7 @@ func testListAsset(t *testing.T) {
 	assert.NotNil(t, msg)
 	assert.NotNil(t, sig)
 	assert.True(t, verifySignature(msg, sig))
-	assert.Equal(t,
-		"e6048f597145d7d1e1ddfe41abf9ae950e9b6e93598c8b1e4fe2d9af8493b240a4d85322eb40c6bf76b0eac2481fa42014956f10a38675769b0c995e191d650b",
+	assert.Equal(t, "125419bebd3623144c1da43d9cc32fc7cab4b870ade32eda8e2a3b175c22b9dac556c47c195bf44f7d7114964411235e690294683cf252f005809f49c4536400",
 		hex.EncodeToString(sig),
 	)
 }

@@ -31,7 +31,7 @@ var (
 
 // Erc20BridgeLogicRestrictedMetaData contains all meta data concerning the Erc20BridgeLogicRestricted contract.
 var Erc20BridgeLogicRestrictedMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"erc20_asset_pool\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user_address\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Asset_Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"lifetime_limit\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"withdraw_threshold\",\"type\":\"uint256\"}],\"name\":\"Asset_Limits_Updated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_asset_id\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Listed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Removed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user_address\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Withdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"Bridge_Resumed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"Bridge_Stopped\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"withdraw_delay\",\"type\":\"uint256\"}],\"name\":\"Bridge_Withdraw_Delay_Set\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"}],\"name\":\"Depositor_Exempted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"}],\"name\":\"Depositor_Exemption_Revoked\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"default_withdraw_delay\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"deposit_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"erc20_asset_pool_address\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exempt_depositor\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_asset_deposit_lifetime_limit\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"vega_asset_id\",\"type\":\"bytes32\"}],\"name\":\"get_asset_source\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"get_multisig_control_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_vega_asset_id\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_withdraw_threshold\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"global_resume\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"global_stop\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"is_asset_listed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"}],\"name\":\"is_exempt_depositor\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"is_stopped\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"vega_asset_id\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"lifetime_limit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"withdraw_threshold\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"list_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"remove_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"revoke_exempt_depositor\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"lifetime_limit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"threshold\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"set_asset_limits\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"delay\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"set_withdraw_delay\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"creation\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"withdraw_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"depositAsset\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"vegaPublicKey\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"exemptDepositor\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getAssetDepositLifetimeLimit\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAssetSource\",\"inputs\":[{\"name\":\"vegaAssetId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getMultisigControlAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getVegaAssetId\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawThreshold\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"globalResume\",\"inputs\":[{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"globalStop\",\"inputs\":[{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isAssetListed\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"isExemptDepositor\",\"inputs\":[{\"name\":\"depositor\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"listAsset\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"vegaAssetId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"lifetimeLimit\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"withdrawThreshold\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeAsset\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeExemptDepositor\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setAssetLimits\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"lifetimeLimit\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"threshold\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setWithdrawDelay\",\"inputs\":[{\"name\":\"delay\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawAsset\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"target\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"creation\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signatures\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"AssetDeposited\",\"inputs\":[{\"name\":\"userAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"assetSource\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"vegaPublicKey\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetLimitsUpdated\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"lifetimeLimit\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"withdrawThreshold\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetListed\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"vegaAssetId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetRemoved\",\"inputs\":[{\"name\":\"assetSource\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetWithdrawn\",\"inputs\":[{\"name\":\"userAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"assetSource\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"nonce\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BridgeResumed\",\"inputs\":[],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BridgeStopped\",\"inputs\":[],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BridgeWithdrawDelaySet\",\"inputs\":[{\"name\":\"withdraw_delay\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DepositorExempted\",\"inputs\":[{\"name\":\"depositor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DepositorExemptionRevoked\",\"inputs\":[{\"name\":\"depositor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false}]",
 }
 
 // Erc20BridgeLogicRestrictedABI is the input ABI used to generate the binding from.
@@ -180,12 +180,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorRaw) Tran
 	return _Erc20BridgeLogicRestricted.Contract.contract.Transact(opts, method, params...)
 }
 
-// DefaultWithdrawDelay is a free data retrieval call binding the contract method 0x3f4f199d.
+// GetAssetDepositLifetimeLimit is a free data retrieval call binding the contract method 0x5d1e1a73.
 //
-// Solidity: function default_withdraw_delay() view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) DefaultWithdrawDelay(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function getAssetDepositLifetimeLimit(address assetSource) view returns(uint256)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetAssetDepositLifetimeLimit(opts *bind.CallOpts, assetSource common.Address) (*big.Int, error) {
 	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "default_withdraw_delay")
+	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "getAssetDepositLifetimeLimit", assetSource)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -197,26 +197,26 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) DefaultWith
 
 }
 
-// DefaultWithdrawDelay is a free data retrieval call binding the contract method 0x3f4f199d.
+// GetAssetDepositLifetimeLimit is a free data retrieval call binding the contract method 0x5d1e1a73.
 //
-// Solidity: function default_withdraw_delay() view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) DefaultWithdrawDelay() (*big.Int, error) {
-	return _Erc20BridgeLogicRestricted.Contract.DefaultWithdrawDelay(&_Erc20BridgeLogicRestricted.CallOpts)
+// Solidity: function getAssetDepositLifetimeLimit(address assetSource) view returns(uint256)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetAssetDepositLifetimeLimit(assetSource common.Address) (*big.Int, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetAssetDepositLifetimeLimit(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// DefaultWithdrawDelay is a free data retrieval call binding the contract method 0x3f4f199d.
+// GetAssetDepositLifetimeLimit is a free data retrieval call binding the contract method 0x5d1e1a73.
 //
-// Solidity: function default_withdraw_delay() view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) DefaultWithdrawDelay() (*big.Int, error) {
-	return _Erc20BridgeLogicRestricted.Contract.DefaultWithdrawDelay(&_Erc20BridgeLogicRestricted.CallOpts)
+// Solidity: function getAssetDepositLifetimeLimit(address assetSource) view returns(uint256)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetAssetDepositLifetimeLimit(assetSource common.Address) (*big.Int, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetAssetDepositLifetimeLimit(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// Erc20AssetPoolAddress is a free data retrieval call binding the contract method 0x9356aab8.
+// GetAssetSource is a free data retrieval call binding the contract method 0xb653e56d.
 //
-// Solidity: function erc20_asset_pool_address() view returns(address)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) Erc20AssetPoolAddress(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function getAssetSource(bytes32 vegaAssetId) view returns(address)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetAssetSource(opts *bind.CallOpts, vegaAssetId [32]byte) (common.Address, error) {
 	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "erc20_asset_pool_address")
+	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "getAssetSource", vegaAssetId)
 
 	if err != nil {
 		return *new(common.Address), err
@@ -228,88 +228,26 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) Erc20AssetP
 
 }
 
-// Erc20AssetPoolAddress is a free data retrieval call binding the contract method 0x9356aab8.
+// GetAssetSource is a free data retrieval call binding the contract method 0xb653e56d.
 //
-// Solidity: function erc20_asset_pool_address() view returns(address)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) Erc20AssetPoolAddress() (common.Address, error) {
-	return _Erc20BridgeLogicRestricted.Contract.Erc20AssetPoolAddress(&_Erc20BridgeLogicRestricted.CallOpts)
+// Solidity: function getAssetSource(bytes32 vegaAssetId) view returns(address)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetAssetSource(vegaAssetId [32]byte) (common.Address, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetAssetSource(&_Erc20BridgeLogicRestricted.CallOpts, vegaAssetId)
 }
 
-// Erc20AssetPoolAddress is a free data retrieval call binding the contract method 0x9356aab8.
+// GetAssetSource is a free data retrieval call binding the contract method 0xb653e56d.
 //
-// Solidity: function erc20_asset_pool_address() view returns(address)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) Erc20AssetPoolAddress() (common.Address, error) {
-	return _Erc20BridgeLogicRestricted.Contract.Erc20AssetPoolAddress(&_Erc20BridgeLogicRestricted.CallOpts)
+// Solidity: function getAssetSource(bytes32 vegaAssetId) view returns(address)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetAssetSource(vegaAssetId [32]byte) (common.Address, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetAssetSource(&_Erc20BridgeLogicRestricted.CallOpts, vegaAssetId)
 }
 
-// GetAssetDepositLifetimeLimit is a free data retrieval call binding the contract method 0x354a897a.
+// GetMultisigControlAddress is a free data retrieval call binding the contract method 0x81a8915e.
 //
-// Solidity: function get_asset_deposit_lifetime_limit(address asset_source) view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetAssetDepositLifetimeLimit(opts *bind.CallOpts, asset_source common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "get_asset_deposit_lifetime_limit", asset_source)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetAssetDepositLifetimeLimit is a free data retrieval call binding the contract method 0x354a897a.
-//
-// Solidity: function get_asset_deposit_lifetime_limit(address asset_source) view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetAssetDepositLifetimeLimit(asset_source common.Address) (*big.Int, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetAssetDepositLifetimeLimit(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
-}
-
-// GetAssetDepositLifetimeLimit is a free data retrieval call binding the contract method 0x354a897a.
-//
-// Solidity: function get_asset_deposit_lifetime_limit(address asset_source) view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetAssetDepositLifetimeLimit(asset_source common.Address) (*big.Int, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetAssetDepositLifetimeLimit(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
-}
-
-// GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
-//
-// Solidity: function get_asset_source(bytes32 vega_asset_id) view returns(address)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetAssetSource(opts *bind.CallOpts, vega_asset_id [32]byte) (common.Address, error) {
-	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "get_asset_source", vega_asset_id)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
-//
-// Solidity: function get_asset_source(bytes32 vega_asset_id) view returns(address)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetAssetSource(vega_asset_id [32]byte) (common.Address, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetAssetSource(&_Erc20BridgeLogicRestricted.CallOpts, vega_asset_id)
-}
-
-// GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
-//
-// Solidity: function get_asset_source(bytes32 vega_asset_id) view returns(address)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetAssetSource(vega_asset_id [32]byte) (common.Address, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetAssetSource(&_Erc20BridgeLogicRestricted.CallOpts, vega_asset_id)
-}
-
-// GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
-//
-// Solidity: function get_multisig_control_address() view returns(address)
+// Solidity: function getMultisigControlAddress() view returns(address)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetMultisigControlAddress(opts *bind.CallOpts) (common.Address, error) {
 	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "get_multisig_control_address")
+	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "getMultisigControlAddress")
 
 	if err != nil {
 		return *new(common.Address), err
@@ -321,26 +259,26 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetMultisig
 
 }
 
-// GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
+// GetMultisigControlAddress is a free data retrieval call binding the contract method 0x81a8915e.
 //
-// Solidity: function get_multisig_control_address() view returns(address)
+// Solidity: function getMultisigControlAddress() view returns(address)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetMultisigControlAddress() (common.Address, error) {
 	return _Erc20BridgeLogicRestricted.Contract.GetMultisigControlAddress(&_Erc20BridgeLogicRestricted.CallOpts)
 }
 
-// GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
+// GetMultisigControlAddress is a free data retrieval call binding the contract method 0x81a8915e.
 //
-// Solidity: function get_multisig_control_address() view returns(address)
+// Solidity: function getMultisigControlAddress() view returns(address)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetMultisigControlAddress() (common.Address, error) {
 	return _Erc20BridgeLogicRestricted.Contract.GetMultisigControlAddress(&_Erc20BridgeLogicRestricted.CallOpts)
 }
 
-// GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
+// GetVegaAssetId is a free data retrieval call binding the contract method 0xf8c2dbe0.
 //
-// Solidity: function get_vega_asset_id(address asset_source) view returns(bytes32)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetVegaAssetId(opts *bind.CallOpts, asset_source common.Address) ([32]byte, error) {
+// Solidity: function getVegaAssetId(address assetSource) view returns(bytes32)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetVegaAssetId(opts *bind.CallOpts, assetSource common.Address) ([32]byte, error) {
 	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "get_vega_asset_id", asset_source)
+	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "getVegaAssetId", assetSource)
 
 	if err != nil {
 		return *new([32]byte), err
@@ -352,26 +290,26 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetVegaAsse
 
 }
 
-// GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
+// GetVegaAssetId is a free data retrieval call binding the contract method 0xf8c2dbe0.
 //
-// Solidity: function get_vega_asset_id(address asset_source) view returns(bytes32)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetVegaAssetId(asset_source common.Address) ([32]byte, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetVegaAssetId(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
+// Solidity: function getVegaAssetId(address assetSource) view returns(bytes32)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetVegaAssetId(assetSource common.Address) ([32]byte, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetVegaAssetId(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
+// GetVegaAssetId is a free data retrieval call binding the contract method 0xf8c2dbe0.
 //
-// Solidity: function get_vega_asset_id(address asset_source) view returns(bytes32)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetVegaAssetId(asset_source common.Address) ([32]byte, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetVegaAssetId(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
+// Solidity: function getVegaAssetId(address assetSource) view returns(bytes32)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetVegaAssetId(assetSource common.Address) ([32]byte, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetVegaAssetId(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// GetWithdrawThreshold is a free data retrieval call binding the contract method 0xe8a7bce0.
+// GetWithdrawThreshold is a free data retrieval call binding the contract method 0xf3dd4013.
 //
-// Solidity: function get_withdraw_threshold(address asset_source) view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetWithdrawThreshold(opts *bind.CallOpts, asset_source common.Address) (*big.Int, error) {
+// Solidity: function getWithdrawThreshold(address assetSource) view returns(uint256)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetWithdrawThreshold(opts *bind.CallOpts, assetSource common.Address) (*big.Int, error) {
 	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "get_withdraw_threshold", asset_source)
+	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "getWithdrawThreshold", assetSource)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -383,26 +321,26 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) GetWithdraw
 
 }
 
-// GetWithdrawThreshold is a free data retrieval call binding the contract method 0xe8a7bce0.
+// GetWithdrawThreshold is a free data retrieval call binding the contract method 0xf3dd4013.
 //
-// Solidity: function get_withdraw_threshold(address asset_source) view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetWithdrawThreshold(asset_source common.Address) (*big.Int, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetWithdrawThreshold(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
+// Solidity: function getWithdrawThreshold(address assetSource) view returns(uint256)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GetWithdrawThreshold(assetSource common.Address) (*big.Int, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetWithdrawThreshold(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// GetWithdrawThreshold is a free data retrieval call binding the contract method 0xe8a7bce0.
+// GetWithdrawThreshold is a free data retrieval call binding the contract method 0xf3dd4013.
 //
-// Solidity: function get_withdraw_threshold(address asset_source) view returns(uint256)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetWithdrawThreshold(asset_source common.Address) (*big.Int, error) {
-	return _Erc20BridgeLogicRestricted.Contract.GetWithdrawThreshold(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
+// Solidity: function getWithdrawThreshold(address assetSource) view returns(uint256)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) GetWithdrawThreshold(assetSource common.Address) (*big.Int, error) {
+	return _Erc20BridgeLogicRestricted.Contract.GetWithdrawThreshold(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// IsAssetListed is a free data retrieval call binding the contract method 0x7fd27b7f.
+// IsAssetListed is a free data retrieval call binding the contract method 0x47eaef01.
 //
-// Solidity: function is_asset_listed(address asset_source) view returns(bool)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) IsAssetListed(opts *bind.CallOpts, asset_source common.Address) (bool, error) {
+// Solidity: function isAssetListed(address assetSource) view returns(bool)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) IsAssetListed(opts *bind.CallOpts, assetSource common.Address) (bool, error) {
 	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "is_asset_listed", asset_source)
+	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "isAssetListed", assetSource)
 
 	if err != nil {
 		return *new(bool), err
@@ -414,26 +352,26 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) IsAssetList
 
 }
 
-// IsAssetListed is a free data retrieval call binding the contract method 0x7fd27b7f.
+// IsAssetListed is a free data retrieval call binding the contract method 0x47eaef01.
 //
-// Solidity: function is_asset_listed(address asset_source) view returns(bool)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) IsAssetListed(asset_source common.Address) (bool, error) {
-	return _Erc20BridgeLogicRestricted.Contract.IsAssetListed(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
+// Solidity: function isAssetListed(address assetSource) view returns(bool)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) IsAssetListed(assetSource common.Address) (bool, error) {
+	return _Erc20BridgeLogicRestricted.Contract.IsAssetListed(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// IsAssetListed is a free data retrieval call binding the contract method 0x7fd27b7f.
+// IsAssetListed is a free data retrieval call binding the contract method 0x47eaef01.
 //
-// Solidity: function is_asset_listed(address asset_source) view returns(bool)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) IsAssetListed(asset_source common.Address) (bool, error) {
-	return _Erc20BridgeLogicRestricted.Contract.IsAssetListed(&_Erc20BridgeLogicRestricted.CallOpts, asset_source)
+// Solidity: function isAssetListed(address assetSource) view returns(bool)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) IsAssetListed(assetSource common.Address) (bool, error) {
+	return _Erc20BridgeLogicRestricted.Contract.IsAssetListed(&_Erc20BridgeLogicRestricted.CallOpts, assetSource)
 }
 
-// IsExemptDepositor is a free data retrieval call binding the contract method 0x15c0df9d.
+// IsExemptDepositor is a free data retrieval call binding the contract method 0xe275317e.
 //
-// Solidity: function is_exempt_depositor(address depositor) view returns(bool)
+// Solidity: function isExemptDepositor(address depositor) view returns(bool)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) IsExemptDepositor(opts *bind.CallOpts, depositor common.Address) (bool, error) {
 	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "is_exempt_depositor", depositor)
+	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "isExemptDepositor", depositor)
 
 	if err != nil {
 		return *new(bool), err
@@ -445,259 +383,228 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) IsExemptDep
 
 }
 
-// IsExemptDepositor is a free data retrieval call binding the contract method 0x15c0df9d.
+// IsExemptDepositor is a free data retrieval call binding the contract method 0xe275317e.
 //
-// Solidity: function is_exempt_depositor(address depositor) view returns(bool)
+// Solidity: function isExemptDepositor(address depositor) view returns(bool)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) IsExemptDepositor(depositor common.Address) (bool, error) {
 	return _Erc20BridgeLogicRestricted.Contract.IsExemptDepositor(&_Erc20BridgeLogicRestricted.CallOpts, depositor)
 }
 
-// IsExemptDepositor is a free data retrieval call binding the contract method 0x15c0df9d.
+// IsExemptDepositor is a free data retrieval call binding the contract method 0xe275317e.
 //
-// Solidity: function is_exempt_depositor(address depositor) view returns(bool)
+// Solidity: function isExemptDepositor(address depositor) view returns(bool)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) IsExemptDepositor(depositor common.Address) (bool, error) {
 	return _Erc20BridgeLogicRestricted.Contract.IsExemptDepositor(&_Erc20BridgeLogicRestricted.CallOpts, depositor)
 }
 
-// IsStopped is a free data retrieval call binding the contract method 0xe272e9d0.
+// DepositAsset is a paid mutator transaction binding the contract method 0xa372b1d2.
 //
-// Solidity: function is_stopped() view returns(bool)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCaller) IsStopped(opts *bind.CallOpts) (bool, error) {
-	var out []interface{}
-	err := _Erc20BridgeLogicRestricted.contract.Call(opts, &out, "is_stopped")
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
+// Solidity: function depositAsset(address assetSource, uint256 amount, bytes32 vegaPublicKey) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) DepositAsset(opts *bind.TransactOpts, assetSource common.Address, amount *big.Int, vegaPublicKey [32]byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "depositAsset", assetSource, amount, vegaPublicKey)
 }
 
-// IsStopped is a free data retrieval call binding the contract method 0xe272e9d0.
+// DepositAsset is a paid mutator transaction binding the contract method 0xa372b1d2.
 //
-// Solidity: function is_stopped() view returns(bool)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) IsStopped() (bool, error) {
-	return _Erc20BridgeLogicRestricted.Contract.IsStopped(&_Erc20BridgeLogicRestricted.CallOpts)
+// Solidity: function depositAsset(address assetSource, uint256 amount, bytes32 vegaPublicKey) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) DepositAsset(assetSource common.Address, amount *big.Int, vegaPublicKey [32]byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.DepositAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, amount, vegaPublicKey)
 }
 
-// IsStopped is a free data retrieval call binding the contract method 0xe272e9d0.
+// DepositAsset is a paid mutator transaction binding the contract method 0xa372b1d2.
 //
-// Solidity: function is_stopped() view returns(bool)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedCallerSession) IsStopped() (bool, error) {
-	return _Erc20BridgeLogicRestricted.Contract.IsStopped(&_Erc20BridgeLogicRestricted.CallOpts)
+// Solidity: function depositAsset(address assetSource, uint256 amount, bytes32 vegaPublicKey) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) DepositAsset(assetSource common.Address, amount *big.Int, vegaPublicKey [32]byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.DepositAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, amount, vegaPublicKey)
 }
 
-// DepositAsset is a paid mutator transaction binding the contract method 0xf7683932.
+// ExemptDepositor is a paid mutator transaction binding the contract method 0xfc4e5482.
 //
-// Solidity: function deposit_asset(address asset_source, uint256 amount, bytes32 vega_public_key) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) DepositAsset(opts *bind.TransactOpts, asset_source common.Address, amount *big.Int, vega_public_key [32]byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "deposit_asset", asset_source, amount, vega_public_key)
-}
-
-// DepositAsset is a paid mutator transaction binding the contract method 0xf7683932.
-//
-// Solidity: function deposit_asset(address asset_source, uint256 amount, bytes32 vega_public_key) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) DepositAsset(asset_source common.Address, amount *big.Int, vega_public_key [32]byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.DepositAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, amount, vega_public_key)
-}
-
-// DepositAsset is a paid mutator transaction binding the contract method 0xf7683932.
-//
-// Solidity: function deposit_asset(address asset_source, uint256 amount, bytes32 vega_public_key) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) DepositAsset(asset_source common.Address, amount *big.Int, vega_public_key [32]byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.DepositAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, amount, vega_public_key)
-}
-
-// ExemptDepositor is a paid mutator transaction binding the contract method 0xb76fbb75.
-//
-// Solidity: function exempt_depositor() returns()
+// Solidity: function exemptDepositor() returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) ExemptDepositor(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "exempt_depositor")
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "exemptDepositor")
 }
 
-// ExemptDepositor is a paid mutator transaction binding the contract method 0xb76fbb75.
+// ExemptDepositor is a paid mutator transaction binding the contract method 0xfc4e5482.
 //
-// Solidity: function exempt_depositor() returns()
+// Solidity: function exemptDepositor() returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) ExemptDepositor() (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.ExemptDepositor(&_Erc20BridgeLogicRestricted.TransactOpts)
 }
 
-// ExemptDepositor is a paid mutator transaction binding the contract method 0xb76fbb75.
+// ExemptDepositor is a paid mutator transaction binding the contract method 0xfc4e5482.
 //
-// Solidity: function exempt_depositor() returns()
+// Solidity: function exemptDepositor() returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) ExemptDepositor() (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.ExemptDepositor(&_Erc20BridgeLogicRestricted.TransactOpts)
 }
 
-// GlobalResume is a paid mutator transaction binding the contract method 0xd72ed529.
+// GlobalResume is a paid mutator transaction binding the contract method 0x3c00cb9c.
 //
-// Solidity: function global_resume(uint256 nonce, bytes signatures) returns()
+// Solidity: function globalResume(uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) GlobalResume(opts *bind.TransactOpts, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "global_resume", nonce, signatures)
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "globalResume", nonce, signatures)
 }
 
-// GlobalResume is a paid mutator transaction binding the contract method 0xd72ed529.
+// GlobalResume is a paid mutator transaction binding the contract method 0x3c00cb9c.
 //
-// Solidity: function global_resume(uint256 nonce, bytes signatures) returns()
+// Solidity: function globalResume(uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GlobalResume(nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.GlobalResume(&_Erc20BridgeLogicRestricted.TransactOpts, nonce, signatures)
 }
 
-// GlobalResume is a paid mutator transaction binding the contract method 0xd72ed529.
+// GlobalResume is a paid mutator transaction binding the contract method 0x3c00cb9c.
 //
-// Solidity: function global_resume(uint256 nonce, bytes signatures) returns()
+// Solidity: function globalResume(uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) GlobalResume(nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.GlobalResume(&_Erc20BridgeLogicRestricted.TransactOpts, nonce, signatures)
 }
 
-// GlobalStop is a paid mutator transaction binding the contract method 0x9dfd3c88.
+// GlobalStop is a paid mutator transaction binding the contract method 0xdaff4e2f.
 //
-// Solidity: function global_stop(uint256 nonce, bytes signatures) returns()
+// Solidity: function globalStop(uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) GlobalStop(opts *bind.TransactOpts, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "global_stop", nonce, signatures)
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "globalStop", nonce, signatures)
 }
 
-// GlobalStop is a paid mutator transaction binding the contract method 0x9dfd3c88.
+// GlobalStop is a paid mutator transaction binding the contract method 0xdaff4e2f.
 //
-// Solidity: function global_stop(uint256 nonce, bytes signatures) returns()
+// Solidity: function globalStop(uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) GlobalStop(nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.GlobalStop(&_Erc20BridgeLogicRestricted.TransactOpts, nonce, signatures)
 }
 
-// GlobalStop is a paid mutator transaction binding the contract method 0x9dfd3c88.
+// GlobalStop is a paid mutator transaction binding the contract method 0xdaff4e2f.
 //
-// Solidity: function global_stop(uint256 nonce, bytes signatures) returns()
+// Solidity: function globalStop(uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) GlobalStop(nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.GlobalStop(&_Erc20BridgeLogicRestricted.TransactOpts, nonce, signatures)
 }
 
-// ListAsset is a paid mutator transaction binding the contract method 0x0ff3562c.
+// ListAsset is a paid mutator transaction binding the contract method 0x8ed131e0.
 //
-// Solidity: function list_asset(address asset_source, bytes32 vega_asset_id, uint256 lifetime_limit, uint256 withdraw_threshold, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) ListAsset(opts *bind.TransactOpts, asset_source common.Address, vega_asset_id [32]byte, lifetime_limit *big.Int, withdraw_threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "list_asset", asset_source, vega_asset_id, lifetime_limit, withdraw_threshold, nonce, signatures)
+// Solidity: function listAsset(address assetSource, bytes32 vegaAssetId, uint256 lifetimeLimit, uint256 withdrawThreshold, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) ListAsset(opts *bind.TransactOpts, assetSource common.Address, vegaAssetId [32]byte, lifetimeLimit *big.Int, withdrawThreshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "listAsset", assetSource, vegaAssetId, lifetimeLimit, withdrawThreshold, nonce, signatures)
 }
 
-// ListAsset is a paid mutator transaction binding the contract method 0x0ff3562c.
+// ListAsset is a paid mutator transaction binding the contract method 0x8ed131e0.
 //
-// Solidity: function list_asset(address asset_source, bytes32 vega_asset_id, uint256 lifetime_limit, uint256 withdraw_threshold, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) ListAsset(asset_source common.Address, vega_asset_id [32]byte, lifetime_limit *big.Int, withdraw_threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.ListAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, vega_asset_id, lifetime_limit, withdraw_threshold, nonce, signatures)
+// Solidity: function listAsset(address assetSource, bytes32 vegaAssetId, uint256 lifetimeLimit, uint256 withdrawThreshold, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) ListAsset(assetSource common.Address, vegaAssetId [32]byte, lifetimeLimit *big.Int, withdrawThreshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.ListAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, vegaAssetId, lifetimeLimit, withdrawThreshold, nonce, signatures)
 }
 
-// ListAsset is a paid mutator transaction binding the contract method 0x0ff3562c.
+// ListAsset is a paid mutator transaction binding the contract method 0x8ed131e0.
 //
-// Solidity: function list_asset(address asset_source, bytes32 vega_asset_id, uint256 lifetime_limit, uint256 withdraw_threshold, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) ListAsset(asset_source common.Address, vega_asset_id [32]byte, lifetime_limit *big.Int, withdraw_threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.ListAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, vega_asset_id, lifetime_limit, withdraw_threshold, nonce, signatures)
+// Solidity: function listAsset(address assetSource, bytes32 vegaAssetId, uint256 lifetimeLimit, uint256 withdrawThreshold, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) ListAsset(assetSource common.Address, vegaAssetId [32]byte, lifetimeLimit *big.Int, withdrawThreshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.ListAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, vegaAssetId, lifetimeLimit, withdrawThreshold, nonce, signatures)
 }
 
-// RemoveAsset is a paid mutator transaction binding the contract method 0xc76de358.
+// RemoveAsset is a paid mutator transaction binding the contract method 0x8ef973ea.
 //
-// Solidity: function remove_asset(address asset_source, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) RemoveAsset(opts *bind.TransactOpts, asset_source common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "remove_asset", asset_source, nonce, signatures)
+// Solidity: function removeAsset(address assetSource, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) RemoveAsset(opts *bind.TransactOpts, assetSource common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "removeAsset", assetSource, nonce, signatures)
 }
 
-// RemoveAsset is a paid mutator transaction binding the contract method 0xc76de358.
+// RemoveAsset is a paid mutator transaction binding the contract method 0x8ef973ea.
 //
-// Solidity: function remove_asset(address asset_source, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) RemoveAsset(asset_source common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.RemoveAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, nonce, signatures)
+// Solidity: function removeAsset(address assetSource, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) RemoveAsset(assetSource common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.RemoveAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, nonce, signatures)
 }
 
-// RemoveAsset is a paid mutator transaction binding the contract method 0xc76de358.
+// RemoveAsset is a paid mutator transaction binding the contract method 0x8ef973ea.
 //
-// Solidity: function remove_asset(address asset_source, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) RemoveAsset(asset_source common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.RemoveAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, nonce, signatures)
+// Solidity: function removeAsset(address assetSource, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) RemoveAsset(assetSource common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.RemoveAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, nonce, signatures)
 }
 
-// RevokeExemptDepositor is a paid mutator transaction binding the contract method 0x6a1c6fa4.
+// RevokeExemptDepositor is a paid mutator transaction binding the contract method 0x66a3edc4.
 //
-// Solidity: function revoke_exempt_depositor() returns()
+// Solidity: function revokeExemptDepositor() returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) RevokeExemptDepositor(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "revoke_exempt_depositor")
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "revokeExemptDepositor")
 }
 
-// RevokeExemptDepositor is a paid mutator transaction binding the contract method 0x6a1c6fa4.
+// RevokeExemptDepositor is a paid mutator transaction binding the contract method 0x66a3edc4.
 //
-// Solidity: function revoke_exempt_depositor() returns()
+// Solidity: function revokeExemptDepositor() returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) RevokeExemptDepositor() (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.RevokeExemptDepositor(&_Erc20BridgeLogicRestricted.TransactOpts)
 }
 
-// RevokeExemptDepositor is a paid mutator transaction binding the contract method 0x6a1c6fa4.
+// RevokeExemptDepositor is a paid mutator transaction binding the contract method 0x66a3edc4.
 //
-// Solidity: function revoke_exempt_depositor() returns()
+// Solidity: function revokeExemptDepositor() returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) RevokeExemptDepositor() (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.RevokeExemptDepositor(&_Erc20BridgeLogicRestricted.TransactOpts)
 }
 
-// SetAssetLimits is a paid mutator transaction binding the contract method 0x41fb776d.
+// SetAssetLimits is a paid mutator transaction binding the contract method 0x10725d39.
 //
-// Solidity: function set_asset_limits(address asset_source, uint256 lifetime_limit, uint256 threshold, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) SetAssetLimits(opts *bind.TransactOpts, asset_source common.Address, lifetime_limit *big.Int, threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "set_asset_limits", asset_source, lifetime_limit, threshold, nonce, signatures)
+// Solidity: function setAssetLimits(address assetSource, uint256 lifetimeLimit, uint256 threshold, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) SetAssetLimits(opts *bind.TransactOpts, assetSource common.Address, lifetimeLimit *big.Int, threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "setAssetLimits", assetSource, lifetimeLimit, threshold, nonce, signatures)
 }
 
-// SetAssetLimits is a paid mutator transaction binding the contract method 0x41fb776d.
+// SetAssetLimits is a paid mutator transaction binding the contract method 0x10725d39.
 //
-// Solidity: function set_asset_limits(address asset_source, uint256 lifetime_limit, uint256 threshold, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) SetAssetLimits(asset_source common.Address, lifetime_limit *big.Int, threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.SetAssetLimits(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, lifetime_limit, threshold, nonce, signatures)
+// Solidity: function setAssetLimits(address assetSource, uint256 lifetimeLimit, uint256 threshold, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) SetAssetLimits(assetSource common.Address, lifetimeLimit *big.Int, threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.SetAssetLimits(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, lifetimeLimit, threshold, nonce, signatures)
 }
 
-// SetAssetLimits is a paid mutator transaction binding the contract method 0x41fb776d.
+// SetAssetLimits is a paid mutator transaction binding the contract method 0x10725d39.
 //
-// Solidity: function set_asset_limits(address asset_source, uint256 lifetime_limit, uint256 threshold, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) SetAssetLimits(asset_source common.Address, lifetime_limit *big.Int, threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.SetAssetLimits(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, lifetime_limit, threshold, nonce, signatures)
+// Solidity: function setAssetLimits(address assetSource, uint256 lifetimeLimit, uint256 threshold, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) SetAssetLimits(assetSource common.Address, lifetimeLimit *big.Int, threshold *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.SetAssetLimits(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, lifetimeLimit, threshold, nonce, signatures)
 }
 
-// SetWithdrawDelay is a paid mutator transaction binding the contract method 0x5a246728.
+// SetWithdrawDelay is a paid mutator transaction binding the contract method 0x9fde4ad0.
 //
-// Solidity: function set_withdraw_delay(uint256 delay, uint256 nonce, bytes signatures) returns()
+// Solidity: function setWithdrawDelay(uint256 delay, uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) SetWithdrawDelay(opts *bind.TransactOpts, delay *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "set_withdraw_delay", delay, nonce, signatures)
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "setWithdrawDelay", delay, nonce, signatures)
 }
 
-// SetWithdrawDelay is a paid mutator transaction binding the contract method 0x5a246728.
+// SetWithdrawDelay is a paid mutator transaction binding the contract method 0x9fde4ad0.
 //
-// Solidity: function set_withdraw_delay(uint256 delay, uint256 nonce, bytes signatures) returns()
+// Solidity: function setWithdrawDelay(uint256 delay, uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) SetWithdrawDelay(delay *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.SetWithdrawDelay(&_Erc20BridgeLogicRestricted.TransactOpts, delay, nonce, signatures)
 }
 
-// SetWithdrawDelay is a paid mutator transaction binding the contract method 0x5a246728.
+// SetWithdrawDelay is a paid mutator transaction binding the contract method 0x9fde4ad0.
 //
-// Solidity: function set_withdraw_delay(uint256 delay, uint256 nonce, bytes signatures) returns()
+// Solidity: function setWithdrawDelay(uint256 delay, uint256 nonce, bytes signatures) returns()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) SetWithdrawDelay(delay *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
 	return _Erc20BridgeLogicRestricted.Contract.SetWithdrawDelay(&_Erc20BridgeLogicRestricted.TransactOpts, delay, nonce, signatures)
 }
 
-// WithdrawAsset is a paid mutator transaction binding the contract method 0x3ad90635.
+// WithdrawAsset is a paid mutator transaction binding the contract method 0x13b99c74.
 //
-// Solidity: function withdraw_asset(address asset_source, uint256 amount, address target, uint256 creation, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) WithdrawAsset(opts *bind.TransactOpts, asset_source common.Address, amount *big.Int, target common.Address, creation *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "withdraw_asset", asset_source, amount, target, creation, nonce, signatures)
+// Solidity: function withdrawAsset(address assetSource, uint256 amount, address target, uint256 creation, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactor) WithdrawAsset(opts *bind.TransactOpts, assetSource common.Address, amount *big.Int, target common.Address, creation *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.contract.Transact(opts, "withdrawAsset", assetSource, amount, target, creation, nonce, signatures)
 }
 
-// WithdrawAsset is a paid mutator transaction binding the contract method 0x3ad90635.
+// WithdrawAsset is a paid mutator transaction binding the contract method 0x13b99c74.
 //
-// Solidity: function withdraw_asset(address asset_source, uint256 amount, address target, uint256 creation, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) WithdrawAsset(asset_source common.Address, amount *big.Int, target common.Address, creation *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.WithdrawAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, amount, target, creation, nonce, signatures)
+// Solidity: function withdrawAsset(address assetSource, uint256 amount, address target, uint256 creation, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedSession) WithdrawAsset(assetSource common.Address, amount *big.Int, target common.Address, creation *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.WithdrawAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, amount, target, creation, nonce, signatures)
 }
 
-// WithdrawAsset is a paid mutator transaction binding the contract method 0x3ad90635.
+// WithdrawAsset is a paid mutator transaction binding the contract method 0x13b99c74.
 //
-// Solidity: function withdraw_asset(address asset_source, uint256 amount, address target, uint256 creation, uint256 nonce, bytes signatures) returns()
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) WithdrawAsset(asset_source common.Address, amount *big.Int, target common.Address, creation *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Erc20BridgeLogicRestricted.Contract.WithdrawAsset(&_Erc20BridgeLogicRestricted.TransactOpts, asset_source, amount, target, creation, nonce, signatures)
+// Solidity: function withdrawAsset(address assetSource, uint256 amount, address target, uint256 creation, uint256 nonce, bytes signatures) returns()
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedTransactorSession) WithdrawAsset(assetSource common.Address, amount *big.Int, target common.Address, creation *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Erc20BridgeLogicRestricted.Contract.WithdrawAsset(&_Erc20BridgeLogicRestricted.TransactOpts, assetSource, amount, target, creation, nonce, signatures)
 }
 
 // Erc20BridgeLogicRestrictedAssetDepositedIterator is returned from FilterAssetDeposited and is used to iterate over the raw logs and unpacked data for AssetDeposited events raised by the Erc20BridgeLogicRestricted contract.
@@ -776,42 +683,42 @@ type Erc20BridgeLogicRestrictedAssetDeposited struct {
 	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterAssetDeposited is a free log retrieval operation binding the contract event 0x3724ff5e82ddc640a08d68b0b782a5991aea0de51a8dd10a59cdbe5b3ec4e6bf.
+// FilterAssetDeposited is a free log retrieval operation binding the contract event 0x682eab6abd797cfe9f53779827c6526e4e1e5c2c0ad2c2a30d8af5a269f5608e.
 //
-// Solidity: event Asset_Deposited(address indexed user_address, address indexed asset_source, uint256 amount, bytes32 vega_public_key)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetDeposited(opts *bind.FilterOpts, user_address []common.Address, asset_source []common.Address) (*Erc20BridgeLogicRestrictedAssetDepositedIterator, error) {
+// Solidity: event AssetDeposited(address indexed userAddress, address indexed assetSource, uint256 amount, bytes32 vegaPublicKey)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetDeposited(opts *bind.FilterOpts, userAddress []common.Address, assetSource []common.Address) (*Erc20BridgeLogicRestrictedAssetDepositedIterator, error) {
 
-	var user_addressRule []interface{}
-	for _, user_addressItem := range user_address {
-		user_addressRule = append(user_addressRule, user_addressItem)
+	var userAddressRule []interface{}
+	for _, userAddressItem := range userAddress {
+		userAddressRule = append(userAddressRule, userAddressItem)
 	}
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Asset_Deposited", user_addressRule, asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "AssetDeposited", userAddressRule, assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedAssetDepositedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Asset_Deposited", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedAssetDepositedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "AssetDeposited", logs: logs, sub: sub}, nil
 }
 
-// WatchAssetDeposited is a free log subscription operation binding the contract event 0x3724ff5e82ddc640a08d68b0b782a5991aea0de51a8dd10a59cdbe5b3ec4e6bf.
+// WatchAssetDeposited is a free log subscription operation binding the contract event 0x682eab6abd797cfe9f53779827c6526e4e1e5c2c0ad2c2a30d8af5a269f5608e.
 //
-// Solidity: event Asset_Deposited(address indexed user_address, address indexed asset_source, uint256 amount, bytes32 vega_public_key)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetDeposited(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetDeposited, user_address []common.Address, asset_source []common.Address) (event.Subscription, error) {
+// Solidity: event AssetDeposited(address indexed userAddress, address indexed assetSource, uint256 amount, bytes32 vegaPublicKey)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetDeposited(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetDeposited, userAddress []common.Address, assetSource []common.Address) (event.Subscription, error) {
 
-	var user_addressRule []interface{}
-	for _, user_addressItem := range user_address {
-		user_addressRule = append(user_addressRule, user_addressItem)
+	var userAddressRule []interface{}
+	for _, userAddressItem := range userAddress {
+		userAddressRule = append(userAddressRule, userAddressItem)
 	}
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Asset_Deposited", user_addressRule, asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "AssetDeposited", userAddressRule, assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -822,7 +729,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedAssetDeposited)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Deposited", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetDeposited", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -843,12 +750,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 	}), nil
 }
 
-// ParseAssetDeposited is a log parse operation binding the contract event 0x3724ff5e82ddc640a08d68b0b782a5991aea0de51a8dd10a59cdbe5b3ec4e6bf.
+// ParseAssetDeposited is a log parse operation binding the contract event 0x682eab6abd797cfe9f53779827c6526e4e1e5c2c0ad2c2a30d8af5a269f5608e.
 //
-// Solidity: event Asset_Deposited(address indexed user_address, address indexed asset_source, uint256 amount, bytes32 vega_public_key)
+// Solidity: event AssetDeposited(address indexed userAddress, address indexed assetSource, uint256 amount, bytes32 vegaPublicKey)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseAssetDeposited(log types.Log) (*Erc20BridgeLogicRestrictedAssetDeposited, error) {
 	event := new(Erc20BridgeLogicRestrictedAssetDeposited)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Deposited", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetDeposited", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -930,34 +837,34 @@ type Erc20BridgeLogicRestrictedAssetLimitsUpdated struct {
 	Raw               types.Log // Blockchain specific contextual infos
 }
 
-// FilterAssetLimitsUpdated is a free log retrieval operation binding the contract event 0xfc7eab762b8751ad85c101fd1025c763b4e8d48f2093f506629b606618e884fe.
+// FilterAssetLimitsUpdated is a free log retrieval operation binding the contract event 0x2b9be4c285a9f5ff31bc13fabbab637c16e5f945e41a8a0e00e699264e9a17b6.
 //
-// Solidity: event Asset_Limits_Updated(address indexed asset_source, uint256 lifetime_limit, uint256 withdraw_threshold)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetLimitsUpdated(opts *bind.FilterOpts, asset_source []common.Address) (*Erc20BridgeLogicRestrictedAssetLimitsUpdatedIterator, error) {
+// Solidity: event AssetLimitsUpdated(address indexed assetSource, uint256 lifetimeLimit, uint256 withdrawThreshold)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetLimitsUpdated(opts *bind.FilterOpts, assetSource []common.Address) (*Erc20BridgeLogicRestrictedAssetLimitsUpdatedIterator, error) {
 
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Asset_Limits_Updated", asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "AssetLimitsUpdated", assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedAssetLimitsUpdatedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Asset_Limits_Updated", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedAssetLimitsUpdatedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "AssetLimitsUpdated", logs: logs, sub: sub}, nil
 }
 
-// WatchAssetLimitsUpdated is a free log subscription operation binding the contract event 0xfc7eab762b8751ad85c101fd1025c763b4e8d48f2093f506629b606618e884fe.
+// WatchAssetLimitsUpdated is a free log subscription operation binding the contract event 0x2b9be4c285a9f5ff31bc13fabbab637c16e5f945e41a8a0e00e699264e9a17b6.
 //
-// Solidity: event Asset_Limits_Updated(address indexed asset_source, uint256 lifetime_limit, uint256 withdraw_threshold)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetLimitsUpdated(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetLimitsUpdated, asset_source []common.Address) (event.Subscription, error) {
+// Solidity: event AssetLimitsUpdated(address indexed assetSource, uint256 lifetimeLimit, uint256 withdrawThreshold)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetLimitsUpdated(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetLimitsUpdated, assetSource []common.Address) (event.Subscription, error) {
 
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Asset_Limits_Updated", asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "AssetLimitsUpdated", assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -968,7 +875,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedAssetLimitsUpdated)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Limits_Updated", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetLimitsUpdated", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -989,12 +896,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 	}), nil
 }
 
-// ParseAssetLimitsUpdated is a log parse operation binding the contract event 0xfc7eab762b8751ad85c101fd1025c763b4e8d48f2093f506629b606618e884fe.
+// ParseAssetLimitsUpdated is a log parse operation binding the contract event 0x2b9be4c285a9f5ff31bc13fabbab637c16e5f945e41a8a0e00e699264e9a17b6.
 //
-// Solidity: event Asset_Limits_Updated(address indexed asset_source, uint256 lifetime_limit, uint256 withdraw_threshold)
+// Solidity: event AssetLimitsUpdated(address indexed assetSource, uint256 lifetimeLimit, uint256 withdrawThreshold)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseAssetLimitsUpdated(log types.Log) (*Erc20BridgeLogicRestrictedAssetLimitsUpdated, error) {
 	event := new(Erc20BridgeLogicRestrictedAssetLimitsUpdated)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Limits_Updated", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetLimitsUpdated", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1076,42 +983,42 @@ type Erc20BridgeLogicRestrictedAssetListed struct {
 	Raw         types.Log // Blockchain specific contextual infos
 }
 
-// FilterAssetListed is a free log retrieval operation binding the contract event 0x4180d77d05ff0d31650c548c23f2de07a3da3ad42e3dd6edd817b438a150452e.
+// FilterAssetListed is a free log retrieval operation binding the contract event 0xec587e0b31172eee3a953d82b0c7f78c96be78084a92eb0463144c0446250d49.
 //
-// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetListed(opts *bind.FilterOpts, asset_source []common.Address, vega_asset_id [][32]byte) (*Erc20BridgeLogicRestrictedAssetListedIterator, error) {
+// Solidity: event AssetListed(address indexed assetSource, bytes32 indexed vegaAssetId, uint256 nonce)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetListed(opts *bind.FilterOpts, assetSource []common.Address, vegaAssetId [][32]byte) (*Erc20BridgeLogicRestrictedAssetListedIterator, error) {
 
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
-	var vega_asset_idRule []interface{}
-	for _, vega_asset_idItem := range vega_asset_id {
-		vega_asset_idRule = append(vega_asset_idRule, vega_asset_idItem)
+	var vegaAssetIdRule []interface{}
+	for _, vegaAssetIdItem := range vegaAssetId {
+		vegaAssetIdRule = append(vegaAssetIdRule, vegaAssetIdItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Asset_Listed", asset_sourceRule, vega_asset_idRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "AssetListed", assetSourceRule, vegaAssetIdRule)
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedAssetListedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Asset_Listed", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedAssetListedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "AssetListed", logs: logs, sub: sub}, nil
 }
 
-// WatchAssetListed is a free log subscription operation binding the contract event 0x4180d77d05ff0d31650c548c23f2de07a3da3ad42e3dd6edd817b438a150452e.
+// WatchAssetListed is a free log subscription operation binding the contract event 0xec587e0b31172eee3a953d82b0c7f78c96be78084a92eb0463144c0446250d49.
 //
-// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetListed(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetListed, asset_source []common.Address, vega_asset_id [][32]byte) (event.Subscription, error) {
+// Solidity: event AssetListed(address indexed assetSource, bytes32 indexed vegaAssetId, uint256 nonce)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetListed(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetListed, assetSource []common.Address, vegaAssetId [][32]byte) (event.Subscription, error) {
 
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
-	var vega_asset_idRule []interface{}
-	for _, vega_asset_idItem := range vega_asset_id {
-		vega_asset_idRule = append(vega_asset_idRule, vega_asset_idItem)
+	var vegaAssetIdRule []interface{}
+	for _, vegaAssetIdItem := range vegaAssetId {
+		vegaAssetIdRule = append(vegaAssetIdRule, vegaAssetIdItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Asset_Listed", asset_sourceRule, vega_asset_idRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "AssetListed", assetSourceRule, vegaAssetIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1122,7 +1029,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedAssetListed)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Listed", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetListed", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1143,12 +1050,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 	}), nil
 }
 
-// ParseAssetListed is a log parse operation binding the contract event 0x4180d77d05ff0d31650c548c23f2de07a3da3ad42e3dd6edd817b438a150452e.
+// ParseAssetListed is a log parse operation binding the contract event 0xec587e0b31172eee3a953d82b0c7f78c96be78084a92eb0463144c0446250d49.
 //
-// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
+// Solidity: event AssetListed(address indexed assetSource, bytes32 indexed vegaAssetId, uint256 nonce)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseAssetListed(log types.Log) (*Erc20BridgeLogicRestrictedAssetListed, error) {
 	event := new(Erc20BridgeLogicRestrictedAssetListed)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Listed", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetListed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1229,34 +1136,34 @@ type Erc20BridgeLogicRestrictedAssetRemoved struct {
 	Raw         types.Log // Blockchain specific contextual infos
 }
 
-// FilterAssetRemoved is a free log retrieval operation binding the contract event 0x58ad5e799e2df93ab408be0e5c1870d44c80b5bca99dfaf7ddf0dab5e6b155c9.
+// FilterAssetRemoved is a free log retrieval operation binding the contract event 0x3406221f53114f44c9a1bb93d08ee55735f39bf235a54741684a52501207bb54.
 //
-// Solidity: event Asset_Removed(address indexed asset_source, uint256 nonce)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetRemoved(opts *bind.FilterOpts, asset_source []common.Address) (*Erc20BridgeLogicRestrictedAssetRemovedIterator, error) {
+// Solidity: event AssetRemoved(address indexed assetSource, uint256 nonce)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetRemoved(opts *bind.FilterOpts, assetSource []common.Address) (*Erc20BridgeLogicRestrictedAssetRemovedIterator, error) {
 
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Asset_Removed", asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "AssetRemoved", assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedAssetRemovedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Asset_Removed", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedAssetRemovedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "AssetRemoved", logs: logs, sub: sub}, nil
 }
 
-// WatchAssetRemoved is a free log subscription operation binding the contract event 0x58ad5e799e2df93ab408be0e5c1870d44c80b5bca99dfaf7ddf0dab5e6b155c9.
+// WatchAssetRemoved is a free log subscription operation binding the contract event 0x3406221f53114f44c9a1bb93d08ee55735f39bf235a54741684a52501207bb54.
 //
-// Solidity: event Asset_Removed(address indexed asset_source, uint256 nonce)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetRemoved(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetRemoved, asset_source []common.Address) (event.Subscription, error) {
+// Solidity: event AssetRemoved(address indexed assetSource, uint256 nonce)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetRemoved(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetRemoved, assetSource []common.Address) (event.Subscription, error) {
 
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Asset_Removed", asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "AssetRemoved", assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1267,7 +1174,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedAssetRemoved)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Removed", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetRemoved", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1288,12 +1195,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 	}), nil
 }
 
-// ParseAssetRemoved is a log parse operation binding the contract event 0x58ad5e799e2df93ab408be0e5c1870d44c80b5bca99dfaf7ddf0dab5e6b155c9.
+// ParseAssetRemoved is a log parse operation binding the contract event 0x3406221f53114f44c9a1bb93d08ee55735f39bf235a54741684a52501207bb54.
 //
-// Solidity: event Asset_Removed(address indexed asset_source, uint256 nonce)
+// Solidity: event AssetRemoved(address indexed assetSource, uint256 nonce)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseAssetRemoved(log types.Log) (*Erc20BridgeLogicRestrictedAssetRemoved, error) {
 	event := new(Erc20BridgeLogicRestrictedAssetRemoved)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Removed", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetRemoved", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1376,42 +1283,42 @@ type Erc20BridgeLogicRestrictedAssetWithdrawn struct {
 	Raw         types.Log // Blockchain specific contextual infos
 }
 
-// FilterAssetWithdrawn is a free log retrieval operation binding the contract event 0xa79be4f3361e32d396d64c478ecef73732cb40b2a75702c3b3b3226a2c83b5df.
+// FilterAssetWithdrawn is a free log retrieval operation binding the contract event 0xdd3541b6a4a74daf4ad7d33c0d4b441e1bad2e93e12da692aa37c5febb19f7b8.
 //
-// Solidity: event Asset_Withdrawn(address indexed user_address, address indexed asset_source, uint256 amount, uint256 nonce)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetWithdrawn(opts *bind.FilterOpts, user_address []common.Address, asset_source []common.Address) (*Erc20BridgeLogicRestrictedAssetWithdrawnIterator, error) {
+// Solidity: event AssetWithdrawn(address indexed userAddress, address indexed assetSource, uint256 amount, uint256 nonce)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterAssetWithdrawn(opts *bind.FilterOpts, userAddress []common.Address, assetSource []common.Address) (*Erc20BridgeLogicRestrictedAssetWithdrawnIterator, error) {
 
-	var user_addressRule []interface{}
-	for _, user_addressItem := range user_address {
-		user_addressRule = append(user_addressRule, user_addressItem)
+	var userAddressRule []interface{}
+	for _, userAddressItem := range userAddress {
+		userAddressRule = append(userAddressRule, userAddressItem)
 	}
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Asset_Withdrawn", user_addressRule, asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "AssetWithdrawn", userAddressRule, assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedAssetWithdrawnIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Asset_Withdrawn", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedAssetWithdrawnIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "AssetWithdrawn", logs: logs, sub: sub}, nil
 }
 
-// WatchAssetWithdrawn is a free log subscription operation binding the contract event 0xa79be4f3361e32d396d64c478ecef73732cb40b2a75702c3b3b3226a2c83b5df.
+// WatchAssetWithdrawn is a free log subscription operation binding the contract event 0xdd3541b6a4a74daf4ad7d33c0d4b441e1bad2e93e12da692aa37c5febb19f7b8.
 //
-// Solidity: event Asset_Withdrawn(address indexed user_address, address indexed asset_source, uint256 amount, uint256 nonce)
-func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetWithdrawn(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetWithdrawn, user_address []common.Address, asset_source []common.Address) (event.Subscription, error) {
+// Solidity: event AssetWithdrawn(address indexed userAddress, address indexed assetSource, uint256 amount, uint256 nonce)
+func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAssetWithdrawn(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedAssetWithdrawn, userAddress []common.Address, assetSource []common.Address) (event.Subscription, error) {
 
-	var user_addressRule []interface{}
-	for _, user_addressItem := range user_address {
-		user_addressRule = append(user_addressRule, user_addressItem)
+	var userAddressRule []interface{}
+	for _, userAddressItem := range userAddress {
+		userAddressRule = append(userAddressRule, userAddressItem)
 	}
-	var asset_sourceRule []interface{}
-	for _, asset_sourceItem := range asset_source {
-		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	var assetSourceRule []interface{}
+	for _, assetSourceItem := range assetSource {
+		assetSourceRule = append(assetSourceRule, assetSourceItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Asset_Withdrawn", user_addressRule, asset_sourceRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "AssetWithdrawn", userAddressRule, assetSourceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1422,7 +1329,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedAssetWithdrawn)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Withdrawn", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetWithdrawn", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1443,12 +1350,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchAsse
 	}), nil
 }
 
-// ParseAssetWithdrawn is a log parse operation binding the contract event 0xa79be4f3361e32d396d64c478ecef73732cb40b2a75702c3b3b3226a2c83b5df.
+// ParseAssetWithdrawn is a log parse operation binding the contract event 0xdd3541b6a4a74daf4ad7d33c0d4b441e1bad2e93e12da692aa37c5febb19f7b8.
 //
-// Solidity: event Asset_Withdrawn(address indexed user_address, address indexed asset_source, uint256 amount, uint256 nonce)
+// Solidity: event AssetWithdrawn(address indexed userAddress, address indexed assetSource, uint256 amount, uint256 nonce)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseAssetWithdrawn(log types.Log) (*Erc20BridgeLogicRestrictedAssetWithdrawn, error) {
 	event := new(Erc20BridgeLogicRestrictedAssetWithdrawn)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Asset_Withdrawn", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "AssetWithdrawn", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1527,24 +1434,24 @@ type Erc20BridgeLogicRestrictedBridgeResumed struct {
 	Raw types.Log // Blockchain specific contextual infos
 }
 
-// FilterBridgeResumed is a free log retrieval operation binding the contract event 0x79c02b0e60e0f00fe0370791204f2f175fe3f06f4816f3506ad4fa1b8e8cde0f.
+// FilterBridgeResumed is a free log retrieval operation binding the contract event 0x287ac30ff6e68ce13e26be0638f2f8fb754a569fd9c2dc77bf8241411a647876.
 //
-// Solidity: event Bridge_Resumed()
+// Solidity: event BridgeResumed()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterBridgeResumed(opts *bind.FilterOpts) (*Erc20BridgeLogicRestrictedBridgeResumedIterator, error) {
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Bridge_Resumed")
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "BridgeResumed")
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedBridgeResumedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Bridge_Resumed", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedBridgeResumedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "BridgeResumed", logs: logs, sub: sub}, nil
 }
 
-// WatchBridgeResumed is a free log subscription operation binding the contract event 0x79c02b0e60e0f00fe0370791204f2f175fe3f06f4816f3506ad4fa1b8e8cde0f.
+// WatchBridgeResumed is a free log subscription operation binding the contract event 0x287ac30ff6e68ce13e26be0638f2f8fb754a569fd9c2dc77bf8241411a647876.
 //
-// Solidity: event Bridge_Resumed()
+// Solidity: event BridgeResumed()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBridgeResumed(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedBridgeResumed) (event.Subscription, error) {
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Bridge_Resumed")
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "BridgeResumed")
 	if err != nil {
 		return nil, err
 	}
@@ -1555,7 +1462,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBrid
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedBridgeResumed)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Bridge_Resumed", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "BridgeResumed", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1576,12 +1483,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBrid
 	}), nil
 }
 
-// ParseBridgeResumed is a log parse operation binding the contract event 0x79c02b0e60e0f00fe0370791204f2f175fe3f06f4816f3506ad4fa1b8e8cde0f.
+// ParseBridgeResumed is a log parse operation binding the contract event 0x287ac30ff6e68ce13e26be0638f2f8fb754a569fd9c2dc77bf8241411a647876.
 //
-// Solidity: event Bridge_Resumed()
+// Solidity: event BridgeResumed()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseBridgeResumed(log types.Log) (*Erc20BridgeLogicRestrictedBridgeResumed, error) {
 	event := new(Erc20BridgeLogicRestrictedBridgeResumed)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Bridge_Resumed", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "BridgeResumed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1660,24 +1567,24 @@ type Erc20BridgeLogicRestrictedBridgeStopped struct {
 	Raw types.Log // Blockchain specific contextual infos
 }
 
-// FilterBridgeStopped is a free log retrieval operation binding the contract event 0x129d99581c8e70519df1f0733d3212f33d0ed3ea6144adacc336c647f1d36382.
+// FilterBridgeStopped is a free log retrieval operation binding the contract event 0xc491bbb4be1472096d01e3f0b6f3c2ba9720a559c3422c36408dff58e42d3873.
 //
-// Solidity: event Bridge_Stopped()
+// Solidity: event BridgeStopped()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterBridgeStopped(opts *bind.FilterOpts) (*Erc20BridgeLogicRestrictedBridgeStoppedIterator, error) {
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Bridge_Stopped")
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "BridgeStopped")
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedBridgeStoppedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Bridge_Stopped", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedBridgeStoppedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "BridgeStopped", logs: logs, sub: sub}, nil
 }
 
-// WatchBridgeStopped is a free log subscription operation binding the contract event 0x129d99581c8e70519df1f0733d3212f33d0ed3ea6144adacc336c647f1d36382.
+// WatchBridgeStopped is a free log subscription operation binding the contract event 0xc491bbb4be1472096d01e3f0b6f3c2ba9720a559c3422c36408dff58e42d3873.
 //
-// Solidity: event Bridge_Stopped()
+// Solidity: event BridgeStopped()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBridgeStopped(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedBridgeStopped) (event.Subscription, error) {
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Bridge_Stopped")
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "BridgeStopped")
 	if err != nil {
 		return nil, err
 	}
@@ -1688,7 +1595,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBrid
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedBridgeStopped)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Bridge_Stopped", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "BridgeStopped", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1709,12 +1616,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBrid
 	}), nil
 }
 
-// ParseBridgeStopped is a log parse operation binding the contract event 0x129d99581c8e70519df1f0733d3212f33d0ed3ea6144adacc336c647f1d36382.
+// ParseBridgeStopped is a log parse operation binding the contract event 0xc491bbb4be1472096d01e3f0b6f3c2ba9720a559c3422c36408dff58e42d3873.
 //
-// Solidity: event Bridge_Stopped()
+// Solidity: event BridgeStopped()
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseBridgeStopped(log types.Log) (*Erc20BridgeLogicRestrictedBridgeStopped, error) {
 	event := new(Erc20BridgeLogicRestrictedBridgeStopped)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Bridge_Stopped", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "BridgeStopped", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1794,24 +1701,24 @@ type Erc20BridgeLogicRestrictedBridgeWithdrawDelaySet struct {
 	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterBridgeWithdrawDelaySet is a free log retrieval operation binding the contract event 0x1c7e8f73a01b8af4e18dd34455a42a45ad742bdb79cfda77bbdf50db2391fc88.
+// FilterBridgeWithdrawDelaySet is a free log retrieval operation binding the contract event 0xd7ce7fbb38daf3a282293f127641ae35e6f17cee1b51904e7b9c633f97df3b85.
 //
-// Solidity: event Bridge_Withdraw_Delay_Set(uint256 withdraw_delay)
+// Solidity: event BridgeWithdrawDelaySet(uint256 withdraw_delay)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterBridgeWithdrawDelaySet(opts *bind.FilterOpts) (*Erc20BridgeLogicRestrictedBridgeWithdrawDelaySetIterator, error) {
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Bridge_Withdraw_Delay_Set")
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "BridgeWithdrawDelaySet")
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedBridgeWithdrawDelaySetIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Bridge_Withdraw_Delay_Set", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedBridgeWithdrawDelaySetIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "BridgeWithdrawDelaySet", logs: logs, sub: sub}, nil
 }
 
-// WatchBridgeWithdrawDelaySet is a free log subscription operation binding the contract event 0x1c7e8f73a01b8af4e18dd34455a42a45ad742bdb79cfda77bbdf50db2391fc88.
+// WatchBridgeWithdrawDelaySet is a free log subscription operation binding the contract event 0xd7ce7fbb38daf3a282293f127641ae35e6f17cee1b51904e7b9c633f97df3b85.
 //
-// Solidity: event Bridge_Withdraw_Delay_Set(uint256 withdraw_delay)
+// Solidity: event BridgeWithdrawDelaySet(uint256 withdraw_delay)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBridgeWithdrawDelaySet(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedBridgeWithdrawDelaySet) (event.Subscription, error) {
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Bridge_Withdraw_Delay_Set")
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "BridgeWithdrawDelaySet")
 	if err != nil {
 		return nil, err
 	}
@@ -1822,7 +1729,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBrid
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedBridgeWithdrawDelaySet)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Bridge_Withdraw_Delay_Set", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "BridgeWithdrawDelaySet", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1843,12 +1750,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchBrid
 	}), nil
 }
 
-// ParseBridgeWithdrawDelaySet is a log parse operation binding the contract event 0x1c7e8f73a01b8af4e18dd34455a42a45ad742bdb79cfda77bbdf50db2391fc88.
+// ParseBridgeWithdrawDelaySet is a log parse operation binding the contract event 0xd7ce7fbb38daf3a282293f127641ae35e6f17cee1b51904e7b9c633f97df3b85.
 //
-// Solidity: event Bridge_Withdraw_Delay_Set(uint256 withdraw_delay)
+// Solidity: event BridgeWithdrawDelaySet(uint256 withdraw_delay)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseBridgeWithdrawDelaySet(log types.Log) (*Erc20BridgeLogicRestrictedBridgeWithdrawDelaySet, error) {
 	event := new(Erc20BridgeLogicRestrictedBridgeWithdrawDelaySet)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Bridge_Withdraw_Delay_Set", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "BridgeWithdrawDelaySet", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1928,9 +1835,9 @@ type Erc20BridgeLogicRestrictedDepositorExempted struct {
 	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterDepositorExempted is a free log retrieval operation binding the contract event 0xf56e0868b913034a60dbca9c89ee79f8b0fa18dadbc5f6665f2f9a2cf3f51cdb.
+// FilterDepositorExempted is a free log retrieval operation binding the contract event 0x9864ffa3d25fb42ecb8e42e8c6655954e8c7427d44a7a9f8edfe0cea4a0108f8.
 //
-// Solidity: event Depositor_Exempted(address indexed depositor)
+// Solidity: event DepositorExempted(address indexed depositor)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterDepositorExempted(opts *bind.FilterOpts, depositor []common.Address) (*Erc20BridgeLogicRestrictedDepositorExemptedIterator, error) {
 
 	var depositorRule []interface{}
@@ -1938,16 +1845,16 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterDep
 		depositorRule = append(depositorRule, depositorItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Depositor_Exempted", depositorRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "DepositorExempted", depositorRule)
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedDepositorExemptedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Depositor_Exempted", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedDepositorExemptedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "DepositorExempted", logs: logs, sub: sub}, nil
 }
 
-// WatchDepositorExempted is a free log subscription operation binding the contract event 0xf56e0868b913034a60dbca9c89ee79f8b0fa18dadbc5f6665f2f9a2cf3f51cdb.
+// WatchDepositorExempted is a free log subscription operation binding the contract event 0x9864ffa3d25fb42ecb8e42e8c6655954e8c7427d44a7a9f8edfe0cea4a0108f8.
 //
-// Solidity: event Depositor_Exempted(address indexed depositor)
+// Solidity: event DepositorExempted(address indexed depositor)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepositorExempted(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedDepositorExempted, depositor []common.Address) (event.Subscription, error) {
 
 	var depositorRule []interface{}
@@ -1955,7 +1862,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepo
 		depositorRule = append(depositorRule, depositorItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Depositor_Exempted", depositorRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "DepositorExempted", depositorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1966,7 +1873,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepo
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedDepositorExempted)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Depositor_Exempted", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "DepositorExempted", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1987,12 +1894,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepo
 	}), nil
 }
 
-// ParseDepositorExempted is a log parse operation binding the contract event 0xf56e0868b913034a60dbca9c89ee79f8b0fa18dadbc5f6665f2f9a2cf3f51cdb.
+// ParseDepositorExempted is a log parse operation binding the contract event 0x9864ffa3d25fb42ecb8e42e8c6655954e8c7427d44a7a9f8edfe0cea4a0108f8.
 //
-// Solidity: event Depositor_Exempted(address indexed depositor)
+// Solidity: event DepositorExempted(address indexed depositor)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseDepositorExempted(log types.Log) (*Erc20BridgeLogicRestrictedDepositorExempted, error) {
 	event := new(Erc20BridgeLogicRestrictedDepositorExempted)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Depositor_Exempted", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "DepositorExempted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2072,9 +1979,9 @@ type Erc20BridgeLogicRestrictedDepositorExemptionRevoked struct {
 	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterDepositorExemptionRevoked is a free log retrieval operation binding the contract event 0xe74b113dca87276d976f476a9b4b9da3c780a3262eaabad051ee4e98912936a4.
+// FilterDepositorExemptionRevoked is a free log retrieval operation binding the contract event 0xd661c54cb18e99cf2cc5b8c6b57f7a094e8a1b967b5de45a609f6d0220e998d4.
 //
-// Solidity: event Depositor_Exemption_Revoked(address indexed depositor)
+// Solidity: event DepositorExemptionRevoked(address indexed depositor)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterDepositorExemptionRevoked(opts *bind.FilterOpts, depositor []common.Address) (*Erc20BridgeLogicRestrictedDepositorExemptionRevokedIterator, error) {
 
 	var depositorRule []interface{}
@@ -2082,16 +1989,16 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) FilterDep
 		depositorRule = append(depositorRule, depositorItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "Depositor_Exemption_Revoked", depositorRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.FilterLogs(opts, "DepositorExemptionRevoked", depositorRule)
 	if err != nil {
 		return nil, err
 	}
-	return &Erc20BridgeLogicRestrictedDepositorExemptionRevokedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "Depositor_Exemption_Revoked", logs: logs, sub: sub}, nil
+	return &Erc20BridgeLogicRestrictedDepositorExemptionRevokedIterator{contract: _Erc20BridgeLogicRestricted.contract, event: "DepositorExemptionRevoked", logs: logs, sub: sub}, nil
 }
 
-// WatchDepositorExemptionRevoked is a free log subscription operation binding the contract event 0xe74b113dca87276d976f476a9b4b9da3c780a3262eaabad051ee4e98912936a4.
+// WatchDepositorExemptionRevoked is a free log subscription operation binding the contract event 0xd661c54cb18e99cf2cc5b8c6b57f7a094e8a1b967b5de45a609f6d0220e998d4.
 //
-// Solidity: event Depositor_Exemption_Revoked(address indexed depositor)
+// Solidity: event DepositorExemptionRevoked(address indexed depositor)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepositorExemptionRevoked(opts *bind.WatchOpts, sink chan<- *Erc20BridgeLogicRestrictedDepositorExemptionRevoked, depositor []common.Address) (event.Subscription, error) {
 
 	var depositorRule []interface{}
@@ -2099,7 +2006,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepo
 		depositorRule = append(depositorRule, depositorItem)
 	}
 
-	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "Depositor_Exemption_Revoked", depositorRule)
+	logs, sub, err := _Erc20BridgeLogicRestricted.contract.WatchLogs(opts, "DepositorExemptionRevoked", depositorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2110,7 +2017,7 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepo
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
 				event := new(Erc20BridgeLogicRestrictedDepositorExemptionRevoked)
-				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Depositor_Exemption_Revoked", log); err != nil {
+				if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "DepositorExemptionRevoked", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -2131,12 +2038,12 @@ func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) WatchDepo
 	}), nil
 }
 
-// ParseDepositorExemptionRevoked is a log parse operation binding the contract event 0xe74b113dca87276d976f476a9b4b9da3c780a3262eaabad051ee4e98912936a4.
+// ParseDepositorExemptionRevoked is a log parse operation binding the contract event 0xd661c54cb18e99cf2cc5b8c6b57f7a094e8a1b967b5de45a609f6d0220e998d4.
 //
-// Solidity: event Depositor_Exemption_Revoked(address indexed depositor)
+// Solidity: event DepositorExemptionRevoked(address indexed depositor)
 func (_Erc20BridgeLogicRestricted *Erc20BridgeLogicRestrictedFilterer) ParseDepositorExemptionRevoked(log types.Log) (*Erc20BridgeLogicRestrictedDepositorExemptionRevoked, error) {
 	event := new(Erc20BridgeLogicRestrictedDepositorExemptionRevoked)
-	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "Depositor_Exemption_Revoked", log); err != nil {
+	if err := _Erc20BridgeLogicRestricted.contract.UnpackLog(event, "DepositorExemptionRevoked", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

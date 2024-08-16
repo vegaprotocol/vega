@@ -37,12 +37,12 @@ func TestAssetPoolSetBridgeAddress(t *testing.T) {
 		{
 			name:     "v1 scheme",
 			v1:       true,
-			expected: "2488c05dd36a754db037f22a1d649109573e299a3c135efdb81c6f64632b26101c0b4ce19c896d370abae8d457682b21a4a3322f48380f29932b311b6ab47707",
+			expected: "d0d9cfac8f805bd28a8c534069157d900b8c60d29580ebbee73ad5be71d1d2c1b20d5f10339b0ff570cea9f3422c1c599bd76b99c37cd19c8a3901bd75603404",
 		},
 		{
 			name:     "v2 scheme",
 			v1:       false,
-			expected: "4b01dfa1a3b77ecc624f678805a74418862cbcb1e32b929e7dce7fbbfa73806ec1f5db1d40d28f4ebcb09d83f59815f04438142612ebc1683158a23c9fbf3a0c",
+			expected: "52e2d9005416e7afe750b4fcf69d9e8e0fe2809127f87c327f10cfa5e76da55069ef723cdc07bafcfb4e44798f2d1b52cf618787cbccf19c6c8f2d1cd0530906",
 		},
 	}
 

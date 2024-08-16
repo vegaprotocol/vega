@@ -107,7 +107,7 @@ func (e ERC20Logic) ListAsset(
 		lifetimeLimit.BigInt(),
 		withdrawThreshold.BigInt(),
 		nonce.BigInt(),
-		"list_asset",
+		"listAsset",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -182,7 +182,7 @@ func (e ERC20Logic) buildListAssetMessage(
 		lifetimeLimit.BigInt(),
 		withdrawThreshold.BigInt(),
 		nonce.BigInt(),
-		"list_asset",
+		"listAsset",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -266,7 +266,7 @@ func (e ERC20Logic) RemoveAsset(
 
 	tokenAddressEth := ethcmn.HexToAddress(tokenAddress)
 	buf, err := args.Pack([]interface{}{
-		tokenAddressEth, nonce.BigInt(), "remove_asset",
+		tokenAddressEth, nonce.BigInt(), "removeAsset",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -354,7 +354,7 @@ func (e ERC20Logic) buildWithdrawAssetMessage(
 		hexEthPartyAddress,
 		timestamp,
 		nonce.BigInt(),
-		"withdraw_asset",
+		"withdrawAsset",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -447,7 +447,7 @@ func (e ERC20Logic) SetAssetLimits(
 		lifetimeLimit.BigInt(),
 		withdrawThreshold.BigInt(),
 		nonce.BigInt(),
-		"set_asset_limits",
+		"setAssetLimits",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -509,7 +509,7 @@ func (e ERC20Logic) buildSetAssetLimitsMessage(
 		lifetimeLimit.BigInt(),
 		withdrawThreshold.BigInt(),
 		nonce.BigInt(),
-		"set_asset_limits",
+		"setAssetLimits",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -604,7 +604,7 @@ func (e ERC20Logic) buildWithdrawDelayMessage(
 	buf, err := args.Pack([]interface{}{
 		delayBig,
 		nonce.BigInt(),
-		"set_withdraw_delay",
+		"setWithdrawDelay",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -671,7 +671,7 @@ func (e ERC20Logic) GlobalStop(
 
 	buf, err := args.Pack([]interface{}{
 		nonce.BigInt(),
-		"global_stop",
+		"globalStop",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -710,7 +710,7 @@ func (e ERC20Logic) GlobalResume(
 
 	buf, err := args.Pack([]interface{}{
 		nonce.BigInt(),
-		"global_resume",
+		"globalResume",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
@@ -750,7 +750,7 @@ func (e ERC20Logic) VerifyGlobalResume(
 
 	buf, err := args.Pack([]interface{}{
 		nonce.BigInt(),
-		"global_resume",
+		"globalResume",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
