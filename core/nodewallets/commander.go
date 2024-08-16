@@ -157,9 +157,9 @@ func (c *Commander) command(ctx context.Context, cmd txn.Command, payload proto.
 		var txHash string
 		switch {
 		case err != nil:
-			c.log.Error("could not send transaction to tendermint",
-				logging.Error(err),
-				logging.String("tx", payload.String()))
+			//			c.log.Error("could not send transaction to tendermint",
+			//				logging.Error(err),
+			//				logging.String("tx", payload.String()))
 		case resp.Code != 0:
 			err = fmt.Errorf("%s", string(resp.Data.Bytes()))
 			c.log.Error("transaction reached network but was rejected",

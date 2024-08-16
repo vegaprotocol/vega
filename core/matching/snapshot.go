@@ -131,7 +131,7 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 	}
 
 	if b.auction {
-		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
+		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell, b.marketID)
 	}
 
 	return nil, nil

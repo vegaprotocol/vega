@@ -268,6 +268,10 @@ func (e *Engine) OnMTM(ctx context.Context) {
 }
 
 func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
+
+	fmt.Println("AMM tick")
+	e.PrintFP()
+
 	// seed an id-generator to create IDs for any orders generated in this block
 	_, blockHash := vgcontext.TraceIDFromContext(ctx)
 	e.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("amm-engine"+e.marketID))
@@ -1066,4 +1070,10 @@ func DeriveAMMParty(
 ) string {
 	hash := crypto.Hash([]byte(fmt.Sprintf("%v%v%v%v", version, market, party, index)))
 	return hex.EncodeToString(hash)
+}
+
+func (e *Engine) PrintFP() {
+	for _, p := range e.poolsCpy {
+		fmt.Println("fp", p.fairPrice(), "pos", p.getPosition(), "max long", p.lower.pv, "max sell", p.upper.pv)
+	}
 }

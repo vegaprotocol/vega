@@ -49,6 +49,7 @@ type OffbookSource interface {
 	SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order
 	NotifyFinished()
 	OrderbookShape(st, nd *num.Uint, id *string) ([]*types.Order, []*types.Order)
+	PrintFP()
 }
 
 // OrderBook represents the book holding all orders in the system.
@@ -212,7 +213,7 @@ func (b *OrderBook) EnterAuction() []*types.Order {
 
 	// Set the market state
 	b.auction = true
-	b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
+	b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell, b.marketID)
 
 	// Return all the orders that have been removed from the book and need to be cancelled
 	return ordersToCancel
@@ -500,7 +501,7 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	}
 
 	// extract uncrossing orders from all AMMs
-	uncrossOrders = b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
+	uncrossOrders = b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume, "")
 
 	// the remaining volume should now come from the orderbook
 	volume -= offbookVolume
@@ -562,8 +563,9 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		uncrossingSide = b.sell
 	}
 
+	fmt.Println("WWW UNCROSSING BOOK")
 	// extract uncrossing orders from all AMMs
-	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
+	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume, b.marketID)
 
 	// the remaining volume should now come from the orderbook
 	volume -= offbookVolume
@@ -928,6 +930,12 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 	}
 
 	order.BatchID = b.batchID
+
+	ba, _ := b.GetBestAskPrice()
+	bb, _ := b.GetBestBidPrice()
+
+	b.buy.offbook.PrintFP()
+	fmt.Println("BEST BUY", bb, "BEST SELL", ba, b.marketID)
 
 	// check if order would trade, that should never happen as well.
 	switch order.Side {

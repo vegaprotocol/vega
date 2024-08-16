@@ -16,6 +16,7 @@
 package matching
 
 import (
+	"fmt"
 	"slices"
 	"sort"
 
@@ -44,6 +45,8 @@ type IndicativePriceAndVolume struct {
 	// keep track of expanded off book orders
 	offbook   OffbookSource
 	generated map[string]*ipvGeneratedOffbook
+
+	mid string
 }
 
 type ipvPriceLevel struct {
@@ -70,7 +73,7 @@ func (g *ipvGeneratedOffbook) add(order *types.Order) {
 	g.buy = append(g.buy, order)
 }
 
-func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) *IndicativePriceAndVolume {
+func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide, mid string) *IndicativePriceAndVolume {
 	bestBid, _, err := buy.BestPriceAndVolume()
 	if err != nil {
 		bestBid = num.UintZero()
@@ -106,6 +109,7 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 		needsUpdate:  true,
 		offbook:      buy.offbook,
 		generated:    map[string]*ipvGeneratedOffbook{},
+		mid:          mid,
 	}
 
 	// if they are crossed set the last min/max values otherwise leave as zero
@@ -462,6 +466,12 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		}
 	}
 
+	for _, l := range cumulativeVolumes {
+		if l.price.GTE(minPrice) && l.price.LTE(maxPrice) {
+			fmt.Println("WWW level", l.price, "ASK", l.cumulativeAskVolume, l.cumulativeAskOffbook, "BID", l.cumulativeBidVolume, l.cumulativeBidOffbook)
+		}
+	}
+
 	// reset those fields
 	ipv.needsUpdate = false
 	ipv.lastMinPrice = minPrice.Clone()
@@ -473,7 +483,7 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 
 // ExtractOffbookOrders returns the cached expanded orders of AMM's in the crossed region of the given side. These
 // are the order that we will send in aggressively to uncrossed the book.
-func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side types.Side, target uint64) []*types.Order {
+func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side types.Side, target uint64, mid string) []*types.Order {
 	if target == 0 {
 		return []*types.Order{}
 	}
@@ -483,6 +493,10 @@ func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side 
 	// the ipv keeps track of all the expand AMM orders in the crossed region
 	parties := maps.Keys(ipv.generated)
 	slices.Sort(parties)
+
+	if mid != "" {
+		fmt.Println("WWW extracting offbook orders", len(parties), mid)
+	}
 
 	for _, p := range parties {
 		cpm := func(p *num.Uint) bool { return p.LT(price) }
@@ -496,6 +510,9 @@ func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side 
 			if cpm(o.Price) {
 				continue
 			}
+			//if mid != "" {
+			//	fmt.Println("WWW extracted", o.Price, o.Size)
+			//}
 			orders = append(orders, o)
 			volume += o.Size
 

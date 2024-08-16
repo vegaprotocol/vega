@@ -16,6 +16,8 @@
 package amm
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -160,6 +162,8 @@ func (sm *shapeMaker) calculateStepSize() {
 	delta.Div(delta, sm.oneTick)
 	sm.step = sm.oneTick.Clone()
 
+	fmt.Println("WWW caculate step size", delta, sm.pool.maxCalculationLevels)
+
 	// if taking steps of one-tick doesn't breach the max-calculation levels then we can happily expand accurately
 	if delta.LTE(sm.pool.maxCalculationLevels) {
 		return
@@ -170,7 +174,7 @@ func (sm *shapeMaker) calculateStepSize() {
 	sm.step.AddSum(num.UintOne()) // if delta / maxcals = 1.9 we're going to want steps of 2
 	sm.step.Mul(sm.step, sm.oneTick)
 	sm.approx = true
-
+	fmt.Println("WWW caculate step size approx", sm.step)
 	if sm.log.IsDebug() {
 		sm.log.Debug("approximating orderbook expansion",
 			logging.String("step", sm.step.String()),
@@ -354,6 +358,7 @@ func (sm *shapeMaker) adjustRegion() bool {
 }
 
 func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
+
 	if !sm.adjustRegion() {
 		// if there is no overlap between the input region and the AMM's bounds then there are no orders
 		return sm.buys, sm.sells

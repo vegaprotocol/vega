@@ -254,7 +254,7 @@ func (sv *StateVariable) logAndRetry(err error, svp *commandspb.StateVariablePro
 		return
 	}
 	sv.lock.Lock()
-	sv.log.Error("failed to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID), logging.Error(err))
+	//	sv.log.Error("failed to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID), logging.Error(err))
 	if svp.Proposal.EventId == sv.eventID {
 		sv.lock.Unlock()
 		if sv.log.IsDebug() {
