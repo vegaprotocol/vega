@@ -747,6 +747,10 @@ func (j *JSON) GetDispatch() func(context.Context, interface{}) error {
 		// there can't be errors here, as all dispatcher
 		// should have been check earlier when being register
 		fn := rawfn.(func(context.Context, interface{}) error)
+
+		// reset the proto struct before unmarshalling the JSON into it
+		j.value.Reset()
+
 		json.Unmarshal([]byte(j.rawval), j.value)
 		return fn(ctx, j.value)
 	}
