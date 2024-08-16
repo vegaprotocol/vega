@@ -96,14 +96,6 @@ func (c *PrimaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *typ
 		return fmt.Errorf("updated chain ID does not match the one set during start up, expected %v got %v", ethConfig.ChainID(), chainID)
 	}
 
-	if err := c.verifyCollateralContract(ctx, ethConfig); err != nil {
-		return fmt.Errorf("failed to verify collateral bridge contract: %w", err)
-	}
-
-	if err := c.verifyMultisigContract(ctx, ethConfig); err != nil {
-		return fmt.Errorf("failed to verify multisig control contract: %w", err)
-	}
-
 	c.ethConfig = ethConfig
 
 	return nil
@@ -167,22 +159,6 @@ func (c *PrimaryClient) VerifyContract(ctx context.Context, address ethcommon.Ad
 	h := hex.EncodeToString(vgcrypto.Hash(b))
 	if h != expectedHash {
 		return fmt.Errorf("%w: address: %s, hash: %s, expected: %s", ErrUnexpectedContractHash, address, h, expectedHash)
-	}
-
-	return nil
-}
-
-func (c *PrimaryClient) verifyCollateralContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-	if address := ethConfig.CollateralBridge(); address.HasAddress() {
-		return c.VerifyContract(ctx, address.Address(), ContractHashes["collateral"])
-	}
-
-	return nil
-}
-
-func (c *PrimaryClient) verifyMultisigContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-	if address := ethConfig.MultiSigControl(); address.HasAddress() {
-		return c.VerifyContract(ctx, address.Address(), ContractHashes["multisig"])
 	}
 
 	return nil
