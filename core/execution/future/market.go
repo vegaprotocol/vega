@@ -5589,7 +5589,8 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 				m.log.Panic("unable to restore AMM balances after failed amend", logging.Error(err))
 			}
 		}
-		return common.ErrAMMCannotRebase
+		err = common.ErrAMMCannotRebase // set it to err so that the defer runs
+		return err
 	}
 
 	m.amm.Confirm(ctx, pool)
