@@ -49,6 +49,7 @@ var (
 
 type QuantumGetter interface {
 	GetAssetQuantum(asset string) (num.Decimal, error)
+	GetAllParties() []string
 }
 
 type twPosition struct {
@@ -58,7 +59,8 @@ type twPosition struct {
 }
 
 type twNotional struct {
-	notional               *num.Uint // last position's price
+	price                  *num.Uint // last position's price
+	notional               *num.Uint // last position's notional value
 	t                      time.Time // time of last recorded notional position
 	currentEpochTWNotional *num.Uint // current epoch's running time-weighted notional position
 }
@@ -73,6 +75,7 @@ type marketTracker struct {
 	lpPaidFees        map[string]*num.Uint
 	buybackFeesPaid   map[string]*num.Uint
 	treasuryFeesPaid  map[string]*num.Uint
+	markPrice         *num.Uint
 
 	totalMakerFeesReceived *num.Uint
 	totalMakerFeesPaid     *num.Uint
@@ -225,6 +228,30 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		markets[marketID] = tracker
 	} else {
 		mat.assetToMarketTrackers[asset] = map[string]*marketTracker{marketID: tracker}
+	}
+}
+
+// UpdateMarkPrice is called for a futures market when the mark price is recalculated.
+func (mat *MarketActivityTracker) UpdateMarkPrice(asset, market string, markPrice *num.Uint) {
+	if amt, ok := mat.assetToMarketTrackers[asset]; ok {
+		if mt, ok := amt[market]; ok {
+			mt.markPrice = markPrice.Clone()
+		}
+	}
+}
+
+// RestoreMarkPrice is called when a market is loaded from a snapshot and will set the price of the notional to
+// the mark price is none is set (for migration).
+func (mat *MarketActivityTracker) RestoreMarkPrice(asset, market string, markPrice *num.Uint) {
+	if amt, ok := mat.assetToMarketTrackers[asset]; ok {
+		if mt, ok := amt[market]; ok {
+			mt.markPrice = markPrice.Clone()
+			for _, twn := range mt.twNotional {
+				if twn.price == nil {
+					twn.price = markPrice.Clone()
+				}
+			}
+		}
 	}
 }
 
@@ -706,7 +733,7 @@ func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, po
 		}
 		notional, _ := num.UintFromDecimal(num.UintZero().Mul(num.NewUint(absPos), price).ToDecimal().Div(positionFactor))
 		tracker.recordPosition(party, absPos, positionFactor, time, mat.epochStartTime)
-		tracker.recordNotional(party, notional, time, mat.epochStartTime)
+		tracker.recordNotional(party, notional, price, time, mat.epochStartTime)
 	}
 }
 
@@ -793,7 +820,25 @@ func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) [
 	if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM {
 		parties = mat.teams.GetAllPartiesInTeams(mat.minEpochsInTeamForRewardEligibility)
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_ALL {
-		parties = sortedK(mat.getAllParties(ds.AssetForMetric, ds.Markets))
+		if ds.Metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES {
+			notionalReq := num.UintZero()
+			stakingReq := num.UintZero()
+			if len(ds.NotionalTimeWeightedAveragePositionRequirement) > 0 {
+				notionalReq = num.MustUintFromString(ds.NotionalTimeWeightedAveragePositionRequirement, 10)
+			}
+			if len(ds.StakingRequirement) > 0 {
+				stakingReq = num.MustUintFromString(ds.StakingRequirement, 10)
+			}
+			if !notionalReq.IsZero() {
+				parties = sortedK(mat.getAllParties(ds.AssetForMetric, ds.Markets))
+			} else if !stakingReq.IsZero() {
+				parties = mat.balanceChecker.GetAllStakingParties()
+			} else {
+				parties = mat.collateral.GetAllParties()
+			}
+		} else {
+			parties = sortedK(mat.getAllParties(ds.AssetForMetric, ds.Markets))
+		}
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM {
 		parties = sortedK(excludePartiesInTeams(mat.getAllParties(ds.AssetForMetric, ds.Markets), mat.teams.GetAllPartiesInTeams(mat.minEpochsInTeamForRewardEligibility)))
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_AMM {
@@ -1243,7 +1288,7 @@ func (mat *MarketActivityTracker) NotionalTakerVolumeForParty(party string) *num
 	return mat.partyTakerNotionalVolume[party].Clone()
 }
 
-func updateNotional(n *twNotional, notional *num.Uint, t, tn int64, time time.Time) {
+func updateNotionalOnTrade(n *twNotional, notional, price *num.Uint, t, tn int64, time time.Time) {
 	tnOverT := num.UintZero()
 	tnOverTComp := uScalingFactor.Clone()
 	if t != 0 {
@@ -1254,10 +1299,11 @@ func updateNotional(n *twNotional, notional *num.Uint, t, tn int64, time time.Ti
 	p2 := num.UintZero().Mul(n.notional, tnOverT)
 	n.currentEpochTWNotional = num.UintZero().Div(p1.AddSum(p2), uScalingFactor)
 	n.notional = notional
+	n.price = price.Clone()
 	n.t = time
 }
 
-func calcNotionalAt(n *twNotional, t, tn int64) *num.Uint {
+func updateNotionalOnEpochEnd(n *twNotional, notional, price *num.Uint, t, tn int64, time time.Time) {
 	tnOverT := num.UintZero()
 	tnOverTComp := uScalingFactor.Clone()
 	if t != 0 {
@@ -1265,26 +1311,50 @@ func calcNotionalAt(n *twNotional, t, tn int64) *num.Uint {
 		tnOverTComp = tnOverTComp.Sub(tnOverTComp, tnOverT)
 	}
 	p1 := num.UintZero().Mul(n.currentEpochTWNotional, tnOverTComp)
-	p2 := num.UintZero().Mul(n.notional, tnOverT)
+	p2 := num.UintZero().Mul(notional, tnOverT)
+	n.currentEpochTWNotional = num.UintZero().Div(p1.AddSum(p2), uScalingFactor)
+	n.notional = notional
+	if price != nil && !price.IsZero() {
+		n.price = price.Clone()
+	}
+	n.t = time
+}
+
+func calcNotionalAt(n *twNotional, t, tn int64, markPrice *num.Uint) *num.Uint {
+	tnOverT := num.UintZero()
+	tnOverTComp := uScalingFactor.Clone()
+	if t != 0 {
+		tnOverT = num.NewUint(uint64(tn / t))
+		tnOverTComp = tnOverTComp.Sub(tnOverTComp, tnOverT)
+	}
+	p1 := num.UintZero().Mul(n.currentEpochTWNotional, tnOverTComp)
+	var notional *num.Uint
+	if markPrice != nil && !markPrice.IsZero() {
+		notional, _ = num.UintFromDecimal(n.notional.ToDecimal().Div(n.price.ToDecimal()).Mul(markPrice.ToDecimal()))
+	} else {
+		notional = n.notional
+	}
+	p2 := num.UintZero().Mul(notional, tnOverT)
 	return num.UintZero().Div(p1.AddSum(p2), uScalingFactor)
 }
 
 // recordNotional tracks the time weighted average notional for the party per market.
 // notional = abs(position) x price / position_factor
 // price in asset decimals.
-func (mt *marketTracker) recordNotional(party string, notional *num.Uint, time time.Time, epochStartTime time.Time) {
+func (mt *marketTracker) recordNotional(party string, notional *num.Uint, price *num.Uint, time time.Time, epochStartTime time.Time) {
 	if _, ok := mt.twNotional[party]; !ok {
 		mt.twNotional[party] = &twNotional{
 			t:                      time,
 			notional:               notional,
 			currentEpochTWNotional: num.UintZero(),
+			price:                  price.Clone(),
 		}
 		return
 	}
 	t := int64(time.Sub(epochStartTime).Seconds())
 	n := mt.twNotional[party]
 	tn := int64(time.Sub(n.t).Seconds()) * scalingFactor
-	updateNotional(n, notional, t, tn, time)
+	updateNotionalOnTrade(n, notional, price, t, tn, time)
 }
 
 func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, endEpochTime time.Time) {
@@ -1292,7 +1362,13 @@ func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, end
 	m := make(map[string]*num.Uint, len(mt.twNotional))
 	for party, twNotional := range mt.twNotional {
 		tn := int64(endEpochTime.Sub(twNotional.t).Seconds()) * scalingFactor
-		updateNotional(twNotional, twNotional.notional, t, tn, endEpochTime)
+		var notional *num.Uint
+		if mt.markPrice != nil && !mt.markPrice.IsZero() {
+			notional, _ = num.UintFromDecimal(twNotional.notional.ToDecimal().Div(twNotional.price.ToDecimal()).Mul(mt.markPrice.ToDecimal()))
+		} else {
+			notional = twNotional.notional
+		}
+		updateNotionalOnEpochEnd(twNotional, notional, mt.markPrice, t, tn, endEpochTime)
 		m[party] = twNotional.currentEpochTWNotional.Clone()
 	}
 	if len(mt.epochTimeWeightedNotional) == maxWindowSize {
@@ -1312,7 +1388,7 @@ func (mt *marketTracker) processNotionalAtMilestone(epochStartTime time.Time, mi
 	m := make(map[string]*num.Uint, len(mt.twNotional))
 	for party, twNotional := range mt.twNotional {
 		tn := int64(milestoneTime.Sub(twNotional.t).Seconds()) * scalingFactor
-		m[party] = calcNotionalAt(twNotional, t, tn)
+		m[party] = calcNotionalAt(twNotional, t, tn, mt.markPrice)
 	}
 	mt.epochTimeWeightedNotional = append(mt.epochTimeWeightedNotional, m)
 }

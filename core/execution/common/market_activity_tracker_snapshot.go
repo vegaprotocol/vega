@@ -178,6 +178,9 @@ func timeWeightedNotionalToProto(twNotional map[string]*twNotional) []*checkpoin
 		pdProto.Notional = b[:]
 		twb := pd.currentEpochTWNotional.Bytes()
 		pdProto.TwNotional = twb[:]
+
+		pb := pd.price.Bytes()
+		pdProto.Price = pb[:]
 		data = append(data, pdProto)
 	}
 	return data
@@ -541,6 +544,9 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 				notional:               num.UintFromBytes(tn.Notional),
 				t:                      time.Unix(0, tn.Time),
 				currentEpochTWNotional: num.UintFromBytes(tn.TwNotional),
+			}
+			if len(tn.Price) > 0 {
+				mft.twNotional[tn.Party].price = num.UintFromBytes(tn.Price)
 			}
 			mft.allPartiesCache[tn.Party] = struct{}{}
 		}

@@ -242,6 +242,8 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.timeWeightedNotionalPositionService,
 		l.gameScoreService,
 		l.ammPoolsService,
+		l.volumeRebateStatsService,
+		l.volumeRebateProgramService,
 	)
 	return grpcServer
 }

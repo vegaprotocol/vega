@@ -400,8 +400,8 @@ Feature: Average position metric rewards
     # party1 reward = 10000*0.00189055/0.00511465 = 3697 + 3344 => 7041
     # party2 reward = 10000*0.001515/0.00511465 = 2962 + 3344 => 6306
     And "aux1" should have vesting account balance of "3121" for asset "VEGA"
-    And "aux2" should have vesting account balance of "3530" for asset "VEGA"
-    And "party1" should have vesting account balance of "7041" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3531" for asset "VEGA"
+    And "party1" should have vesting account balance of "7040" for asset "VEGA"
     And "party2" should have vesting account balance of "6306" for asset "VEGA"
 
   Scenario: If an eligible party opens a position at the beginning of the epoch, their average notional reward metric should be equal to the size of the notional at the end of the epoch (0056-REWA-192). If an eligible party held an open position at the start of the epoch, their average position notional metric should be equal to the size of the notional at the end of the epoch (0056-REWA-194).
@@ -441,10 +441,10 @@ Feature: Average position metric rewards
     # aux1 and aux2 have a position of 10 - which is equal to their position held at the beginning of the epoch
     # party1 and party2 has position of 5 - which is equal to the position opened at the beginning of the epoch
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "3332" for asset "VEGA"
-    And "aux2" should have vesting account balance of "3332" for asset "VEGA"
-    And "party1" should have vesting account balance of "1667" for asset "VEGA"
-    And "party2" should have vesting account balance of "1667" for asset "VEGA"
+    And "aux1" should have vesting account balance of "3333" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3333" for asset "VEGA"
+    And "party1" should have vesting account balance of "1666" for asset "VEGA"
+    And "party2" should have vesting account balance of "1666" for asset "VEGA"
 
   Scenario: If an eligible party opens a position half way through the epoch, their average notional reward metric should be half the size of the position at the end of the epoch (0056-REWA-196). If an eligible party held an open position at the start of the epoch and closes it half-way through the epoch, their average notional reward metric should be equal to the size of that position at the end of the epoch (0056-REWA-197).
     When the parties submit the following liquidity provision:
@@ -491,8 +491,73 @@ Feature: Average position metric rewards
     # party1 - got into position mid epoch so their notional metric is 0.0005005
     # party2 - got into position mid epoch so their notional metric is 0.0002497
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "2500" for asset "VEGA"
-    And "aux2" should have vesting account balance of "3748" for asset "VEGA"
-    And "party1" should have vesting account balance of "2502" for asset "VEGA"
-    And "party2" should have vesting account balance of "1248" for asset "VEGA"
+    And "aux1" should have vesting account balance of "2501" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3750" for asset "VEGA"
+    And "party1" should have vesting account balance of "2498" for asset "VEGA"
+    And "party2" should have vesting account balance of "1249" for asset "VEGA"
 
+  Scenario: If an eligible party opens a position at the beginning of the epoch, and the price changes during the epoch, their average notional position reward metric should be set equal to the notional value of the position at the end of the epoch (0056-REWA-193). If an eligible party held an open position at the start of the epoch, and the mark price does change during the epoch, their average notional position reward metric should be equal to the notional value of the position at the end of the epoch (0056-REWA-195).
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
+      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
+
+    # leave opening auction
+    Then the network moves ahead "1" epochs
+
+    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_AVERAGE_NOTIONAL | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
+
+    # the time is the beginning of the epoch
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | buy  | 5      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | party2 | ETH/DEC21 | sell | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC | p2-sell1  |
+
+    Then the network moves ahead "5" blocks
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 5      | 999   | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | aux2  | ETH/DEC21 | sell | 5      | 999   | 1                | TYPE_LIMIT | TIF_GTC | p2-sell1  |
+
+    Then the network moves ahead "1" epochs
+
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
+    # aux1 and aux2 had a position of 10 at the beginning of the epoch which was update by a trade of 5@999 at the middle of the epoch
+    # 10000 * 0.5 + (10000+999*5)*0.5 = 12497 
+    And "aux1" should have vesting account balance of "3604" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3604" for asset "VEGA"
+    # party1 and party2 has position of 5@999 (the last mark price)
+    And "party1" should have vesting account balance of "1395" for asset "VEGA"
+    And "party2" should have vesting account balance of "1395" for asset "VEGA"
+
+    # now at the beginning of the epoch party1 and party2 had a position, half way through the epoch the mark price changes to 1000
+    Then the network moves ahead "5" blocks
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 5      | 1000   | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | aux2  | ETH/DEC21 | sell | 5      | 1000   | 1                | TYPE_LIMIT | TIF_GTC | p2-sell1  |
+
+    # aux1 and aux2 had a position of 10 at the beginning of the epoch which was update by a trade of 5@999 at the middle of the epoch
+    # (10000+999*5)*0.5 + 10000 * 0.5 = 12497 
+    And "aux1" should have vesting account balance of "3604" for asset "VEGA"
+    And "aux2" should have vesting account balance of "3604" for asset "VEGA"
+    # party1 and party2 has position of 5@1000 (the last mark price)
+    And "party1" should have vesting account balance of "1395" for asset "VEGA"
+    And "party2" should have vesting account balance of "1395" for asset "VEGA"

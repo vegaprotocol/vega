@@ -42,9 +42,6 @@ Feature: Eligible parties metric rewards
             | aux2                                                             | ETH   | 100000000 |
             | trader3                                                          | ETH   | 10000     |
             | trader4                                                          | ETH   | 10000     |
-            | lpprov                                                           | ETH   | 200000000 |
-            | party1                                                           | ETH   | 100000    |
-            | party2                                                           | ETH   | 100000    |
 
 
         And the parties deposit on staking account the following amount:
@@ -53,10 +50,6 @@ Feature: Eligible parties metric rewards
             | aux2    | VEGA  | 1000   |
             | trader3 | VEGA  | 1500   |
             | trader4 | VEGA  | 1000   |
-            | lpprov  | VEGA  | 10000  |
-            | party1  | VEGA  | 2000   |
-            | party2  | VEGA  | 2000   |
-            | party3  | VEGA  | 500    |
 
         Given time is updated to "2023-09-23T00:00:00Z"
         Given the average block duration is "1"
@@ -84,13 +77,6 @@ Feature: Eligible parties metric rewards
             | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1200                | 0                    |
             | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 10000                |
             | 4  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 10000                |
-
-        Then the network moves ahead "2" epochs
-        # No party is known at this point cos no party made any activity contributing to any metric
-        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2dda" should have general account balance of "1000000" for asset "VEGA"
-        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "1000000" for asset "VEGA"
-        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "1000000" for asset "VEGA"
-        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "1000000" for asset "VEGA"
 
         Then the parties place the following orders:
             | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -122,14 +108,14 @@ Feature: Eligible parties metric rewards
         # not distributed as the notional requirement not met
         And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "1000000" for asset "VEGA"
 
-        # they get 1/4 of the reward with no requirements + 1/2 of the reward with staking minimum = 2500+5000=7500
-        And "aux1" should have vesting account balance of "7500" for asset "VEGA"
-        # they get 1/4 of the reward with no requirements = 2500
-        And "aux2" should have vesting account balance of "2500" for asset "VEGA"
-        # they get 1/4 of the reward with no requirements + 1/2 of the reward with staking minimum = 2500+5000=7500
-        And "trader3" should have vesting account balance of "7500" for asset "VEGA"
-        # they get 1/4 of the reward with no requirements =  2500
-        And "trader4" should have vesting account balance of "2500" for asset "VEGA"
+        # they get 1/8 of the reward with no requirements + 1/2 of the reward with staking minimum = 1250+5000=6250
+        And "aux1" should have vesting account balance of "6250" for asset "VEGA"
+        # they get 1/8 of the reward with no requirements = 1250
+        And "aux2" should have vesting account balance of "1250" for asset "VEGA"
+        # they get 1/8 of the reward with no requirements + 1/2 of the reward with staking minimum = 1250+5000=6250
+        And "trader3" should have vesting account balance of "6250" for asset "VEGA"
+        # they get 1/8 of the reward with no requirements =  1250
+        And "trader4" should have vesting account balance of "1250" for asset "VEGA"
 
         # now lets get some notional so we can satisfy the notional requirement
         When the parties place the following orders with ticks:
@@ -147,18 +133,18 @@ Feature: Eligible parties metric rewards
         # we have trade3 statisfying the notional requirement so distributed
         And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
 
-        # for reward (1) each gets a quarter
+        # for reward (1) each gets a 1/8
         # for reward (2) aux1 and trader3 split the reward
         # for reward (3) each gets a quarter (all have sufficient notional)
         # for reward (4) each gets a quarter
-        # aux1 = 7500 + 2500 + 5000 + 2500 + 2500 = 20000
-        And "aux1" should have vesting account balance of "20000" for asset "VEGA"
-        # aux2 = 2500 + 2500 + 2500 + 2500 = 7500
-        And "aux2" should have vesting account balance of "10000" for asset "VEGA"
-        # trader3 = 7500 + 2500 + 5000 + 2500 + 2500 = 20000
-        And "trader3" should have vesting account balance of "20000" for asset "VEGA"
-        # trader4 = 2500 + 2500 + 2500 + 2500 = 10000
-        And "trader4" should have vesting account balance of "10000" for asset "VEGA"
+        # aux1 = 6250 + 1250 + 5000 + 2500 + 2500 = 17500
+        And "aux1" should have vesting account balance of "17500" for asset "VEGA"
+        # aux2 = 1250 + 1250 + 2500 + 2500 = 7500
+        And "aux2" should have vesting account balance of "7500" for asset "VEGA"
+        # trader3 = 6250 + 1250 + 5000 + 2500 + 2500 = 17500
+        And "trader3" should have vesting account balance of "17500" for asset "VEGA"
+        # trader4 = 1250 + 1250 + 2500 + 2500 = 7500
+        And "trader4" should have vesting account balance of "7500" for asset "VEGA"
 
     Scenario: Given a recurring transfer using the eligible entries metric and scoping individuals. If multiple parties meet all eligibility they should receive rewards proportional to any reward multipliers. (0056-REWA-178)
         Given the following network parameters are set:
@@ -205,6 +191,236 @@ Feature: Eligible parties metric rewards
         # no requirement so surely distributed
         # trader3 and aux1 have multipliers of 2
         And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2dda" should have general account balance of "990000" for asset "VEGA"
-        And "aux1" should have vesting account balance of "4000" for asset "VEGA"
-        And "aux2" should have vesting account balance of "2000" for asset "VEGA"
-        And "trader3" should have vesting account balance of "4000" for asset "VEGA"
+        And "aux1" should have vesting account balance of "2000" for asset "VEGA"
+        And "aux2" should have vesting account balance of "1000" for asset "VEGA"
+        And "trader3" should have vesting account balance of "2000" for asset "VEGA"
+        And "trader4" should have vesting account balance of "1000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2dda" should have vesting account balance of "1000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have vesting account balance of "1000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have vesting account balance of "1000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have vesting account balance of "1000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and a reward window length N greater than one, a party who met the eligibility requirements in the current epoch as well as the previous N-1 epochs will receive rewards at the end of the epoch. (0056-REWA-179)
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2dda | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    |
+            | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1200                | 0                    |
+            | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 10000                |
+            | 4  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 10000                |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+        # no requirement so surely distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2dda" should have general account balance of "990000" for asset "VEGA"
+        # only staking requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "990000" for asset "VEGA"
+        # not distributed as the notional requirement not met
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "1000000" for asset "VEGA"
+        # not distributed as the notional requirement not met
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "1000000" for asset "VEGA"
+
+        # they get 1/8 of the reward with no requirements + 1/2 of the reward with staking minimum = 1250+5000=6250
+        And "aux1" should have vesting account balance of "6250" for asset "VEGA"
+        # they get 1/8 of the reward with no requirements = 1250
+        And "aux2" should have vesting account balance of "1250" for asset "VEGA"
+        # they get 1/8 of the reward with no requirements + 1/2 of the reward with staking minimum = 1250+5000=6250
+        And "trader3" should have vesting account balance of "6250" for asset "VEGA"
+        # they get 1/8 of the reward with no requirements =  1250
+        And "trader4" should have vesting account balance of "1250" for asset "VEGA"
+
+        # now lets get some notional so we can satisfy the notional requirement
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+            | trader4 | ETH/DEC21 | sell | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+        # no requirement so surely distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2dda" should have general account balance of "980000" for asset "VEGA"
+        # only staking requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "980000" for asset "VEGA"
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "990000" for asset "VEGA"
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # for reward (1) each gets a 1/8
+        # for reward (2) aux1 and trader3 split the reward
+        # for reward (3) each gets a quarter (all have sufficient notional)
+        # for reward (4) each gets a quarter
+        # aux1 = 6250 + 1250 + 5000 + 2500 + 2500 = 17500
+        And "aux1" should have vesting account balance of "17500" for asset "VEGA"
+        # aux2 = 1250 + 1250 + 2500 + 2500 = 7500
+        And "aux2" should have vesting account balance of "7500" for asset "VEGA"
+        # trader3 = 6250 + 1250 + 5000 + 2500 + 2500 = 17500
+        And "trader3" should have vesting account balance of "17500" for asset "VEGA"
+        # trader4 = 1250 + 1250 + 2500 + 2500 = 7500
+        And "trader4" should have vesting account balance of "7500" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and a reward window length N greater than one, a party who met the eligibility requirements in the current epoch only will receive no rewards at the end of the epoch.
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1200                | 0                    |
+            | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 10000                |
+            | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 10000                |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+        # only staking requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "990000" for asset "VEGA"
+        # not distributed as the notional requirement not met
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "1000000" for asset "VEGA"
+        # not distributed as the notional requirement not met
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "1000000" for asset "VEGA"
+
+        # they get 1/2 of the reward with staking minimum = 5000
+        And "aux1" should have vesting account balance of "5000" for asset "VEGA"
+        # they get 1/2 of the reward with staking minimum = 5000
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+
+        # now lets get some notional so we can satisfy the notional requirement
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+            | trader4 | ETH/DEC21 | sell | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        # now lets make aux2 and trader 4 satisfy the staking requirement
+        And the parties deposit on staking account the following amount:
+            | party   | asset | amount |
+            | aux2    | VEGA  | 1200   |
+            | trader4 | VEGA  | 1200   |
+
+        Then the network moves ahead "1" epochs
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "980000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "990000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # for reward (1) aux1 and trader3 split the reward (because they satisfied the requirement for both epochs)
+        # for reward (2) split 4 ways - all have notional, no staking requirement
+        # for reward (3) split 4 ways - all have notional, lower staking requirement met in both epochs
+        And "aux1" should have vesting account balance of "15000" for asset "VEGA"
+        And "aux2" should have vesting account balance of "5000" for asset "VEGA"
+        And "trader3" should have vesting account balance of "15000" for asset "VEGA"
+        And "trader4" should have vesting account balance of "5000" for asset "VEGA"
+
+        Then the network moves ahead "1" epochs
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "970000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "980000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "980000" for asset "VEGA"
+
+        # all 3 rewards are now split 4 ways
+        # aux1 = 15000 + 2500 + 2500 + 2500 = 22500
+        And "aux1" should have vesting account balance of "22500" for asset "VEGA"
+        # aux2 = 5000 + 2500 + 2500 + 2500 = 12500
+        And "aux2" should have vesting account balance of "12500" for asset "VEGA"
+        # trader3 = 15000 + 2500 + 2500 + 2500 = 22500
+        And "trader3" should have vesting account balance of "22500" for asset "VEGA"
+        # trader4 = 5000 + 2500 + 2500 + 2500 = 7500
+        And "trader4" should have vesting account balance of "12500" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and a reward window length greater than one, a party who met the eligibility requirements in a previous epoch in the window, but not the current epoch will receive no rewards at the end of the epoch. (0056-REWA-181)
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1200                | 0                    |
+            | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 10000                |
+            | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 10000                |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+        # only staking requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "990000" for asset "VEGA"
+        # not distributed as the notional requirement not met
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "1000000" for asset "VEGA"
+        # not distributed as the notional requirement not met
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "1000000" for asset "VEGA"
+
+        # they get 1/2 of the reward with staking minimum = 5000
+        And "aux1" should have vesting account balance of "5000" for asset "VEGA"
+        # they get 1/2 of the reward with staking minimum = 5000
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+
+        # now lets get some notional so we can satisfy the notional requirement
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+            | trader4 | ETH/DEC21 | sell | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        # lets withdraw the staking to make them ineligible in the following window
+        And the parties withdraw from staking account the following amount:
+            | party   | asset | amount |
+            | aux1    | VEGA  | 1200   |
+            | aux2    | VEGA  | 800    |
+            | trader4 | VEGA  | 1000   |
+
+        Then the network moves ahead "1" epochs
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have general account balance of "980000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "990000" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # for reward (1) is paid only to trader 3 
+        # for reward (2) split 4 ways - all have notional, no staking requirement
+        # for reward (3) is paid only to trader 3 
+        And "aux1" should have vesting account balance of "7500" for asset "VEGA"
+        And "aux2" should have vesting account balance of "2500" for asset "VEGA"
+        And "trader3" should have vesting account balance of "27500" for asset "VEGA"
+        And "trader4" should have vesting account balance of "2500" for asset "VEGA"

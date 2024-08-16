@@ -306,15 +306,15 @@ func TestPositions(t *testing.T) {
 func TestAverageNotional(t *testing.T) {
 	tracker := getDefaultTracker(t)
 	// epoch 1
-	tracker.recordNotional("p1", num.NewUint(50), time.Unix(5, 0), time.Unix(0, 0))
+	tracker.recordNotional("p1", num.NewUint(50), num.NewUint(1), time.Unix(5, 0), time.Unix(0, 0))
 	require.Equal(t, "0", tracker.twNotional["p1"].currentEpochTWNotional.String())
 
 	// (( 0 * 3333334 ) + ( 50 * 6666666 )) / 10000000 = 33
-	tracker.recordNotional("p1", num.NewUint(200), time.Unix(15, 0), time.Unix(0, 0))
+	tracker.recordNotional("p1", num.NewUint(200), num.NewUint(1), time.Unix(15, 0), time.Unix(0, 0))
 	require.Equal(t, "33", tracker.twNotional["p1"].currentEpochTWNotional.String())
 
 	// (( 33 * 5000000 ) + ( 200 * 5000000 )) / 10000000 = 116
-	tracker.recordNotional("p1", num.NewUint(600), time.Unix(30, 0), time.Unix(0, 0))
+	tracker.recordNotional("p1", num.NewUint(600), num.NewUint(1), time.Unix(30, 0), time.Unix(0, 0))
 	require.Equal(t, "116", tracker.twNotional["p1"].currentEpochTWNotional.String())
 
 	// (( 116 * 5000000 ) + ( 600 * 5000000 )) / 10000000 = 358
@@ -324,7 +324,7 @@ func TestAverageNotional(t *testing.T) {
 
 	// epoch 2
 	// (( 358 * 0 ) + ( 600 * 10000000 )) / 10000000 = 600
-	tracker.recordNotional("p1", num.NewUint(300), time.Unix(90, 0), time.Unix(60, 0))
+	tracker.recordNotional("p1", num.NewUint(300), num.NewUint(1), time.Unix(90, 0), time.Unix(60, 0))
 	require.Equal(t, "600", tracker.twNotional["p1"].currentEpochTWNotional.String())
 
 	// (( 600 * 5000000 ) + ( 300 * 5000000 )) / 10000000 = 450
@@ -1574,6 +1574,10 @@ func (e DummyCollateralEngine) GetAssetQuantum(asset string) (num.Decimal, error
 	return num.DecimalOne(), nil
 }
 
+func (e DummyCollateralEngine) GetAllParties() []string {
+	return []string{}
+}
+
 type DummyEligibilityChecker struct{}
 
 func (e *DummyEligibilityChecker) IsEligibleForProposerBonus(marketID string, volumeTraded *num.Uint) bool {
@@ -1595,7 +1599,7 @@ func TestIntoProto(t *testing.T) {
 		totalLpFees:                 num.NewUint(11),
 		twPosition:                  map[string]*twPosition{"p1": {t: time.Now(), position: 200, currentEpochTWPosition: 300}},
 		partyM2M:                    map[string]num.Decimal{"p1": num.DecimalFromInt64(20)},
-		twNotional:                  map[string]*twNotional{"p2": {t: time.Now(), notional: num.NewUint(50), currentEpochTWNotional: num.NewUint(55)}},
+		twNotional:                  map[string]*twNotional{"p2": {t: time.Now(), notional: num.NewUint(50), currentEpochTWNotional: num.NewUint(55), price: num.NewUint(100)}},
 		epochTotalMakerFeesReceived: []*num.Uint{num.NewUint(3000), num.NewUint(7000)},
 		epochTotalMakerFeesPaid:     []*num.Uint{num.NewUint(3300), num.NewUint(7700)},
 		epochTotalLpFees:            []*num.Uint{num.NewUint(3600), num.NewUint(8400)},

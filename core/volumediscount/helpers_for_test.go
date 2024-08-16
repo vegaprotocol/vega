@@ -79,7 +79,7 @@ func expectStatsUpdatedWithUnqualifiedParties(t *testing.T, broker *mocks.MockBr
 		for _, s := range stats.Stats {
 			if s.PartyId == "p1" {
 				foundUnqualifiedParty = true
-				require.Equal(t, "0", s.DiscountFactor)
+				require.Equal(t, "", s.DiscountFactor)
 				require.Equal(t, "900", s.RunningVolume)
 			}
 		}

@@ -17,12 +17,15 @@ package sqlstore
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -181,6 +184,21 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 		pageInfo entities.PageInfo
 	)
 
+	stats := []struct {
+		SetID                                 entities.ReferralSetID
+		AtEpoch                               uint64
+		WasEligible                           bool
+		ReferralSetRunningNotionalTakerVolume string
+		ReferrerTakerVolume                   string
+		VegaTime                              time.Time
+		PartyID                               string
+		DiscountFactors                       string
+		EpochNotionalTakerVolume              string
+		RewardFactors                         *vega.RewardFactors
+		RewardsMultiplier                     string
+		RewardsFactorsMultiplier              *vega.RewardFactors
+	}{}
+
 	query = `SELECT set_id,
 					at_epoch,
 					was_eligible,
@@ -220,8 +238,6 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 
 	query = fmt.Sprintf("%s %s", query, whereStr)
 
-	stats := []entities.FlattenReferralSetStats{}
-
 	query, args, err := PaginateQuery[entities.ReferralSetStatsCursor](query, args, referralSetStatsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
@@ -231,9 +247,32 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 		return nil, pageInfo, err
 	}
 
-	stats, pageInfo = entities.PageEntities[*v2.ReferralSetStatsEdge](stats, pagination)
+	flattenStats := []entities.FlattenReferralSetStats{}
+	for _, stat := range stats {
+		discountFactors := &vega.DiscountFactors{}
+		if err := json.Unmarshal([]byte(stat.DiscountFactors), discountFactors); err != nil {
+			return nil, pageInfo, err
+		}
 
-	return stats, pageInfo, nil
+		flattenStats = append(flattenStats, entities.FlattenReferralSetStats{
+			SetID:                                 stat.SetID,
+			AtEpoch:                               stat.AtEpoch,
+			WasEligible:                           stat.WasEligible,
+			ReferralSetRunningNotionalTakerVolume: stat.ReferralSetRunningNotionalTakerVolume,
+			ReferrerTakerVolume:                   stat.ReferrerTakerVolume,
+			VegaTime:                              stat.VegaTime,
+			PartyID:                               stat.PartyID,
+			DiscountFactors:                       discountFactors,
+			EpochNotionalTakerVolume:              stat.EpochNotionalTakerVolume,
+			RewardFactors:                         stat.RewardFactors,
+			RewardsMultiplier:                     stat.RewardsMultiplier,
+			RewardsFactorsMultiplier:              stat.RewardsFactorsMultiplier,
+		})
+	}
+
+	flattenStats, pageInfo = entities.PageEntities[*v2.ReferralSetStatsEdge](flattenStats, pagination)
+
+	return flattenStats, pageInfo, nil
 }
 
 func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID,

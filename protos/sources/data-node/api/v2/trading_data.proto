@@ -3440,6 +3440,8 @@ message EstimateFeeRequest {
   string price = 2 [(google.api.field_behavior) = REQUIRED];
   // Size at which the potential order is expected to trade.
   uint64 size = 3 [(google.api.field_behavior) = REQUIRED];
+  // Party ID, used to get discount details.
+  optional string party = 4;
 }
 
 // Response that is received from EstimateFeeRequest, contains the estimated fees for a given order

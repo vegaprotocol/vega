@@ -55,6 +55,7 @@ const (
 
 type Collateral interface {
 	GetAssetQuantum(asset string) (num.Decimal, error)
+	GetAllParties() []string
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	SubAccountUpdate(
@@ -819,6 +820,10 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 		e.sendUpdate(ctx, p)
 		e.marketActivityTracker.RemoveAMMParty(e.assetID, e.marketID, p.AMMParty)
 	}
+
+	e.pools = nil
+	e.poolsCpy = nil
+	e.ammParties = nil
 	return nil
 }
 

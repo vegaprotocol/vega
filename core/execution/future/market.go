@@ -1005,6 +1005,7 @@ func (m *Market) PostRestore(ctx context.Context) error {
 			}
 		}
 	}
+	m.marketActivityTracker.RestoreMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 
 	// Disposal slippage was set as part of this upgrade, send event to ensure datanode is updated.
 	if vegacontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
@@ -1156,6 +1157,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.risk.GetRiskFactors().Long,
 			true, false)
 		m.markPriceLock.Unlock()
+		m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 		if err != nil {
 			// start the  monitoring auction if required
 			if m.as.AuctionStart() {
@@ -1786,6 +1788,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 		m.pMonitor.ResetPriceHistory(m.lastTradedPrice)
 	}
+	m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
 			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
@@ -2141,41 +2144,11 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	// now check for the parties position
-	positions := m.position.GetPositionsByParty(party)
-	if len(positions) > 1 {
+	if positions := m.position.GetPositionsByParty(party); len(positions) > 1 {
 		m.log.Panic("only one position expected", logging.Int("got", len(positions)))
-	}
-
-	if len(positions) < 1 {
+	} else if len(positions) < 1 {
 		rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
 		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
-	}
-
-	pos := positions[0]
-
-	// now we will reject if the direction of order if is not
-	// going to close the position or potential position
-	potentialSize := pos.Size() - pos.Sell() + pos.Buy()
-	size := pos.Size()
-
-	var stopOrderSide types.Side
-	if fallsBelow != nil {
-		stopOrderSide = fallsBelow.OrderSubmission.Side
-	} else {
-		stopOrderSide = risesAbove.OrderSubmission.Side
-	}
-
-	switch stopOrderSide {
-	case types.SideBuy:
-		if potentialSize >= 0 && size >= 0 {
-			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
-			return nil, common.ErrStopOrderSideNotClosingThePosition
-		}
-	case types.SideSell:
-		if potentialSize <= 0 && size <= 0 {
-			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
-			return nil, common.ErrStopOrderSideNotClosingThePosition
-		}
 	}
 
 	fallsBelowTriggered, risesAboveTriggered := m.stopOrderWouldTriggerAtSubmission(fallsBelow),
@@ -4698,6 +4671,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				false,
 				false)
 			m.markPriceLock.Unlock()
+			m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(

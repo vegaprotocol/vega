@@ -48,7 +48,7 @@ func (br *benefitTierResolver) ReferralRewardFactors(ctx context.Context, obj *v
 }
 
 // Referrals implements BenefitTierResolver.
-func (br *benefitTierResolver) Referrals(ctx context.Context, obj *vega.BenefitTier) (*DiscountFactors, error) {
+func (br *benefitTierResolver) ReferralDiscountFactors(ctx context.Context, obj *vega.BenefitTier) (*DiscountFactors, error) {
 	infra, err := num.DecimalFromString(obj.ReferralDiscountFactors.InfrastructureDiscountFactor)
 	if err != nil {
 		return nil, err

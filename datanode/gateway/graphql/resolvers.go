@@ -1394,6 +1394,7 @@ func (r *myQueryResolver) EstimateOrder(
 		MarketId: order.MarketId,
 		Price:    order.Price,
 		Size:     order.Size,
+		Party:    &party,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -1488,6 +1489,7 @@ func (r *myQueryResolver) EstimateFees(
 		MarketId: order.MarketId,
 		Price:    order.Price,
 		Size:     order.Size,
+		Party:    &party,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)

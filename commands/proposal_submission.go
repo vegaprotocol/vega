@@ -214,6 +214,8 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(checkUpdateReferralProgram(terms, c))
 	case *protoTypes.ProposalTerms_UpdateVolumeDiscountProgram:
 		errs.Merge(checkVolumeDiscountProgram(terms, c))
+	case *protoTypes.ProposalTerms_UpdateVolumeRebateProgram:
+		errs.Merge(checkVolumeRebateProgram(terms, c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -409,6 +411,19 @@ func checkReferralProgramChanges(changes *vegapb.ReferralProgramChanges, enactme
 	return errs
 }
 
+func checkVolumeRebateProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateVolumeRebateProgram) Errors {
+	errs := NewErrors()
+	if change.UpdateVolumeRebateProgram == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_rebate_program", ErrIsRequired)
+	}
+	if change.UpdateVolumeRebateProgram.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_rebate_program.changes", ErrIsRequired)
+	}
+
+	return checkVolumeRebateProgramChanges(change.UpdateVolumeRebateProgram.Changes, terms.EnactmentTimestamp).
+		AddPrefix("proposal_submission.terms.change.")
+}
+
 func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateVolumeDiscountProgram) Errors {
 	errs := NewErrors()
 	if change.UpdateVolumeDiscountProgram == nil {
@@ -420,6 +435,54 @@ func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.Prop
 
 	return checkVolumeDiscountProgramChanges(change.UpdateVolumeDiscountProgram.Changes, terms.EnactmentTimestamp).
 		AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkVolumeRebateProgramChanges(changes *vegapb.VolumeRebateProgramChanges, enactmentTimestamp int64) Errors {
+	errs := NewErrors()
+
+	if changes.EndOfProgramTimestamp == 0 {
+		errs.AddForProperty("update_volume_rebate_program.changes.end_of_program_timestamp", ErrIsRequired)
+	} else if changes.EndOfProgramTimestamp < 0 {
+		errs.AddForProperty("update_volume_rebate_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < enactmentTimestamp {
+		errs.AddForProperty("update_volume_rebate_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+	}
+	if changes.WindowLength == 0 {
+		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrIsRequired)
+	} else if changes.WindowLength > 100 {
+		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrMustBeAtMost100)
+	}
+	for i, tier := range changes.BenefitTiers {
+		errs.Merge(checkVolumeRebateBenefitTier(i, tier))
+	}
+
+	return errs
+}
+
+func checkVolumeRebateBenefitTier(index int, tier *vegapb.VolumeRebateBenefitTier) Errors {
+	errs := NewErrors()
+	propertyPath := fmt.Sprintf("update_volume_discount_program.changes.benefit_tiers.%d", index)
+	if len(tier.MinimumPartyMakerVolumeFraction) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrIsRequired)
+	} else {
+		mrtv, err := num.DecimalFromString(tier.MinimumPartyMakerVolumeFraction)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrIsNotValidNumber)
+		} else if mrtv.IsNegative() || mrtv.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrMustBePositive)
+		}
+	}
+	if len(tier.AdditionalMakerRebate) == 0 {
+		errs.AddForProperty(propertyPath+".additional_maker_rebate", ErrIsRequired)
+	} else {
+		rdf, err := num.DecimalFromString(tier.AdditionalMakerRebate)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".additional_maker_rebate", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".additional_maker_rebate", ErrMustBePositiveOrZero)
+		}
+	}
+	return errs
 }
 
 func checkVolumeDiscountProgramChanges(changes *vegapb.VolumeDiscountProgramChanges, enactmentTimestamp int64) Errors {

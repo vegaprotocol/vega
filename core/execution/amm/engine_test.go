@@ -656,9 +656,9 @@ func testMarketClosure(t *testing.T) {
 	}
 
 	require.NoError(t, tst.engine.MarketClosing(ctx))
-	for _, p := range tst.engine.poolsCpy {
-		assert.Equal(t, types.AMMPoolStatusStopped, p.status)
-	}
+	require.Equal(t, 0, len(tst.engine.pools))
+	require.Equal(t, 0, len(tst.engine.poolsCpy))
+	require.Equal(t, 0, len(tst.engine.ammParties))
 }
 
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {

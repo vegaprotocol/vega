@@ -167,6 +167,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.collateralEngine = collateral.New(execsetup.log, collateral.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	enableAssets(ctx, execsetup.collateralEngine)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.collateralEngine.OnEpochEvent, execsetup.collateralEngine.OnEpochRestore)
 
 	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
 
@@ -308,6 +309,14 @@ func (e *executionTestSetup) registerTimeServiceCallbacks() {
 
 func (e *executionTestSetup) registerNetParamsCallbacks() error {
 	return e.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsBuyBackFee,
+			Watcher: e.volumeRebateProgram.OnMarketFeeFactorsBuyBackFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsTreasuryFee,
+			Watcher: e.volumeRebateProgram.OnMarketFeeFactorsTreasuryFeeUpdate,
+		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
 			Watcher: e.topology.OnMinDelegationUpdated,

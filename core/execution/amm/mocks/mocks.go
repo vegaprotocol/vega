@@ -55,6 +55,20 @@ func (mr *MockCollateralMockRecorder) CreatePartyAMMsSubAccounts(arg0, arg1, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePartyAMMsSubAccounts", reflect.TypeOf((*MockCollateral)(nil).CreatePartyAMMsSubAccounts), arg0, arg1, arg2, arg3, arg4)
 }
 
+// GetAllParties mocks base method.
+func (m *MockCollateral) GetAllParties() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllParties")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetAllParties indicates an expected call of GetAllParties.
+func (mr *MockCollateralMockRecorder) GetAllParties() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllParties", reflect.TypeOf((*MockCollateral)(nil).GetAllParties))
+}
+
 // GetAssetQuantum mocks base method.
 func (m *MockCollateral) GetAssetQuantum(arg0 string) (decimal.Decimal, error) {
 	m.ctrl.T.Helper()

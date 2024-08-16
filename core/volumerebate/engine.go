@@ -44,7 +44,10 @@ type Engine struct {
 	newProgram                        *types.VolumeRebateProgram
 	programHasEnded                   bool
 
-	factorsByParty map[types.PartyID]types.VolumeRebateStats
+	factorsByParty      map[types.PartyID]types.VolumeRebateStats
+	buyBackFee          num.Decimal
+	treasureFee         num.Decimal
+	maxAdditionalRebate num.Decimal
 }
 
 func New(broker Broker, marketActivityTracker MarketActivityTracker) *Engine {
@@ -99,7 +102,10 @@ func (e *Engine) VolumeRebateFactorForParty(party types.PartyID) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	return factors.RebateFactor
+	// this is needed here again because the factors are calculated at the end of the epoch and
+	// the fee factors may change during the epoch so to ensure the factor is capped at any time
+	// we apply the min again here
+	return e.effectiveAdditionalRebate(factors.RebateFactor)
 }
 
 func (e *Engine) MakerVolumeFractionForParty(party types.PartyID) num.Decimal {
@@ -198,7 +204,7 @@ func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
 			tier := e.currentProgram.VolumeRebateBenefitTiers[i]
 			if makerFraction.GreaterThanOrEqual(tier.MinimumPartyMakerVolumeFraction) {
 				e.factorsByParty[party] = types.VolumeRebateStats{
-					RebateFactor: tier.AdditionalMakerRebate,
+					RebateFactor: e.effectiveAdditionalRebate(tier.AdditionalMakerRebate),
 				}
 				evt.Stats = append(evt.Stats, &eventspb.PartyVolumeRebateStats{
 					PartyId:             party.String(),
@@ -222,4 +228,20 @@ func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
 	}
 
 	e.broker.Send(events.NewVolumeRebateStatsUpdatedEvent(ctx, evt))
+}
+
+func (e *Engine) OnMarketFeeFactorsTreasuryFeeUpdate(ctx context.Context, d num.Decimal) error {
+	e.treasureFee = d
+	e.maxAdditionalRebate = e.treasureFee.Add(e.buyBackFee)
+	return nil
+}
+
+func (e *Engine) OnMarketFeeFactorsBuyBackFeeUpdate(ctx context.Context, d num.Decimal) error {
+	e.buyBackFee = d
+	e.maxAdditionalRebate = e.treasureFee.Add(e.buyBackFee)
+	return nil
+}
+
+func (e *Engine) effectiveAdditionalRebate(tierRebate num.Decimal) num.Decimal {
+	return num.MinD(e.maxAdditionalRebate, tierRebate)
 }

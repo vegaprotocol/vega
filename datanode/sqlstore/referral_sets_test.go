@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -618,8 +619,12 @@ func getRefereeStats(t *testing.T, refs []entities.ReferralSetRefereeStats, disc
 	stats := make([]*eventspb.RefereeStats, len(refs))
 	for i, r := range refs {
 		stats[i] = &eventspb.RefereeStats{
-			PartyId:        r.Referee.String(),
-			DiscountFactor: discountFactor,
+			PartyId: r.Referee.String(),
+			DiscountFactors: &vega.DiscountFactors{
+				InfrastructureDiscountFactor: discountFactor,
+				LiquidityDiscountFactor:      discountFactor,
+				MakerDiscountFactor:          discountFactor,
+			},
 		}
 	}
 	return stats
@@ -656,8 +661,12 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 			ReferralSetRunningNotionalTakerVolume: fmt.Sprintf("%d000000", i+1),
 			RefereesStats: setupPartyReferralSetStatsMod(t, parties, func(j int, party entities.Party) *eventspb.RefereeStats {
 				return &eventspb.RefereeStats{
-					PartyId:                  party.ID.String(),
-					DiscountFactor:           fmt.Sprintf("0.1%d%d", i+1, j+1),
+					PartyId: party.ID.String(),
+					DiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.1",
+						LiquidityDiscountFactor:      "0.1",
+						MakerDiscountFactor:          "0.1",
+					},
 					EpochNotionalTakerVolume: strconv.Itoa((i+1)*100 + (j+1)*10),
 				}
 			}),
