@@ -334,11 +334,6 @@ func newServices(
 	)
 
 	svcs.volumeRebate = volumerebate.NewSnapshottedEngine(svcs.broker, svcs.marketActivityTracker)
-	svcs.epochService.NotifyOnEpoch(
-		svcs.volumeRebate.OnEpoch,
-		svcs.volumeRebate.OnEpochRestore,
-	)
-
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService,
 		svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView,
 		svcs.secondaryBridgeView, svcs.forwarderHeartbeat, svcs.partiesEngine)
@@ -352,6 +347,7 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.banking.OnEpoch, svcs.banking.OnEpochRestore)
+	svcs.epochService.NotifyOnEpoch(svcs.volumeRebate.OnEpoch, svcs.volumeRebate.OnEpochRestore)
 
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
