@@ -65,6 +65,7 @@ func TheFollowingTradesShouldBeExecuted(
 		buyerInfraFeeReferrerDiscount, hasBuyerInfraFeeReferrerDiscount := row.DecimalB("buyer infrastructure fee referrer discount")
 		buyerMakerFeeReferrerDiscount, hasBuyerMakerFeeReferrerDiscount := row.DecimalB("buyer maker fee referrer discount")
 		buyerLiqFeeReferrerDiscount, hasBuyerLiqFeeReferrerDiscount := row.DecimalB("buyer liquidity fee referrer discount")
+		buyerHighVolumeMakerFee, hasBuyerHighVolumeMakerFee := row.DecimalB("buyer high volume maker fee")
 
 		sellerFee, hasSellerFee := row.U64B("seller fee")
 		sellerInfraFee, hasSellerInfraFee := row.U64B("seller infrastructure fee")
@@ -76,6 +77,7 @@ func TheFollowingTradesShouldBeExecuted(
 		sellerInfraFeeReferrerDiscount, hasSellerInfraFeeReferrerDiscount := row.DecimalB("seller infrastructure fee referrer discount")
 		sellerMakerFeeReferrerDiscount, hasSellerMakerFeeReferrerDiscount := row.DecimalB("seller maker fee referrer discount")
 		sellerLiqFeeReferrerDiscount, hasSellerLiqFeeReferrerDiscount := row.DecimalB("seller liquidity fee referrer discount")
+		sellerHighVolumeMakerFee, hasSellerHighVolumeMakerFee := row.DecimalB("seller high volume maker fee")
 
 		data := broker.GetTrades()
 		var found bool
@@ -89,22 +91,24 @@ func TheFollowingTradesShouldBeExecuted(
 				(!hasBuyerInfraFee || buyerInfraFee == stringToU64(v.BuyerFee.InfrastructureFee)) &&
 				(!hasBuyerMakerFee || buyerMakerFee == stringToU64(v.BuyerFee.MakerFee)) &&
 				(!hasBuyerLiqFee || buyerLiqFee == stringToU64(v.BuyerFee.LiquidityFee)) &&
-				(!hasBuyerInfraFeeVolumeDiscount || buyerInfraFeeVolumeDiscount == num.MustDecimalFromString(v.BuyerFee.InfrastructureFeeVolumeDiscount)) &&
-				(!hasBuyerMakerFeeVolumeDiscount || buyerMakerFeeVolumeDiscount == num.MustDecimalFromString(v.BuyerFee.MakerFeeVolumeDiscount)) &&
-				(!hasBuyerLiqFeeVolumeDiscount || buyerLiqFeeVolumeDiscount == num.MustDecimalFromString(v.BuyerFee.LiquidityFeeVolumeDiscount)) &&
-				(!hasBuyerInfraFeeReferrerDiscount || buyerInfraFeeReferrerDiscount == num.MustDecimalFromString(v.BuyerFee.InfrastructureFeeReferrerDiscount)) &&
-				(!hasBuyerMakerFeeReferrerDiscount || buyerMakerFeeReferrerDiscount == num.MustDecimalFromString(v.BuyerFee.MakerFeeReferrerDiscount)) &&
-				(!hasBuyerLiqFeeReferrerDiscount || buyerLiqFeeReferrerDiscount == num.MustDecimalFromString(v.BuyerFee.LiquidityFeeReferrerDiscount)) &&
+				(!hasBuyerInfraFeeVolumeDiscount || buyerInfraFeeVolumeDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.InfrastructureFeeVolumeDiscount))) &&
+				(!hasBuyerMakerFeeVolumeDiscount || buyerMakerFeeVolumeDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.MakerFeeVolumeDiscount))) &&
+				(!hasBuyerLiqFeeVolumeDiscount || buyerLiqFeeVolumeDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.LiquidityFeeVolumeDiscount))) &&
+				(!hasBuyerInfraFeeReferrerDiscount || buyerInfraFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.InfrastructureFeeReferrerDiscount))) &&
+				(!hasBuyerMakerFeeReferrerDiscount || buyerMakerFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.MakerFeeReferrerDiscount))) &&
+				(!hasBuyerLiqFeeReferrerDiscount || buyerLiqFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.LiquidityFeeReferrerDiscount))) &&
+				(!hasBuyerHighVolumeMakerFee || buyerHighVolumeMakerFee.Equal(num.MustDecimalFromString(v.BuyerFee.HighVolumeMakerFee))) &&
 				(!hasSellerFee || sellerFee == feeToU64(v.SellerFee)) &&
 				(!hasSellerInfraFee || sellerInfraFee == stringToU64(v.SellerFee.InfrastructureFee)) &&
 				(!hasSellerMakerFee || sellerMakerFee == stringToU64(v.SellerFee.MakerFee)) &&
 				(!hasSellerLiqFee || sellerLiqFee == stringToU64(v.SellerFee.LiquidityFee)) &&
-				(!hasSellerInfraFeeVolumeDiscount || sellerInfraFeeVolumeDiscount == num.MustDecimalFromString(v.SellerFee.InfrastructureFeeVolumeDiscount)) &&
-				(!hasSellerMakerFeeVolumeDiscount || sellerMakerFeeVolumeDiscount == num.MustDecimalFromString(v.SellerFee.MakerFeeVolumeDiscount)) &&
-				(!hasSellerLiqFeeVolumeDiscount || sellerLiqFeeVolumeDiscount == num.MustDecimalFromString(v.SellerFee.LiquidityFeeVolumeDiscount)) &&
-				(!hasSellerInfraFeeReferrerDiscount || sellerInfraFeeReferrerDiscount == num.MustDecimalFromString(v.SellerFee.InfrastructureFeeReferrerDiscount)) &&
-				(!hasSellerMakerFeeReferrerDiscount || sellerMakerFeeReferrerDiscount == num.MustDecimalFromString(v.SellerFee.MakerFeeReferrerDiscount)) &&
-				(!hasSellerLiqFeeReferrerDiscount || sellerLiqFeeReferrerDiscount == num.MustDecimalFromString(v.SellerFee.LiquidityFeeReferrerDiscount)) {
+				(!hasSellerInfraFeeVolumeDiscount || sellerInfraFeeVolumeDiscount.Equal(num.MustDecimalFromString(v.SellerFee.InfrastructureFeeVolumeDiscount))) &&
+				(!hasSellerMakerFeeVolumeDiscount || sellerMakerFeeVolumeDiscount.Equal(num.MustDecimalFromString(v.SellerFee.MakerFeeVolumeDiscount))) &&
+				(!hasSellerLiqFeeVolumeDiscount || sellerLiqFeeVolumeDiscount.Equal(num.MustDecimalFromString(v.SellerFee.LiquidityFeeVolumeDiscount))) &&
+				(!hasSellerInfraFeeReferrerDiscount || sellerInfraFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.SellerFee.InfrastructureFeeReferrerDiscount))) &&
+				(!hasSellerMakerFeeReferrerDiscount || sellerMakerFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.SellerFee.MakerFeeReferrerDiscount))) &&
+				(!hasSellerLiqFeeReferrerDiscount || sellerLiqFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.SellerFee.LiquidityFeeReferrerDiscount))) &&
+				(!hasSellerHighVolumeMakerFee || sellerHighVolumeMakerFee.Equal(num.MustDecimalFromString(v.SellerFee.HighVolumeMakerFee))) {
 				found = true
 			}
 		}
@@ -141,6 +145,7 @@ func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 		"buyer infrastructure fee referrer discount",
 		"buyer liquidity fee referrer discount",
 		"buyer maker fee referrer discount",
+		"buyer high volume maker fee",
 
 		"seller fee",
 		"seller infrastructure fee",
@@ -152,6 +157,7 @@ func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 		"seller infrastructure fee referrer discount",
 		"seller liquidity fee referrer discount",
 		"seller maker fee referrer discount",
+		"seller high volume maker fee",
 		"is amm",
 	})
 }
