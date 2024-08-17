@@ -201,7 +201,6 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, execsetup.marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 	execsetup.volumeRebateProgram = volumerebate.New(execsetup.broker, execsetup.marketActivityTracker)
-	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeRebateProgram.OnEpoch, execsetup.volumeRebateProgram.OnEpochRestore)
 
 	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventHeartbeat, execsetup.profilesEngine)
 
@@ -228,7 +227,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.marketActivityTracker.OnEpochEvent, execsetup.marketActivityTracker.OnEpochRestore)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.banking.OnEpoch, execsetup.banking.OnEpochRestore)
-
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeRebateProgram.OnEpoch, execsetup.volumeRebateProgram.OnEpochRestore)
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 
 	execsetup.activityStreak = activitystreak.New(execsetup.log, execsetup.executionEngine, execsetup.broker)
