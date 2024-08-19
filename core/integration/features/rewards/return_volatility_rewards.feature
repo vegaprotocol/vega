@@ -317,8 +317,8 @@ Feature: Return volatility rewards
     And "party1" should have vesting account balance of "9000" for asset "VEGA"
 
   Scenario: multiple multiple (0056-REWA-090,0056-REWA-093,0056-REWA-094)
-    # not that this test is also demonstrating multiple transfers to the same reward account but with different dispatch strategies, though same metric and same metric asset, 
-    # being handled sepearately, eventially contributing to the same accounts different amounts as calculated by the distribution strategy. 
+    # not that this test is also demonstrating multiple transfers to the same reward account but with different dispatch strategies, though same metric and same metric asset,
+    # being handled sepearately, eventially contributing to the same accounts different amounts as calculated by the distribution strategy.
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | ranks    |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RETURN_VOLATILITY | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    |          |
@@ -408,7 +408,7 @@ Feature: Return volatility rewards
 
     # rank rewards from transfer2:
     # aux1 = 2500
-    # aux2 = 2500 
+    # aux2 = 2500
     # party1 = 5000
 
     # total
@@ -421,3 +421,103 @@ Feature: Return volatility rewards
     And "aux1" should have vesting account balance of "4238" for asset "VEGA"
     And "aux2" should have vesting account balance of "2776" for asset "VEGA"
     And "party1" should have vesting account balance of "12984" for asset "VEGA"
+
+
+  Scenario: rank lottery (0056-REWA-190,0056-REWA-191)
+    Given the following network parameters are set:
+      | name                                         | value                                                                                            |
+      | rewards.activityStreak.inactivityLimit       | 1                                                                                                |
+      | rewards.activityStreak.minQuantumTradeVolume | 1000000000000000                                                                                 |
+      | rewards.activityStreak.minQuantumOpenVolume  | 10000                                                                                            |
+      | rewards.activityStreak.benefitTiers          | {"tiers": [{"minimum_activity_streak": 2, "reward_multiplier": "2", "vesting_multiplier": "2"}]} |
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | ranks    |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca4ffffffffff | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RETURN_VOLATILITY | ETH          |         | 2           | 2             | RANK_LOTTERY          | INDIVIDUALS  | ALL              | 0                   | 0                    | 1:10,2:5 |
+
+    Then the network moves ahead "1" epochs
+
+    Given time is updated to "2023-09-23T00:00:30Z"
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | buy  | 10     | 1002  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | aux1   | ETH/DEC21 | sell | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC21 | sell | 10     | 1003  | 0                | TYPE_LIMIT | TIF_GTC | p2-sell   |
+      | aux2   | ETH/DEC21 | buy  | 10     | 1003  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC22 | buy  | 7      | 2002  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | aux1   | ETH/DEC22 | sell | 7      | 2002  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC22 | sell | 8      | 2003  | 0                | TYPE_LIMIT | TIF_GTC | p2-sell   |
+      | aux2   | ETH/DEC22 | buy  | 8      | 2003  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "1" epochs
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | sell | 2      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | aux1   | ETH/DEC21 | buy  | 2      | 1003  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC21 | buy  | 3      | 1004  | 0                | TYPE_LIMIT | TIF_GTC | p2-sell   |
+      | aux2   | ETH/DEC21 | sell | 3      | 1004  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC22 | sell | 4      | 2003  | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |
+      | aux1   | ETH/DEC22 | buy  | 4      | 2003  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC22 | buy  | 6      | 2004  | 0                | TYPE_LIMIT | TIF_GTC | p2-sell   |
+      | aux2   | ETH/DEC22 | sell | 6      | 2004  | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    Then the network moves ahead "1" epochs
+
+    # looking at the returns of all parties for a window of 2 for only market ETH/DEC21
+
+    # epoch1
+    # market1:
+    # aux1 return = 4
+    # aux2 return = -6
+    # party1 return = 2
+    # market2:
+    # aux1 return = 2.2857142857142857
+    # aux2 return = -3.75
+    # party1 return = 2
+
+    # epoch2
+    # market1:
+    # aux1 return = 1
+    # aux2 return = 0
+    # party1 return = 1
+    # party2 return = -1.4285714285714286
+    # market2:
+    # aux1 return = 1
+    # aux2 return = 1
+    # party1 return = 1
+    # party2 return = -4
+
+    # total:
+    # aux1 = [6.2857142857142857, 2] => variance = 1/4.5918367346938775 = 0.2177777778
+    # aux2 = [-9.75, 1] => 1/28.890625 = 0.03461330449
+    # party1 = [4, 2] => variance = 1
+    # party2 = [,-5.4285714285714286] => 0
+
+    # rank rewards from transfer1 (party1 has a multiplier of 2):
+    # aux1 = 2500 (rank=5 * multiplier=1 = 5) => 1666
+    # aux2 = 2500 (rank=5 * multiplier=1 = 5) => 1666
+    # party1 = 5000 (rank=10 * multiplier=2 = 20) => 6666
+  
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca4ffffffffff" should have general account balance of "90000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "1666" for asset "VEGA"
+    And "aux2" should have vesting account balance of "1666" for asset "VEGA"
+    And "party1" should have vesting account balance of "6666" for asset "VEGA"
