@@ -1378,6 +1378,16 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): PartyMarginModesConnection
+
+  """
+  Get the reward and discount fees for a given party and the fees and rebates applied per market.
+  """
+  partyDiscountStats(
+    "Party ID"
+    partyId: ID!
+    "market IDs"
+    marketIds: [ID!]
+  ): PartyDiscountStats
 }
 
 enum EstimatedAMMError {
@@ -7858,4 +7868,19 @@ type VolumeRebateStats {
   makerVolumeFraction: String!
   "Party's running volume of maker fee received over the relevant window"
   makerFeeReceived: String!
+}
+
+type PartyDiscountStats {
+  volumeDiscountTier: Int!
+  volumeRebateTier: Int!
+  referralDiscountTier: Int!
+  partyMarketFees: [MarketFees!]
+}
+
+type MarketFees {
+  marketId: ID!
+  undiscountedTakerFee: String!
+  discountedTakerFee: String!
+  baseMakerFee: String!
+  userMakerRebate: String!
 }
