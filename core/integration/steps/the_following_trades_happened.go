@@ -123,7 +123,7 @@ func feeToU64(fee *vega.Fee) uint64 {
 	if fee == nil {
 		return uint64(0)
 	}
-	return stringToU64(fee.InfrastructureFee) + stringToU64(fee.LiquidityFee) + stringToU64(fee.MakerFee)
+	return stringToU64(fee.InfrastructureFee) + stringToU64(fee.LiquidityFee) + stringToU64(fee.MakerFee) + stringToU64(fee.BuyBackFee) + stringToU64(fee.TreasuryFee)
 }
 
 func parseExecutedTradesTable(table *godog.Table) []RowWrapper {

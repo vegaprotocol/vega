@@ -84,7 +84,7 @@ func (r feesConfigRow) infrastructureFee() string {
 
 func (r feesConfigRow) buyBackFee() string {
 	if r.row.HasColumn("buy back fee") {
-		return r.row.MustStr("infrastructure fee")
+		return r.row.MustStr("buy back fee")
 	}
 	return "0"
 }
