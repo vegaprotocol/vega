@@ -848,4 +848,3 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetPartyDiscountStatsResponse
   MarketFees:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketFees
-

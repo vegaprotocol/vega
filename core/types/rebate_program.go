@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -42,10 +43,11 @@ type VolumeRebateBenefitTier struct {
 
 func (v VolumeRebateProgram) IntoProto() *vegapb.VolumeRebateProgram {
 	benefitTiers := make([]*vegapb.VolumeRebateBenefitTier, 0, len(v.VolumeRebateBenefitTiers))
-	for _, tier := range v.VolumeRebateBenefitTiers {
+	for i, tier := range v.VolumeRebateBenefitTiers {
 		benefitTiers = append(benefitTiers, &vegapb.VolumeRebateBenefitTier{
 			MinimumPartyMakerVolumeFraction: tier.MinimumPartyMakerVolumeFraction.String(),
 			AdditionalMakerRebate:           tier.AdditionalMakerRebate.String(),
+			TierNumber:                      ptr.From(uint64(i + 1)),
 		})
 	}
 

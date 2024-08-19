@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -172,12 +173,13 @@ func (c ReferralProgram) String() string {
 
 func (c ReferralProgram) IntoProto() *vegapb.ReferralProgram {
 	benefitTiers := make([]*vegapb.BenefitTier, 0, len(c.BenefitTiers))
-	for _, tier := range c.BenefitTiers {
+	for i, tier := range c.BenefitTiers {
 		benefitTiers = append(benefitTiers, &vegapb.BenefitTier{
 			MinimumEpochs:                     tier.MinimumEpochs.String(),
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.String(),
 			ReferralRewardFactors:             tier.ReferralRewardFactors.IntoRewardFactorsProto(),
 			ReferralDiscountFactors:           tier.ReferralDiscountFactors.IntoDiscountFactorsProto(),
+			TierNumber:                        ptr.From(uint64(i + 1)),
 		})
 	}
 
