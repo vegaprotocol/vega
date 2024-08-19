@@ -982,6 +982,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMs"};
   }
 
+  // Get the fees and discounts a party is entitled to.
+  //
+  // Get the discount and reward tiers, and the fees and rebates for a party per market.
+  rpc GetPartyDiscountStats(GetPartyDiscountStatsRequest) returns (GetPartyDiscountStatsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Parties"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -5175,4 +5182,35 @@ message VolumeRebateProgram {
   uint64 window_length = 5;
   // Timestamp in Unix nanoseconds, at which the program ended.
   optional int64 ended_at = 6;
+}
+
+message GetPartyDiscountStatsRequest {
+  // The party ID.
+  string party_id = 1;
+  // list of market IDs to include in the response.
+  repeated string market_ids = 2;
+}
+
+message GetPartyDiscountStatsResponse {
+  // The tier number for the volume discount program the party is in.
+  uint64 volume_discount_tier = 1;
+  // The tier number for referencing the current volume rebate tier.
+  uint64 volume_rebate_tier = 2;
+  // The Tier number indicating the current referral discount program.
+  uint64 referral_discount_tier = 3;
+  // The fees and rebate per market, with and without the discounts applied.
+  repeated MarketFees party_market_fees = 4;
+}
+
+message MarketFees {
+  // The market ID.
+  string market_id = 1;
+  // Undiscounted fees to be paid on the market.
+  string undiscounted_taker_fee = 2;
+  // The taker fees the party will have to pay, discounts applied.
+  string discounted_taker_fee = 3;
+  // the maker rebate without rewards.
+  string base_maker_rebate = 4;
+  // the maker rebate with the party rewards included.
+  string user_maker_rebate = 5;
 }
