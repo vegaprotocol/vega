@@ -157,6 +157,21 @@ func (mr *MockMarketStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketStore)(nil).GetByID), arg0, arg1)
 }
 
+// GetByIDs mocks base method.
+func (m *MockMarketStore) GetByIDs(arg0 context.Context, arg1 []string) ([]entities.Market, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByIDs", arg0, arg1)
+	ret0, _ := ret[0].([]entities.Market)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByIDs indicates an expected call of GetByIDs.
+func (mr *MockMarketStoreMockRecorder) GetByIDs(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDs", reflect.TypeOf((*MockMarketStore)(nil).GetByIDs), arg0, arg1)
+}
+
 // GetByTxHash mocks base method.
 func (m *MockMarketStore) GetByTxHash(arg0 context.Context, arg1 entities.TxHash) ([]entities.Market, error) {
 	m.ctrl.T.Helper()
