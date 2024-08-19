@@ -138,6 +138,7 @@ type TradingDataServiceV2 struct {
 	twNotionalPositionService     *service.TimeWeightedNotionalPosition
 	gameScoreService              *service.GameScore
 	AMMPoolService                AMMService
+	partyDiscountStats            PartyStatsSvc
 }
 
 func (t *TradingDataServiceV2) SetLogger(l *logging.Logger) {
@@ -4218,6 +4219,11 @@ func (t *TradingDataServiceV2) ObserveGovernance(req *v2.ObserveGovernanceReques
 			Data: gd,
 		})
 	})
+}
+
+// GetPartyDiscountStats this is just passing the call through to the service.
+func (t *TradingDataServiceV2) GetPartyDiscountStats(ctx context.Context, req *v2.GetPartyDiscountStatsRequest) (*v2.GetPartyDiscountStatsResponse, error) {
+	return t.partyDiscountStats.GetPartyStats(ctx, req.PartyId, req.MarketIds)
 }
 
 func (t *TradingDataServiceV2) proposalToGovernanceData(ctx context.Context, proposal entities.Proposal) (*vega.GovernanceData, error) {
