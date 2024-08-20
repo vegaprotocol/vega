@@ -271,14 +271,18 @@ func (s *PSvc) getVolumeDiscountTier(ctx context.Context, stats entities.Flatten
 	if stats.DiscountFactors == nil {
 		return nil, nil
 	}
+	vol, err := num.DecimalFromString(stats.RunningVolume)
+	if err != nil {
+		return nil, err
+	}
 	current, err := s.vd.GetCurrentVolumeDiscountProgram(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, dt := range current.BenefitTiers {
-		if dt.VolumeDiscountFactors.InfrastructureDiscountFactor == stats.DiscountFactors.InfrastructureDiscountFactor &&
-			dt.VolumeDiscountFactors.LiquidityDiscountFactor == stats.DiscountFactors.LiquidityDiscountFactor &&
-			dt.VolumeDiscountFactors.MakerDiscountFactor == stats.DiscountFactors.MakerDiscountFactor {
+	for i := len(current.BenefitTiers) - 1; i >= 0; i-- {
+		dt := current.BenefitTiers[i]
+		minV, _ := num.DecimalFromString(dt.MinimumRunningNotionalTakerVolume)
+		if vol.GreaterThanOrEqual(minV) {
 			return dt, nil
 		}
 	}
@@ -290,9 +294,14 @@ func (s *PSvc) getVolumeRebateTier(ctx context.Context, stats entities.FlattenVo
 	if err != nil {
 		return nil, err
 	}
-	for _, bt := range current.BenefitTiers {
-		// @TODO might not be accurate
-		if stats.AdditionalRebate == bt.AdditionalMakerRebate {
+	vf, err := num.DecimalFromString(stats.MakerVolumeFraction)
+	if err != nil {
+		return nil, err
+	}
+	for i := len(current.BenefitTiers) - 1; i >= 0; i-- {
+		bt := current.BenefitTiers[i]
+		minF, _ := num.DecimalFromString(bt.MinimumPartyMakerVolumeFraction)
+		if vf.GreaterThanOrEqual(minF) {
 			return bt, nil
 		}
 	}
