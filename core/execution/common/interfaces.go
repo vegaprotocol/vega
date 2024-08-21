@@ -352,6 +352,7 @@ type CommonMarket interface {
 	GetMarketData() types.MarketData
 	StartOpeningAuction(context.Context) error
 	GetEquityShares() *EquityShares
+	GetEquitySharesForParty(partyID string) num.Decimal
 	IntoType() types.Market
 	OnEpochEvent(ctx context.Context, epoch types.Epoch)
 	OnEpochRestore(ctx context.Context, epoch types.Epoch)
