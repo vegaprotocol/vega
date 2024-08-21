@@ -366,6 +366,9 @@ message CreateReferralSet {
   bool is_team = 1;
   // Team details, if the referral set is to be considered a team.
   optional Team team = 2;
+  // Should a referral set be created as well or only a team.
+  // the default is false so the existing behaviour is kept if older versions of the protobufs are used.
+  bool do_not_create_referral_set = 3;
 
   message Team {
     // Name of the team.
@@ -416,6 +419,9 @@ message UpdateReferralSet {
 message ApplyReferralCode {
   // Referral code, normally the referral set ID, for the party to join.
   string id = 1;
+  // Should the key applying the referral code also join the team.
+  // the default is false so the existing behaviour is kept if older versions of the protobufs are used.
+  bool do_not_join_team = 2;
 }
 
 // Command that allows the submitter to join a team or change teams if they are already a member of a team.

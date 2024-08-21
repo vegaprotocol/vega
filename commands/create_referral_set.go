@@ -15,7 +15,11 @@
 
 package commands
 
-import commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+import (
+	"errors"
+
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+)
 
 func CheckCreateReferralSet(cmd *commandspb.CreateReferralSet) error {
 	return checkCreateReferralSet(cmd).ErrorOrNil()
@@ -26,6 +30,14 @@ func checkCreateReferralSet(cmd *commandspb.CreateReferralSet) Errors {
 
 	if cmd == nil {
 		return errs.FinalAddForProperty("create_referral_set", ErrIsRequired)
+	}
+
+	// Basically this command should be rejected if we are not creating a team
+	// but also not creating a referral set...
+	// just check if this command is ineffective...
+	if cmd.DoNotCreateReferralSet && !cmd.IsTeam {
+		return errs.FinalAddForProperty("create_referral_set",
+			errors.New("is ineffective"))
 	}
 
 	if cmd.IsTeam {
