@@ -64,7 +64,6 @@ Feature: A volume_discount_factors tier with differing factors across the three 
 
     Given the average block duration is "1"
 
-  @DiscTbl
   Scenario: Check the factors after each epoch, basically same as 0084-VDPR-012.
     Given the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
