@@ -173,7 +173,7 @@ func PartiesHaveTheFollowingDiscountFactors(vde *volumediscount.Engine, table *g
 			r: r,
 		}
 		party := row.party()
-		factors := vde.VolumeDiscountFactorForParty(types.PartyID(party))
+		factors := vde.VolumeDiscountFactorForParty(party)
 		if !factors.Maker.Equal(row.maker()) || !factors.Liquidity.Equal(row.liquidity()) || !factors.Infra.Equal(row.infra()) {
 			return fmt.Errorf(
 				"factors for party %s don't match. Expected (%s), got (maker: %s, liquidity: %s, infra: %s)",
