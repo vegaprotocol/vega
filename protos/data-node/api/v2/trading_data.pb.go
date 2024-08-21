@@ -27760,9 +27760,9 @@ type MarketFees struct {
 	UndiscountedTakerFee string `protobuf:"bytes,2,opt,name=undiscounted_taker_fee,json=undiscountedTakerFee,proto3" json:"undiscounted_taker_fee,omitempty"`
 	// The taker fees the party will have to pay, discounts applied.
 	DiscountedTakerFee string `protobuf:"bytes,3,opt,name=discounted_taker_fee,json=discountedTakerFee,proto3" json:"discounted_taker_fee,omitempty"`
-	// the maker rebate without rewards.
+	// Maker rebate without rewards.
 	BaseMakerRebate string `protobuf:"bytes,4,opt,name=base_maker_rebate,json=baseMakerRebate,proto3" json:"base_maker_rebate,omitempty"`
-	// the maker rebate with the party rewards included.
+	// Maker rebate with the party rewards included.
 	UserMakerRebate string `protobuf:"bytes,5,opt,name=user_maker_rebate,json=userMakerRebate,proto3" json:"user_maker_rebate,omitempty"`
 }
 

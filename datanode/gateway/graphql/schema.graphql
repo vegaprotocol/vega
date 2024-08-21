@@ -1385,7 +1385,7 @@ type Query {
   partyDiscountStats(
     "Party ID"
     partyId: ID!
-    "market IDs"
+    "Market IDs"
     marketIds: [ID!]
   ): PartyDiscountStats
 }

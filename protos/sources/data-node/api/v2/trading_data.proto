@@ -5209,8 +5209,8 @@ message MarketFees {
   string undiscounted_taker_fee = 2;
   // The taker fees the party will have to pay, discounts applied.
   string discounted_taker_fee = 3;
-  // the maker rebate without rewards.
+  // Maker rebate without rewards.
   string base_maker_rebate = 4;
-  // the maker rebate with the party rewards included.
+  // Maker rebate with the party rewards included.
   string user_maker_rebate = 5;
 }
