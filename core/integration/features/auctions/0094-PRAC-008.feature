@@ -1,4 +1,5 @@
-Feature: When a market's trigger and extension_trigger are set to represent that the market went into auction due to the price monitoring mechanism and was later extended by the same mechanism and the auction is meant to finish at 11am, but now a long block auction is being triggered so that it ends at 10am then this market is unaffected in any way. (0094-PRAC-008)
+Feature: When a market's trigger and extension_trigger are set to represent that the market went into auction due to the price monitoring mechanism and was later extended by the same mechanism and the auction is meant to finish at 11am, but now a long block auction is being triggered so that it ends at 10am then this market is unaffected in any way. (0094-PRAC-008) When market is in a price monitoring auction which is meant to finish at 10am, but prior to that time a long block auction finishing at 11am gets triggered then the market stays in auction till 11am, it's auction trigger is listed as price monitoring auction and it's extension trigger is listed as long block auction. (0094-PRAC-006).
+         
 
   Background:
     Given the following assets are registered:
@@ -55,7 +56,7 @@ Feature: When a market's trigger and extension_trigger are set to represent that
       | lpprov2 | ETH/DEC19 | 2         | 1                    | sell | MID              | 50     | 100    |
 
   @LBA
-  Scenario: 0094-PRAC-008: Long block auction exceeds the price monitoring auction duration, the auction gets extended.
+  Scenario: When market is in a price monitoring auction which is meant to finish at 10am, but prior to that time a long block auction finishing at 11am gets triggered then the market stays in auction till 11am, it's auction trigger is listed as price monitoring auction and it's extension trigger is listed as long block auction. (0094-PRAC-006). 0094-PRAC-008: Long block auction exceeds the price monitoring auction duration, the auction gets extended.
     # place orders and generate trades - slippage 100
     When the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
@@ -124,6 +125,9 @@ Feature: When a market's trigger and extension_trigger are set to represent that
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | buy  | 1      | 999998 | 0                | TYPE_LIMIT | TIF_GTC | t1-b-3    |
       | party2 | ETH/DEC20 | sell | 1      | 999998 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
+
+    # ETH/DEC19 - demonstrates 0094-PRAC-008
+    # ETH/DEC20 - demonstrates 0094-PRAC-006
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_LONG_BLOCK_AUCTION" for the market "ETH/DEC19"
     And the market data for the market "ETH/DEC20" should be:
