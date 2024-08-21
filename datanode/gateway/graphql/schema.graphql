@@ -7877,13 +7877,13 @@ type VolumeRebateStats {
 }
 
 type PartyDiscountStats {
-  "The volume discount tier for the party"
+  "The volume discount tier the party is in"
   volumeDiscountTier: Int!
-  "The volume rebate tier for the party"
+  "The volume rebate tier the party is in"
   volumeRebateTier: Int!
-  "The referral discount tier for the party"
+  "The referral discount tier the party is in"
   referralDiscountTier: Int!
-  "The party fees for the requested markets"
+  "The fee percentages the party will pay on a given market, with any rebates and discounts accounted for"
   partyMarketFees: [MarketFees!]
 }
 
