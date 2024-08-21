@@ -9371,7 +9371,8 @@ type VolumeBenefitTier struct {
 	VolumeDiscountFactor string `protobuf:"bytes,2,opt,name=volume_discount_factor,json=volumeDiscountFactor,proto3" json:"volume_discount_factor,omitempty"`
 	// Proportion of the taker fees to be discounted.
 	VolumeDiscountFactors *DiscountFactors `protobuf:"bytes,3,opt,name=volume_discount_factors,json=volumeDiscountFactors,proto3" json:"volume_discount_factors,omitempty"`
-	TierNumber            *uint64          `protobuf:"varint,4,opt,name=tier_number,json=tierNumber,proto3,oneof" json:"tier_number,omitempty"`
+	// The tier number. It's set by the core, and used in the party fee stats API.
+	TierNumber *uint64 `protobuf:"varint,4,opt,name=tier_number,json=tierNumber,proto3,oneof" json:"tier_number,omitempty"`
 }
 
 func (x *VolumeBenefitTier) Reset() {
@@ -9453,7 +9454,8 @@ type BenefitTier struct {
 	ReferralRewardFactors *RewardFactors `protobuf:"bytes,5,opt,name=referral_reward_factors,json=referralRewardFactors,proto3" json:"referral_reward_factors,omitempty"`
 	// Referral discount factors for the various fees.
 	ReferralDiscountFactors *DiscountFactors `protobuf:"bytes,6,opt,name=referral_discount_factors,json=referralDiscountFactors,proto3" json:"referral_discount_factors,omitempty"`
-	TierNumber              *uint64          `protobuf:"varint,7,opt,name=tier_number,json=tierNumber,proto3,oneof" json:"tier_number,omitempty"`
+	// The tier number. It's set by the core, and used in the party fee stats API.
+	TierNumber *uint64 `protobuf:"varint,7,opt,name=tier_number,json=tierNumber,proto3,oneof" json:"tier_number,omitempty"`
 }
 
 func (x *BenefitTier) Reset() {
@@ -10145,8 +10147,9 @@ type VolumeRebateBenefitTier struct {
 	// Fraction of a party's maker volume required for a party to access this tier.
 	MinimumPartyMakerVolumeFraction string `protobuf:"bytes,1,opt,name=minimum_party_maker_volume_fraction,json=minimumPartyMakerVolumeFraction,proto3" json:"minimum_party_maker_volume_fraction,omitempty"`
 	// Additional rebate factor, based on the 'trade value for fee purposes', that a party at this tier will receive when they are the maker side of a trade.
-	AdditionalMakerRebate string  `protobuf:"bytes,2,opt,name=additional_maker_rebate,json=additionalMakerRebate,proto3" json:"additional_maker_rebate,omitempty"`
-	TierNumber            *uint64 `protobuf:"varint,3,opt,name=tier_number,json=tierNumber,proto3,oneof" json:"tier_number,omitempty"`
+	AdditionalMakerRebate string `protobuf:"bytes,2,opt,name=additional_maker_rebate,json=additionalMakerRebate,proto3" json:"additional_maker_rebate,omitempty"`
+	// The tier number. It's set by the core, and used in the party fee stats API.
+	TierNumber *uint64 `protobuf:"varint,3,opt,name=tier_number,json=tierNumber,proto3,oneof" json:"tier_number,omitempty"`
 }
 
 func (x *VolumeRebateBenefitTier) Reset() {
