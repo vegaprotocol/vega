@@ -41,6 +41,7 @@
 - [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
 - [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.
 - [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker. 
+- [11607](https://github.com/vegaprotocol/vega/issues/11607) - Wire rank lottery distribution to team reward payout. 
 
 ## 0.77.5
 
