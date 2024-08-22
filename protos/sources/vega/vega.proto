@@ -1951,6 +1951,8 @@ message VolumeBenefitTier {
   string volume_discount_factor = 2;
   // Proportion of the taker fees to be discounted.
   DiscountFactors volume_discount_factors = 3;
+  // The tier number. It's set by the core, and used in the party fee stats API.
+  optional uint64 tier_number = 4;
 }
 
 message BenefitTier {
@@ -1972,6 +1974,9 @@ message BenefitTier {
 
   // Referral discount factors for the various fees.
   DiscountFactors referral_discount_factors = 6;
+
+  // The tier number. It's set by the core, and used in the party fee stats API.
+  optional uint64 tier_number = 7;
 }
 
 message RewardFactors {
@@ -2067,6 +2072,8 @@ message VolumeRebateBenefitTier {
   string minimum_party_maker_volume_fraction = 1;
   // Additional rebate factor, based on the 'trade value for fee purposes', that a party at this tier will receive when they are the maker side of a trade.
   string additional_maker_rebate = 2;
+  // The tier number. It's set by the core, and used in the party fee stats API.
+  optional uint64 tier_number = 3;
 }
 
 message VolumeRebateProgram {

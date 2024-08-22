@@ -26,6 +26,7 @@
 - [11570](https://github.com/vegaprotocol/vega/issues/11570) - Include the required set of parties for evaluation for eligible entities reward.
 - [11576](https://github.com/vegaprotocol/vega/issues/11576) - Replace additional rebate validation with a cap. 
 - [11533](https://github.com/vegaprotocol/vega/issues/11533) - Suppose per party fee discounts in fee estimation. 
+- [11577](https://github.com/vegaprotocol/vega/issues/11577) - Add API for party discounts and rewards.
 
 ### 🐛 Fixes
 

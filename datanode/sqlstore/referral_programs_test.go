@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -70,6 +71,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.00004",
 								MakerDiscountFactor:          "0.00004",
 							},
+							TierNumber: ptr.From(uint64(1)),
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "10000",
@@ -86,6 +88,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.0004",
 								MakerDiscountFactor:          "0.0004",
 							},
+							TierNumber: ptr.From(uint64(2)),
 						},
 					},
 					EndOfProgramTimestamp: endTime.Unix(),
@@ -122,6 +125,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.00008",
 								MakerDiscountFactor:          "0.00008",
 							},
+							TierNumber: ptr.From(uint64(1)),
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "20000",
@@ -138,6 +142,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.0008",
 								MakerDiscountFactor:          "0.0008",
 							},
+							TierNumber: ptr.From(uint64(2)),
 						},
 					},
 					EndOfProgramTimestamp: endTime2.Unix(),
@@ -203,6 +208,7 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 						LiquidityDiscountFactor:      "0.00004",
 						MakerDiscountFactor:          "0.00004",
 					},
+					TierNumber: ptr.From(uint64(1)),
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "10000",
@@ -219,6 +225,7 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 						LiquidityDiscountFactor:      "0.0004",
 						MakerDiscountFactor:          "0.0004",
 					},
+					TierNumber: ptr.From(uint64(2)),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
@@ -258,6 +265,7 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 						LiquidityDiscountFactor:      "0.0008",
 						MakerDiscountFactor:          "0.0008",
 					},
+					TierNumber: ptr.From(uint64(1)),
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "20000",
@@ -274,6 +282,7 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 						LiquidityDiscountFactor:      "0.008",
 						MakerDiscountFactor:          "0.008",
 					},
+					TierNumber: ptr.From(uint64(2)),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),

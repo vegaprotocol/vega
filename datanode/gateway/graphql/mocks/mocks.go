@@ -980,6 +980,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetPartyActivityStreak(arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyActivityStreak", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetPartyActivityStreak), varargs...)
 }
 
+// GetPartyDiscountStats mocks base method.
+func (m *MockTradingDataServiceClientV2) GetPartyDiscountStats(arg0 context.Context, arg1 *v2.GetPartyDiscountStatsRequest, arg2 ...grpc.CallOption) (*v2.GetPartyDiscountStatsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPartyDiscountStats", varargs...)
+	ret0, _ := ret[0].(*v2.GetPartyDiscountStatsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPartyDiscountStats indicates an expected call of GetPartyDiscountStats.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetPartyDiscountStats(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyDiscountStats", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetPartyDiscountStats), varargs...)
+}
+
 // GetPartyVestingStats mocks base method.
 func (m *MockTradingDataServiceClientV2) GetPartyVestingStats(arg0 context.Context, arg1 *v2.GetPartyVestingStatsRequest, arg2 ...grpc.CallOption) (*v2.GetPartyVestingStatsResponse, error) {
 	m.ctrl.T.Helper()

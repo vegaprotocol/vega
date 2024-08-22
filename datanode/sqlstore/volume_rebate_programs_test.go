@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -44,6 +45,7 @@ func TestVolumeRebatePrograms_AddVolumeRebateProgram(t *testing.T) {
 
 	block := addTestBlock(t, ctx, bs)
 	block2 := addTestBlock(t, ctx, bs)
+	one64 := uint64(1)
 
 	t.Run("AddVolumeRebateProgram should create a new volume rebate program record", func(t *testing.T) {
 		endTime := block.VegaTime.Add(time.Hour)
@@ -58,10 +60,12 @@ func TestVolumeRebatePrograms_AddVolumeRebateProgram(t *testing.T) {
 						{
 							MinimumPartyMakerVolumeFraction: "1",
 							AdditionalMakerRebate:           "0.01",
+							TierNumber:                      ptr.From(one64),
 						},
 						{
 							MinimumPartyMakerVolumeFraction: "2",
 							AdditionalMakerRebate:           "0.1",
+							TierNumber:                      ptr.From(one64 * 2),
 						},
 					},
 					EndOfProgramTimestamp: endTime.Unix(),
@@ -76,10 +80,12 @@ func TestVolumeRebatePrograms_AddVolumeRebateProgram(t *testing.T) {
 						{
 							MinimumPartyMakerVolumeFraction: "3",
 							AdditionalMakerRebate:           "0.02",
+							TierNumber:                      ptr.From(one64),
 						},
 						{
 							MinimumPartyMakerVolumeFraction: "4",
 							AdditionalMakerRebate:           "0.2",
+							TierNumber:                      ptr.From(one64 * 2),
 						},
 					},
 					EndOfProgramTimestamp: endTime2.Unix(),
@@ -114,6 +120,7 @@ func getVolumeRebateEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeReb
 ) {
 	t.Helper()
 
+	one64 := uint64(1)
 	started := eventspb.VolumeRebateProgramStarted{
 		Program: &vega.VolumeRebateProgram{
 			Version: 1,
@@ -122,10 +129,12 @@ func getVolumeRebateEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeReb
 				{
 					MinimumPartyMakerVolumeFraction: "1000",
 					AdditionalMakerRebate:           "0.01",
+					TierNumber:                      ptr.From(one64),
 				},
 				{
 					MinimumPartyMakerVolumeFraction: "10000",
 					AdditionalMakerRebate:           "0.1",
+					TierNumber:                      ptr.From(one64 * 2),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
@@ -143,10 +152,12 @@ func getVolumeRebateEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeReb
 				{
 					MinimumPartyMakerVolumeFraction: "2000",
 					AdditionalMakerRebate:           "0.02",
+					TierNumber:                      ptr.From(one64),
 				},
 				{
 					MinimumPartyMakerVolumeFraction: "20000",
 					AdditionalMakerRebate:           "0.2",
+					TierNumber:                      ptr.From(one64 * 2),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),

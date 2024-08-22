@@ -40,6 +40,9 @@ type (
 )
 
 func VolumeDiscountProgramFromProto(proto *vega.VolumeDiscountProgram, vegaTime time.Time, seqNum uint64) *VolumeDiscountProgram {
+	for i := range proto.BenefitTiers {
+		proto.BenefitTiers[i].TierNumber = ptr.From(uint64(i + 1))
+	}
 	return &VolumeDiscountProgram{
 		ID:                    VolumeDiscountProgramID(proto.Id),
 		Version:               proto.Version,

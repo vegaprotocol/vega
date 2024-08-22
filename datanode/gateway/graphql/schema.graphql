@@ -1378,6 +1378,16 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): PartyMarginModesConnection
+
+  """
+  Get the reward and discount fees for a given party and the fees and rebates applied per market.
+  """
+  partyDiscountStats(
+    "Party ID"
+    partyId: ID!
+    "Market IDs"
+    marketIds: [ID!]
+  ): PartyDiscountStats
 }
 
 enum EstimatedAMMError {
@@ -5198,6 +5208,8 @@ type BenefitTier {
   referralRewardFactor: String! @deprecated(reason: "Use referralRewardFactors")
   "The proportion of the referee's taker fees to be rewarded to the referrer"
   referralRewardFactors: RewardFactors!
+  "The tier number"
+  tierNumber: Int
 }
 
 type StakingTier {
@@ -5223,6 +5235,8 @@ type VolumeBenefitTier {
   volumeDiscountFactor: String! @deprecated(reason: "Use volumeDiscountFactors")
   "Discount factors applied to to those in this benefit tier"
   volumeDiscountFactors: DiscountFactors!
+  "The tier number"
+  tierNumber: Int
 }
 
 "Configuration for a new spot market on Vega"
@@ -7811,6 +7825,8 @@ type VolumeRebateBenefitTier {
   minimumPartyMakerVolumeFraction: String!
   "The additional rebate factor (in percentage of trade_value_for_fee_purposes a party at this tier will receive when they are the maker side of a trade"
   additionalMakerRebate: String!
+  "The tier number"
+  tierNumber: Int
 }
 
 
@@ -7858,4 +7874,28 @@ type VolumeRebateStats {
   makerVolumeFraction: String!
   "Party's running volume of maker fee received over the relevant window"
   makerFeeReceived: String!
+}
+
+type PartyDiscountStats {
+  "The volume discount tier the party is in"
+  volumeDiscountTier: Int!
+  "The volume rebate tier the party is in"
+  volumeRebateTier: Int!
+  "The referral discount tier the party is in"
+  referralDiscountTier: Int!
+  "The fee percentages the party will pay on a given market, with any rebates and discounts accounted for"
+  partyMarketFees: [MarketFees!]
+}
+
+type MarketFees {
+  "The market ID"
+  marketId: ID!
+  "The taker fees for the market without the discounts applied"
+  undiscountedTakerFee: String!
+  "The taker fees as applied for the party (with the discounts applied)"
+  discountedTakerFee: String!
+  "The maker fees for the market"
+  baseMakerFee: String!
+  "The maker rebate for the party"
+  userMakerRebate: String!
 }

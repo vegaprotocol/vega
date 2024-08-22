@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -41,6 +42,11 @@ func (rp *VolumeRebatePrograms) AddVolumeRebateProgram(ctx context.Context, prog
 }
 
 func (rp *VolumeRebatePrograms) insertVolumeRebateProgram(ctx context.Context, program *entities.VolumeRebateProgram) error {
+	if len(program.BenefitTiers) > 0 && program.BenefitTiers[0].TierNumber == nil {
+		for i := range program.BenefitTiers {
+			program.BenefitTiers[i].TierNumber = ptr.From(uint64(i + 1))
+		}
+	}
 	_, err := rp.Exec(ctx,
 		`INSERT INTO volume_rebate_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, vega_time, seq_num)
     		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -72,13 +78,20 @@ func (rp *VolumeRebatePrograms) EndVolumeRebateProgram(ctx context.Context, vers
 }
 
 func (rp *VolumeRebatePrograms) GetCurrentVolumeRebateProgram(ctx context.Context) (entities.VolumeRebateProgram, error) {
-	defer metrics.StartSQLQuery("VolumeRebatePrograms", "GetCurrentVolumeRebateProgram")()
-	var programProgram entities.VolumeRebateProgram
+	var program entities.VolumeRebateProgram
+	defer func() {
+		if len(program.BenefitTiers) > 0 && program.BenefitTiers[0].TierNumber == nil {
+			for i := range program.BenefitTiers {
+				program.BenefitTiers[i].TierNumber = ptr.From(uint64(i + 1))
+			}
+		}
+		metrics.StartSQLQuery("VolumeRebatePrograms", "GetCurrentVolumeRebateProgram")()
+	}()
 
 	query := `SELECT id, version, benefit_tiers, end_of_program_timestamp, window_length, vega_time, ended_at, seq_num FROM current_volume_rebate_program`
-	if err := pgxscan.Get(ctx, rp.ConnectionSource, &programProgram, query); err != nil {
-		return programProgram, err
+	if err := pgxscan.Get(ctx, rp.ConnectionSource, &program, query); err != nil {
+		return program, err
 	}
 
-	return programProgram, nil
+	return program, nil
 }

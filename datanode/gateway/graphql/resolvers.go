@@ -235,6 +235,14 @@ func (r *VegaResolverRoot) Deposit() DepositResolver {
 	return (*myDepositResolver)(r)
 }
 
+func (r *VegaResolverRoot) MarketFees() MarketFeesResolver {
+	return (*partyDiscountStatsResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyDiscountStats() PartyDiscountStatsResolver {
+	return (*partyDiscountStatsResolver)(r)
+}
+
 // Withdrawal ...
 func (r *VegaResolverRoot) Withdrawal() WithdrawalResolver {
 	return (*myWithdrawalResolver)(r)
@@ -795,6 +803,14 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) PartyDiscountStats(ctx context.Context, partyID string, markets []string) (*v2.GetPartyDiscountStatsResponse, error) {
+	req := &v2.GetPartyDiscountStatsRequest{
+		PartyId:   partyID,
+		MarketIds: markets,
+	}
+	return r.r.clt2.GetPartyDiscountStats(ctx, req)
+}
 
 // VolumeRebateStats implements QueryResolver.
 func (r *myQueryResolver) VolumeRebateStats(ctx context.Context, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.VolumeRebateStatsConnection, error) {

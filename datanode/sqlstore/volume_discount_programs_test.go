@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -63,6 +64,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.002",
 								MakerDiscountFactor:          "0.004",
 							},
+							TierNumber: ptr.From(uint64(1)),
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "10000",
@@ -72,6 +74,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.02",
 								MakerDiscountFactor:          "0.04",
 							},
+							TierNumber: ptr.From(uint64(2)),
 						},
 					},
 					EndOfProgramTimestamp: endTime.Unix(),
@@ -91,6 +94,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.002",
 								MakerDiscountFactor:          "0.004",
 							},
+							TierNumber: ptr.From(uint64(1)),
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "20000",
@@ -100,6 +104,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 								LiquidityDiscountFactor:      "0.04",
 								MakerDiscountFactor:          "0.08",
 							},
+							TierNumber: ptr.From(uint64(2)),
 						},
 					},
 					EndOfProgramTimestamp: endTime2.Unix(),
@@ -147,6 +152,7 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 						LiquidityDiscountFactor:      "0.002",
 						MakerDiscountFactor:          "0.004",
 					},
+					TierNumber: ptr.From(uint64(1)),
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "10000",
@@ -156,6 +162,7 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 						LiquidityDiscountFactor:      "0.02",
 						MakerDiscountFactor:          "0.04",
 					},
+					TierNumber: ptr.From(uint64(2)),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
@@ -178,6 +185,7 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 						LiquidityDiscountFactor:      "0.004",
 						MakerDiscountFactor:          "0.008",
 					},
+					TierNumber: ptr.From(uint64(1)),
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "20000",
@@ -187,6 +195,7 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 						LiquidityDiscountFactor:      "0.04",
 						MakerDiscountFactor:          "0.08",
 					},
+					TierNumber: ptr.From(uint64(2)),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
