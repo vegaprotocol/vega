@@ -114,6 +114,8 @@ func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balan
 		teamScores = proRataRewardCalculator(teamContribution, map[string]num.Decimal{})
 	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK {
 		teamScores = rankingRewardCalculator(teamContribution, ds.RankTable, map[string]num.Decimal{})
+	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK_LOTTERY {
+		teamScores = rankingLotteryRewardCalculator(teamContribution, ds.RankTable, map[string]num.Decimal{}, timestamp)
 	}
 
 	partyScores := []*types.PartyContributionScore{}
