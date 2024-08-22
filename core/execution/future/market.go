@@ -586,6 +586,14 @@ func (m *Market) GetEquityShares() *common.EquityShares {
 	return m.equityShares
 }
 
+func (m *Market) GetEquitySharesForParty(partyID string) num.Decimal {
+	primary := m.equityShares.SharesFromParty(partyID)
+	if sub, err := m.amm.GetAMMParty(partyID); err == nil {
+		return primary.Add(m.equityShares.SharesFromParty(sub))
+	}
+	return primary
+}
+
 func (m *Market) ResetParentIDAndInsurancePoolFraction() {
 	m.mkt.ParentMarketID = ""
 	m.mkt.InsurancePoolFraction = num.DecimalZero()

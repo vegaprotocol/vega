@@ -1457,7 +1457,7 @@ func (e *Engine) GetMarket(market string, settled bool) (types.Market, bool) {
 // party in the given market. If the market doesn't exist, it returns false.
 func (e *Engine) GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool) {
 	if mkt, ok := e.allMarkets[market]; ok {
-		return mkt.GetEquityShares().SharesFromParty(party), true
+		return mkt.GetEquitySharesForParty(party), true
 	}
 	return num.DecimalZero(), false
 }
