@@ -77,6 +77,14 @@ func (br *benefitTierResolver) MinimumEpochs(_ context.Context, obj *vega.Benefi
 	return int(minEpochs), nil
 }
 
+func (v *benefitTierResolver) TierNumber(_ context.Context, obj *vega.BenefitTier) (*int, error) {
+	if obj.TierNumber == nil {
+		return nil, nil
+	}
+	i := int(*obj.TierNumber)
+	return &i, nil
+}
+
 type volumeBenefitTierResolver VegaResolverRoot
 
 // VolumeDiscountFactors implements VolumeBenefitTierResolver.
@@ -98,4 +106,12 @@ func (v *volumeBenefitTierResolver) VolumeDiscountFactors(ctx context.Context, o
 		MakerFactor:          maker.String(),
 		LiquidityFactor:      liq.String(),
 	}, nil
+}
+
+func (v *volumeBenefitTierResolver) TierNumber(_ context.Context, obj *vega.VolumeBenefitTier) (*int, error) {
+	if obj.TierNumber == nil {
+		return nil, nil
+	}
+	i := int(*obj.TierNumber)
+	return &i, nil
 }

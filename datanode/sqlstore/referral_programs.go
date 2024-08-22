@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -41,6 +42,12 @@ func (rp *ReferralPrograms) AddReferralProgram(ctx context.Context, referral *en
 }
 
 func (rp *ReferralPrograms) insertReferralProgram(ctx context.Context, referral *entities.ReferralProgram) error {
+	if len(referral.BenefitTiers) > 0 && referral.BenefitTiers[0].TierNumber == nil {
+		// update stores to set tier numbers.
+		for i := range referral.BenefitTiers {
+			referral.BenefitTiers[i].TierNumber = ptr.From(uint64(i + 1))
+		}
+	}
 	_, err := rp.Exec(ctx,
 		`INSERT INTO referral_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, vega_time, seq_num)
     		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -73,8 +80,16 @@ func (rp *ReferralPrograms) EndReferralProgram(ctx context.Context, version uint
 }
 
 func (rp *ReferralPrograms) GetCurrentReferralProgram(ctx context.Context) (entities.ReferralProgram, error) {
-	defer metrics.StartSQLQuery("ReferralPrograms", "GetCurrentReferralProgram")()
 	var referralProgram entities.ReferralProgram
+	defer func() {
+		// ensure the tier numbers are set
+		if len(referralProgram.BenefitTiers) > 0 && referralProgram.BenefitTiers[0].TierNumber == nil {
+			for i := range referralProgram.BenefitTiers {
+				referralProgram.BenefitTiers[i].TierNumber = ptr.From(uint64(i + 1))
+			}
+		}
+		metrics.StartSQLQuery("ReferralPrograms", "GetCurrentReferralProgram")()
+	}()
 
 	query := `SELECT id, version, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, vega_time, ended_at, seq_num FROM current_referral_program`
 	if err := pgxscan.Get(ctx, rp.ConnectionSource, &referralProgram, query); err != nil {

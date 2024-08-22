@@ -41,6 +41,9 @@ type (
 )
 
 func ReferralProgramFromProto(proto *vega.ReferralProgram, vegaTime time.Time, seqNum uint64) *ReferralProgram {
+	for i := range proto.BenefitTiers {
+		proto.BenefitTiers[i].TierNumber = ptr.From(uint64(i + 1))
+	}
 	return &ReferralProgram{
 		ID:                    ReferralProgramID(proto.Id),
 		Version:               proto.Version,

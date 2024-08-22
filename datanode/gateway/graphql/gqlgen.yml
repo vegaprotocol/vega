@@ -844,3 +844,7 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStatsEdge
   VolumeRebateStats:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStats
+  PartyDiscountStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetPartyDiscountStatsResponse
+  MarketFees:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketFees

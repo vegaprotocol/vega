@@ -589,6 +589,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of AMMs or filter by market ID, party ID or AMM ID
 	EstimateAMMBounds(ctx context.Context, in *EstimateAMMBoundsRequest, opts ...grpc.CallOption) (*EstimateAMMBoundsResponse, error)
+	// Get the fees and discounts a party is entitled to.
+	//
+	// Get the discount and reward tiers, and the fees and rebates for a party per market.
+	GetPartyDiscountStats(ctx context.Context, in *GetPartyDiscountStatsRequest, opts ...grpc.CallOption) (*GetPartyDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2160,6 +2164,15 @@ func (c *tradingDataServiceClient) EstimateAMMBounds(ctx context.Context, in *Es
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetPartyDiscountStats(ctx context.Context, in *GetPartyDiscountStatsRequest, opts ...grpc.CallOption) (*GetPartyDiscountStatsResponse, error) {
+	out := new(GetPartyDiscountStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetPartyDiscountStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2771,6 +2784,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of AMMs or filter by market ID, party ID or AMM ID
 	EstimateAMMBounds(context.Context, *EstimateAMMBoundsRequest) (*EstimateAMMBoundsResponse, error)
+	// Get the fees and discounts a party is entitled to.
+	//
+	// Get the discount and reward tiers, and the fees and rebates for a party per market.
+	GetPartyDiscountStats(context.Context, *GetPartyDiscountStatsRequest) (*GetPartyDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -3218,6 +3235,9 @@ func (UnimplementedTradingDataServiceServer) ListAMMs(context.Context, *ListAMMs
 }
 func (UnimplementedTradingDataServiceServer) EstimateAMMBounds(context.Context, *EstimateAMMBoundsRequest) (*EstimateAMMBoundsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateAMMBounds not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetPartyDiscountStats(context.Context, *GetPartyDiscountStatsRequest) (*GetPartyDiscountStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPartyDiscountStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -5541,6 +5561,24 @@ func _TradingDataService_EstimateAMMBounds_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetPartyDiscountStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPartyDiscountStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetPartyDiscountStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetPartyDiscountStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetPartyDiscountStats(ctx, req.(*GetPartyDiscountStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -6022,6 +6060,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EstimateAMMBounds",
 			Handler:    _TradingDataService_EstimateAMMBounds_Handler,
+		},
+		{
+			MethodName: "GetPartyDiscountStats",
+			Handler:    _TradingDataService_GetPartyDiscountStats_Handler,
 		},
 		{
 			MethodName: "Ping",

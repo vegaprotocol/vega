@@ -1019,6 +1019,8 @@ type VolumeRebateBenefitTier struct {
 	MinimumPartyMakerVolumeFraction string `json:"minimumPartyMakerVolumeFraction"`
 	// The additional rebate factor (in percentage of trade_value_for_fee_purposes a party at this tier will receive when they are the maker side of a trade
 	AdditionalMakerRebate string `json:"additionalMakerRebate"`
+	// The tier number
+	TierNumber *int `json:"tierNumber,omitempty"`
 }
 
 // Event types

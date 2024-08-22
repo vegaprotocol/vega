@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -150,6 +151,10 @@ type AMMService interface {
 	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListByPartyMarketStatus(ctx context.Context, party, market *string, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+}
+
+type PartyStatsSvc interface {
+	GetPartyStats(ctx context.Context, partyID string, marketIDs []string) (*v2.GetPartyDiscountStatsResponse, error)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
@@ -534,6 +539,15 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	)
 
 	streamIntercept := grpc.StreamInterceptor(subscriptionRateLimiter.WithGrpcInterceptor(g.ipFromContext))
+	partyDiscountStats := service.NewPartyStatsService(g.epochService,
+		g.referralSetsService.ReferralSets,
+		g.volumeDiscountStatsService,
+		g.volumeRebateStatsService,
+		g.marketsService,
+		g.referralProgramService.ReferralPrograms,
+		g.volumeDiscountProgramService.VolumeDiscountPrograms,
+		g.volumeRebateProgramService.VolumeRebatePrograms,
+	)
 
 	g.srv = grpc.NewServer(intercept, streamIntercept)
 
@@ -608,6 +622,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		AMMPoolService:                g.ammPoolService,
 		volumeRebateStatsService:      g.volumeRebateStatsService,
 		volumeRebateProgramService:    g.volumeRebateProgramService,
+		partyDiscountStats:            partyDiscountStats,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

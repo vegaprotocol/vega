@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -59,6 +60,31 @@ func (s *VolumeDiscountStats) Add(ctx context.Context, stats *entities.VolumeDis
 	)
 
 	return err
+}
+
+func (s *VolumeDiscountStats) LatestStats(ctx context.Context, partyID string) (entities.VolumeDiscountStats, error) {
+	query := `SELECT * FROM public.volume_discount_stats WHERE
+	at_epoch = (SELECT id - 1 from current_epochs ORDER BY id DESC, vega_time DESC FETCH FIRST ROW ONLY) AND
+	EXISTS (SELECT TRUE FROM jsonb_array_elements(parties_volume_discount_stats) ps WHERE ps->>'party_id' = '$1')`
+	ent := []entities.VolumeDiscountStats{}
+	if err := pgxscan.Select(ctx, s.ConnectionSource, &ent, query, partyID); err != nil {
+		return entities.VolumeDiscountStats{}, err
+	}
+	if len(ent) == 0 {
+		return entities.VolumeDiscountStats{}, nil
+	}
+	final := ent[0]
+	stats := make([]*eventspb.PartyVolumeDiscountStats, 0, len(ent))
+	for _, e := range ent {
+		for _, stat := range e.PartiesVolumeDiscountStats {
+			if stat.PartyId == partyID {
+				stats = append(stats, stat)
+			}
+		}
+	}
+	// running volume and discount factor to be used to match the volume discount program
+	final.PartiesVolumeDiscountStats = stats
+	return final, nil
 }
 
 func (s *VolumeDiscountStats) Stats(ctx context.Context, atEpoch *uint64, partyID *string, pagination entities.CursorPagination) ([]entities.FlattenVolumeDiscountStats, entities.PageInfo, error) {

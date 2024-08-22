@@ -40,6 +40,10 @@ type (
 )
 
 func VolumeRebateProgramFromProto(proto *vega.VolumeRebateProgram, vegaTime time.Time, seqNum uint64) *VolumeRebateProgram {
+	// set the tier numbers accordingly
+	for i := range proto.BenefitTiers {
+		proto.BenefitTiers[i].TierNumber = ptr.From(uint64(i + 1))
+	}
 	return &VolumeRebateProgram{
 		ID:                    VolumeRebateProgramID(proto.Id),
 		Version:               proto.Version,
