@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/config"
@@ -127,7 +128,19 @@ func (opts *InitCmd) Execute(args []string) error {
 	if !initCmd.NoTendermint {
 		tmCfg := tmcfg.DefaultConfig()
 		tmCfg.SetRoot(os.ExpandEnv(initCmd.TendermintHome))
+		// add a few defaults
+		tmCfg.P2P.MaxPacketMsgPayloadSize = 16384
+		tmCfg.P2P.SendRate = 20000000
+		tmCfg.P2P.RecvRate = 20000000
+		tmCfg.Mempool.Size = 10000
+		tmCfg.Mempool.CacheSize = 20000
+		tmCfg.Consensus.TimeoutCommit = 0 * time.Second
+		tmCfg.Consensus.SkipTimeoutCommit = true
+		tmCfg.Consensus.CreateEmptyBlocksInterval = 1 * time.Second
+		tmCfg.Storage.DiscardABCIResponses = true
 		tmcfg.EnsureRoot(tmCfg.RootDir)
+		// then rewrite the config to apply the changes, EnsureRoot create the config, but with a default config
+		tmcfg.WriteConfigFile(filepath.Join(tmCfg.RootDir, tmcfg.DefaultConfigDir, tmcfg.DefaultConfigFileName), tmCfg)
 		if err := initTendermintConfiguration(output, logger, tmCfg); err != nil {
 			return fmt.Errorf("couldn't initialise tendermint %w", err)
 		}
