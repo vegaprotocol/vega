@@ -36,7 +36,7 @@ Feature: Test liquidity fee settings, using 3 different methods
       | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.2                    | 0                         | SLA        |
 
-  Scenario: 001 Liquidity fee setting to METHOD_CONSTANT(0042-LIQF-058), METHOD_MARGINAL_COST, and METHOD_WEIGHTED_AVERAGE(0042-LIQF-057)
+  Scenario: 001 Liquidity fee setting to METHOD_CONSTANT(0042-LIQF-058, 0042-LIQF-061), METHOD_MARGINAL_COST(0042-LIQF-062), and METHOD_WEIGHTED_AVERAGE(0042-LIQF-057, 0042-LIQF-056)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |

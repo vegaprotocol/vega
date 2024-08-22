@@ -114,6 +114,39 @@ func parseVolumeDiscountTable(table *godog.Table) []RowWrapper {
 	}, []string{})
 }
 
+func parseFactorRow(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"maker factor",
+		"liquidity factor",
+		"infra factor",
+	}, []string{})
+}
+
+type factorRow struct {
+	r RowWrapper
+}
+
+func (f factorRow) party() types.PartyID {
+	return types.PartyID(f.r.MustStr("party"))
+}
+
+func (f factorRow) maker() num.Decimal {
+	return f.r.MustDecimal("maker factor")
+}
+
+func (f factorRow) liquidity() num.Decimal {
+	return f.r.MustDecimal("liquidity factor")
+}
+
+func (f factorRow) infra() num.Decimal {
+	return f.r.MustDecimal("infra factor")
+}
+
+func (f factorRow) String() string {
+	return fmt.Sprintf("maker: %s, liquidity: %s, infra: %s", f.maker(), f.liquidity(), f.infra())
+}
+
 type volumeDiscountRow struct {
 	row RowWrapper
 }
@@ -132,6 +165,27 @@ func (r volumeDiscountRow) closingTimestamp() int64 {
 
 func (r volumeDiscountRow) windowLength() uint64 {
 	return r.row.MustU64("window length")
+}
+
+func PartiesHaveTheFollowingDiscountFactors(vde *volumediscount.Engine, table *godog.Table) error {
+	for _, r := range parseFactorRow(table) {
+		row := factorRow{
+			r: r,
+		}
+		party := row.party()
+		factors := vde.VolumeDiscountFactorForParty(party)
+		if !factors.Maker.Equal(row.maker()) || !factors.Liquidity.Equal(row.liquidity()) || !factors.Infra.Equal(row.infra()) {
+			return fmt.Errorf(
+				"factors for party %s don't match. Expected (%s), got (maker: %s, liquidity: %s, infra: %s)",
+				party,
+				row,
+				factors.Maker,
+				factors.Liquidity,
+				factors.Infra,
+			)
+		}
+	}
+	return nil
 }
 
 func PartyHasTheFollowingDiscountInfraFactor(party, discountFactor string, vde *volumediscount.Engine) error {

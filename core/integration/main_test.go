@@ -772,6 +772,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartyHasTheFollowingDiscountLiquidityFactor(party, discountFactor, execsetup.volumeDiscountProgram)
 	})
 
+	s.Step(`^the parties have the following discount factors:$`, func(table *godog.Table) error {
+		return steps.PartiesHaveTheFollowingDiscountFactors(execsetup.volumeDiscountProgram, table)
+	})
+
 	s.Step(`^the AMM "([^"]*)" has the following discount infra factor "([^"]*)"$`, func(alias, discountFactor string) error {
 		return steps.AMMHasTheFollowingDiscountInfraFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
 	})
