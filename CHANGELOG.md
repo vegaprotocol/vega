@@ -24,9 +24,11 @@
 - [11546](https://github.com/vegaprotocol/vega/issues/11546) - Add validation to market proposals metadata.
 - [11562](https://github.com/vegaprotocol/vega/issues/11562) - Update average notional metric with mark price at the end of the epoch and when calculating live score.
 - [11570](https://github.com/vegaprotocol/vega/issues/11570) - Include the required set of parties for evaluation for eligible entities reward.
-- [11576](https://github.com/vegaprotocol/vega/issues/11576) - Replace additional rebate validation with a cap. 
-- [11533](https://github.com/vegaprotocol/vega/issues/11533) - Suppose per party fee discounts in fee estimation. 
+- [11576](https://github.com/vegaprotocol/vega/issues/11576) - Replace additional rebate validation with a cap.
+- [11533](https://github.com/vegaprotocol/vega/issues/11533) - Suppose per party fee discounts in fee estimation.
 - [11577](https://github.com/vegaprotocol/vega/issues/11577) - Add API for party discounts and rewards.
+- [10716](https://github.com/vegaprotocol/vega/issues/10716) - Set Tendermint defaults during init.
+
 
 ### 🐛 Fixes
 
@@ -41,9 +43,11 @@
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
 - [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
 - [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.
-- [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker. 
-- [11607](https://github.com/vegaprotocol/vega/issues/11607) - Wire rank lottery distribution to team reward payout. 
+- [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker.
+- [11607](https://github.com/vegaprotocol/vega/issues/11607) - Wire rank lottery distribution to team reward payout.
 - [959](https://github.com/vegaprotocol/core-test-coverage/issues/959) - Include `ELS` for `AMM` sub keys to the parent key `ELS`.
+- [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker.
+
 
 ## 0.77.5
 
