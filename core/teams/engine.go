@@ -73,12 +73,32 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 		return err
 	}
 
-	if _, alreadyMember := e.allTeamMembers[referrer]; alreadyMember {
-		return ErrPartyAlreadyBelongsToTeam(referrer)
+	// are we already a team owner? in which case
+	// it's not allowed to create a team
+	for _, team := range e.teams {
+		if team.Referrer.PartyID == referrer {
+			return ErrPartyAlreadyBelongsToTeam(referrer)
+		}
 	}
 
 	if len(params.Name) <= 0 {
 		return errors.New("missing required team name parameter")
+	}
+
+	// if the party is a member of a team but not a referrer
+	// then we need to move it from the previous one, and get
+	// and create it.
+	prevTeamID, isAlreadyMember := e.allTeamMembers[referrer]
+
+	// here just removing them from the team would be enough
+	// to have the correct step
+	//
+	// the notify create team event later will in the DN:
+	// - create the new team
+	// - update the membership informations for the party
+	// - all is fine
+	if isAlreadyMember {
+		e.teams[prevTeamID].RemoveReferee(referrer)
 	}
 
 	now := e.timeService.GetTimeNow()
