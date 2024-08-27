@@ -41,6 +41,7 @@
 - [11568](https://github.com/vegaprotocol/vega/issues/11568) - order book shape on closing `AMM` no longer panics.
 - [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
+- [11616](https://github.com/vegaprotocol/vega/issues/11616) - `AMM` tradable volume now calculated purely in positions to prevent loss of precision.
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
 - [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
 - [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.

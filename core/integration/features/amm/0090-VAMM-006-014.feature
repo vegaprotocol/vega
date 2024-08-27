@@ -478,10 +478,10 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party5 | ETH/MAR22 | buy  | 65     | 120   | 1                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | ref price | mid price | static mid price | best offer price | best bid price |
-      | 95         | TRADING_MODE_CONTINUOUS | 100       | 120       | 120              | 121              | 120            |
+      | 95         | TRADING_MODE_CONTINUOUS | 100       | 120       | 120              | 121              | 119            |
     And the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party5 | 114   | 64   | vamm1-id | true   |
+      | party5 | 114   | 65   | vamm1-id | true   |
     # Check the resulting position, vAMM further increased their position
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
@@ -490,5 +490,5 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party2   | -1     | -14            | 0            |        |
       | party3   | -350   | -6650          | 0            |        |
       | party4   | 420    | 7980           | 0            |        |
-      | party5   | 64     | 0              | 0            |        |
-      | vamm1-id | -134   | -1330          | 0            | true   |
+      | party5   | 65     | 0              | 0            |        |
+      | vamm1-id | -135   | -1330          | 0            | true   |

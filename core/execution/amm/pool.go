@@ -607,39 +607,52 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 		st, nd = nd, st
 	}
 
-	fp := p.fairPrice()
+	// map the given st/nd prices into positions, then the difference is the volume
+	asPosition := func(price *num.Uint) int64 {
+		switch {
+		case price.GT(p.lower.high):
+			// in upper curve
+			if !p.upper.empty {
+				return p.upper.positionAtPrice(p.sqrt, num.Min(p.upper.high, price))
+			}
+		case price.LT(p.lower.high):
+			// in lower curve
+			if !p.lower.empty {
+				return p.lower.positionAtPrice(p.sqrt, num.Max(p.lower.low, price))
+			}
+		}
+		return 0
+	}
+
+	stP := asPosition(st)
+	ndP := asPosition(nd)
+
 	if side == types.SideSell {
-		// want all buy volume so everything below fair price
-		nd = num.Min(fp, nd)
+		// want all buy volume so everything below fair price, where the AMM is long
+		ndP = num.MaxV(pos, ndP)
 	}
 
 	if side == types.SideBuy {
-		// want all sell volume so everything above fair price
-		st = num.Max(fp, st)
+		// want all sell volume so everything above fair price, where the AMM is short
+		stP = num.MinV(pos, stP)
 	}
 
-	var other *curve
-	var volume uint64
-	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
-	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
-	if pos < 0 || (pos == 0 && side == types.SideBuy) {
-		volume = p.upper.volumeBetweenPrices(p.sqrt, st, nd)
-		other = p.lower
-	} else {
-		volume = p.lower.volumeBetweenPrices(p.sqrt, st, nd)
-		other = p.upper
+	if !p.closing() {
+		return uint64(stP - ndP)
 	}
 
-	if p.closing() {
-		return num.MinV(volume, uint64(num.AbsV(pos)))
+	if pos > 0 {
+		// if closing and long, we have no volume at short prices, so cap range to > 0
+		stP = num.MaxV(0, stP)
+		ndP = num.MaxV(0, ndP)
 	}
 
-	// if the position is non-zero, the incoming order could push us across to the other curve
-	// so we need to check for volume there too
-	if pos != 0 {
-		volume += other.volumeBetweenPrices(p.sqrt, st, nd)
+	if pos < 0 {
+		// if closing and short, we have no volume at long prices, so cap range to < 0
+		stP = num.MinV(0, stP)
+		ndP = num.MinV(0, ndP)
 	}
-	return volume
+	return num.MinV(uint64(stP-ndP), uint64(num.AbsV(pos)))
 }
 
 // getBalance returns the total balance of the pool i.e it's general account + it's margin account.
