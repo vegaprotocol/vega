@@ -144,6 +144,10 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.pendingMTM(assetPrice, pf)
 	if trade.Type == types.TradeTypeNetworkCloseOutBad {
 		p.updateWithBadTrade(trade, seller, pf)
+	} else if p.DistressedStatus == PositionStatusClosedOut {
+		// Not a closeout trade, but the position is currently still marked as distressed.
+		// This indicates the party was closed out previously, but has topped up and opened a new position.
+		p.DistressedStatus = PositionStatusUnspecified
 	}
 }
 

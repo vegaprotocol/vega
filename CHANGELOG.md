@@ -48,6 +48,7 @@
 - [11607](https://github.com/vegaprotocol/vega/issues/11607) - Wire rank lottery distribution to team reward payout.
 - [959](https://github.com/vegaprotocol/core-test-coverage/issues/959) - Include `ELS` for `AMM` sub keys to the parent key `ELS`.
 - [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker.
+- [10907](https://github.com/vegaprotocol/vega/issues/10907) - Fix position API distressed status not getting updated once the party has been closed out.
 
 
 ## 0.77.5
