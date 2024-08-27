@@ -597,6 +597,9 @@ func (b *OrderBook) uncrossBookSide(
 	if len(uncrossOrders) == 0 {
 		return nil, nil
 	}
+
+	defer b.buy.uncrossFinished()
+
 	// get price factor, if price is 10,000, but market price is 100, this is 10,000/100 -> 100
 	// so we can get the market price simply by doing price / (order.Price/ order.OriginalPrice)
 	// as the asset decimals may be < market decimals, the calculation must be done in decimals.
@@ -1001,6 +1004,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	if !b.auction {
 		// uncross with opposite
+
+		defer b.buy.uncrossFinished()
+
 		idealPrice := b.theoreticalBestTradePrice(order)
 		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order, true, idealPrice)
 		if !lastTradedPrice.IsZero() {
