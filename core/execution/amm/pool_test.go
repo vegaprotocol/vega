@@ -38,6 +38,7 @@ func TestAMMPool(t *testing.T) {
 	t.Run("test pool logic with position factor", testPoolPositionFactor)
 	t.Run("test one sided pool", testOneSidedPool)
 	t.Run("test near zero volume curve triggers and error", testNearZeroCurveErrors)
+	t.Run("test volume between prices when closing", testTradeableVolumeInRangeClosing)
 }
 
 func testTradeableVolumeInRange(t *testing.T) {
@@ -85,7 +86,7 @@ func testTradeableVolumeInRange(t *testing.T) {
 			price1:         num.NewUint(500),
 			price2:         num.NewUint(3500),
 			side:           types.SideBuy,
-			expectedVolume: 1337,
+			expectedVolume: 1335,
 			position:       700, // position at full lower boundary, incoming is by so whole volume of both curves is available
 		},
 		{
@@ -101,7 +102,7 @@ func testTradeableVolumeInRange(t *testing.T) {
 			price1:         num.NewUint(500),
 			price2:         num.NewUint(3500),
 			side:           types.SideBuy,
-			expectedVolume: 986,
+			expectedVolume: 985,
 			position:       350,
 		},
 		{
@@ -109,14 +110,129 @@ func testTradeableVolumeInRange(t *testing.T) {
 			price1:         num.NewUint(500),
 			price2:         num.NewUint(3500),
 			side:           types.SideSell,
-			expectedVolume: 1053,
+			expectedVolume: 1052,
 			position:       -350,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ensurePositionN(t, p.pos, tt.position, num.UintZero(), 2)
+			ensurePositionN(t, p.pos, tt.position, num.UintZero(), 1)
+			volume := p.pool.TradableVolumeInRange(tt.side, tt.price1, tt.price2)
+			assert.Equal(t, int(tt.expectedVolume), int(volume))
+		})
+	}
+}
+
+func testTradeableVolumeInRangeClosing(t *testing.T) {
+	p := newTestPool(t)
+	defer p.ctrl.Finish()
+
+	// pool is reducing its
+	p.pool.status = types.AMMPoolStatusReduceOnly
+
+	tests := []struct {
+		name           string
+		price1         *num.Uint
+		price2         *num.Uint
+		position       int64
+		side           types.Side
+		expectedVolume uint64
+		nposcalls      int
+	}{
+		{
+			name:           "0 position, 0 buy volume",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(2200),
+			side:           types.SideBuy,
+			expectedVolume: 0,
+			nposcalls:      1,
+		},
+		{
+			name:           "0 position, 0 sell volume",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(2200),
+			side:           types.SideSell,
+			expectedVolume: 0,
+			nposcalls:      1,
+		},
+		{
+			name:           "long position, 0 volume for incoming SELL",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(2200),
+			side:           types.SideSell,
+			position:       10,
+			expectedVolume: 0,
+			nposcalls:      1,
+		},
+		{
+			name:           "long position, 10 volume for incoming BUY",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(2200),
+			side:           types.SideBuy,
+			position:       10,
+			expectedVolume: 10,
+			nposcalls:      2,
+		},
+		{
+			name:           "short position, 0 volume for incoming BUY",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(2200),
+			side:           types.SideBuy,
+			position:       -10,
+			expectedVolume: 0,
+			nposcalls:      1,
+		},
+		{
+			name:           "short position, 10 volume for incoming SELL",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(2200),
+			side:           types.SideSell,
+			position:       -10,
+			expectedVolume: 10,
+			nposcalls:      2,
+		},
+		{
+			name:           "asking for SELL volume but for prices outside of price ranges",
+			price1:         num.NewUint(2000),
+			price2:         num.NewUint(2200),
+			side:           types.SideBuy,
+			position:       10,
+			expectedVolume: 0,
+			nposcalls:      2,
+		},
+		{
+			name:           "asking for BUY volume but for prices outside of price ranges",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(1850),
+			side:           types.SideSell,
+			position:       -10,
+			expectedVolume: 0,
+			nposcalls:      2,
+		},
+		{
+			name:           "asking for partial closing volume when long",
+			price1:         num.NewUint(1800),
+			price2:         num.NewUint(1850),
+			side:           types.SideBuy,
+			position:       702,
+			expectedVolume: 186,
+			nposcalls:      2,
+		},
+		{
+			name:           "asking for partial closing volume when short",
+			price1:         num.NewUint(2100),
+			price2:         num.NewUint(2150),
+			side:           types.SideSell,
+			position:       -635,
+			expectedVolume: 155,
+			nposcalls:      2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ensurePositionN(t, p.pos, tt.position, num.UintZero(), tt.nposcalls)
 			volume := p.pool.TradableVolumeInRange(tt.side, tt.price1, tt.price2)
 			assert.Equal(t, int(tt.expectedVolume), int(volume))
 		})
@@ -149,7 +265,7 @@ func TestTradeableVolumeWhenAtBoundary(t *testing.T) {
 	defer p.ctrl.Finish()
 
 	// when position is zero fair-price should be the base
-	ensurePositionN(t, p.pos, 0, num.UintZero(), 3)
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
 	fp := p.pool.BestPrice(nil)
 	assert.Equal(t, "6765400000000000000000", fp.String())
 
@@ -160,7 +276,7 @@ func TestTradeableVolumeWhenAtBoundary(t *testing.T) {
 	assert.Equal(t, fullLong, int(volume))
 
 	// now lets pretend the AMM has fully traded out in that direction, best price will be near but not quite the lower bound
-	ensurePositionN(t, p.pos, int64(fullLong), num.UintZero(), 3)
+	ensurePositionN(t, p.pos, int64(fullLong), num.UintZero(), 2)
 	fp = p.pool.BestPrice(nil)
 	assert.Equal(t, "6712721893865935337785", fp.String())
 	assert.True(t, fp.GTE(num.MustUintFromString("6712720000000000000000", 10)))
@@ -174,12 +290,12 @@ func testPoolPositionFactor(t *testing.T) {
 	p := newTestPoolWithPositionFactor(t, num.DecimalFromInt64(1000))
 	defer p.ctrl.Finish()
 
-	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 1)
 	volume := p.pool.TradableVolumeInRange(types.SideBuy, num.NewUint(2000), num.NewUint(2200))
 	// with position factot of 1 the volume is 635
 	assert.Equal(t, int(635395), int(volume))
 
-	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 1)
 	volume = p.pool.TradableVolumeInRange(types.SideSell, num.NewUint(1800), num.NewUint(2000))
 	// with position factot of 1 the volume is 702
 	assert.Equal(t, int(702411), int(volume))
@@ -256,18 +372,18 @@ func testOneSidedPool(t *testing.T) {
 	defer p.ctrl.Finish()
 
 	// side with liquidity returns volume
-	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 1)
 	volume := p.pool.TradableVolumeInRange(types.SideBuy, num.NewUint(2000), num.NewUint(2200))
 	assert.Equal(t, int(635), int(volume))
 
 	// empty side returns no volume
-	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 1)
 	volume = p.pool.TradableVolumeInRange(types.SideSell, num.NewUint(1800), num.NewUint(2000))
 	assert.Equal(t, int(0), int(volume))
 
 	// pool with short position and incoming sell only reports volume up to base
 	// empty side returns no volume
-	ensurePositionN(t, p.pos, -10, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, -10, num.UintZero(), 1)
 	volume = p.pool.TradableVolumeInRange(types.SideSell, num.NewUint(1800), num.NewUint(2200))
 	assert.Equal(t, int(10), int(volume))
 
@@ -440,22 +556,22 @@ func TestNotebook(t *testing.T) {
 
 	pos := int64(0)
 
-	ensurePositionN(t, p.pos, pos, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, pos, num.UintZero(), 1)
 	volume := p.pool.TradableVolumeInRange(types.SideSell, base, low)
 	assert.Equal(t, int(702), int(volume))
 
-	ensurePositionN(t, p.pos, pos, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, pos, num.UintZero(), 1)
 	volume = p.pool.TradableVolumeInRange(types.SideBuy, up, base)
 	assert.Equal(t, int(635), int(volume))
 
 	lowmid := num.NewUint(1900)
 	upmid := num.NewUint(2100)
 
-	ensurePositionN(t, p.pos, pos, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, pos, num.UintZero(), 1)
 	volume = p.pool.TradableVolumeInRange(types.SideSell, low, lowmid)
 	assert.Equal(t, int(365), int(volume))
 
-	ensurePositionN(t, p.pos, pos, num.UintZero(), 2)
+	ensurePositionN(t, p.pos, pos, num.UintZero(), 1)
 	volume = p.pool.TradableVolumeInRange(types.SideBuy, upmid, up)
 	assert.Equal(t, int(306), int(volume))
 
