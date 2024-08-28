@@ -3650,8 +3650,6 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, formatE(ErrMarketServiceGetByID, err)
 	}
 
-	cap, hasCap := mkt.HasCap()
-
 	collateralAvailable := marginAccountBalance
 	crossMarginMode := req.MarginMode == types.MarginModeCrossMargin
 	if crossMarginMode {
@@ -3681,6 +3679,15 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 
 	dPriceFactor := priceFactor
 
+	var mdpCap num.Decimal
+	cap, hasCap := mkt.HasCap()
+	if hasCap {
+		mdpCap, err = num.DecimalFromString(cap.MaxPrice)
+		if err != nil {
+			formatE(ErrMarketServiceGetByID, err)
+		}
+	}
+
 	buyOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
 	sellOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
 
@@ -3696,6 +3703,10 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 
 		if p.IsNegative() || !p.IsInteger() {
 			return nil, ErrInvalidOrderPrice
+		}
+
+		if hasCap && p.GreaterThanOrEqual(mdpCap) {
+			return nil, formatE(ErrInvalidOrderPrice, errors.New("outside of market-cap range"))
 		}
 
 		price = t.scaleDecimalFromMarketToAssetPrice(p, dPriceFactor)
@@ -3794,8 +3805,8 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		auctionPrice,
 		cap,
 		avgEntryPrice,
+		dPriceFactor,
 	)
-
 	marginEstimate := &v2.MarginEstimate{
 		WorstCase: implyMarginLevels(wMaintenance, orderMargin, dMarginFactor, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", req.MarketId, asset, isolatedMarginMode),
 		BestCase:  implyMarginLevels(bMaintenance, orderMargin, dMarginFactor, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", req.MarketId, asset, isolatedMarginMode),
@@ -3921,6 +3932,7 @@ func (t *TradingDataServiceV2) computeMarginRange(
 	marginFactor, auctionPrice num.Decimal,
 	cap *vega.FutureCap,
 	averageEntryPrice num.Decimal,
+	priceFactor num.Decimal,
 ) (num.Decimal, num.Decimal, num.Decimal) {
 	bOrders, sOrders := buyOrders, sellOrders
 	orderMargin := num.DecimalZero()
@@ -3948,7 +3960,12 @@ func (t *TradingDataServiceV2) computeMarginRange(
 
 		// this is a special case for fully collateralised capped future markets
 		if cap != nil && cap.FullyCollateralised != nil && *cap.FullyCollateralised {
-			orderMargin = calcOrderMarginIsolatedModeCappedAndFullyCollateralised(bNonMarketOrders, sNonMarketOrders, cap)
+			cappedPrice := t.scaleDecimalFromMarketToAssetPrice(
+				num.MustDecimalFromString(cap.MaxPrice),
+				priceFactor,
+			)
+
+			orderMargin = calcOrderMarginIsolatedModeCappedAndFullyCollateralised(bNonMarketOrders, sNonMarketOrders, cappedPrice)
 		} else {
 			orderMargin = risk.CalcOrderMarginIsolatedMode(openVolume, bNonMarketOrders, sNonMarketOrders, positionFactor, marginFactor, auctionPrice)
 		}
@@ -3957,7 +3974,12 @@ func (t *TradingDataServiceV2) computeMarginRange(
 	var worst, best num.Decimal
 	// this is a special case for fully collateralised capped future markets
 	if cap != nil && cap.FullyCollateralised != nil && *cap.FullyCollateralised {
-		worst = calcPositionMarginCappedAndFullyCollateralised(bOrders, sOrders, cap, openVolume, averageEntryPrice)
+		cappedPrice := t.scaleDecimalFromMarketToAssetPrice(
+			num.MustDecimalFromString(cap.MaxPrice),
+			priceFactor,
+		)
+
+		worst = calcPositionMarginCappedAndFullyCollateralised(bOrders, sOrders, cappedPrice, openVolume, averageEntryPrice)
 		best = worst
 	} else {
 		worst = risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction, auctionPrice)
@@ -3970,7 +3992,7 @@ func (t *TradingDataServiceV2) computeMarginRange(
 func calcPositionMarginCappedAndFullyCollateralised(
 	buyOrders []*risk.OrderInfo,
 	sellOrders []*risk.OrderInfo,
-	cap *vega.FutureCap,
+	priceCap num.Decimal,
 	openVolume int64,
 	openVolumeAverageEntryPrice decimal.Decimal,
 ) decimal.Decimal {
@@ -3980,8 +4002,6 @@ func calcPositionMarginCappedAndFullyCollateralised(
 	// - averageEntryPrice * positionSize
 	// if short:
 	// - (priceCap - averageEntryPrice) * positionSize
-
-	priceCap := num.MustDecimalFromString(cap.MaxPrice)
 
 	positionSize := openVolume
 	totalVolume := openVolume
@@ -3995,6 +4015,7 @@ func calcPositionMarginCappedAndFullyCollateralised(
 		size := int64(v.TrueRemaining)
 		positionSize += size
 		totalVolume += size
+
 		ongoing = ongoing.Add(v.Price.Mul(num.DecimalFromInt64(size)))
 	}
 
@@ -4022,20 +4043,19 @@ func calcPositionMarginCappedAndFullyCollateralised(
 		return priceCap.Sub(averageEntryPrice).Mul(num.DecimalFromInt64(positionSize))
 	}
 
-	return priceCap.Mul(num.DecimalFromInt64(positionSize))
+	return averageEntryPrice.Mul(num.DecimalFromInt64(positionSize))
 }
 
 func calcOrderMarginIsolatedModeCappedAndFullyCollateralised(
 	buyOrders []*risk.OrderInfo,
 	sellOrders []*risk.OrderInfo,
-	cap *vega.FutureCap,
+	cappedPrice num.Decimal,
 ) decimal.Decimal {
 	// long order margin:
 	// - price * positionSize
 	// short order marign:
 	// - (cappedPrice - price) * positionSize
 
-	cappedPrice := num.MustDecimalFromString(cap.MaxPrice)
 	marginBuy, marginSell := num.DecimalZero(), num.DecimalZero()
 
 	for _, v := range buyOrders {
