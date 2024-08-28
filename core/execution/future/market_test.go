@@ -6722,13 +6722,100 @@ func TestLiquidityFeeSettingsConstantFee(t *testing.T) {
 }
 
 func TestVerifyAMMBounds(t *testing.T) {
-	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
-	require.Equal(t, "upper bound (8) as factored by market and asset decimals must be greater than base (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
-	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(0.1)).Error())
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(0.1)))
+	tests := []struct {
+		name        string
+		params      *types.ConcentratedLiquidityParameters
+		maxCap      *num.Uint
+		priceFactor num.Decimal
+		expectedErr error
+	}{
+		{
+			name: "normal valid bounds",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1.1),
+		},
+		{
+			name: "lower greater than base with fewer decimals",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(80),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(90),
+			},
+			priceFactor: num.NewDecimalFromFloat(0.1),
+			expectedErr: fmt.Errorf("base (8) as factored by market and asset decimals must be greater than lower bound (8)"),
+		},
+		{
+			name: "base greater than base with fewer decimals",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(80),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(0.1),
+			expectedErr: fmt.Errorf("base (8) as factored by market and asset decimals must be greater than lower bound (8)"),
+		},
+		{
+			name: "both bounds too close with fewer decimals",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(0.1),
+			expectedErr: fmt.Errorf("base (8) as factored by market and asset decimals must be greater than lower bound (8)"),
+		},
+		{
+			name: "upper bound higher than cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(86),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+		{
+			name: "upper bound equal cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(88),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+		{
+			name: "base higher than cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(100),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(86),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+		{
+			name: "base equal cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(88),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+	}
 
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := future.VerifyAMMBounds(tt.params, tt.maxCap, tt.priceFactor)
+			assert.Equal(t, tt.expectedErr, err)
+		})
+	}
 }
