@@ -295,6 +295,137 @@ func TestEstimateFees(t *testing.T) {
 	require.Equal(t, "50000", estimate.Fee.TreasuryFee)
 }
 
+func TestEstimatePositionCappedFuture(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ctx := context.Background()
+	assetId := "assetID"
+	marketId := "marketID"
+
+	assetDecimals := 8
+	marketDecimals := 3
+	positionDecimalPlaces := 2
+	initialMarginScalingFactor := 1.5
+	linearSlippageFactor := num.DecimalFromFloat(0.005)
+	quadraticSlippageFactor := num.DecimalZero()
+	rfLong := num.DecimalFromFloat(0.1)
+	rfShort := num.DecimalFromFloat(0.2)
+
+	auctionEnd := int64(0)
+	fundingPayment := 1234.56789
+
+	asset := entities.Asset{
+		Decimals: assetDecimals,
+	}
+
+	tickSize := num.DecimalOne()
+
+	mkt := entities.Market{
+		DecimalPlaces:           marketDecimals,
+		PositionDecimalPlaces:   positionDecimalPlaces,
+		LinearSlippageFactor:    &linearSlippageFactor,
+		QuadraticSlippageFactor: &quadraticSlippageFactor,
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{
+				Instrument: &vega.Instrument{
+					Product: &vega.Instrument_Future{
+						Future: &vega.Future{
+							SettlementAsset: assetId,
+							Cap: &vega.FutureCap{
+								MaxPrice:            floatToStringWithDp(100, marketDecimals),
+								FullyCollateralised: ptr.From(true),
+							},
+						},
+					},
+				},
+				MarginCalculator: &vega.MarginCalculator{
+					ScalingFactors: &vega.ScalingFactors{
+						SearchLevel:       initialMarginScalingFactor * 0.9,
+						InitialMargin:     initialMarginScalingFactor,
+						CollateralRelease: initialMarginScalingFactor * 1.1,
+					},
+				},
+			},
+		},
+		TickSize: &tickSize,
+	}
+
+	rf := entities.RiskFactor{
+		Long:  rfLong,
+		Short: rfShort,
+	}
+
+	assetService := mocks.NewMockAssetService(ctrl)
+	marketService := mocks.NewMockMarketsService(ctrl)
+	riskFactorService := mocks.NewMockRiskFactorService(ctrl)
+
+	assetService.EXPECT().GetByID(ctx, assetId).Return(asset, nil).AnyTimes()
+	marketService.EXPECT().GetByID(ctx, marketId).Return(mkt, nil).AnyTimes()
+	riskFactorService.EXPECT().GetMarketRiskFactors(ctx, marketId).Return(rf, nil).AnyTimes()
+
+	mktData := entities.MarketData{
+		MarkPrice:  num.DecimalFromFloat(123.456 * math.Pow10(marketDecimals)),
+		AuctionEnd: auctionEnd,
+		ProductData: &entities.ProductData{
+			ProductData: &vega.ProductData{
+				Data: &vega.ProductData_PerpetualData{
+					PerpetualData: &vega.PerpetualData{
+						FundingPayment: fmt.Sprintf("%f", fundingPayment),
+						FundingRate:    "0.05",
+					},
+				},
+			},
+		},
+	}
+	marketDataService := mocks.NewMockMarketDataService(ctrl)
+	marketDataService.EXPECT().GetMarketDataByID(ctx, marketId).Return(mktData, nil).AnyTimes()
+
+	apiService := api.TradingDataServiceV2{
+		AssetService:      assetService,
+		MarketsService:    marketService,
+		MarketDataService: marketDataService,
+		RiskFactorService: riskFactorService,
+	}
+
+	req := &v2.EstimatePositionRequest{
+		MarketId:          marketId,
+		OpenVolume:        0,
+		AverageEntryPrice: "0",
+		Orders: []*v2.OrderInfo{
+			{
+				Side:          entities.SideBuy,
+				Price:         floatToStringWithDp(100, marketDecimals),
+				Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+				IsMarketOrder: false,
+			},
+		},
+		MarginAccountBalance:      fmt.Sprintf("%f", 100*math.Pow10(assetDecimals)),
+		GeneralAccountBalance:     fmt.Sprintf("%f", 1000*math.Pow10(assetDecimals)),
+		OrderMarginAccountBalance: "0",
+		MarginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
+		MarginFactor:              ptr.From("0"),
+	}
+
+	// error because hypothetical order is outide of max range
+	_, err := apiService.EstimatePosition(ctx, req)
+	require.Error(t, err)
+
+	req.Orders = []*v2.OrderInfo{
+		{
+			Side:          entities.SideBuy,
+			Price:         floatToStringWithDp(50, marketDecimals),
+			Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+			IsMarketOrder: false,
+		},
+	}
+
+	// error because hypothetical order is outide of max range
+	resp, err := apiService.EstimatePosition(ctx, req)
+	require.NoError(t, err)
+
+	assert.Equal(t, "500000000000", resp.Margin.BestCase.MaintenanceMargin)
+	assert.Equal(t, "500000000000", resp.Margin.WorstCase.MaintenanceMargin)
+}
+
 func TestEstimatePosition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ctx := context.TODO()
