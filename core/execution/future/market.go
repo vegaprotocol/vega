@@ -2842,6 +2842,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		}
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
+		notionalTraded, _ := num.UintFromDecimal(num.UintZero().Mul(num.NewUint(trade.Size), trade.Price).ToDecimal().Div(m.positionFactor))
+		m.marketActivityTracker.RecordNotionalTraded(m.settlementAsset, m.mkt.ID, notionalTraded)
 
 		preTradePositions := m.position.GetPositionsByParty(trade.Buyer, trade.Seller)
 		for i, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {

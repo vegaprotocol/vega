@@ -355,4 +355,19 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if dispatchStrategy.TransferInterval != nil && (*dispatchStrategy.TransferInterval <= 0 || *dispatchStrategy.TransferInterval > 100) {
 		errs.AddForProperty(prefix+".transfer_interval", errors.New("must be between 1 and 100"))
 	}
+
+	if dispatchStrategy.TargetNotionalVolume != nil &&
+		((dispatchStrategy.Metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES && len(dispatchStrategy.AssetForMetric) == 0) ||
+			dispatchStrategy.Metric == vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE ||
+			dispatchStrategy.Metric == vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING) {
+		errs.AddForProperty(prefix+".target_notional_volume", fmt.Errorf(fmt.Sprintf("not allowed for metric %s", dispatchStrategy.Metric)))
+	}
+	if dispatchStrategy.TargetNotionalVolume != nil && len(*dispatchStrategy.TargetNotionalVolume) > 0 {
+		n, overflow := num.UintFromString(*dispatchStrategy.TargetNotionalVolume, 10)
+		if overflow {
+			errs.AddForProperty(prefix+".target_notional_volume", ErrIsNotValidNumber)
+		} else if n.IsNegative() || n.IsZero() {
+			errs.AddForProperty(prefix+".target_notional_volume", ErrMustBePositive)
+		}
+	}
 }

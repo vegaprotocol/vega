@@ -1723,7 +1723,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	transfers := []*types.LedgerMovement{}
 	for idx, trade := range conf.Trades {
 		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
-
+		notionalTraded, _ := num.UintFromDecimal(num.UintZero().Mul(num.NewUint(trade.Size), trade.Price).ToDecimal().Div(m.positionFactor))
+		m.marketActivityTracker.RecordNotionalTraded(m.quoteAsset, m.mkt.ID, notionalTraded)
 		tradeTransfers := m.handleTrade(ctx, trade)
 		transfers = append(transfers, tradeTransfers...)
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))

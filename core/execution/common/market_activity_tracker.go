@@ -77,6 +77,8 @@ type marketTracker struct {
 	treasuryFeesPaid  map[string]*num.Uint
 	markPrice         *num.Uint
 
+	notionalVolumeForEpoch *num.Uint
+
 	totalMakerFeesReceived *num.Uint
 	totalMakerFeesPaid     *num.Uint
 	totalLpFees            *num.Uint
@@ -97,6 +99,7 @@ type marketTracker struct {
 	epochTimeWeightedNotional   []map[string]*num.Uint
 	epochPartyM2M               []map[string]num.Decimal
 	epochPartyRealisedReturn    []map[string]num.Decimal
+	epochNotionalVolume         []*num.Uint
 
 	valueTraded     *num.Uint
 	proposersPaid   map[string]struct{} // identifier of payout_asset : funder : markets_in_scope
@@ -203,6 +206,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		lpPaidFees:                  map[string]*num.Uint{},
 		buybackFeesPaid:             map[string]*num.Uint{},
 		treasuryFeesPaid:            map[string]*num.Uint{},
+		notionalVolumeForEpoch:      num.UintZero(),
 		totalMakerFeesReceived:      num.UintZero(),
 		totalMakerFeesPaid:          num.UintZero(),
 		totalLpFees:                 num.UintZero(),
@@ -219,6 +223,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		epochPartyM2M:               []map[string]num.Decimal{},
 		epochPartyRealisedReturn:    []map[string]decimal.Decimal{},
 		epochTimeWeightedPosition:   []map[string]uint64{},
+		epochNotionalVolume:         []*num.Uint{},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
 		ammPartiesCache:             map[string]struct{}{},
@@ -543,6 +548,11 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 				mt.processM2MEndOfEpoch()
 				mt.processPartyRealisedReturnOfEpoch()
 				mt.clearFeeActivity()
+				if len(mt.epochNotionalVolume) == maxWindowSize {
+					mt.epochNotionalVolume = mt.epochNotionalVolume[1:]
+				}
+				mt.epochNotionalVolume = append(mt.epochNotionalVolume, mt.notionalVolumeForEpoch)
+				mt.notionalVolumeForEpoch = num.UintZero()
 			}
 		}
 		if len(mat.takerFeesPaidInEpoch) == maxWindowSize {
@@ -564,6 +574,33 @@ func (mat *MarketActivityTracker) clearDeletedMarkets() {
 			}
 		}
 	}
+}
+
+func (mat *MarketActivityTracker) GetNotionalVolumeForAsset(asset string, markets []string, windowSize int) *num.Uint {
+	total := num.UintZero()
+	trackers, ok := mat.assetToMarketTrackers[asset]
+	if !ok {
+		return total
+	}
+	marketsInScope := map[string]struct{}{}
+	for _, mkt := range markets {
+		marketsInScope[mkt] = struct{}{}
+	}
+	if len(markets) == 0 {
+		for mkt := range trackers {
+			marketsInScope[mkt] = struct{}{}
+		}
+	}
+	for mkt := range marketsInScope {
+		for i := 0; i < windowSize; i++ {
+			idx := len(trackers[mkt].epochNotionalVolume) - i - 1
+			if idx < 0 {
+				break
+			}
+			total.AddSum(trackers[mkt].epochNotionalVolume[idx])
+		}
+	}
+	return total
 }
 
 func (mat *MarketActivityTracker) CalculateTotalMakerContributionInQuantum(windowSize int) (map[string]*num.Uint, map[string]num.Decimal) {
@@ -1200,6 +1237,12 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 		mat.log.Panic("unexpected metric")
 	}
 	return num.DecimalZero(), found
+}
+
+func (mat *MarketActivityTracker) RecordNotionalTraded(asset, marketID string, notional *num.Uint) {
+	if tracker, ok := mat.getMarketTracker(asset, marketID); ok {
+		tracker.notionalVolumeForEpoch.AddSum(notional)
+	}
 }
 
 func (mat *MarketActivityTracker) RecordNotionalTakerVolume(marketID string, party string, volumeToAdd *num.Uint) {

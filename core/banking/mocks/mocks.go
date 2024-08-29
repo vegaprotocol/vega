@@ -540,6 +540,20 @@ func (mr *MockMarketActivityTrackerMockRecorder) GetMarketsWithEligibleProposer(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketsWithEligibleProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetMarketsWithEligibleProposer), arg0, arg1, arg2, arg3)
 }
 
+// GetNotionalVolumeForAsset mocks base method.
+func (m *MockMarketActivityTracker) GetNotionalVolumeForAsset(arg0 string, arg1 []string, arg2 int) *num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNotionalVolumeForAsset", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*num.Uint)
+	return ret0
+}
+
+// GetNotionalVolumeForAsset indicates an expected call of GetNotionalVolumeForAsset.
+func (mr *MockMarketActivityTrackerMockRecorder) GetNotionalVolumeForAsset(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotionalVolumeForAsset", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetNotionalVolumeForAsset), arg0, arg1, arg2)
+}
+
 // MarkPaidProposer mocks base method.
 func (m *MockMarketActivityTracker) MarkPaidProposer(arg0, arg1, arg2 string, arg3 []string, arg4 string) {
 	m.ctrl.T.Helper()

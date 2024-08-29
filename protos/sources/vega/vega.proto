@@ -1185,6 +1185,8 @@ message DispatchStrategy {
   optional string cap_reward_fee_multiple = 14;
   // Number of epochs between transfers, i.e. when 4, funds will be transferred every 4 epochs with the first transfer occurring 4 epochs after the transaction is processed.
   optional int32 transfer_interval = 15;
+  // If set, the target notional factor used to scale the amount to be taken from the source account
+  optional string target_notional_volume = 16;
 }
 
 message Rank {

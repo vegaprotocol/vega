@@ -29,6 +29,7 @@
 - [11533](https://github.com/vegaprotocol/vega/issues/11533) - Suppose per party fee discounts in fee estimation.
 - [11577](https://github.com/vegaprotocol/vega/issues/11577) - Add API for party discounts and rewards.
 - [10716](https://github.com/vegaprotocol/vega/issues/10716) - Set Tendermint defaults during init.
+- [11612](https://github.com/vegaprotocol/vega/issues/11612) - Reward scaling support.
 -[11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
 
 ### 🐛 Fixes
@@ -41,7 +42,6 @@
 - [11568](https://github.com/vegaprotocol/vega/issues/11568) - order book shape on closing `AMM` no longer panics.
 - [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
-- [11616](https://github.com/vegaprotocol/vega/issues/11616) - `AMM` tradable volume now calculated purely in positions to prevent loss of precision.
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
 - [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
 - [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
@@ -50,7 +50,6 @@
 - [11607](https://github.com/vegaprotocol/vega/issues/11607) - Wire rank lottery distribution to team reward payout.
 - [959](https://github.com/vegaprotocol/core-test-coverage/issues/959) - Include `ELS` for `AMM` sub keys to the parent key `ELS`.
 - [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker.
-- [10907](https://github.com/vegaprotocol/vega/issues/10907) - Fix position API distressed status not getting updated once the party has been closed out.
 
 
 ## 0.77.5
