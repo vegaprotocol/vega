@@ -29,7 +29,7 @@
 - [11533](https://github.com/vegaprotocol/vega/issues/11533) - Suppose per party fee discounts in fee estimation.
 - [11577](https://github.com/vegaprotocol/vega/issues/11577) - Add API for party discounts and rewards.
 - [10716](https://github.com/vegaprotocol/vega/issues/10716) - Set Tendermint defaults during init.
-
+-[11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
 
 ### 🐛 Fixes
 
