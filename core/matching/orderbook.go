@@ -563,13 +563,10 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		uncrossBound   *num.Uint
 	)
 
-	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
 	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
-		uncrossBound = min
 	} else {
 		uncrossingSide = b.sell
-		uncrossBound = max
 	}
 
 	fmt.Println("WWW uncrossed bound", uncrossBound, uncrossingSide)
@@ -584,6 +581,16 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 
 	// Remove all the orders from that side of the book up to the given volume
 	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, true)...)
+
+	pf, _ := num.UintFromDecimal(uncrossOrders[0].Price.ToDecimal().Div(uncrossOrders[0].OriginalPrice.ToDecimal()))
+	oneTick := num.Max(num.UintOne(), pf)
+	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
+	if uncrossSide == types.SideBuy {
+		uncrossBound = num.UintZero().Add(min, oneTick)
+	} else {
+		uncrossBound = num.UintZero().Add(max, oneTick)
+	}
+
 	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone(), uncrossBound)
 }
 
@@ -628,6 +635,8 @@ func (b *OrderBook) uncrossBookSide(
 				affectedOrder.Status = types.OrderStatusFilled
 			}
 		}
+
+		fmt.Println("WWW order", order.Remaining, order.Size)
 		// Update all the trades to have the correct uncrossing price
 		for index := 0; index < len(trades); index++ {
 			trades[index].Price = price.Clone()

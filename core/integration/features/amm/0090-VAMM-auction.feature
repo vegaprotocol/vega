@@ -514,16 +514,16 @@ Feature: vAMM rebasing when created or amended
 
     And the parties place the following orders:
         | party  | market id | side  | volume | price | resulting trades | type       | tif     | reference |
-        | lp1    | ETH/MAR22 | sell  | 657    | 90    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
-        | lp2    | ETH/MAR22 | buy   | 100    | 80    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
+        | lp1    | ETH/MAR22 | buy   | 4235    | 200   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+        | lp1    | ETH/MAR22 | sell  | 200    | 200   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
     
 
     Then the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 90          | 110         | 0.03         |
+      | vamm1 | ETH/MAR22 | 1000000 | 0.05     | 100  | 90          | 110         | 0.03         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | 
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 90          | 110         | 
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 1000000 | STATUS_ACTIVE | 100  | 90          | 110         |
 
 
     # now place some pegged orders which will cause a panic if the uncrossing is crossed
@@ -539,7 +539,7 @@ Feature: vAMM rebasing when created or amended
 
     #And the market data for the market "ETH/MAR22" should be:
     #  | trading mode                 | indicative price | indicative volume |
-    #  | TRADING_MODE_OPENING_AUCTION | 80               | 657               |
+    #  | TRADING_MODE_OPENING_AUCTION | 155              | 423               |
 
 
     When the opening auction period ends for market "ETH/MAR22"
