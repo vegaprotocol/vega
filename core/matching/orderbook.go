@@ -586,11 +586,11 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	oneTick := num.Max(num.UintOne(), pf)
 	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
 	if uncrossSide == types.SideBuy {
-		uncrossBound = num.UintZero().Add(min, oneTick)
+		uncrossBound = num.UintZero().Sub(min, oneTick)
 	} else {
 		uncrossBound = num.UintZero().Add(max, oneTick)
 	}
-
+	fmt.Println("WWW new uncross bound", uncrossBound, "min/max", min, max)
 	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone(), uncrossBound)
 }
 
