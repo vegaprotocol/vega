@@ -515,7 +515,6 @@ Feature: vAMM rebasing when created or amended
     And the parties place the following orders:
         | party  | market id | side  | volume | price | resulting trades | type       | tif     | reference |
         | lp1    | ETH/MAR22 | sell  | 657    | 90    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
-        | lp1    | ETH/MAR22 | sell  | 100    | 80    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
         | lp2    | ETH/MAR22 | buy   | 100    | 80    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
     
 
