@@ -572,6 +572,8 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		uncrossBound = max
 	}
 
+	uncrossBound = nil
+
 	// extract uncrossing orders from all AMMs
 	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
 

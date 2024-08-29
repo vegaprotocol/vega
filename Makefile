@@ -17,7 +17,7 @@ test: ## Run unit tests
 
 .PHONY: integrationtest
 integrationtest: ## run integration tests, showing ledger movements and full scenario output
-	go test -v ./core/integration/... --godog.format=pretty
+	go test -v ./core/integration/... --godog.format=pretty --godog.tags=VAMM
 
 .PHONY: gqlgen
 gqlgen:
