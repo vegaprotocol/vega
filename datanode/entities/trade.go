@@ -99,6 +99,8 @@ func (t Trade) ToProto() *vega.Trade {
 			InfrastructureFeeVolumeDiscount:   t.BuyerInfrastructureFeeVolumeDiscount.String(),
 			LiquidityFeeReferrerDiscount:      t.BuyerLiquidityFeeReferralDiscount.String(),
 			LiquidityFeeVolumeDiscount:        t.BuyerLiquidityFeeVolumeDiscount.String(),
+			TreasuryFee:                       t.BuyerTreasuryFee.String(),
+			BuyBackFee:                        t.BuyerBuyBackFee.String(),
 			HighVolumeMakerFee:                t.BuyerHighVolumeMakerFee.String(),
 		},
 		SellerFee: &vega.Fee{
@@ -111,6 +113,8 @@ func (t Trade) ToProto() *vega.Trade {
 			InfrastructureFeeVolumeDiscount:   t.SellerInfrastructureFeeVolumeDiscount.String(),
 			LiquidityFeeReferrerDiscount:      t.SellerLiquidityFeeReferralDiscount.String(),
 			LiquidityFeeVolumeDiscount:        t.SellerLiquidityFeeVolumeDiscount.String(),
+			TreasuryFee:                       t.SellerTreasuryFee.String(),
+			BuyBackFee:                        t.SellerBuyBackFee.String(),
 			HighVolumeMakerFee:                t.SellerHighVolumeMakerFee.String(),
 		},
 		BuyerAuctionBatch:  t.BuyerAuctionBatch,
