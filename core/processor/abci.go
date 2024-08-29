@@ -171,6 +171,10 @@ type VolumeDiscountProgram interface {
 	UpdateProgram(program *types.VolumeDiscountProgram)
 }
 
+type VolumeRebateProgram interface {
+	UpdateProgram(program *types.VolumeRebateProgram)
+}
+
 type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
 	MaxMempoolSize() int64
@@ -257,6 +261,7 @@ type App struct {
 	partiesEngine                  PartiesEngine
 	referralProgram                ReferralProgram
 	volumeDiscountProgram          VolumeDiscountProgram
+	volumeRebateProgram            VolumeRebateProgram
 	protocolUpgradeService         ProtocolUpgradeService
 	primaryErc20MultiSigTopology   ERC20MultiSigTopology
 	secondaryErc20MultiSigTopology ERC20MultiSigTopology
@@ -304,6 +309,7 @@ func NewApp(log *logging.Logger,
 	teamsEngine TeamsEngine,
 	referralProgram ReferralProgram,
 	volumeDiscountProgram VolumeDiscountProgram,
+	volumeRebateProgram VolumeRebateProgram,
 	blockchainClient BlockchainClient,
 	primaryMultisig ERC20MultiSigTopology,
 	secondaryMultisig ERC20MultiSigTopology,
@@ -355,6 +361,7 @@ func NewApp(log *logging.Logger,
 		teamsEngine:                    teamsEngine,
 		referralProgram:                referralProgram,
 		volumeDiscountProgram:          volumeDiscountProgram,
+		volumeRebateProgram:            volumeRebateProgram,
 		version:                        version,
 		blockchainClient:               blockchainClient,
 		primaryErc20MultiSigTopology:   primaryMultisig,
@@ -2710,6 +2717,9 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsVolumeDiscountProgramUpdate():
 			prop.State = types.ProposalStateEnacted
 			app.volumeDiscountProgram.UpdateProgram(toEnact.VolumeDiscountProgramUpdate())
+		case toEnact.IsVolumeRebateProgramUpdate():
+			prop.State = types.ProposalStateEnacted
+			app.volumeRebateProgram.UpdateProgram(toEnact.VolumeRebateProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -3014,23 +3024,6 @@ func (app *App) getMaxGas() uint64 {
 	return app.gastimator.maxGas
 }
 
-func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministicID string) error {
-	params := &commandspb.CreateReferralSet{}
-	if err := tx.Unmarshal(params); err != nil {
-		return fmt.Errorf("could not deserialize CreateReferralSet command: %w", err)
-	}
-
-	if err := app.referralProgram.CreateReferralSet(ctx, types.PartyID(tx.Party()), types.ReferralSetID(deterministicID)); err != nil {
-		return err
-	}
-
-	if params.IsTeam {
-		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params.Team)
-	}
-
-	return nil
-}
-
 func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
 	var err error
 	params := &commandspb.UpdateMarginMode{}
@@ -3077,6 +3070,25 @@ func (app *App) DeliverCancelAMM(ctx context.Context, tx abci.Tx, deterministicI
 	return app.exec.CancelAMM(ctx, cancel, deterministicID)
 }
 
+func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.CreateReferralSet{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize CreateReferralSet command: %w", err)
+	}
+
+	if !params.DoNotCreateReferralSet {
+		if err := app.referralProgram.CreateReferralSet(ctx, types.PartyID(tx.Party()), types.ReferralSetID(deterministicID)); err != nil {
+			return err
+		}
+	}
+
+	if params.IsTeam {
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params.Team)
+	}
+
+	return nil
+}
+
 // UpdateReferralSet this is effectively Update team, but also served to create
 // a team for an existing referral set...
 func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
@@ -3085,10 +3097,13 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
 	}
 
-	if err := app.referralProgram.PartyOwnsReferralSet(types.PartyID(tx.Party()), types.ReferralSetID(params.Id)); err != nil {
-		return fmt.Errorf("cannot update referral set: %w", err)
-	}
+	// Is this relevant at all now? With anyone able to create a team, this verification should not matter.
+	//
+	// if err := app.referralProgram.PartyOwnsReferralSet(types.PartyID(tx.Party()), types.ReferralSetID(params.Id)); err != nil {
+	//     return fmt.Errorf("cannot update referral set: %w", err)
+	// }
 
+	// ultimately this has just become a createOrUpdateTeam.
 	if params.IsTeam {
 		teamID := types.TeamID(params.Id)
 		if app.teamsEngine.TeamExists(teamID) {
@@ -3118,14 +3133,16 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
-	teamID := types.TeamID(params.Id)
-	joinTeam := &commandspb.JoinTeam{
-		Id: params.Id,
-	}
-	err = app.teamsEngine.JoinTeam(ctx, partyID, joinTeam)
-	// This is ok as well, as not all referral sets are teams as well.
-	if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
-		return fmt.Errorf("couldn't join team: %w", err)
+	if !params.DoNotJoinTeam {
+		teamID := types.TeamID(params.Id)
+		joinTeam := &commandspb.JoinTeam{
+			Id: params.Id,
+		}
+		err = app.teamsEngine.JoinTeam(ctx, partyID, joinTeam)
+		// This is ok as well, as not all referral sets are teams as well.
+		if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
+			return fmt.Errorf("couldn't join team: %w", err)
+		}
 	}
 
 	return nil

@@ -309,8 +309,8 @@ const (
 	AccountTypeLiquidityFeesBonusDistribution AccountType = proto.AccountType_ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION
 	AccountTypeVestingRewards                 AccountType = proto.AccountType_ACCOUNT_TYPE_VESTING_REWARDS
 	AccountTypeVestedRewards                  AccountType = proto.AccountType_ACCOUNT_TYPE_VESTED_REWARDS
-	// Reward account for average position metric.
-	AccountTypeAveragePositionReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION
+	// Reward account for average notional metric.
+	AccountTypeAverageNotionalReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL
 	// Reward account for relative return metric.
 	AccountTypeRelativeReturnReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN
 	// Reward account for return volatility metric.
@@ -321,4 +321,8 @@ const (
 	AccountTypePendingFeeReferralReward AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
 	// Account for realised return rewards.
 	AccountTypeRealisedReturnReward = proto.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN
+	// Account for buy back fees.
+	AccountTypeBuyBackFees AccountType = proto.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES
+	// Account for eligible entities rewards.
+	AccountTypeEligibleEntitiesReward = proto.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES
 )

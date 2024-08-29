@@ -183,6 +183,8 @@ func testSubmissionForReferralProgramUpdateWithoutTierMinimumRunningNotionalTake
 }
 
 func testSubmissionForReferralProgramUpdateWithDuplicateBenefitTierEntriesFails(t *testing.T) {
+	factors := []string{"1.1", "1.2", "1.3", "1.4", "1.5", "1.6"}
+
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
@@ -192,20 +194,44 @@ func testSubmissionForReferralProgramUpdateWithDuplicateBenefitTierEntriesFails(
 							{
 								MinimumRunningNotionalTakerVolume: "100",
 								MinimumEpochs:                     "10",
-								ReferralRewardFactor:              "1.1",
-								ReferralDiscountFactor:            "1.2",
+								ReferralRewardFactors: &types.RewardFactors{
+									InfrastructureRewardFactor: factors[0],
+									MakerRewardFactor:          factors[1],
+									LiquidityRewardFactor:      factors[2],
+								},
+								ReferralDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: factors[1],
+									MakerDiscountFactor:          factors[2],
+									LiquidityDiscountFactor:      factors[3],
+								},
 							},
 							{
 								MinimumRunningNotionalTakerVolume: "100",
 								MinimumEpochs:                     "10",
-								ReferralRewardFactor:              "1.2",
-								ReferralDiscountFactor:            "1.3",
+								ReferralRewardFactors: &types.RewardFactors{
+									InfrastructureRewardFactor: factors[1],
+									MakerRewardFactor:          factors[2],
+									LiquidityRewardFactor:      factors[3],
+								},
+								ReferralDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: factors[2],
+									MakerDiscountFactor:          factors[3],
+									LiquidityDiscountFactor:      factors[4],
+								},
 							},
 							{
 								MinimumRunningNotionalTakerVolume: "100",
 								MinimumEpochs:                     "20",
-								ReferralRewardFactor:              "1.3",
-								ReferralDiscountFactor:            "1.4",
+								ReferralRewardFactors: &types.RewardFactors{
+									InfrastructureRewardFactor: factors[2],
+									MakerRewardFactor:          factors[3],
+									LiquidityRewardFactor:      factors[4],
+								},
+								ReferralDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: factors[3],
+									MakerDiscountFactor:          factors[4],
+									LiquidityDiscountFactor:      factors[5],
+								},
 							},
 						},
 					},
@@ -376,8 +402,8 @@ func testSubmissionForReferralProgramUpdateWithoutTierReferralRewardFactorFails(
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factor"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factors"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factors"), commands.ErrIsRequired)
 }
 
 func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralRewardFactorFails(t *testing.T) {
@@ -388,9 +414,17 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralRewardFac
 					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
-								ReferralRewardFactor: "qbc",
+								ReferralRewardFactors: &types.RewardFactors{
+									InfrastructureRewardFactor: "qbc",
+									MakerRewardFactor:          "qbc",
+									LiquidityRewardFactor:      "qbc",
+								},
 							}, {
-								ReferralRewardFactor: "0x32",
+								ReferralRewardFactors: &types.RewardFactors{
+									InfrastructureRewardFactor: "0x32",
+									MakerRewardFactor:          "0x32",
+									LiquidityRewardFactor:      "0x32",
+								},
 							},
 						},
 					},
@@ -399,8 +433,8 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralRewardFac
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factor"), commands.ErrIsNotValidNumber)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factors.infrastructure_reward_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factors.infrastructure_reward_factor"), commands.ErrIsNotValidNumber)
 }
 
 func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralRewardFactorFails(t *testing.T) {
@@ -411,9 +445,17 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralRewardFact
 					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
-								ReferralRewardFactor: "-10",
+								ReferralRewardFactors: &types.RewardFactors{
+									InfrastructureRewardFactor: "-10",
+									MakerRewardFactor:          "-10",
+									LiquidityRewardFactor:      "-10",
+								},
 							}, {
-								ReferralRewardFactor: "-1",
+								ReferralRewardFactors: &types.RewardFactors{
+									InfrastructureRewardFactor: "-1",
+									MakerRewardFactor:          "-1",
+									LiquidityRewardFactor:      "-1",
+								},
 							},
 						},
 					},
@@ -422,8 +464,12 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralRewardFact
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factor"), commands.ErrMustBePositiveOrZero)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factors.infrastructure_reward_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factors.infrastructure_reward_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factors.maker_reward_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factors.maker_reward_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_reward_factors.liquidity_reward_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_reward_factors.liquidity_reward_factor"), commands.ErrMustBePositiveOrZero)
 }
 
 func testSubmissionForReferralProgramUpdateWithoutTierReferralDiscountFactorFails(t *testing.T) {
@@ -434,9 +480,9 @@ func testSubmissionForReferralProgramUpdateWithoutTierReferralDiscountFactorFail
 					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
-								ReferralDiscountFactor: "",
+								ReferralDiscountFactors: &types.DiscountFactors{},
 							}, {
-								ReferralDiscountFactor: "",
+								ReferralDiscountFactors: &types.DiscountFactors{},
 							},
 						},
 					},
@@ -445,8 +491,12 @@ func testSubmissionForReferralProgramUpdateWithoutTierReferralDiscountFactorFail
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factor"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.infrastructure_discount_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.infrastructure_discount_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.maker_discount_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.maker_discount_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.liquidity_discount_factor"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.liquidity_discount_factor"), commands.ErrIsRequired)
 }
 
 func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralDiscountFactorFails(t *testing.T) {
@@ -457,9 +507,17 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralDiscountF
 					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
-								ReferralDiscountFactor: "qbc",
+								ReferralDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "qbc",
+									LiquidityDiscountFactor:      "qbc",
+									MakerDiscountFactor:          "qbc",
+								},
 							}, {
-								ReferralDiscountFactor: "0x32",
+								ReferralDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "0x32",
+									LiquidityDiscountFactor:      "0x32",
+									MakerDiscountFactor:          "0x32",
+								},
 							},
 						},
 					},
@@ -468,8 +526,12 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralDiscountF
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factor"), commands.ErrIsNotValidNumber)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.infrastructure_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.infrastructure_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.maker_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.maker_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.liquidity_discount_factor"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.liquidity_discount_factor"), commands.ErrIsNotValidNumber)
 }
 
 func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralDiscountFactorFails(t *testing.T) {
@@ -480,9 +542,17 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralDiscountFa
 					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
-								ReferralDiscountFactor: "-10",
+								ReferralDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "-10",
+									MakerDiscountFactor:          "-10",
+									LiquidityDiscountFactor:      "-10",
+								},
 							}, {
-								ReferralDiscountFactor: "-1",
+								ReferralDiscountFactors: &types.DiscountFactors{
+									InfrastructureDiscountFactor: "-1",
+									MakerDiscountFactor:          "-1",
+									LiquidityDiscountFactor:      "-1",
+								},
 							},
 						},
 					},
@@ -491,8 +561,12 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralDiscountFa
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factor"), commands.ErrMustBePositiveOrZero)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.infrastructure_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.infrastructure_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.liquidity_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.liquidity_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factors.maker_discount_factor"), commands.ErrMustBePositiveOrZero)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factors.maker_discount_factor"), commands.ErrMustBePositiveOrZero)
 }
 
 func testSubmissionForReferralProgramUpdateWithoutStakingTierMinimumStakedTokensFails(t *testing.T) {

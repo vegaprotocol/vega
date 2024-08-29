@@ -132,7 +132,7 @@ func (sm *shapeMaker) calculateBoundaryOrders() (*types.Order, *types.Order) {
 	bnd1 := sm.makeBoundaryOrder(st, sm.from)
 
 	if sm.log.IsDebug() {
-		sm.log.Debug("creating boundary order",
+		sm.log.Debug("created boundary order",
 			logging.String("price", bnd1.Price.String()),
 			logging.String("side", bnd1.Side.String()),
 			logging.Uint64("volume", bnd1.Size),
@@ -143,7 +143,7 @@ func (sm *shapeMaker) calculateBoundaryOrders() (*types.Order, *types.Order) {
 	bnd2 := sm.makeBoundaryOrder(sm.to, nd)
 
 	if sm.log.IsDebug() {
-		sm.log.Debug("creating boundary order",
+		sm.log.Debug("created boundary order",
 			logging.String("price", bnd2.Price.String()),
 			logging.String("side", bnd2.Side.String()),
 			logging.Uint64("volume", bnd2.Size),
@@ -294,10 +294,25 @@ func (sm *shapeMaker) adjustRegion() bool {
 			// only orders between fair-price -> base
 			lower = sm.fairPrice.Clone()
 			upper = sm.pool.lower.high.Clone()
+
+			// if the AMM is super close to closing its position the delta between fair-price -> base
+			// could be very small, but the upshot is we know it will only be one order and can calculate
+			// directly
+			if num.UintZero().Sub(upper, lower).LTE(sm.oneTick) {
+				price := num.UintZero().Sub(sm.pool.lower.high, sm.oneTick)
+				sm.addOrder(uint64(sm.pos), price, types.SideSell)
+				return false
+			}
 		} else {
 			// only orders between base -> fair-price
 			upper = sm.fairPrice.Clone()
 			lower = sm.pool.lower.high.Clone()
+
+			if num.UintZero().Sub(upper, lower).LTE(sm.oneTick) {
+				price := num.UintZero().Add(sm.pool.lower.high, sm.oneTick)
+				sm.addOrder(uint64(-sm.pos), price, types.SideBuy)
+				return false
+			}
 		}
 	}
 
@@ -313,7 +328,6 @@ func (sm *shapeMaker) adjustRegion() bool {
 	// cap the range to the pool's bounds, there will be no orders outside of this
 	from := num.Max(sm.from, lower)
 	to := num.Min(sm.to, upper)
-
 	switch {
 	case sm.from.GT(sm.fairPrice):
 		// if we are expanding entirely in the sell range to calculate the order at price `from`
@@ -340,7 +354,7 @@ func (sm *shapeMaker) adjustRegion() bool {
 func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
 	if !sm.adjustRegion() {
 		// if there is no overlap between the input region and the AMM's bounds then there are no orders
-		return nil, nil
+		return sm.buys, sm.sells
 	}
 
 	// create accurate orders at the boundary of the adjusted region (even if we are going to make approximate internal steps)

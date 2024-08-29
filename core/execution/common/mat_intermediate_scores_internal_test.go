@@ -32,7 +32,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPublishGameMetricAveragePosition(t *testing.T) {
+func TestPublishGameMetricAverageNotional(t *testing.T) {
 	ctx := context.Background()
 	epochService := &DummyEpochEngine{}
 	ctrl := gomock.NewController(t)
@@ -47,7 +47,7 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -78,7 +78,7 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 
 	ds1 := &vgproto.DispatchStrategy{
 		AssetForMetric:       "a1",
-		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		Markets:              []string{"m1"},
 		EntityScope:          vgproto.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 		IndividualScope:      vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL,
@@ -87,7 +87,7 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	}
 	ds2 := &vgproto.DispatchStrategy{
 		AssetForMetric:       "a1",
-		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		Markets:              []string{"m2"},
 		EntityScope:          vgproto.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 		IndividualScope:      vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL,
@@ -96,7 +96,7 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	}
 	ds3 := &vgproto.DispatchStrategy{
 		AssetForMetric:       "a1",
-		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		Markets:              []string{"m3"},
 		EntityScope:          vgproto.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 		IndividualScope:      vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL,
@@ -105,7 +105,7 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	}
 	ds4 := &vgproto.DispatchStrategy{
 		AssetForMetric:       "a1",
-		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		Markets:              []string{"m1", "m2"},
 		EntityScope:          vgproto.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 		IndividualScope:      vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL,
@@ -114,7 +114,7 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	}
 	ds5 := &vgproto.DispatchStrategy{
 		AssetForMetric:       "a1",
-		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		Metric:               vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		EntityScope:          vgproto.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
 		IndividualScope:      vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL,
 		WindowLength:         1,
@@ -127,32 +127,32 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	ps1 := gameScoreEvents[0].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps1[0].Party)
 	require.Equal(t, "p2", ps1[1].Party)
-	require.Equal(t, "9.166666", ps1[0].Score)
-	require.Equal(t, "75", ps1[1].Score)
+	require.Equal(t, "0.0000009", ps1[0].Score)
+	require.Equal(t, "0.000075", ps1[1].Score)
 
 	ps2 := gameScoreEvents[1].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps2[0].Party)
 	require.Equal(t, "p2", ps2[1].Party)
-	require.Equal(t, "13.333332", ps2[0].Score)
-	require.Equal(t, "116.66666", ps2[1].Score)
+	require.Equal(t, "0.0000026", ps2[0].Score)
+	require.Equal(t, "0.0002333", ps2[1].Score)
 
 	ps3 := gameScoreEvents[2].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps3[0].Party)
 	require.Equal(t, "p2", ps3[1].Party)
-	require.Equal(t, "15", ps3[0].Score)
-	require.Equal(t, "75", ps3[1].Score)
+	require.Equal(t, "0.0000045", ps3[0].Score)
+	require.Equal(t, "0.000225", ps3[1].Score)
 
 	ps4 := gameScoreEvents[3].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps4[0].Party)
 	require.Equal(t, "p2", ps4[1].Party)
-	require.Equal(t, "22.499998", ps4[0].Score)
-	require.Equal(t, "191.66666", ps4[1].Score)
+	require.Equal(t, "0.0000035", ps4[0].Score)
+	require.Equal(t, "0.0003083", ps4[1].Score)
 
 	ps5 := gameScoreEvents[4].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps5[0].Party)
 	require.Equal(t, "p2", ps5[1].Party)
-	require.Equal(t, "37.499998", ps5[0].Score)
-	require.Equal(t, "266.66666", ps5[1].Score)
+	require.Equal(t, "0.000008", ps5[0].Score)
+	require.Equal(t, "0.0005333", ps5[1].Score)
 
 	// now we end the epoch and make sure that we get the exact same results
 	gameScoreEvents = []events.Event{}
@@ -164,32 +164,32 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	ps1 = gameScoreEvents[0].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps1[0].Party)
 	require.Equal(t, "p2", ps1[1].Party)
-	require.Equal(t, "9.166666", ps1[0].Score)
-	require.Equal(t, "75", ps1[1].Score)
+	require.Equal(t, "0.0000009", ps1[0].Score)
+	require.Equal(t, "0.000075", ps1[1].Score)
 
 	ps2 = gameScoreEvents[1].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps2[0].Party)
 	require.Equal(t, "p2", ps2[1].Party)
-	require.Equal(t, "13.333332", ps2[0].Score)
-	require.Equal(t, "116.66666", ps2[1].Score)
+	require.Equal(t, "0.0000026", ps2[0].Score)
+	require.Equal(t, "0.0002333", ps2[1].Score)
 
 	ps3 = gameScoreEvents[2].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps3[0].Party)
 	require.Equal(t, "p2", ps3[1].Party)
-	require.Equal(t, "15", ps3[0].Score)
-	require.Equal(t, "75", ps3[1].Score)
+	require.Equal(t, "0.0000045", ps3[0].Score)
+	require.Equal(t, "0.000225", ps3[1].Score)
 
 	ps4 = gameScoreEvents[3].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps4[0].Party)
 	require.Equal(t, "p2", ps4[1].Party)
-	require.Equal(t, "22.499998", ps4[0].Score)
-	require.Equal(t, "191.66666", ps4[1].Score)
+	require.Equal(t, "0.0000035", ps4[0].Score)
+	require.Equal(t, "0.0003083", ps4[1].Score)
 
 	ps5 = gameScoreEvents[4].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps5[0].Party)
 	require.Equal(t, "p2", ps5[1].Party)
-	require.Equal(t, "37.499998", ps5[0].Score)
-	require.Equal(t, "266.66666", ps5[1].Score)
+	require.Equal(t, "0.000008", ps5[0].Score)
+	require.Equal(t, "0.0005333", ps5[1].Score)
 
 	// start epoch 2 and record some activity
 	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(60, 0)})
@@ -206,32 +206,32 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	ps1 = gameScoreEvents[0].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps1[0].Party)
 	require.Equal(t, "p2", ps1[1].Party)
-	require.Equal(t, "15", ps1[0].Score)
-	require.Equal(t, "100", ps1[1].Score)
+	require.Equal(t, "0.0000055", ps1[0].Score)
+	require.Equal(t, "0.0001", ps1[1].Score)
 
 	ps2 = gameScoreEvents[1].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps2[0].Party)
 	require.Equal(t, "p2", ps2[1].Party)
-	require.Equal(t, "20", ps2[0].Score)
-	require.Equal(t, "57.5", ps2[1].Score)
+	require.Equal(t, "0.000004", ps2[0].Score)
+	require.Equal(t, "0.0001075", ps2[1].Score)
 
 	ps3 = gameScoreEvents[2].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps3[0].Party)
 	require.Equal(t, "p2", ps3[1].Party)
-	require.Equal(t, "30", ps3[0].Score)
-	require.Equal(t, "300", ps3[1].Score)
+	require.Equal(t, "0.000009", ps3[0].Score)
+	require.Equal(t, "0.0009", ps3[1].Score)
 
 	ps4 = gameScoreEvents[3].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps4[0].Party)
 	require.Equal(t, "p2", ps4[1].Party)
-	require.Equal(t, "35", ps4[0].Score)
-	require.Equal(t, "157.5", ps4[1].Score)
+	require.Equal(t, "0.0000095", ps4[0].Score)
+	require.Equal(t, "0.0002075", ps4[1].Score)
 
 	ps5 = gameScoreEvents[4].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps5[0].Party)
 	require.Equal(t, "p2", ps5[1].Party)
-	require.Equal(t, "65", ps5[0].Score)
-	require.Equal(t, "457.5", ps5[1].Score)
+	require.Equal(t, "0.0000185", ps5[0].Score)
+	require.Equal(t, "0.0011075", ps5[1].Score)
 
 	// now lets change the window to 2:
 	ds1.WindowLength = 2
@@ -247,32 +247,32 @@ func TestPublishGameMetricAveragePosition(t *testing.T) {
 	ps1 = gameScoreEvents[0].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps1[0].Party)
 	require.Equal(t, "p2", ps1[1].Party)
-	require.Equal(t, "12.083333", ps1[0].Score)
-	require.Equal(t, "87.5", ps1[1].Score)
+	require.Equal(t, "0.0000032", ps1[0].Score)
+	require.Equal(t, "0.0000875", ps1[1].Score)
 
 	ps2 = gameScoreEvents[1].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps2[0].Party)
 	require.Equal(t, "p2", ps2[1].Party)
-	require.Equal(t, "16.666666", ps2[0].Score)
-	require.Equal(t, "87.08333", ps2[1].Score)
+	require.Equal(t, "0.0000033", ps2[0].Score)
+	require.Equal(t, "0.0001704", ps2[1].Score)
 
 	ps3 = gameScoreEvents[2].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps3[0].Party)
 	require.Equal(t, "p2", ps3[1].Party)
-	require.Equal(t, "22.5", ps3[0].Score)
-	require.Equal(t, "187.5", ps3[1].Score)
+	require.Equal(t, "0.00000675", ps3[0].Score)
+	require.Equal(t, "0.0005625", ps3[1].Score)
 
 	ps4 = gameScoreEvents[3].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps4[0].Party)
 	require.Equal(t, "p2", ps4[1].Party)
-	require.Equal(t, "28.749999", ps4[0].Score)
-	require.Equal(t, "174.58333", ps4[1].Score)
+	require.Equal(t, "0.0000065", ps4[0].Score)
+	require.Equal(t, "0.0002579", ps4[1].Score)
 
 	ps5 = gameScoreEvents[4].StreamMessage().GetGameScores().PartyScores
 	require.Equal(t, "p1", ps5[0].Party)
 	require.Equal(t, "p2", ps5[1].Party)
-	require.Equal(t, "51.249999", ps5[0].Score)
-	require.Equal(t, "362.08333", ps5[1].Score)
+	require.Equal(t, "0.00001325", ps5[0].Score)
+	require.Equal(t, "0.0008204", ps5[1].Score)
 }
 
 func TestPublishGameMetricReturnVolatility(t *testing.T) {
@@ -289,7 +289,7 @@ func TestPublishGameMetricReturnVolatility(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -537,7 +537,7 @@ func TestPublishGameMetricRelativeReturn(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(0, 0)})
@@ -757,7 +757,7 @@ func TestPublishGameMetricRealisedReturn(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(0, 0)})
@@ -879,7 +879,7 @@ func TestPublishGameMetricFees(t *testing.T) {
 			gameScoreEvents = append(gameScoreEvents, evt)
 		}
 	}).AnyTimes()
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, DummyCollateralEngine{})
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(0, 0)})

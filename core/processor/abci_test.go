@@ -692,6 +692,7 @@ type tstApp struct {
 	teams              *mocks.MockTeamsEngine
 	referral           *mocks.MockReferralProgram
 	volDiscount        *mocks.MockVolumeDiscountProgram
+	volRebate          *mocks.MockVolumeRebateProgram
 	bClient            *mocks.MockBlockchainClient
 	puSvc              *mocks.MockProtocolUpgradeService
 	ethCallEng         *mocks.MockEthCallEngine
@@ -873,6 +874,7 @@ func getTestApp(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *
 	teams := mocks.NewMockTeamsEngine(ctrl)
 	referral := mocks.NewMockReferralProgram(ctrl)
 	volDiscount := mocks.NewMockVolumeDiscountProgram(ctrl)
+	volRebate := mocks.NewMockVolumeRebateProgram(ctrl)
 	bClient := mocks.NewMockBlockchainClient(ctrl)
 	puSvc := mocks.NewMockProtocolUpgradeService(ctrl)
 	ethCallEng := mocks.NewMockEthCallEngine(ctrl)
@@ -919,6 +921,7 @@ func getTestApp(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *
 		teams:          teams,
 		referral:       referral,
 		volDiscount:    volDiscount,
+		volRebate:      volRebate,
 		bClient:        bClient,
 		puSvc:          puSvc,
 		ethCallEng:     ethCallEng,
@@ -1001,6 +1004,7 @@ func getTestApp(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *
 		teams,
 		referral,
 		volDiscount,
+		volRebate,
 		bClient,
 		pERC20,
 		sERC20,

@@ -750,3 +750,23 @@ func UnmarshalAMMStatusReason(v interface{}) (eventspb.AMM_StatusReason, error) 
 
 	return eventspb.AMM_StatusReason(status), nil
 }
+
+func MarshalEstimatedAMMError(s v2.EstimateAMMBoundsResponse_AMMError) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalEstimatedAMMError(v interface{}) (v2.EstimateAMMBoundsResponse_AMMError, error) {
+	s, ok := v.(string)
+	if !ok {
+		return v2.EstimateAMMBoundsResponse_AMM_ERROR_UNSPECIFIED, fmt.Errorf("expected Estimated AMM error to be a string")
+	}
+
+	status, ok := v2.EstimateAMMBoundsResponse_AMMError_value[s]
+	if !ok {
+		return v2.EstimateAMMBoundsResponse_AMM_ERROR_UNSPECIFIED, fmt.Errorf("failed to convert Estimated AMM error from GraphQL to Proto: %v", s)
+	}
+
+	return v2.EstimateAMMBoundsResponse_AMMError(status), nil
+}

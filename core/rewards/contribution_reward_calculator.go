@@ -84,6 +84,8 @@ func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string,
 		partyScores = proRataRewardCalculator(partyContribution, rewardFactors)
 	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK {
 		partyScores = rankingRewardCalculator(partyContribution, ds.RankTable, rewardFactors)
+	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK_LOTTERY {
+		partyScores = rankingLotteryRewardCalculator(partyContribution, ds.RankTable, rewardFactors, timestamp)
 	}
 
 	cap := num.DecimalZero()
@@ -112,6 +114,8 @@ func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balan
 		teamScores = proRataRewardCalculator(teamContribution, map[string]num.Decimal{})
 	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK {
 		teamScores = rankingRewardCalculator(teamContribution, ds.RankTable, map[string]num.Decimal{})
+	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK_LOTTERY {
+		teamScores = rankingLotteryRewardCalculator(teamContribution, ds.RankTable, map[string]num.Decimal{}, timestamp)
 	}
 
 	partyScores := []*types.PartyContributionScore{}

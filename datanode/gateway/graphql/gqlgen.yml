@@ -827,9 +827,24 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMEdge
   AMMConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMConnection
+  EstimatedAMMError:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.EstimatedAMMError
   RiskFactorOverride:
     model: code.vegaprotocol.io/vega/protos/vega.RiskFactorOverride
   FutureCap:
     model: code.vegaprotocol.io/vega/protos/vega.FutureCap
   EstimatedAMMBounds:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateAMMBoundsResponse
+  VolumeRebateProgram:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateProgram
+  VolumeRebateStatsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStatsConnection
+  VolumeRebateStatsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStatsEdge
+  VolumeRebateStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeRebateStats
+  PartyDiscountStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetPartyDiscountStatsResponse
+  MarketFees:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketFees

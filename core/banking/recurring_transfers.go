@@ -152,6 +152,7 @@ func (e *Engine) cleanupStaleDispatchStrategies() {
 	for hash, dsc := range e.hashToStrategy {
 		if dsc.refCount == 0 {
 			delete(e.hashToStrategy, hash)
+			e.marketActivityTracker.GameFinished(hash)
 		}
 	}
 }
@@ -194,10 +195,11 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 		vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
-		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
 		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
-		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN:
+		vegapb.DispatchMetric_DISPATCH_METRIC_REALISED_RETURN,
+		vegapb.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES:
 		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
 			hasNonZeroMetric := false
 			partyMetrics := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)
@@ -215,7 +217,7 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 					break
 				}
 			}
-			required = hasNonZeroMetric || (hasEligibleParties && ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK)
+			required = hasNonZeroMetric || (hasEligibleParties && (ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK || ds.DistributionStrategy == vegapb.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK_LOTTERY))
 			return required
 		} else {
 			tcs, pcs := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)

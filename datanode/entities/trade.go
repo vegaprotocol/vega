@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -31,26 +32,32 @@ type _Trade struct{}
 type TradeID = ID[_Trade]
 
 type Trade struct {
-	SyntheticTime           time.Time
-	TxHash                  TxHash
-	VegaTime                time.Time
-	SeqNum                  uint64
-	ID                      TradeID
-	MarketID                MarketID
-	Price                   decimal.Decimal
-	Size                    uint64
-	Buyer                   PartyID
-	Seller                  PartyID
-	Aggressor               Side
-	BuyOrder                OrderID
-	SellOrder               OrderID
-	Type                    TradeType
-	BuyerMakerFee           decimal.Decimal
-	BuyerInfrastructureFee  decimal.Decimal
-	BuyerLiquidityFee       decimal.Decimal
-	SellerMakerFee          decimal.Decimal
-	SellerInfrastructureFee decimal.Decimal
-	SellerLiquidityFee      decimal.Decimal
+	SyntheticTime            time.Time
+	TxHash                   TxHash
+	VegaTime                 time.Time
+	SeqNum                   uint64
+	ID                       TradeID
+	MarketID                 MarketID
+	Price                    decimal.Decimal
+	Size                     uint64
+	Buyer                    PartyID
+	Seller                   PartyID
+	Aggressor                Side
+	BuyOrder                 OrderID
+	SellOrder                OrderID
+	Type                     TradeType
+	BuyerMakerFee            decimal.Decimal
+	BuyerInfrastructureFee   decimal.Decimal
+	BuyerLiquidityFee        decimal.Decimal
+	BuyerBuyBackFee          decimal.Decimal
+	BuyerTreasuryFee         decimal.Decimal
+	BuyerHighVolumeMakerFee  decimal.Decimal
+	SellerMakerFee           decimal.Decimal
+	SellerInfrastructureFee  decimal.Decimal
+	SellerLiquidityFee       decimal.Decimal
+	SellerBuyBackFee         decimal.Decimal
+	SellerTreasuryFee        decimal.Decimal
+	SellerHighVolumeMakerFee decimal.Decimal
 
 	BuyerMakerFeeReferralDiscount           decimal.Decimal
 	BuyerMakerFeeVolumeDiscount             decimal.Decimal
@@ -92,6 +99,9 @@ func (t Trade) ToProto() *vega.Trade {
 			InfrastructureFeeVolumeDiscount:   t.BuyerInfrastructureFeeVolumeDiscount.String(),
 			LiquidityFeeReferrerDiscount:      t.BuyerLiquidityFeeReferralDiscount.String(),
 			LiquidityFeeVolumeDiscount:        t.BuyerLiquidityFeeVolumeDiscount.String(),
+			TreasuryFee:                       t.BuyerTreasuryFee.String(),
+			BuyBackFee:                        t.BuyerBuyBackFee.String(),
+			HighVolumeMakerFee:                t.BuyerHighVolumeMakerFee.String(),
 		},
 		SellerFee: &vega.Fee{
 			MakerFee:                          t.SellerMakerFee.String(),
@@ -103,6 +113,9 @@ func (t Trade) ToProto() *vega.Trade {
 			InfrastructureFeeVolumeDiscount:   t.SellerInfrastructureFeeVolumeDiscount.String(),
 			LiquidityFeeReferrerDiscount:      t.SellerLiquidityFeeReferralDiscount.String(),
 			LiquidityFeeVolumeDiscount:        t.SellerLiquidityFeeVolumeDiscount.String(),
+			TreasuryFee:                       t.SellerTreasuryFee.String(),
+			BuyBackFee:                        t.SellerBuyBackFee.String(),
+			HighVolumeMakerFee:                t.SellerHighVolumeMakerFee.String(),
 		},
 		BuyerAuctionBatch:  t.BuyerAuctionBatch,
 		SellerAuctionBatch: t.SellerAuctionBatch,
@@ -129,8 +142,11 @@ func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNu
 	}
 
 	buyerMakerFee := decimal.Zero
+	buyerHighMakerFee := decimal.Zero
 	buyerInfraFee := decimal.Zero
 	buyerLiquidityFee := decimal.Zero
+	buyerBuyBackFee := decimal.Zero
+	buyerTreasuryFee := decimal.Zero
 
 	buyerMakerFeeReferrerDiscount := decimal.Zero
 	buyerMakerFeeVolumeDiscount := decimal.Zero
@@ -159,6 +175,24 @@ func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNu
 		buyerInfraFee, err = decimal.NewFromString(t.BuyerFee.InfrastructureFee)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode buyer infrastructure fee:%w", err)
+		}
+		if len(t.BuyerFee.BuyBackFee) > 0 {
+			buyerBuyBackFee, err = decimal.NewFromString(t.BuyerFee.BuyBackFee)
+			if err != nil {
+				buyerBuyBackFee = num.DecimalZero()
+			}
+		}
+		if len(t.BuyerFee.TreasuryFee) > 0 {
+			buyerTreasuryFee, err = decimal.NewFromString(t.BuyerFee.TreasuryFee)
+			if err != nil {
+				buyerTreasuryFee = num.DecimalZero()
+			}
+		}
+		if len(t.BuyerFee.HighVolumeMakerFee) > 0 {
+			buyerHighMakerFee, err = decimal.NewFromString(t.BuyerFee.HighVolumeMakerFee)
+			if err != nil {
+				buyerHighMakerFee = num.DecimalZero()
+			}
 		}
 		if len(t.BuyerFee.InfrastructureFeeReferrerDiscount) > 0 {
 			buyerInfraFeeReferrerDiscount, err = decimal.NewFromString(t.BuyerFee.InfrastructureFeeReferrerDiscount)
@@ -191,8 +225,11 @@ func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNu
 	}
 
 	sellerMakerFee := decimal.Zero
+	sellerHighMakerFee := decimal.Zero
 	sellerInfraFee := decimal.Zero
 	sellerLiquidityFee := decimal.Zero
+	sellerBuyBackFee := decimal.Zero
+	sellerTreasuryFee := decimal.Zero
 
 	sellerMakerFeeReferrerDiscount := decimal.Zero
 	sellerMakerFeeVolumeDiscount := decimal.Zero
@@ -221,6 +258,24 @@ func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNu
 		sellerInfraFee, err = decimal.NewFromString(t.SellerFee.InfrastructureFee)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode seller infrastructure fee:%w", err)
+		}
+		if len(t.SellerFee.BuyBackFee) > 0 {
+			sellerBuyBackFee, err = decimal.NewFromString(t.SellerFee.BuyBackFee)
+			if err != nil {
+				sellerBuyBackFee = num.DecimalZero()
+			}
+		}
+		if len(t.SellerFee.TreasuryFee) > 0 {
+			sellerTreasuryFee, err = decimal.NewFromString(t.SellerFee.TreasuryFee)
+			if err != nil {
+				sellerTreasuryFee = num.DecimalZero()
+			}
+		}
+		if len(t.SellerFee.HighVolumeMakerFee) > 0 {
+			sellerHighMakerFee, err = decimal.NewFromString(t.SellerFee.HighVolumeMakerFee)
+			if err != nil {
+				sellerHighMakerFee = num.DecimalZero()
+			}
 		}
 		if len(t.SellerFee.InfrastructureFeeReferrerDiscount) > 0 {
 			sellerInfraFeeReferrerDiscount, err = decimal.NewFromString(t.SellerFee.InfrastructureFeeReferrerDiscount)
@@ -270,6 +325,9 @@ func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNu
 		BuyerMakerFee:                           buyerMakerFee,
 		BuyerInfrastructureFee:                  buyerInfraFee,
 		BuyerLiquidityFee:                       buyerLiquidityFee,
+		BuyerBuyBackFee:                         buyerBuyBackFee,
+		BuyerTreasuryFee:                        buyerTreasuryFee,
+		BuyerHighVolumeMakerFee:                 buyerHighMakerFee,
 		BuyerMakerFeeReferralDiscount:           buyerMakerFeeReferrerDiscount,
 		BuyerMakerFeeVolumeDiscount:             buyerMakerFeeVolumeDiscount,
 		BuyerInfrastructureFeeReferralDiscount:  buyerInfraFeeReferrerDiscount,
@@ -277,8 +335,11 @@ func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNu
 		BuyerLiquidityFeeReferralDiscount:       buyerLiquidityFeeReferrerDiscount,
 		BuyerLiquidityFeeVolumeDiscount:         buyerLiquidityFeeVolumeDiscount,
 		SellerMakerFee:                          sellerMakerFee,
+		SellerHighVolumeMakerFee:                sellerHighMakerFee,
 		SellerInfrastructureFee:                 sellerInfraFee,
 		SellerLiquidityFee:                      sellerLiquidityFee,
+		SellerBuyBackFee:                        sellerBuyBackFee,
+		SellerTreasuryFee:                       sellerTreasuryFee,
 		SellerMakerFeeReferralDiscount:          sellerMakerFeeReferrerDiscount,
 		SellerMakerFeeVolumeDiscount:            sellerMakerFeeVolumeDiscount,
 		SellerInfrastructureFeeReferralDiscount: sellerInfraFeeReferrerDiscount,

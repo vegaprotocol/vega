@@ -155,10 +155,12 @@ message VolumeDiscountStatsUpdated {
 message PartyVolumeDiscountStats {
   // Party ID.
   string party_id = 1;
-  // Discount factor applied to fees.
+  // deprecated.
   string discount_factor = 2;
   // The party's running volume.
   string running_volume = 3;
+  // Discount factors applied to fees.
+  vega.DiscountFactors discount_factors = 4;
 }
 
 // Stats of all parties invested in the vesting program.
@@ -586,14 +588,37 @@ message TransferFeesDiscount {
 }
 
 message TransactionResult {
+  enum Status {
+    // Default value, always invalid
+    STATUS_UNSPECIFIED = 0;
+    // The transaction succeeded.
+    STATUS_SUCCESS = 1;
+    // The transaction partially succeeded.
+    STATUS_PARTIAL_SUCCESS = 2;
+    // The transaction's final state is failure.
+    STATUS_FAILURE = 3;
+  }
+
+  // A mapping of a key to a list of errors.
+  message KeyErrors {
+    // The key.
+    string key = 1;
+    // The errors mapped to this key.
+    repeated string errors = 2;
+  }
+
   // Unique party ID for the related party
   string party_id = 1;
-  // Status of the transaction, did it succeed or an error was raised.
+  // Status of the transaction, if it succeeded or an error was raised.
   bool status = 2;
   // Hash of the transaction
   string hash = 3;
-  // Transaction itself as received by the network
+  // Status of the transaction.
+  // Backward compatible with previous events,
+  // as this field will default to UNSPECIFIED.
+  Status status_detail = 4;
 
+  // Transaction itself as received by the network
   oneof transaction {
     commands.v1.OrderSubmission order_submission = 101;
     commands.v1.OrderAmendment order_amendment = 102;
@@ -642,6 +667,8 @@ message TransactionResult {
   message FailureDetails {
     // Error message explaining the reason for the transaction failing processing
     string error = 1;
+    // Map of the detailed errors, if any.
+    repeated KeyErrors errors = 2;
   }
 }
 
@@ -1073,25 +1100,31 @@ message ReferralSetStatsUpdated {
   string referral_set_running_notional_taker_volume = 3;
   // Referees' statistics for that epoch.
   repeated RefereeStats referees_stats = 4;
-  // Reward factor applied to the trades.
+  // deprecated
   string reward_factor = 5;
   // Rewards multiplier applied to the trades.
   string rewards_multiplier = 6;
-  // Rewards factor multiplier for the trades.
+  // deprecated
   string rewards_factor_multiplier = 7;
   // Indicates if the referral set was eligible to be part of the referral program.
   bool was_eligible = 8;
   // Taker volume of the referrer
   string referrer_taker_volume = 9;
+  // Reward factor applied to the trades.
+  vega.RewardFactors reward_factors = 10;
+  // Reward factors multiplier for the trades.
+  vega.RewardFactors reward_factors_multiplier = 11;
 }
 
 message RefereeStats {
   // Unique ID of the party.
   string party_id = 1;
-  // Discount factor applied to the party.
+  // deprecated.
   string discount_factor = 2;
   // Current referee notional taker volume
   string epoch_notional_taker_volume = 4;
+  // Discount factors applied to the party.
+  vega.DiscountFactors discount_factors = 5;
 }
 
 message RefereeJoinedReferralSet {
@@ -1490,6 +1523,18 @@ enum BusEventType {
   // Event use to notify for an AMM update.
   BUS_EVENT_TYPE_AMM = 91;
 
+  // Event indicating a volume rebate program started.
+  BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_STARTED = 92;
+
+  // Event indicating a volume rebate program has been updated.
+  BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED = 93;
+
+  // Event indicating a volume rebate program ended.
+  BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_ENDED = 94;
+
+  // Event indicating the updated statistics for the volume rebate.
+  BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED = 95;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1681,7 +1726,14 @@ message BusEvent {
     GameScores game_scores = 188;
     // Event notifying of AMM updates.
     AMM amm = 189;
-
+    // Event notifying that a volume rebate program has started.
+    VolumeRebateProgramStarted volume_rebate_program_started = 190;
+    // Event notifying that a volume rebate program has been updated.
+    VolumeRebateProgramUpdated volume_rebate_program_updated = 191;
+    // Event notifying that a volume rebate program has ended.
+    VolumeRebateProgramEnded volume_rebate_program_ended = 192;
+    // Event notifying of an update to the volume rebate statistics.
+    VolumeRebateStatsUpdated volume_rebate_stats_updated = 193;
     // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
@@ -1691,4 +1743,53 @@ message BusEvent {
   uint32 version = 4;
   string chain_id = 5;
   string tx_hash = 6;
+}
+
+// Stats of all parties eligible for volume rebate.
+message VolumeRebateStatsUpdated {
+  // Epoch at which the volume rebate statistics are updated.
+  uint64 at_epoch = 1;
+  // All parties' stats.
+  repeated PartyVolumeRebateStats stats = 2;
+}
+
+// Volume rebate stats for a given party.
+message PartyVolumeRebateStats {
+  // Party ID.
+  string party_id = 1;
+  // Rebate factor applied to fees.
+  string additional_rebate = 2;
+  // The party's maker volume fraction.
+  string maker_volume_fraction = 3;
+  // The party's maker fee received over the window across all markets and assets, expressed in quantum.
+  string maker_fees_received = 4;
+}
+
+message VolumeRebateProgramStarted {
+  // Volume rebate program that has started.
+  vega.VolumeRebateProgram program = 1;
+  // Time in Unix nanoseconds when the volume discount program started.
+  int64 started_at = 2;
+  // Epoch at which the volume discount program started.
+  uint64 at_epoch = 3;
+}
+
+message VolumeRebateProgramUpdated {
+  // The updated volume rebate program.
+  vega.VolumeRebateProgram program = 1;
+  // Time in Unix nanoseconds when the volume discount program was updated.
+  int64 updated_at = 2;
+  // Epoch at which the volume discount program was updated.
+  uint64 at_epoch = 3;
+}
+
+message VolumeRebateProgramEnded {
+  // Program update version.
+  uint64 version = 1;
+  // Unique ID of the volume discount program.
+  string id = 2;
+  // Time in Unix nanoseconds when the referral program ended.
+  int64 ended_at = 3;
+  // Epoch at which the referral program ended.
+  uint64 at_epoch = 4;
 }

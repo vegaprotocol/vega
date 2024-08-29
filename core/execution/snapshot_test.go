@@ -610,7 +610,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker, collateralEngine)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	ethAsset := types.Asset{
@@ -624,9 +624,10 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	require.NoError(t, collateralEngine.EnableAsset(context.Background(), ethAsset))
 	referralDiscountReward := fmock.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscount := fmock.NewMockVolumeDiscountService(ctrl)
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebate := fmock.NewMockVolumeRebateService(ctrl)
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	referralDiscountReward.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
 	parties := mocks.NewMockParties(ctrl)
@@ -644,6 +645,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
+		volumeRebate,
 		banking,
 		parties,
 		delayTarget,
@@ -680,7 +682,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker, collateralEngine)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	ethAsset := types.Asset{
@@ -697,9 +699,11 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	}
 	referralDiscountReward := fmock.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscount := fmock.NewMockVolumeDiscountService(ctrl)
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebate := fmock.NewMockVolumeRebateService(ctrl)
+
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	referralDiscountReward.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
 	partiesMock := mocks.NewMockParties(ctrl)
@@ -717,6 +721,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
+		volumeRebate,
 		banking,
 		partiesMock,
 		delayTarget,

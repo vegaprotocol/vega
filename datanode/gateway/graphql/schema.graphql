@@ -636,6 +636,9 @@ type Query {
   "Get the current volume discount program"
   currentVolumeDiscountProgram: VolumeDiscountProgram
 
+  "Get the current volume rebate program"
+  currentVolumeRebateProgram: VolumeRebateProgram
+
   "List core snapshots"
   coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
@@ -791,11 +794,11 @@ type Query {
     lowerPrice: String
     "Leverage at the upper price of the AMM pool."
     leverageAtUpperPrice: String
-   "Leverage at the lower price of the AMM pool."
+    "Leverage at the lower price of the AMM pool."
     leverageAtLowerPrice: String
     "Amount of the asset that the party is willing to commit to the AMM pool."
     commitmentAmount: String!
-    "Market ID to filter for."
+    "Market ID to estimate the AMM for."
     marketId: ID!
   ): EstimatedAMMBounds
 
@@ -1330,6 +1333,17 @@ type Query {
   "Find a transfer using its ID"
   transfer("ID of the transfer" id: ID!): TransferNode
 
+  "Get volume rebate statistics"
+  volumeRebateStats(
+    "Optional epoch to get statistics from. If not provided, the latest statistics are returned"
+    epoch: Int
+    "Optional party ID"
+    partyId: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): VolumeRebateStatsConnection!
+
+
   "Get volume discount statistics"
   volumeDiscountStats(
     "Optional epoch to get statistics from. If not provided, the latest statistics are returned"
@@ -1364,6 +1378,28 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): PartyMarginModesConnection
+
+  """
+  Get the reward and discount fees for a given party and the fees and rebates applied per market.
+  """
+  partyDiscountStats(
+    "Party ID"
+    partyId: ID!
+    "Market IDs"
+    marketIds: [ID!]
+  ): PartyDiscountStats
+}
+
+enum EstimatedAMMError {
+  AMM_ERROR_UNSPECIFIED
+  "Commitment is below the global limit set by the network parameter `market.amm.minCommitmentQuantum`."
+  AMM_ERROR_COMMITMENT_BELOW_MINIMUM
+  "AMM's lower price is too far from the base price for the given commitment resulting in zero volume between price levels."
+  AMM_ERROR_LOWER_BOUND_TOO_WIDE
+  "AMM's upper price is too far from the base price for the given commitment resulting in zero volume between price levels."
+  AMM_ERROR_UPPER_BOUND_TOO_WIDE
+  "AMM bounds are too wide for the given commitment resulting in zero volume between price levels."
+  AMM_ERROR_BOTH_BOUNDS_TOO_WIDE
 }
 
 type EstimatedAMMBounds {
@@ -1379,6 +1415,9 @@ type EstimatedAMMBounds {
   liquidationPriceAtUpper: String
   "Estimated price below the lower bound at which the commitment will be lost."
   liquidationPriceAtLower: String
+  "If populated the bounds could be calculated but the AMM is invalid for other reasons."
+  ammError: EstimatedAMMError
+  
 }
 
 "Defines the types of a dispatch strategy's scope the API can filter on."
@@ -1501,7 +1540,9 @@ enum DispatchMetric {
   "Dispatch metric that uses the total value of the market if above the required threshold and not paid given proposer bonus yet"
   DISPATCH_METRIC_MARKET_VALUE
   "Dispatch metric that uses the time weighted position of the party in the market"
-  DISPATCH_METRIC_AVERAGE_POSITION
+  DISPATCH_METRIC_AVERAGE_POSITION @deprecated
+  "Dispatch metric that uses the time weighted notional of the party in the market"
+  DISPATCH_METRIC_AVERAGE_NOTIONAL
   "Dispatch metric that uses the relative PNL of the party in the market"
   DISPATCH_METRIC_RELATIVE_RETURN
   "Dispatch metric that uses return volatility of the party in the market"
@@ -1510,6 +1551,8 @@ enum DispatchMetric {
   DISPATCH_METRIC_VALIDATOR_RANKING
   "Dispatch metric that uses the realised return of the party in the market"
   DISPATCH_METRIC_REALISED_RETURN
+  "Dispatch metric that uses the eligibility of entities"
+  DISPATCH_METRIC_ELIGIBLE_ENTITIES
 }
 
 enum EntityScope {
@@ -1535,6 +1578,9 @@ enum DistributionStrategy {
   DISTRIBUTION_STRATEGY_PRO_RATA
   "Rewards funded using the rank strategy"
   DISTRIBUTION_STRATEGY_RANK
+  "Rewards funded using the rank lottery strategy"
+  DISTRIBUTION_STRATEGY_RANK_LOTTERY
+
 }
 
 "Dispatch strategy for a recurring transfer"
@@ -2509,6 +2555,10 @@ type FeeFactors {
   infrastructureFee: String!
   "The factor applied to calculate LiquidityFees, a non-negative float"
   liquidityFee: String!
+  "The fee used to purchase governance tokens via regular auctions (network wide)"
+  buyBackFee: String! 
+  "The fee sent to the network treasury for later use based on governance actions (network wide)."
+  treasuryFee: String!
 }
 
 enum LiquidityFeeMethod {
@@ -3765,6 +3815,15 @@ type TradeFee {
   "The fee paid to the liquidity providers that committed liquidity to the market"
   liquidityFee: String!
 
+  "The fee paid into the protocol buy-back account"
+  buyBackFee: String!
+
+  "The fee paid into the network treasury"
+  treasuryFee: String!
+
+  "The fee paid to a high-volume maker as a rebate"
+  highVolumeMakerFee: String!
+
   "Referral discount on maker fees for the trade"
   makerFeeReferralDiscount: String
 
@@ -4259,6 +4318,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
   "One or more proposals in a batch has been declined"
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
+  "Volume rebate program proposal is invalid"
+  PROPOSAL_ERROR_INVALID_VOLUME_REBATE_PROGRAM
 }
 
 "Why the order was rejected by the core node"
@@ -4577,7 +4638,7 @@ enum AccountType {
   "Vested reward account is a per party per asset account for vested reward funds"
   ACCOUNT_TYPE_VESTED_REWARDS
   "Average position reward account is a per asset per market account for average position reward funds"
-  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION
+  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION @deprecated
   "Relative return reward account is a per asset per market account for relative return reward funds"
   ACCOUNT_TYPE_REWARD_RELATIVE_RETURN
   "Return volatility reward account is a per asset per market account for return volatility reward funds"
@@ -4590,6 +4651,10 @@ enum AccountType {
   ACCOUNT_TYPE_ORDER_MARGIN
   "Realised return reward account is per asset per reward scheme"
   ACCOUNT_TYPE_REWARD_REALISED_RETURN
+  "Average notional reward account is a per asset per market account for average notional reward funds"
+  ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL
+  "Reward account for the eligible entities metric"
+  ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES
 }
 
 "Types that describe why a transfer has been made"
@@ -5112,15 +5177,39 @@ type UpdateReferralProgram {
   stakingTiers: [StakingTier!]!
 }
 
+type RewardFactors {
+  "The proportion of the referee's taker infrastructure fees to be rewarded to the referrer"
+  infrastructureFactor: String!
+  "The proportion of the referee's taker maker fees to be rewarded to the referrer"
+  makerFactor: String!
+  "The proportion of the referee's taker liquidity fees to be rewarded to the referrer"
+  liquidityFactor: String!
+}
+
+type DiscountFactors {
+  "The proportion of the referee's taker infrastructure fees to be discounted"
+  infrastructureFactor: String!
+  "The proportion of the referee's taker maker fees to be discounted"
+  makerFactor: String!
+  "The proportion of the referee's taker liquidity fees to be discounted"
+  liquidityFactor: String!
+}
+
 type BenefitTier {
   "The minimum number of epochs the party needs to be in the referral set to be eligible for the benefit"
   minimumEpochs: Int!
   "The minimum running notional for the given benefit tier"
   minimumRunningNotionalTakerVolume: String!
   "The proportion of the referee's taker fees to be discounted"
-  referralDiscountFactor: String!
+  referralDiscountFactor: String! @deprecated(reason: "Use referralDiscountFactors")
+  "The proportion of the referee's taker fees to be discounted"
+  referralDiscountFactors: DiscountFactors!
   "The proportion of the referee's taker fees to be rewarded to the referrer"
-  referralRewardFactor: String!
+  referralRewardFactor: String! @deprecated(reason: "Use referralRewardFactors")
+  "The proportion of the referee's taker fees to be rewarded to the referrer"
+  referralRewardFactors: RewardFactors!
+  "The tier number"
+  tierNumber: Int
 }
 
 type StakingTier {
@@ -5143,7 +5232,11 @@ type VolumeBenefitTier {
   "The minimum running notional for the given benefit tier"
   minimumRunningNotionalTakerVolume: String!
   "Discount given to those in this benefit tier"
-  volumeDiscountFactor: String!
+  volumeDiscountFactor: String! @deprecated(reason: "Use volumeDiscountFactors")
+  "Discount factors applied to to those in this benefit tier"
+  volumeDiscountFactors: DiscountFactors!
+  "The tier number"
+  tierNumber: Int
 }
 
 "Configuration for a new spot market on Vega"
@@ -5256,6 +5349,7 @@ union ProposalChange =
   | UpdateSpotMarket
   | UpdateVolumeDiscountProgram
   | UpdateReferralProgram
+  | UpdateVolumeRebateProgram
 
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
@@ -7120,9 +7214,13 @@ type ReferralSetStats {
   "Indicates if the referral set was eligible to be part of the referral program."
   wasEligible: Boolean!
   "Discount factor applied to the party."
-  discountFactor: String!
+  discountFactor: String! @deprecated(reason: "Use discountFactors")
   "Reward factor applied to the party."
-  rewardFactor: String!
+  rewardFactor: String! @deprecated(reason: "Use rewardFactors")
+  "Discount factors applied to the party."
+  discountFactors: DiscountFactors!
+  "Reward factors applied to the party."
+  rewardFactors: RewardFactors!
   "Current referee notional taker volume"
   epochNotionalTakerVolume: String!
   "Running volume for the set based on the window length of the current referral program."
@@ -7130,7 +7228,9 @@ type ReferralSetStats {
   "The multiplier applied to the referral reward factor when calculating referral rewards due to the referrer."
   rewardsMultiplier: String!
   "The proportion of the referees taker fees to be rewarded to the referrer."
-  rewardsFactorMultiplier: String!
+  rewardsFactorMultiplier: String! @deprecated(reason: "Use rewardsFactorsMultiplier")
+  "The proportion of the referees taker fees to be rewarded to the referrer."
+  rewardsFactorsMultiplier: RewardFactors!
   "The referrer's taker volume"
   referrerTakerVolume: String!
 }
@@ -7408,8 +7508,10 @@ type VolumeDiscountStats {
   atEpoch: Int!
   "Unique ID of the party."
   partyId: ID!
-  "Discount factor applied to the party."
-  discountFactor: String!
+   "Discount factor applied to the party."
+  discountFactor: String! @deprecated(reason: "Use discountFactors")
+  "Discount factors applied to the party."
+  discountFactors: DiscountFactors!
   "Party's running volume."
   runningVolume: String!
 }
@@ -7707,4 +7809,93 @@ enum AMMStatusReason {
   STATUS_REASON_COMMITMENT_TOO_LOW
   "The AMM was unable to rebase its fair-price such that it does not cross with existing orders"
   STATUS_REASON_CANNOT_REBASE
+}
+
+type UpdateVolumeRebateProgram {
+  "The benefit tiers for the program"
+  benefitTiers: [VolumeRebateBenefitTier!]!
+  "Timestamp as Unix time in nanoseconds, after which program ends."
+  endOfProgramTimestamp: Timestamp!
+  "The window length to consider for the volume discount program"
+  windowLength: Int!
+}
+
+type VolumeRebateBenefitTier {
+  "The required volume fraction for a party to access this tier"
+  minimumPartyMakerVolumeFraction: String!
+  "The additional rebate factor (in percentage of trade_value_for_fee_purposes a party at this tier will receive when they are the maker side of a trade"
+  additionalMakerRebate: String!
+  "The tier number"
+  tierNumber: Int
+}
+
+
+"Volume rebate program information"
+type VolumeRebateProgram {
+  "Unique ID generated from the proposal that created this program."
+  id: ID!
+  "Incremental version of the program. It is incremented each time the volume discount program is edited."
+  version: Int!
+  "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
+  benefitTiers: [VolumeRebateBenefitTier!]!
+  "Timestamp as Unix time in nanoseconds, after which when the current epoch ends, the program will end and benefits will be disabled."
+  endOfProgramTimestamp: Timestamp!
+  "Number of epochs over which to evaluate parties' running volume."
+  windowLength: Int!
+  "Timestamp as RFC3339Nano when the program ended. If present, the current program has ended and no program is currently running."
+  endedAt: Timestamp
+}
+
+
+"Connection type for retrieving cursor-based paginated volume rebate statistics information"
+type VolumeRebateStatsConnection {
+  "The volume rebate statistics in this connection"
+  edges: [VolumeRebateStatsEdge]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+"Edge type containing the volume rebate statistics and cursor information returned by a VolumeRebateStatsConnection"
+type VolumeRebateStatsEdge {
+  "The volume rebate statistics"
+  node: VolumeRebateStats!
+  "The cursor for this volume rebate statistics"
+  cursor: String!
+}
+
+type VolumeRebateStats {
+  "Epoch at which the statistics are updated."
+  atEpoch: Int!
+  "Unique ID of the party."
+  partyId: ID!
+  "Rebate factor applied to the party."
+  additionalMakerRebate: String!
+  "Party's running volume fraction (of maker fee paid over the relevant window)"
+  makerVolumeFraction: String!
+  "Party's running volume of maker fee received over the relevant window"
+  makerFeeReceived: String!
+}
+
+type PartyDiscountStats {
+  "The volume discount tier the party is in"
+  volumeDiscountTier: Int!
+  "The volume rebate tier the party is in"
+  volumeRebateTier: Int!
+  "The referral discount tier the party is in"
+  referralDiscountTier: Int!
+  "The fee percentages the party will pay on a given market, with any rebates and discounts accounted for"
+  partyMarketFees: [MarketFees!]
+}
+
+type MarketFees {
+  "The market ID"
+  marketId: ID!
+  "The taker fees for the market without the discounts applied"
+  undiscountedTakerFee: String!
+  "The taker fees as applied for the party (with the discounts applied)"
+  discountedTakerFee: String!
+  "The maker fees for the market"
+  baseMakerFee: String!
+  "The maker rebate for the party"
+  userMakerRebate: String!
 }

@@ -93,7 +93,7 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
 
@@ -240,10 +240,10 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party | market id | amount | status           | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 4              | 4              |
     And the following transfers should happen:
-      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 47     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 28208  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 100331 | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+      | from     | from account            | to       | to account           | market id | amount | asset | is amm | type                            |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 47     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 28208  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH       |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 100331 | USD   | true   | TRANSFER_TYPE_AMM_RELEASE       |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 1000331 |        |        |
@@ -396,10 +396,10 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party | market id | amount | status           | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 4              | 4              |
     And the following transfers should happen:
-      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 47     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 28208  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 100331 | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+      | from     | from account            | to       | to account           | market id | amount | asset | is amm | type                            |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 47     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 28208  | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH       |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 100331 | USD   | true   | TRANSFER_TYPE_AMM_RELEASE       |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 1000331 |        |        |

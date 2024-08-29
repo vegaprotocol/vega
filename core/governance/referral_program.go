@@ -39,11 +39,23 @@ func validateUpdateReferralProgram(netp NetParams, p *types.UpdateReferralProgra
 	maxRewardFactor, _ := netp.GetDecimal(netparams.ReferralProgramMaxReferralRewardFactor)
 	maxDiscountFactor, _ := netp.GetDecimal(netparams.ReferralProgramMaxReferralDiscountFactor)
 	for i, tier := range p.Changes.BenefitTiers {
-		if tier.ReferralRewardFactor.GreaterThan(maxRewardFactor) {
-			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral reward factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralRewardFactor, maxRewardFactor.String(), tier.ReferralRewardFactor.String())
+		if tier.ReferralRewardFactors.Infra.GreaterThan(maxRewardFactor) {
+			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral reward infrastructure factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralRewardFactor, maxRewardFactor.String(), tier.ReferralRewardFactors.Infra.String())
 		}
-		if tier.ReferralDiscountFactor.GreaterThan(maxDiscountFactor) {
-			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral discount factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralDiscountFactor, maxDiscountFactor.String(), tier.ReferralDiscountFactor.String())
+		if tier.ReferralRewardFactors.Maker.GreaterThan(maxRewardFactor) {
+			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral reward maker factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralRewardFactor, maxRewardFactor.String(), tier.ReferralRewardFactors.Maker.String())
+		}
+		if tier.ReferralRewardFactors.Liquidity.GreaterThan(maxRewardFactor) {
+			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral reward liquidity factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralRewardFactor, maxRewardFactor.String(), tier.ReferralRewardFactors.Liquidity.String())
+		}
+		if tier.ReferralDiscountFactors.Infra.GreaterThan(maxDiscountFactor) {
+			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral discount infrastructure factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralDiscountFactor, maxDiscountFactor.String(), tier.ReferralDiscountFactors.Infra.String())
+		}
+		if tier.ReferralDiscountFactors.Maker.GreaterThan(maxDiscountFactor) {
+			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral discount maker factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralDiscountFactor, maxDiscountFactor.String(), tier.ReferralDiscountFactors.Maker.String())
+		}
+		if tier.ReferralDiscountFactors.Liquidity.GreaterThan(maxDiscountFactor) {
+			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral discount liquidity factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralDiscountFactor, maxDiscountFactor.String(), tier.ReferralDiscountFactors.Liquidity.String())
 		}
 	}
 	return types.ProposalErrorUnspecified, nil

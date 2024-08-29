@@ -17,12 +17,15 @@ package sqlstore
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -154,9 +157,9 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 			   referrer_taker_volume,
 			   referees_stats,
 			   vega_time,
-			   reward_factor,
+			   reward_factors,
 			   rewards_multiplier,
-			   rewards_factor_multiplier)
+			   rewards_factors_multiplier)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		stats.SetID,
 		stats.AtEpoch,
@@ -165,9 +168,9 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 		stats.ReferrerTakerVolume,
 		refereesStats,
 		stats.VegaTime,
-		stats.RewardFactor,
+		stats.RewardFactors,
 		stats.RewardsMultiplier,
-		stats.RewardsFactorMultiplier,
+		stats.RewardsFactorsMultiplier,
 	)
 
 	return err
@@ -181,18 +184,33 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 		pageInfo entities.PageInfo
 	)
 
+	stats := []struct {
+		SetID                                 entities.ReferralSetID
+		AtEpoch                               uint64
+		WasEligible                           bool
+		ReferralSetRunningNotionalTakerVolume string
+		ReferrerTakerVolume                   string
+		VegaTime                              time.Time
+		PartyID                               string
+		DiscountFactors                       string
+		EpochNotionalTakerVolume              string
+		RewardFactors                         *vega.RewardFactors
+		RewardsMultiplier                     string
+		RewardsFactorsMultiplier              *vega.RewardFactors
+	}{}
+
 	query = `SELECT set_id,
 					at_epoch,
 					was_eligible,
        				vega_time,
        				referral_set_running_notional_taker_volume,
        				referrer_taker_volume,
-       				reward_factor,
+       				reward_factors,
        				referee_stats->>'party_id' AS party_id,
-       				referee_stats->>'discount_factor' AS discount_factor,
+       				referee_stats->>'discount_factors' AS discount_factors,
        				referee_stats->>'epoch_notional_taker_volume' AS epoch_notional_taker_volume,
 					rewards_multiplier,
-    				rewards_factor_multiplier
+    				rewards_factors_multiplier
 			  FROM referral_set_stats, JSONB_ARRAY_ELEMENTS(referees_stats) AS referee_stats`
 
 	whereClauses := []string{}
@@ -220,8 +238,6 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 
 	query = fmt.Sprintf("%s %s", query, whereStr)
 
-	stats := []entities.FlattenReferralSetStats{}
-
 	query, args, err := PaginateQuery[entities.ReferralSetStatsCursor](query, args, referralSetStatsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
@@ -231,9 +247,32 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 		return nil, pageInfo, err
 	}
 
-	stats, pageInfo = entities.PageEntities[*v2.ReferralSetStatsEdge](stats, pagination)
+	flattenStats := []entities.FlattenReferralSetStats{}
+	for _, stat := range stats {
+		discountFactors := &vega.DiscountFactors{}
+		if err := json.Unmarshal([]byte(stat.DiscountFactors), discountFactors); err != nil {
+			return nil, pageInfo, err
+		}
 
-	return stats, pageInfo, nil
+		flattenStats = append(flattenStats, entities.FlattenReferralSetStats{
+			SetID:                                 stat.SetID,
+			AtEpoch:                               stat.AtEpoch,
+			WasEligible:                           stat.WasEligible,
+			ReferralSetRunningNotionalTakerVolume: stat.ReferralSetRunningNotionalTakerVolume,
+			ReferrerTakerVolume:                   stat.ReferrerTakerVolume,
+			VegaTime:                              stat.VegaTime,
+			PartyID:                               stat.PartyID,
+			DiscountFactors:                       discountFactors,
+			EpochNotionalTakerVolume:              stat.EpochNotionalTakerVolume,
+			RewardFactors:                         stat.RewardFactors,
+			RewardsMultiplier:                     stat.RewardsMultiplier,
+			RewardsFactorsMultiplier:              stat.RewardsFactorsMultiplier,
+		})
+	}
+
+	flattenStats, pageInfo = entities.PageEntities[*v2.ReferralSetStatsEdge](flattenStats, pagination)
+
+	return flattenStats, pageInfo, nil
 }
 
 func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID,

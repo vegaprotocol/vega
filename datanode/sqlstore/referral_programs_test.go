@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -60,12 +61,34 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 							MinimumEpochs:                     "10",
 							ReferralRewardFactor:              "0.0001",
 							ReferralDiscountFactor:            "0.0001",
+							ReferralRewardFactors: &vega.RewardFactors{
+								InfrastructureRewardFactor: "0.00002",
+								LiquidityRewardFactor:      "0.00004",
+								MakerRewardFactor:          "0.00004",
+							},
+							ReferralDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.00002",
+								LiquidityDiscountFactor:      "0.00004",
+								MakerDiscountFactor:          "0.00004",
+							},
+							TierNumber: ptr.From(uint64(1)),
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "10000",
 							MinimumEpochs:                     "100",
 							ReferralRewardFactor:              "0.001",
 							ReferralDiscountFactor:            "0.001",
+							ReferralRewardFactors: &vega.RewardFactors{
+								InfrastructureRewardFactor: "0.0002",
+								LiquidityRewardFactor:      "0.0004",
+								MakerRewardFactor:          "0.0004",
+							},
+							ReferralDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.0002",
+								LiquidityDiscountFactor:      "0.0004",
+								MakerDiscountFactor:          "0.0004",
+							},
+							TierNumber: ptr.From(uint64(2)),
 						},
 					},
 					EndOfProgramTimestamp: endTime.Unix(),
@@ -92,12 +115,34 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 							MinimumEpochs:                     "20",
 							ReferralRewardFactor:              "0.0002",
 							ReferralDiscountFactor:            "0.0002",
+							ReferralRewardFactors: &vega.RewardFactors{
+								InfrastructureRewardFactor: "0.00004",
+								LiquidityRewardFactor:      "0.00008",
+								MakerRewardFactor:          "0.00008",
+							},
+							ReferralDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.00004",
+								LiquidityDiscountFactor:      "0.00008",
+								MakerDiscountFactor:          "0.00008",
+							},
+							TierNumber: ptr.From(uint64(1)),
 						},
 						{
 							MinimumRunningNotionalTakerVolume: "20000",
 							MinimumEpochs:                     "200",
 							ReferralRewardFactor:              "0.002",
 							ReferralDiscountFactor:            "0.002",
+							ReferralRewardFactors: &vega.RewardFactors{
+								InfrastructureRewardFactor: "0.0004",
+								LiquidityRewardFactor:      "0.0008",
+								MakerRewardFactor:          "0.0008",
+							},
+							ReferralDiscountFactors: &vega.DiscountFactors{
+								InfrastructureDiscountFactor: "0.0004",
+								LiquidityDiscountFactor:      "0.0008",
+								MakerDiscountFactor:          "0.0008",
+							},
+							TierNumber: ptr.From(uint64(2)),
 						},
 					},
 					EndOfProgramTimestamp: endTime2.Unix(),
@@ -153,12 +198,34 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 					MinimumEpochs:                     "10",
 					ReferralRewardFactor:              "0.0001",
 					ReferralDiscountFactor:            "0.0001",
+					ReferralRewardFactors: &vega.RewardFactors{
+						InfrastructureRewardFactor: "0.00002",
+						LiquidityRewardFactor:      "0.00004",
+						MakerRewardFactor:          "0.00004",
+					},
+					ReferralDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.00002",
+						LiquidityDiscountFactor:      "0.00004",
+						MakerDiscountFactor:          "0.00004",
+					},
+					TierNumber: ptr.From(uint64(1)),
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "10000",
 					MinimumEpochs:                     "100",
 					ReferralRewardFactor:              "0.001",
 					ReferralDiscountFactor:            "0.001",
+					ReferralRewardFactors: &vega.RewardFactors{
+						InfrastructureRewardFactor: "0.0002",
+						LiquidityRewardFactor:      "0.0004",
+						MakerRewardFactor:          "0.0004",
+					},
+					ReferralDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.0002",
+						LiquidityDiscountFactor:      "0.0004",
+						MakerDiscountFactor:          "0.0004",
+					},
+					TierNumber: ptr.From(uint64(2)),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
@@ -188,12 +255,34 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 					MinimumEpochs:                     "20",
 					ReferralRewardFactor:              "0.0002",
 					ReferralDiscountFactor:            "0.0002",
+					ReferralRewardFactors: &vega.RewardFactors{
+						InfrastructureRewardFactor: "0.0004",
+						LiquidityRewardFactor:      "0.0008",
+						MakerRewardFactor:          "0.0008",
+					},
+					ReferralDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.0004",
+						LiquidityDiscountFactor:      "0.0008",
+						MakerDiscountFactor:          "0.0008",
+					},
+					TierNumber: ptr.From(uint64(1)),
 				},
 				{
 					MinimumRunningNotionalTakerVolume: "20000",
 					MinimumEpochs:                     "200",
 					ReferralRewardFactor:              "0.002",
 					ReferralDiscountFactor:            "0.002",
+					ReferralRewardFactors: &vega.RewardFactors{
+						InfrastructureRewardFactor: "0.004",
+						LiquidityRewardFactor:      "0.008",
+						MakerRewardFactor:          "0.008",
+					},
+					ReferralDiscountFactors: &vega.DiscountFactors{
+						InfrastructureDiscountFactor: "0.004",
+						LiquidityDiscountFactor:      "0.008",
+						MakerDiscountFactor:          "0.008",
+					},
+					TierNumber: ptr.From(uint64(2)),
 				},
 			},
 			EndOfProgramTimestamp: endTime.Unix(),

@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/ptr"
 )
 
 type AMMPools struct {
@@ -40,4 +41,18 @@ func (a *AMMPools) ListByPool(ctx context.Context, poolID string, pagination ent
 
 func (a *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	return a.AMMPools.ListBySubAccount(ctx, entities.PartyID(ammPartyID), pagination)
+}
+
+func (a *AMMPools) ListByPartyMarketStatus(ctx context.Context, partyID, marketID *string, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	var (
+		party  *entities.PartyID
+		market *entities.MarketID
+	)
+	if partyID != nil {
+		party = ptr.From(entities.PartyID(*partyID))
+	}
+	if marketID != nil {
+		market = ptr.From(entities.MarketID(*marketID))
+	}
+	return a.AMMPools.ListByPartyMarketStatus(ctx, party, market, status, pagination)
 }

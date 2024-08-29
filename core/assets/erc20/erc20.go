@@ -145,7 +145,7 @@ func (e *ERC20) SignListAsset() (msg []byte, sig []byte, err error) {
 	}
 
 	source := e.asset.Details.GetERC20()
-	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, e.ethClient.IsEthereum()).
+	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, false).
 		ListAsset(e.address, e.asset.ID, source.LifetimeLimit, source.WithdrawThreshold, nonce)
 	if err != nil {
 		return nil, nil, err
@@ -156,7 +156,7 @@ func (e *ERC20) SignListAsset() (msg []byte, sig []byte, err error) {
 
 func (e *ERC20) SignSetAssetLimits(nonce *num.Uint, lifetimeLimit *num.Uint, withdrawThreshold *num.Uint) (msg []byte, sig []byte, err error) {
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
-	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, e.ethClient.IsEthereum()).
+	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, false).
 		SetAssetLimits(e.address, lifetimeLimit, withdrawThreshold, nonce)
 	if err != nil {
 		return nil, nil, err
@@ -173,7 +173,7 @@ func (e *ERC20) SignWithdrawal(
 ) (msg []byte, sig []byte, err error) {
 	nonce, _ := num.UintFromBig(withdrawRef)
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
-	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, e.ethClient.IsEthereum()).
+	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress, e.chainID, false).
 		WithdrawAsset(e.address, amount, ethPartyAddress, now, nonce)
 	if err != nil {
 		return nil, nil, err

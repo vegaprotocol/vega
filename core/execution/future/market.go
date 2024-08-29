@@ -96,6 +96,7 @@ type Market struct {
 	fee                           *fee.Engine
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
+	volumeRebateService           fee.VolumeRebateService
 	liquidity                     *common.MarketLiquidity
 	liquidityEngine               common.LiquidityEngine
 
@@ -197,6 +198,7 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
 	parties common.Parties,
 ) (*Market, error) {
@@ -347,6 +349,7 @@ func NewMarket(
 		perp:                          marketType == types.MarketTypePerp,
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		volumeRebateService:           volumeRebateService,
 		partyMarginFactor:             map[string]num.Decimal{},
 		banking:                       banking,
 		markPriceCalculator:           common.NewCompositePriceCalculator(ctx, mkt.MarkPriceConfiguration, oracleEngine, timeService),
@@ -581,6 +584,14 @@ func (m *Market) Mkt() *types.Market {
 
 func (m *Market) GetEquityShares() *common.EquityShares {
 	return m.equityShares
+}
+
+func (m *Market) GetEquitySharesForParty(partyID string) num.Decimal {
+	primary := m.equityShares.SharesFromParty(partyID)
+	if sub, err := m.amm.GetAMMParty(partyID); err == nil {
+		return primary.Add(m.equityShares.SharesFromParty(sub))
+	}
+	return primary
 }
 
 func (m *Market) ResetParentIDAndInsurancePoolFraction() {
@@ -1002,6 +1013,7 @@ func (m *Market) PostRestore(ctx context.Context) error {
 			}
 		}
 	}
+	m.marketActivityTracker.RestoreMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 
 	// Disposal slippage was set as part of this upgrade, send event to ensure datanode is updated.
 	if vegacontext.InProgressUpgradeFromMultiple(ctx, "v0.75.8", "v0.75.7") {
@@ -1153,6 +1165,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.risk.GetRiskFactors().Long,
 			true, false)
 		m.markPriceLock.Unlock()
+		m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 		if err != nil {
 			// start the  monitoring auction if required
 			if m.as.AuctionStart() {
@@ -1783,6 +1796,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 		m.pMonitor.ResetPriceHistory(m.lastTradedPrice)
 	}
+	m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
 			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
@@ -2138,41 +2152,11 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	// now check for the parties position
-	positions := m.position.GetPositionsByParty(party)
-	if len(positions) > 1 {
+	if positions := m.position.GetPositionsByParty(party); len(positions) > 1 {
 		m.log.Panic("only one position expected", logging.Int("got", len(positions)))
-	}
-
-	if len(positions) < 1 {
+	} else if len(positions) < 1 {
 		rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
 		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
-	}
-
-	pos := positions[0]
-
-	// now we will reject if the direction of order if is not
-	// going to close the position or potential position
-	potentialSize := pos.Size() - pos.Sell() + pos.Buy()
-	size := pos.Size()
-
-	var stopOrderSide types.Side
-	if fallsBelow != nil {
-		stopOrderSide = fallsBelow.OrderSubmission.Side
-	} else {
-		stopOrderSide = risesAbove.OrderSubmission.Side
-	}
-
-	switch stopOrderSide {
-	case types.SideBuy:
-		if potentialSize >= 0 && size >= 0 {
-			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
-			return nil, common.ErrStopOrderSideNotClosingThePosition
-		}
-	case types.SideSell:
-		if potentialSize <= 0 && size <= 0 {
-			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
-			return nil, common.ErrStopOrderSideNotClosingThePosition
-		}
 	}
 
 	fallsBelowTriggered, risesAboveTriggered := m.stopOrderWouldTriggerAtSubmission(fallsBelow),
@@ -2712,12 +2696,12 @@ func (m *Market) calcFees(trades []*types.Trade) (events.FeesTransfer, error) {
 	)
 
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	}
 
 	if err != nil {
@@ -4695,6 +4679,7 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				false,
 				false)
 			m.markPriceLock.Unlock()
+			m.marketActivityTracker.UpdateMarkPrice(m.settlementAsset, m.mkt.ID, m.getCurrentMarkPrice())
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(
@@ -5281,79 +5266,66 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
 }
 
-func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+func (m *Market) checkOrderForSpam(side types.Side, orderPrice *num.Uint, orderSize uint64, peggedOrder *types.PeggedOrder, orderType vegapb.Order_Type, quantumMultiplier num.Decimal) error {
 	rf := num.DecimalOne()
 
 	factor := m.mkt.LinearSlippageFactor
 	if m.risk.IsRiskFactorInitialised() {
-		if order.Side == types.SideBuy {
+		if side == types.SideBuy {
 			rf = m.risk.GetRiskFactors().Long
 		} else {
 			rf = m.risk.GetRiskFactors().Short
 		}
 	}
 	var price *num.Uint
-	if order.PeggedOrder == nil {
-		price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
-	} else {
-		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
-		if order.Side == types.SideBuy {
-			priceInMarket.AddSum(order.PeggedOrder.Offset)
-		} else {
-			priceInMarket = priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
-		}
-		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
-	}
-	margins := num.UintZero().Mul(price, num.NewUint(order.TrueRemaining())).ToDecimal().Div(m.positionFactor)
-	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
-	if err != nil {
-		return err
-	}
-	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(m.minMaintenanceMarginQuantumMultiplier.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
-	}
-	return nil
-}
-
-func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
-	rf := num.DecimalOne()
-
-	factor := m.mkt.LinearSlippageFactor
-	if m.risk.IsRiskFactorInitialised() {
-		if orderSubmission.Side == types.SideBuy {
-			rf = m.risk.GetRiskFactors().Long
-		} else {
-			rf = m.risk.GetRiskFactors().Short
-		}
-	}
-
-	var price *num.Uint
-	if orderSubmission.PeggedOrder != nil || orderSubmission.Type == vega.Order_TYPE_MARKET {
+	if peggedOrder != nil || orderType == vega.Order_TYPE_MARKET {
 		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
 		offset := num.UintZero()
-		if orderSubmission.PeggedOrder != nil {
-			offset = orderSubmission.PeggedOrder.Offset
+		if peggedOrder != nil {
+			offset = peggedOrder.Offset
 		}
-		if orderSubmission.Side == types.SideBuy {
+		if side == types.SideBuy {
 			priceInMarket.AddSum(offset)
 		} else {
 			priceInMarket = priceInMarket.Sub(priceInMarket, offset)
 		}
 		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 	} else {
-		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
+		price, _ = num.UintFromDecimal(orderPrice.ToDecimal().Mul(m.priceFactor))
 	}
 
-	margins := num.UintZero().Mul(price, num.NewUint(orderSubmission.Size)).ToDecimal().Div(m.positionFactor)
+	margins := num.UintZero().Mul(price, num.NewUint(orderSize)).ToDecimal().Div(m.positionFactor)
 
 	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
 	if err != nil {
 		return err
 	}
-	if margins.Mul(rf.Add(factor)).LessThan(quantumMultiplier.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum maintenance margin for spam")
+	value := margins.Mul(rf.Add(factor))
+	required := quantumMultiplier.Mul(assetQuantum)
+	if value.LessThan(required) {
+		return fmt.Errorf(fmt.Sprintf("order value (%s) is less than minimum maintenance margin for spam (%s)", value.String(), required.String()))
 	}
 	return nil
+}
+
+func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+	return m.checkOrderForSpam(
+		order.Side,
+		order.Price,
+		order.Size,
+		order.PeggedOrder,
+		order.Type,
+		m.minMaintenanceMarginQuantumMultiplier)
+}
+
+func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	return m.checkOrderForSpam(
+		orderSubmission.Side,
+		orderSubmission.Price,
+		orderSubmission.Size,
+		orderSubmission.PeggedOrder,
+		orderSubmission.Type,
+		quantumMultiplier)
 }
 
 func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
@@ -5368,7 +5340,8 @@ func (m *Market) getRebasingOrder(
 ) (*types.Order, error) {
 	var volume uint64
 	fairPrice := pool.BestPrice(nil)
-	oneTick, _ := num.UintFromDecimal(num.DecimalOne().Mul(m.priceFactor))
+	oneTick, _ := num.UintFromDecimal(m.priceFactor)
+	oneTick = num.Max(num.UintOne(), oneTick)
 
 	var until *num.Uint
 	switch side {
@@ -5464,20 +5437,34 @@ func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) 
 	return false, types.SideUnspecified, nil
 }
 
-func VerifyAMMBounds(baseParam *num.Uint, lowerParam *num.Uint, upperParam *num.Uint, priceFactor num.Decimal) error {
-	base, _ := num.UintFromDecimal(baseParam.ToDecimal().Mul(priceFactor))
-	if lowerParam != nil {
-		lower, _ := num.UintFromDecimal(lowerParam.ToDecimal().Mul(priceFactor))
+func VerifyAMMBounds(params *types.ConcentratedLiquidityParameters, cap *num.Uint, priceFactor num.Decimal) error {
+	base, _ := num.UintFromDecimal(params.Base.ToDecimal().Mul(priceFactor))
+	if cap != nil && base.GTE(cap) {
+		return common.ErrAMMBoundsOutsidePriceCap
+	}
+
+	if params.LowerBound != nil {
+		lower, _ := num.UintFromDecimal(params.LowerBound.ToDecimal().Mul(priceFactor))
 		if lower.GTE(base) {
-			return fmt.Errorf(fmt.Sprintf("base (%s) as factored by market and asset decimals must be greater than lower bound (%s)", base.String(), lower.String()))
+			return fmt.Errorf("base (%s) as factored by market and asset decimals must be greater than lower bound (%s)", base.String(), lower.String())
+		}
+
+		if cap != nil && lower.GTE(cap) {
+			return common.ErrAMMBoundsOutsidePriceCap
 		}
 	}
-	if upperParam != nil {
-		upper, _ := num.UintFromDecimal(upperParam.ToDecimal().Mul(priceFactor))
+
+	if params.UpperBound != nil {
+		upper, _ := num.UintFromDecimal(params.UpperBound.ToDecimal().Mul(priceFactor))
 		if base.GTE(upper) {
-			return fmt.Errorf(fmt.Sprintf("upper bound (%s) as factored by market and asset decimals must be greater than base (%s)", upper.String(), base.String()))
+			return fmt.Errorf("upper bound (%s) as factored by market and asset decimals must be greater than base (%s)", upper.String(), base.String())
+		}
+
+		if cap != nil && upper.GTE(cap) {
+			return common.ErrAMMBoundsOutsidePriceCap
 		}
 	}
+
 	return nil
 }
 
@@ -5491,7 +5478,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 
 	// create the AMM curves but do not confirm it with the engine
 	var order *types.Order
-	if err := VerifyAMMBounds(submit.Parameters.Base, submit.Parameters.LowerBound, submit.Parameters.UpperBound, m.priceFactor); err != nil {
+	if err := VerifyAMMBounds(submit.Parameters, m.capMax, m.priceFactor); err != nil {
 		return err
 	}
 
@@ -5533,6 +5520,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	if order == nil {
 		m.amm.Confirm(ctx, pool)
 		m.matching.UpdateAMM(pool.AMMParty)
+		m.checkForReferenceMoves(ctx, nil, false)
 		return nil
 	}
 
@@ -5558,6 +5546,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	m.amm.Confirm(ctx, pool)
 	// now tell the matching engine something new has appeared incase it needs to update its auction IPV cache
 	m.matching.UpdateAMM(pool.AMMParty)
+	m.checkForReferenceMoves(ctx, nil, false)
 	return nil
 }
 
@@ -5570,7 +5559,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	defer func() { m.idgen = nil }()
 
 	if amend.Parameters != nil {
-		if err := VerifyAMMBounds(amend.Parameters.Base, amend.Parameters.LowerBound, amend.Parameters.UpperBound, m.priceFactor); err != nil {
+		if err := VerifyAMMBounds(amend.Parameters, m.capMax, m.priceFactor); err != nil {
 			return err
 		}
 	}
@@ -5580,7 +5569,6 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	if err != nil {
 		return err
 	}
-
 	// if we failed to rebase the amended pool be sure to reinstante the old one
 	defer func() {
 		if err != nil {
@@ -5608,6 +5596,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	if order == nil {
 		m.amm.Confirm(ctx, pool)
 		m.matching.UpdateAMM(pool.AMMParty)
+		m.checkForReferenceMoves(ctx, nil, false)
 		return nil
 	}
 
@@ -5618,13 +5607,17 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 			logging.Error(err),
 		)
 		if amend.CommitmentAmount != nil {
-			_, err = m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.AMMParty, prevCommitment)
+			if _, err := m.amm.UpdateSubAccountBalance(ctx, pool.Owner(), pool.AMMParty, prevCommitment); err != nil {
+				m.log.Panic("unable to restore AMM balances after failed amend", logging.Error(err))
+			}
 		}
+		err = common.ErrAMMCannotRebase // set it to err so that the defer runs
 		return err
 	}
 
 	m.amm.Confirm(ctx, pool)
 	m.matching.UpdateAMM(pool.AMMParty)
+	m.checkForReferenceMoves(ctx, nil, false)
 	return nil
 }
 
@@ -5645,6 +5638,9 @@ func (m *Market) CancelAMM(ctx context.Context, cancel *types.CancelAMM, determi
 
 	// tell matching incase it needs to remove the AMM's contribution to the IPV cache
 	m.matching.UpdateAMM(ammParty)
+
+	// rejig any pegged orders that might need re-pricing now an AMM is not longer there, or is no longer quoting one side
+	m.checkForReferenceMoves(ctx, nil, false)
 
 	if closeout == nil {
 		return nil

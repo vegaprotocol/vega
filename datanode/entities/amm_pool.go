@@ -52,6 +52,10 @@ type AMMPool struct {
 	UpperTheoreticalPosition       num.Decimal
 }
 
+type AMMFilterType interface {
+	Where(fieldName *string, nextBindVar func(*[]any, any) string, args ...any) (string, []any)
+}
+
 type AMMPoolsFilter interface {
 	*PartyID | *MarketID | *AMMPoolID | *AMMStatus
 

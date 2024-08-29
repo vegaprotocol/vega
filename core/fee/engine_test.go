@@ -35,13 +35,24 @@ const (
 	testAsset = "ETH"
 )
 
-var testFees = types.Fees{
-	Factors: &types.FeeFactors{
-		LiquidityFee:      num.DecimalFromFloat(0.1),
-		InfrastructureFee: num.DecimalFromFloat(0.05),
-		MakerFee:          num.DecimalFromFloat(0.02),
-	},
-}
+var (
+	testFees = types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.05),
+			MakerFee:          num.DecimalFromFloat(0.02),
+		},
+	}
+	extendedTestFees = types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.05),
+			MakerFee:          num.DecimalFromFloat(0.02),
+			BuyBackFee:        num.DecimalFromFloat(0.002),
+			TreasuryFee:       num.DecimalFromFloat(0.003),
+		},
+	}
+)
 
 type testFee struct {
 	*fee.Engine
@@ -60,25 +71,45 @@ func getTestFee(t *testing.T) *testFee {
 	return &testFee{eng}
 }
 
+func getExtendedTestFee(t *testing.T) *testFee {
+	t.Helper()
+	eng, err := fee.New(
+		logging.NewTestLogger(),
+		fee.NewDefaultConfig(),
+		extendedTestFees,
+		testAsset,
+		num.DecimalFromInt64(1),
+	)
+	assert.NoError(t, err)
+	return &testFee{eng}
+}
+
 func TestFeeEngine(t *testing.T) {
 	t.Run("update fee factors with invalid input", testUpdateFeeFactorsError)
 	t.Run("update fee factors with valid input", testUpdateFeeFactors)
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
 	t.Run("calculate continuous trading fee", testCalcContinuousTrading)
 	t.Run("calculate continuous trading fee + check amounts", testCalcContinuousTradingAndCheckAmounts)
-
 	t.Run("calculate continuous trading fee + check amounts with discounts and rewards", testCalcContinuousTradingAndCheckAmountsWithDiscount)
-
-	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
 	t.Run("calculate auction trading fee empty trade", testCalcAuctionTradingErrorEmptyTrade)
 	t.Run("calculate auction trading fee", testCalcAuctionTrading)
-
 	t.Run("calculate batch auction trading fee empty trade", testCalcBatchAuctionTradingErrorEmptyTrade)
 	t.Run("calculate batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
 	t.Run("calculate batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
-
 	t.Run("Build liquidity fee transfers with remainder", testBuildLiquidityFeesRemainder)
 	t.Run("calculate closeout fees", testCloseoutFees)
+}
+
+func TestFeeEngineWithBuyBackAndTreasury(t *testing.T) {
+	t.Run("update fee factors with invalid input", testUpdateExtendedFeeFactorsError)
+	t.Run("update fee factors with valid input", testUpdateExtendedFeeFactors)
+	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
+	t.Run("calculate continuous trading fee", testCalcContinuousTradingExtended)
+	t.Run("calculate continuous trading fee + check amounts", testCalcContinuousTradingAndCheckAmountsExtended)
+	t.Run("calculate continuous trading fee + check amounts with discounts and rewards", testCalcContinuousTradingAndCheckAmountsWithDiscountExtended)
+	t.Run("calculate auction trading fee empty trade", testCalcAuctionTradingErrorEmptyTrade)
+	t.Run("calculate auction trading fee", testCalcAuctionTradingExtended)
+	t.Run("calculate batch auction trading fee empty trade", testCalcBatchAuctionTradingErrorEmptyTrade)
 }
 
 func testUpdateFeeFactors(t *testing.T) {
@@ -88,6 +119,21 @@ func testUpdateFeeFactors(t *testing.T) {
 			LiquidityFee:      num.DecimalFromFloat(0.1),
 			InfrastructureFee: num.DecimalFromFloat(0.5),
 			MakerFee:          num.DecimalFromFloat(0.25),
+		},
+	}
+	err := eng.UpdateFeeFactors(okFees)
+	assert.NoError(t, err)
+}
+
+func testUpdateExtendedFeeFactors(t *testing.T) {
+	eng := getExtendedTestFee(t)
+	okFees := types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.5),
+			MakerFee:          num.DecimalFromFloat(0.25),
+			BuyBackFee:        num.DecimalFromFloat(0.3),
+			TreasuryFee:       num.DecimalFromFloat(0.4),
 		},
 	}
 	err := eng.UpdateFeeFactors(okFees)
@@ -126,13 +172,46 @@ func testUpdateFeeFactorsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func testUpdateExtendedFeeFactorsError(t *testing.T) {
+	eng := getExtendedTestFee(t)
+	koFees := types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.5),
+			MakerFee:          num.DecimalFromFloat(0.25),
+			BuyBackFee:        num.DecimalFromFloat(-1),
+			TreasuryFee:       num.DecimalFromFloat(0.4),
+		},
+	}
+	err := eng.UpdateFeeFactors(koFees)
+	assert.Error(t, err)
+
+	koFees = types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.11),
+			MakerFee:          num.DecimalFromFloat(0.25),
+			BuyBackFee:        num.DecimalFromFloat(0.41),
+			TreasuryFee:       num.DecimalFromFloat(-1),
+		},
+	}
+	err = eng.UpdateFeeFactors(koFees)
+	assert.Error(t, err)
+}
+
 func testCalcContinuousTradingErrorEmptyTrade(t *testing.T) {
 	eng := getTestFee(t)
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
-	_, err := eng.CalculateForContinuousMode([]*types.Trade{}, discountRewardService, volumeDiscountService)
+	_, err := eng.CalculateForContinuousMode([]*types.Trade{}, discountRewardService, volumeDiscountService, volumeRebateService)
+	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
+
+	eng = getExtendedTestFee(t)
+	_, err = eng.CalculateForContinuousMode([]*types.Trade{}, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
 }
 
@@ -141,9 +220,11 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	require.NoError(t, eng.UpdateFeeFactors(types.Fees{
 		Factors: &types.FeeFactors{
@@ -162,7 +243,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 		},
 	}
 
-	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 	transfers := ft.Transfers()
@@ -244,14 +325,162 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	}, eng.GetFeesStatsOnEpochEnd(num.DecimalFromInt64(1)))
 }
 
+func testCalcContinuousTradingAndCheckAmountsExtended(t *testing.T) {
+	eng := getExtendedTestFee(t)
+	ctrl := gomock.NewController(t)
+	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(types.PartyID("party2")).Return(num.DecimalFromFloat(0.0025)).AnyTimes()
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	require.NoError(t, eng.UpdateFeeFactors(types.Fees{
+		Factors: &types.FeeFactors{
+			MakerFee:          num.DecimalFromFloat(.000250),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			LiquidityFee:      num.DecimalFromFloat(0.001),
+			BuyBackFee:        num.DecimalFromFloat(0.002),
+			TreasuryFee:       num.DecimalFromFloat(0.003),
+		},
+	}))
+	trades := []*types.Trade{
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      5,
+			Price:     num.NewUint(100000),
+		},
+	}
+
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
+	assert.NotNil(t, ft)
+	assert.Nil(t, err)
+	transfers := ft.Transfers()
+	var pay, recv, infra, liquidity, bb, treasury, hmp, hmr int
+	for _, v := range transfers {
+		if v.Type == types.TransferTypeLiquidityFeePay {
+			liquidity++
+			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeInfrastructureFeePay {
+			infra++
+			assert.Equal(t, num.NewUint(250), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeMakerFeeReceive {
+			recv++
+			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeMakerFeePay {
+			pay++
+			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeBuyBackFeePay {
+			bb++
+			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeTreasuryPay {
+			treasury++
+			assert.Equal(t, num.NewUint(750), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeHighMakerRebatePay {
+			hmp++
+			assert.Equal(t, num.NewUint(1250), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeHighMakerRebateReceive {
+			hmr++
+			assert.Equal(t, num.NewUint(1250), v.Amount.Amount)
+		}
+	}
+
+	assert.Equal(t, liquidity, 1)
+	assert.Equal(t, infra, 1)
+	assert.Equal(t, bb, 1)
+	assert.Equal(t, treasury, 1)
+	assert.Equal(t, hmp, 1)
+	assert.Equal(t, hmr, 1)
+	assert.Equal(t, recv, len(trades))
+	assert.Equal(t, pay, len(trades))
+	assert.Equal(t, &eventspb.FeesStats{
+		Market:                   "",
+		Asset:                    testAsset,
+		EpochSeq:                 0,
+		TotalRewardsReceived:     []*eventspb.PartyAmount{},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:         "party1",
+				Amount:        "0",
+				QuantumAmount: "0",
+			},
+		},
+		VolumeDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:         "party1",
+				Amount:        "0",
+				QuantumAmount: "0",
+			},
+		},
+		TotalMakerFeesReceived: []*eventspb.PartyAmount{
+			{
+				Party:         "party2",
+				Amount:        "125",
+				QuantumAmount: "125",
+			},
+		},
+		MakerFeesGenerated: []*eventspb.MakerFeesGenerated{
+			{
+				Taker: "party1",
+				MakerFeesPaid: []*eventspb.PartyAmount{
+					{
+						Party:         "party2",
+						Amount:        "125",
+						QuantumAmount: "125",
+					},
+				},
+			},
+		},
+		TotalFeesPaidAndReceived: []*eventspb.PartyAmount{
+			{
+				Party:         "party1",
+				Amount:        "875",
+				QuantumAmount: "875",
+			},
+			{
+				Party:         "party2",
+				Amount:        "125",
+				QuantumAmount: "125",
+			},
+		},
+	}, eng.GetFeesStatsOnEpochEnd(num.DecimalFromInt64(1)))
+}
+
 func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 	eng := getTestFee(t)
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.3)).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalFromFloat(0.2)).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.1)).AnyTimes()
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.3),
+		Maker:     num.NewDecimalFromFloat(0.3),
+		Liquidity: num.NewDecimalFromFloat(0.3),
+	}).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.2),
+		Maker:     num.NewDecimalFromFloat(0.2),
+		Liquidity: num.NewDecimalFromFloat(0.2),
+	}).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(
+		types.Factors{
+			Infra:     num.NewDecimalFromFloat(0.1),
+			Maker:     num.NewDecimalFromFloat(0.1),
+			Liquidity: num.NewDecimalFromFloat(0.1),
+		})
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("party3"), nil).AnyTimes()
 	require.NoError(t, eng.UpdateFeeFactors(types.Fees{
 		Factors: &types.FeeFactors{
@@ -270,7 +499,7 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 		},
 	}
 
-	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 	transfers := ft.Transfers()
@@ -367,6 +596,166 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 	}, eng.GetFeesStatsOnEpochEnd(num.DecimalFromInt64(1)))
 }
 
+func testCalcContinuousTradingAndCheckAmountsWithDiscountExtended(t *testing.T) {
+	eng := getExtendedTestFee(t)
+	ctrl := gomock.NewController(t)
+	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.0025)).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.3),
+		Maker:     num.NewDecimalFromFloat(0.3),
+		Liquidity: num.NewDecimalFromFloat(0.3),
+	}).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.2),
+		Maker:     num.NewDecimalFromFloat(0.2),
+		Liquidity: num.NewDecimalFromFloat(0.2),
+	}).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(
+		types.Factors{
+			Infra:     num.NewDecimalFromFloat(0.1),
+			Maker:     num.NewDecimalFromFloat(0.1),
+			Liquidity: num.NewDecimalFromFloat(0.1),
+		})
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("party3"), nil).AnyTimes()
+	require.NoError(t, eng.UpdateFeeFactors(types.Fees{
+		Factors: &types.FeeFactors{
+			MakerFee:          num.DecimalFromFloat(.000250),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			LiquidityFee:      num.DecimalFromFloat(0.001),
+			BuyBackFee:        num.DecimalFromFloat(0.002),
+			TreasuryFee:       num.DecimalFromFloat(0.003),
+		},
+	}))
+	trades := []*types.Trade{
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      5,
+			Price:     num.NewUint(100000),
+		},
+	}
+
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
+	assert.NotNil(t, ft)
+	assert.Nil(t, err)
+	transfers := ft.Transfers()
+	var pay, recv, infra, liquidity, bb, treasury, hmp, hmr int
+	for _, v := range transfers {
+		if v.Type == types.TransferTypeLiquidityFeePay {
+			liquidity++
+			assert.Equal(t, num.NewUint(252), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeInfrastructureFeePay {
+			infra++
+			assert.Equal(t, num.NewUint(127), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeMakerFeeReceive {
+			recv++
+			assert.Equal(t, num.NewUint(64), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeMakerFeePay {
+			pay++
+			assert.Equal(t, num.NewUint(64), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeBuyBackFeePay {
+			bb++
+			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeTreasuryPay {
+			treasury++
+			assert.Equal(t, num.NewUint(750), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeHighMakerRebatePay {
+			hmp++
+			assert.Equal(t, num.NewUint(1250), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeHighMakerRebateReceive {
+			hmr++
+			assert.Equal(t, num.NewUint(1250), v.Amount.Amount)
+		}
+	}
+
+	assert.Equal(t, liquidity, 1)
+	assert.Equal(t, infra, 1)
+	assert.Equal(t, bb, 1)
+	assert.Equal(t, treasury, 1)
+	assert.Equal(t, hmp, 1)
+	assert.Equal(t, hmr, 1)
+	assert.Equal(t, recv, len(trades))
+	assert.Equal(t, pay, len(trades))
+	assert.Equal(t, &eventspb.FeesStats{
+		Asset: testAsset,
+		TotalRewardsReceived: []*eventspb.PartyAmount{
+			{
+				Party:         "party3",
+				Amount:        "110",
+				QuantumAmount: "110",
+			},
+		},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+			{
+				Referrer: "party3",
+				GeneratedReward: []*eventspb.PartyAmount{
+					{
+						Party:         "party1",
+						Amount:        "110",
+						QuantumAmount: "110",
+					},
+				},
+			},
+		},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:         "party1",
+				Amount:        "262",
+				QuantumAmount: "262",
+			},
+		},
+		VolumeDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:         "party1",
+				Amount:        "60",
+				QuantumAmount: "60",
+			},
+		},
+		TotalMakerFeesReceived: []*eventspb.PartyAmount{
+			{
+				Party:         "party2",
+				Amount:        "64",
+				QuantumAmount: "64",
+			},
+		},
+		MakerFeesGenerated: []*eventspb.MakerFeesGenerated{
+			{
+				Taker: "party1",
+				MakerFeesPaid: []*eventspb.PartyAmount{
+					{
+						Party:         "party2",
+						Amount:        "64",
+						QuantumAmount: "64",
+					},
+				},
+			},
+		},
+		TotalFeesPaidAndReceived: []*eventspb.PartyAmount{
+			{
+				Party:         "party1",
+				Amount:        "443",
+				QuantumAmount: "443",
+			},
+			{
+				Party:         "party2",
+				Amount:        "64",
+				QuantumAmount: "64",
+			},
+		},
+	}, eng.GetFeesStatsOnEpochEnd(num.DecimalFromInt64(1)))
+}
+
 func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *testing.T, aggressorSide types.Side) {
 	t.Helper()
 	eng := getTestFee(t)
@@ -374,6 +763,8 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *te
 
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
 	eng.UpdateFeeFactors(types.Fees{
 		Factors: &types.FeeFactors{
@@ -398,13 +789,29 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *te
 		aggressor = "party2"
 	}
 
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.5)).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.25)).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.5),
+		Maker:     num.NewDecimalFromFloat(0.5),
+		Liquidity: num.NewDecimalFromFloat(0.5),
+	}).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.25),
+		Maker:     num.NewDecimalFromFloat(0.25),
+		Liquidity: num.NewDecimalFromFloat(0.25),
+	})
 	discountRewardService.EXPECT().GetReferrer(types.PartyID(aggressor)).Return(types.PartyID("referrer"), nil).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party1")).Return(num.DecimalFromFloat(0.3)).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party2")).Return(num.DecimalFromFloat(0.3)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(types.PartyID("party1")).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.3),
+		Maker:     num.NewDecimalFromFloat(0.3),
+		Liquidity: num.NewDecimalFromFloat(0.3),
+	}).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(types.PartyID("party2")).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.3),
+		Maker:     num.NewDecimalFromFloat(0.3),
+		Liquidity: num.NewDecimalFromFloat(0.3),
+	}).AnyTimes()
 
-	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 	transfers := ft.Transfers()
@@ -466,6 +873,8 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySideMultip
 
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
 	eng.UpdateFeeFactors(types.Fees{
 		Factors: &types.FeeFactors{
@@ -504,14 +913,30 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySideMultip
 		aggressor = "party2"
 	}
 
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.5)).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.25)).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.5),
+		Maker:     num.NewDecimalFromFloat(0.5),
+		Liquidity: num.NewDecimalFromFloat(0.5),
+	}).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.25),
+		Maker:     num.NewDecimalFromFloat(0.25),
+		Liquidity: num.NewDecimalFromFloat(0.25),
+	}).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("referrer"), nil).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(types.PartyID(aggressor)).Return(types.PartyID("referrer"), nil).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(aggressor).Return(num.DecimalFromFloat(0.3)).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalFromFloat(0.3)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(aggressor).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.3),
+		Maker:     num.NewDecimalFromFloat(0.3),
+		Liquidity: num.NewDecimalFromFloat(0.3),
+	}).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.3),
+		Maker:     num.NewDecimalFromFloat(0.3),
+		Liquidity: num.NewDecimalFromFloat(0.3),
+	}).AnyTimes()
 
-	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 	transfers := ft.Transfers()
@@ -639,9 +1064,11 @@ func testCalcContinuousTrading(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("party1"), errors.New("not a referrer")).AnyTimes()
 
 	trades := []*types.Trade{
@@ -682,7 +1109,7 @@ func testCalcContinuousTrading(t *testing.T) {
 		},
 	}
 
-	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 
@@ -716,12 +1143,121 @@ func testCalcContinuousTrading(t *testing.T) {
 	assert.Equal(t, pay, len(trades))
 }
 
+func testCalcContinuousTradingExtended(t *testing.T) {
+	eng := getExtendedTestFee(t)
+	ctrl := gomock.NewController(t)
+	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(types.PartyID("party2")).Return(num.DecimalFromFloat(0.00005)).AnyTimes()
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(types.PartyID("party3")).Return(num.DecimalZero()).AnyTimes()
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(types.PartyID("party4")).Return(num.DecimalZero()).AnyTimes()
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(types.PartyID("party5")).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("party1"), errors.New("not a referrer")).AnyTimes()
+
+	trades := []*types.Trade{
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      10,
+			Price:     num.NewUint(10000),
+		},
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party3",
+			Size:      1,
+			Price:     num.NewUint(10300),
+		},
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party4",
+			Size:      7,
+			Price:     num.NewUint(10300),
+		},
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      2,
+			Price:     num.NewUint(10500),
+		},
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party5",
+			Size:      5,
+			Price:     num.NewUint(11000),
+		},
+	}
+
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
+	assert.NotNil(t, ft)
+	assert.Nil(t, err)
+
+	// get the amounts map
+	feeAmounts := ft.TotalFeesAmountPerParty()
+	party1Amount, ok := feeAmounts["party1"]
+	assert.True(t, ok)
+	assert.Equal(t, num.NewUint(43928), party1Amount)
+
+	// get the transfer and check we have enough of each types
+	transfers := ft.Transfers()
+	var pay, recv, infra, liquidity, highMakerPay, highMakerReceive, bb, treasury int
+	for _, v := range transfers {
+		if v.Type == types.TransferTypeLiquidityFeePay {
+			liquidity++
+		}
+		if v.Type == types.TransferTypeInfrastructureFeePay {
+			infra++
+		}
+		if v.Type == types.TransferTypeMakerFeeReceive {
+			recv++
+		}
+		if v.Type == types.TransferTypeMakerFeePay {
+			pay++
+		}
+		if v.Type == types.TransferTypeHighMakerRebatePay {
+			highMakerPay++
+		}
+		if v.Type == types.TransferTypeHighMakerRebateReceive {
+			highMakerReceive++
+		}
+		if v.Type == types.TransferTypeBuyBackFeePay {
+			bb++
+		}
+		if v.Type == types.TransferTypeTreasuryPay {
+			treasury++
+		}
+	}
+
+	assert.Equal(t, liquidity, 1)
+	assert.Equal(t, infra, 1)
+	assert.Equal(t, highMakerPay, 2)
+	assert.Equal(t, highMakerReceive, 2)
+	assert.Equal(t, recv, len(trades))
+	assert.Equal(t, pay, len(trades))
+	assert.Equal(t, bb, len(trades))
+	assert.Equal(t, treasury, len(trades))
+}
+
 func testCalcAuctionTradingErrorEmptyTrade(t *testing.T) {
 	eng := getTestFee(t)
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	_, err := eng.CalculateForAuctionMode([]*types.Trade{}, discountRewardService, volumeDiscountService)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	_, err := eng.CalculateForAuctionMode([]*types.Trade{}, discountRewardService, volumeDiscountService, volumeRebateService)
+	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
+
+	eng = getExtendedTestFee(t)
+	_, err = eng.CalculateForAuctionMode([]*types.Trade{}, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
 }
 
@@ -730,9 +1266,11 @@ func testCalcAuctionTrading(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{
 		{
@@ -744,7 +1282,7 @@ func testCalcAuctionTrading(t *testing.T) {
 		},
 	}
 
-	ft, err := eng.CalculateForAuctionMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForAuctionMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 
@@ -785,23 +1323,115 @@ func testCalcAuctionTrading(t *testing.T) {
 	assert.Equal(t, pay, 0)
 }
 
+func testCalcAuctionTradingExtended(t *testing.T) {
+	eng := getExtendedTestFee(t)
+	ctrl := gomock.NewController(t)
+	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.0025)).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	trades := []*types.Trade{
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      1,
+			Price:     num.NewUint(100),
+		},
+	}
+
+	ft, err := eng.CalculateForAuctionMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
+	assert.NotNil(t, ft)
+	assert.Nil(t, err)
+
+	// get the amounts map
+	feeAmounts := ft.TotalFeesAmountPerParty()
+	// fees are (100 * 0.1 + 100 * 0.05) = 15
+	// 15 / 2 = 7.5
+	// internally the engine Ceil all fees.
+	// so here we will expect 8 for each
+	party1Amount, ok := feeAmounts["party1"]
+	assert.True(t, ok)
+	assert.Equal(t, num.NewUint(8), party1Amount)
+	party2Amount, ok := feeAmounts["party2"]
+	assert.True(t, ok)
+	assert.Equal(t, num.NewUint(8), party2Amount)
+
+	// get the transfer and check we have enough of each types
+	transfers := ft.Transfers()
+	var pay, recv, infra, liquidity, hmp, hmr, bb, treasury int
+	for _, v := range transfers {
+		if v.Type == types.TransferTypeLiquidityFeePay {
+			liquidity++
+		}
+		if v.Type == types.TransferTypeInfrastructureFeePay {
+			infra++
+		}
+		if v.Type == types.TransferTypeMakerFeeReceive {
+			recv++
+		}
+		if v.Type == types.TransferTypeMakerFeePay {
+			pay++
+		}
+		if v.Type == types.TransferTypeHighMakerRebatePay {
+			hmp++
+		}
+		if v.Type == types.TransferTypeHighMakerRebateReceive {
+			hmr++
+		}
+		if v.Type == types.TransferTypeBuyBackFeePay {
+			bb++
+		}
+		if v.Type == types.TransferTypeTreasuryPay {
+			treasury++
+		}
+	}
+
+	assert.Equal(t, 2, liquidity)
+	assert.Equal(t, 2, infra)
+	assert.Equal(t, 0, recv)
+	assert.Equal(t, 0, pay)
+	assert.Equal(t, 0, hmp)
+	assert.Equal(t, 0, hmr)
+	assert.Equal(t, 2, bb)
+	assert.Equal(t, 2, treasury)
+}
+
 func TestCalcAuctionTradingWithDiscountsAndRewards(t *testing.T) {
 	eng := getTestFee(t)
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).DoAndReturn(func(p types.PartyID) num.Decimal {
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).DoAndReturn(func(p types.PartyID) types.Factors {
 		if p == types.PartyID("party1") {
-			return num.DecimalZero()
+			return types.EmptyFactors
 		} else {
-			return num.NewDecimalFromFloat(0.5)
+			return types.Factors{
+				Infra:     num.NewDecimalFromFloat(0.5),
+				Maker:     num.NewDecimalFromFloat(0.5),
+				Liquidity: num.NewDecimalFromFloat(0.5),
+			}
 		}
 	}).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).DoAndReturn(func(p types.PartyID) num.Decimal {
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).DoAndReturn(func(p types.PartyID) types.Factors {
 		if p == types.PartyID("party1") {
-			return num.NewDecimalFromFloat(0.2)
+			return types.Factors{
+				Infra:     num.NewDecimalFromFloat(0.2),
+				Maker:     num.NewDecimalFromFloat(0.2),
+				Liquidity: num.NewDecimalFromFloat(0.2),
+			}
 		} else {
-			return num.NewDecimalFromFloat(0.3)
+			return types.Factors{
+				Infra:     num.NewDecimalFromFloat(0.3),
+				Maker:     num.NewDecimalFromFloat(0.3),
+				Liquidity: num.NewDecimalFromFloat(0.3),
+			}
 		}
 	}).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).DoAndReturn(func(p types.PartyID) (types.PartyID, error) {
@@ -811,8 +1441,12 @@ func TestCalcAuctionTradingWithDiscountsAndRewards(t *testing.T) {
 			return types.PartyID(""), errors.New("No referrer")
 		}
 	}).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party1")).Return(num.DecimalFromFloat(0.5)).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party2")).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(types.PartyID("party1")).Return(types.Factors{
+		Infra:     num.NewDecimalFromFloat(0.5),
+		Maker:     num.NewDecimalFromFloat(0.5),
+		Liquidity: num.NewDecimalFromFloat(0.5),
+	}).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(types.PartyID("party2")).Return(types.EmptyFactors).AnyTimes()
 
 	trades := []*types.Trade{
 		{
@@ -824,7 +1458,7 @@ func TestCalcAuctionTradingWithDiscountsAndRewards(t *testing.T) {
 		},
 	}
 
-	ft, err := eng.CalculateForAuctionMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForAuctionMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 
@@ -898,7 +1532,13 @@ func testCalcBatchAuctionTradingErrorEmptyTrade(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	_, err := eng.CalculateForFrequentBatchesAuctionMode([]*types.Trade{}, discountRewardService, volumeDiscountService)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	_, err := eng.CalculateForFrequentBatchesAuctionMode([]*types.Trade{}, discountRewardService, volumeDiscountService, volumeRebateService)
+	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
+
+	eng = getExtendedTestFee(t)
+	_, err = eng.CalculateForFrequentBatchesAuctionMode([]*types.Trade{}, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
 }
 
@@ -907,9 +1547,11 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{
 		{
@@ -923,7 +1565,7 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 		},
 	}
 
-	ft, err := eng.CalculateForFrequentBatchesAuctionMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForFrequentBatchesAuctionMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 
@@ -969,9 +1611,11 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{
 		{
@@ -985,7 +1629,7 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 		},
 	}
 
-	ft, err := eng.CalculateForFrequentBatchesAuctionMode(trades, discountRewardService, volumeDiscountService)
+	ft, err := eng.CalculateForFrequentBatchesAuctionMode(trades, discountRewardService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 
@@ -1028,9 +1672,9 @@ func testCloseoutFees(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
-	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{
 		{
@@ -1067,9 +1711,10 @@ func testCloseoutFees(t *testing.T) {
 	assert.NotNil(t, fee)
 	allTransfers := ft.Transfers()
 	// first we have the network -> pay transfers, then 1 transfer per good party
-	assert.Equal(t, len(trades), len(allTransfers)-3)
-	goodPartyTransfers := allTransfers[3:]
-	networkTransfers := allTransfers[:3]
+	// two additional transfers for the buy back and treasury fees
+	assert.Equal(t, len(trades), len(allTransfers)-5)
+	goodPartyTransfers := allTransfers[5:]
+	networkTransfers := allTransfers[:5]
 
 	numTrades := num.NewUint(uint64(len(trades)))
 	// maker fee is 100 * 0.02 == 2

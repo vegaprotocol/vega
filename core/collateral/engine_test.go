@@ -574,7 +574,7 @@ func testFeeTransferContinuousOKWithEnoughInGenral(t *testing.T) {
 	defer eng.Finish()
 	party := "myparty"
 	// create party
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	general, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	require.NoError(t, err)
 
@@ -617,7 +617,7 @@ func testFeeTransferContinuousOKWith0Amount(t *testing.T) {
 	defer eng.Finish()
 	party := "myparty"
 	// create party
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	general, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	require.NoError(t, err)
 
@@ -662,7 +662,7 @@ func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
 	defer eng.Finish()
 	party := "myparty"
 	// create party
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	_, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	require.NoError(t, err)
 
@@ -704,7 +704,7 @@ func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
 	defer eng.Finish()
 	party := "myparty"
 	// create party
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	_, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	require.NoError(t, err)
 
@@ -776,7 +776,7 @@ func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
 	defer eng.Finish()
 	party := "myparty"
 	// create party
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	general, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	require.NoError(t, err)
 

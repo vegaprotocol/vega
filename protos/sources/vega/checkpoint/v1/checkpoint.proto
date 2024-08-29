@@ -214,6 +214,7 @@ message MarketTracker {
   repeated TakerNotionalVolume taker_notional_volume = 2;
   repeated MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
   repeated EpochPartyTakerFees epoch_taker_fees = 4;
+  repeated GameEligibilityTracker game_eligibility_tracker = 5;
 }
 
 message MarketActivityTracker {
@@ -245,6 +246,18 @@ message MarketActivityTracker {
   repeated EpochReturnsData realised_returns_history = 22;
 
   repeated string amm_parties = 23;
+
+  repeated PartyFees buy_back_fees = 24;
+  repeated PartyFees treasury_fees = 25;
+}
+
+message GameEligibilityTracker {
+  string game_id = 1;
+  repeated EpochEligibility epoch_eligibility = 2;
+}
+
+message EpochEligibility {
+  repeated string eligible_parties = 1;
 }
 
 message EpochPartyTakerFees {
@@ -315,6 +328,7 @@ message TWNotionalData {
   bytes notional = 2;
   int64 time = 3;
   bytes tw_notional = 4;
+  bytes price = 5;
 }
 
 message PartyFees {

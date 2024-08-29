@@ -42,6 +42,9 @@ type curve struct {
 	// note that this equals Vega's position at the boundary only in the lower curve, since Vega position == curve-position
 	// in the upper curve Vega's position == 0 => position of `pv`` in curve-position, Vega's position pv => 0 in curve-position
 	pv num.Decimal
+
+	lDivSqrtPu num.Decimal
+	sqrtHigh   num.Decimal
 }
 
 func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
@@ -56,8 +59,8 @@ func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
 		return 0
 	}
 
-	stP := impliedPosition(sqrt(st), sqrt(c.high), c.l)
-	ndP := impliedPosition(sqrt(nd), sqrt(c.high), c.l)
+	stP := impliedPosition(sqrt(st), c.sqrtHigh, c.l)
+	ndP := impliedPosition(sqrt(nd), c.sqrtHigh, c.l)
 
 	// abs(P(st) - P(nd))
 	volume := stP.Sub(ndP).Abs()
@@ -67,7 +70,7 @@ func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
 // positionAtPrice returns the position of the AMM if its fair-price were the given price. This
 // will be signed for long/short as usual.
 func (c *curve) positionAtPrice(sqrt sqrtFn, price *num.Uint) int64 {
-	pos := impliedPosition(sqrt(price), sqrt(c.high), c.l)
+	pos := impliedPosition(sqrt(price), c.sqrtHigh, c.l)
 	if c.isLower {
 		return pos.IntPart()
 	}
@@ -111,6 +114,8 @@ type Pool struct {
 
 	maxCalculationLevels *num.Uint // maximum number of price levels the AMM will be expanded into
 	oneTick              *num.Uint // one price tick
+
+	fpCache map[int64]*num.Uint
 }
 
 func NewPool(
@@ -145,9 +150,10 @@ func NewPool(
 		position:             position,
 		priceFactor:          priceFactor,
 		positionFactor:       positionFactor,
-		oneTick:              oneTick,
+		oneTick:              num.Max(num.UintOne(), oneTick),
 		status:               types.AMMPoolStatusActive,
 		maxCalculationLevels: maxCalculationLevels,
+		fpCache:              map[int64]*num.Uint{},
 	}
 	err := pool.setCurves(rf, sf, linearSlippage)
 	if err != nil {
@@ -164,6 +170,7 @@ func NewPoolFromProto(
 	state *snapshotpb.PoolMapEntry_Pool,
 	party string,
 	priceFactor num.Decimal,
+	positionFactor num.Decimal,
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 
@@ -232,17 +239,18 @@ func NewPoolFromProto(
 			LeverageAtLowerBound: lowerLeverage,
 			LeverageAtUpperBound: upperLeverage,
 		},
-		owner:       party,
-		market:      state.Market,
-		asset:       state.Asset,
-		sqrt:        sqrt,
-		collateral:  collateral,
-		position:    position,
-		lower:       lowerCu,
-		upper:       upperCu,
-		priceFactor: priceFactor,
-		oneTick:     oneTick,
-		status:      state.Status,
+		owner:          party,
+		market:         state.Market,
+		asset:          state.Asset,
+		sqrt:           sqrt,
+		collateral:     collateral,
+		position:       position,
+		lower:          lowerCu,
+		upper:          upperCu,
+		priceFactor:    priceFactor,
+		positionFactor: positionFactor,
+		oneTick:        num.Max(num.UintOne(), oneTick),
+		status:         state.Status,
 	}, nil
 }
 
@@ -266,12 +274,18 @@ func NewCurveFromProto(c *snapshotpb.PoolMapEntry_Curve) (*curve, error) {
 	if overflow {
 		return nil, fmt.Errorf("failed to convert string to Uint: %s", c.Low)
 	}
+
+	sqrtHigh := num.UintOne().Sqrt(high)
+	lDivSqrtPu := l.Div(sqrtHigh)
+
 	return &curve{
-		l:     l,
-		high:  high,
-		low:   low,
-		empty: c.Empty,
-		pv:    pv,
+		l:          l,
+		high:       high,
+		low:        low,
+		empty:      c.Empty,
+		pv:         pv,
+		sqrtHigh:   sqrtHigh,
+		lDivSqrtPu: lDivSqrtPu,
 	}, nil
 }
 
@@ -353,6 +367,7 @@ func (p *Pool) Update(
 		sqrt:                 p.sqrt,
 		oneTick:              p.oneTick,
 		maxCalculationLevels: p.maxCalculationLevels,
+		fpCache:              map[int64]*num.Uint{},
 	}
 	if err := updated.setCurves(rf, sf, linearSlippage); err != nil {
 		return nil, err
@@ -441,14 +456,20 @@ func generateCurve(
 
 	// now we scale theoretical position by position factor so that is it feeds through into all subsequent equations
 	pv = pv.Mul(positionFactor)
+	l := pv.Mul(lu)
+
+	sqrtHigh := sqrt(high)
+	lDivSqrtPu := l.Div(sqrtHigh)
 
 	// and finally calculate L = pv * Lu
 	return &curve{
-		l:       pv.Mul(lu),
-		low:     low,
-		high:    high,
-		pv:      pv,
-		isLower: isLower,
+		l:          l,
+		low:        low,
+		high:       high,
+		pv:         pv,
+		isLower:    isLower,
+		lDivSqrtPu: lDivSqrtPu,
+		sqrtHigh:   sqrtHigh,
 	}
 }
 
@@ -586,39 +607,52 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 		st, nd = nd, st
 	}
 
-	fp := p.fairPrice()
+	// map the given st/nd prices into positions, then the difference is the volume
+	asPosition := func(price *num.Uint) int64 {
+		switch {
+		case price.GT(p.lower.high):
+			// in upper curve
+			if !p.upper.empty {
+				return p.upper.positionAtPrice(p.sqrt, num.Min(p.upper.high, price))
+			}
+		case price.LT(p.lower.high):
+			// in lower curve
+			if !p.lower.empty {
+				return p.lower.positionAtPrice(p.sqrt, num.Max(p.lower.low, price))
+			}
+		}
+		return 0
+	}
+
+	stP := asPosition(st)
+	ndP := asPosition(nd)
+
 	if side == types.SideSell {
-		// want all buy volume so everything below fair price
-		nd = num.Min(fp, nd)
+		// want all buy volume so everything below fair price, where the AMM is long
+		ndP = num.MaxV(pos, ndP)
 	}
 
 	if side == types.SideBuy {
-		// want all sell volume so everything above fair price
-		st = num.Max(fp, st)
+		// want all sell volume so everything above fair price, where the AMM is short
+		stP = num.MinV(pos, stP)
 	}
 
-	var other *curve
-	var volume uint64
-	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
-	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
-	if pos < 0 || (pos == 0 && side == types.SideBuy) {
-		volume = p.upper.volumeBetweenPrices(p.sqrt, st, nd)
-		other = p.lower
-	} else {
-		volume = p.lower.volumeBetweenPrices(p.sqrt, st, nd)
-		other = p.upper
+	if !p.closing() {
+		return uint64(stP - ndP)
 	}
 
-	if p.closing() {
-		return num.MinV(volume, uint64(num.AbsV(pos)))
+	if pos > 0 {
+		// if closing and long, we have no volume at short prices, so cap range to > 0
+		stP = num.MaxV(0, stP)
+		ndP = num.MaxV(0, ndP)
 	}
 
-	// if the position is non-zero, the incoming order could push us across to the other curve
-	// so we need to check for volume there too
-	if pos != 0 {
-		volume += other.volumeBetweenPrices(p.sqrt, st, nd)
+	if pos < 0 {
+		// if closing and short, we have no volume at long prices, so cap range to < 0
+		stP = num.MinV(0, stP)
+		ndP = num.MinV(0, ndP)
 	}
-	return volume
+	return num.MinV(uint64(stP-ndP), uint64(num.AbsV(pos)))
 }
 
 // getBalance returns the total balance of the pool i.e it's general account + it's margin account.
@@ -694,6 +728,10 @@ func (p *Pool) fairPrice() *num.Uint {
 		return p.lower.high.Clone()
 	}
 
+	if fp, ok := p.fpCache[pos]; ok {
+		return fp.Clone()
+	}
+
 	cu := p.lower
 	pv := num.DecimalFromInt64(pos)
 	if pos < 0 {
@@ -706,10 +744,8 @@ func (p *Pool) fairPrice() *num.Uint {
 		panic("should not be calculating fair-price on empty-curve side")
 	}
 
-	l := cu.l
-
 	// pv * sqrt(pu) * (1/L) + 1
-	denom := pv.Mul(p.sqrt(cu.high)).Div(l).Add(num.DecimalOne())
+	denom := pv.Mul(cu.sqrtHigh).Div(cu.l).Add(num.DecimalOne())
 
 	// sqrt(fp) = sqrt(pu) / denom
 	sqrtPf := p.sqrt(cu.high).Div(denom)
@@ -727,12 +763,16 @@ func (p *Pool) fairPrice() *num.Uint {
 	}
 
 	fairPrice, _ := num.UintFromDecimal(fp)
+
+	p.fpCache = map[int64]*num.Uint{
+		pos: fairPrice.Clone(),
+	}
 	return fairPrice
 }
 
 // virtualBalancesShort returns the pools x, y balances when the pool has a negative position
 //
-// x = P + Pv + L / sqrt(pl)
+// x = P + Pv + L / sqrt(pu)
 // y = L * sqrt(fair-price).
 func (p *Pool) virtualBalancesShort(pos int64, fp *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.upper
@@ -748,10 +788,10 @@ func (p *Pool) virtualBalancesShort(pos int64, fp *num.Uint) (num.Decimal, num.D
 	// Pv
 	term2x := cu.pv
 
-	// L / sqrt(pl)
-	term3x := cu.l.Div(p.sqrt(cu.high))
+	// L / sqrt(pu)
+	term3x := cu.lDivSqrtPu
 
-	// x = P + (cc * rf / pu) + (L / sqrt(pl))
+	// x = P + (cc * rf / pu) + (L / sqrt(pu))
 	x := term2x.Add(term3x).Add(term1x)
 
 	// now lets get y
@@ -777,7 +817,7 @@ func (p *Pool) virtualBalancesLong(pos int64, fp *num.Uint) (num.Decimal, num.De
 	term1x := num.DecimalFromInt64(pos)
 
 	// L / sqrt(pu)
-	term2x := cu.l.Div(p.sqrt(cu.high))
+	term2x := cu.lDivSqrtPu
 
 	// x = P + (L / sqrt(pu))
 	x := term1x.Add(term2x)

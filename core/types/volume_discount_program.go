@@ -20,11 +20,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type VolumeDiscountStats struct {
-	DiscountFactor num.Decimal
+	DiscountFactors Factors
 }
 
 type VolumeDiscountProgram struct {
@@ -37,15 +38,16 @@ type VolumeDiscountProgram struct {
 
 type VolumeBenefitTier struct {
 	MinimumRunningNotionalTakerVolume *num.Uint
-	VolumeDiscountFactor              num.Decimal
+	VolumeDiscountFactors             Factors
 }
 
 func (v VolumeDiscountProgram) IntoProto() *vegapb.VolumeDiscountProgram {
 	benefitTiers := make([]*vegapb.VolumeBenefitTier, 0, len(v.VolumeBenefitTiers))
-	for _, tier := range v.VolumeBenefitTiers {
+	for i, tier := range v.VolumeBenefitTiers {
 		benefitTiers = append(benefitTiers, &vegapb.VolumeBenefitTier{
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.String(),
-			VolumeDiscountFactor:              tier.VolumeDiscountFactor.String(),
+			VolumeDiscountFactors:             tier.VolumeDiscountFactors.IntoDiscountFactorsProto(),
+			TierNumber:                        ptr.From(uint64(i + 1)),
 		})
 	}
 
@@ -63,7 +65,7 @@ func (v VolumeDiscountProgram) DeepClone() *VolumeDiscountProgram {
 	for _, tier := range v.VolumeBenefitTiers {
 		benefitTiers = append(benefitTiers, &VolumeBenefitTier{
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.Clone(),
-			VolumeDiscountFactor:              tier.VolumeDiscountFactor,
+			VolumeDiscountFactors:             tier.VolumeDiscountFactors.Clone(),
 		})
 	}
 
@@ -85,11 +87,10 @@ func NewVolumeDiscountProgramFromProto(v *vegapb.VolumeDiscountProgram) *VolumeD
 	benefitTiers := make([]*VolumeBenefitTier, 0, len(v.BenefitTiers))
 	for _, tier := range v.BenefitTiers {
 		minimumRunningVolume, _ := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
-		discountFactor, _ := num.DecimalFromString(tier.VolumeDiscountFactor)
 
 		benefitTiers = append(benefitTiers, &VolumeBenefitTier{
 			MinimumRunningNotionalTakerVolume: minimumRunningVolume,
-			VolumeDiscountFactor:              discountFactor,
+			VolumeDiscountFactors:             FactorsFromDiscountFactorsWithDefault(tier.VolumeDiscountFactors, tier.VolumeDiscountFactor),
 		})
 	}
 
@@ -108,10 +109,10 @@ func (c VolumeDiscountProgram) String() string {
 		if i > 1 {
 			benefitTierStr += ", "
 		}
-		benefitTierStr += fmt.Sprintf("%d(minimumRunningNotionalTakerVolume(%s), volumeDiscountFactor(%s))",
+		benefitTierStr += fmt.Sprintf("%d(minimumRunningNotionalTakerVolume(%s), volumeDiscountFactors(%s))",
 			i,
 			tier.MinimumRunningNotionalTakerVolume.String(),
-			tier.VolumeDiscountFactor.String(),
+			tier.VolumeDiscountFactors.String(),
 		)
 	}
 

@@ -230,6 +230,10 @@ message FeeFactors {
   string infrastructure_fee = 2;
   // Liquidity fee applied per market for market making.
   string liquidity_fee = 3;
+  // Fees sent to network treasury for later use based on governance actions (network wide).
+  string treasury_fee = 4;
+  // Fees used to purchase governance tokens via regular auctions (network wide).
+  string buy_back_fee = 5;
 }
 
 // Fees definition

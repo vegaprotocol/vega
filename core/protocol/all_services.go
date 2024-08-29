@@ -70,6 +70,7 @@ import (
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/core/volumediscount"
+	"code.vegaprotocol.io/vega/core/volumerebate"
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -168,6 +169,7 @@ type allServices struct {
 	activityStreak *activitystreak.SnapshotEngine
 	vesting        *vesting.SnapshotEngine
 	volumeDiscount *volumediscount.SnapshottedEngine
+	volumeRebate   *volumerebate.SnapshottedEngine
 
 	// l2 stuff
 	// TODO: instantiate
@@ -229,7 +231,7 @@ func newServices(
 
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
-
+	svcs.epochService.NotifyOnEpoch(svcs.collateral.OnEpochEvent, svcs.collateral.OnEpochRestore)
 	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
 
 	svcs.netParams = netparams.New(svcs.log, svcs.conf.NetworkParameters, svcs.broker)
@@ -296,7 +298,7 @@ func newServices(
 	svcs.txCache = txcache.NewTxCache(svcs.commander)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
-	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts, svcs.broker)
+	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts, svcs.broker, svcs.collateral)
 
 	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
 
@@ -331,6 +333,7 @@ func newServices(
 		svcs.volumeDiscount.OnEpochRestore,
 	)
 
+	svcs.volumeRebate = volumerebate.NewSnapshottedEngine(svcs.broker, svcs.marketActivityTracker)
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService,
 		svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView,
 		svcs.secondaryBridgeView, svcs.forwarderHeartbeat, svcs.partiesEngine)
@@ -338,12 +341,13 @@ func newServices(
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
-		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking, svcs.partiesEngine,
+		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.volumeRebate, svcs.banking, svcs.partiesEngine,
 		svcs.txCache,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.banking.OnEpoch, svcs.banking.OnEpochRestore)
+	svcs.epochService.NotifyOnEpoch(svcs.volumeRebate.OnEpoch, svcs.volumeRebate.OnEpochRestore)
 
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
@@ -464,6 +468,7 @@ func newServices(
 		svcs.l2Verifiers,
 		svcs.partiesEngine,
 		svcs.forwarderHeartbeat,
+		svcs.volumeRebate,
 	)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW)
@@ -747,6 +752,22 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MarketFeeFactorsInfrastructureFee,
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
+		},
+		{
+			Param:   netparams.MarketFeeFactorsTreasuryFee,
+			Watcher: svcs.executionEngine.OnMarketFeeFactorsTreasuryFeeUpdate,
+		},
+		{
+			Param:   netparams.MarketFeeFactorsBuyBackFee,
+			Watcher: svcs.executionEngine.OnMarketFeeFactorsBuyBackFeeUpdate,
+		},
+		{
+			Param:   netparams.MarketFeeFactorsTreasuryFee,
+			Watcher: svcs.volumeRebate.OnMarketFeeFactorsTreasuryFeeUpdate,
+		},
+		{
+			Param:   netparams.MarketFeeFactorsBuyBackFee,
+			Watcher: svcs.volumeRebate.OnMarketFeeFactorsBuyBackFeeUpdate,
 		},
 		{
 			Param:   netparams.MarketValueWindowLength,

@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased 0.78.0
+## Unreleased 0.79.0
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [8777](https://github.com/vegaprotocol/vega/issues/8777) - Stop orders can now be used to create or increase a position.
 
 ### 🗑️ Deprecation
 
@@ -19,12 +19,57 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.78.0
+
+### 🛠 Improvements
+
+- [11428](https://github.com/vegaprotocol/vega/issues/11428) - Add buy back and treasury fee and separate discount/reward factors.
+- [11468](https://github.com/vegaprotocol/vega/issues/11468) - Added support for volume rebate program.
+- [11523](https://github.com/vegaprotocol/vega/issues/11523) - Change method of caching to improve `AMM` snapshot performance.
+- [11426](https://github.com/vegaprotocol/vega/issues/11426) - `EstimateAMMBounds` now reports issues with commitment.
+- [11459](https://github.com/vegaprotocol/vega/issues/11459) - Deprecate time weight position reward metric and replace it with time weighted notional.
+- [11528](https://github.com/vegaprotocol/vega/issues/11528) - Added support for eligible entities reward.
+- [11372](https://github.com/vegaprotocol/vega/issues/11372) - Support combined filters for the `AMM` API.
+- [11583](https://github.com/vegaprotocol/vega/issues/11583) - Keep `AMM` ephemeral position throughout entire auction uncrossing.
+- [11535](https://github.com/vegaprotocol/vega/issues/11535) - Added support for lottery rank distribution strategy.
+- [11536](https://github.com/vegaprotocol/vega/issues/11536) - Make the batch market instructions errors programmatically usable.
+- [11546](https://github.com/vegaprotocol/vega/issues/11546) - Add validation to market proposals metadata.
+- [11562](https://github.com/vegaprotocol/vega/issues/11562) - Update average notional metric with mark price at the end of the epoch and when calculating live score.
+- [11570](https://github.com/vegaprotocol/vega/issues/11570) - Include the required set of parties for evaluation for eligible entities reward.
+- [11576](https://github.com/vegaprotocol/vega/issues/11576) - Replace additional rebate validation with a cap.
+- [11533](https://github.com/vegaprotocol/vega/issues/11533) - Suppose per party fee discounts in fee estimation.
+- [11577](https://github.com/vegaprotocol/vega/issues/11577) - Add API for party discounts and rewards.
+- [10716](https://github.com/vegaprotocol/vega/issues/10716) - Set Tendermint defaults during init.
+- [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
+
+### 🐛 Fixes
+
+- [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
+- [11526](https://github.com/vegaprotocol/vega/issues/11526) - `EstimateAMMBounds` now respects the market's decimal places.
+- [11486](https://github.com/vegaprotocol/vega/issues/11486) - `AMMs` can now be submitted on markets with more decimal places than asset decimal places.
+- [11561](https://github.com/vegaprotocol/vega/issues/11561) - Failing amends on `AMMs` now restore original properly.
+- [11583](https://github.com/vegaprotocol/vega/issues/11583) - Remove `AMMs` entirely from engine when market closes.
+- [11568](https://github.com/vegaprotocol/vega/issues/11568) - order book shape on closing `AMM` no longer panics.
+- [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
+- [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
+- [11616](https://github.com/vegaprotocol/vega/issues/11616) - `AMM` tradable volume now calculated purely in positions to prevent loss of precision.
+- [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
+- [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
+- [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
+- [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.
+- [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker.
+- [11607](https://github.com/vegaprotocol/vega/issues/11607) - Wire rank lottery distribution to team reward payout.
+- [959](https://github.com/vegaprotocol/core-test-coverage/issues/959) - Include `ELS` for `AMM` sub keys to the parent key `ELS`.
+- [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker.
+- [10907](https://github.com/vegaprotocol/vega/issues/10907) - Fix position API distressed status not getting updated once the party has been closed out.
+
+
 ## 0.77.5
 
 ### 🐛 Fixes
 
 - [11513](https://github.com/vegaprotocol/vega/issues/11513) - Rollback CometBFT to version `v0.38.8`.
-
+- [11516](https://github.com/vegaprotocol/vega/issues/11516) - Fix order spam check for amends.
 
 ## 0.77.4
 
@@ -32,6 +77,7 @@
 
 - [11508](https://github.com/vegaprotocol/vega/issues/11508) - Handle market order for margin spam protection.
 - [11507](https://github.com/vegaprotocol/vega/issues/11507) - Margin spam check to remove division by asset quantum.
+- [11504](https://github.com/vegaprotocol/vega/issues/11504) - Fix bug causing panic when accounting for volume rounding with AMM orders.
 
 
 ## 0.77.3

@@ -30,8 +30,14 @@ func validateUpdateVolumeDiscountProgram(netp NetParams, p *types.UpdateVolumeDi
 
 	maxDiscountFactor, _ := netp.GetDecimal(netparams.VolumeDiscountProgramMaxVolumeDiscountFactor)
 	for i, tier := range p.Changes.VolumeBenefitTiers {
-		if tier.VolumeDiscountFactor.GreaterThan(maxDiscountFactor) {
-			return types.ProposalErrorInvalidVolumeDiscountProgram, fmt.Errorf("tier %d defines a volume discount factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.VolumeDiscountProgramMaxVolumeDiscountFactor, maxDiscountFactor.String(), tier.VolumeDiscountFactor.String())
+		if tier.VolumeDiscountFactors.Infra.GreaterThan(maxDiscountFactor) {
+			return types.ProposalErrorInvalidVolumeDiscountProgram, fmt.Errorf("tier %d defines a volume discount infrastructure factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.VolumeDiscountProgramMaxVolumeDiscountFactor, maxDiscountFactor.String(), tier.VolumeDiscountFactors.Infra.String())
+		}
+		if tier.VolumeDiscountFactors.Maker.GreaterThan(maxDiscountFactor) {
+			return types.ProposalErrorInvalidVolumeDiscountProgram, fmt.Errorf("tier %d defines a volume discount maker factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.VolumeDiscountProgramMaxVolumeDiscountFactor, maxDiscountFactor.String(), tier.VolumeDiscountFactors.Maker.String())
+		}
+		if tier.VolumeDiscountFactors.Liquidity.GreaterThan(maxDiscountFactor) {
+			return types.ProposalErrorInvalidVolumeDiscountProgram, fmt.Errorf("tier %d defines a volume discount liquidity factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.VolumeDiscountProgramMaxVolumeDiscountFactor, maxDiscountFactor.String(), tier.VolumeDiscountFactors.Liquidity.String())
 		}
 	}
 	return 0, nil

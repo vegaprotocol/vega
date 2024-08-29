@@ -208,6 +208,15 @@ func (e *Engine) CheckOrderSpamAllMarkets(party string) error {
 	return fmt.Errorf("party " + party + " is not eligible to submit order transaction with no market in scope")
 }
 
+func (e *Engine) GetAllParties() []string {
+	keys := make([]string, 0, len(e.partiesAccsBalanceCache))
+	for k := range e.partiesAccsBalanceCache {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func (e *Engine) CheckOrderSpam(party, market string, assets []string) error {
 	e.cacheLock.RLock()
 	defer e.cacheLock.RUnlock()
@@ -447,6 +456,14 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 	e.cfgMu.Unlock()
 }
+
+func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+		e.snapshotBalances()
+	}
+}
+
+func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
 
 // EnableAsset adds a new asset in the collateral engine
 // this enable the asset to be used by new markets or
@@ -732,7 +749,7 @@ func (e *Engine) transferSpotFees(ctx context.Context, marketID string, assetID 
 
 	for _, transfer := range transfers {
 		req, err := e.getSpotFeeTransferRequest(
-			transfer, makerFee, infraFee, liquiFee, marketID, assetID)
+			ctx, transfer, makerFee, infraFee, liquiFee, marketID, assetID)
 		if err != nil {
 			e.log.Error("Failed to build transfer request for event",
 				logging.Error(err))
@@ -763,6 +780,7 @@ func (e *Engine) transferSpotFees(ctx context.Context, marketID string, assetID 
 }
 
 func (e *Engine) getSpotFeeTransferRequest(
+	ctx context.Context,
 	t *types.Transfer,
 	makerFee, infraFee, liquiFee *types.Account,
 	marketID, assetID string,
@@ -795,6 +813,13 @@ func (e *Engine) getSpotFeeTransferRequest(
 		return nil, err
 	}
 
+	networkTreausry, err := e.GetNetworkTreasuryAccount(assetID)
+	if err != nil {
+		return nil, err
+	}
+
+	buyBackAccount := e.getOrCreateBuyBackFeesAccount(ctx, assetID)
+
 	treq := &types.TransferRequest{
 		Amount:    t.Amount.Amount.Clone(),
 		MinAmount: t.Amount.Amount.Clone(),
@@ -813,6 +838,20 @@ func (e *Engine) getSpotFeeTransferRequest(
 	case types.TransferTypeInfrastructureFeeDistribute:
 		treq.FromAccount = []*types.Account{infraFee}
 		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferTypeTreasuryPay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
+		treq.FromAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{networkTreausry}
+		return treq, nil
+	case types.TransferTypeBuyBackFeePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
+		treq.FromAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{buyBackAccount}
 		return treq, nil
 	case types.TransferTypeLiquidityFeePay:
 		amt := num.Min(treq.Amount, general.Balance.Clone())
@@ -835,6 +874,17 @@ func (e *Engine) getSpotFeeTransferRequest(
 	case types.TransferTypeMakerFeeReceive:
 		treq.FromAccount = []*types.Account{makerFee}
 		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferTypeHighMakerRebateReceive:
+		treq.FromAccount = []*types.Account{makerFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferTypeHighMakerRebatePay:
+		amt := num.Min(treq.Amount, general.Balance.Clone())
+		treq.Amount = amt
+		treq.MinAmount = amt
+		treq.FromAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{makerFee}
 		return treq, nil
 	case types.TransferTypeLiquidityFeeAllocate:
 		partyLiquidityFee, err := partyLiquidityFeeAccount()
@@ -2234,6 +2284,12 @@ func (e *Engine) getFeeTransferRequest(
 		general *types.Account
 		err     error
 	)
+	networkTreausry, err := e.GetNetworkTreasuryAccount(assetID)
+	if err != nil {
+		return nil, err
+	}
+	buyBackAccount := e.getOrCreateBuyBackFeesAccount(ctx, assetID)
+
 	if t.Owner == types.NetworkParty {
 		general, err = e.GetMarketInsurancePoolAccount(marketID, assetID)
 		if err != nil {
@@ -2295,6 +2351,28 @@ func (e *Engine) getFeeTransferRequest(
 			treq.FromAccount = append(treq.FromAccount, orderMargin)
 		}
 		treq.ToAccount = []*types.Account{infraFee}
+	case types.TransferTypeTreasuryPay:
+		margin, err := marginAccount()
+		if err != nil {
+			return nil, err
+		}
+		orderMargin := orderMarginAccount()
+		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
+		treq.ToAccount = []*types.Account{networkTreausry}
+	case types.TransferTypeBuyBackFeePay:
+		margin, err := marginAccount()
+		if err != nil {
+			return nil, err
+		}
+		orderMargin := orderMarginAccount()
+		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
+		treq.ToAccount = []*types.Account{buyBackAccount}
 	case types.TransferTypeInfrastructureFeeDistribute:
 		treq.FromAccount = []*types.Account{infraFee}
 		treq.ToAccount = []*types.Account{general}
@@ -2326,6 +2404,21 @@ func (e *Engine) getFeeTransferRequest(
 	case types.TransferTypeMakerFeeReceive:
 		treq.FromAccount = []*types.Account{makerFee}
 		treq.ToAccount = []*types.Account{general}
+	case types.TransferTypeHighMakerRebatePay:
+		margin, err := marginAccount()
+		if err != nil {
+			return nil, err
+		}
+		orderMargin := orderMarginAccount()
+		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
+		treq.ToAccount = []*types.Account{makerFee}
+	case types.TransferTypeHighMakerRebateReceive:
+		treq.FromAccount = []*types.Account{makerFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
 	case types.TransferTypeLiquidityFeeAllocate:
 		partyLiquidityFee, err := partyLiquidityFeeAccount()
 		if err != nil {
@@ -2640,9 +2733,9 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 
 			// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
-			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
+			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAverageNotionalReward,
 			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeRealisedReturnReward,
-			types.AccountTypeValidatorRankingReward:
+			types.AccountTypeValidatorRankingReward, types.AccountTypeEligibleEntitiesReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -2747,9 +2840,9 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 
 		// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeNetworkTreasury,
-			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
+			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAverageNotionalReward,
 			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeRealisedReturnReward,
-			types.AccountTypeValidatorRankingReward:
+			types.AccountTypeValidatorRankingReward, types.AccountTypeEligibleEntitiesReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -4592,6 +4685,26 @@ func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
 
 func (e *Engine) GetNetworkTreasuryAccount(asset string) (*types.Account, error) {
 	return e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypeNetworkTreasury))
+}
+
+func (e *Engine) getOrCreateBuyBackFeesAccount(ctx context.Context, asset string) *types.Account {
+	accID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeBuyBackFees)
+	acc, err := e.GetAccountByID(accID)
+	if err == nil {
+		return acc
+	}
+	ntAcc := &types.Account{
+		ID:       accID,
+		Asset:    asset,
+		Owner:    systemOwner,
+		Balance:  num.UintZero(),
+		MarketID: noMarket,
+		Type:     types.AccountTypeBuyBackFees,
+	}
+	e.accs[accID] = ntAcc
+	e.addAccountToHashableSlice(ntAcc)
+	e.broker.Send(events.NewAccountEvent(ctx, *ntAcc))
+	return ntAcc
 }
 
 func (e *Engine) GetOrCreateNetworkTreasuryAccount(ctx context.Context, asset string) *types.Account {

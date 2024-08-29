@@ -90,4 +90,5 @@ var (
 	ErrIsolatedMarginFullyCollateralised = errors.New("isolated margin not permitted on fully collateralised markets")
 	// ErrSettlementDataOutOfRange is returned when a capped future receives settlement data that is outside of the acceptable range (either > max price, or neither 0 nor max for binary settlements).
 	ErrSettlementDataOutOfRange = errors.New("settlement data is outside of the price cap")
+	ErrAMMBoundsOutsidePriceCap = errors.New("an AMM bound is outside of the price cap")
 )

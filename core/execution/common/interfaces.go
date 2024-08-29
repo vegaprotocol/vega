@@ -195,6 +195,7 @@ type Collateral interface {
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
 	CheckOrderSpam(party, market string, assets []string) error
 	CheckOrderSpamAllMarkets(party string) error
+	GetAllParties() []string
 
 	// amm stuff
 	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)
@@ -351,6 +352,7 @@ type CommonMarket interface {
 	GetMarketData() types.MarketData
 	StartOpeningAuction(context.Context) error
 	GetEquityShares() *EquityShares
+	GetEquitySharesForParty(partyID string) num.Decimal
 	IntoType() types.Market
 	OnEpochEvent(ctx context.Context, epoch types.Epoch)
 	OnEpochRestore(ctx context.Context, epoch types.Epoch)
@@ -374,6 +376,8 @@ type CommonMarket interface {
 	OnMarketProbabilityOfTradingTauScalingUpdate(context.Context, num.Decimal)
 	OnMarketValueWindowLengthUpdate(time.Duration)
 	OnFeeFactorsInfrastructureFeeUpdate(context.Context, num.Decimal)
+	OnFeeFactorsTreasuryFeeUpdate(context.Context, num.Decimal)
+	OnFeeFactorsBuyBackFeeUpdate(context.Context, num.Decimal)
 	OnFeeFactorsMakerFeeUpdate(context.Context, num.Decimal)
 	OnMarkPriceUpdateMaximumFrequency(context.Context, time.Duration)
 	OnMarketAuctionMinimumDurationUpdate(context.Context, time.Duration)
@@ -413,6 +417,7 @@ type CommonMarket interface {
 
 type AccountBalanceChecker interface {
 	GetAvailableBalance(party string) (*num.Uint, error)
+	GetAllStakingParties() []string
 }
 
 type Teams interface {

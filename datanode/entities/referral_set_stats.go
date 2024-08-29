@@ -20,6 +20,7 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -32,9 +33,9 @@ type (
 		ReferrerTakerVolume                   string
 		RefereesStats                         []*eventspb.RefereeStats
 		VegaTime                              time.Time
-		RewardFactor                          string
+		RewardFactors                         *vega.RewardFactors
 		RewardsMultiplier                     string
-		RewardsFactorMultiplier               string
+		RewardsFactorsMultiplier              *vega.RewardFactors
 	}
 
 	FlattenReferralSetStats struct {
@@ -45,11 +46,11 @@ type (
 		ReferrerTakerVolume                   string
 		VegaTime                              time.Time
 		PartyID                               string
-		DiscountFactor                        string
+		DiscountFactors                       *vega.DiscountFactors
 		EpochNotionalTakerVolume              string
-		RewardFactor                          string
+		RewardFactors                         *vega.RewardFactors
 		RewardsMultiplier                     string
-		RewardsFactorMultiplier               string
+		RewardsFactorsMultiplier              *vega.RewardFactors
 	}
 
 	ReferralSetStatsCursor struct {
@@ -82,11 +83,11 @@ func (s FlattenReferralSetStats) ToProto() *v2.ReferralSetStats {
 		ReferralSetRunningNotionalTakerVolume: s.ReferralSetRunningNotionalTakerVolume,
 		ReferrerTakerVolume:                   s.ReferrerTakerVolume,
 		PartyId:                               s.PartyID,
-		DiscountFactor:                        s.DiscountFactor,
-		RewardFactor:                          s.RewardFactor,
+		DiscountFactors:                       s.DiscountFactors,
+		RewardFactors:                         s.RewardFactors,
 		EpochNotionalTakerVolume:              s.EpochNotionalTakerVolume,
 		RewardsMultiplier:                     s.RewardsMultiplier,
-		RewardsFactorMultiplier:               s.RewardsFactorMultiplier,
+		RewardsFactorsMultiplier:              s.RewardsFactorsMultiplier,
 		WasEligible:                           s.WasEligible,
 	}
 }
@@ -112,8 +113,8 @@ func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime
 		ReferrerTakerVolume:                   proto.ReferrerTakerVolume,
 		RefereesStats:                         proto.RefereesStats,
 		VegaTime:                              vegaTime,
-		RewardFactor:                          proto.RewardFactor,
+		RewardFactors:                         proto.RewardFactors,
 		RewardsMultiplier:                     proto.RewardsMultiplier,
-		RewardsFactorMultiplier:               proto.RewardsFactorMultiplier,
+		RewardsFactorsMultiplier:              proto.RewardFactorsMultiplier,
 	}, nil
 }

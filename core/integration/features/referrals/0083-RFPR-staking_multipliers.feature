@@ -1,5 +1,5 @@
 Feature: Setting and applying referral reward multipliers
-  
+
   Background:
 
     # Initialise timings
@@ -32,8 +32,8 @@ Feature: Setting and applying referral reward multipliers
 
     # Initalise the referral program then move forwards an epoch to start the program
     Given the referral benefit tiers "rbt":
-      | minimum running notional taker volume | minimum epochs | referral reward factor | referral discount factor |
-      | 1                                     | 1              | 0.02                   | 0.02                     |
+      | minimum running notional taker volume | minimum epochs | referral reward infra factor | referral reward maker factor | referral reward liquidity factor | referral discount infra factor | referral discount maker factor | referral discount liquidity factor |
+      | 1                                     | 1              | 0.021                        | 0.022                        | 0.023                            | 0.024                          | 0.025                          | 0.026                              |
     And the referral staking tiers "rst":
       | minimum staked tokens | referral reward multiplier |
       | 2000                  | 2                          |
@@ -114,8 +114,8 @@ Feature: Setting and applying referral reward multipliers
       | referrer1 | ETH/USD.1.1 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "2" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of 1000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.02          | 0.02            |
+      | party    | reward infra factor | reward maker factor | reward liquidity factor | discount infra factor | discount maker factor | discount liquidity factor |
+      | referee1 | 0.021               | 0.022               | 0.023                   | 0.024                 | 0.025                 | 0.026                     |
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -134,6 +134,6 @@ Feature: Setting and applying referral reward multipliers
 
     Examples:
       | staking amount | expected discounted fees | expected reward |
-      | 1001           | 97                       | 3               |
-      | 2001           | 95                       | 9               |
+      | 1001           | 96                       | 6               |
+      | 2001           | 94                       | 12              |
       | 3001           | 89                       | 27              |

@@ -188,6 +188,13 @@ func (t *Teams) AddTeam(ctx context.Context, team *entities.Team) error {
 		return err
 	}
 
+	// in case the party already was in a team?
+	_, _ = t.Exec(
+		ctx,
+		"DELETE FROM team_members WHERE party_id = $1",
+		team.Referrer,
+	)
+
 	if _, err := t.Exec(
 		ctx,
 		"INSERT INTO team_members(team_id, party_id, joined_at_epoch, joined_at, vega_time) VALUES ($1, $2, $3, $4, $5)",
@@ -247,7 +254,7 @@ func (t *Teams) RefereeJoinedTeam(ctx context.Context, referee *entities.TeamMem
 }
 
 func (t *Teams) RefereeSwitchedTeam(ctx context.Context, referee *entities.RefereeTeamSwitch) error {
-	defer metrics.StartSQLQuery("Teams", "RefereeJoinedTeam")()
+	defer metrics.StartSQLQuery("Teams", "RefereeSwitchedTeam")()
 
 	_, err := t.Exec(ctx,
 		`INSERT INTO team_members(team_id, party_id, joined_at, joined_at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5)`,
@@ -353,7 +360,6 @@ func (t *Teams) ListTeams(ctx context.Context, pagination entities.CursorPaginat
 SELECT teams.*, members_stats.total_members
 FROM teams
   LEFT JOIN members_stats on teams.id = members_stats.team_id`
-
 	query, args, err := PaginateQuery[entities.TeamCursor](query, args, teamsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err

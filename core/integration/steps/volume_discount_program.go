@@ -37,7 +37,11 @@ func VolumeDiscountProgramTiers(
 		row := volumeDiscountTiersRow{row: r}
 		p := &types.VolumeBenefitTier{
 			MinimumRunningNotionalTakerVolume: row.volume(),
-			VolumeDiscountFactor:              row.factor(),
+			VolumeDiscountFactors: types.Factors{
+				Infra:     row.infraFactor(),
+				Maker:     row.makerFactor(),
+				Liquidity: row.liqFactor(),
+			},
 		}
 
 		vbts = append(vbts, p)
@@ -49,7 +53,9 @@ func VolumeDiscountProgramTiers(
 func parseVolumeDiscountTiersTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"volume",
-		"factor",
+		"infra factor",
+		"maker factor",
+		"liquidity factor",
 	}, []string{})
 }
 
@@ -61,8 +67,16 @@ func (r volumeDiscountTiersRow) volume() *num.Uint {
 	return r.row.MustUint("volume")
 }
 
-func (r volumeDiscountTiersRow) factor() num.Decimal {
-	return r.row.MustDecimal("factor")
+func (r volumeDiscountTiersRow) infraFactor() num.Decimal {
+	return r.row.MustDecimal("infra factor")
+}
+
+func (r volumeDiscountTiersRow) makerFactor() num.Decimal {
+	return r.row.MustDecimal("maker factor")
+}
+
+func (r volumeDiscountTiersRow) liqFactor() num.Decimal {
+	return r.row.MustDecimal("liquidity factor")
 }
 
 func VolumeDiscountProgram(
@@ -100,6 +114,39 @@ func parseVolumeDiscountTable(table *godog.Table) []RowWrapper {
 	}, []string{})
 }
 
+func parseFactorRow(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"maker factor",
+		"liquidity factor",
+		"infra factor",
+	}, []string{})
+}
+
+type factorRow struct {
+	r RowWrapper
+}
+
+func (f factorRow) party() types.PartyID {
+	return types.PartyID(f.r.MustStr("party"))
+}
+
+func (f factorRow) maker() num.Decimal {
+	return f.r.MustDecimal("maker factor")
+}
+
+func (f factorRow) liquidity() num.Decimal {
+	return f.r.MustDecimal("liquidity factor")
+}
+
+func (f factorRow) infra() num.Decimal {
+	return f.r.MustDecimal("infra factor")
+}
+
+func (f factorRow) String() string {
+	return fmt.Sprintf("maker: %s, liquidity: %s, infra: %s", f.maker(), f.liquidity(), f.infra())
+}
+
 type volumeDiscountRow struct {
 	row RowWrapper
 }
@@ -120,10 +167,49 @@ func (r volumeDiscountRow) windowLength() uint64 {
 	return r.row.MustU64("window length")
 }
 
-func PartyHasTheFollowingDiscountFactor(party, discountFactor string, vde *volumediscount.Engine) error {
+func PartiesHaveTheFollowingDiscountFactors(vde *volumediscount.Engine, table *godog.Table) error {
+	for _, r := range parseFactorRow(table) {
+		row := factorRow{
+			r: r,
+		}
+		party := row.party()
+		factors := vde.VolumeDiscountFactorForParty(party)
+		if !factors.Maker.Equal(row.maker()) || !factors.Liquidity.Equal(row.liquidity()) || !factors.Infra.Equal(row.infra()) {
+			return fmt.Errorf(
+				"factors for party %s don't match. Expected (%s), got (maker: %s, liquidity: %s, infra: %s)",
+				party,
+				row,
+				factors.Maker,
+				factors.Liquidity,
+				factors.Infra,
+			)
+		}
+	}
+	return nil
+}
+
+func PartyHasTheFollowingDiscountInfraFactor(party, discountFactor string, vde *volumediscount.Engine) error {
 	df := vde.VolumeDiscountFactorForParty(types.PartyID(party))
 	df2, _ := num.DecimalFromString(discountFactor)
-	if !df.Equal(df2) {
+	if !df.Infra.Equal(df2) {
+		return fmt.Errorf("%s has the discount factor of %s when we expected %s", party, df, df2)
+	}
+	return nil
+}
+
+func PartyHasTheFollowingDiscountMakerFactor(party, discountFactor string, vde *volumediscount.Engine) error {
+	df := vde.VolumeDiscountFactorForParty(types.PartyID(party))
+	df2, _ := num.DecimalFromString(discountFactor)
+	if !df.Maker.Equal(df2) {
+		return fmt.Errorf("%s has the discount factor of %s when we expected %s", party, df, df2)
+	}
+	return nil
+}
+
+func PartyHasTheFollowingDiscountLiquidityFactor(party, discountFactor string, vde *volumediscount.Engine) error {
+	df := vde.VolumeDiscountFactorForParty(types.PartyID(party))
+	df2, _ := num.DecimalFromString(discountFactor)
+	if !df.Liquidity.Equal(df2) {
 		return fmt.Errorf("%s has the discount factor of %s when we expected %s", party, df, df2)
 	}
 	return nil
@@ -147,10 +233,26 @@ func AMMHasTheFollowingNotionalValue(exec Execution, vde *volumediscount.Engine,
 	return PartyHasTheFollowingTakerNotional(id, value, vde)
 }
 
-func AMMHasTheFollowingDiscountFactor(exec Execution, vde *volumediscount.Engine, alias, factor string) error {
+func AMMHasTheFollowingDiscountInfraFactor(exec Execution, vde *volumediscount.Engine, alias, factor string) error {
 	id, ok := exec.GetAMMSubAccountID(alias)
 	if !ok {
 		return fmt.Errorf("unknown vAMM alias %s", alias)
 	}
-	return PartyHasTheFollowingDiscountFactor(id, factor, vde)
+	return PartyHasTheFollowingDiscountInfraFactor(id, factor, vde)
+}
+
+func AMMHasTheFollowingDiscountMakerFactor(exec Execution, vde *volumediscount.Engine, alias, factor string) error {
+	id, ok := exec.GetAMMSubAccountID(alias)
+	if !ok {
+		return fmt.Errorf("unknown vAMM alias %s", alias)
+	}
+	return PartyHasTheFollowingDiscountMakerFactor(id, factor, vde)
+}
+
+func AMMHasTheFollowingDiscountLiquidityFactor(exec Execution, vde *volumediscount.Engine, alias, factor string) error {
+	id, ok := exec.GetAMMSubAccountID(alias)
+	if !ok {
+		return fmt.Errorf("unknown vAMM alias %s", alias)
+	}
+	return PartyHasTheFollowingDiscountInfraFactor(id, factor, vde)
 }

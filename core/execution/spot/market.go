@@ -82,6 +82,7 @@ type Market struct {
 	fee                           *fee.Engine
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
+	volumeRebateService           fee.VolumeRebateService
 	liquidity                     *common.MarketLiquidity
 	liquidityEngine               common.LiquidityEngine
 
@@ -159,6 +160,7 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
@@ -232,6 +234,7 @@ func NewMarket(
 		fee:                           feeEngine,
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		volumeRebateService:           volumeRebateService,
 		parties:                       map[string]struct{}{},
 		as:                            as,
 		pMonitor:                      pMonitor,
@@ -332,6 +335,15 @@ func (m *Market) Update(ctx context.Context, config *types.Market) error {
 
 func (m *Market) GetEquityShares() *common.EquityShares {
 	return m.equityShares
+}
+
+func (m *Market) GetEquitySharesForParty(partyID string) num.Decimal {
+	primary := m.equityShares.SharesFromParty(partyID)
+	// AMM for spot has not been implemented yet
+	// if sub, err := m.amm.GetAMMParty(partyID); err == nil {
+	// return primary.Add(m.equityShares.SharesFromParty(sub))
+	// }
+	return primary
 }
 
 func (m *Market) SetNextMTM(tm time.Time) {
@@ -2377,12 +2389,12 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 		existingHoldingQty, existingHoldingFee := m.orderHoldingTracker.GetCurrentHolding(order.ID)
 		oldHoldingRequirement := num.Sum(existingHoldingQty, existingHoldingFee)
 		newFeesRequirement := num.UintZero()
-		if m.as.InAuction() {
-			newFeesRequirement, _ = m.calculateFees(order.Party, remaining, amendment.Price, order.Side)
-		}
 		price := order.Price
 		if amendment.Price != nil {
 			price, _ = num.UintFromDecimal(amendment.Price.ToDecimal().Mul(m.priceFactor))
+		}
+		if m.as.InAuction() {
+			newFeesRequirement, _ = m.calculateFees(order.Party, remaining, price, order.Side)
 		}
 		if order.PeggedOrder != nil {
 			p, err := m.getNewPeggedPrice(order)
@@ -3177,15 +3189,15 @@ func (m *Market) calculateFeesForTrades(trades []*types.Trade) (events.FeesTrans
 		err  error
 	)
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else {
 		if !m.as.IsOpeningAuction() {
-			fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+			fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 		}
 	}
 	return fees, err
@@ -3323,62 +3335,54 @@ type IDGen interface {
 	NextID() string
 }
 
-func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+func (m *Market) checkOrderForSpam(side types.Side, orderPrice *num.Uint, orderSize uint64, peggedOrder *types.PeggedOrder, orderType vega.Order_Type, quantumMultiplier num.Decimal) error {
 	assetQuantum, err := m.collateral.GetAssetQuantum(m.quoteAsset)
 	if err != nil {
 		return err
 	}
 
 	var price *num.Uint
-	if order.PeggedOrder == nil {
-		price, _ = num.UintFromDecimal(order.Price.ToDecimal().Mul(m.priceFactor))
-	} else {
-		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
-		if order.Side == types.SideBuy {
-			priceInMarket.AddSum(order.PeggedOrder.Offset)
-		} else {
-			priceInMarket = priceInMarket.Sub(priceInMarket, order.PeggedOrder.Offset)
-		}
-		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
-	}
-
-	minQuantum := assetQuantum.Mul(m.minHoldingQuantumMultiplier)
-	value := num.UintZero().Mul(num.NewUint(order.Size), price).ToDecimal()
-	value = value.Div(m.positionFactor).Div(assetQuantum)
-	if value.LessThan(minQuantum.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum holding requirement for spam")
-	}
-	return nil
-}
-
-func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
-	assetQuantum, err := m.collateral.GetAssetQuantum(m.quoteAsset)
-	if err != nil {
-		return err
-	}
-
-	var price *num.Uint
-	if orderSubmission.PeggedOrder != nil || orderSubmission.Type == vega.Order_TYPE_MARKET {
+	if peggedOrder != nil || orderType == vega.Order_TYPE_MARKET {
 		priceInMarket, _ := num.UintFromDecimal(m.getCurrentMarkPrice().ToDecimal().Div(m.priceFactor))
 		offset := num.UintZero()
-		if orderSubmission.PeggedOrder != nil {
-			offset = orderSubmission.PeggedOrder.Offset
+		if peggedOrder != nil {
+			offset = peggedOrder.Offset
 		}
-		if orderSubmission.Side == types.SideBuy {
+		if side == types.SideBuy {
 			priceInMarket.AddSum(offset)
 		} else {
 			priceInMarket = priceInMarket.Sub(priceInMarket, offset)
 		}
 		price, _ = num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
 	} else {
-		price, _ = num.UintFromDecimal(orderSubmission.Price.ToDecimal().Mul(m.priceFactor))
+		price, _ = num.UintFromDecimal(orderPrice.ToDecimal().Mul(m.priceFactor))
 	}
 
-	minQuantum := assetQuantum.Mul(quantumMultiplier)
-	value := num.UintZero().Mul(num.NewUint(orderSubmission.Size), price).ToDecimal()
+	value := num.UintZero().Mul(num.NewUint(orderSize), price).ToDecimal()
 	value = value.Div(m.positionFactor)
-	if value.LessThan(minQuantum.Mul(assetQuantum)) {
-		return fmt.Errorf("order value is less than minimum holding requirement for spam")
+	required := assetQuantum.Mul(quantumMultiplier)
+	if value.LessThan(required) {
+		return fmt.Errorf(fmt.Sprintf("order value (%s) is less than minimum holding requirement for spam (%s)", value.String(), required.String()))
 	}
 	return nil
+}
+
+func (m *Market) checkOrderAmendForSpam(order *types.Order) error {
+	return m.checkOrderForSpam(
+		order.Side,
+		order.Price,
+		order.Size,
+		order.PeggedOrder,
+		order.Type,
+		m.minHoldingQuantumMultiplier)
+}
+
+func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	return m.checkOrderForSpam(
+		orderSubmission.Side,
+		orderSubmission.Price,
+		orderSubmission.Size,
+		orderSubmission.PeggedOrder,
+		orderSubmission.Type,
+		quantumMultiplier)
 }

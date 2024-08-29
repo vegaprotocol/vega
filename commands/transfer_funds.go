@@ -120,11 +120,12 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
-				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
-				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES {
 				errs.AddForProperty("transfer.account.to", errors.New("transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric"))
 			}
 		case *commandspb.Transfer_Recurring:
@@ -151,10 +152,11 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
-				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
 				if k.Recurring.DispatchStrategy == nil {
 					errs.AddForProperty("transfer.kind.dispatch_strategy", ErrIsRequired)
@@ -183,15 +185,16 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS &&
-		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION &&
+		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY &&
+		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES &&
 		toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
 		errs.AddForProperty(destinationPrefixErr, ErrIsNotValid)
 	}
 	// check asset for metric is passed unless it's a market proposer reward
-	if len(dispatchStrategy.AssetForMetric) <= 0 && toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
+	if len(dispatchStrategy.AssetForMetric) <= 0 && toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES && toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
 		errs.AddForProperty(prefix+".asset_for_metric", ErrIsRequired)
 	}
 	if len(dispatchStrategy.AssetForMetric) > 0 && !IsVegaID(dispatchStrategy.AssetForMetric) {
@@ -213,7 +216,10 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
 		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
 	}
-	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION {
+	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL {
+		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
+	}
+	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES {
 		errs.AddForProperty(prefix+".dispatch_metric", mismatchingAccountTypeError(toAccountType, dispatchStrategy.Metric))
 	}
 	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN {
@@ -236,6 +242,28 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	}
 	if dispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_TEAMS && len(dispatchStrategy.NTopPerformers) == 0 {
 		errs.AddForProperty(prefix+".n_top_performers", ErrIsRequired)
+	}
+	if dispatchStrategy.Metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES {
+		var metricAssetDefined, marketScope, stakingRequirement, positionRequirement bool
+		if len(dispatchStrategy.AssetForMetric) > 0 {
+			metricAssetDefined = true
+		}
+		if len(dispatchStrategy.Markets) > 0 {
+			marketScope = true
+		}
+		if len(dispatchStrategy.StakingRequirement) > 0 {
+			stakingRequirement = true
+		}
+		if len(dispatchStrategy.NotionalTimeWeightedAveragePositionRequirement) > 0 {
+			positionRequirement = true
+		}
+		if !metricAssetDefined && !marketScope && !stakingRequirement && !positionRequirement {
+			errs.AddForProperty(prefix+".dispatch_metric", fmt.Errorf("eligible_entities metric requires at least one of (markets, asset_for_metric, staking_requirement, notional_time_weighted_average_position_requirement) to be defined"))
+		}
+	}
+
+	if dispatchStrategy.Metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES && len(dispatchStrategy.NotionalTimeWeightedAveragePositionRequirement) > 0 && len(dispatchStrategy.AssetForMetric) == 0 {
+		errs.AddForProperty(prefix+".asset_for_metric", fmt.Errorf("asset for metric must be provided if NotionalTimeWeightedAveragePositionRequirement is specified"))
 	}
 
 	if dispatchStrategy.EntityScope != vega.EntityScope_ENTITY_SCOPE_TEAMS && len(dispatchStrategy.NTopPerformers) != 0 {
@@ -296,10 +324,10 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if dispatchStrategy.WindowLength > 100 {
 		errs.AddForProperty(prefix+".window_length", ErrMustBeAtMost100)
 	}
-	if len(dispatchStrategy.RankTable) == 0 && dispatchStrategy.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK {
+	if len(dispatchStrategy.RankTable) == 0 && (dispatchStrategy.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK || dispatchStrategy.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK_LOTTERY) {
 		errs.AddForProperty(prefix+".rank_table", ErrMustBePositive)
 	}
-	if len(dispatchStrategy.RankTable) > 0 && dispatchStrategy.DistributionStrategy != vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK {
+	if len(dispatchStrategy.RankTable) > 0 && dispatchStrategy.DistributionStrategy != vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK && dispatchStrategy.DistributionStrategy != vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK_LOTTERY {
 		errs.AddForProperty(prefix+".rank_table", errors.New("should not be set for distribution strategy "+dispatchStrategy.DistributionStrategy.String()))
 	}
 	if len(dispatchStrategy.RankTable) > 500 {

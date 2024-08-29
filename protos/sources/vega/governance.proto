@@ -384,6 +384,8 @@ message ProposalTerms {
     UpdateReferralProgram update_referral_program = 112;
     // Proposal change for updating the volume discount program.
     UpdateVolumeDiscountProgram update_volume_discount_program = 113;
+    // Proposal change for updating the volume rebate program.
+    UpdateVolumeRebateProgram update_volume_rebate_program = 114;
   }
 }
 
@@ -424,6 +426,8 @@ message BatchProposalTermsChange {
     UpdateVolumeDiscountProgram update_volume_discount_program = 112;
     // Proposal change for adding a new asset.
     NewAsset new_asset = 113;
+    // Proposal change for updating the volume rebate program.
+    UpdateVolumeRebateProgram update_volume_rebate_program = 114;
   }
 }
 
@@ -683,6 +687,8 @@ enum ProposalError {
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED = 59;
   // Spot market decimal places cannot be greater than the base asset’s decimal places
   PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES = 60;
+  // Volume rebate program proposal is invalid
+  PROPOSAL_ERROR_INVALID_VOLUME_REBATE_PROGRAM = 61;
 }
 
 // Governance vote
@@ -736,6 +742,23 @@ message VolumeDiscountProgramChanges {
   // second element will give Tier 2, and so on. Determines the level of
   // benefit a party can expect based on performance criteria.
   repeated VolumeBenefitTier benefit_tiers = 1;
+  // Timestamp as Unix time in seconds, after which when the current epoch
+  // ends, the program will end and benefits will be disabled.
+  int64 end_of_program_timestamp = 2;
+  // Number of epochs over which to evaluate a referral set's running volume.
+  uint64 window_length = 3;
+}
+
+message UpdateVolumeRebateProgram {
+  // Configuration for a change to update a volume rebate program
+  VolumeRebateProgramChanges changes = 1;
+}
+
+message VolumeRebateProgramChanges {
+  // Defined benefit tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on performance criteria.
+  repeated VolumeRebateBenefitTier benefit_tiers = 1;
   // Timestamp as Unix time in seconds, after which when the current epoch
   // ends, the program will end and benefits will be disabled.
   int64 end_of_program_timestamp = 2;

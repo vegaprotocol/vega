@@ -86,6 +86,15 @@ func (p *ProposalTerms) IsVolumeDiscountProgramUpdate() bool {
 	}
 }
 
+func (p *ProposalTerms) IsVolumeRebateProgramUpdate() bool {
+	switch p.Change.(type) {
+	case *ProposalTermsUpdateVolumeRebateProgram:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *ProposalTerms) MarketUpdate() *UpdateMarket {
 	switch terms := p.Change.(type) {
 	case *ProposalTermsUpdateMarket:
@@ -170,6 +179,8 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 	case *vegapb.ProposalTerms_UpdateReferralProgram:
 		terms.Change = ch
 	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
+		terms.Change = ch
+	case *vegapb.ProposalTerms_UpdateVolumeRebateProgram:
 		terms.Change = ch
 	}
 
@@ -282,6 +293,15 @@ func (p *ProposalTerms) GetUpdateVolumeDiscountProgram() *UpdateVolumeDiscountPr
 	}
 }
 
+func (p *ProposalTerms) GetUpdateVolumeRebateProgram() *UpdateVolumeRebateProgram {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateVolumeRebateProgram:
+		return c.UpdateVolumeRebateProgram
+	default:
+		return nil
+	}
+}
+
 func (p *ProposalTerms) GetUpdateReferralProgram() *UpdateReferralProgram {
 	switch c := p.Change.(type) {
 	case *ProposalTermsUpdateReferralProgram:
@@ -341,6 +361,8 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 		change, err = NewUpdateReferralProgramProposalFromProto(ch.UpdateReferralProgram)
 	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
 		change, err = NewUpdateVolumeDiscountProgramProposalFromProto(ch.UpdateVolumeDiscountProgram)
+	case *vegapb.ProposalTerms_UpdateVolumeRebateProgram:
+		change, err = NewUpdateVolumeRebateProgramProposalFromProto(ch.UpdateVolumeRebateProgram)
 	}
 	if err != nil {
 		return nil, err
@@ -427,6 +449,8 @@ func (p BatchProposalTerms) changesToProto() []*vegapb.BatchProposalTermsChange 
 			termsChange.Change = ch
 		case *vegapb.BatchProposalTermsChange_UpdateVolumeDiscountProgram:
 			termsChange.Change = ch
+		case *vegapb.BatchProposalTermsChange_UpdateVolumeRebateProgram:
+			termsChange.Change = ch
 		}
 
 		out = append(out, termsChange)
@@ -496,6 +520,8 @@ func BatchProposalTermsSubmissionFromProto(p *commandspb.BatchProposalSubmission
 			change, err = NewUpdateReferralProgramProposalFromProto(ch.UpdateReferralProgram)
 		case *vegapb.BatchProposalTermsChange_UpdateVolumeDiscountProgram:
 			change, err = NewUpdateVolumeDiscountProgramProposalFromProto(ch.UpdateVolumeDiscountProgram)
+		case *vegapb.BatchProposalTermsChange_UpdateVolumeRebateProgram:
+			change, err = NewUpdateVolumeRebateProgramProposalFromProto(ch.UpdateVolumeRebateProgram)
 		}
 		if err != nil {
 			return nil, err

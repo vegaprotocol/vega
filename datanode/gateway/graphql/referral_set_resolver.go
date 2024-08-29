@@ -45,6 +45,33 @@ func (r *referralSetRefereeResolver) RefereeID(ctx context.Context, obj *v2.Refe
 
 type referralSetStatsResolver VegaResolverRoot
 
+// DiscountFactors implements ReferralSetStatsResolver.
+func (r *referralSetStatsResolver) DiscountFactors(ctx context.Context, obj *v2.ReferralSetStats) (*DiscountFactors, error) {
+	return &DiscountFactors{
+		InfrastructureFactor: obj.DiscountFactors.InfrastructureDiscountFactor,
+		MakerFactor:          obj.DiscountFactors.MakerDiscountFactor,
+		LiquidityFactor:      obj.DiscountFactors.LiquidityDiscountFactor,
+	}, nil
+}
+
+// RewardFactors implements ReferralSetStatsResolver.
+func (r *referralSetStatsResolver) RewardFactors(ctx context.Context, obj *v2.ReferralSetStats) (*RewardFactors, error) {
+	return &RewardFactors{
+		InfrastructureFactor: obj.RewardFactors.InfrastructureRewardFactor,
+		MakerFactor:          obj.RewardFactors.MakerRewardFactor,
+		LiquidityFactor:      obj.RewardFactors.LiquidityRewardFactor,
+	}, nil
+}
+
+// RewardsFactorsMultiplier implements ReferralSetStatsResolver.
+func (r *referralSetStatsResolver) RewardsFactorsMultiplier(ctx context.Context, obj *v2.ReferralSetStats) (*RewardFactors, error) {
+	return &RewardFactors{
+		InfrastructureFactor: obj.RewardsFactorsMultiplier.InfrastructureRewardFactor,
+		MakerFactor:          obj.RewardsFactorsMultiplier.MakerRewardFactor,
+		LiquidityFactor:      obj.RewardsFactorsMultiplier.LiquidityRewardFactor,
+	}, nil
+}
+
 func (r *referralSetStatsResolver) AtEpoch(_ context.Context, obj *v2.ReferralSetStats) (int, error) {
 	if obj.AtEpoch > math.MaxInt {
 		return 0, errors.New("at_epoch is too large")

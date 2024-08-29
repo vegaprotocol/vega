@@ -90,6 +90,34 @@ func epochReturnDataToProto(epochData []map[string]num.Decimal) []*checkpoint.Ep
 	return ret
 }
 
+func epochEligitbilityToProto(eligibilityData map[string][]map[string]struct{}) []*checkpoint.GameEligibilityTracker {
+	res := make([]*checkpoint.GameEligibilityTracker, 0, len(eligibilityData))
+	gameIDs := make([]string, 0, len(eligibilityData))
+	for k := range eligibilityData {
+		gameIDs = append(gameIDs, k)
+	}
+	sort.Strings(gameIDs)
+	for _, gameID := range gameIDs {
+		epochs := eligibilityData[gameID]
+		get := &checkpoint.GameEligibilityTracker{
+			GameId:           gameID,
+			EpochEligibility: make([]*checkpoint.EpochEligibility, 0, len(epochs)),
+		}
+		for _, epoch := range epochs {
+			epochEligibleParties := make([]string, 0, len(epoch))
+			for party := range epoch {
+				epochEligibleParties = append(epochEligibleParties, party)
+			}
+			sort.Strings(epochEligibleParties)
+			get.EpochEligibility = append(get.EpochEligibility, &checkpoint.EpochEligibility{
+				EligibleParties: epochEligibleParties,
+			})
+		}
+		res = append(res, get)
+	}
+	return res
+}
+
 func epochTakerFeesToProto(epochData []map[string]map[string]map[string]*num.Uint) []*checkpoint.EpochPartyTakerFees {
 	ret := make([]*checkpoint.EpochPartyTakerFees, 0, len(epochData))
 	for _, epoch := range epochData {
@@ -150,6 +178,9 @@ func timeWeightedNotionalToProto(twNotional map[string]*twNotional) []*checkpoin
 		pdProto.Notional = b[:]
 		twb := pd.currentEpochTWNotional.Bytes()
 		pdProto.TwNotional = twb[:]
+
+		pb := pd.price.Bytes()
+		pdProto.Price = pb[:]
 		data = append(data, pdProto)
 	}
 	return data
@@ -295,6 +326,8 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		LpFees:                          marketFeesToProto(mt.lpFees),
 		InfraFees:                       marketFeesToProto(mt.infraFees),
 		LpPaidFees:                      marketFeesToProto(mt.lpPaidFees),
+		BuyBackFees:                     marketFeesToProto(mt.buybackFeesPaid),
+		TreasuryFees:                    marketFeesToProto(mt.treasuryFeesPaid),
 		Proposer:                        mt.proposer,
 		BonusPaid:                       paid,
 		ValueTraded:                     mt.valueTraded.String(),
@@ -339,6 +372,7 @@ func (mat *MarketActivityTracker) serialiseFeesTracker() *snapshot.MarketTracker
 		TakerNotionalVolume:              takerNotionalToProto(mat.partyTakerNotionalVolume),
 		MarketToPartyTakerNotionalVolume: marketToPartyTakerNotionalToProto(mat.marketToPartyTakerNotionalVolume),
 		EpochTakerFees:                   epochTakerFeesToProto(mat.takerFeesPaidInEpoch),
+		GameEligibilityTracker:           epochEligitbilityToProto(mat.eligibilityInEpoch),
 	}
 }
 
@@ -394,6 +428,8 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		makerFeesReceived:      map[string]*num.Uint{},
 		makerFeesPaid:          map[string]*num.Uint{},
 		lpFees:                 map[string]*num.Uint{},
+		buybackFeesPaid:        map[string]*num.Uint{},
+		treasuryFeesPaid:       map[string]*num.Uint{},
 		infraFees:              map[string]*num.Uint{},
 		lpPaidFees:             map[string]*num.Uint{},
 		totalMakerFeesReceived: num.UintZero(),
@@ -467,6 +503,22 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		}
 	}
 
+	if len(tracker.BuyBackFees) > 0 {
+		for _, mf := range tracker.BuyBackFees {
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			mft.buybackFeesPaid[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
+		}
+	}
+
+	if len(tracker.TreasuryFees) > 0 {
+		for _, mf := range tracker.TreasuryFees {
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			mft.treasuryFeesPaid[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
+		}
+	}
+
 	if len(tracker.LpPaidFees) > 0 {
 		for _, mf := range tracker.LpPaidFees {
 			fee, _ := num.UintFromString(mf.Fee, 10)
@@ -492,6 +544,9 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 				notional:               num.UintFromBytes(tn.Notional),
 				t:                      time.Unix(0, tn.Time),
 				currentEpochTWNotional: num.UintFromBytes(tn.TwNotional),
+			}
+			if len(tn.Price) > 0 {
+				mft.twNotional[tn.Party].price = num.UintFromBytes(tn.Price)
 			}
 			mft.allPartiesCache[tn.Party] = struct{}{}
 		}
@@ -634,6 +689,17 @@ func (mat *MarketActivityTracker) restore(tracker *snapshot.MarketTracker) {
 				}
 			}
 			mat.takerFeesPaidInEpoch = append(mat.takerFeesPaidInEpoch, epochMap)
+		}
+	}
+	if tracker.GameEligibilityTracker != nil {
+		for _, get := range tracker.GameEligibilityTracker {
+			mat.eligibilityInEpoch[get.GameId] = make([]map[string]struct{}, len(get.EpochEligibility))
+			for i, epoch := range get.EpochEligibility {
+				mat.eligibilityInEpoch[get.GameId][i] = make(map[string]struct{}, len(epoch.EligibleParties))
+				for _, party := range epoch.EligibleParties {
+					mat.eligibilityInEpoch[get.GameId][i][party] = struct{}{}
+				}
+			}
 		}
 	}
 }

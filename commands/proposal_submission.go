@@ -48,11 +48,12 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
@@ -64,11 +65,12 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
@@ -79,11 +81,12 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
 }
 
@@ -211,6 +214,8 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(checkUpdateReferralProgram(terms, c))
 	case *protoTypes.ProposalTerms_UpdateVolumeDiscountProgram:
 		errs.Merge(checkVolumeDiscountProgram(terms, c))
+	case *protoTypes.ProposalTerms_UpdateVolumeRebateProgram:
+		errs.Merge(checkVolumeRebateProgram(terms, c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -406,6 +411,19 @@ func checkReferralProgramChanges(changes *vegapb.ReferralProgramChanges, enactme
 	return errs
 }
 
+func checkVolumeRebateProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateVolumeRebateProgram) Errors {
+	errs := NewErrors()
+	if change.UpdateVolumeRebateProgram == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_rebate_program", ErrIsRequired)
+	}
+	if change.UpdateVolumeRebateProgram.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_rebate_program.changes", ErrIsRequired)
+	}
+
+	return checkVolumeRebateProgramChanges(change.UpdateVolumeRebateProgram.Changes, terms.EnactmentTimestamp).
+		AddPrefix("proposal_submission.terms.change.")
+}
+
 func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateVolumeDiscountProgram) Errors {
 	errs := NewErrors()
 	if change.UpdateVolumeDiscountProgram == nil {
@@ -417,6 +435,54 @@ func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.Prop
 
 	return checkVolumeDiscountProgramChanges(change.UpdateVolumeDiscountProgram.Changes, terms.EnactmentTimestamp).
 		AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkVolumeRebateProgramChanges(changes *vegapb.VolumeRebateProgramChanges, enactmentTimestamp int64) Errors {
+	errs := NewErrors()
+
+	if changes.EndOfProgramTimestamp == 0 {
+		errs.AddForProperty("update_volume_rebate_program.changes.end_of_program_timestamp", ErrIsRequired)
+	} else if changes.EndOfProgramTimestamp < 0 {
+		errs.AddForProperty("update_volume_rebate_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < enactmentTimestamp {
+		errs.AddForProperty("update_volume_rebate_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+	}
+	if changes.WindowLength == 0 {
+		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrIsRequired)
+	} else if changes.WindowLength > 100 {
+		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrMustBeAtMost100)
+	}
+	for i, tier := range changes.BenefitTiers {
+		errs.Merge(checkVolumeRebateBenefitTier(i, tier))
+	}
+
+	return errs
+}
+
+func checkVolumeRebateBenefitTier(index int, tier *vegapb.VolumeRebateBenefitTier) Errors {
+	errs := NewErrors()
+	propertyPath := fmt.Sprintf("update_volume_discount_program.changes.benefit_tiers.%d", index)
+	if len(tier.MinimumPartyMakerVolumeFraction) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrIsRequired)
+	} else {
+		mrtv, err := num.DecimalFromString(tier.MinimumPartyMakerVolumeFraction)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrIsNotValidNumber)
+		} else if mrtv.IsNegative() || mrtv.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrMustBePositive)
+		}
+	}
+	if len(tier.AdditionalMakerRebate) == 0 {
+		errs.AddForProperty(propertyPath+".additional_maker_rebate", ErrIsRequired)
+	} else {
+		rdf, err := num.DecimalFromString(tier.AdditionalMakerRebate)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".additional_maker_rebate", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".additional_maker_rebate", ErrMustBePositiveOrZero)
+		}
+	}
+	return errs
 }
 
 func checkVolumeDiscountProgramChanges(changes *vegapb.VolumeDiscountProgramChanges, enactmentTimestamp int64) Errors {
@@ -454,14 +520,26 @@ func checkVolumeBenefitTier(index int, tier *vegapb.VolumeBenefitTier) Errors {
 			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrMustBePositive)
 		}
 	}
-	if len(tier.VolumeDiscountFactor) == 0 {
-		errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsRequired)
+	if tier.VolumeDiscountFactors == nil {
+		errs.AddForProperty(propertyPath+".volume_discount_factors", ErrIsRequired)
 	} else {
-		rdf, err := num.DecimalFromString(tier.VolumeDiscountFactor)
+		rdf, err := num.DecimalFromString(tier.VolumeDiscountFactors.MakerDiscountFactor)
 		if err != nil {
-			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsNotValidNumber)
+			errs.AddForProperty(propertyPath+".volume_discount_factors.maker_discount_factor", ErrIsNotValidNumber)
 		} else if rdf.IsNegative() {
-			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrMustBePositiveOrZero)
+			errs.AddForProperty(propertyPath+".volume_discount_factors.maker_discount_factor", ErrMustBePositiveOrZero)
+		}
+		rdf, err = num.DecimalFromString(tier.VolumeDiscountFactors.LiquidityDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.liquidity_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.liquidity_discount_factor", ErrMustBePositiveOrZero)
+		}
+		rdf, err = num.DecimalFromString(tier.VolumeDiscountFactors.InfrastructureDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.infrastructure_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".volume_discount_factors.infrastructure_discount_factor", ErrMustBePositiveOrZero)
 		}
 	}
 	return errs
@@ -494,25 +572,73 @@ func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
 		}
 	}
 
-	if len(tier.ReferralRewardFactor) == 0 {
-		errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsRequired)
+	if tier.ReferralRewardFactors == nil {
+		errs.AddForProperty(propertyPath+".referral_reward_factors", ErrIsRequired)
 	} else {
-		rrf, err := num.DecimalFromString(tier.ReferralRewardFactor)
-		if err != nil {
-			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsNotValidNumber)
-		} else if rrf.IsNegative() {
-			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrMustBePositiveOrZero)
+		if len(tier.ReferralRewardFactors.InfrastructureRewardFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_reward_factors.infrastructure_reward_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralRewardFactors.InfrastructureRewardFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.infrastructure_reward_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.infrastructure_reward_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralRewardFactors.MakerRewardFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_reward_factors.maker_reward_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralRewardFactors.MakerRewardFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.maker_reward_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.maker_reward_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralRewardFactors.LiquidityRewardFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_reward_factors.liquidity_reward_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralRewardFactors.LiquidityRewardFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.liquidity_reward_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_reward_factors.liquidity_reward_factor", ErrMustBePositiveOrZero)
+			}
 		}
 	}
 
-	if len(tier.ReferralDiscountFactor) == 0 {
-		errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsRequired)
+	if tier.ReferralDiscountFactors == nil {
+		errs.AddForProperty(propertyPath+".referral_discount_factors", ErrIsRequired)
 	} else {
-		rdf, err := num.DecimalFromString(tier.ReferralDiscountFactor)
-		if err != nil {
-			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsNotValidNumber)
-		} else if rdf.IsNegative() {
-			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrMustBePositiveOrZero)
+		if len(tier.ReferralDiscountFactors.InfrastructureDiscountFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_discount_factors.infrastructure_discount_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralDiscountFactors.InfrastructureDiscountFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.infrastructure_discount_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.infrastructure_discount_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralDiscountFactors.MakerDiscountFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_discount_factors.maker_discount_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralDiscountFactors.MakerDiscountFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.maker_discount_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.maker_discount_factor", ErrMustBePositiveOrZero)
+			}
+		}
+		if len(tier.ReferralDiscountFactors.LiquidityDiscountFactor) == 0 {
+			errs.AddForProperty(propertyPath+".referral_discount_factors.liquidity_discount_factor", ErrIsRequired)
+		} else {
+			rrf, err := num.DecimalFromString(tier.ReferralDiscountFactors.LiquidityDiscountFactor)
+			if err != nil {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.liquidity_discount_factor", ErrIsNotValidNumber)
+			} else if rrf.IsNegative() {
+				errs.AddForProperty(propertyPath+".referral_discount_factors.liquidity_discount_factor", ErrMustBePositiveOrZero)
+			}
 		}
 	}
 
@@ -680,11 +806,12 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN {
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES {
 			errs.AddForProperty("new_transfer.changes.destination_type", ErrIsNotValid)
 		}
 		if oneoff.DeliverOn < 0 {
@@ -886,6 +1013,8 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 
 	isCorrectProduct := false
 
+	errs.Merge(checkMetadata(changes, "new_market.changes"))
+
 	if changes.Instrument == nil {
 		return errs.FinalAddForProperty("new_spot_market.changes.instrument", ErrIsRequired)
 	}
@@ -936,8 +1065,31 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	return checkNewMarketChangesConfiguration(change.NewMarket.Changes).AddPrefix("proposal_submission.terms.change.")
 }
 
+func checkMetadata(
+	m interface{ GetMetadata() []string },
+	pre string,
+) Errors {
+	errs := NewErrors()
+
+	meta := m.GetMetadata()
+
+	if len(meta) > 100 {
+		errs.AddForProperty(fmt.Sprintf("%s.metadata", pre), ErrMustBeAtMost100)
+	}
+
+	for i, v := range meta {
+		if len(v) > 2048 {
+			errs.AddForProperty(fmt.Sprintf("%s.metadata.%d", pre, i), ErrMustBeAtMost2048)
+		}
+	}
+
+	return errs
+}
+
 func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) Errors {
 	errs := NewErrors()
+
+	errs.Merge(checkMetadata(changes, "new_market.changes"))
 
 	if changes.DecimalPlaces >= 150 {
 		errs.AddForProperty("new_market.changes.decimal_places", ErrMustBeLessThan150)

@@ -76,6 +76,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	primaryBridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	secondaryBridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
+	marketActivityTracker.EXPECT().GameFinished(gomock.Any()).AnyTimes()
 	ethSource := mocks.NewMockEthereumEventSource(ctrl)
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()

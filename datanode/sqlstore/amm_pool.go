@@ -100,6 +100,33 @@ on conflict (party_id, market_id, id, amm_party_id) do update set
 	return nil
 }
 
+func listByFields(ctx context.Context, connection Connection, fields map[string]entities.AMMFilterType, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	var (
+		pools       []entities.AMMPool
+		pageInfo    entities.PageInfo
+		whereClause string
+	)
+	where := make([]string, 0, len(fields))
+	args := make([]any, 0, len(fields))
+	for field, val := range fields {
+		var clause string
+		clause, args = val.Where(&field, nextBindVar, args...)
+		where = append(where, clause)
+	}
+	whereClause = strings.Join(where, " AND ")
+	query := fmt.Sprintf(`SELECT * FROM amms WHERE %s`, whereClause)
+	query, args, err := PaginateQuery[entities.AMMPoolCursor](query, args, ammPoolsOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+	if err := pgxscan.Select(ctx, connection, &pools, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not list AMM Pools: %w", err)
+	}
+
+	pools, pageInfo = entities.PageEntities(pools, pagination)
+	return pools, pageInfo, nil
+}
+
 func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connection, fieldName string, filter T, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	var (
 		pools       []entities.AMMPool
@@ -177,6 +204,21 @@ func (p *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID entities.Par
 func (p *AMMPools) ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByStatus")
 	return listBy(ctx, p.ConnectionSource, "status", &status, pagination)
+}
+
+func (p *AMMPools) ListByPartyMarketStatus(ctx context.Context, party *entities.PartyID, market *entities.MarketID, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("AMMs", "ListByPartyMarketStatus")
+	fields := make(map[string]entities.AMMFilterType, 3)
+	if party != nil {
+		fields["party_id"] = party
+	}
+	if market != nil {
+		fields["market_id"] = market
+	}
+	if status != nil {
+		fields["status"] = status
+	}
+	return listByFields(ctx, p.ConnectionSource, fields, pagination)
 }
 
 func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -32,11 +33,99 @@ type ReferralProgram struct {
 	StakingTiers          []*StakingTier
 }
 
+type Factors struct {
+	Infra     num.Decimal
+	Liquidity num.Decimal
+	Maker     num.Decimal
+}
+
+var EmptyFactors = Factors{
+	Infra:     num.DecimalZero(),
+	Liquidity: num.DecimalZero(),
+	Maker:     num.DecimalZero(),
+}
+
+func (f Factors) IsEmpty() bool {
+	return f.Equal(EmptyFactors)
+}
+
+func (f Factors) String() string {
+	return fmt.Sprintf("infra(%s),liquidity(%s),maker(%s)", f.Infra.String(), f.Liquidity.String(), f.Maker.String())
+}
+
+func (f Factors) Equal(other Factors) bool {
+	return f.Infra.Equal(other.Infra) && f.Maker.Equal(other.Maker) && f.Liquidity.Equal(other.Liquidity)
+}
+
+func (f Factors) CapRewardFactors(multiplier, referralProgramMaxRewardProportion num.Decimal) Factors {
+	return Factors{
+		Infra:     num.MinD(f.Infra.Mul(multiplier), referralProgramMaxRewardProportion),
+		Maker:     num.MinD(f.Maker.Mul(multiplier), referralProgramMaxRewardProportion),
+		Liquidity: num.MinD(f.Liquidity.Mul(multiplier), referralProgramMaxRewardProportion),
+	}
+}
+
+func (f Factors) Clone() Factors {
+	return Factors{
+		Infra:     f.Infra,
+		Liquidity: f.Liquidity,
+		Maker:     f.Maker,
+	}
+}
+
+func FactorsFromRewardFactorsWithDefault(factors *vegapb.RewardFactors, defaultFactor string) Factors {
+	f := Factors{}
+	if len(defaultFactor) > 0 {
+		defaultFactorDec := num.MustDecimalFromString(defaultFactor)
+		f.Infra = defaultFactorDec
+		f.Maker = defaultFactorDec
+		f.Liquidity = defaultFactorDec
+	}
+	if factors != nil {
+		f.Infra, _ = num.DecimalFromString(factors.InfrastructureRewardFactor)
+		f.Maker, _ = num.DecimalFromString(factors.MakerRewardFactor)
+		f.Liquidity, _ = num.DecimalFromString(factors.LiquidityRewardFactor)
+	}
+	return f
+}
+
+func FactorsFromDiscountFactorsWithDefault(factors *vegapb.DiscountFactors, defaultFactor string) Factors {
+	f := Factors{}
+	if len(defaultFactor) > 0 {
+		defaultFactorDec := num.MustDecimalFromString(defaultFactor)
+		f.Infra = defaultFactorDec
+		f.Maker = defaultFactorDec
+		f.Liquidity = defaultFactorDec
+	}
+	if factors != nil {
+		f.Infra, _ = num.DecimalFromString(factors.InfrastructureDiscountFactor)
+		f.Maker, _ = num.DecimalFromString(factors.MakerDiscountFactor)
+		f.Liquidity, _ = num.DecimalFromString(factors.LiquidityDiscountFactor)
+	}
+	return f
+}
+
+func (f Factors) IntoRewardFactorsProto() *vegapb.RewardFactors {
+	factors := &vegapb.RewardFactors{}
+	factors.InfrastructureRewardFactor = f.Infra.String()
+	factors.MakerRewardFactor = f.Maker.String()
+	factors.LiquidityRewardFactor = f.Liquidity.String()
+	return factors
+}
+
+func (f Factors) IntoDiscountFactorsProto() *vegapb.DiscountFactors {
+	factors := &vegapb.DiscountFactors{}
+	factors.InfrastructureDiscountFactor = f.Infra.String()
+	factors.MakerDiscountFactor = f.Maker.String()
+	factors.LiquidityDiscountFactor = f.Liquidity.String()
+	return factors
+}
+
 type BenefitTier struct {
 	MinimumEpochs                     *num.Uint
 	MinimumRunningNotionalTakerVolume *num.Uint
-	ReferralRewardFactor              num.Decimal
-	ReferralDiscountFactor            num.Decimal
+	ReferralRewardFactors             Factors
+	ReferralDiscountFactors           Factors
 }
 
 type StakingTier struct {
@@ -54,8 +143,8 @@ func (c ReferralProgram) String() string {
 			i,
 			tier.MinimumEpochs.String(),
 			tier.MinimumRunningNotionalTakerVolume.String(),
-			tier.ReferralRewardFactor.String(),
-			tier.ReferralDiscountFactor.String(),
+			tier.ReferralRewardFactors.String(),
+			tier.ReferralDiscountFactors.String(),
 		)
 	}
 
@@ -84,12 +173,13 @@ func (c ReferralProgram) String() string {
 
 func (c ReferralProgram) IntoProto() *vegapb.ReferralProgram {
 	benefitTiers := make([]*vegapb.BenefitTier, 0, len(c.BenefitTiers))
-	for _, tier := range c.BenefitTiers {
+	for i, tier := range c.BenefitTiers {
 		benefitTiers = append(benefitTiers, &vegapb.BenefitTier{
 			MinimumEpochs:                     tier.MinimumEpochs.String(),
 			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.String(),
-			ReferralRewardFactor:              tier.ReferralRewardFactor.String(),
-			ReferralDiscountFactor:            tier.ReferralDiscountFactor.String(),
+			ReferralRewardFactors:             tier.ReferralRewardFactors.IntoRewardFactorsProto(),
+			ReferralDiscountFactors:           tier.ReferralDiscountFactors.IntoDiscountFactorsProto(),
+			TierNumber:                        ptr.From(uint64(i + 1)),
 		})
 	}
 
@@ -120,14 +210,12 @@ func NewReferralProgramFromProto(c *vegapb.ReferralProgram) *ReferralProgram {
 	for _, tier := range c.BenefitTiers {
 		minimumEpochs, _ := num.UintFromString(tier.MinimumEpochs, 10)
 		minimumRunningVolume, _ := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
-		rewardFactor, _ := num.DecimalFromString(tier.ReferralRewardFactor)
-		discountFactor, _ := num.DecimalFromString(tier.ReferralDiscountFactor)
 
 		benefitTiers = append(benefitTiers, &BenefitTier{
 			MinimumEpochs:                     minimumEpochs,
 			MinimumRunningNotionalTakerVolume: minimumRunningVolume,
-			ReferralRewardFactor:              rewardFactor,
-			ReferralDiscountFactor:            discountFactor,
+			ReferralRewardFactors:             FactorsFromRewardFactorsWithDefault(tier.ReferralRewardFactors, tier.ReferralRewardFactor),
+			ReferralDiscountFactors:           FactorsFromDiscountFactorsWithDefault(tier.ReferralDiscountFactors, tier.ReferralDiscountFactor),
 		})
 	}
 

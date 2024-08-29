@@ -626,6 +626,12 @@ message Fee {
   string infrastructure_fee_referrer_discount = 8;
   // Discount on liquidity fee for eligible referrer.
   string liquidity_fee_referrer_discount = 9;
+  // Fee amount sent to network treasury for later use based on governance actions (network wide).
+  string treasury_fee = 10;
+  // Fee amount used to purchase governance tokens via regular auctions (network wide).
+  string buy_back_fee = 11;
+  // Fee paid by the taker to the maker if the maker is eligible.
+  string high_volume_maker_fee = 12;
 }
 
 message TradeSet {
@@ -913,8 +919,7 @@ enum AccountType {
   // Account holding user's rewards after the vesting period
   ACCOUNT_TYPE_VESTED_REWARDS = 23;
 
-  // Per asset market reward account given for average position
-  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION = 24;
+  reserved 24;
 
   // Per asset market reward account given for relative return
   ACCOUNT_TYPE_REWARD_RELATIVE_RETURN = 25;
@@ -933,6 +938,15 @@ enum AccountType {
 
   // Per asset market reward account for realised return
   ACCOUNT_TYPE_REWARD_REALISED_RETURN = 30;
+
+  // Per asset account for paid buy-back fees
+  ACCOUNT_TYPE_BUY_BACK_FEES = 31;
+
+  // Per asset market reward account given for average notional
+  ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL = 32;
+
+  // Reward account for the eligible entities metric.
+  ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES = 33;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
@@ -1061,6 +1075,14 @@ enum TransferType {
   TRANSFER_TYPE_AMM_HIGH = 50;
   // Transfer releasing an AMM's general account upon closure.
   TRANSFER_TYPE_AMM_RELEASE = 51;
+  // Treasury fee paid from party's general account.
+  TRANSFER_TYPE_TREASURY_FEE_PAY = 52;
+  // Buy-back fee paid into network buy-back account.
+  TRANSFER_TYPE_BUY_BACK_FEE_PAY = 53;
+  // High-volume maker fee paid from general account
+  TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_PAY = 54;
+  // Maker fee received into general account
+  TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_RECEIVE = 55;
 }
 
 // Represents a financial transfer within Vega
@@ -1087,8 +1109,7 @@ enum DispatchMetric {
   DISPATCH_METRIC_LP_FEES_RECEIVED = 3;
   // Dispatch metric that uses total value of the market if above the required threshold and not paid given proposer bonus yet
   DISPATCH_METRIC_MARKET_VALUE = 4;
-  // Dispatch metric that uses the time weighted average position
-  DISPATCH_METRIC_AVERAGE_POSITION = 5;
+  reserved 5;
   // Dispatch metric that uses the relative PNL of the party in the market
   DISPATCH_METRIC_RELATIVE_RETURN = 6;
   // Dispatch metric that uses return volatility of the party in the market
@@ -1097,6 +1118,10 @@ enum DispatchMetric {
   DISPATCH_METRIC_VALIDATOR_RANKING = 8;
   // Dispatch metric that uses the realised return of the party in a market
   DISPATCH_METRIC_REALISED_RETURN = 9;
+  // Dispatch metric that uses the time weighted average notional
+  DISPATCH_METRIC_AVERAGE_NOTIONAL = 10;
+  // Dispatch metric that uses the eligibility criteria of entities
+  DISPATCH_METRIC_ELIGIBLE_ENTITIES = 11;
 }
 
 enum EntityScope {
@@ -1125,6 +1150,8 @@ enum DistributionStrategy {
   DISTRIBUTION_STRATEGY_PRO_RATA = 1;
   // Rewards funded using the party rank.
   DISTRIBUTION_STRATEGY_RANK = 2;
+  // Rewards funded using the ranked lottery.
+  DISTRIBUTION_STRATEGY_RANK_LOTTERY = 3;
 }
 
 message DispatchStrategy {
@@ -1152,7 +1179,7 @@ message DispatchStrategy {
   uint64 lock_period = 11;
   // Controls how the reward is distributed between qualifying parties
   DistributionStrategy distribution_strategy = 12;
-  // Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank distribution strategy.
+  // Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank and rank lottery distribution strategies.
   repeated Rank rank_table = 13;
   // If set, the actual amount of rewards transferred to each public key during distribution for this transfer will be `min(calculated_reward_in_quantum, cap_reward_fee_multiple × fees_paid_this_epoch_in_quantum).
   optional string cap_reward_fee_multiple = 14;
@@ -1920,8 +1947,12 @@ message VolumeBenefitTier {
   // Required running notional taker volume in quantum units for parties
   // to access this tier.
   string minimum_running_notional_taker_volume = 1;
-  // Proportion of the taker fees to be discounted.
+  // deprecated
   string volume_discount_factor = 2;
+  // Proportion of the taker fees to be discounted.
+  DiscountFactors volume_discount_factors = 3;
+  // The tier number. It's set by the core, and used in the party fee stats API.
+  optional uint64 tier_number = 4;
 }
 
 message BenefitTier {
@@ -1931,10 +1962,39 @@ message BenefitTier {
   // Required number of epochs a party must have been in a referral set to
   // access this tier.
   string minimum_epochs = 2;
-  // Proportion of the referee's taker fees to be rewarded to the referrer.
+
+  // deprecated
   string referral_reward_factor = 3;
-  // Proportion of the referee's taker fees to be discounted.
+
+  // deprecated
   string referral_discount_factor = 4;
+
+  // Proportion of the referee's fees to be rewarded to the referrer.
+  RewardFactors referral_reward_factors = 5;
+
+  // Referral discount factors for the various fees.
+  DiscountFactors referral_discount_factors = 6;
+
+  // The tier number. It's set by the core, and used in the party fee stats API.
+  optional uint64 tier_number = 7;
+}
+
+message RewardFactors {
+  // Proportion of the referee's infrastructure fees to be rewarded to the referrer.
+  string infrastructure_reward_factor = 1;
+  // Proportion of the referee's liquidity fees to be rewarded to the referrer.
+  string liquidity_reward_factor = 2;
+  // Proportion of the maker fees to be rewarded.
+  string maker_reward_factor = 3;
+}
+
+message DiscountFactors {
+  // Proportion of the referee's infrastructure fee to be discounted.
+  string infrastructure_discount_factor = 1;
+  // Proportion of the referee's liquidity fee to be discounted.
+  string liquidity_discount_factor = 2;
+  // Proportion of the referee's maker fee to be discounted.
+  string maker_discount_factor = 3;
 }
 
 message VestingBenefitTiers {
@@ -2005,4 +2065,28 @@ message LongBlockAuction {
 message LongBlockAuctionDurationTable {
   // Slice of thresholds and durations for corresponding auctions.
   repeated LongBlockAuction threshold_and_duration = 1;
+}
+
+message VolumeRebateBenefitTier {
+  // Fraction of a party's maker volume required for a party to access this tier.
+  string minimum_party_maker_volume_fraction = 1;
+  // Additional rebate factor, based on the 'trade value for fee purposes', that a party at this tier will receive when they are the maker side of a trade.
+  string additional_maker_rebate = 2;
+  // The tier number. It's set by the core, and used in the party fee stats API.
+  optional uint64 tier_number = 3;
+}
+
+message VolumeRebateProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined benefit tiers ordered by increasing rebates.
+  repeated VolumeRebateBenefitTier benefit_tiers = 3;
+  // Timestamp in Unix seconds, after which when the current epoch
+  // ends, the program will end and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which a referral set's running volume is evaluated.
+  uint64 window_length = 5;
 }

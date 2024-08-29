@@ -98,6 +98,22 @@ func (mr *MockAMMServiceMockRecorder) ListByParty(arg0, arg1, arg2 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByParty", reflect.TypeOf((*MockAMMService)(nil).ListByParty), arg0, arg1, arg2)
 }
 
+// ListByPartyMarketStatus mocks base method.
+func (m *MockAMMService) ListByPartyMarketStatus(arg0 context.Context, arg1, arg2 *string, arg3 *entities.AMMStatus, arg4 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByPartyMarketStatus", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].([]entities.AMMPool)
+	ret1, _ := ret[1].(entities.PageInfo)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListByPartyMarketStatus indicates an expected call of ListByPartyMarketStatus.
+func (mr *MockAMMServiceMockRecorder) ListByPartyMarketStatus(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByPartyMarketStatus", reflect.TypeOf((*MockAMMService)(nil).ListByPartyMarketStatus), arg0, arg1, arg2, arg3, arg4)
+}
+
 // ListByPool mocks base method.
 func (m *MockAMMService) ListByPool(arg0 context.Context, arg1 string, arg2 entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	m.ctrl.T.Helper()

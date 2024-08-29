@@ -93,7 +93,7 @@ Feature: Test vAMM cancellation by abandoning.
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
 
@@ -113,8 +113,8 @@ Feature: Test vAMM cancellation by abandoning.
 
     # trying to trade again causes no trades because the AMM has no more volume
     When the parties place the following orders:
-      | party  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | buy  | 500    | 150     | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/MAR22 | buy  | 500    | 150   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # the AMM's mid price has moved to 150, but it has no volume +150 so that best offer comes from the orderbook of 160
     Then the market data for the market "ETH/MAR22" should be:
@@ -152,7 +152,7 @@ Feature: Test vAMM cancellation by abandoning.
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 925595  |        |        |
     And the following transfers should happen:
-       | from     | from account         | to    | to account             | market id | amount | asset | is amm | type                                 |
+       | from     | from account         | to    | to account             | market id | amount | asset | is amm | type                      |
        | vamm1-id | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL   | ETH/MAR22 | 25595  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
        | vamm1-id | ACCOUNT_TYPE_MARGIN  |       | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 74548  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
 

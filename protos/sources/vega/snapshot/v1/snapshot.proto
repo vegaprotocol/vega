@@ -150,6 +150,7 @@ message Payload {
     EVMMultisigTopologies evm_multisig_topologies = 87;
     TxCache tx_cache = 88;
     EVMFwdHeartbeats evm_fwd_heartbeats = 89;
+    VolumeRebateProgram volume_rebate_program = 90;
   }
 }
 
@@ -1150,6 +1151,7 @@ message MarketTracker {
   repeated checkpoint.v1.TakerNotionalVolume taker_notional_volume = 2;
   repeated checkpoint.v1.MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
   repeated checkpoint.v1.EpochPartyTakerFees epoch_taker_fees = 4;
+  repeated checkpoint.v1.GameEligibilityTracker game_eligibility_tracker = 5;
 }
 
 message SignerEventsPerAddress {
@@ -1308,9 +1310,13 @@ message ReferralSet {
   Membership referrer = 4;
   repeated Membership referees = 5;
   repeated RunningVolume running_volumes = 6;
+  // deprecated
   string current_reward_factor = 7;
   string current_rewards_multiplier = 8;
+  // deprecated
   string current_rewards_factor_multiplier = 9;
+  vega.RewardFactors current_rewards_factors_multiplier = 10;
+  vega.RewardFactors current_reward_factors = 11;
 }
 
 message RunningVolume {
@@ -1320,8 +1326,10 @@ message RunningVolume {
 
 message FactorByReferee {
   string party = 1;
+  // deprecated
   bytes discount_factor = 2;
   bytes taker_volume = 3;
+  vega.DiscountFactors discount_factors = 4;
 }
 
 message AssetLocked {
@@ -1351,6 +1359,27 @@ message PartyActivityStreak {
   bytes reward_vesting_multiplier = 5;
 }
 
+message PartyRebateData {
+  string party = 1;
+  string fraction = 2;
+  string maker_fee_received = 3;
+}
+
+message VolumeRebateProgram {
+  repeated string parties = 1;
+  repeated PartyRebateData party_rebate_data = 2;
+  vega.VolumeRebateProgram current_program = 3;
+  vega.VolumeRebateProgram new_program = 4;
+  repeated VolumeRebateStats factors_by_party = 5;
+  uint64 last_program_version = 6;
+  bool program_has_ended = 7;
+}
+
+message VolumeRebateStats {
+  string party = 1;
+  string rebate_factor = 2;
+}
+
 message VolumeDiscountProgram {
   repeated string parties = 1;
   repeated EpochPartyVolumes epoch_party_volumes = 2;
@@ -1365,7 +1394,9 @@ message VolumeDiscountProgram {
 
 message VolumeDiscountStats {
   string party = 1;
+  // deprecated
   string discount_factor = 2;
+  vega.DiscountFactors discount_factors = 3;
 }
 
 message EpochPartyVolumes {

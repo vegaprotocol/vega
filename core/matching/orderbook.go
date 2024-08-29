@@ -597,6 +597,9 @@ func (b *OrderBook) uncrossBookSide(
 	if len(uncrossOrders) == 0 {
 		return nil, nil
 	}
+
+	defer b.buy.uncrossFinished()
+
 	// get price factor, if price is 10,000, but market price is 100, this is 10,000/100 -> 100
 	// so we can get the market price simply by doing price / (order.Price/ order.OriginalPrice)
 	// as the asset decimals may be < market decimals, the calculation must be done in decimals.
@@ -725,27 +728,35 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 }
 
 func (b *OrderBook) CheckBook() bool {
+	checkOBB, checkOBS := false, false
 	if len(b.buy.levels) > 0 {
-		allPegged := true
+		checkOBB = true
 		for _, o := range b.buy.levels[len(b.buy.levels)-1].orders {
 			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestBid {
-				allPegged = false
+				checkOBB = false
 				break
 			}
-		}
-		if allPegged {
-			return false
 		}
 	}
 	if len(b.sell.levels) > 0 {
-		allPegged := true
+		checkOBS = true
 		for _, o := range b.sell.levels[len(b.sell.levels)-1].orders {
 			if o.PeggedOrder == nil || o.PeggedOrder.Reference != types.PeggedReferenceBestAsk {
-				allPegged = false
+				checkOBS = false
 				break
 			}
 		}
-		if allPegged {
+	}
+	// if either buy or sell side is lacking non-pegged orders, check AMM orders.
+	if checkOBB || checkOBS {
+		// get best bid/ask price and volumes.
+		bb, bbv, bs, bsv := b.buy.offbook.BestPricesAndVolumes()
+		// if the buy side is lacking non-pegged orders, check if there are off-book orders.
+		if checkOBB && (bb == nil || bb.IsZero() || bbv == 0) {
+			return false
+		}
+		// same, but for sell side.
+		if checkOBS && (bs == nil || bs.IsZero() || bsv == 0) {
 			return false
 		}
 	}
@@ -993,6 +1004,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	if !b.auction {
 		// uncross with opposite
+
+		defer b.buy.uncrossFinished()
+
 		idealPrice := b.theoreticalBestTradePrice(order)
 		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order, true, idealPrice)
 		if !lastTradedPrice.IsZero() {

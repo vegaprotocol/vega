@@ -235,22 +235,24 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	teams := mocks.NewMockTeams(tm.ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
 	broker := bmocks.NewMockBroker(tm.ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker, collateralEngine)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
 	volumeDiscount := fmocks.NewMockVolumeDiscountService(tm.ctrl)
+	volumeRebate := fmocks.NewMockVolumeRebateService(tm.ctrl)
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	referralDiscountReward.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeRebate.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(tm.ctrl)
 	parties := mocks.NewMockParties(tm.ctrl)
 
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties,
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties,
 	)
 	require.NoError(tm.t, err)
 
@@ -648,22 +650,25 @@ func getTestMarket2WithDP(
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	teams := mocks.NewMockTeams(tm.ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker, collateralEngine)
 	epoch.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
 	volumeDiscount := fmocks.NewMockVolumeDiscountService(tm.ctrl)
+	volumeRebate := fmocks.NewMockVolumeRebateService(tm.ctrl)
+
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	referralDiscountReward.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeRebate.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
 	parties := mocks.NewMockParties(ctrl)
 
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}
@@ -6717,13 +6722,100 @@ func TestLiquidityFeeSettingsConstantFee(t *testing.T) {
 }
 
 func TestVerifyAMMBounds(t *testing.T) {
-	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
-	require.Equal(t, "upper bound (8) as factored by market and asset decimals must be greater than base (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(0.1)).Error())
-	require.Equal(t, "base (8) as factored by market and asset decimals must be greater than lower bound (8)", future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(0.1)).Error())
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(0.1)))
+	tests := []struct {
+		name        string
+		params      *types.ConcentratedLiquidityParameters
+		maxCap      *num.Uint
+		priceFactor num.Decimal
+		expectedErr error
+	}{
+		{
+			name: "normal valid bounds",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1.1),
+		},
+		{
+			name: "lower greater than base with fewer decimals",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(80),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(90),
+			},
+			priceFactor: num.NewDecimalFromFloat(0.1),
+			expectedErr: fmt.Errorf("base (8) as factored by market and asset decimals must be greater than lower bound (8)"),
+		},
+		{
+			name: "base greater than base with fewer decimals",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(80),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(0.1),
+			expectedErr: fmt.Errorf("base (8) as factored by market and asset decimals must be greater than lower bound (8)"),
+		},
+		{
+			name: "both bounds too close with fewer decimals",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(0.1),
+			expectedErr: fmt.Errorf("base (8) as factored by market and asset decimals must be greater than lower bound (8)"),
+		},
+		{
+			name: "upper bound higher than cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(86),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+		{
+			name: "upper bound equal cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(85),
+				UpperBound: num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(88),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+		{
+			name: "base higher than cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(100),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(86),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+		{
+			name: "base equal cap",
+			params: &types.ConcentratedLiquidityParameters{
+				LowerBound: num.NewUint(82),
+				Base:       num.NewUint(88),
+			},
+			priceFactor: num.NewDecimalFromFloat(1),
+			maxCap:      num.NewUint(88),
+			expectedErr: common.ErrAMMBoundsOutsidePriceCap,
+		},
+	}
 
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(82), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(88), num.NewDecimalFromFloat(1.1)))
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(80), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
-	require.NoError(t, future.VerifyAMMBounds(num.NewUint(85), num.NewUint(78), num.NewUint(90), num.NewDecimalFromFloat(1.1)))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := future.VerifyAMMBounds(tt.params, tt.maxCap, tt.priceFactor)
+			assert.Equal(t, tt.expectedErr, err)
+		})
+	}
 }

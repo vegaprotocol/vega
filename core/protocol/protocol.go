@@ -142,6 +142,7 @@ func New(
 			svcs.teamsEngine,
 			svcs.referralProgram,
 			svcs.volumeDiscount,
+			svcs.volumeRebate,
 			svcs.blockchainClient,
 			svcs.primaryMultisig,
 			svcs.secondaryMultisig,

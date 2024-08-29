@@ -462,7 +462,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	expectSubaccountCreation(t, tst, party, subAccount)
 	whenAMMIsSubmitted(t, tst, submit)
 
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(5).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
 		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
 	)
 
@@ -473,7 +473,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	assert.Equal(t, 1192, int(avolume))
 
 	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(5).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
 		[]events.MarketPosition{&marketPosition{size: -222000, averageEntry: num.NewUint(0)}},
 	)
 
@@ -484,7 +484,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	assert.Equal(t, 103, int(avolume))
 
 	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(5).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
 		[]events.MarketPosition{&marketPosition{size: 270400, averageEntry: num.NewUint(0)}},
 	)
 
@@ -492,7 +492,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	assert.Equal(t, "180000", bid.String()) // make sure we are capped to the boundary and not 179904
 	assert.Equal(t, "180104", ask.String())
 	assert.Equal(t, 58, int(bvolume))
-	assert.Equal(t, 1463, int(avolume))
+	assert.Equal(t, 1460, int(avolume))
 }
 
 func testClosingReduceOnlyPool(t *testing.T) {
@@ -656,9 +656,9 @@ func testMarketClosure(t *testing.T) {
 	}
 
 	require.NoError(t, tst.engine.MarketClosing(ctx))
-	for _, p := range tst.engine.poolsCpy {
-		assert.Equal(t, types.AMMPoolStatusStopped, p.status)
-	}
+	require.Equal(t, 0, len(tst.engine.pools))
+	require.Equal(t, 0, len(tst.engine.poolsCpy))
+	require.Equal(t, 0, len(tst.engine.ammParties))
 }
 
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {
@@ -704,6 +704,8 @@ func whenAMMIsSubmitted(t *testing.T, tst *tstEngine, submission *types.SubmitAM
 	party := submission.Party
 	subAccount := DeriveAMMParty(party, tst.marketID, "AMMv1", 0)
 	expectBalanceChecks(t, tst, party, subAccount, submission.CommitmentAmount.Uint64())
+
+	ensurePosition(t, tst.pos, 0, nil)
 
 	ctx := context.Background()
 	pool, err := tst.engine.Create(ctx, submission, vgcrypto.RandomHash(), riskFactors, scalingFactors, slippage)
@@ -794,7 +796,7 @@ func getTestEngineWithFactors(t *testing.T, priceFactor, positionFactor num.Deci
 	teams := cmocks.NewMockTeams(ctrl)
 	balanceChecker := cmocks.NewMockAccountBalanceChecker(ctrl)
 
-	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, col)
 
 	parties := cmocks.NewMockParties(ctrl)
 	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()

@@ -55,6 +55,7 @@ const (
 
 type Collateral interface {
 	GetAssetQuantum(asset string) (num.Decimal, error)
+	GetAllParties() []string
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	SubAccountUpdate(
@@ -99,17 +100,16 @@ func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	if r, ok := s.cache[u.String()]; ok {
-		return r
-	}
+	// caching was disabled here since it caused problems with snapshots (https://github.com/vegaprotocol/vega/issues/11523)
+	// and we changed tact to instead cache constant terms in calculations that *involve* sqrt's instead of the sqrt result
+	// directly. I'm leaving the ghost of this cache here incase we need to introduce it again, maybe as a LRU cache instead.
+	// if r, ok := s.cache[u.String()]; ok {
+	//	return r
+	// }
 
-	// TODO that we may need to re-visit this depending on the performance impact
-	// but for now lets do it "properly" in full decimals and work out how we can
-	// improve it once we have reg-tests and performance data.
 	r := num.UintOne().Sqrt(u)
 
-	// and cache it -- we can also maybe be more clever here and use a LRU but thats for later
-	s.cache[u.String()] = r
+	// s.cache[u.String()] = r
 	return r
 }
 
@@ -175,7 +175,7 @@ func New(
 		priceFactor:           priceFactor,
 		positionFactor:        positionFactor,
 		parties:               parties,
-		oneTick:               oneTick,
+		oneTick:               num.Max(num.UintOne(), oneTick),
 	}
 }
 
@@ -198,13 +198,8 @@ func NewFromProto(
 		e.ammParties[v.Key] = v.Value
 	}
 
-	// TODO consider whether we want the cache in the snapshot, it might be pretty large/slow and I'm not sure what we gain
-	for _, v := range state.Sqrter {
-		e.rooter.cache[v.Key] = num.MustDecimalFromString(v.Value)
-	}
-
 	for _, v := range state.Pools {
-		p, err := NewPoolFromProto(log, e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor)
+		p, err := NewPoolFromProto(log, e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor, positionFactor)
 		if err != nil {
 			return e, err
 		}
@@ -216,18 +211,9 @@ func NewFromProto(
 
 func (e *Engine) IntoProto() *v1.AmmState {
 	state := &v1.AmmState{
-		Sqrter:      make([]*v1.StringMapEntry, 0, len(e.rooter.cache)),
 		AmmPartyIds: make([]*v1.StringMapEntry, 0, len(e.ammParties)),
 		Pools:       make([]*v1.PoolMapEntry, 0, len(e.pools)),
 	}
-
-	for k, v := range e.rooter.cache {
-		state.Sqrter = append(state.Sqrter, &v1.StringMapEntry{
-			Key:   k,
-			Value: v.String(),
-		})
-	}
-	sort.Slice(state.Sqrter, func(i, j int) bool { return state.Sqrter[i].Key < state.Sqrter[j].Key })
 
 	for k, v := range e.ammParties {
 		state.AmmPartyIds = append(state.AmmPartyIds, &v1.StringMapEntry{
@@ -427,15 +413,27 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 
 	// if the pools consume the whole incoming order's volume, share it out pro-rata
 	if agg.Remaining < total {
+		maxVolumes := make([]uint64, 0, len(volumes))
+		// copy the available volumes for rounding.
+		maxVolumes = append(maxVolumes, volumes...)
 		var retotal uint64
 		for i := range volumes {
 			volumes[i] = agg.Remaining * volumes[i] / total
 			retotal += volumes[i]
 		}
 
-		// any lost crumbs due to integer division is given to the first pool
+		// any lost crumbs due to integer division is given to the pools that can accommodate it.
 		if d := agg.Remaining - retotal; d != 0 {
-			volumes[0] += d
+			for i, v := range volumes {
+				if delta := maxVolumes[i] - v; delta != 0 {
+					if delta >= d {
+						volumes[i] += d
+						break
+					}
+					volumes[i] += delta
+					d -= delta
+				}
+			}
 		}
 	}
 
@@ -695,6 +693,14 @@ func (e *Engine) Create(
 		return nil, err
 	}
 
+	// sanity check, a *new* AMM should not already have a position. If it does it means that the party
+	// previously had an AMM but it was stopped/cancelled while still holding a position which should not happen.
+	// It should have either handed its position over to the liquidation engine, or be in reduce-only mode
+	// and only be removed when its position is 0.
+	if pool.getPosition() != 0 {
+		e.log.Panic("AMM has position before existing")
+	}
+
 	e.log.Debug("AMM created",
 		logging.String("owner", submit.Party),
 		logging.String("poolID", pool.ID),
@@ -814,6 +820,10 @@ func (e *Engine) MarketClosing(ctx context.Context) error {
 		e.sendUpdate(ctx, p)
 		e.marketActivityTracker.RemoveAMMParty(e.assetID, e.marketID, p.AMMParty)
 	}
+
+	e.pools = nil
+	e.poolsCpy = nil
+	e.ammParties = nil
 	return nil
 }
 

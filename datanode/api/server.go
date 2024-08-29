@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -47,6 +48,29 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
+
+// VolumeDiscountService ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/volume_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api VolumeDiscountService
+type VolumeDiscountService interface {
+	Stats(ctx context.Context, atEpoch *uint64, partyID *string, pagination entities.CursorPagination) ([]entities.FlattenVolumeDiscountStats, entities.PageInfo, error)
+}
+
+// EpochService
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api EpochService
+type EpochService interface {
+	GetCurrent(ctx context.Context) (entities.Epoch, error)
+	GetByBlock(ctx context.Context, height uint64) (entities.Epoch, error)
+	Get(ctx context.Context, ID uint64) (entities.Epoch, error)
+	GetAll(ctx context.Context) ([]entities.Epoch, error)
+}
+
+type ReferralSetService interface {
+	GetReferralSetStats(ctx context.Context, setID *entities.ReferralSetID, atEpoch *uint64, referee *entities.PartyID, pagination entities.CursorPagination) ([]entities.FlattenReferralSetStats, entities.PageInfo, error)
+	ListReferralSets(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination) ([]entities.ReferralSet, entities.PageInfo, error)
+	ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination, aggregationEpochs uint32) ([]entities.ReferralSetRefereeStats, entities.PageInfo, error)
+}
 
 // EventService ...
 //
@@ -126,6 +150,11 @@ type AMMService interface {
 	ListByPool(ctx context.Context, poolID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByPartyMarketStatus(ctx context.Context, party, market *string, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+}
+
+type PartyStatsSvc interface {
+	GetPartyStats(ctx context.Context, partyID string, marketIDs []string) (*v2.GetPartyDiscountStatsResponse, error)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
@@ -193,6 +222,8 @@ type GRPCServer struct {
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition
 	gameScoreService                    *service.GameScore
 	ammPoolService                      *service.AMMPools
+	volumeRebateStatsService            *service.VolumeRebateStats
+	volumeRebateProgramService          *service.VolumeRebatePrograms
 
 	eventObserver *eventObserver
 
@@ -265,6 +296,8 @@ func NewGRPCServer(
 	timeWeightedNotionalPositionService *service.TimeWeightedNotionalPosition,
 	gameScoreService *service.GameScore,
 	ammPoolService *service.AMMPools,
+	volumeRebateStatsService *service.VolumeRebateStats,
+	volumeRebateProgramsService *service.VolumeRebatePrograms,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -336,7 +369,8 @@ func NewGRPCServer(
 		timeWeightedNotionalPositionService: timeWeightedNotionalPositionService,
 		gameScoreService:                    gameScoreService,
 		ammPoolService:                      ammPoolService,
-
+		volumeRebateStatsService:            volumeRebateStatsService,
+		volumeRebateProgramService:          volumeRebateProgramsService,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -505,6 +539,15 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	)
 
 	streamIntercept := grpc.StreamInterceptor(subscriptionRateLimiter.WithGrpcInterceptor(g.ipFromContext))
+	partyDiscountStats := service.NewPartyStatsService(g.epochService,
+		g.referralSetsService.ReferralSets,
+		g.volumeDiscountStatsService,
+		g.volumeRebateStatsService,
+		g.marketsService,
+		g.referralProgramService.ReferralPrograms,
+		g.volumeDiscountProgramService.VolumeDiscountPrograms,
+		g.volumeRebateProgramService.VolumeRebatePrograms,
+	)
 
 	g.srv = grpc.NewServer(intercept, streamIntercept)
 
@@ -544,7 +587,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		delegationService:             g.delegationService,
 		marketDepthService:            g.marketDepthService,
 		nodeService:                   g.nodeService,
-		epochService:                  g.epochService,
+		EpochService:                  g.epochService,
 		RiskFactorService:             g.riskFactorService,
 		networkParameterService:       g.networkParameterService,
 		checkpointService:             g.checkpointService,
@@ -561,11 +604,11 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		fundingPeriodService:          g.fundingPeriodService,
 		partyActivityStreak:           g.partyActivityStreak,
 		referralProgramService:        g.referralProgramService,
-		referralSetsService:           g.referralSetsService,
+		ReferralSetsService:           g.referralSetsService,
 		teamsService:                  g.teamsService,
 		feesStatsService:              g.FeesStatsService,
 		fundingPaymentService:         g.fundingPaymentService,
-		volumeDiscountStatsService:    g.volumeDiscountStatsService,
+		VolumeDiscountStatsService:    g.volumeDiscountStatsService,
 		volumeDiscountProgramService:  g.volumeDiscountProgramService,
 		paidLiquidityFeesStatsService: g.paidLiquidityFeesStatsService,
 		partyLockedBalances:           g.partyLockedBalances,
@@ -577,6 +620,9 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		twNotionalPositionService:     g.timeWeightedNotionalPositionService,
 		gameScoreService:              g.gameScoreService,
 		AMMPoolService:                g.ammPoolService,
+		volumeRebateStatsService:      g.volumeRebateStatsService,
+		volumeRebateProgramService:    g.volumeRebateProgramService,
+		partyDiscountStats:            partyDiscountStats,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

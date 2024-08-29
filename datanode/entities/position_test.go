@@ -85,6 +85,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	market := "market-id"
 	party := "party1"
 	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	pf := num.DecimalFromFloat(1)
 
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
@@ -95,7 +96,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 			size:  3,
 			price: num.NewUint(1200),
 		},
-	}, 1, num.DecimalFromFloat(1))
+	}, 1, pf)
 	position.UpdateWithPositionSettlement(ps)
 	pp := position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
@@ -111,9 +112,31 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	// now assume this party is distressed, and we've taken all their funds
 	sde := events.NewSettleDistressed(ctx, party, market, num.UintZero(), num.NewUint(100), 1)
 	position.UpdateWithSettleDistressed(sde)
+	// ensure the position is flagged as distressed.
+	assert.Equal(t, entities.PositionStatusClosedOut, position.DistressedStatus)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.Equal(t, "-1000", pp.RealisedPnl)
+
+	// now submit process a closeout trade event
+	position.UpdateWithTrade(vega.Trade{
+		Size:       5,
+		Price:      "1200",
+		AssetPrice: "1200",
+		Type:       vega.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
+	}, true, pf)
+	// now ensure the position status still is what we expect it to be
+	assert.Equal(t, entities.PositionStatusClosedOut, position.DistressedStatus)
+
+	// next, assume the party has topped up, and traded again.
+	position.UpdateWithTrade(vega.Trade{
+		Size:       1,
+		Price:      "1200",
+		AssetPrice: "1200",
+		Type:       vega.Trade_TYPE_DEFAULT,
+	}, true, pf)
+	// now the distressed status ought to be cleared.
+	assert.Equal(t, entities.PositionStatusUnspecified, position.DistressedStatus)
 }
 
 func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {

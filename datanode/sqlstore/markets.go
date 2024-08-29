@@ -177,25 +177,59 @@ func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market
 	m.cacheLock.Lock()
 	defer m.cacheLock.Unlock()
 
-	var market entities.Market
-
 	if market, ok := m.cache[marketID]; ok {
 		return market, nil
 	}
 
-	query := fmt.Sprintf(`%s
-where id = $1
-order by id, vega_time desc
-`, getSelect())
-
 	defer metrics.StartSQLQuery("Markets", "GetByID")()
-	err := pgxscan.Get(ctx, m.ConnectionSource, &market, query, entities.MarketID(marketID))
+	market, err := m.queryByID(ctx, marketID)
 
 	if err == nil {
 		m.cache[marketID] = market
 	}
 
 	return market, m.wrapE(err)
+}
+
+// queryByID assumes the cache lock has been acquired, and the cache doesn't yet contain the requested market.
+// This function does not access the cache, so technically it can be called without a cache lock, but it's best not to go down that route.
+func (m *Markets) queryByID(ctx context.Context, mktID string) (entities.Market, error) {
+	var market entities.Market
+	query := fmt.Sprintf(`%s
+where id = $1
+order by id, vega_time desc
+`, getSelect())
+
+	err := pgxscan.Get(ctx, m.ConnectionSource, &market, query, entities.MarketID(mktID))
+
+	return market, m.wrapE(err)
+}
+
+func (m *Markets) GetByIDs(ctx context.Context, markets []string) ([]entities.Market, error) {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+	ret := make([]entities.Market, 0, len(markets))
+	missing := make([]string, 0, len(markets))
+	for _, mid := range markets {
+		if mkt, ok := m.cache[mid]; ok {
+			ret = append(ret, mkt)
+		} else {
+			missing = append(missing, mid)
+		}
+	}
+	if len(missing) == 0 {
+		return ret, nil
+	}
+	for _, mid := range missing {
+		mkt, err := m.queryByID(ctx, mid)
+		// if a requested market couldn't be found, just return an error.
+		if err != nil {
+			return nil, err
+		}
+		m.cache[mid] = mkt
+		ret = append(ret, mkt)
+	}
+	return ret, nil
 }
 
 func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Market, error) {

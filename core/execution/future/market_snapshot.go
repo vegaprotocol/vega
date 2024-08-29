@@ -67,6 +67,7 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
 	parties common.Parties,
 ) (*Market, error) {
@@ -234,6 +235,7 @@ func NewMarketFromSnapshot(
 		fee:                           feeEngine,
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		volumeRebateService:           volumeRebateService,
 		liquidityEngine:               liquidityEngine,
 		liquidity:                     marketLiquidity,
 		parties:                       map[string]struct{}{},
@@ -317,7 +319,6 @@ func NewMarketFromSnapshot(
 		}
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
-
 	return market, nil
 }
 

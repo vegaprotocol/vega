@@ -62,7 +62,8 @@ func TestMarketTracker(t *testing.T) {
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -140,7 +141,7 @@ func TestMarketTracker(t *testing.T) {
 	teams2 := mocks.NewMockTeams(ctrl)
 	balanceChecker2 := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker = bmocks.NewMockBroker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams2, balanceChecker2, broker)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams2, balanceChecker2, broker, collateralService)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -160,7 +161,8 @@ func TestRemoveMarket(t *testing.T) {
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -187,7 +189,8 @@ func TestAddRemoveAMM(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -208,6 +211,105 @@ func TestAddRemoveAMM(t *testing.T) {
 	require.Equal(t, map[string]struct{}{}, tracker.GetAllAMMParties("asset1", nil))
 }
 
+func TestCalculateTotalMakerContributionInQuantum(t *testing.T) {
+	// ctx := context.Background()
+	epochService := &TestEpochEngine{}
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.UintZero(), nil).AnyTimes()
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+	tracker.MarketProposed("asset1", "market1", "me")
+	tracker.MarketProposed("asset1", "market2", "me2")
+	tracker.MarketProposed("asset1", "market4", "me4")
+	tracker.MarketProposed("asset2", "market3", "me3")
+
+	collateralService.EXPECT().GetAssetQuantum("asset1").Return(num.DecimalOne(), nil).AnyTimes()
+	collateralService.EXPECT().GetAssetQuantum("asset2").Return(num.DecimalTwo(), nil).AnyTimes()
+	// no fees generated expect empty slice
+	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
+	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END})
+
+	// expect no makers fee contributors
+	contribution, fraction := tracker.CalculateTotalMakerContributionInQuantum(1)
+	require.Equal(t, 0, len(fraction))
+	require.Equal(t, 0, len(contribution))
+
+	contribution, fraction = tracker.CalculateTotalMakerContributionInQuantum(2)
+	require.Equal(t, 0, len(fraction))
+	require.Equal(t, 0, len(contribution))
+
+	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START})
+
+	// now lets get some fees paid
+	// update with a few transfers
+	transfersM1 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
+
+	transfersM2 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
+
+	transfersM3 := []*types.Transfer{
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(450)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset2", "market3", transfersM3)
+	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_END})
+
+	contribution, fraction = tracker.CalculateTotalMakerContributionInQuantum(1)
+	// party 1 received in total:
+	// asset1 : 1000
+	// party 2 received in total:
+	// asset1 : 1500
+	// asset2: 450/2 = 225
+	require.Equal(t, 2, len(fraction))
+	require.Equal(t, 2, len(contribution))
+	require.Equal(t, "1000", contribution["party1"].String())
+	require.Equal(t, "1725", contribution["party2"].String())
+	require.Equal(t, "0.3669724770642202", fraction["party1"].String())
+	require.Equal(t, "0.6330275229357798", fraction["party2"].String())
+
+	epochService.target(context.Background(), types.Epoch{Seq: 3, Action: vgproto.EpochAction_EPOCH_ACTION_START})
+
+	transfersM4 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(2000)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM4)
+
+	transfersM5 := []*types.Transfer{
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(550)}},
+	}
+	tracker.UpdateFeesFromTransfers("asset2", "market3", transfersM5)
+	epochService.target(context.Background(), types.Epoch{Seq: 3, Action: vgproto.EpochAction_EPOCH_ACTION_END})
+
+	// party 1 received in total this epoch:
+	// asset1 : 2000
+	// party 2 received in total:
+	// asset2: 550/2 = 275
+	// in total for both epochs:
+	// party1 = 3000
+	// party2 = 2000
+	contribution, fraction = tracker.CalculateTotalMakerContributionInQuantum(2)
+	require.Equal(t, 2, len(fraction))
+	require.Equal(t, 2, len(contribution))
+	require.Equal(t, "3000", contribution["party1"].String())
+	require.Equal(t, "2000", contribution["party2"].String())
+	require.Equal(t, "0.6", fraction["party1"].String())
+	require.Equal(t, "0.4", fraction["party2"].String())
+}
+
 func TestGetScores(t *testing.T) {
 	ctx := context.Background()
 	epochService := &TestEpochEngine{}
@@ -218,7 +320,8 @@ func TestGetScores(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -368,7 +471,8 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -530,7 +634,8 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	state1, _, err := tracker.GetState(key)
@@ -561,7 +666,8 @@ func TestFeesTrackerWith0(t *testing.T) {
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.UintZero(), nil).AnyTimes()
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 
@@ -595,7 +701,8 @@ func TestGetLastEpochTakeFees(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -659,7 +766,8 @@ func TestGetLastEpochTakeFeesMultiEpochWindow(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -749,7 +857,8 @@ func TestFeesTracker(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -851,7 +960,7 @@ func TestFeesTracker(t *testing.T) {
 	balanceChecker = mocks.NewMockAccountBalanceChecker(ctrl)
 	balanceChecker.EXPECT().GetAvailableBalance(gomock.Any()).Return(num.UintZero(), nil).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochEngineLoad.NotifyOnEpoch(trackerLoad.OnEpochEvent, trackerLoad.OnEpochRestore)
 
 	pl := snapshotpb.Payload{}
@@ -935,7 +1044,8 @@ func TestSnapshot(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -958,7 +1068,8 @@ func TestCheckpoint(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 
 	require.NoError(t, trackerLoad.Load(context.Background(), b))
 
@@ -1021,7 +1132,8 @@ func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	snapshotEngine2, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
 	defer snapshotEngine2.Close()
@@ -1059,7 +1171,8 @@ func TestMarketProposerBonusScenarios(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
@@ -1182,7 +1295,7 @@ func TestMarketProposerBonusScenarios(t *testing.T) {
 	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "jeremy")))
 }
 
-func TestPositionMetric(t *testing.T) {
+func TestNotionalMetric(t *testing.T) {
 	epochService := &TestEpochEngine{}
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
@@ -1192,7 +1305,8 @@ func TestPositionMetric(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
@@ -1211,29 +1325,29 @@ func TestPositionMetric(t *testing.T) {
 	// pBar = (1 - 600/1000) * 75 + 200 * 600/1000 = 150
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime, EndTime: epochStartTime.Add(1000 * time.Second)})
 
-	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores := tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "150", scores[0].Score.String())
+	require.Equal(t, "0.000027", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "75", scores[0].Score.String())
+	require.Equal(t, "0.0000135", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "50", scores[0].Score.String())
+	require.Equal(t, "0.000009", scores[0].Score.String())
 
 	// qualifying the market to m1, expect the same result
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m1"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "50", scores[0].Score.String())
+	require.Equal(t, "0.000009", scores[0].Score.String())
 
 	// qualifying the market to m2, expect the same result
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 3, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime.Add(1000 * time.Second)})
@@ -1245,29 +1359,29 @@ func TestPositionMetric(t *testing.T) {
 	// end the epoch
 	// pBar = 0.6 * 200 + 0.4 * 100 = 160
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(1000 * time.Second), EndTime: epochStartTime.Add(2000 * time.Second)})
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "160", scores[0].Score.String())
+	require.Equal(t, "0.000036", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "155", scores[0].Score.String())
+	require.Equal(t, "0.0000315", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "62", scores[0].Score.String())
+	require.Equal(t, "0.0000126", scores[0].Score.String())
 
 	// qualify to m1
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m1"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m1"}})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "62", scores[0].Score.String())
+	require.Equal(t, "0.0000126", scores[0].Score.String())
 
 	// qualify to m2
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m2"}})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 5, Markets: []string{"m2"}})
 	require.Equal(t, 0, len(scores))
 
 	// now lets lets at an epoch with no activity
@@ -1275,20 +1389,20 @@ func TestPositionMetric(t *testing.T) {
 	// end the epoch
 	// pBar = 0 * 160 + 1 * 100 = 100
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: epochStartTime.Add(2000 * time.Second), EndTime: epochStartTime.Add(3000 * time.Second)})
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "100", scores[0].Score.String())
+	require.Equal(t, "0.00003", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 2})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "130", scores[0].Score.String())
+	require.Equal(t, "0.000033", scores[0].Score.String())
 
-	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "a1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 4})
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "p1", scores[0].Party)
-	require.Equal(t, "102.5", scores[0].Score.String())
+	require.Equal(t, "0.00002325", scores[0].Score.String())
 }
 
 func TestRealisedReturnMetric(t *testing.T) {
@@ -1301,7 +1415,8 @@ func TestRealisedReturnMetric(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
@@ -1405,7 +1520,8 @@ func TestRelativeReturnMetric(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
@@ -1494,7 +1610,8 @@ func TestTeamStatsForMarkets(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 
 	asset1 := vgrand.RandomStr(5)
 	asset2 := vgrand.RandomStr(5)
@@ -1606,8 +1723,8 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
+	collateralService := mocks.NewMockCollateral(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, collateralService)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()

@@ -91,6 +91,8 @@ func defaultNetParams() map[string]value {
 		MarketMarginScalingFactors:                NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
 		MarketFeeFactorsInfrastructureFee:         NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),
+		MarketFeeFactorsBuyBackFee:                NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		MarketFeeFactorsTreasuryFee:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		MarketAuctionMinimumDuration:              NewDuration(gte1s, lte1d).Mutable(true).MustUpdate("30m0s"),
 		MarketAuctionMaximumDuration:              NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
 		MarketLiquidityTargetStakeTriggeringRatio: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
@@ -204,6 +206,15 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalVolumeDiscountProgramRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
 		GovernanceProposalVolumeDiscountProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("10000000000000000000000"),
 		GovernanceProposalVolumeDiscountProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
+
+		GovernanceProposalVolumeRebateProgramMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
+		GovernanceProposalVolumeRebateProgramMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalVolumeRebateProgramMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
+		GovernanceProposalVolumeRebateProgramMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalVolumeRebateProgramRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		GovernanceProposalVolumeRebateProgramRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalVolumeRebateProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("10000000000000000000000"),
+		GovernanceProposalVolumeRebateProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
 
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
@@ -319,6 +330,8 @@ func defaultNetParams() map[string]value {
 
 		VolumeDiscountProgramMaxVolumeDiscountFactor: NewDecimal(gteD0, DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.9"),
 		VolumeDiscountProgramMaxBenefitTiers:         NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("10"),
+
+		VolumeRebateProgramMaxBenefitTiers: NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("10"),
 
 		RewardsActivityStreakInactivityLimit:       NewUint(UintGTE(num.UintOne()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("3"),
 		RewardsActivityStreakBenefitTiers:          NewJSON(&proto.ActivityStreakBenefitTiers{}, types.CheckUntypedActivityStreakBenefitTier).Mutable(true).MustUpdate(`{"tiers": []}`),

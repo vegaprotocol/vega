@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -72,6 +73,15 @@ func NewStakingAccountStub() *StakingAccountStub {
 		partyToStake:         make(map[string]*num.Uint),
 		partyToStakeForEpoch: make(map[int64]map[string]*num.Uint),
 	}
+}
+
+func (t *StakingAccountStub) GetAllStakingParties() []string {
+	keys := make([]string, 0, len(t.partyToStake))
+	for k := range t.partyToStake {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func (t *StakingAccountStub) GetAvailableBalance(party string) (*num.Uint, error) {

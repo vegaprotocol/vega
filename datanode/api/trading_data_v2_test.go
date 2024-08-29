@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/service"
 	smocks "code.vegaprotocol.io/vega/datanode/service/mocks"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -124,6 +125,305 @@ func TestExportNetworkHistory(t *testing.T) {
 		"test-chain-id-orders-001-000001-002000.csv",
 		"test-chain-id-orders-002-002001-003000.csv",
 	})
+}
+
+type dummyReferralService struct{}
+
+func (*dummyReferralService) GetReferralSetStats(ctx context.Context, setID *entities.ReferralSetID, atEpoch *uint64, referee *entities.PartyID, pagination entities.CursorPagination) ([]entities.FlattenReferralSetStats, entities.PageInfo, error) {
+	return []entities.FlattenReferralSetStats{
+		{
+			DiscountFactors: &vega.DiscountFactors{
+				MakerDiscountFactor:          "0.001",
+				InfrastructureDiscountFactor: "0.002",
+				LiquidityDiscountFactor:      "0.003",
+			},
+		},
+	}, entities.PageInfo{}, nil
+}
+
+func (*dummyReferralService) ListReferralSets(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination) ([]entities.ReferralSet, entities.PageInfo, error) {
+	return nil, entities.PageInfo{}, nil
+}
+
+func (*dummyReferralService) ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination, aggregationEpochs uint32) ([]entities.ReferralSetRefereeStats, entities.PageInfo, error) {
+	return nil, entities.PageInfo{}, nil
+}
+
+func TestEstimateFees(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ctx := context.TODO()
+	assetDecimals := 8
+	marketDecimals := 3
+	positionDecimalPlaces := 2
+	marginFundingFactor := 0.95
+	initialMarginScalingFactor := 1.5
+	linearSlippageFactor := num.DecimalFromFloat(0.005)
+	quadraticSlippageFactor := num.DecimalZero()
+	rfLong := num.DecimalFromFloat(0.1)
+	rfShort := num.DecimalFromFloat(0.2)
+
+	asset := entities.Asset{
+		Decimals: assetDecimals,
+	}
+
+	tickSize := num.DecimalOne()
+
+	mkt := entities.Market{
+		DecimalPlaces:           marketDecimals,
+		PositionDecimalPlaces:   positionDecimalPlaces,
+		LinearSlippageFactor:    &linearSlippageFactor,
+		QuadraticSlippageFactor: &quadraticSlippageFactor,
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{
+				Instrument: &vega.Instrument{
+					Product: &vega.Instrument_Perpetual{
+						Perpetual: &vega.Perpetual{
+							SettlementAsset:     crypto.RandomHash(),
+							MarginFundingFactor: fmt.Sprintf("%f", marginFundingFactor),
+						},
+					},
+				},
+				MarginCalculator: &vega.MarginCalculator{
+					ScalingFactors: &vega.ScalingFactors{
+						SearchLevel:       initialMarginScalingFactor * 0.9,
+						InitialMargin:     initialMarginScalingFactor,
+						CollateralRelease: initialMarginScalingFactor * 1.1,
+					},
+				},
+			},
+		},
+		TickSize: &tickSize,
+		Fees: entities.Fees{
+			Factors: &entities.FeeFactors{
+				MakerFee:          "0.1",
+				InfrastructureFee: "0.02",
+				LiquidityFee:      "0.03",
+				BuyBackFee:        "0.04",
+				TreasuryFee:       "0.05",
+			},
+		},
+	}
+
+	rf := entities.RiskFactor{
+		Long:  rfLong,
+		Short: rfShort,
+	}
+
+	assetService := mocks.NewMockAssetService(ctrl)
+	marketService := mocks.NewMockMarketsService(ctrl)
+	riskFactorService := mocks.NewMockRiskFactorService(ctrl)
+	vdService := mocks.NewMockVolumeDiscountService(ctrl)
+	epochService := mocks.NewMockEpochService(ctrl)
+
+	assetService.EXPECT().GetByID(ctx, gomock.Any()).Return(asset, nil).AnyTimes()
+	marketService.EXPECT().GetByID(ctx, gomock.Any()).Return(mkt, nil).AnyTimes()
+	riskFactorService.EXPECT().GetMarketRiskFactors(ctx, gomock.Any()).Return(rf, nil).AnyTimes()
+	epochService.EXPECT().GetCurrent(gomock.Any()).Return(entities.Epoch{ID: 1}, nil).AnyTimes()
+	vdService.EXPECT().Stats(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]entities.FlattenVolumeDiscountStats{
+		{
+			DiscountFactors: &vega.DiscountFactors{
+				MakerDiscountFactor:          "0.0001",
+				InfrastructureDiscountFactor: "0.0002",
+				LiquidityDiscountFactor:      "0.0003",
+			},
+		},
+	}, entities.PageInfo{}, nil)
+
+	apiService := api.TradingDataServiceV2{
+		AssetService:               assetService,
+		MarketsService:             marketService,
+		RiskFactorService:          riskFactorService,
+		VolumeDiscountStatsService: vdService,
+		ReferralSetsService:        &dummyReferralService{},
+		EpochService:               epochService,
+	}
+
+	estimate, err := apiService.EstimateFee(ctx, &v2.EstimateFeeRequest{
+		MarketId: crypto.RandomHash(),
+		Price:    "100",
+		Size:     10,
+		Party:    nil,
+	})
+	require.NoError(t, err)
+	// no party was passed so the calculation is returned without discounts
+	require.Equal(t, "100000", estimate.Fee.MakerFee)
+	require.Equal(t, "20000", estimate.Fee.InfrastructureFee)
+	require.Equal(t, "30000", estimate.Fee.LiquidityFee)
+	require.Equal(t, "40000", estimate.Fee.BuyBackFee)
+	require.Equal(t, "50000", estimate.Fee.TreasuryFee)
+	require.Equal(t, "", estimate.Fee.MakerFeeReferrerDiscount)
+	require.Equal(t, "", estimate.Fee.MakerFeeVolumeDiscount)
+	require.Equal(t, "", estimate.Fee.InfrastructureFeeReferrerDiscount)
+	require.Equal(t, "", estimate.Fee.InfrastructureFeeVolumeDiscount)
+	require.Equal(t, "", estimate.Fee.LiquidityFeeReferrerDiscount)
+	require.Equal(t, "", estimate.Fee.LiquidityFeeVolumeDiscount)
+
+	party := "party"
+	estimate, err = apiService.EstimateFee(ctx, &v2.EstimateFeeRequest{
+		MarketId: crypto.RandomHash(),
+		Price:    "100",
+		Size:     10,
+		Party:    &party,
+	})
+	require.NoError(t, err)
+	// before discount makerFee = 100000
+	// ref discount = 0.001 * 100000 = 100
+	// vol discount = 0.0001 * (100000 - 100) = 9.99 => 9
+	// 100000 - 100 - 9 = 99,891
+	require.Equal(t, "99891", estimate.Fee.MakerFee)
+	require.Equal(t, "100", estimate.Fee.MakerFeeReferrerDiscount)
+	require.Equal(t, "9", estimate.Fee.MakerFeeVolumeDiscount)
+
+	// before discount infraFee = 20000
+	// ref discount = 0.002 * 20000 = 40
+	// vol discount = 0.0002 * (20000 - 40) = 3.992 => 3
+	// 20000 - 40 - 3 = 19,957
+	require.Equal(t, "19957", estimate.Fee.InfrastructureFee)
+	require.Equal(t, "40", estimate.Fee.InfrastructureFeeReferrerDiscount)
+	require.Equal(t, "3", estimate.Fee.InfrastructureFeeVolumeDiscount)
+
+	// before discount liqFee = 30000
+	// ref discount = 0.003 * 30000 = 90
+	// vol discount = 0.0003 * (30000 - 90) = 8.973 => 8
+	// 30000 - 90 - 8 = 29,902
+	require.Equal(t, "29902", estimate.Fee.LiquidityFee)
+	require.Equal(t, "90", estimate.Fee.LiquidityFeeReferrerDiscount)
+	require.Equal(t, "8", estimate.Fee.LiquidityFeeVolumeDiscount)
+
+	// no discount on buy back and treasury
+	require.Equal(t, "40000", estimate.Fee.BuyBackFee)
+	require.Equal(t, "50000", estimate.Fee.TreasuryFee)
+}
+
+func TestEstimatePositionCappedFuture(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ctx := context.Background()
+	assetId := "assetID"
+	marketId := "marketID"
+
+	assetDecimals := 8
+	marketDecimals := 3
+	positionDecimalPlaces := 2
+	initialMarginScalingFactor := 1.5
+	linearSlippageFactor := num.DecimalFromFloat(0.005)
+	quadraticSlippageFactor := num.DecimalZero()
+	rfLong := num.DecimalFromFloat(0.1)
+	rfShort := num.DecimalFromFloat(0.2)
+
+	auctionEnd := int64(0)
+	fundingPayment := 1234.56789
+
+	asset := entities.Asset{
+		Decimals: assetDecimals,
+	}
+
+	tickSize := num.DecimalOne()
+
+	mkt := entities.Market{
+		DecimalPlaces:           marketDecimals,
+		PositionDecimalPlaces:   positionDecimalPlaces,
+		LinearSlippageFactor:    &linearSlippageFactor,
+		QuadraticSlippageFactor: &quadraticSlippageFactor,
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{
+				Instrument: &vega.Instrument{
+					Product: &vega.Instrument_Future{
+						Future: &vega.Future{
+							SettlementAsset: assetId,
+							Cap: &vega.FutureCap{
+								MaxPrice:            floatToStringWithDp(100, marketDecimals),
+								FullyCollateralised: ptr.From(true),
+							},
+						},
+					},
+				},
+				MarginCalculator: &vega.MarginCalculator{
+					ScalingFactors: &vega.ScalingFactors{
+						SearchLevel:       initialMarginScalingFactor * 0.9,
+						InitialMargin:     initialMarginScalingFactor,
+						CollateralRelease: initialMarginScalingFactor * 1.1,
+					},
+				},
+			},
+		},
+		TickSize: &tickSize,
+	}
+
+	rf := entities.RiskFactor{
+		Long:  rfLong,
+		Short: rfShort,
+	}
+
+	assetService := mocks.NewMockAssetService(ctrl)
+	marketService := mocks.NewMockMarketsService(ctrl)
+	riskFactorService := mocks.NewMockRiskFactorService(ctrl)
+
+	assetService.EXPECT().GetByID(ctx, assetId).Return(asset, nil).AnyTimes()
+	marketService.EXPECT().GetByID(ctx, marketId).Return(mkt, nil).AnyTimes()
+	riskFactorService.EXPECT().GetMarketRiskFactors(ctx, marketId).Return(rf, nil).AnyTimes()
+
+	mktData := entities.MarketData{
+		MarkPrice:  num.DecimalFromFloat(123.456 * math.Pow10(marketDecimals)),
+		AuctionEnd: auctionEnd,
+		ProductData: &entities.ProductData{
+			ProductData: &vega.ProductData{
+				Data: &vega.ProductData_PerpetualData{
+					PerpetualData: &vega.PerpetualData{
+						FundingPayment: fmt.Sprintf("%f", fundingPayment),
+						FundingRate:    "0.05",
+					},
+				},
+			},
+		},
+	}
+	marketDataService := mocks.NewMockMarketDataService(ctrl)
+	marketDataService.EXPECT().GetMarketDataByID(ctx, marketId).Return(mktData, nil).AnyTimes()
+
+	apiService := api.TradingDataServiceV2{
+		AssetService:      assetService,
+		MarketsService:    marketService,
+		MarketDataService: marketDataService,
+		RiskFactorService: riskFactorService,
+	}
+
+	req := &v2.EstimatePositionRequest{
+		MarketId:          marketId,
+		OpenVolume:        0,
+		AverageEntryPrice: "0",
+		Orders: []*v2.OrderInfo{
+			{
+				Side:          entities.SideBuy,
+				Price:         floatToStringWithDp(100, marketDecimals),
+				Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+				IsMarketOrder: false,
+			},
+		},
+		MarginAccountBalance:      fmt.Sprintf("%f", 100*math.Pow10(assetDecimals)),
+		GeneralAccountBalance:     fmt.Sprintf("%f", 1000*math.Pow10(assetDecimals)),
+		OrderMarginAccountBalance: "0",
+		MarginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
+		MarginFactor:              ptr.From("0"),
+	}
+
+	// error because hypothetical order is outide of max range
+	_, err := apiService.EstimatePosition(ctx, req)
+	require.Error(t, err)
+
+	req.Orders = []*v2.OrderInfo{
+		{
+			Side:          entities.SideBuy,
+			Price:         floatToStringWithDp(50, marketDecimals),
+			Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+			IsMarketOrder: false,
+		},
+	}
+
+	// error because hypothetical order is outide of max range
+	resp, err := apiService.EstimatePosition(ctx, req)
+	require.NoError(t, err)
+
+	assert.Equal(t, "500000000000", resp.Margin.BestCase.MaintenanceMargin)
+	assert.Equal(t, "500000000000", resp.Margin.WorstCase.MaintenanceMargin)
 }
 
 func TestEstimatePosition(t *testing.T) {

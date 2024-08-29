@@ -242,8 +242,6 @@ func newMarketFromSnapshot(t *testing.T, ctx context.Context, ctrl *gomock.Contr
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
-	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	broker.EXPECT().Stage(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -251,16 +249,20 @@ func newMarketFromSnapshot(t *testing.T, ctx context.Context, ctrl *gomock.Contr
 	timeService.EXPECT().GetTimeNow().AnyTimes()
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
 
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker, collateralEngine)
+	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
+
 	positionConfig.StreamPositionVerbose = true
 	referralDiscountReward := fmock.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscount := fmock.NewMockVolumeDiscountService(ctrl)
-	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeRebate := fmock.NewMockVolumeRebateService(ctrl)
+	referralDiscountReward.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
 	parties := mocks.NewMockParties(ctrl)
 
 	return future.NewMarketFromSnapshot(ctx, log, em, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, timeService, broker, stubs.NewStateVar(), cfgAsset, marketActivityTracker,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking, parties)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties)
 }

@@ -21,7 +21,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "Stake_Deposited",
+      "name": "StakeDeposited",
       "type": "event"
     },
     {
@@ -46,7 +46,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "Stake_Removed",
+      "name": "StakeRemoved",
       "type": "event"
     },
     {
@@ -77,12 +77,12 @@
           "type": "bytes32"
         }
       ],
-      "name": "Stake_Transferred",
+      "name": "StakeTransferred",
       "type": "event"
     },
     {
       "inputs": [],
-      "name": "staking_token",
+      "name": "stakingToken",
       "outputs": [
         {
           "internalType": "address",
@@ -106,7 +106,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "stake_balance",
+      "name": "stakeBalance",
       "outputs": [
         {
           "internalType": "uint256",
@@ -119,7 +119,7 @@
     },
     {
       "inputs": [],
-      "name": "total_staked",
+      "name": "totalStaked",
       "outputs": [
         {
           "internalType": "uint256",

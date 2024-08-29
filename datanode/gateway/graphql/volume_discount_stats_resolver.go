@@ -20,10 +20,32 @@ import (
 	"errors"
 	"math"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
 type volumeDiscountStatsResolver VegaResolverRoot
+
+// DiscountFactors implements VolumeDiscountStatsResolver.
+func (v *volumeDiscountStatsResolver) DiscountFactors(ctx context.Context, obj *v2.VolumeDiscountStats) (*DiscountFactors, error) {
+	infra, err := num.DecimalFromString(obj.DiscountFactors.InfrastructureDiscountFactor)
+	if err != nil {
+		return nil, err
+	}
+	maker, err := num.DecimalFromString(obj.DiscountFactors.MakerDiscountFactor)
+	if err != nil {
+		return nil, err
+	}
+	liq, err := num.DecimalFromString(obj.DiscountFactors.LiquidityDiscountFactor)
+	if err != nil {
+		return nil, err
+	}
+	return &DiscountFactors{
+		InfrastructureFactor: infra.String(),
+		MakerFactor:          maker.String(),
+		LiquidityFactor:      liq.String(),
+	}, nil
+}
 
 func (v *volumeDiscountStatsResolver) AtEpoch(_ context.Context, obj *v2.VolumeDiscountStats) (int, error) {
 	if obj.AtEpoch > math.MaxInt {

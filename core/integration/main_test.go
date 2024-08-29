@@ -286,6 +286,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, execsetup.timeService, table)
 	})
+	s.Step(`^the parties place the following hacked orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingHackedOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
 	s.Step(`^the party "([^"]+)" adds the following orders to a batch:$`, func(party string, table *godog.Table) error {
 		return steps.PartyAddsTheFollowingOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
 	})
@@ -757,13 +760,33 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.VolumeDiscountProgram(execsetup.volumeDiscountProgram, volumeDiscountTiers, table)
 	})
 
-	s.Step(`^the party "([^"]*)" has the following discount factor "([^"]*)"$`, func(party, discountFactor string) error {
-		return steps.PartyHasTheFollowingDiscountFactor(party, discountFactor, execsetup.volumeDiscountProgram)
-	})
-	s.Step(`^the AMM "([^"]*)" has the following discount factor "([^"]*)"$`, func(alias, discountFactor string) error {
-		return steps.AMMHasTheFollowingDiscountFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
+	s.Step(`^the party "([^"]*)" has the following discount infra factor "([^"]*)"$`, func(party, discountFactor string) error {
+		return steps.PartyHasTheFollowingDiscountInfraFactor(party, discountFactor, execsetup.volumeDiscountProgram)
 	})
 
+	s.Step(`^the party "([^"]*)" has the following discount maker factor "([^"]*)"$`, func(party, discountFactor string) error {
+		return steps.PartyHasTheFollowingDiscountMakerFactor(party, discountFactor, execsetup.volumeDiscountProgram)
+	})
+
+	s.Step(`^the party "([^"]*)" has the following discount liquidity factor "([^"]*)"$`, func(party, discountFactor string) error {
+		return steps.PartyHasTheFollowingDiscountLiquidityFactor(party, discountFactor, execsetup.volumeDiscountProgram)
+	})
+
+	s.Step(`^the parties have the following discount factors:$`, func(table *godog.Table) error {
+		return steps.PartiesHaveTheFollowingDiscountFactors(execsetup.volumeDiscountProgram, table)
+	})
+
+	s.Step(`^the AMM "([^"]*)" has the following discount infra factor "([^"]*)"$`, func(alias, discountFactor string) error {
+		return steps.AMMHasTheFollowingDiscountInfraFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
+	})
+
+	s.Step(`^the AMM "([^"]*)" has the following discount maker factor "([^"]*)"$`, func(alias, discountFactor string) error {
+		return steps.AMMHasTheFollowingDiscountMakerFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
+	})
+
+	s.Step(`^the AMM "([^"]*)" has the following discount liquidity factor "([^"]*)"$`, func(alias, discountFactor string) error {
+		return steps.AMMHasTheFollowingDiscountLiquidityFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
+	})
 	s.Step(`^the party "([^"]*)" has the following taker notional "([^"]*)"$`, func(party, notional string) error {
 		return steps.PartyHasTheFollowingTakerNotional(party, notional, execsetup.volumeDiscountProgram)
 	})
@@ -782,6 +805,28 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^clear trade events$`, func() error {
 		return steps.ClearTradeEvents(execsetup.broker)
+	})
+
+	s.Step(`^the volume rebate program tiers named "([^"]*)":$`, func(vrp string, table *godog.Table) error {
+		return steps.VolumeRebateProgramTiers(volumeRebateTiers, vrp, table)
+	})
+
+	s.Step(`^the volume rebate program:$`, func(table *godog.Table) error {
+		return steps.VolumeRebateProgram(execsetup.volumeRebateProgram, volumeRebateTiers, table)
+	})
+	s.Step(`^the party "([^"]*)" has the following rebate factor "([^"]*)"$`, func(party, rebate string) error {
+		return steps.PartyHasTheFollowingRebate(party, rebate, execsetup.volumeRebateProgram)
+	})
+	s.Step(`^the AMM "([^"]*)" has the following rebate factor "([^"]*)"$`, func(alias, rebate string) error {
+		return steps.AMMHasTheFollowingRebate(execsetup.executionEngine, execsetup.volumeRebateProgram, alias, rebate)
+	})
+
+	s.Step(`^the party "([^"]*)" has the following maker volume fraction "([^"]*)"$`, func(party, fraction string) error {
+		return steps.PartyHasTheFollowingMakerVolumeFraction(party, fraction, execsetup.volumeRebateProgram)
+	})
+
+	s.Step(`^the AMM "([^"]+)" has the following maker volume fraction "([^"]+)"$`, func(alias, fraction string) error {
+		return steps.AMMHasTheFollowingMakerVolumeFraction(execsetup.executionEngine, execsetup.volumeRebateProgram, alias, fraction)
 	})
 
 	// Long block auction steps

@@ -103,8 +103,8 @@ Feature: vAMM behaviour when a market settles
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount  | asset | is amm | type                             |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 30000   | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 30000  | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
   @VAMM
   Scenario Outline: 0090-VAMM-031: When an AMM is active on a market at time of settlement with a position in a well collateralised state, the market can settle successfully and then all funds on the AMM key are transferred back to the main party's account.
@@ -146,10 +146,10 @@ Feature: vAMM behaviour when a market settles
 
     # verify the that the margin balance is released, and then the correct balance if transferred from the pool account back to the party.
     And the following transfers should happen:
-      | from     | from account            | to       | to account           | market id | amount        | asset | is amm | type                                 |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1             | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | <margin>      | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL |           | <amm balance> | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+      | from     | from account            | to       | to account           | market id | amount        | asset | is amm | type                            |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1             | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | <margin>      | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH       |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL |           | <amm balance> | USD   | true   | TRANSFER_TYPE_AMM_RELEASE       |
     And the parties should have the following account balances:
       | party    | asset | market id | general           | margin | is amm |
       | vamm1    | USD   |           | <general balance> |        |        |

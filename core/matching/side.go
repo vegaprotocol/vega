@@ -669,7 +669,6 @@ func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, idealPrice *nu
 // uncross returns trades after order book side gets uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreticalBestTrade *num.Uint) ([]*types.Trade, []*types.Order, *num.Uint, error) {
-	defer s.uncrossFinished()
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order

@@ -138,6 +138,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.volumeRebateService,
 		e.banking,
 	)
 	if err != nil {
@@ -215,6 +216,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.volumeRebateService,
 		e.banking,
 		e.parties,
 	)
