@@ -37,15 +37,15 @@ type FundingPaymentsEvent interface {
 type LossSocEvt interface {
 	events.Event
 	IsFunding() bool
-	IsNegative() bool
+	Negative() bool
 	PartyID() string
 	MarketID() string
 	Amount() *num.Int
 }
 
 type FundingPaymentsStore interface {
-	Add(context.Context, []*entities.FundingPayment) error
-	GetByPartyAndMarket(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID) (entities.FundingPayment, error)
+	Add(ctx context.Context, data []*entities.FundingPayment) error
+	GetByPartyAndMarket(ctx context.Context, partyID, marketID string) (entities.FundingPayment, error)
 }
 
 type FundingPaymentSubscriber struct {
@@ -64,10 +64,15 @@ func NewFundingPaymentsSubscriber(store FundingPaymentsStore) *FundingPaymentSub
 }
 
 func (ts *FundingPaymentSubscriber) Types() []events.Type {
-	return []events.Type{events.FundingPaymentsEvent}
+	return []events.Type{
+		events.FundingPaymentsEvent,
+		events.LossSocializationEvent,
+	}
 }
 
 func (ts *FundingPaymentSubscriber) Flush(ctx context.Context) error {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
 	ts.cache = make(map[string]entities.FundingPayment, len(ts.cache))
 	return nil
 }
@@ -88,7 +93,7 @@ func (ts *FundingPaymentSubscriber) handleLossSoc(ctx context.Context, e LossSoc
 		return nil
 	}
 	var err error
-	partyID, marketID := entities.PartyID(e.PartyID()), entities.MarketID(e.MarketID())
+	partyID, marketID := e.PartyID(), e.MarketID()
 	k := fmt.Sprintf("%s%s", partyID, marketID)
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
@@ -103,11 +108,21 @@ func (ts *FundingPaymentSubscriber) handleLossSoc(ctx context.Context, e LossSoc
 		// update the tx hash and time
 		fp.TxHash = entities.TxHash(e.TxHash())
 		fp.VegaTime = ts.vegaTime
-		// @TODO see if this even makes sense
-		fp.FundingPeriodSeq++
 	}
-	amtD := num.DecimalFromInt(e.Amount())
-	fp.LossAmount = fp.LossAmount.Add(amtD)
+	amtD := num.DecimalFromUint(e.Amount().U)
+	if e.Negative() {
+		fp.LossSocialisationAmount = fp.LossSocialisationAmount.Sub(amtD)
+	} else {
+		diff := fp.LossSocialisationAmount.Add(amtD)
+		if diff.IsNegative() || diff.IsZero() {
+			// reduce or zero out the accrued loss?
+			fp.LossSocialisationAmount = diff
+		} else {
+			// loss "overflow", zero out the loss, add the remainder to the amount paid out.
+			fp.LossSocialisationAmount = num.DecimalZero()
+			fp.Amount = fp.Amount.Add(diff)
+		}
+	}
 	// let's insert this as a new row
 	ts.cache[k] = fp
 	// first figure out which keys we are missing
@@ -115,8 +130,6 @@ func (ts *FundingPaymentSubscriber) handleLossSoc(ctx context.Context, e LossSoc
 }
 
 func (ts *FundingPaymentSubscriber) consume(ctx context.Context, te FundingPaymentsEvent) error {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
 	fps := te.FundingPayments()
 
 	return errors.Wrap(ts.addFundingPayments(ctx, fps, entities.TxHash(te.TxHash()), ts.vegaTime, te.Sequence()), "failed to consume funding payment")

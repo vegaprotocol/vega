@@ -26,13 +26,13 @@ import (
 )
 
 type FundingPayment struct {
-	PartyID          PartyID
-	MarketID         MarketID
-	FundingPeriodSeq uint64
-	Amount           num.Decimal
-	VegaTime         time.Time
-	TxHash           TxHash
-	LossAmount       num.Decimal
+	PartyID                 PartyID
+	MarketID                MarketID
+	FundingPeriodSeq        uint64
+	Amount                  num.Decimal
+	VegaTime                time.Time
+	TxHash                  TxHash
+	LossSocialisationAmount num.Decimal
 }
 
 func NewFundingPaymentsFromProto(
@@ -71,7 +71,7 @@ func (fp FundingPayment) ToProto() *v2.FundingPayment {
 		FundingPeriodSeq: fp.FundingPeriodSeq,
 		Timestamp:        fp.VegaTime.UnixNano(),
 		Amount:           fp.Amount.String(),
-		LossAmount:       fp.LossAmount.String(),
+		LossAmount:       fp.LossSocialisationAmount.String(),
 	}
 }
 

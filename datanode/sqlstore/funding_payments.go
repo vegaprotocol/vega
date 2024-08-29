@@ -52,8 +52,8 @@ func (fp *FundingPayments) Add(
 	for _, v := range fundingPayments {
 		_, err := fp.Exec(ctx,
 			`insert into funding_payment(market_id, party_id, funding_period_seq, amount, vega_time, tx_hash, loss_socialisation_amount)
-values ($1, $2, $3, $4, $5, $6)`,
-			v.MarketID, v.PartyID, v.FundingPeriodSeq, v.Amount, v.VegaTime, v.TxHash, v.LossAmount)
+values ($1, $2, $3, $4, $5, $6, $7)`,
+			v.MarketID, v.PartyID, v.FundingPeriodSeq, v.Amount, v.VegaTime, v.TxHash, v.LossSocialisationAmount)
 		if err != nil {
 			return err
 		}
@@ -95,7 +95,8 @@ func (fp *FundingPayments) List(
 	return fundingPayments, pageInfo, nil
 }
 
-func (fp *FundingPayments) GetByPartyAndMarket(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID) (entities.FundingPayment, error) {
+func (fp *FundingPayments) GetByPartyAndMarket(ctx context.Context, party, market string) (entities.FundingPayment, error) {
+	partyID, marketID := entities.PartyID(party), entities.MarketID(market)
 	defer metrics.StartSQLQuery("FundingPayments", "GetByPartyAndMarket")()
 	var (
 		err error
