@@ -243,6 +243,24 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if dispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_TEAMS && len(dispatchStrategy.NTopPerformers) == 0 {
 		errs.AddForProperty(prefix+".n_top_performers", ErrIsRequired)
 	}
+	if dispatchStrategy.Metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES {
+		var metricAssetDefined, marketScope, stakingRequirement, positionRequirement bool
+		if len(dispatchStrategy.AssetForMetric) > 0 {
+			metricAssetDefined = true
+		}
+		if len(dispatchStrategy.Markets) > 0 {
+			marketScope = true
+		}
+		if len(dispatchStrategy.StakingRequirement) > 0 {
+			stakingRequirement = true
+		}
+		if len(dispatchStrategy.NotionalTimeWeightedAveragePositionRequirement) > 0 {
+			positionRequirement = true
+		}
+		if !metricAssetDefined && !marketScope && !stakingRequirement && !positionRequirement {
+			errs.AddForProperty(prefix+".dispatch_metric", fmt.Errorf("eligible_entities metric requires at least one of (markets, asset_for_metric, staking_requirement, notional_time_weighted_average_position_requirement) to be defined"))
+		}
+	}
 
 	if dispatchStrategy.Metric == vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES && len(dispatchStrategy.NotionalTimeWeightedAveragePositionRequirement) > 0 && len(dispatchStrategy.AssetForMetric) == 0 {
 		errs.AddForProperty(prefix+".asset_for_metric", fmt.Errorf("asset for metric must be provided if NotionalTimeWeightedAveragePositionRequirement is specified"))
