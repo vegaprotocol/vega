@@ -572,13 +572,15 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		uncrossBound = max
 	}
 
-	uncrossBound = nil
+	fmt.Println("WWW uncrossed bound", uncrossBound, uncrossingSide)
+	//uncrossBound = nil
 
 	// extract uncrossing orders from all AMMs
 	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
 
 	// the remaining volume should now come from the orderbook
 	volume -= offbookVolume
+	fmt.Println("WWW crossing side", uncrossSide, "orderbook", volume, "offbook", offbookVolume, min, max)
 
 	// Remove all the orders from that side of the book up to the given volume
 	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, true)...)

@@ -447,14 +447,12 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		// calculate the price the pool wil give for the trading volume
 		price := p.PriceForVolume(volume, agg.Side)
 
-		if e.log.IsDebug() {
-			e.log.Debug("generated order at price",
-				logging.String("price", price.String()),
-				logging.Uint64("volume", volume),
-				logging.String("id", p.ID),
-				logging.String("side", types.OtherSide(agg.Side).String()),
-			)
-		}
+		e.log.Info("generated order at price",
+			logging.String("price", price.String()),
+			logging.Uint64("volume", volume),
+			logging.String("id", p.ID),
+			logging.String("side", types.OtherSide(agg.Side).String()),
+		)
 
 		// construct an order
 		o := p.makeOrder(volume, price, types.OtherSide(agg.Side), e.idgen)

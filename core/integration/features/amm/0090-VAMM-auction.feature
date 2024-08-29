@@ -440,7 +440,7 @@ Feature: vAMM rebasing when created or amended
       | mark price   | trading mode               | best bid price | best offer price |
       | 96           | TRADING_MODE_CONTINUOUS    | 96             | 98               |
 
-@VAMM
+  @VAMM
   Scenario: complicated AMM's crossed with orders and pegged orders
 
   # these are buys
@@ -499,6 +499,48 @@ Feature: vAMM rebasing when created or amended
     And the market data for the market "ETH/MAR22" should be:
       | trading mode                 | indicative price | indicative volume |
       | TRADING_MODE_OPENING_AUCTION | 93               | 602               |
+
+
+    When the opening auction period ends for market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode             | best bid price | best offer price |
+      | 93         | TRADING_MODE_CONTINUOUS  | 92             | 94               |
+
+
+
+  @VAMM3
+  Scenario: AMM crossed with limit order, AMM pushed to boundary
+
+
+    And the parties place the following orders:
+        | party  | market id | side  | volume | price | resulting trades | type       | tif     | reference |
+        | lp1    | ETH/MAR22 | sell  | 657    | 90    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
+        | lp1    | ETH/MAR22 | sell  | 100    | 80    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
+        | lp2    | ETH/MAR22 | buy   | 100    | 80    | 0                 | TYPE_LIMIT | TIF_GTC | lp1-b     |
+    
+
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 90          | 110         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound | 
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 90          | 110         | 
+
+
+    # now place some pegged orders which will cause a panic if the uncrossing is crossed
+    When the parties place the following pegged orders:
+      | party | market id | side | volume | pegged reference | offset |
+      | lp3   | ETH/MAR22 | buy  | 100    | BID              | 1      |
+      | lp3   | ETH/MAR22 | sell | 100    | ASK              | 1      |
+
+    And set the following AMM sub account aliases:
+      | party | market id | alias    |
+      | vamm1 | ETH/MAR22 | vamm1-id |
+
+
+    #And the market data for the market "ETH/MAR22" should be:
+    #  | trading mode                 | indicative price | indicative volume |
+    #  | TRADING_MODE_OPENING_AUCTION | 80               | 657               |
 
 
     When the opening auction period ends for market "ETH/MAR22"
