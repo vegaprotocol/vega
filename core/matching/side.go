@@ -408,7 +408,7 @@ func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 
 // fakeUncross returns hypothetical trades if the order book side were to be uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
-func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idealPrice *num.Uint) ([]*types.Trade, error) {
+func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, error) {
 	defer s.uncrossFinished()
 
 	// get a copy of the order passed in, so we can rely on fakeUncross to do its job
@@ -428,7 +428,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 		}
 
 		// first check for volume between the theoretical best price and the first price level
-		_, oo := s.uncrossOffbook(len(s.levels), fake, idealPrice, true)
+		_, oo := s.uncrossOffbook(len(s.levels), fake, true)
 		for _, order := range oo {
 			totalVolumeToFill += order.Remaining
 		}
@@ -448,7 +448,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 					}
 				}
 
-				_, oo := s.uncrossOffbook(i, fake, idealPrice, true)
+				_, oo := s.uncrossOffbook(i, fake, true)
 				for _, order := range oo {
 					totalVolumeToFill += order.Remaining
 				}
@@ -483,7 +483,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LT(agg.Price) }
 	}
 
-	trades, offbookOrders = s.uncrossOffbook(idx+1, fake, idealPrice, true)
+	trades, offbookOrders = s.uncrossOffbook(idx+1, fake, true)
 
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
@@ -501,7 +501,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 		}
 
 		if fake.Remaining != 0 {
-			obTrades, obOrders := s.uncrossOffbook(idx, fake, idealPrice, true)
+			obTrades, obOrders := s.uncrossOffbook(idx, fake, true)
 			trades = append(trades, obTrades...)
 			offbookOrders = append(offbookOrders, obOrders...)
 		}
@@ -514,7 +514,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 }
 
 // fakeUncrossAuction returns hypothetical trades if the order book side were to be uncrossed with the agg orders supplied, wash trades are allowed.
-func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order, bound *num.Uint) ([]*types.Trade, error) {
+func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trade, error) {
 	defer s.uncrossFinished()
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
@@ -542,7 +542,7 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order, bound *num.Uin
 
 	for ; iOrder < len(orders); iOrder++ {
 		fake = orders[iOrder].Clone()
-		ntrades, _ = s.uncrossOffbook(len(s.levels), fake, bound, false)
+		ntrades, _ = s.uncrossOffbook(len(s.levels), fake, false)
 		trades = append(trades, ntrades...)
 
 		// no more to trade in this pre-orderbook region for AMM's, we now need to move to orderbook
@@ -580,7 +580,7 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order, bound *num.Uin
 			trades = append(trades, ntrades...)
 
 			if fake.Remaining != 0 {
-				ntrades, _ := s.uncrossOffbook(idx, fake, bound, true)
+				ntrades, _ := s.uncrossOffbook(idx, fake, true)
 				trades = append(trades, ntrades...)
 
 				// if we couldn't consume the whole order with this AMM volume in this region
@@ -617,15 +617,15 @@ func clonePriceLevel(lvl *PriceLevel) *PriceLevel {
 // betweenLevels returns the inner, outer bounds for the given idx in the price levels.
 // Usually this means (inner, outer) = (lvl[i].price, lvl[i-1].price) but we also handle
 // the past the first and last price levels.
-func (s *OrderBookSide) betweenLevels(idx int, first, last *num.Uint) (*num.Uint, *num.Uint) {
+func (s *OrderBookSide) betweenLevels(idx int, last *num.Uint) (*num.Uint, *num.Uint) {
 	// there are no price levels, so between is from low to high
 	if len(s.levels) == 0 {
-		return first, last
+		return nil, last
 	}
 
-	// we're at the first price level
+	// we're at the first price level, we pass back nil for the first level since we do not know the bound for this
 	if idx == len(s.levels) {
-		return first, s.levels[idx-1].price
+		return nil, s.levels[idx-1].price
 	}
 
 	// we're at the last price level
@@ -641,13 +641,13 @@ func (s *OrderBookSide) uncrossFinished() {
 	}
 }
 
-func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, idealPrice *num.Uint, fake bool) ([]*types.Trade, []*types.Order) {
+func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, fake bool) ([]*types.Trade, []*types.Order) {
 	if s.offbook == nil {
 		return nil, nil
 	}
 
 	// get the bounds between price levels for the given price level index
-	inner, outer := s.betweenLevels(idx, idealPrice, agg.Price)
+	inner, outer := s.betweenLevels(idx, agg.Price)
 
 	// submit the order to the offbook source for volume between those bounds
 	orders := s.offbook.SubmitOrder(agg, inner, outer)
@@ -668,7 +668,7 @@ func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, idealPrice *nu
 
 // uncross returns trades after order book side gets uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
-func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreticalBestTrade *num.Uint) ([]*types.Trade, []*types.Order, *num.Uint, error) {
+func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, *num.Uint, error) {
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order
@@ -686,7 +686,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 	}
 
 	if agg.TimeInForce == types.OrderTimeInForceFOK {
-		_, oo := s.uncrossOffbook(len(s.levels), fake, theoreticalBestTrade, true)
+		_, oo := s.uncrossOffbook(len(s.levels), fake, true)
 		for _, order := range oo {
 			totalVolumeToFill += order.Remaining
 		}
@@ -706,7 +706,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 					// in case of network trades, we want to calculate an accurate average price to return
 					totalVolumeToFill += order.Remaining
 
-					_, oo := s.uncrossOffbook(i, fake, theoreticalBestTrade, true)
+					_, oo := s.uncrossOffbook(i, fake, true)
 					for _, order := range oo {
 						totalVolumeToFill += order.Remaining
 					}
@@ -742,7 +742,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 	)
 
 	// first check for off source volume between the best theoretical price and the first price level
-	trades, impactedOrders = s.uncrossOffbook(idx+1, agg, theoreticalBestTrade, false)
+	trades, impactedOrders = s.uncrossOffbook(idx+1, agg, false)
 	filled = agg.Remaining == 0
 
 	// in here we iterate from the end, as it's easier to remove the
@@ -760,7 +760,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 
 			if !filled {
 				// now check for off source volume between the price levels
-				ot, oo := s.uncrossOffbook(idx, agg, theoreticalBestTrade, false)
+				ot, oo := s.uncrossOffbook(idx, agg, false)
 				trades = append(trades, ot...)
 				impactedOrders = append(impactedOrders, oo...)
 				filled = agg.Remaining == 0
