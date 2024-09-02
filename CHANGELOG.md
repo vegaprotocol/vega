@@ -43,6 +43,7 @@
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
 - [11616](https://github.com/vegaprotocol/vega/issues/11616) - `AMM` tradable volume now calculated purely in positions to prevent loss of precision.
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
+- [11583](https://github.com/vegaprotocol/vega/issues/11583) - Rough bound on price interval when matching with `AMMs` is now looser and calculated in the `AMM` engine.
 - [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
 - [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
 - [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.

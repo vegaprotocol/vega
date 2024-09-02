@@ -235,7 +235,7 @@ func testMatchOrdersBothSide(t *testing.T) {
 	assert.Len(t, trades, 8)
 
 	// uncross
-	expectOffbookOrders(t, tst, price, num.NewUint(oPrice-1), num.NewUint(120))
+	expectOffbookOrders(t, tst, price, nil, num.NewUint(120))
 	expectOffbookOrders(t, tst, price, num.NewUint(120), num.NewUint(110))
 	expectOffbookOrders(t, tst, price, num.NewUint(110), num.NewUint(90))
 	tst.obs.EXPECT().NotifyFinished().Times(1)
