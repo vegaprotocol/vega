@@ -113,6 +113,22 @@ func testTradeableVolumeInRange(t *testing.T) {
 			expectedVolume: 1052,
 			position:       -350,
 		},
+		{
+			name:           "AMM is long and price range is fully in short section",
+			price1:         num.NewUint(1900),
+			price2:         num.NewUint(2200),
+			side:           types.SideSell,
+			expectedVolume: 0,
+			position:       700,
+		},
+		{
+			name:           "AMM is short and price range is fully in long section",
+			price1:         num.NewUint(1900),
+			price2:         num.NewUint(2100),
+			side:           types.SideBuy,
+			expectedVolume: 0,
+			position:       -700,
+		},
 	}
 
 	for _, tt := range tests {

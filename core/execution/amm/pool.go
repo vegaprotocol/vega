@@ -629,11 +629,17 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 
 	if side == types.SideSell {
 		// want all buy volume so everything below fair price, where the AMM is long
+		if pos > stP {
+			return 0
+		}
 		ndP = num.MaxV(pos, ndP)
 	}
 
 	if side == types.SideBuy {
 		// want all sell volume so everything above fair price, where the AMM is short
+		if pos < ndP {
+			return 0
+		}
 		stP = num.MinV(pos, stP)
 	}
 
