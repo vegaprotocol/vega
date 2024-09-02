@@ -36,6 +36,7 @@
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
 - [11526](https://github.com/vegaprotocol/vega/issues/11526) - `EstimateAMMBounds` now respects the market's decimal places.
 - [11486](https://github.com/vegaprotocol/vega/issues/11486) - `AMMs` can now be submitted on markets with more decimal places than asset decimal places.
+- [11635](https://github.com/vegaprotocol/vega/issues/11635) - Handle expansion of one sided `AMMs` that reduce to point expansion when calculating order book shape.
 - [11561](https://github.com/vegaprotocol/vega/issues/11561) - Failing amends on `AMMs` now restore original properly.
 - [11583](https://github.com/vegaprotocol/vega/issues/11583) - Remove `AMMs` entirely from engine when market closes.
 - [11568](https://github.com/vegaprotocol/vega/issues/11568) - order book shape on closing `AMM` no longer panics.
