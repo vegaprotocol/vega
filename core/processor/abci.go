@@ -2298,7 +2298,7 @@ func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx, deterministicBa
 		switch term := change.Change.(type) {
 		case *types.ProposalTermsUpdateNetworkParameter:
 			if err := app.netp.IsUpdateAllowed(term.UpdateNetworkParameter.Changes.Key); err != nil {
-				errs.Add(errs)
+				errs.Add(err)
 			}
 		}
 	}
