@@ -58,7 +58,7 @@ Feature: Team Rewards
             | referrer1 | ref1   | referral-code-1 | team1     | 3        | 10000000 | USD-1-10 |
 
     @TeamStep
-    Scenario: Given a recurring transfer scoping a single market and specifying a non-zero target_notional_volume. If that market's volume is less than the target, the rewards distributed are scaled accordingly. (0056-REWA-206).
+    Scenario: Given a recurring transfer scoping a single market and specifying a non-zero target_notional_volume. If that market's volume is less than the target, the rewards distributed are scaled accordingly. (0056-REWA-232).
 
         Given the parties submit the following recurring transfers:
             | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | individual_scope | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      | target_notional_volume |

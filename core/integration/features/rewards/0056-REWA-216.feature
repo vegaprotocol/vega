@@ -58,7 +58,7 @@ Feature: Team Rewards
             | referrer1 | ref1   | referral-code-1 | team1     | 3        | 10000000 | USD-1-10 |
 
     @TeamStep
-    Scenario: Given a recurring transfer with a reward window `>1` and specifying a non-zero `target_notional_volume`. When the volume is spread evenly across the window, if the cumulative volume across the window is less than the target, the rewards distributed are scaled accordingly. (<a name="0056-REWA-214" href="#0056-REWA-214">0056-REWA-214</a>).
+    Scenario: Given a recurring transfer with a reward window `>1` and specifying a non-zero `target_notional_volume`. When the volume is spread evenly across the window, if the cumulative volume across the window is less than the target, the rewards distributed are scaled accordingly. (<a name="0056-REWA-240" href="#0056-REWA-240">0056-REWA-240</a>).
         And the parties place the following orders:
             | party     | market id    | side | volume | price | resulting trades | type       | tif     |
             | aux1      | ETH/USD-1-10 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |

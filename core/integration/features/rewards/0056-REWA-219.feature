@@ -58,7 +58,7 @@ Feature: Team Rewards
             | referrer1 | ref1   | referral-code-1 | team1     | 3        | 10000000 | USD-1-10 |
 
     @TeamStep
-    Scenario: Given a recurring transfer with a reward window `>1` and specifying a non-zero `target_notional_volume`. When the volume is zero in the current epoch, if the cumulative volume across the window is greater than the target, no more than the full reward amount is **still** distributed. (<a name="0056-REWA-219" href="#0056-REWA-219">0056-REWA-219</a>).
+    Scenario: Given a recurring transfer with a reward window `>1` and specifying a non-zero `target_notional_volume`. When the volume is zero in the current epoch, if the cumulative volume across the window is greater than the target, no more than the full reward amount is **still** distributed. (<a name="0056-REWA-245" href="#0056-REWA-245">0056-REWA-245</a>).
         And the parties place the following orders:
             | party     | market id    | side | volume | price | resulting trades | type       | tif     |
             | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
