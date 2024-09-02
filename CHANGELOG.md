@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.77.10
+
+### 🐛 Fixes
+
+- [114634](https://github.com/vegaprotocol/vega/pull/11634) - Disable incorrect validation with number of validators.
+
+
 ## 0.77.9
 
 ### 🐛 Fixes
