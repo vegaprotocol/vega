@@ -15,7 +15,15 @@
 
 package errors
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
+
+var (
+	errSelfReference   = fmt.Errorf("<self reference>")
+	errParentReference = fmt.Errorf("<parent reference>")
+)
 
 type CumulatedErrors struct {
 	Errors []error
@@ -26,7 +34,39 @@ func NewCumulatedErrors() *CumulatedErrors {
 }
 
 func (e *CumulatedErrors) Add(err error) {
+	// prevent adding this instance of cumulatedErrors to itself.
+	if err == e {
+		err = errSelfReference
+	} else if cerr, ok := err.(*CumulatedErrors); ok {
+		// nothing to add.
+		if !cerr.HasAny() {
+			return
+		}
+		// create a copy of the error we're adding
+		cpy := &CumulatedErrors{
+			Errors: append([]error{}, cerr.Errors...),
+		}
+		// remove any references to the parent from the error we're adding.
+		err = cpy.checkRef(e, errParentReference)
+	}
 	e.Errors = append(e.Errors, err)
+}
+
+// check recursively if a cumulated errors object contains a certain reference, and if so, replace with a placehold, simple error.
+// returns either itself (with the replaced references), or a replacement error.
+func (e *CumulatedErrors) checkRef(ref *CumulatedErrors, repl error) error {
+	if e == ref {
+		return repl
+	}
+	// recursively remove a given reference.
+	for i, subE := range e.Errors {
+		if subE == ref {
+			e.Errors[i] = repl
+		} else if cErr, ok := subE.(*CumulatedErrors); ok {
+			e.Errors[i] = cErr.checkRef(ref, repl)
+		}
+	}
+	return e
 }
 
 func (e *CumulatedErrors) HasAny() bool {
