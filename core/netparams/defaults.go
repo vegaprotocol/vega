@@ -343,8 +343,8 @@ func defaultNetParams() map[string]value {
 	m[MarketAuctionMinimumDuration].AddRules(DurationDependentLT(MarketAuctionMaximumDuration, m[MarketAuctionMaximumDuration].(*Duration)))
 	m[MarketAuctionMaximumDuration].AddRules(DurationDependentGT(MarketAuctionMinimumDuration, m[MarketAuctionMinimumDuration].(*Duration)))
 
-	m[NumberEthMultisigSigners].AddRules(UintDependentLTE(NumberOfTendermintValidators, m[NumberOfTendermintValidators].(*Uint), num.MustDecimalFromString("1")))
-	m[NumberOfTendermintValidators].AddRules(UintDependentGTE(NumberEthMultisigSigners, m[NumberEthMultisigSigners].(*Uint), num.MustDecimalFromString("1")))
+	// m[NumberEthMultisigSigners].AddRules(UintDependentLTE(NumberOfTendermintValidators, m[NumberOfTendermintValidators].(*Uint), num.MustDecimalFromString("1")))
+	// m[NumberOfTendermintValidators].AddRules(UintDependentGTE(NumberEthMultisigSigners, m[NumberEthMultisigSigners].(*Uint), num.MustDecimalFromString("1")))
 
 	// ensure that MinBlockCapacity <= 2*
 	m[MaxGasPerBlock].AddRules(UintDependentGTE(MinBlockCapacity, m[MinBlockCapacity].(*Uint), num.MustDecimalFromString("2")))
