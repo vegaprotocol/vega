@@ -47,6 +47,10 @@ func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, am
 	}
 }
 
+func (l LossSoc) LossType() types.LossType {
+	return l.lType
+}
+
 func (l LossSoc) IsFunding() bool {
 	return l.lType == types.LossTypeFunding
 }

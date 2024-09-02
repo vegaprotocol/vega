@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -47,7 +48,7 @@ func TheLossSocialisationAmountsAre(broker *stubs.BrokerStub, table *godog.Table
 		}
 		for _, p := range lsr.Party() {
 			if _, ok := parties[p]; !ok {
-				return fmt.Errorf("no loss socialisation found for party %s on market %s for amount %s", p, lsr.Market(), lsr.Amount().String())
+				return fmt.Errorf("no loss socialisation found for party %s on market %s for amount %s (type: %s)", p, lsr.Market(), lsr.Amount().String(), lsr.Type().String())
 			}
 		}
 	}
@@ -91,6 +92,7 @@ func parseLossSocTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"party",
 		"count",
+		"type",
 	})
 }
 
@@ -118,4 +120,19 @@ func (l lossSocRow) Count() int {
 		return int(l.r.MustI64("count"))
 	}
 	return -1
+}
+
+func (l lossSocRow) matchesType(t types.LossType) bool {
+	if l.r.HasColumn("type") {
+		exp := l.Type()
+		return exp == t
+	}
+	return true
+}
+
+func (l lossSocRow) Type() types.LossType {
+	if !l.r.HasColumn("type") {
+		return types.LossTypeUnspecified
+	}
+	return l.r.MustLossType("type")
 }
