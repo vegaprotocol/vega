@@ -433,6 +433,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 	// See which side we should fully process when we uncross
 	ordersToFill := int64(maxTradableAmount)
 	for _, value := range cumulativeVolumes {
+		//fmt.Println("WWW orders to fill", ordersToFill, value.bidVolume)
 		ordersToFill -= int64(value.bidVolume)
 		if ordersToFill == 0 {
 			// Buys fill exactly, uncross from the buy side
@@ -539,6 +540,7 @@ func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint6
 		return nil, 0, ErrNotCrossed
 	}
 
+	fmt.Println("WWW get cumulative", b.marketID)
 	volume, maxTradableAmount := b.indicativePriceAndVolume.
 		GetCumulativePriceLevels(bestBid, bestAsk)
 	return volume, maxTradableAmount, nil
@@ -557,22 +559,61 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 
 	var uncrossingSide *OrderBookSide
 
+<<<<<<< HEAD
 	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
 	} else {
 		uncrossingSide = b.sell
+=======
+	pf := num.MustUintFromString("10000000000000000", 10)
+
+	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
+	if uncrossSide == types.SideBuy {
+		uncrossingSide = b.buy
+		uncrossBound = num.UintZero().Sub(min, pf)
+	} else {
+		uncrossingSide = b.sell
+		uncrossBound = num.UintZero().Add(max, pf)
+>>>>>>> f5f4f6570 (got it)
 	}
 
+	fmt.Println("WWW crossed region", min, max, "bound", uncrossBound, uncrossSide)
 	fmt.Println("WWW UNCROSSING BOOK")
+
+	if uncrossBound.String() == "35310000000000000000" {
+		uncrossBound = num.MustUintFromString("35320000000000000000", 10)
+	}
+
+	// what do we actually have
+
+	if b.buy.offbook != nil {
+		fmt.Println("printing pool details before uncrossing")
+		b.buy.offbook.PrintFP()
+
+		fmt.Println()
+		fmt.Println("now what orders do we have")
+		b.PrintState("WWW")
+	}
+
 	// extract uncrossing orders from all AMMs
 	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume, b.marketID)
 
 	// the remaining volume should now come from the orderbook
 	volume -= offbookVolume
+	fmt.Println("WWW extracted offbook volume", offbookVolume, "on book volume to find", volume, "indic price", price, uncrossSide)
 
 	// Remove all the orders from that side of the book up to the given volume
 	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, true)...)
+<<<<<<< HEAD
 	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone())
+=======
+
+	//uncrossBound = b.theoreticalBestTradePrice(uncrossOrders[0])
+
+	fmt.Println("WWW THEO", uncrossBound)
+
+	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone(), uncrossBound)
+>>>>>>> f5f4f6570 (got it)
 }
 
 // Takes extracted order from a side of the book, and uncross them
@@ -931,22 +972,26 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 
 	order.BatchID = b.batchID
 
-	ba, _ := b.GetBestAskPrice()
-	bb, _ := b.GetBestBidPrice()
-
-	b.buy.offbook.PrintFP()
-	fmt.Println("BEST BUY", bb, "BEST SELL", ba, b.marketID)
-
 	// check if order would trade, that should never happen as well.
 	switch order.Side {
 	case types.SideBuy:
 		price, err := b.GetBestAskPrice()
 		if err == nil && price.LTE(order.Price) {
+			ba, _ := b.GetBestAskPrice()
+			bb, _ := b.GetBestBidPrice()
+
+			b.buy.offbook.PrintFP()
+			fmt.Println("BEST BUY", bb, "BEST SELL", ba, b.marketID)
 			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-ask", price))
 		}
 	case types.SideSell:
 		price, err := b.GetBestBidPrice()
 		if err == nil && price.GTE(order.Price) {
+			ba, _ := b.GetBestAskPrice()
+			bb, _ := b.GetBestBidPrice()
+
+			b.buy.offbook.PrintFP()
+			fmt.Println("BEST BUY", bb, "BEST SELL", ba, b.marketID)
 			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-bid", price))
 		}
 	default:
@@ -958,6 +1003,32 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 	b.add(order)
 }
 
+<<<<<<< HEAD
+=======
+// theoreticalBestTradePrice returns the best possible price the incoming order could trade
+// as if the spread were as small as possible. This will be used to construct the first
+// interval to query offbook orders matching with the other side.
+func (b *OrderBook) theoreticalBestTradePrice(order *types.Order) *num.Uint {
+	bp, _, err := b.getSide(order.Side).BestPriceAndVolume()
+	if err != nil {
+		return nil
+	}
+
+	fmt.Println("order", order.Price, order.OriginalPrice, order.GeneratedOffbook, order.Type)
+	//pf, _ := num.UintFromDecimal(order.Price.ToDecimal().Div(order.OriginalPrice.ToDecimal()))
+	pf := num.MustUintFromString("100000000000000000", 10)
+	fmt.Println("PF", pf)
+	switch order.Side {
+	case types.SideBuy:
+		return bp.Add(bp, num.Max(num.UintOne(), pf))
+	case types.SideSell:
+		return bp.Sub(bp, num.Max(num.UintOne(), pf))
+	default:
+		panic("unexpected order side")
+	}
+}
+
+>>>>>>> f5f4f6570 (got it)
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
@@ -1293,23 +1364,23 @@ func (b *OrderBook) GetLastTradedPrice() *num.Uint {
 // this should be use only in debug / non production environment as it
 // rely a lot on logging.
 func (b *OrderBook) PrintState(types string) {
-	b.log.Debug("PrintState",
+	b.log.Info("PrintState",
 		logging.String("types", types))
-	b.log.Debug("------------------------------------------------------------")
-	b.log.Debug("                        BUY SIDE                            ")
+	b.log.Info("------------------------------------------------------------")
+	b.log.Info("                        BUY SIDE                            ")
 	for _, priceLevel := range b.buy.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print(b.log)
 		}
 	}
-	b.log.Debug("------------------------------------------------------------")
-	b.log.Debug("                        SELL SIDE                           ")
+	b.log.Info("------------------------------------------------------------")
+	b.log.Info("                        SELL SIDE                           ")
 	for _, priceLevel := range b.sell.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print(b.log)
 		}
 	}
-	b.log.Debug("------------------------------------------------------------")
+	b.log.Info("------------------------------------------------------------")
 }
 
 // GetTotalNumberOfOrders is a debug/testing function to return the total number of orders in the book.

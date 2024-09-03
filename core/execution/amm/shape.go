@@ -107,6 +107,18 @@ func (sm *shapeMaker) makeBoundaryOrder(st, nd *num.Uint) *types.Order {
 	return sm.pool.makeOrder(uint64(volume), st, types.SideBuy, sm.idgen)
 }
 
+// makeBoundaryOrder creates an accurrate order for the given one-tick interval which will exist at the edges
+// of the adjusted expansion region.
+func (sm *shapeMaker) getPos(st *num.Uint) int64 {
+	// lets do the starting boundary order
+	cu := sm.pool.lower
+	if st.GTE(sm.pool.lower.high) {
+		cu = sm.pool.upper
+	}
+
+	return cu.positionAtPrice(sm.pool.sqrt, st)
+}
+
 // calculateBoundaryOrders returns two orders which represent the edges of the adjust expansion region.
 func (sm *shapeMaker) calculateBoundaryOrders() (*types.Order, *types.Order) {
 	// we need to make sure that the orders at the boundary are the region are always accurate and not approximated
@@ -165,7 +177,7 @@ func (sm *shapeMaker) calculateStepSize() {
 	fmt.Println("WWW caculate step size", delta, sm.pool.maxCalculationLevels)
 
 	// if taking steps of one-tick doesn't breach the max-calculation levels then we can happily expand accurately
-	if delta.LTE(sm.pool.maxCalculationLevels) {
+	if true || delta.LTE(sm.pool.maxCalculationLevels) {
 		return
 	}
 
@@ -383,6 +395,21 @@ func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
 	if bnd1.Price.NEQ(bnd2.Price) {
 		sm.appendOrder(bnd2)
 	}
+
+	// add up all the volume
+	total := uint64(0)
+	for _, o := range sm.buys {
+		total += o.Size
+	}
+
+	for _, o := range sm.sells {
+		total += o.Size
+	}
+
+	// do get the continuous volume in the range
+	d := num.DeltaV(sm.getPos(sm.from), sm.getPos(sm.to))
+
+	fmt.Println("WWW ORDER TOTAL", total, "contin total", d)
 
 	if sm.log.IsDebug() {
 		sm.log.Debug("pool expanded into orders",

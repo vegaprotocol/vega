@@ -386,11 +386,12 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 
 	// if the crossed region hasn't changed and no new orders were added/removed from the crossed region then we do not need
 	// to recalculate
-	if !ipv.needsUpdate && !crossedRegionChanged {
+	if false && !ipv.needsUpdate && !crossedRegionChanged {
 		return ipv.lastCumulativeVolumes, ipv.lastMaxTradable
 	}
 
-	if crossedRegionChanged && ipv.offbook != nil {
+	if ipv.offbook != nil {
+		fmt.Println("WWW update state", minPrice, maxPrice)
 		ipv.updateOffbookState(minPrice, maxPrice)
 	}
 
@@ -468,10 +469,10 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 
 	for _, l := range cumulativeVolumes {
 		if l.price.GTE(minPrice) && l.price.LTE(maxPrice) {
-			fmt.Println("WWW level", l.price, "ASK", l.cumulativeAskVolume, l.cumulativeAskOffbook, "BID", l.cumulativeBidVolume, l.cumulativeBidOffbook)
+			//fmt.Println("WWW level", l.price, "ASK", l.cumulativeAskVolume, l.cumulativeAskOffbook, "BID", l.cumulativeBidVolume, l.cumulativeBidOffbook)
 		}
 	}
-
+	fmt.Println("WWW max tradable", maxTradable)
 	// reset those fields
 	ipv.needsUpdate = false
 	ipv.lastMinPrice = minPrice.Clone()

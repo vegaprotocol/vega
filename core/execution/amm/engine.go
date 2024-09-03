@@ -269,8 +269,10 @@ func (e *Engine) OnMTM(ctx context.Context) {
 
 func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 
-	fmt.Println("AMM tick")
-	e.PrintFP()
+	if len(e.pools) != 0 {
+		fmt.Println("AMM tick", e.oneTick)
+		e.PrintFP()
+	}
 
 	// seed an id-generator to create IDs for any orders generated in this block
 	_, blockHash := vgcontext.TraceIDFromContext(ctx)
@@ -404,12 +406,11 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	volumes := []uint64{}
 	for _, p := range useActive {
 		volume := p.TradableVolumeInRange(agg.Side, inner, outer)
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("volume available to trade",
-				logging.Uint64("volume", volume),
-				logging.String("id", p.ID),
-			)
-		}
+		e.log.Info("volume available to trade",
+			logging.Uint64("volume", volume),
+			logging.String("inner", inner.String()),
+			logging.String("outer", outer.String()),
+		)
 
 		volumes = append(volumes, volume)
 		total += volume
@@ -451,14 +452,12 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		// calculate the price the pool wil give for the trading volume
 		price := p.PriceForVolume(volume, agg.Side)
 
-		if e.log.IsDebug() {
-			e.log.Debug("generated order at price",
-				logging.String("price", price.String()),
-				logging.Uint64("volume", volume),
-				logging.String("id", p.ID),
-				logging.String("side", types.OtherSide(agg.Side).String()),
-			)
-		}
+		e.log.Info("generated order at price",
+			logging.String("price", price.String()),
+			logging.Uint64("volume", volume),
+			logging.Uint64("incoming", agg.Size),
+			logging.String("side", types.OtherSide(agg.Side).String()),
+		)
 
 		// construct an order
 		o := p.makeOrder(volume, price, types.OtherSide(agg.Side), e.idgen)
@@ -516,6 +515,8 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 	if agg.Side == types.SideSell {
 		inner, outer = outer, inner
 	}
+
+	fmt.Println("partition", inner, outer)
 
 	// if inner and outer are equal then we are wanting to trade with AMMs *only at* this given price
 	// this can happen quite easily during auction uncrossing where two AMMs have bases offset by 2
@@ -1074,6 +1075,6 @@ func DeriveAMMParty(
 
 func (e *Engine) PrintFP() {
 	for _, p := range e.poolsCpy {
-		fmt.Println("fp", p.fairPrice(), "pos", p.getPosition(), "max long", p.lower.pv, "max sell", p.upper.pv)
+		fmt.Println("fp", p.fairPrice(), "pos", p.getPosition(), "[", p.lower.pv, ",", p.upper.pv, "]", "bounds", "[", p.lower.low, ",", p.upper.low, ",", p.upper.high, "]")
 	}
 }
