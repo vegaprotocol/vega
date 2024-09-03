@@ -516,7 +516,7 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 		inner, outer = outer, inner
 	}
 
-	fmt.Println("partition", inner, outer)
+	//fmt.Println("partition", inner, outer)
 
 	// if inner and outer are equal then we are wanting to trade with AMMs *only at* this given price
 	// this can happen quite easily during auction uncrossing where two AMMs have bases offset by 2
@@ -1075,6 +1075,10 @@ func DeriveAMMParty(
 
 func (e *Engine) PrintFP() {
 	for _, p := range e.poolsCpy {
-		fmt.Println("fp", p.fairPrice(), "pos", p.getPosition(), "[", p.lower.pv, ",", p.upper.pv, "]", "bounds", "[", p.lower.low, ",", p.upper.low, ",", p.upper.high, "]")
+		fmt.Println("fp", p.fairPrice(), "pos", p.getPosition(), "[", p.lower.pv, ",", p.upper.pv, "]", "bounds", "[", p.lower.low, ",", p.upper.low, ",", p.upper.high, "]", p.AMMParty)
+	}
+
+	for _, p := range e.poolsCpy {
+		p.checkPosition(p.getPosition())
 	}
 }

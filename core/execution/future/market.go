@@ -5362,7 +5362,7 @@ func (m *Market) getRebasingOrder(
 Walk:
 	for {
 		// get the tradable volume necessary to move the AMM's position from fair-price -> price
-		required := pool.TradableVolumeInRange(types.OtherSide(side), fairPrice, price)
+		required := pool.TradableVolumeInRangeSpecial(types.OtherSide(side), fairPrice, price)
 
 		// AMM is close enough to the target that is has no volume between, so we do not need to rebase
 		if required == 0 {
@@ -5594,6 +5594,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	}
 
 	if order == nil {
+		fmt.Println("WWW amended without rebase", pool.AMMParty)
 		m.amm.Confirm(ctx, pool)
 		m.matching.UpdateAMM(pool.AMMParty)
 		m.checkForReferenceMoves(ctx, nil, false)
