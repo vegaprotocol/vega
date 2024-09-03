@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [8777](https://github.com/vegaprotocol/vega/issues/8777) - Stop orders can now be used to create or increase a position.
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🗑️ Deprecation
 
@@ -17,6 +17,16 @@
 ### 🐛 Fixes
 
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+
+## 0.78.1
+
+### 🐛 Fixes
+
+- [11633](https://github.com/vegaprotocol/vega/issues/11633) - Use bridge deployment heights from network parameter when starting network from genesis.)
+- [11583](https://github.com/vegaprotocol/vega/issues/11583) - Rough bound on price interval when matching with `AMMs` is now looser and calculated in the `AMM` engine.
+- [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
+- [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
 
 
 ## 0.78.0
