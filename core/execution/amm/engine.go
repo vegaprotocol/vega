@@ -491,6 +491,23 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 		}
 	}
 
+	if inner == nil {
+		// if inner is given as nil it means the matching engine is trading up to its first price level
+		// and so has no lower bound on the range. So we'll calculate one using best price of all pools
+		// note that if the incoming order is a buy the price range we need to evaluate is from
+		// fair-price -> best-ask -> outer, so we need to step one back. But then if we use fair-price exactly we
+		// risk hitting numerical problems and given this is just to exclude AMM's completely out of range we
+		// can be a bit looser and so step back again so that we evaluate from best-buy -> best-ask -> outer.
+		buy, _, ask, _ := e.BestPricesAndVolumes()
+		two := num.UintZero().AddSum(e.oneTick, e.oneTick)
+		if agg.Side == types.SideBuy && ask != nil {
+			inner = num.UintZero().Sub(ask, two)
+		}
+		if agg.Side == types.SideSell && buy != nil {
+			inner = num.UintZero().Add(buy, two)
+		}
+	}
+
 	// switch so that inner < outer to make it easier to reason with
 	if agg.Side == types.SideSell {
 		inner, outer = outer, inner

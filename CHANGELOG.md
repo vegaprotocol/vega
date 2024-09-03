@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [8777](https://github.com/vegaprotocol/vega/issues/8777) - Stop orders can now be used to create or increase a position.
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🗑️ Deprecation
 
@@ -17,6 +17,16 @@
 ### 🐛 Fixes
 
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+
+## 0.78.1
+
+### 🐛 Fixes
+
+- [11633](https://github.com/vegaprotocol/vega/issues/11633) - Use bridge deployment heights from network parameter when starting network from genesis.)
+- [11583](https://github.com/vegaprotocol/vega/issues/11583) - Rough bound on price interval when matching with `AMMs` is now looser and calculated in the `AMM` engine.
+- [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
+- [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
 
 
 ## 0.78.0
@@ -47,6 +57,7 @@
 - [11521](https://github.com/vegaprotocol/vega/issues/11521) - Restore `AMM` position factor when loading from a snapshot.
 - [11526](https://github.com/vegaprotocol/vega/issues/11526) - `EstimateAMMBounds` now respects the market's decimal places.
 - [11486](https://github.com/vegaprotocol/vega/issues/11486) - `AMMs` can now be submitted on markets with more decimal places than asset decimal places.
+- [11635](https://github.com/vegaprotocol/vega/issues/11635) - Handle expansion of one sided `AMMs` that reduce to point expansion when calculating order book shape.
 - [11561](https://github.com/vegaprotocol/vega/issues/11561) - Failing amends on `AMMs` now restore original properly.
 - [11583](https://github.com/vegaprotocol/vega/issues/11583) - Remove `AMMs` entirely from engine when market closes.
 - [11568](https://github.com/vegaprotocol/vega/issues/11568) - order book shape on closing `AMM` no longer panics.
@@ -54,6 +65,8 @@
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
 - [11616](https://github.com/vegaprotocol/vega/issues/11616) - `AMM` tradable volume now calculated purely in positions to prevent loss of precision.
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
+- [11583](https://github.com/vegaprotocol/vega/issues/11583) - Rough bound on price interval when matching with `AMMs` is now looser and calculated in the `AMM` engine.
+- [11633](https://github.com/vegaprotocol/vega/issues/11633) - Use bridge deployment heights from network parameter when starting network from genesis.
 - [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
 - [11579](https://github.com/vegaprotocol/vega/issues/11579) - Spot calculate fee on amend, use order price if no amended price is provided.
 - [11585](https://github.com/vegaprotocol/vega/issues/11585) - Initialise rebate stats service in API.
