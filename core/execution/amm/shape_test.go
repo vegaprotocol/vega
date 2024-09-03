@@ -36,6 +36,7 @@ func TestOrderbookShape(t *testing.T) {
 	t.Run("test orderbook shape boundary order when approx", testOrderbookShapeBoundaryOrder)
 	t.Run("test orderbook shape region not divisible by tick", testOrderbookSubTick)
 	t.Run("test orderbook shape closing pool close to base", testClosingCloseToBase)
+	t.Run("test orderbook shape point expansion at fair price", testPointExpansionAtFairPrice)
 }
 
 func testOrderbookShapeZeroPosition(t *testing.T) {
@@ -413,6 +414,39 @@ func testClosingCloseToBase(t *testing.T) {
 	buys, sells = p.pool.OrderbookShape(from, to, nil)
 
 	// should have one sell of volume 1
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 0, len(sells))
+}
+
+func testPointExpansionAtFairPrice(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(7), num.NewUint(10), num.NewUint(13))
+	defer p.ctrl.Finish()
+
+	base := p.submission.Parameters.Base
+
+	// range [10, 10] fair price is 10, no orders
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
+	buys, sells := p.pool.OrderbookShape(base, base, nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 0, len(sells))
+
+	// now try with a one sided curve where the input range shrinks to a point-expansion
+	p = newTestPoolWithRanges(t, num.NewUint(7), num.NewUint(10), nil)
+	defer p.ctrl.Finish()
+
+	// range [10, 1000] but sell curve is empty so effective range is [10, 10] at fair-price
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
+	buys, sells = p.pool.OrderbookShape(base, num.NewUint(1000), nil)
+	assert.Equal(t, 0, len(buys))
+	assert.Equal(t, 0, len(sells))
+
+	// now try with a one sided curve where the input range shrinks to a point-expansion
+	p = newTestPoolWithRanges(t, nil, num.NewUint(10), num.NewUint(13))
+	defer p.ctrl.Finish()
+
+	// range [1, 10] but buy curve is empty so effective range is [10, 10] at fair-price
+	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
+	buys, sells = p.pool.OrderbookShape(num.NewUint(1), base, nil)
 	assert.Equal(t, 0, len(buys))
 	assert.Equal(t, 0, len(sells))
 }
