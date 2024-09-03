@@ -79,6 +79,8 @@ type Position struct {
 	TakerFeesPaidSince             *num.Uint
 	MakerFeesReceivedSince         *num.Uint
 	FeesPaidSince                  *num.Uint
+	FundingPaymentAmount           *num.Int
+	FundingPaymentAmountSince      *num.Int
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
@@ -105,6 +107,8 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 		TakerFeesPaidSince:             num.UintZero(),
 		MakerFeesReceivedSince:         num.UintZero(),
 		FeesPaidSince:                  num.UintZero(),
+		FundingPaymentAmount:           num.IntZero(),
+		FundingPaymentAmountSince:      num.IntZero(),
 	}
 }
 
@@ -185,9 +189,11 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {
-	da := num.DecimalFromInt(amount)
-	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(da)
-	p.RealisedPnl = p.RealisedPnl.Add(da)
+	p.FundingPaymentAmount.Add(amount)
+	p.FundingPaymentAmountSince.Add(amount)
+	// da := num.DecimalFromInt(amount)
+	// p.PendingRealisedPnl = p.PendingRealisedPnl.Add(da)
+	// p.RealisedPnl = p.RealisedPnl.Add(da)
 }
 
 func (p *Position) UpdateOrdersClosed() {
@@ -206,17 +212,29 @@ func (p *Position) ToggleDistressedStatus() {
 
 func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
 	pf := e.PositionFactor()
+	resetFP := false
 	for _, t := range e.Trades() {
+		if p.OpenVolume == 0 {
+			resetFP = true
+		}
 		openedVolume, closedVolume := CalculateOpenClosedVolume(p.OpenVolume, t.Size())
 		// Deal with any volume we have closed
 		realisedPnlDelta := num.DecimalFromUint(t.Price()).Sub(p.AverageEntryPrice).Mul(num.DecimalFromInt64(closedVolume)).Div(pf)
 		p.RealisedPnl = p.RealisedPnl.Add(realisedPnlDelta)
+		pos := p.OpenVolume > 0
 		p.OpenVolume -= closedVolume
 
 		// Then with any we have opened
 		p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, t.Price())
 		p.AverageEntryMarketPrice = updateVWAP(p.AverageEntryMarketPrice, p.OpenVolume, openedVolume, t.MarketPrice())
 		p.OpenVolume += openedVolume
+		// check if position flipped
+		if !resetFP && (pos != (p.OpenVolume > 0) && p.OpenVolume != 0) {
+			resetFP = true
+		}
+	}
+	if resetFP {
+		p.FundingPaymentAmountSince = num.IntZero()
 	}
 	p.mtm(e.Price(), pf)
 	p.TxHash = TxHash(e.TxHash())
@@ -258,6 +276,10 @@ func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
 	p.DistressedStatus = PositionStatusClosedOut
+	p.FundingPaymentAmountSince = num.IntZero()
+	p.FeesPaidSince = num.UintZero()
+	p.MakerFeesReceivedSince = num.UintZero()
+	p.TakerFeesPaidSince = num.UintZero()
 	p.syncPending()
 }
 
