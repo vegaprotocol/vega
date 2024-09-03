@@ -321,13 +321,15 @@ func (sm *shapeMaker) adjustRegion() bool {
 		return false
 	}
 
-	if sm.from.EQ(sm.to) && sm.from.EQ(sm.fairPrice) {
-		return false
-	}
-
 	// cap the range to the pool's bounds, there will be no orders outside of this
 	from := num.Max(sm.from, lower)
 	to := num.Min(sm.to, upper)
+
+	// expansion is a point region *at* fair-price, there are no orders
+	if from.EQ(to) && from.EQ(sm.fairPrice) {
+		return false
+	}
+
 	switch {
 	case sm.from.GT(sm.fairPrice):
 		// if we are expanding entirely in the sell range to calculate the order at price `from`
