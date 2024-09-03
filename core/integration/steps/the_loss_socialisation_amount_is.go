@@ -35,10 +35,10 @@ func TheLossSocialisationAmountsAre(broker *stubs.BrokerStub, table *godog.Table
 		if !ok {
 			return fmt.Errorf("no loss socialisation events found for market %s", lsr.Market())
 		}
-		parties := map[string]struct{}{}
+		parties := map[string]types.LossType{}
 		for _, e := range mevts {
 			if lsr.Amount().EQ(e.Amount()) {
-				parties[e.PartyID()] = struct{}{}
+				parties[e.PartyID()] = e.LossType()
 			}
 		}
 		if c := lsr.Count(); c != -1 {
@@ -47,8 +47,12 @@ func TheLossSocialisationAmountsAre(broker *stubs.BrokerStub, table *godog.Table
 			}
 		}
 		for _, p := range lsr.Party() {
-			if _, ok := parties[p]; !ok {
+			lt, ok := parties[p]
+			if !ok {
 				return fmt.Errorf("no loss socialisation found for party %s on market %s for amount %s (type: %s)", p, lsr.Market(), lsr.Amount().String(), lsr.Type().String())
+			}
+			if !lsr.matchesType(lt) {
+				return fmt.Errorf("loss socialisation for party %s on market %s for amount %s is of type %s, not %s", p, lsr.Market(), lsr.Amount().String(), lt.String(), lsr.Type().String())
 			}
 		}
 	}
@@ -124,8 +128,7 @@ func (l lossSocRow) Count() int {
 
 func (l lossSocRow) matchesType(t types.LossType) bool {
 	if l.r.HasColumn("type") {
-		exp := l.Type()
-		return exp == t
+		return l.Type() == t
 	}
 	return true
 }
