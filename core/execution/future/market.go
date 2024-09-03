@@ -1435,26 +1435,61 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		price, err = m.getBestStaticBidPrice()
 	case types.PeggedReferenceBestAsk:
 		price, err = m.getBestStaticAskPrice()
+
+		// make sure the price in in a tick size, it might have come from an AMM
+
 	}
 	if err != nil {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
+	/*
+		epricing 551c6ba0c20c8ecbb93c8f293417ba66352be094d3d005350d0a82aa64044e7c PEGGED_REFERENCE_BEST_ASK 19894163489467417848 offset 0
+		price in market 1989
+		price in market with offset 1989 2
+		price in market with after tick 1988
+		price in market back to asset 19880000000000000000
+
+	*/
+
+	fmt.Println("repricing", order.ID, order.PeggedOrder.Reference, price, "offset", order.PeggedOrder.Offset)
+
 	// we're converting both offset and tick size to asset decimals so we can adjust the price (in asset) directly
 	priceInMarket, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+
+	// reference might not be in tick if it comes from an AMM, so make sure it is
+	if order.PeggedOrder.Reference != types.PeggedReferenceMid {
+		if mod := num.UintZero().Mod(priceInMarket, m.mkt.TickSize); !mod.IsZero() {
+			if order.Side == types.SideBuy {
+				priceInMarket.Sub(priceInMarket, mod)
+			} else {
+				d := num.UintOne().Sub(m.mkt.TickSize, mod)
+				priceInMarket.AddSum(d)
+			}
+		}
+	}
+
 	if order.Side == types.SideSell {
+
+		fmt.Println("price in market", priceInMarket)
+
 		priceInMarket.AddSum(order.PeggedOrder.Offset)
+		fmt.Println("price in market with offset", priceInMarket, m.mkt.TickSize)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
 		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
 		// whole multiples of tick size.
 		if mod := num.UintZero().Mod(priceInMarket, m.mkt.TickSize); !mod.IsZero() {
 			priceInMarket.Sub(priceInMarket, mod)
 		}
+
+		fmt.Println("price in market with after tick", priceInMarket)
 		price, _ := num.UintFromDecimal(priceInMarket.ToDecimal().Mul(m.priceFactor))
+		fmt.Println("price in market back to asset", price)
 
 		if m.capMax != nil {
 			upper := num.UintZero().Sub(m.capMax, num.UintOne())
 			price = num.Min(price, upper)
+			fmt.Println("price capped", price)
 		}
 		if price.IsZero() {
 			price = num.UintOne()
