@@ -406,11 +406,6 @@ func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
 		total += o.Size
 	}
 
-	// do get the continuous volume in the range
-	d := num.DeltaV(sm.getPos(sm.from), sm.getPos(sm.to))
-
-	fmt.Println("WWW ORDER TOTAL", total, "contin total", d)
-
 	if sm.log.IsDebug() {
 		sm.log.Debug("pool expanded into orders",
 			logging.Int("buys", len(sm.buys)),

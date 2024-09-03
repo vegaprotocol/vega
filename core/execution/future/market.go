@@ -5339,9 +5339,18 @@ func (m *Market) getRebasingOrder(
 	pool *amm.Pool,
 ) (*types.Order, error) {
 	var volume uint64
+
+	if pool.AMMParty == "8f9c29f7003dd101215f181568dde6d4f6304d18a56887267cb74745dfa8a7bb" {
+		fmt.Println("WWW rebasing")
+	}
+
 	fairPrice := pool.BestPrice(nil)
 	oneTick, _ := num.UintFromDecimal(m.priceFactor)
 	oneTick = num.Max(num.UintOne(), oneTick)
+
+	if pool.AMMParty == "8f9c29f7003dd101215f181568dde6d4f6304d18a56887267cb74745dfa8a7bb" {
+		fmt.Println("WWW rebasing fair-price", fairPrice, "to", price)
+	}
 
 	var until *num.Uint
 	switch side {
@@ -5357,6 +5366,10 @@ func (m *Market) getRebasingOrder(
 		if stopAt, overflow := num.UintFromDecimal(slipped); !overflow {
 			until = num.Max(until, stopAt)
 		}
+	}
+
+	if pool.AMMParty == "8f9c29f7003dd101215f181568dde6d4f6304d18a56887267cb74745dfa8a7bb" {
+		fmt.Println("WWW rebasing fair-price", fairPrice, "to", price, "walk until", until, "slippage", slippage)
 	}
 
 Walk:
@@ -5377,9 +5390,17 @@ Walk:
 		ammVolume := m.amm.GetVolumeAtPrice(price, side)
 		orderVolume := m.matching.GetVolumeAtPrice(price, types.OtherSide(side))
 
+		if pool.AMMParty == "8f9c29f7003dd101215f181568dde6d4f6304d18a56887267cb74745dfa8a7bb" {
+			fmt.Println("WWW volume from", fairPrice, "->", price, "=", required, ", have", orderVolume+ammVolume, "(", orderVolume, "+", ammVolume, ")")
+		}
+
 		// there is enough volume to trade at this level, create the order that the AMM needs to submit
 		if required < orderVolume+ammVolume {
 			originalPrice, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+
+			if pool.AMMParty == "8f9c29f7003dd101215f181568dde6d4f6304d18a56887267cb74745dfa8a7bb" {
+				fmt.Println("WWW found rebasing order", "price", price, "size", volume, side)
+			}
 			return &types.Order{
 				ID:            m.idgen.NextID(),
 				MarketID:      m.GetID(),

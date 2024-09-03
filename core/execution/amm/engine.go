@@ -354,6 +354,18 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
 		fp := pool.BestPrice(nil)
+
+		// make sure price is not between pool's best-buy and best-ask
+		switch {
+		case side == types.SideBuy:
+			if num.UintZero().Add(fp, pool.oneTick).GT(price) {
+				continue
+			}
+		case side == types.SideSell:
+			if num.UintZero().Sub(fp, pool.oneTick).LT(price) {
+				continue
+			}
+		}
 		volume := pool.TradableVolumeInRange(side, fp, price)
 		vol += volume
 	}
@@ -374,12 +386,13 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		p.setEphemeralPosition()
 
 		price := p.BestPrice(agg)
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("best price for pool",
-				logging.String("id", p.ID),
-				logging.String("best-price", price.String()),
-			)
-		}
+
+		e.log.Debug("best price for pool",
+			logging.String("id", p.AMMParty),
+			logging.String("best-price", price.String()),
+			logging.String("incoming", agg.Price.String()),
+			logging.String("outer", agg.Price.String()),
+		)
 
 		if agg.Side == types.SideBuy {
 			if price.GT(outer) || (agg.Type != types.OrderTypeMarket && price.GT(agg.Price)) {
@@ -585,6 +598,9 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 			return levels[i].LT(levels[j])
 		},
 	)
+
+	//fmt.Println("partitioned, active", len(active))
+
 	return active, levels
 }
 
@@ -736,10 +752,10 @@ func (e *Engine) Confirm(
 	ctx context.Context,
 	pool *Pool,
 ) {
-	e.log.Debug("AMM confirmed",
+	e.log.Info("AMM confirmed",
 		logging.String("owner", pool.owner),
 		logging.String("marketID", e.marketID),
-		logging.String("poolID", pool.ID),
+		logging.String("amm-party", pool.AMMParty),
 	)
 
 	pool.status = types.AMMPoolStatusActive
@@ -748,6 +764,9 @@ func (e *Engine) Confirm(
 	e.add(pool)
 	e.sendUpdate(ctx, pool)
 	e.parties.AssignDeriveKey(ctx, types.PartyID(pool.owner), pool.AMMParty)
+
+	e.PrintFP()
+
 }
 
 // Amend takes the details of an amendment to an AMM and returns a copy of that pool with the updated curves along with the current pool.
@@ -779,10 +798,10 @@ func (e *Engine) Amend(
 	// trade with ourselves.
 	e.remove(ctx, amend.Party)
 
-	e.log.Debug("AMM amended",
+	e.log.Info("AMM amended",
 		logging.String("owner", amend.Party),
 		logging.String("marketID", e.marketID),
-		logging.String("poolID", pool.ID),
+		logging.String("amm-party", pool.AMMParty),
 	)
 	return updated, pool, nil
 }
