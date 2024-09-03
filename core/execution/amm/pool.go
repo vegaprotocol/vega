@@ -669,75 +669,19 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 
 // TradableVolumeInRange returns the volume the pool is willing to provide between the two given price levels for side of a given order
 // that is trading with the pool. If `nil` is provided for either price then we take the full volume in that direction.
-func (p *Pool) TradableVolumeInRangeSpecial(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
-	if !p.canTrade(side) {
-		return 0
-	}
-	pos := p.getPosition()
-	st, nd := price1, price2
-
-	if price1 == nil {
-		st = p.lower.low
-	}
-
-	if price2 == nil {
-		nd = p.upper.high
-	}
-
-	if st.EQ(nd) {
-		return 0
-	}
-
-	if st.GT(nd) {
-		st, nd = nd, st
-	}
-
-	// map the given st/nd prices into positions, then the difference is the volume
-	asPosition := func(price *num.Uint) int64 {
-		switch {
-		case price.GT(p.lower.high):
-			// in upper curve
-			if !p.upper.empty {
-				return p.upper.positionAtPrice(p.sqrt, p.upper.high)
-			}
-		case price.LT(p.lower.high):
-			// in lower curve
-			if !p.lower.empty {
-				return p.lower.positionAtPrice(p.sqrt, p.lower.low)
-			}
-		}
-		return 0
-	}
-
-	stP := asPosition(st)
-	ndP := asPosition(nd)
-
+func (p *Pool) TradableVolumeForPrice(side types.Side, price *num.Uint) uint64 {
 	if side == types.SideSell {
-		// want all buy volume so everything below fair price, where the AMM is long
-		ndP = num.MaxV(pos, ndP)
+
+		// passing in nil tells tradeableVolume in range to take cu.upper.high here
+		// which will then get capped to fair-position
+		// so eventually asks for volume between [price-position, fair-position]
+		return p.TradableVolumeInRange(side, price, nil)
 	}
 
-	if side == types.SideBuy {
-		// want all sell volume so everything above fair price, where the AMM is short
-		stP = num.MinV(pos, stP)
-	}
-
-	if !p.closing() {
-		return uint64(stP - ndP)
-	}
-
-	if pos > 0 {
-		// if closing and long, we have no volume at short prices, so cap range to > 0
-		stP = num.MaxV(0, stP)
-		ndP = num.MaxV(0, ndP)
-	}
-
-	if pos < 0 {
-		// if closing and short, we have no volume at long prices, so cap range to < 0
-		stP = num.MinV(0, stP)
-		ndP = num.MinV(0, ndP)
-	}
-	return num.MinV(uint64(stP-ndP), uint64(num.AbsV(pos)))
+	// passing in nil tells tradeableVolume in range to take cu.lower.low here
+	// which will then get capped to fair-position
+	// so eventually asks for volume between [fair-position, price-position]
+	return p.TradableVolumeInRange(side, nil, price)
 }
 
 // getBalance returns the total balance of the pool i.e it's general account + it's margin account.

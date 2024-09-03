@@ -5375,7 +5375,7 @@ func (m *Market) getRebasingOrder(
 Walk:
 	for {
 		// get the tradable volume necessary to move the AMM's position from fair-price -> price
-		required := pool.TradableVolumeInRange(types.OtherSide(side), fairPrice, price)
+		required := pool.TradableVolumeForPrice(types.OtherSide(side), price)
 
 		// AMM is close enough to the target that is has no volume between, so we do not need to rebase
 		if required == 0 {
@@ -5390,7 +5390,7 @@ Walk:
 		ammVolume := m.amm.GetVolumeAtPrice(price, side)
 		orderVolume := m.matching.GetVolumeAtPrice(price, types.OtherSide(side))
 
-		if pool.AMMParty == "8f9c29f7003dd101215f181568dde6d4f6304d18a56887267cb74745dfa8a7bb" {
+		if pool.AMMParty == "4fd072f64798c78525ac385f4156f26cd86d81039951340d1025e01c8d9586f0" {
 			fmt.Println("WWW volume from", fairPrice, "->", price, "=", required, ", have", orderVolume+ammVolume, "(", orderVolume, "+", ammVolume, ")")
 		}
 
@@ -5398,7 +5398,7 @@ Walk:
 		if required < orderVolume+ammVolume {
 			originalPrice, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
 
-			if pool.AMMParty == "8f9c29f7003dd101215f181568dde6d4f6304d18a56887267cb74745dfa8a7bb" {
+			if pool.AMMParty == "4fd072f64798c78525ac385f4156f26cd86d81039951340d1025e01c8d9586f0" {
 				fmt.Println("WWW found rebasing order", "price", price, "size", volume, side)
 			}
 			return &types.Order{
@@ -5447,6 +5447,9 @@ func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) 
 	}
 
 	ask, err := m.matching.GetBestAskPrice()
+
+	// if fair-price GT ask AND THERES VOLUME ON THAT SIDE
+
 	if err == nil && fairPrice.GT(ask) {
 		return true, types.SideBuy, ask
 	}
