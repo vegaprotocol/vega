@@ -20,6 +20,7 @@ import (
 	"errors"
 	"math"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
@@ -32,6 +33,7 @@ func (r *volumeRebateProgramResolver) BenefitTiers(ctx context.Context, obj *v2.
 		tiers = append(tiers, &VolumeRebateBenefitTier{
 			MinimumPartyMakerVolumeFraction: tier.MinimumPartyMakerVolumeFraction,
 			AdditionalMakerRebate:           tier.AdditionalMakerRebate,
+			TierNumber:                      ptr.From(int(ptr.UnBox(tier.TierNumber))),
 		})
 	}
 	return tiers, nil
