@@ -347,8 +347,18 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	vol := uint64(0)
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		fp := pool.BestPrice(nil)
-		volume := pool.TradableVolumeInRange(side, fp, price)
+		best := pool.BestPrice(&types.Order{Price: price, Side: side})
+
+		// make sure price is in tradable range
+		if side == types.SideBuy && best.GT(price) {
+			continue
+		}
+
+		if side == types.SideSell && best.LT(price) {
+			continue
+		}
+
+		volume := pool.TradableVolumeForPrice(side, price)
 		vol += volume
 	}
 	return vol
