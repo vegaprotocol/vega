@@ -6340,6 +6340,7 @@ type PositionEdge {
 input PositionsFilter {
   partyIds: [ID!]
   marketIds: [ID!]
+  includeDerivedParties: Boolean
 }
 
 "Connection type for retrieving cursor-based paginated position information"

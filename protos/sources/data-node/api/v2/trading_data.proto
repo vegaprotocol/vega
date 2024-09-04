@@ -1538,6 +1538,8 @@ message PositionsFilter {
   repeated string party_ids = 1;
   // Restrict positions to those on the given markets.
   repeated string market_ids = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  optional bool include_derived_parties = 3;
 }
 
 // Request to list positions, given the position filter is supplied.

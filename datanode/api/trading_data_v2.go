@@ -1579,6 +1579,22 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
 		req.Filter.PartyIds = partyIDs
+
+		// check for derived parties
+		if ptr.UnBox(req.Filter.IncludeDerivedParties) {
+			if len(partyIDs) == 0 {
+				return nil, formatE(newInvalidArgumentError("includeDerivedParties requires a partyId"))
+			}
+
+			derivedParties, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
+			if err != nil {
+				return nil, formatE(ErrPositionServiceGetByParty, err)
+			}
+			slices.Sort(derivedParties)
+			partyIDs = append(partyIDs, derivedParties...)
+		}
+
+		req.Filter.PartyIds = partyIDs
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
