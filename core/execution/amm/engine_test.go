@@ -63,6 +63,7 @@ func TestAmendAMM(t *testing.T) {
 	t.Run("test amend AMM which doesn't exist", testAmendAMMWhichDoesntExist)
 	t.Run("test amend AMM with sparse amend", testAmendAMMSparse)
 	t.Run("test amend AMM insufficient commitment", testAmendInsufficientCommitment)
+	t.Run("test amend AMM when position to large", testAmendWhenPositionLarge)
 }
 
 func TestClosingAMM(t *testing.T) {
@@ -125,6 +126,7 @@ func testAmendAMMSparse(t *testing.T) {
 	amend.Parameters.UpperBound.AddSum(num.UintOne())
 	amend.Parameters.LowerBound.AddSum(num.UintOne())
 
+	ensurePosition(t, tst.pos, 0, nil)
 	updated, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
 	require.NoError(t, err)
 
@@ -153,6 +155,39 @@ func testAmendInsufficientCommitment(t *testing.T) {
 
 	_, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
 	require.ErrorContains(t, err, "insufficient commitment")
+
+	// check that the original pool still exists
+	assert.Equal(t, poolID, tst.engine.poolsCpy[0].ID)
+}
+
+func testAmendWhenPositionLarge(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+	expectSubaccountCreation(t, tst, party, subAccount)
+	whenAMMIsSubmitted(t, tst, submit)
+
+	poolID := tst.engine.poolsCpy[0].ID
+
+	amend := getPoolAmendment(t, party, tst.marketID)
+
+	// lower commitment so that the AMM's position at the same price bounds will be less
+	amend.CommitmentAmount = num.NewUint(50000000000)
+
+	expectBalanceChecks(t, tst, party, subAccount, 100000000000)
+	ensurePosition(t, tst.pos, 20000000, nil)
+	_, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
+	require.ErrorContains(t, err, "current position is outside of amended bounds")
+
+	// check that the original pool still exists
+	assert.Equal(t, poolID, tst.engine.poolsCpy[0].ID)
+
+	expectBalanceChecks(t, tst, party, subAccount, 100000000000)
+	ensurePosition(t, tst.pos, -20000000, nil)
+	_, _, err = tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
+	require.ErrorContains(t, err, "current position is outside of amended bounds")
 
 	// check that the original pool still exists
 	assert.Equal(t, poolID, tst.engine.poolsCpy[0].ID)
@@ -559,7 +594,7 @@ func testAmendMakesClosingPoolActive(t *testing.T) {
 
 	amend := getPoolAmendment(t, party, tst.marketID)
 	expectBalanceChecks(t, tst, party, subAccount, amend.CommitmentAmount.Uint64())
-
+	ensurePosition(t, tst.pos, 0, num.UintZero())
 	updated, _, err := tst.engine.Amend(ctx, amend, riskFactors, scalingFactors, slippage)
 	require.NoError(t, err)
 	tst.engine.Confirm(ctx, updated)

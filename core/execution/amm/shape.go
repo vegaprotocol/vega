@@ -93,9 +93,21 @@ func (sm *shapeMaker) makeBoundaryOrder(st, nd *num.Uint) *types.Order {
 		cu = sm.pool.upper
 	}
 
+	// if one of the boundaries it equal to the fair-price then the equivalent position
+	// if the AMM's current position and checking removes the risk of precision loss
+	stPosition := sm.pos
+	if st.NEQ(sm.fairPrice) {
+		stPosition = cu.positionAtPrice(sm.pool.sqrt, st)
+	}
+
+	ndPosition := sm.pos
+	if nd.NEQ(sm.fairPrice) {
+		ndPosition = cu.positionAtPrice(sm.pool.sqrt, nd)
+	}
+
 	volume := num.DeltaV(
-		cu.positionAtPrice(sm.pool.sqrt, st),
-		cu.positionAtPrice(sm.pool.sqrt, nd),
+		stPosition,
+		ndPosition,
 	)
 
 	if st.GTE(sm.fairPrice) {
