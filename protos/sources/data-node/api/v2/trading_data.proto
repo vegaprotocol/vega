@@ -5042,6 +5042,8 @@ message ListAMMsRequest {
   optional vega.events.v1.AMM.Status status = 5;
   // Pagination controls.
   optional Pagination pagination = 6;
+  // Restrict AMMs to those that are actively trading. If not set, it is treated as being false.
+  optional bool live_only = 7;
 }
 
 message ListAMMsResponse {
