@@ -30,6 +30,7 @@ type MarketStore interface {
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Market, error)
 	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error)
 	ListSuccessorMarkets(ctx context.Context, marketID string, fullHistory bool, pagination entities.CursorPagination) ([]entities.SuccessorMarket, entities.PageInfo, error)
+	GetAllFees(ctx context.Context) ([]entities.Market, error)
 }
 
 type Markets struct {
@@ -49,6 +50,10 @@ func NewMarkets(store MarketStore) *Markets {
 
 func (m *Markets) Initialise(ctx context.Context) error {
 	return nil
+}
+
+func (m *Markets) GetAllFees(ctx context.Context) ([]entities.Market, error) {
+	return m.store.GetAllFees(ctx)
 }
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {

@@ -250,6 +250,17 @@ func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	return markets, m.wrapE(err)
 }
 
+// GetAllFees returns fee information for all markets.
+// it returns a market entity with only id and fee.
+// NB: it's not cached nor paged.
+func (m *Markets) GetAllFees(ctx context.Context) ([]entities.Market, error) {
+	markets := make([]entities.Market, 0)
+	args := make([]interface{}, 0)
+	query := `select mc.id,  mc.fees from markets_current mc where state != 'STATE_REJECTED' AND state != 'STATE_SETTLED' AND state != 'STATE_CLOSED' order by mc.id`
+	err := pgxscan.Select(ctx, m.ConnectionSource, &markets, query, args...)
+	return markets, err
+}
+
 func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
 	key := newCacheKey(marketID, pagination, includeSettled)
 	m.allCacheLock.Lock()

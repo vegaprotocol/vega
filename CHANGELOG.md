@@ -27,6 +27,7 @@
 - [11583](https://github.com/vegaprotocol/vega/issues/11583) - Rough bound on price interval when matching with `AMMs` is now looser and calculated in the `AMM` engine.
 - [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
 - [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
+- [11645](https://github.com/vegaprotocol/vega/issues/11645) - Support party stats with no markets to retrive for all markets. 
 
 
 ## 0.78.0
