@@ -1361,7 +1361,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 					logging.String("market-id", settle.MarketID))
 
 				brokerEvts = append(brokerEvts,
-					events.NewLossSocializationEvent(ctx, transfer.Owner, marketID, delta, false, now))
+					events.NewLossSocializationEvent(ctx, transfer.Owner, marketID, delta, false, now, types.LossTypeUnspecified))
 			}
 		}
 	}
@@ -1476,16 +1476,16 @@ func (e *Engine) getMTMPartyAccounts(party, marketID, asset string) (gen, margin
 // PerpsFundingSettlement will run a funding settlement over given positions.
 // This works exactly the same as a MTM settlement, but uses different transfer types.
 func (e *Engine) PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint, useGeneralAccountForMarginSearch func(string) bool) ([]events.Margin, []*types.LedgerMovement, error) {
-	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypePerpFundingWin, round, useGeneralAccountForMarginSearch)
+	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypePerpFundingWin, round, useGeneralAccountForMarginSearch, types.LossTypeFunding)
 }
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
 // return ledger move stuff here, too (separate return value, because we need to stream those).
 func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string, useGeneralAccountForMarginSearch func(string) bool) ([]events.Margin, []*types.LedgerMovement, error) {
-	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypeMTMWin, nil, useGeneralAccountForMarginSearch)
+	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypeMTMWin, nil, useGeneralAccountForMarginSearch, types.LossTypeSettlement)
 }
 
-func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, winType types.TransferType, round *num.Uint, useGeneralAccountForMarginSearch func(string) bool) ([]events.Margin, []*types.LedgerMovement, error) {
+func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, winType types.TransferType, round *num.Uint, useGeneralAccountForMarginSearch func(string) bool, lType types.LossType) ([]events.Margin, []*types.LedgerMovement, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil, nil
@@ -1616,7 +1616,7 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 					logging.String("market-id", settle.MarketID))
 
 				brokerEvts = append(brokerEvts,
-					events.NewLossSocializationEvent(ctx, party, settle.MarketID, delta, false, now))
+					events.NewLossSocializationEvent(ctx, party, settle.MarketID, delta, false, now, lType))
 			}
 			marginEvts = append(marginEvts, marginEvt)
 		} else {
@@ -1652,6 +1652,7 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 		collected:       settle.Balance,
 		requests:        make([]request, 0, len(transfers)-winidx),
 		ts:              now,
+		lType:           lType,
 	}
 
 	if distr.LossSocializationEnabled() {

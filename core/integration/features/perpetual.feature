@@ -307,6 +307,14 @@ Feature: Simple test creating a perpetual market.
       | start      | end        | internal twap    | external twap    | funding payment | funding rate       |
       | 1575072007 | 1575072014 | 9820000000000000 | 9750000000000000 | 70000000000000  | 0.0071794871794872 |
       | 1575072014 |            | 9890000000000000 | 9720000000000000 |                 |                    |
+    And the following funding payment events should be emitted:
+      | party   | market    | amount      |
+      | trader2 | ETH/DEC19 | -100000000  |
+      | trader2 | ETH/DEC19 | 700000000   |
+      | trader1 | ETH/DEC19 | 100000000   |
+      | trader1 | ETH/DEC19 | -700000000  |
+      | trader3 | ETH/DEC19 | -1400000000 |
+      | trader4 | ETH/DEC19 | 1400000000  |
     # payments for trader3 and trader4 should be twice those of trader1 and trader2
     And the following transfers should happen:
       | type                                  | from    | to      | from account             | to account              | market id |  amount    | asset |
