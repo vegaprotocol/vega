@@ -144,13 +144,13 @@ type AssetService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/amm_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api AMMService
 type AMMService interface {
 	GetSubKeysForParties(ctx context.Context, partyIDs []string, marketIDs []string) ([]string, error)
-	ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListByMarket(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListByParty(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListByPool(ctx context.Context, poolID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListAll(ctx context.Context, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByMarket(ctx context.Context, marketID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByParty(ctx context.Context, partyID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByPool(ctx context.Context, poolID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 	ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
-	ListByPartyMarketStatus(ctx context.Context, party, market *string, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListBySubAccount(ctx context.Context, ammPartyID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
+	ListByPartyMarketStatus(ctx context.Context, party, market *string, status *entities.AMMStatus, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error)
 }
 
 type PartyStatsSvc interface {

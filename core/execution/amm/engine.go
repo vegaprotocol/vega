@@ -347,8 +347,18 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	vol := uint64(0)
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		fp := pool.BestPrice(nil)
-		volume := pool.TradableVolumeInRange(side, fp, price)
+		best := pool.BestPrice(&types.Order{Price: price, Side: side})
+
+		// make sure price is in tradable range
+		if side == types.SideBuy && best.GT(price) {
+			continue
+		}
+
+		if side == types.SideSell && best.LT(price) {
+			continue
+		}
+
+		volume := pool.TradableVolumeForPrice(side, price)
 		vol += volume
 	}
 	return vol
@@ -639,45 +649,15 @@ func (e *Engine) Create(
 	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, V1, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonPartyAlreadyOwnsAPool,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, ErrPartyAlreadyOwnAPool(e.marketID)
 	}
 
 	if err := e.ensureCommitmentAmount(ctx, submit.Party, subAccount, submit.CommitmentAmount); err != nil {
-		reason := types.AMMStatusReasonCannotFillCommitment
-		if err == ErrCommitmentTooLow {
-			reason = types.AMMStatusReasonCommitmentTooLow
-		}
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, reason,
-				submit.ProposedFee, nil, nil,
-			),
-		)
 		return nil, err
 	}
 
 	_, _, err := e.collateral.CreatePartyAMMsSubAccounts(ctx, submit.Party, subAccount, e.assetID, submit.MarketID)
 	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonUnspecified,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, err
 	}
 
@@ -698,15 +678,6 @@ func (e *Engine) Create(
 		e.maxCalculationLevels,
 	)
 	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonCommitmentTooLow,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, err
 	}
 

@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.78.1";
+    version: "v0.78.2";
   }
   schemes: [
     HTTP,
@@ -1538,6 +1538,8 @@ message PositionsFilter {
   repeated string party_ids = 1;
   // Restrict positions to those on the given markets.
   repeated string market_ids = 2;
+  // Whether to return all derived parties from AMMs for the given party.
+  optional bool include_derived_parties = 3;
 }
 
 // Request to list positions, given the position filter is supplied.
@@ -5040,6 +5042,8 @@ message ListAMMsRequest {
   optional vega.events.v1.AMM.Status status = 5;
   // Pagination controls.
   optional Pagination pagination = 6;
+  // Restrict AMMs to those that are actively trading. If not set, it is treated as being false.
+  optional bool live_only = 7;
 }
 
 message ListAMMsResponse {

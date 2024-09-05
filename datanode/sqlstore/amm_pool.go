@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -100,7 +101,7 @@ on conflict (party_id, market_id, id, amm_party_id) do update set
 	return nil
 }
 
-func listByFields(ctx context.Context, connection Connection, fields map[string]entities.AMMFilterType, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func listByFields(ctx context.Context, connection Connection, fields map[string]entities.AMMFilterType, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	var (
 		pools       []entities.AMMPool
 		pageInfo    entities.PageInfo
@@ -113,12 +114,18 @@ func listByFields(ctx context.Context, connection Connection, fields map[string]
 		clause, args = val.Where(&field, nextBindVar, args...)
 		where = append(where, clause)
 	}
+
+	if liveOnly {
+		where = append(where, liveOnlyClause(&args))
+	}
+
 	whereClause = strings.Join(where, " AND ")
 	query := fmt.Sprintf(`SELECT * FROM amms WHERE %s`, whereClause)
 	query, args, err := PaginateQuery[entities.AMMPoolCursor](query, args, ammPoolsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
+
 	if err := pgxscan.Select(ctx, connection, &pools, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not list AMM Pools: %w", err)
 	}
@@ -127,7 +134,7 @@ func listByFields(ctx context.Context, connection Connection, fields map[string]
 	return pools, pageInfo, nil
 }
 
-func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connection, fieldName string, filter T, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connection, fieldName string, filter T, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	var (
 		pools       []entities.AMMPool
 		pageInfo    entities.PageInfo
@@ -135,6 +142,11 @@ func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connectio
 		whereClause string
 	)
 	whereClause, args = filter.Where(&fieldName, nextBindVar, args...)
+
+	if liveOnly {
+		whereClause += " AND " + liveOnlyClause(&args)
+	}
+
 	query := fmt.Sprintf(`SELECT * FROM amms WHERE %s`, whereClause)
 	query, args, err := PaginateQuery[entities.AMMPoolCursor](query, args, ammPoolsOrdering, pagination)
 	if err != nil {
@@ -148,15 +160,15 @@ func listBy[T entities.AMMPoolsFilter](ctx context.Context, connection Connectio
 	return pools, pageInfo, nil
 }
 
-func (p *AMMPools) ListByMarket(ctx context.Context, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (p *AMMPools) ListByMarket(ctx context.Context, marketID entities.MarketID, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByMarket")
-	return listBy(ctx, p.ConnectionSource, "market_id", &marketID, pagination)
+	return listBy(ctx, p.ConnectionSource, "market_id", &marketID, liveOnly, pagination)
 }
 
-func (p *AMMPools) ListByParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (p *AMMPools) ListByParty(ctx context.Context, partyID entities.PartyID, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByParty")
 
-	return listBy(ctx, p.ConnectionSource, "party_id", &partyID, pagination)
+	return listBy(ctx, p.ConnectionSource, "party_id", &partyID, liveOnly, pagination)
 }
 
 func (p *AMMPools) GetSubKeysForParties(ctx context.Context, partyIDs []string, marketIDs []string) ([]string, error) {
@@ -165,12 +177,12 @@ func (p *AMMPools) GetSubKeysForParties(ctx context.Context, partyIDs []string, 
 	}
 	parties := strings.Builder{}
 	args := make([]any, 0, len(partyIDs)+len(marketIDs))
-	query := `SELECT amm_party_id FROM amms WHERE "`
+	query := `SELECT amm_party_id FROM amms WHERE `
 	for i, party := range partyIDs {
 		if i > 0 {
 			parties.WriteString(",")
 		}
-		parties.WriteString(nextBindVar(&args, party))
+		parties.WriteString(nextBindVar(&args, ptr.From(entities.PartyID(party))))
 	}
 	query = fmt.Sprintf(`%s party_id IN (%s)`, query, parties.String())
 	if len(marketIDs) > 0 {
@@ -179,34 +191,40 @@ func (p *AMMPools) GetSubKeysForParties(ctx context.Context, partyIDs []string, 
 			if i > 0 {
 				markets.WriteString(",")
 			}
-			markets.WriteString(nextBindVar(&args, mID))
+
+			markets.WriteString(nextBindVar(&args, ptr.From(entities.MarketID(mID))))
 		}
-		query = fmt.Sprintf("%s AND market_id IN(%s)", query, markets.String())
+		query = fmt.Sprintf("%s AND market_id IN (%s)", query, markets.String())
 	}
 
-	subKeys := []string{}
+	subKeys := []entities.PartyID{}
 	if err := pgxscan.Select(ctx, p.ConnectionSource, &subKeys, query, args...); err != nil {
 		return nil, err
 	}
-	return subKeys, nil
+
+	res := make([]string, 0, len(subKeys))
+	for _, k := range subKeys {
+		res = append(res, k.String())
+	}
+	return res, nil
 }
 
-func (p *AMMPools) ListByPool(ctx context.Context, poolID entities.AMMPoolID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (p *AMMPools) ListByPool(ctx context.Context, poolID entities.AMMPoolID, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByPool")
-	return listBy(ctx, p.ConnectionSource, "id", &poolID, pagination)
+	return listBy(ctx, p.ConnectionSource, "id", &poolID, liveOnly, pagination)
 }
 
-func (p *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID entities.PartyID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (p *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID entities.PartyID, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByAMMParty")
-	return listBy(ctx, p.ConnectionSource, "amm_party_id", &ammPartyID, pagination)
+	return listBy(ctx, p.ConnectionSource, "amm_party_id", &ammPartyID, liveOnly, pagination)
 }
 
 func (p *AMMPools) ListByStatus(ctx context.Context, status entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByStatus")
-	return listBy(ctx, p.ConnectionSource, "status", &status, pagination)
+	return listBy(ctx, p.ConnectionSource, "status", &status, false, pagination)
 }
 
-func (p *AMMPools) ListByPartyMarketStatus(ctx context.Context, party *entities.PartyID, market *entities.MarketID, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (p *AMMPools) ListByPartyMarketStatus(ctx context.Context, party *entities.PartyID, market *entities.MarketID, status *entities.AMMStatus, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListByPartyMarketStatus")
 	fields := make(map[string]entities.AMMFilterType, 3)
 	if party != nil {
@@ -218,10 +236,10 @@ func (p *AMMPools) ListByPartyMarketStatus(ctx context.Context, party *entities.
 	if status != nil {
 		fields["status"] = status
 	}
-	return listByFields(ctx, p.ConnectionSource, fields, pagination)
+	return listByFields(ctx, p.ConnectionSource, fields, liveOnly, pagination)
 }
 
-func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (p *AMMPools) ListAll(ctx context.Context, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListAll")
 	var (
 		pools    []entities.AMMPool
@@ -229,6 +247,11 @@ func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagina
 		args     []interface{}
 	)
 	query := `SELECT * FROM amms`
+
+	if liveOnly {
+		query += ` WHERE ` + liveOnlyClause(&args)
+	}
+
 	query, args, err := PaginateQuery[entities.AMMPoolCursor](query, args, ammPoolsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
@@ -245,24 +268,25 @@ func (p *AMMPools) ListAll(ctx context.Context, pagination entities.CursorPagina
 func (p *AMMPools) ListActive(ctx context.Context) ([]entities.AMMPool, error) {
 	defer metrics.StartSQLQuery("AMMs", "ListAll")
 	var (
-		pools       []entities.AMMPool
-		args        []interface{}
-		whereClause string
+		pools []entities.AMMPool
+		args  []interface{}
 	)
 
-	states := strings.Builder{}
-	for i, status := range activeStates {
-		if i > 0 {
-			states.WriteString(",")
-		}
-		states.WriteString(nextBindVar(&args, status))
-	}
-	whereClause += fmt.Sprintf("status IN (%s)", states.String())
-	query := fmt.Sprintf(`SELECT * from amms WHERE %s`, whereClause)
-
+	query := fmt.Sprintf(`SELECT * from amms WHERE %s`, liveOnlyClause(&args))
 	if err := pgxscan.Select(ctx, p.ConnectionSource, &pools, query, args...); err != nil {
 		return nil, fmt.Errorf("could not list active AMMs: %w", err)
 	}
 
 	return pools, nil
+}
+
+func liveOnlyClause(args *[]interface{}) string {
+	states := strings.Builder{}
+	for i, status := range activeStates {
+		if i > 0 {
+			states.WriteString(",")
+		}
+		states.WriteString(nextBindVar(args, status))
+	}
+	return fmt.Sprintf("status IN (%s)", states.String())
 }

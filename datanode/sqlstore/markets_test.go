@@ -49,6 +49,67 @@ func TestMarkets_Get(t *testing.T) {
 	t.Run("GetByID should return a perpetual market if it exists", getByIDShouldReturnAPerpetualMarketIfItExists)
 }
 
+func TestGetAllFees(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx := tempTransaction(t)
+
+	block := addTestBlock(t, ctx, bs)
+
+	market := entities.Market{
+		ID:       "deadbeef",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateActive,
+		Fees: entities.Fees{
+			Factors: &entities.FeeFactors{
+				MakerFee:          "0.1",
+				InfrastructureFee: "0.2",
+				LiquidityFee:      "0.3",
+				BuyBackFee:        "0.4",
+				TreasuryFee:       "0.5",
+			},
+		},
+	}
+	err := md.Upsert(ctx, &market)
+	require.NoError(t, err)
+
+	market2 := entities.Market{
+		ID:       "beefdead",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateActive,
+		Fees: entities.Fees{
+			Factors: &entities.FeeFactors{
+				MakerFee:          "0.5",
+				InfrastructureFee: "0.4",
+				LiquidityFee:      "0.3",
+				BuyBackFee:        "0.2",
+				TreasuryFee:       "0.1",
+			},
+		},
+	}
+	err = md.Upsert(ctx, &market2)
+	require.NoError(t, err, "Saving market entity to database")
+
+	mkts, err := md.GetAllFees(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(mkts))
+
+	require.Equal(t, "beefdead", mkts[0].ID.String())
+	require.Equal(t, "0.5", mkts[0].Fees.Factors.MakerFee)
+	require.Equal(t, "0.4", mkts[0].Fees.Factors.InfrastructureFee)
+	require.Equal(t, "0.3", mkts[0].Fees.Factors.LiquidityFee)
+	require.Equal(t, "0.2", mkts[0].Fees.Factors.BuyBackFee)
+	require.Equal(t, "0.1", mkts[0].Fees.Factors.TreasuryFee)
+	require.Equal(t, "deadbeef", mkts[1].ID.String())
+	require.Equal(t, "0.1", mkts[1].Fees.Factors.MakerFee)
+	require.Equal(t, "0.2", mkts[1].Fees.Factors.InfrastructureFee)
+	require.Equal(t, "0.3", mkts[1].Fees.Factors.LiquidityFee)
+	require.Equal(t, "0.4", mkts[1].Fees.Factors.BuyBackFee)
+	require.Equal(t, "0.5", mkts[1].Fees.Factors.TreasuryFee)
+}
+
 func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
