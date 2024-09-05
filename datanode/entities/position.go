@@ -73,14 +73,14 @@ type Position struct {
 	PendingAverageEntryMarketPrice decimal.Decimal
 	LossSocialisationAmount        decimal.Decimal
 	DistressedStatus               PositionStatus
-	TakerFeesPaid                  *num.Uint
-	MakerFeesReceived              *num.Uint
-	FeesPaid                       *num.Uint // infra fees and the like
-	TakerFeesPaidSince             *num.Uint
-	MakerFeesReceivedSince         *num.Uint
-	FeesPaidSince                  *num.Uint
-	FundingPaymentAmount           *num.Int
-	FundingPaymentAmountSince      *num.Int
+	TakerFeesPaid                  num.Decimal
+	MakerFeesReceived              num.Decimal
+	FeesPaid                       num.Decimal
+	TakerFeesPaidSince             num.Decimal
+	MakerFeesReceivedSince         num.Decimal
+	FeesPaidSince                  num.Decimal
+	FundingPaymentAmount           num.Decimal
+	FundingPaymentAmountSince      num.Decimal
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
@@ -101,14 +101,14 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 		PendingAverageEntryMarketPrice: num.DecimalZero(),
 		LossSocialisationAmount:        num.DecimalZero(),
 		DistressedStatus:               PositionStatusUnspecified,
-		TakerFeesPaid:                  num.UintZero(),
-		MakerFeesReceived:              num.UintZero(),
-		FeesPaid:                       num.UintZero(),
-		TakerFeesPaidSince:             num.UintZero(),
-		MakerFeesReceivedSince:         num.UintZero(),
-		FeesPaidSince:                  num.UintZero(),
-		FundingPaymentAmount:           num.IntZero(),
-		FundingPaymentAmountSince:      num.IntZero(),
+		TakerFeesPaid:                  num.DecimalZero(),
+		MakerFeesReceived:              num.DecimalZero(),
+		FeesPaid:                       num.DecimalZero(),
+		TakerFeesPaidSince:             num.DecimalZero(),
+		MakerFeesReceivedSince:         num.DecimalZero(),
+		FeesPaidSince:                  num.DecimalZero(),
+		FundingPaymentAmount:           num.DecimalZero(),
+		FundingPaymentAmountSince:      num.DecimalZero(),
 	}
 }
 
@@ -141,9 +141,10 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	}
 	// add fees paid/received
 	fees := getFeeAmountsForSide(&trade, seller)
-	p.MakerFeesReceived.AddSum(fees.maker)
-	p.TakerFeesPaid.AddSum(fees.taker)
-	p.FeesPaid.AddSum(fees.other)
+	maker, taker, other := num.DecimalFromUint(fees.maker), num.DecimalFromUint(fees.taker), num.DecimalFromUint(fees.other)
+	p.MakerFeesReceived = p.MakerFeesReceived.Add(maker)
+	p.TakerFeesPaid = p.TakerFeesPaid.Add(taker)
+	p.FeesPaid = p.FeesPaid.Add(other)
 	// check if we should reset the "since" fields for fees
 	since := p.PendingOpenVolume == 0
 	// close out trade doesn't require the MTM calculation to be performed
@@ -168,15 +169,15 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.PendingOpenVolume += opened
 	// either the position is no longer 0, or the position has flipped sides (and is non-zero)
 	if since || (pos != (p.PendingOpenVolume > 0) && p.PendingOpenVolume != 0) {
-		p.MakerFeesReceivedSince = num.UintZero()
-		p.TakerFeesPaidSince = num.UintZero()
-		p.FeesPaidSince = num.UintZero()
+		p.MakerFeesReceivedSince = num.DecimalZero()
+		p.TakerFeesPaidSince = num.DecimalZero()
+		p.FeesPaidSince = num.DecimalZero()
 	}
 	if p.PendingOpenVolume != 0 {
 		// running total of fees paid since get incremented
-		p.MakerFeesReceivedSince.AddSum(fees.maker)
-		p.TakerFeesPaidSince.AddSum(fees.taker)
-		p.FeesPaidSince.AddSum(fees.other)
+		p.MakerFeesReceivedSince = p.MakerFeesReceivedSince.Add(maker)
+		p.TakerFeesPaidSince = p.TakerFeesPaidSince.Add(taker)
+		p.FeesPaidSince = p.FeesPaidSince.Add(other)
 	}
 	p.pendingMTM(assetPrice, pf)
 	if trade.Type == types.TradeTypeNetworkCloseOutBad {
@@ -189,8 +190,9 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {
-	p.FundingPaymentAmount.Add(amount)
-	p.FundingPaymentAmountSince.Add(amount)
+	amt := num.DecimalFromInt(amount)
+	p.FundingPaymentAmount = p.FundingPaymentAmount.Add(amt)
+	p.FundingPaymentAmountSince = p.FundingPaymentAmountSince.Add(amt)
 	// da := num.DecimalFromInt(amount)
 	// p.PendingRealisedPnl = p.PendingRealisedPnl.Add(da)
 	// p.RealisedPnl = p.RealisedPnl.Add(da)
@@ -234,7 +236,7 @@ func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
 		}
 	}
 	if resetFP {
-		p.FundingPaymentAmountSince = num.IntZero()
+		p.FundingPaymentAmountSince = num.DecimalZero()
 	}
 	p.mtm(e.Price(), pf)
 	p.TxHash = TxHash(e.TxHash())
@@ -276,10 +278,10 @@ func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
 	p.DistressedStatus = PositionStatusClosedOut
-	p.FundingPaymentAmountSince = num.IntZero()
-	p.FeesPaidSince = num.UintZero()
-	p.MakerFeesReceivedSince = num.UintZero()
-	p.TakerFeesPaidSince = num.UintZero()
+	p.FundingPaymentAmountSince = num.DecimalZero()
+	p.FeesPaidSince = num.DecimalZero()
+	p.MakerFeesReceivedSince = num.DecimalZero()
+	p.TakerFeesPaidSince = num.DecimalZero()
 	p.syncPending()
 }
 
