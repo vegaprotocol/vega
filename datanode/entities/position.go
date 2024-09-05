@@ -73,6 +73,12 @@ type Position struct {
 	PendingAverageEntryMarketPrice decimal.Decimal
 	LossSocialisationAmount        decimal.Decimal
 	DistressedStatus               PositionStatus
+	TakerFeesPaid                  *num.Uint
+	MakerFeesReceived              *num.Uint
+	FeesPaid                       *num.Uint // infra fees and the like
+	TakerFeesPaidSince             *num.Uint
+	MakerFeesReceivedSince         *num.Uint
+	FeesPaidSince                  *num.Uint
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
@@ -93,6 +99,12 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 		PendingAverageEntryMarketPrice: num.DecimalZero(),
 		LossSocialisationAmount:        num.DecimalZero(),
 		DistressedStatus:               PositionStatusUnspecified,
+		TakerFeesPaid:                  num.UintZero(),
+		MakerFeesReceived:              num.UintZero(),
+		FeesPaid:                       num.UintZero(),
+		TakerFeesPaidSince:             num.UintZero(),
+		MakerFeesReceivedSince:         num.UintZero(),
+		FeesPaidSince:                  num.UintZero(),
 	}
 }
 
@@ -123,6 +135,13 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	if seller {
 		size *= -1
 	}
+	// add fees paid/received
+	fees := getFeeAmountsForSide(&trade, seller)
+	p.MakerFeesReceived.AddSum(fees.maker)
+	p.TakerFeesPaid.AddSum(fees.taker)
+	p.FeesPaid.AddSum(fees.other)
+	// check if we should reset the "since" fields for fees
+	since := p.PendingOpenVolume == 0
 	// close out trade doesn't require the MTM calculation to be performed
 	// the distressed trader will be handled through a settle distressed event, the network
 	// open volume should just be updated, the average entry price is unchanged.
@@ -133,6 +152,8 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
 	realisedPnlDelta := assetPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
 	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
+	// did we start with a positive/negative position?
+	pos := p.PendingOpenVolume > 0
 	p.PendingOpenVolume -= closed
 
 	marketPriceUint, _ := num.UintFromDecimal(marketPrice)
@@ -141,6 +162,18 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, assetPriceUint)
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
+	// either the position is no longer 0, or the position has flipped sides (and is non-zero)
+	if since || (pos != (p.PendingOpenVolume > 0) && p.PendingOpenVolume != 0) {
+		p.MakerFeesReceivedSince = num.UintZero()
+		p.TakerFeesPaidSince = num.UintZero()
+		p.FeesPaidSince = num.UintZero()
+	}
+	if p.PendingOpenVolume != 0 {
+		// running total of fees paid since get incremented
+		p.MakerFeesReceivedSince.AddSum(fees.maker)
+		p.TakerFeesPaidSince.AddSum(fees.taker)
+		p.FeesPaidSince.AddSum(fees.other)
+	}
 	p.pendingMTM(assetPrice, pf)
 	if trade.Type == types.TradeTypeNetworkCloseOutBad {
 		p.updateWithBadTrade(trade, seller, pf)
