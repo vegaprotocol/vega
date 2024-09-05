@@ -24,6 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/plugins"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"
@@ -87,7 +88,7 @@ func TestMultipleTradesAndLossSocializationPartyNoOpenVolume(t *testing.T) {
 	assert.Equal(t, "1000", pp[0].RealisedPnl.String())
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1, types.LossTypeUnspecified)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -121,7 +122,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	assert.Equal(t, "-600", pp[0].UnrealisedPnl.String())
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1, types.LossTypeUnspecified)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -163,7 +164,7 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 	assert.Equal(t, "-600", pp[0].UnrealisedPnl.String())
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1, types.LossTypeUnspecified)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)

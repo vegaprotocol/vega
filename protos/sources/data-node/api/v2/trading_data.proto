@@ -3970,6 +3970,8 @@ message FundingPayment {
   int64 timestamp = 4;
   // Funding payment amount, where a positive value indicates an earned payment received and a negative value a loss.
   string amount = 5;
+  // Amount missed out on due to loss socialization.
+  string loss_amount = 6;
 }
 
 // Request to list a a party's funding payments

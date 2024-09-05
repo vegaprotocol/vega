@@ -698,6 +698,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug network parameter "([^"]*)"$`, func(name string) error {
 		return steps.DebugNetworkParameter(execsetup.log, execsetup.netParams, name)
 	})
+	s.Step(`^debug funding payment events$`, func() error {
+		steps.DebugFundingPaymentsEvents(execsetup.broker, execsetup.log)
+		return nil
+	})
 
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
@@ -711,6 +715,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^the following funding period events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingFundingPeriodEventsShouldBeEmitted(execsetup.broker, table)
+	})
+	s.Step(`^the following funding payment events should be emitted:$`, func(table *godog.Table) error {
+		return steps.TheFollowingFundingPaymentEventsShouldBeEmitted(execsetup.broker, table)
 	})
 	s.Step(`^the following events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
