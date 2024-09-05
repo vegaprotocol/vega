@@ -330,34 +330,34 @@ func TestTradeFees(t *testing.T) {
 			HighVolumeMakerFee: "1",
 		},
 	}
-	bFeesPaid := num.NewUint(4)
-	sFeesPaid := num.NewUint(9)
-	bMaker := num.NewUint(10)
-	sMaker := num.NewUint(20)
+	bFeesPaid := num.NewDecimalFromFloat(4)
+	sFeesPaid := num.NewDecimalFromFloat(9)
+	bMaker := num.NewDecimalFromFloat(10)
+	sMaker := num.NewDecimalFromFloat(20)
 	position.UpdateWithTrade(trade, false, dp)
 	sPos.UpdateWithTrade(trade, true, dp)
-	require.True(t, position.FeesPaid.EQ(bFeesPaid))
-	require.True(t, sPos.FeesPaid.EQ(sFeesPaid))
+	require.True(t, position.FeesPaid.Equal(bFeesPaid))
+	require.True(t, sPos.FeesPaid.Equal(sFeesPaid))
 	// maker fees swap
-	require.True(t, sPos.TakerFeesPaid.EQ(sMaker))
-	require.True(t, position.MakerFeesReceived.EQ(sMaker))
+	require.True(t, sPos.TakerFeesPaid.Equal(sMaker))
+	require.True(t, position.MakerFeesReceived.Equal(sMaker))
 	// we have an aggressor, so only one side received maker fees
-	require.True(t, sPos.MakerFeesReceived.EQ(num.UintZero()))
-	require.True(t, position.TakerFeesPaid.EQ(bMaker))
+	require.True(t, sPos.MakerFeesReceived.Equal(num.DecimalZero()))
+	require.True(t, position.TakerFeesPaid.Equal(bMaker))
 	// now the same trade but with no aggressor
 	trade.Aggressor = types.SideUnspecified
 	position = entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 	sPos = entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(sParty))
 	position.UpdateWithTrade(trade, false, dp)
 	sPos.UpdateWithTrade(trade, true, dp)
-	require.True(t, position.FeesPaid.EQ(bFeesPaid))
-	require.True(t, sPos.FeesPaid.EQ(sFeesPaid))
+	require.True(t, position.FeesPaid.Equal(bFeesPaid))
+	require.True(t, sPos.FeesPaid.Equal(sFeesPaid))
 	// maker fees swap
-	require.True(t, sPos.TakerFeesPaid.EQ(sMaker))
-	require.True(t, position.MakerFeesReceived.EQ(sMaker))
+	require.True(t, sPos.TakerFeesPaid.Equal(sMaker))
+	require.True(t, position.MakerFeesReceived.Equal(sMaker))
 	// we have an aggressor, so only one side received maker fees
-	require.True(t, sPos.MakerFeesReceived.EQ(bMaker))
-	require.True(t, position.TakerFeesPaid.EQ(bMaker))
+	require.True(t, sPos.MakerFeesReceived.Equal(bMaker))
+	require.True(t, position.TakerFeesPaid.Equal(bMaker))
 }
 
 func TestPnLWithTradeDecimals(t *testing.T) {
