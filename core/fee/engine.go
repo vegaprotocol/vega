@@ -195,7 +195,7 @@ func (e *Engine) CalculateForContinuousMode(
 
 		e.feesStats.RegisterMakerFee(maker, taker, fee.MakerFee)
 
-		totalTradingFees := num.UintZero().AddSum(fee.MakerFee, fee.InfrastructureFee, fee.LiquidityFee)
+		totalTradingFees := num.UintZero().AddSum(fee.MakerFee, fee.InfrastructureFee, fee.LiquidityFee, fee.BuyBackFee, fee.TreasuryFee, fee.HighVolumeMakerFee)
 
 		switch trade.Aggressor {
 		case types.SideBuy:
@@ -451,26 +451,41 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	}, nil
 }
 
-func (e *Engine) GetFeeForPositionResolution(trades []*types.Trade) (events.FeesTransfer, *types.Fee) {
+func (e *Engine) GetFeeForPositionResolution(trades []*types.Trade,
+	referral ReferralDiscountRewardService,
+	volumeDiscount VolumeDiscountService,
+	volumeRebate VolumeRebateService,
+) (events.FeesTransfer, *types.Fee) {
 	if len(trades) == 0 {
 		return nil, nil
 	}
 	var (
 		netFee *types.Fee
-		gt     *types.Transfer
+		gt     []*types.Transfer
 	)
 	transfers := make([]*types.Transfer, 0, len(trades))
 	for _, t := range trades {
 		fees := e.calculateContinuousModeFees(t)
+
+		maker := t.Buyer
+		if t.Buyer == types.NetworkParty {
+			maker = t.Seller
+		}
+		size := num.NewUint(t.Size)
+		// multiply by size
+		tradeValueForFee := size.Mul(t.Price, size).ToDecimal().Div(e.positionFactor)
+		postRewardDiscountFees, _ := e.applyDiscountsAndRewards(types.NetworkParty, maker, tradeValueForFee, fees, referral, volumeDiscount, volumeRebate)
+		e.feesStats.RegisterMakerFee(maker, types.NetworkParty, postRewardDiscountFees.MakerFee)
+
 		goodParty := t.Buyer
-		t.SellerFee = fees
+		t.SellerFee = postRewardDiscountFees
 		if t.Buyer == types.NetworkParty {
 			goodParty = t.Seller
 			t.SellerFee = types.NewFee()
-			t.BuyerFee = fees
+			t.BuyerFee = postRewardDiscountFees
 		}
-		netFee, gt = e.getNetworkFeeWithMakerTransfer(fees, netFee, goodParty)
-		transfers = append(transfers, gt)
+		netFee, gt = e.getNetworkFeeWithMakerTransfer(postRewardDiscountFees, netFee, goodParty)
+		transfers = append(transfers, gt...)
 	}
 	netTf, total := e.getNetworkFeeTransfers(netFee)
 	// calculate the
@@ -549,29 +564,44 @@ func (e *Engine) buildLiquidityFeesTransfer(
 	return ft
 }
 
-func (e *Engine) getNetworkFeeWithMakerTransfer(fees *types.Fee, current *types.Fee, goodParty string) (*types.Fee, *types.Transfer) {
-	transfer := &types.Transfer{
+func (e *Engine) getNetworkFeeWithMakerTransfer(fees *types.Fee, current *types.Fee, goodParty string) (*types.Fee, []*types.Transfer) {
+	transfers := []*types.Transfer{}
+	transfers = append(transfers, &types.Transfer{
 		Owner: goodParty,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
-			Amount: fees.MakerFee,
+			Amount: fees.MakerFee.Clone(),
 		},
 		MinAmount: num.UintZero(),
 		Type:      types.TransferTypeMakerFeeReceive,
+	})
+	if !fees.HighVolumeMakerFee.IsZero() {
+		transfers = append(transfers, &types.Transfer{
+			Owner: goodParty,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: fees.HighVolumeMakerFee,
+			},
+			MinAmount: num.UintZero(),
+			Type:      types.TransferTypeHighMakerRebateReceive,
+		})
 	}
+
 	if current == nil {
-		return fees.Clone(), transfer
+		return fees.Clone(), transfers
 	}
 	current.MakerFee.AddSum(fees.MakerFee)
 	current.LiquidityFee.AddSum(fees.LiquidityFee)
 	current.InfrastructureFee.AddSum(fees.InfrastructureFee)
 	current.BuyBackFee.AddSum(fees.BuyBackFee)
 	current.TreasuryFee.AddSum(fees.TreasuryFee)
-	return current, transfer
+	current.HighVolumeMakerFee.AddSum(fees.HighVolumeMakerFee)
+
+	return current, transfers
 }
 
 func (e *Engine) getNetworkFeeTransfers(fees *types.Fee) ([]*types.Transfer, *num.Uint) {
-	return []*types.Transfer{
+	transfers := []*types.Transfer{
 		{
 			Owner: types.NetworkParty,
 			Amount: &types.FinancialAmount{
@@ -617,7 +647,20 @@ func (e *Engine) getNetworkFeeTransfers(fees *types.Fee) ([]*types.Transfer, *nu
 			MinAmount: num.UintZero(),
 			Type:      types.TransferTypeTreasuryPay,
 		},
-	}, num.Sum(fees.MakerFee, fees.InfrastructureFee, fees.LiquidityFee)
+	}
+	if !fees.HighVolumeMakerFee.IsZero() {
+		transfers = append(transfers, &types.Transfer{
+			Owner: types.NetworkParty,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: fees.HighVolumeMakerFee.Clone(),
+			},
+			MinAmount: num.UintZero(),
+			Type:      types.TransferTypeHighMakerRebatePay,
+		})
+	}
+
+	return transfers, num.Sum(fees.MakerFee, fees.InfrastructureFee, fees.LiquidityFee, fees.BuyBackFee, fees.HighVolumeMakerFee)
 }
 
 func (e *Engine) applyDiscountsAndRewards(taker string, maker string, tradeValueForFeePurposes num.Decimal, fees *types.Fee, referral ReferralDiscountRewardService, volumeDiscount VolumeDiscountService, volumeRebate VolumeRebateService) (*types.Fee, *types.ReferrerReward) {
