@@ -93,9 +93,21 @@ func (sm *shapeMaker) makeBoundaryOrder(st, nd *num.Uint) *types.Order {
 		cu = sm.pool.upper
 	}
 
+	// if one of the boundaries it equal to the fair-price then the equivalent position
+	// if the AMM's current position and checking removes the risk of precision loss
+	stPosition := sm.pos
+	if st.NEQ(sm.fairPrice) {
+		stPosition = cu.positionAtPrice(sm.pool.sqrt, st)
+	}
+
+	ndPosition := sm.pos
+	if nd.NEQ(sm.fairPrice) {
+		ndPosition = cu.positionAtPrice(sm.pool.sqrt, nd)
+	}
+
 	volume := num.DeltaV(
-		cu.positionAtPrice(sm.pool.sqrt, st),
-		cu.positionAtPrice(sm.pool.sqrt, nd),
+		stPosition,
+		ndPosition,
 	)
 
 	if st.GTE(sm.fairPrice) {
@@ -321,13 +333,15 @@ func (sm *shapeMaker) adjustRegion() bool {
 		return false
 	}
 
-	if sm.from.EQ(sm.to) && sm.from.EQ(sm.fairPrice) {
-		return false
-	}
-
 	// cap the range to the pool's bounds, there will be no orders outside of this
 	from := num.Max(sm.from, lower)
 	to := num.Min(sm.to, upper)
+
+	// expansion is a point region *at* fair-price, there are no orders
+	if from.EQ(to) && from.EQ(sm.fairPrice) {
+		return false
+	}
+
 	switch {
 	case sm.from.GT(sm.fairPrice):
 		// if we are expanding entirely in the sell range to calculate the order at price `from`

@@ -347,8 +347,18 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	vol := uint64(0)
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		fp := pool.BestPrice(nil)
-		volume := pool.TradableVolumeInRange(side, fp, price)
+		best := pool.BestPrice(&types.Order{Price: price, Side: side})
+
+		// make sure price is in tradable range
+		if side == types.SideBuy && best.GT(price) {
+			continue
+		}
+
+		if side == types.SideSell && best.LT(price) {
+			continue
+		}
+
+		volume := pool.TradableVolumeForPrice(side, price)
 		vol += volume
 	}
 	return vol
@@ -491,6 +501,23 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 		}
 	}
 
+	if inner == nil {
+		// if inner is given as nil it means the matching engine is trading up to its first price level
+		// and so has no lower bound on the range. So we'll calculate one using best price of all pools
+		// note that if the incoming order is a buy the price range we need to evaluate is from
+		// fair-price -> best-ask -> outer, so we need to step one back. But then if we use fair-price exactly we
+		// risk hitting numerical problems and given this is just to exclude AMM's completely out of range we
+		// can be a bit looser and so step back again so that we evaluate from best-buy -> best-ask -> outer.
+		buy, _, ask, _ := e.BestPricesAndVolumes()
+		two := num.UintZero().AddSum(e.oneTick, e.oneTick)
+		if agg.Side == types.SideBuy && ask != nil {
+			inner = num.UintZero().Sub(ask, two)
+		}
+		if agg.Side == types.SideSell && buy != nil {
+			inner = num.UintZero().Add(buy, two)
+		}
+	}
+
 	// switch so that inner < outer to make it easier to reason with
 	if agg.Side == types.SideSell {
 		inner, outer = outer, inner
@@ -622,45 +649,15 @@ func (e *Engine) Create(
 	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, V1, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonPartyAlreadyOwnsAPool,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, ErrPartyAlreadyOwnAPool(e.marketID)
 	}
 
 	if err := e.ensureCommitmentAmount(ctx, submit.Party, subAccount, submit.CommitmentAmount); err != nil {
-		reason := types.AMMStatusReasonCannotFillCommitment
-		if err == ErrCommitmentTooLow {
-			reason = types.AMMStatusReasonCommitmentTooLow
-		}
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, reason,
-				submit.ProposedFee, nil, nil,
-			),
-		)
 		return nil, err
 	}
 
 	_, _, err := e.collateral.CreatePartyAMMsSubAccounts(ctx, submit.Party, subAccount, e.assetID, submit.MarketID)
 	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonUnspecified,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, err
 	}
 
@@ -681,15 +678,6 @@ func (e *Engine) Create(
 		e.maxCalculationLevels,
 	)
 	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonCommitmentTooLow,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, err
 	}
 

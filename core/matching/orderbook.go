@@ -491,16 +491,12 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	var (
 		uncrossOrders  []*types.Order
 		uncrossingSide *OrderBookSide
-		uncrossBound   *num.Uint
 	)
 
-	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
 	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
-		uncrossBound = min
 	} else {
 		uncrossingSide = b.sell
-		uncrossBound = max
 	}
 
 	// extract uncrossing orders from all AMMs
@@ -513,7 +509,7 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, false)...)
 	opSide := b.getOppositeSide(uncrossSide)
 	output := make([]*types.Trade, 0, len(uncrossOrders))
-	trades, err := opSide.fakeUncrossAuction(uncrossOrders, uncrossBound)
+	trades, err := opSide.fakeUncrossAuction(uncrossOrders)
 	if err != nil {
 		return nil, err
 	}
@@ -558,18 +554,12 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		return nil, nil
 	}
 
-	var (
-		uncrossingSide *OrderBookSide
-		uncrossBound   *num.Uint
-	)
+	var uncrossingSide *OrderBookSide
 
-	min, max := b.indicativePriceAndVolume.GetCrossedRegion()
 	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
-		uncrossBound = min
 	} else {
 		uncrossingSide = b.sell
-		uncrossBound = max
 	}
 
 	// extract uncrossing orders from all AMMs
@@ -580,7 +570,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 
 	// Remove all the orders from that side of the book up to the given volume
 	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, true)...)
-	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone(), uncrossBound)
+	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone())
 }
 
 // Takes extracted order from a side of the book, and uncross them
@@ -588,7 +578,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 func (b *OrderBook) uncrossBookSide(
 	uncrossOrders []*types.Order,
 	opSide *OrderBookSide,
-	price, uncrossBound *num.Uint,
+	price *num.Uint,
 ) ([]*types.OrderConfirmation, error) {
 	var (
 		uncrossedOrder *types.OrderConfirmation
@@ -614,7 +604,7 @@ func (b *OrderBook) uncrossBookSide(
 		}
 
 		// try to get the market price value from the order
-		trades, affectedOrders, _, err := opSide.uncross(order, false, uncrossBound)
+		trades, affectedOrders, _, err := opSide.uncross(order, false)
 		if err != nil {
 			return nil, err
 		}
@@ -911,8 +901,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	idealPrice := b.theoreticalBestTradePrice(order)
-	trades, err := b.getOppositeSide(order.Side).fakeUncross(order, true, idealPrice)
+	trades, err := b.getOppositeSide(order.Side).fakeUncross(order, true)
 	// it's fine for the error to be a wash trade here,
 	// it's just be stopped when really uncrossing.
 	if err != nil && err != ErrWashTrade {
@@ -961,25 +950,6 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 	b.add(order)
 }
 
-// theoreticalBestTradePrice returns the best possible price the incoming order could trade
-// as if the spread were as small as possible. This will be used to construct the first
-// interval to query offbook orders matching with the other side.
-func (b *OrderBook) theoreticalBestTradePrice(order *types.Order) *num.Uint {
-	bp, _, err := b.getSide(order.Side).BestPriceAndVolume()
-	if err != nil {
-		return nil
-	}
-
-	switch order.Side {
-	case types.SideBuy:
-		return bp.Add(bp, num.UintOne())
-	case types.SideSell:
-		return bp.Sub(bp, num.UintOne())
-	default:
-		panic("unexpected order side")
-	}
-}
-
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
@@ -1006,9 +976,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		// uncross with opposite
 
 		defer b.buy.uncrossFinished()
-
-		idealPrice := b.theoreticalBestTradePrice(order)
-		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order, true, idealPrice)
+		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order, true)
 		if !lastTradedPrice.IsZero() {
 			b.lastTradedPrice = lastTradedPrice
 		}

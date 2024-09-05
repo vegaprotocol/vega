@@ -316,6 +316,21 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 	}
 }
 
+// checkPosition will return false if its position exists outside of the curve boundaries and so the AMM
+// is invalid.
+func (p *Pool) checkPosition() bool {
+	pos := p.getPosition()
+	if pos > p.lower.pv.IntPart() {
+		return false
+	}
+
+	if -pos > p.upper.pv.IntPart() {
+		return false
+	}
+
+	return true
+}
+
 // Update returns a copy of the give pool but with its curves and parameters update as specified by `amend`.
 func (p *Pool) Update(
 	amend *types.AmendAMM,
@@ -372,6 +387,11 @@ func (p *Pool) Update(
 	if err := updated.setCurves(rf, sf, linearSlippage); err != nil {
 		return nil, err
 	}
+
+	if !updated.checkPosition() {
+		return nil, errors.New("AMM's current position is outside of amended bounds - reduce position first")
+	}
+
 	return updated, nil
 }
 
@@ -629,11 +649,17 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 
 	if side == types.SideSell {
 		// want all buy volume so everything below fair price, where the AMM is long
+		if pos > stP {
+			return 0
+		}
 		ndP = num.MaxV(pos, ndP)
 	}
 
 	if side == types.SideBuy {
 		// want all sell volume so everything above fair price, where the AMM is short
+		if pos < ndP {
+			return 0
+		}
 		stP = num.MinV(pos, stP)
 	}
 
@@ -653,6 +679,17 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 		ndP = num.MinV(0, ndP)
 	}
 	return num.MinV(uint64(stP-ndP), uint64(num.AbsV(pos)))
+}
+
+// TrableVolumeForPrice returns the volume available between the AMM's fair-price and the given
+// price and side of an incoming order. It is a special case of TradableVolumeInRange with
+// the benefit of accurately using the AMM's position instead of having to calculate the hop
+// from fair-price -> position.
+func (p *Pool) TradableVolumeForPrice(side types.Side, price *num.Uint) uint64 {
+	if side == types.SideSell {
+		return p.TradableVolumeInRange(side, price, nil)
+	}
+	return p.TradableVolumeInRange(side, nil, price)
 }
 
 // getBalance returns the total balance of the pool i.e it's general account + it's margin account.

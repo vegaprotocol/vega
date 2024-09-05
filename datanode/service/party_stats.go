@@ -52,6 +52,8 @@ type VRSStore interface {
 // MktStore is a duplicate interface at this point, but again: custom method fetching list of markets would be handy.
 type MktStore interface {
 	GetByIDs(ctx context.Context, marketID []string) ([]entities.Market, error)
+	// NB: although it returns Market entity, all it has is id and fees. Trying to access anything else on it will get NPE.
+	GetAllFees(ctx context.Context) ([]entities.Market, error)
 }
 
 type VRStore interface {
@@ -109,12 +111,14 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 		return nil, err
 	}
 	// then get the markets:
-	mkts, err := s.mkt.GetByIDs(ctx, markets)
+	var mkts []entities.Market
+	if len(markets) > 0 {
+		mkts, err = s.mkt.GetByIDs(ctx, markets)
+	} else {
+		mkts, err = s.mkt.GetAllFees(ctx)
+	}
 	if err != nil {
 		return nil, err
-	}
-	if len(mkts) == 0 {
-		return nil, fmt.Errorf("no valid markets provided")
 	}
 	lastE := uint64(epoch.ID - 1)
 
@@ -257,10 +261,12 @@ func (s *PSvc) getReferralTier(ctx context.Context, stats entities.FlattenReferr
 	if err != nil {
 		return nil, err
 	}
-	for _, bt := range current.BenefitTiers {
+	for i, bt := range current.BenefitTiers {
 		if bt.ReferralRewardFactors.InfrastructureRewardFactor == stats.RewardFactors.InfrastructureRewardFactor &&
 			bt.ReferralRewardFactors.LiquidityRewardFactor == stats.RewardFactors.LiquidityRewardFactor &&
 			bt.ReferralRewardFactors.MakerRewardFactor == stats.RewardFactors.MakerRewardFactor {
+			tierNumber := uint64(i)
+			bt.TierNumber = &tierNumber
 			return bt, nil
 		}
 	}
@@ -279,10 +285,11 @@ func (s *PSvc) getVolumeDiscountTier(ctx context.Context, stats entities.Flatten
 	if err != nil {
 		return nil, err
 	}
-	for i := len(current.BenefitTiers) - 1; i >= 0; i-- {
+	for i := uint64(len(current.BenefitTiers)) - 1; i >= uint64(0); i-- {
 		dt := current.BenefitTiers[i]
 		minV, _ := num.DecimalFromString(dt.MinimumRunningNotionalTakerVolume)
 		if vol.GreaterThanOrEqual(minV) {
+			dt.TierNumber = &i
 			return dt, nil
 		}
 	}
@@ -298,10 +305,11 @@ func (s *PSvc) getVolumeRebateTier(ctx context.Context, stats entities.FlattenVo
 	if err != nil {
 		return nil, err
 	}
-	for i := len(current.BenefitTiers) - 1; i >= 0; i-- {
+	for i := uint64(len(current.BenefitTiers)) - 1; i >= uint64(0); i-- {
 		bt := current.BenefitTiers[i]
 		minF, _ := num.DecimalFromString(bt.MinimumPartyMakerVolumeFraction)
 		if vf.GreaterThanOrEqual(minF) {
+			bt.TierNumber = &i
 			return bt, nil
 		}
 	}

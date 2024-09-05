@@ -27,23 +27,23 @@ type AMMPools struct {
 	*sqlstore.AMMPools
 }
 
-func (a *AMMPools) ListByMarket(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	return a.AMMPools.ListByMarket(ctx, entities.MarketID(marketID), pagination)
+func (a *AMMPools) ListByMarket(ctx context.Context, marketID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	return a.AMMPools.ListByMarket(ctx, entities.MarketID(marketID), liveOnly, pagination)
 }
 
-func (a *AMMPools) ListByParty(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	return a.AMMPools.ListByParty(ctx, entities.PartyID(partyID), pagination)
+func (a *AMMPools) ListByParty(ctx context.Context, partyID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	return a.AMMPools.ListByParty(ctx, entities.PartyID(partyID), liveOnly, pagination)
 }
 
-func (a *AMMPools) ListByPool(ctx context.Context, poolID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	return a.AMMPools.ListByPool(ctx, entities.AMMPoolID(poolID), pagination)
+func (a *AMMPools) ListByPool(ctx context.Context, poolID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	return a.AMMPools.ListByPool(ctx, entities.AMMPoolID(poolID), liveOnly, pagination)
 }
 
-func (a *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID string, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
-	return a.AMMPools.ListBySubAccount(ctx, entities.PartyID(ammPartyID), pagination)
+func (a *AMMPools) ListBySubAccount(ctx context.Context, ammPartyID string, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+	return a.AMMPools.ListBySubAccount(ctx, entities.PartyID(ammPartyID), liveOnly, pagination)
 }
 
-func (a *AMMPools) ListByPartyMarketStatus(ctx context.Context, partyID, marketID *string, status *entities.AMMStatus, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
+func (a *AMMPools) ListByPartyMarketStatus(ctx context.Context, partyID, marketID *string, status *entities.AMMStatus, liveOnly bool, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
 	var (
 		party  *entities.PartyID
 		market *entities.MarketID
@@ -54,5 +54,5 @@ func (a *AMMPools) ListByPartyMarketStatus(ctx context.Context, partyID, marketI
 	if marketID != nil {
 		market = ptr.From(entities.MarketID(*marketID))
 	}
-	return a.AMMPools.ListByPartyMarketStatus(ctx, party, market, status, pagination)
+	return a.AMMPools.ListByPartyMarketStatus(ctx, party, market, status, liveOnly, pagination)
 }

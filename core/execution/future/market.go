@@ -1442,6 +1442,20 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 
 	// we're converting both offset and tick size to asset decimals so we can adjust the price (in asset) directly
 	priceInMarket, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+
+	// if the pegged offset is zero and the reference price is non-tick size (from an AMM) then we have to move it so it
+	// is otherwise the pegged will cross.
+	if order.PeggedOrder.Offset.IsZero() {
+		if mod := num.UintZero().Mod(priceInMarket, m.mkt.TickSize); !mod.IsZero() {
+			if order.Side == types.SideBuy {
+				priceInMarket.Sub(priceInMarket, mod)
+			} else {
+				d := num.UintOne().Sub(m.mkt.TickSize, mod)
+				priceInMarket.AddSum(d)
+			}
+		}
+	}
+
 	if order.Side == types.SideSell {
 		priceInMarket.AddSum(order.PeggedOrder.Offset)
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
@@ -5364,7 +5378,7 @@ func (m *Market) getRebasingOrder(
 Walk:
 	for {
 		// get the tradable volume necessary to move the AMM's position from fair-price -> price
-		required := pool.TradableVolumeInRange(types.OtherSide(side), fairPrice, price)
+		required := pool.TradableVolumeForPrice(types.OtherSide(side), price)
 
 		// AMM is close enough to the target that is has no volume between, so we do not need to rebase
 		if required == 0 {

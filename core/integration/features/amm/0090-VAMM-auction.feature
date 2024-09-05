@@ -505,3 +505,47 @@ Feature: vAMM rebasing when created or amended
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price |
       | 93         | TRADING_MODE_CONTINUOUS  | 92             | 94               |
+
+
+  @VAMM
+  Scenario: AMM crossed with limit order, AMM pushed to boundary
+
+
+    And the parties place the following orders:
+        | party  | market id | side  | volume | price | resulting trades | type       | tif     | reference |
+        | lp1    | ETH/MAR22 | buy   | 423    | 200   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
+      
+    Then the parties submit the following AMM:
+      | party | market id | amount | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.05     | 100  | 90          | 110         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status        | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 90          | 110         |
+
+
+    # now place some pegged orders which will cause a panic if the uncrossing is crossed
+    When the parties place the following pegged orders:
+      | party | market id | side | volume | pegged reference | offset |
+      | lp3   | ETH/MAR22 | buy  | 100    | BID              | 1      |
+      | lp3   | ETH/MAR22 | sell | 100    | ASK              | 1      |
+
+    And set the following AMM sub account aliases:
+      | party | market id | alias    |
+      | vamm1 | ETH/MAR22 | vamm1-id |
+
+
+    And the market data for the market "ETH/MAR22" should be:
+      | trading mode                 | indicative price | indicative volume |
+      | TRADING_MODE_OPENING_AUCTION | 155              | 423               |
+
+
+    When the opening auction period ends for market "ETH/MAR22"
+
+    # the volume of this trade should be the entire volume of the AMM's sell curve
+    Then the following trades should be executed:
+      | buyer     | price | size  | seller     | is amm |
+      | lp1       | 155   | 423   | vamm1-id  | true   |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode             | best bid price | best offer price |
+      | 155        | TRADING_MODE_CONTINUOUS  | 109            | 0                |

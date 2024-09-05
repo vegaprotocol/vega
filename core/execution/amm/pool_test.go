@@ -34,6 +34,8 @@ import (
 
 func TestAMMPool(t *testing.T) {
 	t.Run("test volume between prices", testTradeableVolumeInRange)
+	t.Run("test volume between prices when AMM closing", testTradeableVolumeInRangeClosing)
+	t.Run("test tradable volume at price", testTradableVolumeAtPrice)
 	t.Run("test best price", testBestPrice)
 	t.Run("test pool logic with position factor", testPoolPositionFactor)
 	t.Run("test one sided pool", testOneSidedPool)
@@ -112,6 +114,22 @@ func testTradeableVolumeInRange(t *testing.T) {
 			side:           types.SideSell,
 			expectedVolume: 1052,
 			position:       -350,
+		},
+		{
+			name:           "AMM is long and price range is fully in short section",
+			price1:         num.NewUint(1900),
+			price2:         num.NewUint(2200),
+			side:           types.SideSell,
+			expectedVolume: 0,
+			position:       700,
+		},
+		{
+			name:           "AMM is short and price range is fully in long section",
+			price1:         num.NewUint(1900),
+			price2:         num.NewUint(2100),
+			side:           types.SideBuy,
+			expectedVolume: 0,
+			position:       -700,
 		},
 	}
 
@@ -234,6 +252,64 @@ func testTradeableVolumeInRangeClosing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ensurePositionN(t, p.pos, tt.position, num.UintZero(), tt.nposcalls)
 			volume := p.pool.TradableVolumeInRange(tt.side, tt.price1, tt.price2)
+			assert.Equal(t, int(tt.expectedVolume), int(volume))
+		})
+	}
+}
+
+func testTradableVolumeAtPrice(t *testing.T) {
+	p := newTestPool(t)
+	defer p.ctrl.Finish()
+
+	tests := []struct {
+		name           string
+		price          *num.Uint
+		position       int64
+		side           types.Side
+		expectedVolume uint64
+	}{
+		{
+			name:           "full volume upper curve",
+			price:          num.NewUint(2200),
+			side:           types.SideBuy,
+			expectedVolume: 635,
+		},
+		{
+			name:           "full volume lower curve",
+			price:          num.NewUint(1800),
+			side:           types.SideSell,
+			expectedVolume: 702,
+		},
+		{
+			name:           "no volume upper, wrong side",
+			price:          num.NewUint(2200),
+			side:           types.SideSell,
+			expectedVolume: 0,
+		},
+		{
+			name:           "no volume lower, wrong side",
+			price:          num.NewUint(1800),
+			side:           types.SideBuy,
+			expectedVolume: 0,
+		},
+		{
+			name:           "no volume at fair-price buy",
+			price:          num.NewUint(2000),
+			side:           types.SideBuy,
+			expectedVolume: 0,
+		},
+		{
+			name:           "no volume at fair-price sell",
+			price:          num.NewUint(2000),
+			side:           types.SideSell,
+			expectedVolume: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ensurePositionN(t, p.pos, tt.position, num.UintZero(), 1)
+			volume := p.pool.TradableVolumeForPrice(tt.side, tt.price)
 			assert.Equal(t, int(tt.expectedVolume), int(volume))
 		})
 	}
@@ -471,6 +547,10 @@ func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
 	pos := mocks.NewMockPosition(ctrl)
+
+	pos.EXPECT().GetPositionsByParty(gomock.Any()).AnyTimes().Return(
+		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: nil}},
+	)
 
 	sqrter := &Sqrter{cache: map[string]num.Decimal{}}
 
