@@ -877,7 +877,7 @@ func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, asse
 }
 
 func (r *myQueryResolver) Amms(ctx context.Context, partyID *string, marketID *string, id *string,
-	ammPartyID *string, status *v1.AMM_Status, pagination *v2.Pagination,
+	ammPartyID *string, status *v1.AMM_Status, liveOnly *bool, pagination *v2.Pagination,
 ) (*v2.AMMConnection, error) {
 	req := &v2.ListAMMsRequest{
 		Id:         id,

@@ -649,45 +649,15 @@ func (e *Engine) Create(
 	subAccount := DeriveAMMParty(submit.Party, submit.MarketID, V1, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonPartyAlreadyOwnsAPool,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, ErrPartyAlreadyOwnAPool(e.marketID)
 	}
 
 	if err := e.ensureCommitmentAmount(ctx, submit.Party, subAccount, submit.CommitmentAmount); err != nil {
-		reason := types.AMMStatusReasonCannotFillCommitment
-		if err == ErrCommitmentTooLow {
-			reason = types.AMMStatusReasonCommitmentTooLow
-		}
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, reason,
-				submit.ProposedFee, nil, nil,
-			),
-		)
 		return nil, err
 	}
 
 	_, _, err := e.collateral.CreatePartyAMMsSubAccounts(ctx, submit.Party, subAccount, e.assetID, submit.MarketID)
 	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonUnspecified,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, err
 	}
 
@@ -708,15 +678,6 @@ func (e *Engine) Create(
 		e.maxCalculationLevels,
 	)
 	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.marketID, subAccount, poolID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMStatusReasonCommitmentTooLow,
-				submit.ProposedFee, nil, nil,
-			),
-		)
-
 		return nil, err
 	}
 
