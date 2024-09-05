@@ -100,6 +100,7 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		}
 
 		amount, err := e.processGovernanceTransfer(ctx, gTransfer)
+		amount = e.scaleAmountByTargetNotional(gTransfer.Config.RecurringTransferConfig.DispatchStrategy, amount)
 		e.log.Info("processed transfer", logging.String("amount", amount.String()))
 
 		if err != nil {
