@@ -52,6 +52,8 @@ type VRSStore interface {
 // MktStore is a duplicate interface at this point, but again: custom method fetching list of markets would be handy.
 type MktStore interface {
 	GetByIDs(ctx context.Context, marketID []string) ([]entities.Market, error)
+	// NB: although it returns Market entity, all it has is id and fees. Trying to access anything else on it will get NPE.
+	GetAllFees(ctx context.Context) ([]entities.Market, error)
 }
 
 type VRStore interface {
@@ -109,12 +111,14 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 		return nil, err
 	}
 	// then get the markets:
-	mkts, err := s.mkt.GetByIDs(ctx, markets)
+	var mkts []entities.Market
+	if len(markets) > 0 {
+		mkts, err = s.mkt.GetByIDs(ctx, markets)
+	} else {
+		mkts, err = s.mkt.GetAllFees(ctx)
+	}
 	if err != nil {
 		return nil, err
-	}
-	if len(mkts) == 0 {
-		return nil, fmt.Errorf("no valid markets provided")
 	}
 	lastE := uint64(epoch.ID - 1)
 
