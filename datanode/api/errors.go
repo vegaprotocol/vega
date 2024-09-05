@@ -343,7 +343,8 @@ var (
 
 	ErrDateRangeValidationFailed = newInvalidArgumentError("invalid date range")
 
-	ErrListAMMPools = errors.New("failed to list AMM pools")
+	ErrListAMMPools                     = errors.New("failed to list AMM pools")
+	ErrCannotFilterByStatusWhenLiveOnly = newInvalidArgumentError("status filter and live-only cannot both be set")
 
 	// Amm bounds estimates.
 	ErrInvalidBasePrice            = newInvalidArgumentError("invalid base price")

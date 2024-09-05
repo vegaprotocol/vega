@@ -1579,6 +1579,22 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
 		req.Filter.PartyIds = partyIDs
+
+		// check for derived parties
+		if ptr.UnBox(req.Filter.IncludeDerivedParties) {
+			if len(partyIDs) == 0 {
+				return nil, formatE(newInvalidArgumentError("includeDerivedParties requires a partyId"))
+			}
+
+			derivedParties, err := t.AMMPoolService.GetSubKeysForParties(ctx, partyIDs, marketIDs)
+			if err != nil {
+				return nil, formatE(ErrPositionServiceGetByParty, err)
+			}
+			slices.Sort(derivedParties)
+			partyIDs = append(partyIDs, derivedParties...)
+		}
+
+		req.Filter.PartyIds = partyIDs
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -5854,16 +5870,21 @@ func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsReq
 		pageInfo entities.PageInfo
 	)
 
+	liveOnly := ptr.UnBox(req.LiveOnly)
+	if liveOnly && req.Status != nil {
+		return nil, formatE(ErrCannotFilterByStatusWhenLiveOnly)
+	}
+
 	if req.AmmPartyId != nil {
-		pools, pageInfo, err = t.AMMPoolService.ListBySubAccount(ctx, *req.AmmPartyId, pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListBySubAccount(ctx, *req.AmmPartyId, liveOnly, pagination)
 	} else if req.Id != nil {
-		pools, pageInfo, err = t.AMMPoolService.ListByPool(ctx, *req.Id, pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByPool(ctx, *req.Id, liveOnly, pagination)
 	} else if req.PartyId != nil && req.MarketId == nil && req.Status == nil {
 		// keeping the cases where one parameter is set to change nothing about the behaviour, except for the combining of filters
-		pools, pageInfo, err = t.AMMPoolService.ListByParty(ctx, *req.PartyId, pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByParty(ctx, *req.PartyId, liveOnly, pagination)
 	} else if req.MarketId != nil && req.PartyId == nil && req.Status == nil {
 		// same: keeping this here for consistency.
-		pools, pageInfo, err = t.AMMPoolService.ListByMarket(ctx, *req.MarketId, pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByMarket(ctx, *req.MarketId, liveOnly, pagination)
 	} else if req.Status != nil && req.PartyId == nil && req.MarketId == nil {
 		// again, this should be handled by the combined filter method
 		pools, pageInfo, err = t.AMMPoolService.ListByStatus(ctx, entities.AMMStatus(*req.Status), pagination)
@@ -5872,9 +5893,9 @@ func (t *TradingDataServiceV2) ListAMMs(ctx context.Context, req *v2.ListAMMsReq
 		if req.Status != nil {
 			status = ptr.From(entities.AMMStatus(*req.Status))
 		}
-		pools, pageInfo, err = t.AMMPoolService.ListByPartyMarketStatus(ctx, req.PartyId, req.MarketId, status, pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListByPartyMarketStatus(ctx, req.PartyId, req.MarketId, status, liveOnly, pagination)
 	} else {
-		pools, pageInfo, err = t.AMMPoolService.ListAll(ctx, pagination)
+		pools, pageInfo, err = t.AMMPoolService.ListAll(ctx, liveOnly, pagination)
 	}
 
 	if err != nil {

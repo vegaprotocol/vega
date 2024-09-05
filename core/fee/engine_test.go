@@ -446,8 +446,8 @@ func testCalcContinuousTradingAndCheckAmountsExtended(t *testing.T) {
 		TotalFeesPaidAndReceived: []*eventspb.PartyAmount{
 			{
 				Party:         "party1",
-				Amount:        "875",
-				QuantumAmount: "875",
+				Amount:        "3375",
+				QuantumAmount: "3375",
 			},
 			{
 				Party:         "party2",
@@ -744,8 +744,8 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountExtended(t *testing.T) 
 		TotalFeesPaidAndReceived: []*eventspb.PartyAmount{
 			{
 				Party:         "party1",
-				Amount:        "443",
-				QuantumAmount: "443",
+				Amount:        "2943",
+				QuantumAmount: "2943",
 			},
 			{
 				Party:         "party2",
@@ -1204,7 +1204,7 @@ func testCalcContinuousTradingExtended(t *testing.T) {
 	feeAmounts := ft.TotalFeesAmountPerParty()
 	party1Amount, ok := feeAmounts["party1"]
 	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(43928), party1Amount)
+	assert.Equal(t, num.NewUint(45221), party1Amount)
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
@@ -1670,12 +1670,17 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 func testCloseoutFees(t *testing.T) {
 	eng := getTestFee(t)
 	ctrl := gomock.NewController(t)
+	referralDiscountService := mocks.NewMockReferralDiscountRewardService(ctrl)
+	referralDiscountService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	volumeRebateService := mocks.NewMockVolumeRebateService(ctrl)
 	discountRewardService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().RewardsFactorsMultiplierAppliedForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	referralDiscountService.EXPECT().ReferralDiscountFactorsForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
+	volumeRebateService.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	trades := []*types.Trade{
 		{
 			Aggressor: types.SideSell,
@@ -1707,10 +1712,10 @@ func testCloseoutFees(t *testing.T) {
 		},
 	}
 
-	ft, fee := eng.GetFeeForPositionResolution(trades)
+	ft, fee := eng.GetFeeForPositionResolution(trades, referralDiscountService, volumeDiscountService, volumeRebateService)
 	assert.NotNil(t, fee)
 	allTransfers := ft.Transfers()
-	// first we have the network -> pay transfers, then 1 transfer per good party
+	// first we have the network -> pay transfers , then 1 transfer per good party
 	// two additional transfers for the buy back and treasury fees
 	assert.Equal(t, len(trades), len(allTransfers)-5)
 	goodPartyTransfers := allTransfers[5:]
