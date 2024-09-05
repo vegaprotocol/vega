@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -165,12 +166,12 @@ func (p *AMMPools) GetSubKeysForParties(ctx context.Context, partyIDs []string, 
 	}
 	parties := strings.Builder{}
 	args := make([]any, 0, len(partyIDs)+len(marketIDs))
-	query := `SELECT amm_party_id FROM amms WHERE "`
+	query := `SELECT amm_party_id FROM amms WHERE `
 	for i, party := range partyIDs {
 		if i > 0 {
 			parties.WriteString(",")
 		}
-		parties.WriteString(nextBindVar(&args, party))
+		parties.WriteString(nextBindVar(&args, ptr.From(entities.PartyID(party))))
 	}
 	query = fmt.Sprintf(`%s party_id IN (%s)`, query, parties.String())
 	if len(marketIDs) > 0 {
@@ -179,16 +180,22 @@ func (p *AMMPools) GetSubKeysForParties(ctx context.Context, partyIDs []string, 
 			if i > 0 {
 				markets.WriteString(",")
 			}
-			markets.WriteString(nextBindVar(&args, mID))
+
+			markets.WriteString(nextBindVar(&args, ptr.From(entities.MarketID(mID))))
 		}
-		query = fmt.Sprintf("%s AND market_id IN(%s)", query, markets.String())
+		query = fmt.Sprintf("%s AND market_id IN (%s)", query, markets.String())
 	}
 
-	subKeys := []string{}
+	subKeys := []entities.PartyID{}
 	if err := pgxscan.Select(ctx, p.ConnectionSource, &subKeys, query, args...); err != nil {
 		return nil, err
 	}
-	return subKeys, nil
+
+	res := make([]string, 0, len(subKeys))
+	for _, k := range subKeys {
+		res = append(res, k.String())
+	}
+	return res, nil
 }
 
 func (p *AMMPools) ListByPool(ctx context.Context, poolID entities.AMMPoolID, pagination entities.CursorPagination) ([]entities.AMMPool, entities.PageInfo, error) {
