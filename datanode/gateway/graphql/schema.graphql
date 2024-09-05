@@ -602,6 +602,8 @@ type Query {
     ammPartyId: ID
     "AMM status to filter for. This filter is ignored if any of the other filters are set."
     status: AMMStatus
+    "Restrict AMMs to those that are actively trading. If not set, it is treated as being false."
+    liveOnly: Boolean
     "Optional pagination information"
     pagination: Pagination
   ): AMMConnection!

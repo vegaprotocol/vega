@@ -265,7 +265,7 @@ func TestAMMPools_ListAll(t *testing.T) {
 	t.Run("Should return all pools if no pagination is provided", func(t *testing.T) {
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListAll(ctx, pagination)
+		listedPools, pageInfo, err := ps.ListAll(ctx, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, len(pools), len(listedPools))
 		assert.Equal(t, pools, listedPools)
@@ -280,7 +280,7 @@ func TestAMMPools_ListAll(t *testing.T) {
 	t.Run("Should return the first page of pools", func(t *testing.T) {
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListAll(ctx, pagination)
+		listedPools, pageInfo, err := ps.ListAll(ctx, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, pools[:5], listedPools)
@@ -295,7 +295,7 @@ func TestAMMPools_ListAll(t *testing.T) {
 	t.Run("Should return the last page of pools", func(t *testing.T) {
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListAll(ctx, pagination)
+		listedPools, pageInfo, err := ps.ListAll(ctx, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, pools[len(pools)-5:], listedPools)
@@ -310,7 +310,7 @@ func TestAMMPools_ListAll(t *testing.T) {
 	t.Run("Should return the requested page when paging forward", func(t *testing.T) {
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), ptr.From(pools[20].Cursor().Encode()), nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListAll(ctx, pagination)
+		listedPools, pageInfo, err := ps.ListAll(ctx, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, pools[21:26], listedPools)
@@ -325,7 +325,7 @@ func TestAMMPools_ListAll(t *testing.T) {
 	t.Run("Should return the request page when paging backward", func(t *testing.T) {
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), ptr.From(pools[20].Cursor().Encode()), true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListAll(ctx, pagination)
+		listedPools, pageInfo, err := ps.ListAll(ctx, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, pools[15:20], listedPools)
@@ -364,9 +364,33 @@ func TestAMMPools_ListByMarket(t *testing.T) {
 		}))
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, pagination)
+		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, len(want), len(listedPools))
+		assert.Equal(t, want, listedPools)
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     want[0].Cursor().Encode(),
+			EndCursor:       want[len(want)-1].Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Should return all active pools", func(t *testing.T) {
+		// Randomly pick a market
+		market := markets[r.Intn(n)]
+		want := orderPools(filterPools(pools, func(pool entities.AMMPool) bool {
+			if pool.MarketID != market {
+				return false
+			}
+			return pool.Status == entities.AMMStatusActive || pool.Status == entities.AMMStatusReduceOnly
+		}))
+		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+		require.NoError(t, err)
+		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, true, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, len(want), len(listedPools))
+
 		assert.Equal(t, want, listedPools)
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     false,
@@ -384,7 +408,7 @@ func TestAMMPools_ListByMarket(t *testing.T) {
 		}))
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(3)), nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, pagination)
+		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(listedPools))
 		assert.Equal(t, want[:3], listedPools)
@@ -404,7 +428,7 @@ func TestAMMPools_ListByMarket(t *testing.T) {
 		}))
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(3)), nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, pagination)
+		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(listedPools))
 		assert.Equal(t, want[len(want)-3:], listedPools)
@@ -424,7 +448,7 @@ func TestAMMPools_ListByMarket(t *testing.T) {
 		}))
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(3)), ptr.From(want[0].Cursor().Encode()), nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, pagination)
+		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(listedPools))
 		assert.Equal(t, want[1:4], listedPools)
@@ -444,7 +468,7 @@ func TestAMMPools_ListByMarket(t *testing.T) {
 		}))
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(3)), ptr.From(want[4].Cursor().Encode()), true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, pagination)
+		listedPools, pageInfo, err := ps.ListByMarket(ctx, market, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(listedPools))
 		assert.Equal(t, want[1:4], listedPools)
@@ -473,7 +497,7 @@ func TestAMMPools_ListByParty(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, pagination)
+		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, len(want), len(listedPools))
 		assert.Equal(t, want, listedPools)
@@ -493,7 +517,7 @@ func TestAMMPools_ListByParty(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, pagination)
+		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[:5], listedPools)
@@ -513,7 +537,7 @@ func TestAMMPools_ListByParty(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, pagination)
+		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[len(want)-5:], listedPools)
@@ -533,7 +557,7 @@ func TestAMMPools_ListByParty(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, pagination)
+		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[11:16], listedPools)
@@ -553,7 +577,7 @@ func TestAMMPools_ListByParty(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, pagination)
+		listedPools, pageInfo, err := ps.ListByParty(ctx, party.PartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[5:10], listedPools)
@@ -562,6 +586,38 @@ func TestAMMPools_ListByParty(t *testing.T) {
 			HasPreviousPage: true,
 			StartCursor:     want[5].Cursor().Encode(),
 			EndCursor:       want[9].Cursor().Encode(),
+		}, pageInfo)
+	})
+}
+
+func TestAMMPools_ListByPartyMarketStatus(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	ps, pools, parties, _, _ := setupAMMPoolsTest(ctx, t)
+	src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(src)
+	n := len(parties)
+
+	t.Run("Should list active only", func(t *testing.T) {
+		// Randomly pick a party
+		party := parties[r.Intn(n)]
+		want := filterPools(pools, func(pool entities.AMMPool) bool {
+			if pool.PartyID != party.PartyID {
+				return false
+			}
+			return pool.Status == entities.AMMStatusActive || pool.Status == entities.AMMStatusReduceOnly
+		})
+		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+		require.NoError(t, err)
+		listedPools, pageInfo, err := ps.ListByPartyMarketStatus(ctx, &party.PartyID, nil, nil, true, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, len(want), len(listedPools))
+		assert.Equal(t, want, listedPools)
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     want[0].Cursor().Encode(),
+			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}, pageInfo)
 	})
 }
@@ -581,7 +637,7 @@ func TestAMMPools_ListByPool(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListByPool(ctx, pa, pagination)
+		listedPools, pageInfo, err := ps.ListByPool(ctx, pa, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, len(want), len(listedPools))
 		assert.Equal(t, want, listedPools)
@@ -610,7 +666,7 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, len(want), len(listedPools))
 		assert.Equal(t, want, listedPools)
@@ -630,7 +686,7 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), nil, nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[:5], listedPools)
@@ -650,7 +706,7 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[len(want)-5:], listedPools)
@@ -670,7 +726,7 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), nil, nil, true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[11:16], listedPools)
@@ -690,7 +746,7 @@ func TestAMMPools_ListBySubAccount(t *testing.T) {
 		})
 		pagination, err := entities.NewCursorPagination(nil, nil, ptr.From(int32(5)), ptr.From(want[10].Cursor().Encode()), true)
 		require.NoError(t, err)
-		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, pagination)
+		listedPools, pageInfo, err := ps.ListBySubAccount(ctx, party.AMMPartyID, false, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(listedPools))
 		assert.Equal(t, want[5:10], listedPools)
