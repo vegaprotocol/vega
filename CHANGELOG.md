@@ -12,11 +12,27 @@
 
 ### 🛠 Improvements
 
-- [11644](https://github.com/vegaprotocol/vega/issues/11644) - `liveOnly` flag has been added to the `AMM` API to show only active `AMMs`.
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
 
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+
+## 0.78.2
+
+### 🛠 Improvements
+
+- [11644](https://github.com/vegaprotocol/vega/issues/11644) - `liveOnly` flag has been added to the `AMM` API to show only active `AMMs`.
+
+### 🐛 Fixes
+
+- [11652](https://github.com/vegaprotocol/vega/issues/11652) - Apply fees and discounts on network disposal trades.
+- [11645](https://github.com/vegaprotocol/vega/issues/11645) - Support party stats with no markets to retrieve for all markets.
+- [11655](https://github.com/vegaprotocol/vega/issues/11655) - Liquidity fees paid does not like type derived party flag.
+- [11650](https://github.com/vegaprotocol/vega/issues/11650) - Add include sub accounts flag to `listPositions`.
+- [11641](https://github.com/vegaprotocol/vega/issues/11641) - Panic with pegged orders.
+- [11646](https://github.com/vegaprotocol/vega/issues/11646) - Add tier numbers to API.
 
 
 ## 0.78.1
@@ -27,8 +43,6 @@
 - [11583](https://github.com/vegaprotocol/vega/issues/11583) - Rough bound on price interval when matching with `AMMs` is now looser and calculated in the `AMM` engine.
 - [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
 - [11619](https://github.com/vegaprotocol/vega/issues/11619) - Fix `EstimatePositions` API for capped futures.
-- [11645](https://github.com/vegaprotocol/vega/issues/11645) - Support party stats with no markets to retrieve for all markets. 
-
 
 ## 0.78.0
 
@@ -54,6 +68,7 @@
 - [11612](https://github.com/vegaprotocol/vega/issues/11612) - Reward scaling support.
 -[11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
 - [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
+- [11512](https://github.com/vegaprotocol/vega/issues/11512) - Add loss socialisation amounts to funding payment API.
 
 ### 🐛 Fixes
 

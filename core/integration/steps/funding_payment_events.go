@@ -21,7 +21,10 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/cucumber/godog"
 )
@@ -47,6 +50,171 @@ func TheFollowingFundingPeriodEventsShouldBeEmitted(broker *stubs.BrokerStub, ta
 		}
 	}
 	return nil
+}
+
+func TheFollowingFundingPaymentEventsShouldBeEmitted(broker *stubs.BrokerStub, table *godog.Table) error {
+	paymentEvts := broker.GetFundginPaymentEvents()
+	checkLoss := false
+	rows := parseFundingPaymentsTable(table)
+	matchers := make([]FundingPaymentsWrapper, 0, len(rows))
+	for _, row := range rows {
+		w := FundingPaymentsWrapper{
+			r: row,
+		}
+		matchers = append(matchers, w)
+		checkLoss = (checkLoss || w.CheckLoss())
+	}
+	// map the events by party and market
+	lsEvt := map[string]map[string][]*events.LossSoc{}
+	if checkLoss {
+		for _, ls := range broker.GetLossSoc() {
+			mID, pID := ls.MarketID(), ls.PartyID()
+			mmap, ok := lsEvt[mID]
+			if !ok {
+				mmap = map[string][]*events.LossSoc{}
+			}
+			ps, ok := mmap[pID]
+			if !ok {
+				ps = []*events.LossSoc{}
+			}
+			ps = append(ps, ls)
+			mmap[pID] = ps
+			lsEvt[mID] = mmap
+		}
+	}
+	// get by party and market
+	pEvts := map[string]map[string][]*eventspb.FundingPayment{}
+	for _, pe := range paymentEvts {
+		mID := pe.MarketID()
+		mmap, ok := pEvts[mID]
+		if !ok {
+			mmap = map[string][]*eventspb.FundingPayment{}
+		}
+		for _, fp := range pe.FundingPayments().Payments {
+			fps, ok := mmap[fp.PartyId]
+			if !ok {
+				fps = []*eventspb.FundingPayment{}
+			}
+			fps = append(fps, fp)
+			mmap[fp.PartyId] = fps
+		}
+		pEvts[mID] = mmap
+	}
+	// now start matching
+	for _, row := range matchers {
+		mID, pID := row.Market(), row.Party()
+		mmap, ok := pEvts[mID]
+		if !ok {
+			return fmt.Errorf("could not find funding payment events for market %s", mID)
+		}
+		ppayments, ok := mmap[pID]
+		if !ok {
+			return fmt.Errorf("could not find funding payment events for party %s in market %s", pID, mID)
+		}
+		matched := false
+		amt := row.Amount().String()
+		for _, fp := range ppayments {
+			if fp.Amount == amt {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return fmt.Errorf("could not find funding payment of amount %s for party %s in market %s", amt, pID, mID)
+		}
+		if !checkLoss || !row.CheckLoss() {
+			continue
+		}
+		mloss, ok := lsEvt[mID]
+		if !ok {
+			return fmt.Errorf("could not find loss socialisation events for market %s", mID)
+		}
+		pLoss, ok := mloss[pID]
+		if !ok {
+			return fmt.Errorf("could not find loss socialisation event for party %s in market %s", pID, mID)
+		}
+		matched = false
+		for _, le := range pLoss {
+			if !row.matchLossType(le.LossType()) {
+				continue
+			}
+			if !row.matchLossAmount(le.Amount()) {
+				continue
+			}
+			matched = true
+			break
+		}
+		if !matched {
+			return fmt.Errorf("could not find loss amount/type %s/%s for party %s in market %s", row.LossAmount().String(), row.LossType().String(), pID, mID)
+		}
+	}
+	return nil
+}
+
+func DebugFundingPaymentsEvents(broker *stubs.BrokerStub, log *logging.Logger) {
+	paymentEvts := broker.GetFundginPaymentEvents()
+	lossSoc := broker.GetLossSoc()
+	pEvts := map[string]map[string][]*eventspb.FundingPayment{}
+	lsEvt := map[string]map[string][]*events.LossSoc{}
+	for _, pe := range paymentEvts {
+		mID := pe.MarketID()
+		mmap, ok := pEvts[mID]
+		if !ok {
+			mmap = map[string][]*eventspb.FundingPayment{}
+		}
+		for _, fp := range pe.FundingPayments().Payments {
+			fps, ok := mmap[fp.PartyId]
+			if !ok {
+				fps = []*eventspb.FundingPayment{}
+			}
+			fps = append(fps, fp)
+			mmap[fp.PartyId] = fps
+		}
+		pEvts[mID] = mmap
+	}
+	for _, le := range lossSoc {
+		mID, pID := le.MarketID(), le.PartyID()
+		// ignore loss socialisation unless they are related to funding payments:
+		if mmap, ok := pEvts[mID]; !ok {
+			continue
+		} else if _, ok := mmap[pID]; !ok {
+			// also skip the parties that don't have funding payment events.
+			continue
+		}
+		mmap, ok := lsEvt[mID]
+		if !ok {
+			mmap = map[string][]*events.LossSoc{}
+		}
+		// ignore irrelevant parties?
+		ps, ok := mmap[pID]
+		if !ok {
+			ps = []*events.LossSoc{}
+		}
+		ps = append(ps, le)
+		mmap[pID] = ps
+		lsEvt[mID] = mmap
+	}
+	log.Info("DUMPING FUNDING PAYMENTS EVENTS")
+	for mID, fpMap := range pEvts {
+		log.Infof("Market ID: %s\n", mID)
+		for pID, fpe := range fpMap {
+			log.Infof("PartyID: %s\n", pID)
+			var lSoc []*events.LossSoc
+			lossM, ok := lsEvt[mID]
+			if ok {
+				lSoc = lossM[pID]
+			}
+			for i, fe := range fpe {
+				log.Infof("%d: Amount %s\n", i+1, fe.Amount)
+			}
+			if len(lSoc) > 0 {
+				log.Info("\nLOSS SOCIALISATION:\n")
+			}
+			for i, le := range lSoc {
+				log.Infof("%d: Amount: %s - Type: %s\n", i+1, le.Amount().String(), le.LossType().String())
+			}
+		}
+	}
 }
 
 func DebugFundingPeriodEventss(broker *stubs.BrokerStub, log *logging.Logger) {
@@ -112,6 +280,10 @@ type FundingPeriodEventWrapper struct {
 	row RowWrapper
 }
 
+type FundingPaymentsWrapper struct {
+	r RowWrapper
+}
+
 func parseFundingPeriodEventTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"internal twap",
@@ -122,6 +294,61 @@ func parseFundingPeriodEventTable(table *godog.Table) []RowWrapper {
 		"start",
 		"end",
 	})
+}
+
+func parseFundingPaymentsTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"market",
+		"amount",
+	}, []string{
+		"loss type",
+		"loss amount",
+	})
+}
+
+func (f FundingPaymentsWrapper) Party() string {
+	return f.r.MustStr("party")
+}
+
+func (f FundingPaymentsWrapper) Market() string {
+	return f.r.MustStr("market")
+}
+
+func (f FundingPaymentsWrapper) Amount() *num.Int {
+	return f.r.MustInt("amount")
+}
+
+func (f FundingPaymentsWrapper) LossAmount() *num.Int {
+	if !f.r.HasColumn("loss amount") {
+		return num.IntZero()
+	}
+	return f.r.MustInt("loss amount")
+}
+
+func (f FundingPaymentsWrapper) LossType() types.LossType {
+	if !f.r.HasColumn("loss type") {
+		return types.LossTypeUnspecified
+	}
+	return f.r.MustLossType("loss type")
+}
+
+func (f FundingPaymentsWrapper) CheckLoss() bool {
+	return f.r.HasColumn("loss type") || f.r.HasColumn("loss amount")
+}
+
+func (f FundingPaymentsWrapper) matchLossType(t types.LossType) bool {
+	if !f.r.HasColumn("loss type") {
+		return true
+	}
+	return f.LossType() == t
+}
+
+func (f FundingPaymentsWrapper) matchLossAmount(amt *num.Int) bool {
+	if !f.r.HasColumn("loss amount") {
+		return true
+	}
+	return f.LossAmount().EQ(amt)
 }
 
 func (f FundingPeriodEventWrapper) InternalTWAP() string {

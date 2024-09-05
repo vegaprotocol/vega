@@ -621,6 +621,23 @@ func (b *BrokerStub) GetFundingPeriodEvents() []events.FundingPeriod {
 	return ret
 }
 
+func (b *BrokerStub) GetFundginPaymentEvents() []events.FundingPayments {
+	batch := b.GetBatch(events.FundingPaymentsEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.FundingPayments, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.FundingPayments:
+			ret = append(ret, *et)
+		case events.FundingPayments:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
 func (b *BrokerStub) GetTradeEvents() []events.Trade {
 	batch := b.GetBatch(events.TradeEvent)
 	if len(batch) == 0 {

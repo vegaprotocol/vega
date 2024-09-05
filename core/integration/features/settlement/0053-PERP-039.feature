@@ -108,26 +108,34 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
     And the mark price should be "1200" for the market "ETH/DEC19"
 
     When time is updated to "2021-08-12T11:04:12Z"
-    Then system unix time is "1628766252"
+    And system unix time is "1628766252"
 
-    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+    And the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                   | time offset |
       | perp.funding.cue | 1628766252              | 0s          |
 
-    And the following funding period events should be emitted:
+    Then the following funding period events should be emitted:
       | start      | end        | internal twap | external twap | funding payment |
-      | 1612998252 | 1628766252 | 1200          | 6200         | -5000           |
+      | 1612998252 | 1628766252 | 1200          | 6200          | -5000           |
 
     # funding payment is 5000000 but party "aux" only has 4793200
     # check that loss socialisation has happened and that the insurance pool has been cleared to indicate 
     # that there wasn't enough in there to cover the funding payment hence the winning parties received a haircut      
+    #And debug funding payment events
+    And the following funding payment events should be emitted:
+      | party  | market    | amount    | loss amount | loss type            |
+      | party2 | ETH/DEC19 | 5000000   | -68867      | TYPE_FUNDING_PAYMENT |
+      | party3 | ETH/DEC19 | 5000000   | -68866      | TYPE_FUNDING_PAYMENT |
+      | aux2   | ETH/DEC19 | 5000000   | -68867      | TYPE_FUNDING_PAYMENT |
+      | aux    | ETH/DEC19 | -5000000  | 206600      | TYPE_FUNDING_PAYMENT |
+      | party1 | ETH/DEC19 | -10000000 |             |                      |
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount  | asset | type                                  |
       | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1008000 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
       | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 8992000 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
-      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |  648000 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
+      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 648000  | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
       | aux    | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4145200 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
-      | market | market | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     200 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
+      | market | market | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200     | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
       | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4931133 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  |
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4931133 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4931134 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  |

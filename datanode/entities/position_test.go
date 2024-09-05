@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -73,7 +74,7 @@ func TestMultipleTradesAndLossSocializationPartyNoOpenVolume(t *testing.T) {
 	assert.Equal(t, "1000", pp.RealisedPnl)
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1, types.LossTypeUnspecified)
 	position.UpdateWithLossSocialization(lsevt)
 	pp = position.ToProto()
 	assert.Equal(t, "700", pp.RealisedPnl)
@@ -103,7 +104,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	assert.Equal(t, "-600", pp.UnrealisedPnl)
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1, types.LossTypeUnspecified)
 	position.UpdateWithLossSocialization(lsevt)
 	pp = position.ToProto()
 	assert.Equal(t, "-300", pp.RealisedPnl)
@@ -161,7 +162,7 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 	assert.Equal(t, "-600", pp.UnrealisedPnl)
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1, types.LossTypeUnspecified)
 	position.UpdateWithLossSocialization(lsevt)
 	pp = position.ToProto()
 	assert.Equal(t, "-300", pp.RealisedPnl)
@@ -316,7 +317,7 @@ func TestPnLWithTradeDecimals(t *testing.T) {
 	assert.Equal(t, "-200", pp.UnrealisedPnl)
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1, types.LossTypeUnspecified)
 	position.UpdateWithLossSocialization(lsevt)
 	pp = position.ToProto()
 	assert.Equal(t, "-300", pp.RealisedPnl)
