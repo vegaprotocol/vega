@@ -18,6 +18,7 @@ package events
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -28,9 +29,10 @@ type LossSoc struct {
 	marketID string
 	amount   *num.Int
 	ts       int64
+	lType    types.LossType
 }
 
-func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount *num.Uint, neg bool, ts int64) *LossSoc {
+func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount *num.Uint, neg bool, ts int64, lType types.LossType) *LossSoc {
 	signedAmount := num.NewIntFromUint(amount)
 	if neg {
 		signedAmount.FlipSign()
@@ -41,7 +43,12 @@ func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, am
 		marketID: marketID,
 		amount:   signedAmount,
 		ts:       ts,
+		lType:    lType,
 	}
+}
+
+func (l LossSoc) IsFunding() bool {
+	return l.lType == types.LossTypeFunding
 }
 
 func (l LossSoc) IsParty(id string) bool {
@@ -73,6 +80,7 @@ func (l LossSoc) Proto() eventspb.LossSocialization {
 		MarketId: l.marketID,
 		PartyId:  l.partyID,
 		Amount:   l.amount.String(),
+		LossType: l.lType,
 	}
 }
 
@@ -88,12 +96,14 @@ func (l LossSoc) StreamMessage() *eventspb.BusEvent {
 }
 
 func LossSocializationEventFromStream(ctx context.Context, be *eventspb.BusEvent) *LossSoc {
+	ls := be.GetLossSocialization()
 	lse := &LossSoc{
 		Base:     newBaseFromBusEvent(ctx, LossSocializationEvent, be),
-		partyID:  be.GetLossSocialization().PartyId,
-		marketID: be.GetLossSocialization().MarketId,
+		partyID:  ls.PartyId,
+		marketID: ls.MarketId,
+		lType:    ls.LossType,
 	}
 
-	lse.amount, _ = num.IntFromString(be.GetLossSocialization().Amount, 10)
+	lse.amount, _ = num.IntFromString(ls.Amount, 10)
 	return lse
 }

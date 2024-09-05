@@ -749,6 +749,17 @@ message LossSocialization {
   string party_id = 2;
   // Amount distributed
   string amount = 3;
+  // Type of transfer that resulted in loss socialization.
+  Type loss_type = 4;
+
+  enum Type {
+    // Default value.
+    TYPE_UNSPECIFIED = 0;
+    // Loss socialisation occurred during a settlement transfer (mark to market or final settlement).
+    TYPE_SETTLEMENT = 1;
+    // Loss socialisation occurred during a funding payment.
+    TYPE_FUNDING_PAYMENT = 2;
+  }
 }
 
 // Trade settlement is part of the settle position event

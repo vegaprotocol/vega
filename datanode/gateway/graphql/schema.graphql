@@ -6995,6 +6995,8 @@ type FundingPayment {
   amount: String
   "RFC3339Nano timestamp when the data point was received."
   timestamp: Timestamp!
+  "Amount lost due to loss socialisation."
+  lossAmount: String
 }
 
 "Edge type for funding payment"
