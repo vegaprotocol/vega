@@ -62,7 +62,7 @@ func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
 		return nil
 	}
 	// transfer fees to the good party -> fees are now taken from the insurance pool
-	fees, _ := m.fee.GetFeeForPositionResolution(conf.Trades)
+	fees, _ := m.fee.GetFeeForPositionResolution(conf.Trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), m.settlementAsset, fees)
 	if err != nil {
 		// we probably should reject the order, although if we end up here we have a massive problem.
