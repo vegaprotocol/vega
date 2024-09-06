@@ -115,6 +115,7 @@ type MarketActivityTracker interface {
 	TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint
 	PublishGameMetric(ctx context.Context, dispatchStrategy []*vega.DispatchStrategy, now time.Time)
 	GameFinished(gameID string)
+	GetNotionalVolumeForAsset(asset string, markets []string, windowSize int) *num.Uint
 }
 
 type EthereumEventSource interface {

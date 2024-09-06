@@ -234,6 +234,23 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 	return required
 }
 
+func (e *Engine) scaleAmountByTargetNotional(ds *vegapb.DispatchStrategy, amount *num.Uint) *num.Uint {
+	if ds == nil {
+		return amount
+	}
+	if ds.TargetNotionalVolume == nil {
+		return amount
+	}
+	actualVolumeInWindow := e.marketActivityTracker.GetNotionalVolumeForAsset(ds.AssetForMetric, ds.Markets, int(ds.WindowLength))
+	if actualVolumeInWindow.IsZero() {
+		return num.UintZero()
+	}
+	targetNotional := num.MustUintFromString(*ds.TargetNotionalVolume, 10)
+	ratio := num.MinD(actualVolumeInWindow.ToDecimal().Div(targetNotional.ToDecimal()), num.DecimalOne())
+	amt, _ := num.UintFromDecimal(ratio.Mul(amount.ToDecimal()))
+	return amt
+}
+
 func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint64) {
 	var (
 		transfersDone = []events.Event{}
@@ -272,6 +289,9 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 				),
 			)
 		)
+
+		// scale transfer amount as necessary
+		amount = e.scaleAmountByTargetNotional(v.DispatchStrategy, amount)
 
 		// check if the amount is still enough
 		// ensure asset exists

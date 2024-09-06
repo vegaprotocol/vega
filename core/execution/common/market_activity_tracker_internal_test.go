@@ -132,6 +132,8 @@ func getDefaultTracker(t *testing.T) *marketTracker {
 		twNotional:               map[string]*twNotional{},
 		epochPartyM2M:            []map[string]num.Decimal{},
 		epochPartyRealisedReturn: []map[string]num.Decimal{},
+		epochNotionalVolume:      []*num.Uint{},
+		notionalVolumeForEpoch:   num.UintZero(),
 	}
 }
 
@@ -1610,6 +1612,8 @@ func TestIntoProto(t *testing.T) {
 		epochTimeWeightedPosition:   []map[string]uint64{{"p1": 100, "p2": 200}, {"p3": 90, "p4": 80}},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{{"p1": num.NewUint(1000), "p2": num.NewUint(2000)}, {"p1": num.NewUint(3000), "p3": num.NewUint(4000)}},
 		allPartiesCache:             map[string]struct{}{"p1": {}, "p2": {}, "p3": {}, "p4": {}, "p5": {}, "p6": {}},
+		notionalVolumeForEpoch:      num.UintZero(),
+		epochNotionalVolume:         []*num.Uint{num.NewUint(100)},
 	}
 
 	mt1Proto := mt.IntoProto("market1")
