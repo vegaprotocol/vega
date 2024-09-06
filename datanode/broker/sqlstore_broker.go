@@ -256,7 +256,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 			switch e.Type() {
 			case events.EndBlockEvent:
-				b.log.Warningf("end block event received", logging.Int("n-events", count))
+				b.log.Warn("end block event received", logging.Int("n-events", count))
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
 					return nil, err
