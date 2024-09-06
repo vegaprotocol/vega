@@ -250,6 +250,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 			switch e.Type() {
 			case events.EndBlockEvent:
+				b.log.Warningf("end block event received")
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
 					return nil, err
@@ -280,6 +281,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 
 			case events.BeginBlockEvent:
+				b.log.Warningf("begin block event received")
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
 			case events.CoreSnapshotEvent:
