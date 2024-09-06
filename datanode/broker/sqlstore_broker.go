@@ -263,11 +263,12 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				if err != nil {
 					return nil, err
 				}
-
+				b.log.Warn("commiting events")
 				err = b.transactionManager.Commit(blockCtx)
 				if err != nil {
 					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
 				}
+				b.log.Warn("events commited")
 				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
 				betweenBlocks = true
 
