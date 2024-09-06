@@ -53,24 +53,42 @@ Feature: Team Rewards
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD-1-10"
 
   @TeamStep
-  Scenario: 0056-REWA-100 scope individuals is paid out to all eligible parties accordingly
-
+  Scenario: 0056-REWA-100 scope individuals is paid out to all eligible parties accordingly, 0056-REWA-201 if no `eligible keys` list is specified in the recurring transfer, all parties meeting other eligibility criteria should receive a score.
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | INDIVIDUALS  | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 |
     # 3 individuals, same metrics, 10k/3 = 3,333 each
     And the parties place the following orders:
-      | party     | market id    | side | volume | price | resulting trades | type       | tif     |
-      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3    | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id    | side | volume | price | resulting trades | type       | tif     |
+      | aux1   | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then parties should have the following vesting account balances:
       | party  | asset    | balance |
       | party1 | USD-1-10 | 3333    |
       | party2 | USD-1-10 | 3333    |
       | party3 | USD-1-10 | 3333    |
-    #And "ref1-0002" should have vesting account balance of "0" for asset "USD-1-10"
+  #And "ref1-0002" should have vesting account balance of "0" for asset "USD-1-10"
+
+  @TeamStep
+  Scenario: 0056-REWA-211 if an `eligible keys` list is specified in the recurring transfer, only parties included in the list and meeting other eligibility criteria should receive a score (if they meet the criteria for one):
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      | eligible_keys |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | INDIVIDUALS  | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 | party1,party3 |
+    And the parties place the following orders:
+      | party  | market id    | side | volume | price | resulting trades | type       | tif     |
+      | aux1   | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then parties should have the following vesting account balances:
+      | party  | asset    | balance |
+      | party1 | USD-1-10 | 5000    |
+      | party3 | USD-1-10 | 5000    |

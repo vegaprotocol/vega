@@ -1187,6 +1187,8 @@ message DispatchStrategy {
   optional int32 transfer_interval = 15;
   // If set, the target notional factor used to scale the amount to be taken from the source account
   optional string target_notional_volume = 16;
+  // A list of party keys to constrain the potential receivers of a reward transfer.
+  repeated string eligible_keys = 17;
 }
 
 message Rank {

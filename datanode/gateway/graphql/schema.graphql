@@ -1632,6 +1632,9 @@ type DispatchStrategy {
   "Interval for the distribution of the transfer"
   transferInterval: Int
 
+  "A list of party keys that are in scope for the reward" 
+  eligibleKeys: [String!]
+
   "The target notional factor used to scale the amount to be taken from the source account"
   targetNotionalVolume: String
 }

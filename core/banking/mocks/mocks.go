@@ -527,17 +527,17 @@ func (mr *MockMarketActivityTrackerMockRecorder) GameFinished(arg0 interface{}) 
 }
 
 // GetMarketsWithEligibleProposer mocks base method.
-func (m *MockMarketActivityTracker) GetMarketsWithEligibleProposer(arg0 string, arg1 []string, arg2, arg3 string) []*types.MarketContributionScore {
+func (m *MockMarketActivityTracker) GetMarketsWithEligibleProposer(arg0 string, arg1 []string, arg2, arg3 string, arg4 []string) []*types.MarketContributionScore {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMarketsWithEligibleProposer", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "GetMarketsWithEligibleProposer", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].([]*types.MarketContributionScore)
 	return ret0
 }
 
 // GetMarketsWithEligibleProposer indicates an expected call of GetMarketsWithEligibleProposer.
-func (mr *MockMarketActivityTrackerMockRecorder) GetMarketsWithEligibleProposer(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockMarketActivityTrackerMockRecorder) GetMarketsWithEligibleProposer(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketsWithEligibleProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetMarketsWithEligibleProposer), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketsWithEligibleProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetMarketsWithEligibleProposer), arg0, arg1, arg2, arg3, arg4)
 }
 
 // GetNotionalVolumeForAsset mocks base method.

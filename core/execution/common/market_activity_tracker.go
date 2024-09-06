@@ -349,7 +349,12 @@ func (mat *MarketActivityTracker) RemoveAMMParty(asset, marketID, ammParty strin
 
 // GetMarketsWithEligibleProposer gets all the markets within the given asset (or just all the markets in scope passed as a parameter) that
 // are eligible for proposer bonus.
-func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore {
+func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string, eligibleKeys []string) []*types.MarketContributionScore {
+	eligibleKeySet := make(map[string]struct{}, len(eligibleKeys))
+	for _, ek := range eligibleKeys {
+		eligibleKeySet[ek] = struct{}{}
+	}
+
 	var mkts []string
 	if len(markets) > 0 {
 		mkts = markets
@@ -382,7 +387,10 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 	for _, a := range assets {
 		for _, v := range mkts {
 			if t, ok := mat.getMarketTracker(a, v); ok && (len(asset) == 0 || t.asset == asset) && mat.IsMarketEligibleForBonus(a, v, payoutAsset, markets, funder) {
-				eligibleMarkets = append(eligibleMarkets, v)
+				proposer := mat.GetProposer(v)
+				if _, ok := eligibleKeySet[proposer]; len(eligibleKeySet) == 0 || ok {
+					eligibleMarkets = append(eligibleMarkets, v)
+				}
 			}
 		}
 	}
@@ -880,6 +888,19 @@ func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) [
 		parties = sortedK(excludePartiesInTeams(mat.getAllParties(ds.AssetForMetric, ds.Markets), mat.teams.GetAllPartiesInTeams(mat.minEpochsInTeamForRewardEligibility)))
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_AMM {
 		parties = sortedK(mat.GetAllAMMParties(ds.AssetForMetric, ds.Markets))
+	}
+	if len(ds.EligibleKeys) > 0 {
+		eligibleParties := make([]string, 0, len(parties))
+		ep := make(map[string]struct{}, len(ds.EligibleKeys))
+		for _, ek := range ds.EligibleKeys {
+			ep[ek] = struct{}{}
+		}
+		for _, pp := range parties {
+			if _, ok := ep[pp]; ok {
+				eligibleParties = append(eligibleParties, pp)
+			}
+		}
+		parties = eligibleParties
 	}
 	return parties
 }

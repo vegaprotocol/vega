@@ -327,7 +327,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 				// different to how all other metric based rewards behave. The reason is that we need the context of the funder
 				// and this context is lost when the transfer has already gone through
 				if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
-					marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(v.DispatchStrategy.AssetForMetric, v.DispatchStrategy.Markets, v.Asset, v.From)
+					marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(v.DispatchStrategy.AssetForMetric, v.DispatchStrategy.Markets, v.Asset, v.From, v.DispatchStrategy.EligibleKeys)
 					for _, fms := range marketProposersScore {
 						amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
 						if amt.IsZero() {
