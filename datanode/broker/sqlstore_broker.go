@@ -228,6 +228,9 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	b.snapshotTaken = false
 	betweenBlocks := false
 	refreshMaterializedViews := false
+
+	count := 0
+
 	for {
 		blockTimer.stopTimer()
 		select {
@@ -239,6 +242,8 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
 				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
+
+			count += 1
 			if b.protocolUpdateHandler.GetProtocolUpgradeStarted() {
 				return nil, errors.New("received event after protocol upgrade started")
 			}
@@ -251,7 +256,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 			switch e.Type() {
 			case events.EndBlockEvent:
-				b.log.Warningf("end block event received")
+				b.log.Warningf("end block event received", logging.Int("n-events", count))
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
 					return nil, err
