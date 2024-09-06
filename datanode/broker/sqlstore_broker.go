@@ -132,12 +132,13 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 	}
 
 	for {
+		fmt.Println("process block")
 		if nextBlock, err = b.processBlock(ctx, dbContext, nextBlock, receiveCh, errCh); err != nil {
 			return err
 		}
-
+		fmt.Println("processed block")
 		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height, b.snapshotTaken)
-
+		fmt.Println("committed block")
 		if b.receivedProtocolUpgradeEvent {
 			return b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
 		}
@@ -334,7 +335,9 @@ func (b *SQLStoreBroker) addBlock(ctx context.Context, block *entities.Block) er
 	// a primary key restraint failure, this code is to handle this scenario
 	if b.lastBlock == nil || !block.VegaTime.Equal(b.lastBlock.VegaTime) {
 		b.lastBlock = block
+		fmt.Println("update block", block.Height)
 		err := b.blockStore.Add(ctx, *block)
+		fmt.Println("updateed block", block.Height)
 		if err != nil {
 			return errors.Wrap(err, "failed to add block")
 		}
