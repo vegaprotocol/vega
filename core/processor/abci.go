@@ -1319,7 +1319,7 @@ func (app *App) OnBeginBlock(blockHeight uint64, blockHash string, blockTime tim
 	if app.protocolUpgradeService.CoreReadyForUpgrade() {
 		app.startProtocolUpgrade(ctx)
 	}
-
+	app.log.Info("WWW sending Begin block", logging.Uint64("h", blockHeight))
 	app.broker.Send(events.NewBeginBlock(ctx, eventspb.BeginBlock{
 		Height:    blockHeight,
 		Timestamp: blockTime.UnixNano(),
@@ -1499,6 +1499,7 @@ func (app *App) OnCommit() (*tmtypes.ResponseCommit, error) {
 	if !app.nilPow {
 		app.pow.OnCommit()
 	}
+	app.log.Info("WWW sending end block", logging.Uint64("h", app.stats.Height()))
 	app.broker.Send(
 		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
 			Height: app.stats.Height(),
