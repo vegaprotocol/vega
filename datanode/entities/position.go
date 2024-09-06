@@ -303,15 +303,23 @@ func (p Position) ToProto() *vega.Position {
 	// we use the pending values when converting to protos
 	// so trades are reflected as accurately as possible
 	return &vega.Position{
-		MarketId:                p.MarketID.String(),
-		PartyId:                 p.PartyID.String(),
-		OpenVolume:              p.PendingOpenVolume,
-		RealisedPnl:             p.PendingRealisedPnl.Round(0).String(),
-		UnrealisedPnl:           p.PendingUnrealisedPnl.Round(0).String(),
-		AverageEntryPrice:       p.PendingAverageEntryMarketPrice.Round(0).String(),
-		UpdatedAt:               timestamp,
-		LossSocialisationAmount: p.LossSocialisationAmount.Round(0).String(),
-		PositionStatus:          vega.PositionStatus(p.DistressedStatus),
+		MarketId:                  p.MarketID.String(),
+		PartyId:                   p.PartyID.String(),
+		OpenVolume:                p.PendingOpenVolume,
+		RealisedPnl:               p.PendingRealisedPnl.Round(0).String(),
+		UnrealisedPnl:             p.PendingUnrealisedPnl.Round(0).String(),
+		AverageEntryPrice:         p.PendingAverageEntryMarketPrice.Round(0).String(),
+		UpdatedAt:                 timestamp,
+		LossSocialisationAmount:   p.LossSocialisationAmount.Round(0).String(),
+		PositionStatus:            vega.PositionStatus(p.DistressedStatus),
+		TakerFeesPaid:             p.TakerFeesPaid.String(),
+		MakerFeesReceived:         p.MakerFeesReceived.String(),
+		FeesPaid:                  p.FeesPaid.String(),
+		TakerFeesPaidSince:        p.TakerFeesPaidSince.String(),
+		MakerFeesReceivedSince:    p.MakerFeesReceivedSince.String(),
+		FeesPaidSince:             p.FeesPaidSince.String(),
+		FundingPaymentAmount:      p.FundingPaymentAmount.String(),
+		FundingPaymentAmountSince: p.FundingPaymentAmountSince.String(),
 	}
 }
 
@@ -407,7 +415,8 @@ var PositionColumns = []string{
 	"market_id", "party_id", "open_volume", "realised_pnl", "unrealised_pnl",
 	"average_entry_price", "average_entry_market_price", "loss", "adjustment", "tx_hash", "vega_time", "pending_open_volume",
 	"pending_realised_pnl", "pending_unrealised_pnl", "pending_average_entry_price", "pending_average_entry_market_price",
-	"loss_socialisation_amount", "distressed_status",
+	"loss_socialisation_amount", "distressed_status", "taker_fees_paid", "maker_fees_received", "fees_paid",
+	"taker_fees_paid_since", "maker_fees_received_since", "fees_paid_since", "funding_payment_amount", "funding_payment_amount_since",
 }
 
 func (p Position) ToRow() []interface{} {
@@ -415,7 +424,8 @@ func (p Position) ToRow() []interface{} {
 		p.MarketID, p.PartyID, p.OpenVolume, p.RealisedPnl, p.UnrealisedPnl,
 		p.AverageEntryPrice, p.AverageEntryMarketPrice, p.Loss, p.Adjustment, p.TxHash, p.VegaTime, p.PendingOpenVolume,
 		p.PendingRealisedPnl, p.PendingUnrealisedPnl, p.PendingAverageEntryPrice, p.PendingAverageEntryMarketPrice,
-		p.LossSocialisationAmount, p.DistressedStatus,
+		p.LossSocialisationAmount, p.DistressedStatus, p.TakerFeesPaid, p.MakerFeesReceived, p.FeesPaid,
+		p.TakerFeesPaidSince, p.MakerFeesReceivedSince, p.FeesPaidSince, p.FundingPaymentAmount, p.FundingPaymentAmountSince,
 	}
 }
 
