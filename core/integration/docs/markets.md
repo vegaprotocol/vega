@@ -40,6 +40,8 @@ Once a market has been set up, the current market state should also be checked. 
 * [Last market state](#Last-market-state) may sometimes be needed to check markets that have reached a final state.
 * [Mark price](#Mark-price)
 
+The market lifecycle is largely determined through oracles. How to use oracles in integration tests is [covered here](oracles.md). Markets can, however be updated or closed through governance. The integration test framework essentially takes the chain and the governance engine out of the equation, but to test market changes through governance, some steps have been provided. These steps are [covered here](governance.md).
+
 ### Risk models
 
 There are a number of pre-defined risk models, but if a custom risk model is required, there are steps provided to create one.
@@ -368,7 +370,7 @@ Market configuration is extensive, and can be configured with a myriad of additi
 | liquidation strategy       | no       | string (liquidation strategy name)            |            |
 | price type                 | no       | Price_Type                                    |            |
 | decay weight               | no       | decimal (default 0)                           |            |
-| decay power                | no       | deciaml (default 0)                           |            |
+| decay power                | no       | decimal (default 0)                           |            |
 | cash amount                | no       | uint (default 0)                              |            |
 | source weights             | no       | Source_Weights (default 0,0,0,0)              |            |
 | source staleness tolerance | no       | Staleness_Tolerance (default 1us,1us,1us,1us) |            |

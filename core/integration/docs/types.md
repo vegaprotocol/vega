@@ -29,6 +29,15 @@ Possible values for `Market_TradingMode` are:
 * TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
 * TRADING_MODE_LONG_BLOCK_AUCTION
 
+## Market state update
+
+Possible values for `MarketStateUpdate` are:
+
+* MARKET_STATE_UPDATE_TYPE_UNSPECIFIED
+* MARKET_STATE_UPDATE_TYPE_TERMINATE
+* MARKET_STATE_UPDATE_TYPE_SUSPEND
+* MARKET_STATE_UPDATE_TYPE_RESUME
+
 ## Market state
 
 Possible values for `Market_State` are:
