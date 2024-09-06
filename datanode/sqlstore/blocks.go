@@ -98,7 +98,6 @@ func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 	if bs.lastBlock != nil {
-		fmt.Println("got last block", bs.lastBlock.Height)
 		return *bs.lastBlock, nil
 	}
 	defer metrics.StartSQLQuery("Blocks", "GetLastBlock")()

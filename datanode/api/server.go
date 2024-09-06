@@ -488,7 +488,6 @@ func headersInterceptor(
 			height = block.Height
 			timestamp = block.VegaTime.UnixNano()
 		}
-		fmt.Println("metadata height", height)
 		for _, h := range []metadata.MD{
 			// Deprecated: use 'X-Block-Height' and 'X-Block-Timestamp' instead to determine if data is fresh.
 			metadata.Pairs("X-Block-Height", strconv.FormatInt(height, 10)),

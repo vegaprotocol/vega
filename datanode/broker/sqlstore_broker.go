@@ -142,6 +142,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		if b.receivedProtocolUpgradeEvent {
 			return b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
 		}
+		b.log.Info("end loop")
 	}
 }
 
@@ -192,6 +193,7 @@ func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 
 // processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
 func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
+	b.log.Info("start process block")
 	metrics.BlockCounterInc()
 	metrics.SetBlockHeight(float64(block.Height))
 
@@ -219,18 +221,18 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	if err != nil {
 		return nil, fmt.Errorf("failed to add transaction to context:%w", err)
 	}
-
+	b.log.Info("adding block")
 	if err = b.addBlock(blockCtx, block); err != nil {
 		return nil, fmt.Errorf("failed to add block:%w", err)
 	}
-
+	b.log.Info("adding block")
 	defer b.slowTimeUpdateTicker.Stop()
 	b.snapshotTaken = false
 	betweenBlocks := false
 	refreshMaterializedViews := false
 
 	count := 0
-
+	b.log.Info("start select block")
 	for {
 		blockTimer.stopTimer()
 		select {
