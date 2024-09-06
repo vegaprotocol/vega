@@ -294,6 +294,72 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	assert.EqualValues(t, 0, pp.OpenVolume)
 }
 
+func TestTradeFees(t *testing.T) {
+	// ctx := context.Background()
+	market := "market-id"
+	party := "party1"
+	sParty := "seller"
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	sPos := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(sParty))
+	dp := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(3))
+
+	// first update with trades
+	trade := vega.Trade{
+		Id:         "t1",
+		MarketId:   market,
+		Price:      "1000",
+		Size:       2,
+		Buyer:      party,
+		Seller:     sParty,
+		AssetPrice: "1000",
+		Aggressor:  types.SideSell,
+		BuyerFee: &vega.Fee{
+			MakerFee:           "10",
+			InfrastructureFee:  "1",
+			LiquidityFee:       "2",
+			TreasuryFee:        "1",
+			BuyBackFee:         "0",
+			HighVolumeMakerFee: "0",
+		},
+		SellerFee: &vega.Fee{
+			MakerFee:           "20",
+			InfrastructureFee:  "2",
+			LiquidityFee:       "3",
+			TreasuryFee:        "2",
+			BuyBackFee:         "1",
+			HighVolumeMakerFee: "1",
+		},
+	}
+	bFeesPaid := num.NewDecimalFromFloat(4)
+	sFeesPaid := num.NewDecimalFromFloat(9)
+	bMaker := num.NewDecimalFromFloat(10)
+	sMaker := num.NewDecimalFromFloat(20)
+	position.UpdateWithTrade(trade, false, dp)
+	sPos.UpdateWithTrade(trade, true, dp)
+	require.True(t, position.FeesPaid.Equal(bFeesPaid))
+	require.True(t, sPos.FeesPaid.Equal(sFeesPaid))
+	// maker fees swap
+	require.True(t, sPos.TakerFeesPaid.Equal(sMaker))
+	require.True(t, position.MakerFeesReceived.Equal(sMaker))
+	// we have an aggressor, so only one side received maker fees
+	require.True(t, sPos.MakerFeesReceived.Equal(num.DecimalZero()))
+	require.True(t, position.TakerFeesPaid.Equal(bMaker))
+	// now the same trade but with no aggressor
+	trade.Aggressor = types.SideUnspecified
+	position = entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	sPos = entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(sParty))
+	position.UpdateWithTrade(trade, false, dp)
+	sPos.UpdateWithTrade(trade, true, dp)
+	require.True(t, position.FeesPaid.Equal(bFeesPaid))
+	require.True(t, sPos.FeesPaid.Equal(sFeesPaid))
+	// maker fees swap
+	require.True(t, sPos.TakerFeesPaid.Equal(sMaker))
+	require.True(t, position.MakerFeesReceived.Equal(sMaker))
+	// we have an aggressor, so only one side received maker fees
+	require.True(t, sPos.MakerFeesReceived.Equal(bMaker))
+	require.True(t, position.TakerFeesPaid.Equal(bMaker))
+}
+
 func TestPnLWithTradeDecimals(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
@@ -362,20 +428,20 @@ func TestUpdateWithTradesAndFundingPayment(t *testing.T) {
 	assert.Equal(t, "0", pp.UnrealisedPnl)
 	position.ApplyFundingPayment(num.NewInt(100))
 	pp = position.ToProto()
-	assert.Equal(t, "100", pp.RealisedPnl)
+	assert.Equal(t, "100", position.FundingPaymentAmount.String())
 	assert.Equal(t, "0", pp.UnrealisedPnl, pp.AverageEntryPrice)
 	position.UpdateWithTrade(trades[1].ToVega(dp), false, dp)
 	pp = position.ToProto()
-	assert.Equal(t, "100", pp.RealisedPnl)
+	assert.Equal(t, "100", position.FundingPaymentAmount.String())
 	assert.Equal(t, "-133", pp.UnrealisedPnl, pp.AverageEntryPrice)
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{trades[0], trades[1]}, 1, dp)
 	position.UpdateWithPositionSettlement(ps)
 	psp := position.ToProto()
-	assert.Equal(t, "100", psp.RealisedPnl)
+	assert.Equal(t, "100", position.FundingPaymentAmount.String())
 	assert.Equal(t, "-133", psp.UnrealisedPnl)
 	position.ApplyFundingPayment(num.NewInt(-50))
 	pp = position.ToProto()
-	assert.Equal(t, "50", pp.RealisedPnl)
+	assert.Equal(t, "50", position.FundingPaymentAmount.String())
 	assert.Equal(t, "-133", pp.UnrealisedPnl, pp.AverageEntryPrice)
 }
 

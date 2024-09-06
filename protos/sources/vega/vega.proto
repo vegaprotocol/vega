@@ -727,6 +727,23 @@ message Position {
   string loss_socialisation_amount = 8;
   // Position status, indicating whether the party was distressed and had orders cancelled or was closed out.
   PositionStatus position_status = 9;
+  // Total taker fees paid by a party on a market.
+  string taker_fees_paid = 10;
+  // Total maker fees received by a party on a market.
+  string maker_fees_received = 11;
+  // Total fees paid by a party on a market (liquidity, infrastructure, treasury, buy-back, high volume maker fee).
+  string fees_paid = 12;
+  // Taker fees paid by party on a market since opening their current position.
+  // The current position is counted whenever the party changed sides (long <=> short), or a position was opened.
+  string taker_fees_paid_since = 13;
+  // Maker fees received since opening the current position.
+  string maker_fees_received_since = 14;
+  // Fees paid since opening the current position.
+  string fees_paid_since = 15;
+  // Total funding payment amounts received or paid by a party on a market.
+  string funding_payment_amount = 16;
+  // Funding payments received or paid since opening the current position.
+  string funding_payment_amount_since = 17;
 }
 
 message PositionTrade {

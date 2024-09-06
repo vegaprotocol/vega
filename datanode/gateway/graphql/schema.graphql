@@ -3356,6 +3356,23 @@ type Position {
 
   "RFC3339Nano time the position was updated"
   updatedAt: Timestamp
+
+  "The total amount paid in taker fees"
+  takerFeesPaid: String!
+  "The total amount in maker fees received"
+  makerFeesReceived: String!
+  "The total amount in fees paid (liquidity, infrastructure, treasury, buy-back, and high volume maker fees)"
+  feesPaid: String!
+  "Taker fees paid since opening the current long/short position. Gets reset when opening a position or changing between long and short."
+  takerFeesPaidSince: String!
+  "Maker fees received since opening the current long/short position."
+  makerFeesReceivedSince: String!
+  "Fees paid since opening the current long/short positions."
+  feesPaidSince: String!
+  "The total amount received or paid in funding payments"
+  fundingPaymentAmount: String!
+  "The amount paid or received in funding payments since opening the current position"
+  fundingPaymentAmountSince: String!
 }
 
 """

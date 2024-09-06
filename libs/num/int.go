@@ -16,12 +16,17 @@
 package num
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"math/big"
 
 	"github.com/holiman/uint256"
 )
 
-var intZero = NewInt(0)
+var (
+	ErrInvalidScanInput = fmt.Errorf("invalid input for Scan")
+	intZero             = NewInt(0)
+)
 
 // Int a wrapper to a signed big int.
 type Int struct {
@@ -291,6 +296,35 @@ func (i *Int) Div(m *Int) *Int {
 	i.U.Div(i.U, m.U)
 	i.s = i.s == m.s
 	return i
+}
+
+// Value returns the string representation for SQL queries.
+func (i *Int) Value() (driver.Value, error) {
+	str := i.String()
+	return str, nil
+}
+
+// Scan lets Uint.Scan do the heavy lifting, we just check for leading sign characters here.
+func (i *Int) Scan(v any) error {
+	var str string
+	switch vt := v.(type) {
+	case string:
+		str = vt
+	case []byte:
+		str = string(vt)
+	default:
+		return ErrInvalidScanInput
+	}
+	i.s = true
+	// set sign flag, strip leading +/- sign.
+	switch str[0:1] {
+	case "-":
+		i.s = false
+		fallthrough
+	case "+":
+		str = str[1:]
+	}
+	return i.U.Scan(str)
 }
 
 // NewInt creates a new Int with the value of the

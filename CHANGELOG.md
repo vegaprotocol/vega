@@ -12,7 +12,8 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11644](https://github.com/vegaprotocol/vega/issues/11644) - `liveOnly` flag has been added to the `AMM` API to show only active `AMMs`.
+- [11519](https://github.com/vegaprotocol/vega/issues/11519) - Add fees to position API types.
 
 ### 🐛 Fixes
 
