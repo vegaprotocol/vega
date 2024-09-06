@@ -310,7 +310,7 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
       | seller1 | USDT.0.1 | 0       |
       | seller2 | USDT.0.1 | 0       |
 
-  Examples:
+    Examples:
       | account type                            | dispatch metric                     |
       | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | DISPATCH_METRIC_MAKER_FEES_PAID     |
       | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | DISPATCH_METRIC_MAKER_FEES_RECEIVED |
@@ -352,7 +352,7 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
       | seller1 | USDT.0.1 | 0       |
       | seller2 | USDT.0.1 | 0       |
 
-  Examples:
+    Examples:
       | account type                         | dispatch metric                  |
       | ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL | DISPATCH_METRIC_AVERAGE_NOTIONAL |
       | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN  | DISPATCH_METRIC_RELATIVE_RETURN  |
@@ -376,7 +376,7 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
     Then the following trades should be executed:
       | buyer  | seller  | price | size | buyer maker fee | seller liquidity fee |
       | buyer1 | seller1 | 1000  | 10   | 0               | 100                  |
-    
+
     Given clear trade events
 
     # Generate trades on the leveraged market
@@ -417,7 +417,7 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
     Then the following trades should be executed:
       | buyer  | seller  | price | size | buyer maker fee | seller liquidity fee |
       | buyer1 | seller1 | 1000  | 10   | 0               | 100                  |
-    
+
     Given clear trade events
 
     # Generate trades on the leveraged market
@@ -441,9 +441,8 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
       | seller2 | USDT.0.1 | 5000    |
 
 
-  Scenario: Given a liquidity fees received reward, contributions from a spot market are correctly aggregated with markets allowing leverage. (0056-REWA-167)
-
-   # Set-up a recurring transfer
+  Scenario: Given a liquidity fees received reward, contributions from a spot market are correctly aggregated with markets allowing leverage. (0056-REWA-167). Given the following dispatch metrics, if no `eligible keys` list is specified in the recurring transfer, all parties meeting other eligibility criteria should receive a score 0056-REWA-202.
+    # Set-up a recurring transfer
     Given the current epoch is "0"
     And the parties submit the following recurring transfers:
       | id     | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset    | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period |
@@ -458,7 +457,7 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
     Then the following trades should be executed:
       | buyer  | seller  | price | size | buyer maker fee | seller liquidity fee |
       | buyer1 | seller1 | 1000  | 10   | 0               | 100                  |
-    
+
     Given clear trade events
 
     # Generate trades on the leveraged market
@@ -478,3 +477,39 @@ Feature: Distributing rewards to parties based on trading activity in Spot marke
       | party | asset    | balance |
       | lp1   | USDT.0.1 | 5000    |
       | lp2   | USDT.0.1 | 5000    |
+
+  Scenario: Given the following dispatch metrics, if an `eligible keys` list is specified in the recurring transfer, only parties included in the list and meeting other eligibility criteria should receive a score 0056-REWA-213.
+    # Set-up a recurring transfer
+    Given the current epoch is "0"
+    And the parties submit the following recurring transfers:
+      | id     | from                                                             | from_account_type    | to                                                               | to_account_type                      | asset    | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets | lock_period | eligible_keys |
+      | reward | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES | USDT.0.1 | 10000  | 1           |           | 1      | DISPATCH_METRIC_LP_FEES_RECEIVED | USDT.0.1     |         | 100         | lp1           |
+    And the network moves ahead "1" epochs
+
+    # Generate trades on the spot market
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | buyer1  | BTC/USDT  | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | seller1 | BTC/USDT  | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer  | seller  | price | size | buyer maker fee | seller liquidity fee |
+      | buyer1 | seller1 | 1000  | 10   | 0               | 100                  |
+
+    Given clear trade events
+
+    # Generate trades on the leveraged market
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | seller2 | GOLD/USDT | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | buyer2  | GOLD/USDT | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer  | seller  | price | size | buyer liquidity fee | seller maker fee |
+      | buyer2 | seller2 | 1000  | 10   | 100                 | 0                |
+
+    # Move to the end of the epoch - LP1 and LP2 should receive equal but only lp1 is in eligible keys so they get it all
+    # rewards as they received an equal amount of liquidity fees from
+    # the spot and leveraged markets respectively.
+    Given the network moves ahead "1" epochs
+    Then parties should have the following vesting account balances:
+      | party | asset    | balance |
+      | lp1   | USDT.0.1 | 10000    |

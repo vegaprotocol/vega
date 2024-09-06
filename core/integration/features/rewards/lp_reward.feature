@@ -89,6 +89,34 @@ Feature: Rewards for liquidity fees recieved
       | lpprov | USD-1-10 | 10000   |
 
 
+  Scenario: Given the following dispatch metrics, if an `eligible keys` list is specified in the recurring transfer, only parties included in the list and meeting other eligibility criteria should receive a score 0056-REWA-213
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                      | entity_scope | asset    | amount | start_epoch | end_epoch | factor | metric                           | metric_asset | markets      | eligible_keys |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES | INDIVIDUALS  | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_LP_FEES_RECEIVED | USD-1-10     | ETH/USD-1-10 | aux1          |
+    And the parties place the following orders:
+      | party    | market id    | side | volume | price | resulting trades | type       | tif     |
+      | aux1     | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee3 | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    # Confirm lpprov did indeed receive fees
+    Then the following transfers should happen:
+      | from   | to     | from account                   | to account                     | market id    | amount | asset    |
+      |        | lpprov | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/USD-1-10 | 2500   | USD-1-10 |
+      | lpprov | lpprov | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_GENERAL           | ETH/USD-1-10 | 2500   | USD-1-10 |
+    # We would expect the lp to recieve the full reward but it's not in eligible keys so no. 
+    Then parties should have the following vesting account balances:
+      | party  | asset    | balance |
+      | lpprov | USD-1-10 | 0       |
+
+    # nothing transferred
+    Then "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "10000000" for asset "USD-1-10"
+
+
   Scenario: Party funds reward pool with lp received fees dispatch metric and scoping teams
 
     Given the parties submit the following recurring transfers:
