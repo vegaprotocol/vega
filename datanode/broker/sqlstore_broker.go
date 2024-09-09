@@ -272,10 +272,10 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				// so we need to call the refresh materialized views function here.
 				if refreshMaterializedViews {
 					// We need to refresh the materialized views as we have reached the end of an epoch
-					err = b.transactionManager.RefreshMaterializedViews(blockCtx)
-					if err != nil {
-						return nil, fmt.Errorf("failed to refresh materialized views:%w", err)
-					}
+					//err = b.transactionManager.RefreshMaterializedViews(blockCtx)
+					//if err != nil {
+					//	return nil, fmt.Errorf("failed to refresh materialized views:%w", err)
+					//}
 					refreshMaterializedViews = false
 				}
 
