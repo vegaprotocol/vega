@@ -383,13 +383,6 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		}
 
 		tresps = append(tresps, resps...)
-
-		// if we don't have anymore
-		if v.EndEpoch != nil && *v.EndEpoch == e.currentEpoch {
-			v.Status = types.TransferStatusDone
-			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v, e.getGameID(v)))
-			doneIDs = append(doneIDs, v.ID)
-		}
 	}
 
 	// send events

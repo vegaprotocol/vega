@@ -34,6 +34,7 @@
 - [11650](https://github.com/vegaprotocol/vega/issues/11650) - Add include sub accounts flag to `listPositions`.
 - [11641](https://github.com/vegaprotocol/vega/issues/11641) - Panic with pegged orders.
 - [11646](https://github.com/vegaprotocol/vega/issues/11646) - Add tier numbers to API.
+- [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch. 
 
 
 ## 0.78.1
