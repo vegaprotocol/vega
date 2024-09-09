@@ -17,7 +17,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -101,10 +100,6 @@ func NewPartyStatsService(epoch EpochStore, ref ReferralSetStore, vds VDSStore, 
 }
 
 func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []string) (*v2.GetPartyDiscountStatsResponse, error) {
-	// ensure the arguments we received make sense:
-	if len(markets) == 0 {
-		return nil, fmt.Errorf("required to provide at least one market ID")
-	}
 	// first up, last epoch to get the stats:
 	epoch, err := s.epoch.GetCurrent(ctx)
 	if err != nil {
