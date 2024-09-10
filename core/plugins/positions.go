@@ -164,34 +164,20 @@ func (p *Positions) handleRegularTrade(e TE) {
 	buyer, ok := partyPos[trade.Buyer]
 	if !ok {
 		buyer = Position{
-			Position: types.Position{
-				MarketID: marketID,
-				PartyID:  types.NetworkParty,
-			},
+			Position:            types.NewPosition(marketID, trade.Buyer),
 			AverageEntryPriceFP: num.DecimalZero(),
 			RealisedPnlFP:       num.DecimalZero(),
 			UnrealisedPnlFP:     num.DecimalZero(),
-			taker:               newAmount(),
-			maker:               newAmount(),
-			other:               newAmount(),
-			funding:             newAmount(),
 		}
 	}
 	buyer.setFees(buyerFee)
 	seller, ok := partyPos[trade.Seller]
 	if !ok {
 		seller = Position{
-			Position: types.Position{
-				MarketID: marketID,
-				PartyID:  types.NetworkParty,
-			},
+			Position:            types.NewPosition(marketID, trade.Seller),
 			AverageEntryPriceFP: num.DecimalZero(),
 			RealisedPnlFP:       num.DecimalZero(),
 			UnrealisedPnlFP:     num.DecimalZero(),
-			taker:               newAmount(),
-			maker:               newAmount(),
-			other:               newAmount(),
-			funding:             newAmount(),
 		}
 	}
 	seller.setFees(sellerFee)
@@ -223,17 +209,10 @@ func (p *Positions) handleTradeEvent(e TE) {
 	pos, ok := partyPos[types.NetworkParty]
 	if !ok {
 		pos = Position{
-			Position: types.Position{
-				MarketID: marketID,
-				PartyID:  types.NetworkParty,
-			},
+			Position:            types.NewPosition(marketID, types.NetworkParty),
 			AverageEntryPriceFP: num.DecimalZero(),
 			RealisedPnlFP:       num.DecimalZero(),
 			UnrealisedPnlFP:     num.DecimalZero(),
-			taker:               newAmount(),
-			maker:               newAmount(),
-			other:               newAmount(),
-			funding:             newAmount(),
 		}
 	}
 	dParty := trade.Seller
@@ -246,21 +225,14 @@ func (p *Positions) handleTradeEvent(e TE) {
 	other, ok := partyPos[dParty]
 	if !ok {
 		other = Position{
-			Position: types.Position{
-				MarketID: marketID,
-				PartyID:  dParty,
-			},
+			Position:            types.NewPosition(marketID, dParty),
 			AverageEntryPriceFP: num.DecimalZero(),
 			RealisedPnlFP:       num.DecimalZero(),
 			UnrealisedPnlFP:     num.DecimalZero(),
-			taker:               newAmount(),
-			maker:               newAmount(),
-			other:               newAmount(),
-			funding:             newAmount(),
 		}
 	}
 	other.setFees(otherFee)
-	other.resetSince()
+	other.ResetSince()
 	pos.setFees(networkFee)
 	opened, closed := calculateOpenClosedVolume(pos.OpenVolume, size)
 	realisedPnlDelta := markPriceDec.Sub(pos.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closed)).Div(posFactor)
@@ -297,8 +269,8 @@ func (p *Positions) handleFundingPayments(e FP) {
 		pos.RealisedPnl = pos.RealisedPnl.Add(amt)
 		pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amt)
 		// add funding totals
-		pos.funding.total.Add(iAmt)
-		pos.funding.since.Add(iAmt)
+		pos.FundingPaymentAmount.Add(iAmt)
+		pos.FundingPaymentAmountSince.Add(iAmt)
 		partyPos[pay.PartyId] = pos
 	}
 	p.data[marketID] = partyPos
@@ -354,8 +326,8 @@ func (p *Positions) applyLossSocialization(e LSE) {
 	}
 	if e.IsFunding() {
 		// adjust funding amounts if needed.
-		pos.funding.total.Add(iAmt)
-		pos.funding.since.Add(iAmt)
+		pos.FundingPaymentAmount.Add(iAmt)
+		pos.FundingPaymentAmountSince.Add(iAmt)
 	}
 	pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amountLoss)
 	pos.RealisedPnl = pos.RealisedPnl.Add(amountLoss)
@@ -587,7 +559,7 @@ func updateSettlePosition(p *Position, e SPE) {
 		openV(p, openedVolume, pr)
 		// was the position zero, or did the position flip sides?
 		if reset || (before < 0 && p.OpenVolume > 0) || (before > 0 && p.OpenVolume < 0) {
-			p.resetSince()
+			p.ResetSince()
 		}
 		p.AverageEntryPrice, _ = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
 
@@ -595,18 +567,6 @@ func updateSettlePosition(p *Position, e SPE) {
 	}
 	mtm(p, e.Price(), e.PositionFactor())
 	p.UnrealisedPnl = p.UnrealisedPnlFP.Round(0)
-}
-
-type amount struct {
-	total *num.Int
-	since *num.Int
-}
-
-func newAmount() amount {
-	return amount{
-		total: num.NewInt(0),
-		since: num.NewInt(0),
-	}
 }
 
 type Position struct {
@@ -620,25 +580,14 @@ type Position struct {
 	// what a party was missing which triggered loss socialization
 	adjustment num.Decimal
 	state      vega.PositionStatus
-	taker      amount
-	maker      amount
-	other      amount
-	funding    amount
 }
 
 func seToProto(e SE) Position {
 	return Position{
-		Position: types.Position{
-			MarketID: e.MarketID(),
-			PartyID:  e.PartyID(),
-		},
+		Position:            types.NewPosition(e.MarketID(), e.PartyID()),
 		AverageEntryPriceFP: num.DecimalZero(),
 		RealisedPnlFP:       num.DecimalZero(),
 		UnrealisedPnlFP:     num.DecimalZero(),
-		taker:               newAmount(),
-		maker:               newAmount(),
-		other:               newAmount(),
-		funding:             newAmount(),
 	}
 }
 
@@ -663,17 +612,10 @@ func (p *Positions) Types() []events.Type {
 }
 
 func (p *Position) setFees(fee *feeAmounts) {
-	p.taker.total.U.AddSum(fee.taker)
-	p.taker.since.U.AddSum(fee.taker)
-	p.maker.total.U.AddSum(fee.maker)
-	p.maker.since.U.AddSum(fee.maker)
-	p.other.total.U.AddSum(fee.other)
-	p.other.since.U.AddSum(fee.other)
-}
-
-func (p *Position) resetSince() {
-	p.taker.since = num.NewInt(0)
-	p.maker.since = num.NewInt(0)
-	p.other.since = num.NewInt(0)
-	p.funding.since = num.NewInt(0)
+	p.TakerFeesPaid.AddSum(fee.taker)
+	p.TakerFeesPaidSince.AddSum(fee.taker)
+	p.MakerFeesReceived.AddSum(fee.maker)
+	p.MakerFeesReceivedSince.AddSum(fee.maker)
+	p.FeesPaid.AddSum(fee.other)
+	p.FeesPaidSince.AddSum(fee.other)
 }

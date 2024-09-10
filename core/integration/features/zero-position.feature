@@ -142,11 +142,11 @@ Feature: Closeout scenarios
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
 
     Then the parties should have the following profit and loss:
-      | party      | volume | unrealised pnl | realised pnl | status                        |
-      | trader2    | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
-      | trader3    | 0      | 0              | -162         | POSITION_STATUS_CLOSED_OUT    |
-      | auxiliary1 | -10    | -900           | 0            |                               |
-      | auxiliary2 | 5      | 475            | 586          |                               |
+      | party      | volume | unrealised pnl | realised pnl | status                        | taker fees | taker fees since | maker fees | maker fees since | other fees | other fees since | funding payments | funding payments since |
+      | trader2    | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED | 0          | 0                | 0          | 0                | 0          | 0                | 0                | 0                      |
+      | trader3    | 0      | 0              | -162         | POSITION_STATUS_CLOSED_OUT    | 0          | 0                | 0          | 0                | 0          | 0                | 0                | 0                      |
+      | auxiliary1 | -10    | -900           | 0            |                               | 0          | 0                | 0          | 0                | 0          | 0                | 0                | 0                      |
+      | auxiliary2 | 5      | 475            | 586          |                               | 0          | 0                | 0          | 0                | 1          | 0                | 0                | 0                      |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     When the parties place the following orders:
       | party      | market id | side | price | volume | resulting trades | type       | tif     | reference       |

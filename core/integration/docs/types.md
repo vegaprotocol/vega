@@ -2,6 +2,15 @@
 
 Below is a list of types used in the docs and the possible values
 
+## Position status
+
+Possible values for `PositionStatus` are:
+
+* POSITION_STATUS_UNSPECIFIED
+* POSITION_STATUS_ORDERS_CLOSED
+* POSITION_STATUS_CLOSED_OUT
+* POSITION_STATUS_DISTRESSED
+
 ## Auction trigger
 
 Possible values for `AuctionTrigger` are:
