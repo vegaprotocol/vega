@@ -89,7 +89,7 @@ func Test_0015_NP_OBES_002(t *testing.T) {
 	marketID := vgcrypto.RandomHash()
 
 	mds.orders.EXPECT().GetLiveOrders(gomock.Any()).Return([]entities.Order{}, nil)
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 
 	// mid-price is 100
@@ -143,7 +143,7 @@ func TestAMMMarketDepth(t *testing.T) {
 	marketID := vgcrypto.RandomHash()
 
 	ensureLiveOrders(t, mds, marketID)
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
 
@@ -180,7 +180,7 @@ func TestAMMMarketDepth(t *testing.T) {
 	assert.Equal(t, 120, int(mds.service.GetAMMVolume(marketID, false)))
 	assert.Equal(t, 260, int(mds.service.GetTotalVolume(marketID)))
 
-	assert.Equal(t, "1996", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "1995", mds.service.GetBestBidPrice(marketID).String())
 	assert.Equal(t, "1998", mds.service.GetBestAskPrice(marketID).String())
 
 	// now the AMM is updated so that its definition has changed, namely that its curve when short is removed
@@ -194,7 +194,7 @@ func TestAMMMarketDepth(t *testing.T) {
 	assert.Equal(t, 65, int(mds.service.GetAMMVolume(marketID, true)))
 	assert.Equal(t, 60, int(mds.service.GetAMMVolume(marketID, false)))
 	assert.Equal(t, 145, int(mds.service.GetTotalVolume(marketID)))
-	assert.Equal(t, "1996", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "1995", mds.service.GetBestBidPrice(marketID).String())
 	assert.Equal(t, "1998", mds.service.GetBestAskPrice(marketID).String())
 
 	// and there should definitely be no volume at 2001
@@ -227,7 +227,7 @@ func TestAMMInitialiseNoAMM(t *testing.T) {
 	newMarket := vgcrypto.RandomHash()
 	pool := getAMMDefinition(t, newMarket)
 
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
 	mds.service.OnAMMUpdate(pool, time.Now(), 1000)
@@ -252,7 +252,7 @@ func TestAMMStepOverFairPrice(t *testing.T) {
 
 	marketID := vgcrypto.RandomHash()
 	ensureLiveOrders(t, mds, marketID)
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
 
@@ -280,11 +280,12 @@ func TestAMMStepOverFairPrice(t *testing.T) {
 		37,
 	)
 
-	assert.Equal(t, "1999", mds.service.GetBestBidPrice(marketID).String())
-	assert.Equal(t, "2000", mds.service.GetBestAskPrice(marketID).String())
-	assert.Equal(t, 2, int(mds.service.GetVolumeAtPrice(marketID, types.SideBuy, 1999)))
-	assert.Equal(t, 1, int(mds.service.GetVolumeAtPrice(marketID, types.SideSell, 2000)))
-	assert.Equal(t, 3, int(mds.service.GetVolumeAtPrice(marketID, types.SideSell, 2001)))
+	assert.Equal(t, "1998", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "2001", mds.service.GetBestAskPrice(marketID).String())
+	assert.Equal(t, 0, int(mds.service.GetVolumeAtPrice(marketID, types.SideBuy, 1999)))
+	assert.Equal(t, 0, int(mds.service.GetVolumeAtPrice(marketID, types.SideSell, 2000)))
+	assert.Equal(t, 5, int(mds.service.GetVolumeAtPrice(marketID, types.SideBuy, 1998)))
+	assert.Equal(t, 4, int(mds.service.GetVolumeAtPrice(marketID, types.SideSell, 2001)))
 }
 
 func TestAMMSmallBounds(t *testing.T) {
@@ -300,7 +301,7 @@ func TestAMMSmallBounds(t *testing.T) {
 
 	marketID := vgcrypto.RandomHash()
 	ensureLiveOrders(t, mds, marketID)
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
 
@@ -331,7 +332,7 @@ func TestEstimatedStepOverAMMBound(t *testing.T) {
 
 	marketID := vgcrypto.RandomHash()
 	ensureLiveOrders(t, mds, marketID)
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
 
@@ -360,7 +361,7 @@ func TestExpansionMuchBiggerThanAMMs(t *testing.T) {
 	marketID := vgcrypto.RandomHash()
 
 	ensureLiveOrders(t, mds, marketID)
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
 
@@ -386,7 +387,7 @@ func TestMidPriceMove(t *testing.T) {
 	marketID := vgcrypto.RandomHash()
 
 	ensureLiveOrders(t, mds, marketID)
-	ensureDecimalPlaces(t, mds)
+	ensureDecimalPlaces(t, mds, 1, 1)
 	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
 	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
 
@@ -419,6 +420,29 @@ func TestMidPriceMove(t *testing.T) {
 
 	assert.Equal(t, "1828", mds.service.GetBestBidPrice(marketID).String())
 	assert.Equal(t, "3000", mds.service.GetBestAskPrice(marketID).String()) // this is an actual order volume not AMM volume
+}
+
+func TestFairgroundAMM(t *testing.T) {
+	ctx := context.Background()
+
+	mds := getService(t)
+	defer mds.ctrl.Finish()
+
+	marketID := vgcrypto.RandomHash()
+
+	mds.orders.EXPECT().GetLiveOrders(gomock.Any()).Return(nil, nil)
+	ensureDecimalPlaces(t, mds, 9, 5)
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: -69005905}, nil)
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(12955)}, nil)
+
+	pool := getAMMDefinitionTestnet(t, marketID)
+	mds.amm.EXPECT().ListActive(gomock.Any()).Return([]entities.AMMPool{pool}, nil).Times(1)
+	mds.service.Initialise(ctx)
+
+	// AMM's fair price is 129543034, so +/- one each side is 129533034, 129553034
+	// the we round *away* from the fair price and get:
+	assert.Equal(t, "12953", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "12956", mds.service.GetBestAskPrice(marketID).String())
 }
 
 func ensureLiveOrders(t *testing.T, mds *MDS, marketID string) {
@@ -485,6 +509,25 @@ func getAMMDefinitionMid100(t *testing.T, marketID string) entities.AMMPool {
 	}
 }
 
+func getAMMDefinitionTestnet(t *testing.T, marketID string) entities.AMMPool {
+	t.Helper()
+
+	// position -69005905
+
+	return entities.AMMPool{
+		PartyID:                  entities.PartyID(vgcrypto.RandomHash()),
+		AmmPartyID:               entities.PartyID(vgcrypto.RandomHash()),
+		MarketID:                 entities.MarketID(marketID),
+		ParametersLowerBound:     ptr.From(num.DecimalFromInt64(11403)),
+		LowerVirtualLiquidity:    num.DecimalFromFloat(32934372037780.849503179454583540865465761125),
+		LowerTheoreticalPosition: num.DecimalFromFloat(158269985.323671339473934),
+		ParametersBase:           num.DecimalFromInt64(12670),
+		ParametersUpperBound:     ptr.From(num.DecimalFromInt64(13937)),
+		UpperVirtualLiquidity:    num.DecimalFromFloat(70393727154384.2551793351731482811200266360637),
+		UpperTheoreticalPosition: num.DecimalFromFloat(291036775.097792633711267),
+	}
+}
+
 func ensureAMMs(t *testing.T, mds *MDS, marketID string) entities.AMMPool {
 	t.Helper()
 
@@ -493,7 +536,7 @@ func ensureAMMs(t *testing.T, mds *MDS, marketID string) entities.AMMPool {
 	return pool
 }
 
-func ensureDecimalPlaces(t *testing.T, mds *MDS) {
+func ensureDecimalPlaces(t *testing.T, mds *MDS, adp, mdp int) {
 	t.Helper()
 
 	market := entities.Market{
@@ -506,13 +549,13 @@ func ensureDecimalPlaces(t *testing.T, mds *MDS) {
 				},
 			},
 		},
-		DecimalPlaces: 1,
+		DecimalPlaces: mdp,
 		TickSize:      ptr.From(num.DecimalOne()),
 	}
 	mds.markets.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(market, nil)
 
 	asset := entities.Asset{
-		Decimals: 1,
+		Decimals: adp,
 	}
 	mds.assets.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(asset, nil)
 }
