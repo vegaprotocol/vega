@@ -39,6 +39,7 @@ type positionSettlement interface {
 type lossSocialization interface {
 	Amount() *num.Int
 	TxHash() string
+	IsFunding() bool
 }
 
 type settleDistressed interface {
@@ -261,6 +262,11 @@ func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
 	} else {
 		p.Adjustment = p.Adjustment.Add(amountLoss)
 		p.LossSocialisationAmount = p.LossSocialisationAmount.Add(amountLoss)
+	}
+	if e.IsFunding() {
+		// adjust if this is a loss socialisation resulting from a funding payment settlement.
+		p.FundingPaymentAmount = p.FundingPaymentAmount.Add(amountLoss)
+		p.FundingPaymentAmountSince = p.FundingPaymentAmountSince.Add(amountLoss)
 	}
 
 	p.RealisedPnl = p.RealisedPnl.Add(amountLoss)

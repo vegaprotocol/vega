@@ -70,6 +70,7 @@ type LSE interface {
 	MarketID() string
 	Amount() *num.Int
 	Timestamp() int64
+	IsFunding() bool
 }
 
 // DOC DistressedOrdersClosedEvent.
@@ -148,10 +149,62 @@ func (p *Positions) Push(evts ...events.Event) {
 	p.mu.Unlock()
 }
 
+func (p *Positions) handleRegularTrade(e TE) {
+	trade := e.Trade()
+	if trade.Type == types.TradeTypeNetworkCloseOutBad {
+		return
+	}
+	marketID := e.MarketID()
+	partyPos, ok := p.data[marketID]
+	if !ok {
+		// @TODO should this be done?
+		return
+	}
+	buyerFee, sellerFee := getFeeAmounts(&trade)
+	buyer, ok := partyPos[trade.Buyer]
+	if !ok {
+		buyer = Position{
+			Position: types.Position{
+				MarketID: marketID,
+				PartyID:  types.NetworkParty,
+			},
+			AverageEntryPriceFP: num.DecimalZero(),
+			RealisedPnlFP:       num.DecimalZero(),
+			UnrealisedPnlFP:     num.DecimalZero(),
+			taker:               newAmount(),
+			maker:               newAmount(),
+			other:               newAmount(),
+			funding:             newAmount(),
+		}
+	}
+	buyer.setFees(buyerFee)
+	seller, ok := partyPos[trade.Seller]
+	if !ok {
+		seller = Position{
+			Position: types.Position{
+				MarketID: marketID,
+				PartyID:  types.NetworkParty,
+			},
+			AverageEntryPriceFP: num.DecimalZero(),
+			RealisedPnlFP:       num.DecimalZero(),
+			UnrealisedPnlFP:     num.DecimalZero(),
+			taker:               newAmount(),
+			maker:               newAmount(),
+			other:               newAmount(),
+			funding:             newAmount(),
+		}
+	}
+	seller.setFees(sellerFee)
+	partyPos[trade.Buyer] = buyer
+	partyPos[trade.Seller] = seller
+	p.data[marketID] = partyPos
+}
+
 // handle trade event closing distressed parties.
 func (p *Positions) handleTradeEvent(e TE) {
 	trade := e.Trade()
 	if trade.Type != types.TradeTypeNetworkCloseOutBad {
+		p.handleRegularTrade(e)
 		return
 	}
 	marketID := e.MarketID()
@@ -177,11 +230,38 @@ func (p *Positions) handleTradeEvent(e TE) {
 			AverageEntryPriceFP: num.DecimalZero(),
 			RealisedPnlFP:       num.DecimalZero(),
 			UnrealisedPnlFP:     num.DecimalZero(),
+			taker:               newAmount(),
+			maker:               newAmount(),
+			other:               newAmount(),
+			funding:             newAmount(),
 		}
 	}
+	dParty := trade.Seller
+	networkFee, otherFee := getFeeAmounts(&trade)
 	if trade.Seller == types.NetworkParty {
 		size *= -1
+		dParty = trade.Buyer
+		networkFee, otherFee = otherFee, networkFee
 	}
+	other, ok := partyPos[dParty]
+	if !ok {
+		other = Position{
+			Position: types.Position{
+				MarketID: marketID,
+				PartyID:  dParty,
+			},
+			AverageEntryPriceFP: num.DecimalZero(),
+			RealisedPnlFP:       num.DecimalZero(),
+			UnrealisedPnlFP:     num.DecimalZero(),
+			taker:               newAmount(),
+			maker:               newAmount(),
+			other:               newAmount(),
+			funding:             newAmount(),
+		}
+	}
+	other.setFees(otherFee)
+	other.resetSince()
+	pos.setFees(networkFee)
 	opened, closed := calculateOpenClosedVolume(pos.OpenVolume, size)
 	realisedPnlDelta := markPriceDec.Sub(pos.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closed)).Div(posFactor)
 	pos.RealisedPnl = pos.RealisedPnl.Add(realisedPnlDelta)
@@ -196,6 +276,7 @@ func (p *Positions) handleTradeEvent(e TE) {
 	pos.OpenVolume += opened
 	mtm(&pos, mPrice, posFactor)
 	partyPos[types.NetworkParty] = pos
+	partyPos[dParty] = other
 	p.data[marketID] = partyPos
 }
 
@@ -208,12 +289,16 @@ func (p *Positions) handleFundingPayments(e FP) {
 	payments := e.FundingPayments().Payments
 	for _, pay := range payments {
 		pos, ok := partyPos[pay.PartyId]
-		amt, _ := num.DecimalFromString(pay.Amount)
 		if !ok {
 			continue
 		}
+		amt, _ := num.DecimalFromString(pay.Amount)
+		iAmt, _ := num.IntFromDecimal(amt)
 		pos.RealisedPnl = pos.RealisedPnl.Add(amt)
 		pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amt)
+		// add funding totals
+		pos.funding.total.Add(iAmt)
+		pos.funding.since.Add(iAmt)
 		partyPos[pay.PartyId] = pos
 	}
 	p.data[marketID] = partyPos
@@ -256,7 +341,8 @@ func (p *Positions) applyDistressedOrders(e DOC) {
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
-	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), num.DecimalFromInt(e.Amount())
+	iAmt := e.Amount()
+	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), num.DecimalFromInt(iAmt)
 	pos, ok := p.data[marketID][partyID]
 	if !ok {
 		return
@@ -265,6 +351,11 @@ func (p *Positions) applyLossSocialization(e LSE) {
 		pos.loss = pos.loss.Add(amountLoss)
 	} else {
 		pos.adjustment = pos.adjustment.Add(amountLoss)
+	}
+	if e.IsFunding() {
+		// adjust funding amounts if needed.
+		pos.funding.total.Add(iAmt)
+		pos.funding.since.Add(iAmt)
 	}
 	pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amountLoss)
 	pos.RealisedPnl = pos.RealisedPnl.Add(amountLoss)
@@ -488,16 +579,34 @@ func mtm(p *Position, markPrice *num.Uint, positionFactor num.Decimal) {
 
 func updateSettlePosition(p *Position, e SPE) {
 	for _, t := range e.Trades() {
+		reset := p.OpenVolume == 0
 		pr := t.Price()
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
 		_ = closeV(p, closedVolume, pr, e.PositionFactor())
+		before := p.OpenVolume
 		openV(p, openedVolume, pr)
+		// was the position zero, or did the position flip sides?
+		if reset || (before < 0 && p.OpenVolume > 0) || (before > 0 && p.OpenVolume < 0) {
+			p.resetSince()
+		}
 		p.AverageEntryPrice, _ = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
 
 		p.RealisedPnl = p.RealisedPnlFP.Round(0)
 	}
 	mtm(p, e.Price(), e.PositionFactor())
 	p.UnrealisedPnl = p.UnrealisedPnlFP.Round(0)
+}
+
+type amount struct {
+	total *num.Int
+	since *num.Int
+}
+
+func newAmount() amount {
+	return amount{
+		total: num.NewInt(0),
+		since: num.NewInt(0),
+	}
 }
 
 type Position struct {
@@ -511,6 +620,10 @@ type Position struct {
 	// what a party was missing which triggered loss socialization
 	adjustment num.Decimal
 	state      vega.PositionStatus
+	taker      amount
+	maker      amount
+	other      amount
+	funding    amount
 }
 
 func seToProto(e SE) Position {
@@ -522,6 +635,10 @@ func seToProto(e SE) Position {
 		AverageEntryPriceFP: num.DecimalZero(),
 		RealisedPnlFP:       num.DecimalZero(),
 		UnrealisedPnlFP:     num.DecimalZero(),
+		taker:               newAmount(),
+		maker:               newAmount(),
+		other:               newAmount(),
+		funding:             newAmount(),
 	}
 }
 
@@ -543,4 +660,20 @@ func (p *Positions) Types() []events.Type {
 		events.FundingPaymentsEvent,
 		events.TradeEvent,
 	}
+}
+
+func (p *Position) setFees(fee *feeAmounts) {
+	p.taker.total.U.AddSum(fee.taker)
+	p.taker.since.U.AddSum(fee.taker)
+	p.maker.total.U.AddSum(fee.maker)
+	p.maker.since.U.AddSum(fee.maker)
+	p.other.total.U.AddSum(fee.other)
+	p.other.since.U.AddSum(fee.other)
+}
+
+func (p *Position) resetSince() {
+	p.taker.since = num.NewInt(0)
+	p.maker.since = num.NewInt(0)
+	p.other.since = num.NewInt(0)
+	p.funding.since = num.NewInt(0)
 }
