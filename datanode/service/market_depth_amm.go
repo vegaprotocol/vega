@@ -244,6 +244,8 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 
 	estimated := []bool{}
 	orders := []*types.Order{}
+
+	extraVolume := int64(0)
 	for i := range levels {
 		if i == len(levels)-1 {
 			break
@@ -296,19 +298,31 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 			side = types.SideSell
 			retPrice = level2.price
 
-			// if we've stepped over the pool's position we need to split the step
+			// if we've stepped over the pool's position we need to split the volume and add it to the outer levels
 			if v1.GreaterThan(ammDefn.position) {
 				volume := v1.Sub(ammDefn.position).Abs().IntPart()
-				o := m.makeOrder(level1.price, ammDefn.partyID, uint64(volume), types.SideBuy)
-				orders = append(orders, o)
-				estimated = append(estimated, level1.estimated)
 
-				// now set v1 ready for the second half of this split
-				v1 = ammDefn.position
+				// we want to add the volume to the previous order, because thats the price in marketDP when rounded away
+				// from the fair-price
+				if len(orders) != 0 {
+					o := orders[len(orders)-1]
+					o.Size += uint64(volume)
+					o.Remaining += uint64(volume)
+				}
+
+				// we need to add this volume to the price level we step to next
+				extraVolume = ammDefn.position.Sub(v2).Abs().IntPart()
+				continue
 			}
 		}
 		// calculate the volume
 		volume := v1.Sub(v2).Abs().IntPart()
+
+		// this is extra volume from when we stepped over the AMM's fair-price
+		if extraVolume != 0 {
+			volume += extraVolume
+			extraVolume = 0
+		}
 
 		orders = append(
 			orders,
