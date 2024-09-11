@@ -17,7 +17,7 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
 
 
 ## 0.78.2
@@ -34,7 +34,7 @@
 - [11650](https://github.com/vegaprotocol/vega/issues/11650) - Add include sub accounts flag to `listPositions`.
 - [11641](https://github.com/vegaprotocol/vega/issues/11641) - Panic with pegged orders.
 - [11646](https://github.com/vegaprotocol/vega/issues/11646) - Add tier numbers to API.
-- [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch. 
+- [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
 
 
 ## 0.78.1
@@ -70,7 +70,7 @@
 - [11612](https://github.com/vegaprotocol/vega/issues/11612) - Reward scaling support.
 - [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
 - [11512](https://github.com/vegaprotocol/vega/issues/11512) - Add loss socialisation amounts to funding payment API.
-- [11627](https://github.com/vegaprotocol/vega/issues/11627) - Add eligible keys filter to reward transfers. 
+- [11627](https://github.com/vegaprotocol/vega/issues/11627) - Add eligible keys filter to reward transfers.
 
 ### 🐛 Fixes
 

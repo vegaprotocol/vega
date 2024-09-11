@@ -3043,6 +3043,8 @@ func (r *myTradeResolver) BuyerFee(_ context.Context, obj *vegapb.Trade) (*Trade
 		fee.LiquidityFee = obj.BuyerFee.LiquidityFee
 		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeReferrerDiscount)
 		fee.LiquidityFeeVolumeDiscount = setIfExists(obj.BuyerFee.LiquidityFeeVolumeDiscount)
+		fee.TreasuryFee = obj.BuyerFee.TreasuryFee
+		fee.BuyBackFee = obj.BuyerFee.BuyBackFee
 	}
 	return &fee, nil
 }
@@ -3068,6 +3070,8 @@ func (r *myTradeResolver) SellerFee(_ context.Context, obj *vegapb.Trade) (*Trad
 		fee.LiquidityFee = obj.SellerFee.LiquidityFee
 		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeReferrerDiscount)
 		fee.LiquidityFeeVolumeDiscount = setIfExists(obj.SellerFee.LiquidityFeeVolumeDiscount)
+		fee.TreasuryFee = obj.SellerFee.TreasuryFee
+		fee.BuyBackFee = obj.SellerFee.BuyBackFee
 	}
 
 	return &fee, nil
