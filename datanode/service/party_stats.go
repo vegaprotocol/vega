@@ -280,11 +280,14 @@ func (s *PSvc) getVolumeDiscountTier(ctx context.Context, stats entities.Flatten
 	if err != nil {
 		return nil, err
 	}
-	for i := uint64(len(current.BenefitTiers)) - 1; i >= uint64(0); i-- {
+	if len(current.BenefitTiers) == 0 {
+		return nil, nil
+	}
+	for i := len(current.BenefitTiers) - 1; i >= 0; i-- {
 		dt := current.BenefitTiers[i]
 		minV, _ := num.DecimalFromString(dt.MinimumRunningNotionalTakerVolume)
 		if vol.GreaterThanOrEqual(minV) {
-			dt.TierNumber = &i
+			dt.TierNumber = ptr.From(uint64(i))
 			return dt, nil
 		}
 	}
@@ -300,11 +303,14 @@ func (s *PSvc) getVolumeRebateTier(ctx context.Context, stats entities.FlattenVo
 	if err != nil {
 		return nil, err
 	}
-	for i := uint64(len(current.BenefitTiers)) - 1; i >= uint64(0); i-- {
+	if len(current.BenefitTiers) == 0 {
+		return nil, nil
+	}
+	for i := len(current.BenefitTiers) - 1; i >= 0; i-- {
 		bt := current.BenefitTiers[i]
 		minF, _ := num.DecimalFromString(bt.MinimumPartyMakerVolumeFraction)
 		if vf.GreaterThanOrEqual(minF) {
-			bt.TierNumber = &i
+			bt.TierNumber = ptr.From(uint64(i))
 			return bt, nil
 		}
 	}
