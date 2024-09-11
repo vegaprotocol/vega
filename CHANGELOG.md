@@ -27,7 +27,7 @@
 - [11662](https://github.com/vegaprotocol/vega/issues/11662) - Remove reference to public from query.
 - [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
 - [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
-
+- [11668](https://github.com/vegaprotocol/vega/issues/11668) - Market depth for `AMM's` when stepping over fair-price adds volume.
 
 ## 0.78.2
 
