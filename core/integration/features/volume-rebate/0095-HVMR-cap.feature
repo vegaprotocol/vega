@@ -42,7 +42,7 @@ Feature: Volume rebate program - rebate cap
       | party2 | USD-0-1 | 1000000 |
       
 
-  Scenario Outline: Fixed buyback, treasury and rebate factors. Rebate capped correctly where necessary. (0095-HVMR-029)(0095-HVMR-030)(0095-HVMR-31)
+  Scenario Outline: Fixed buyback, treasury and rebate factors. Rebate capped correctly where necessary. (0095-HVMR-029)(0095-HVMR-030)(0095-HVMR-031)
 
     Given the following network parameters are set:
       | name                           | value      |
