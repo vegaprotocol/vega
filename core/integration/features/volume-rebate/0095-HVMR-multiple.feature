@@ -12,7 +12,6 @@ Feature: Volume rebate program - two programs overlapping
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | validators.epoch.length                 | 20s   |
       | market.auction.minimumDuration          | 1     |
-      #| volumeRebateProgram.maxBenefitTiers     | 2     |
 
     And the following assets are registered:
       | id       | decimal places | quantum |
@@ -65,7 +64,6 @@ Feature: Volume rebate program - two programs overlapping
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "MXN-0-10/USD-0-1"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "MXN-0-10/USD-0-1"
 
-  @HVMR
   Scenario Outline: rebate program A is enacted, during its lifetime program B takes over. Program B closes after program A, so after B closes, no programs should be active. (0995-HVMR-006)(0095-HMVR-007)(0095-HVMR-008)(0095-HVMR-009)(0095-HVM-010)(0095-HVMR-011).
     Given the volume rebate program tiers named "A1":
       | fraction | rebate |
@@ -111,10 +109,6 @@ Feature: Volume rebate program - two programs overlapping
       | party1 | aux1   | 1    | 50000 | sell           | 0                           | <party1 rebate A>            |
       | party2 | aux1   | 1    | 50000 | sell           | 0                           | <party2 rebate A>            |
 
-    # ensure program B can be created
-    #When the following network parameters are set:
-    #| name                                | value |
-    #| volumeRebateProgram.maxBenefitTiers | 3     |
     When the network moves ahead "1" epochs
     Then the volume rebate program:
       | id       | tiers | closing timestamp | window length   | closing delta   |
