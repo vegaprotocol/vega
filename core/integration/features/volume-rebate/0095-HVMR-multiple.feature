@@ -64,7 +64,7 @@ Feature: Volume rebate program - two programs overlapping
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "MXN-0-10/USD-0-1"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "MXN-0-10/USD-0-1"
 
-  Scenario Outline: rebate program A is enacted, during its lifetime program B takes over. Program B closes after program A, so after B closes, no programs should be active. (0995-HVMR-006)(0095-HMVR-007)(0095-HVMR-008)(0095-HVMR-009)(0095-HVM-010)(0095-HVMR-011).
+  Scenario Outline: rebate program A is enacted, during its lifetime program B takes over. Program B closes after program A, so after B closes, no programs should be active. (0095-HVMR-005)(0095-HVMR-006)(0095-HMVR-007)(0095-HVMR-008)(0095-HVMR-009)(0095-HVM-010)(0095-HVMR-011).
     Given the volume rebate program tiers named "A1":
       | fraction | rebate |
       | 0.0001   | 0.001  |

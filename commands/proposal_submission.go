@@ -461,7 +461,7 @@ func checkVolumeRebateProgramChanges(changes *vegapb.VolumeRebateProgramChanges,
 
 func checkVolumeRebateBenefitTier(index int, tier *vegapb.VolumeRebateBenefitTier) Errors {
 	errs := NewErrors()
-	propertyPath := fmt.Sprintf("update_volume_discount_program.changes.benefit_tiers.%d", index)
+	propertyPath := fmt.Sprintf("update_volume_rebate_program.changes.benefit_tiers.%d", index)
 	if len(tier.MinimumPartyMakerVolumeFraction) == 0 {
 		errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrIsRequired)
 	} else {

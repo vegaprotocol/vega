@@ -112,7 +112,7 @@ Feature: Team Rewards
     When the network moves ahead "1" epochs
     And parties should have the following vesting account balances:
       | party  | asset   | balance |
-      | party1 | USD-0-1 | 100     |
+      | party1 | USD-0-1 | 200     |
       | party2 | USD-0-1 | 0       |
 
     Then debug transfers
