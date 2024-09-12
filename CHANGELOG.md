@@ -19,6 +19,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.78.4
+
+### 🐛 Fixes
+
+- [11675](https://github.com/vegaprotocol/vega/issues/11675) - Check for empty tier slices and use int for slice indexes
+- [11676](https://github.com/vegaprotocol/vega/issues/11676) - Check for nil pointers in tiers.
+- [11670](https://github.com/vegaprotocol/vega/issues/11670) - Extend validation for programs window length to 200.
+
+
 ## 0.78.3
 
 ### 🐛 Fixes
