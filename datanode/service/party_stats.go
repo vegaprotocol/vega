@@ -133,7 +133,9 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 		if err := addRefFeeFactors(&pfFactors, refStats[0]); err != nil {
 			return nil, err
 		}
-		data.ReferralDiscountTier = *tier.TierNumber
+		if tier != nil {
+			data.ReferralDiscountTier = *tier.TierNumber
+		}
 	}
 	// 2. volume discount stats.
 	vdStats, _, err := s.vds.Stats(ctx, &lastE, &partyID, entities.DefaultCursorPagination(true))
@@ -148,7 +150,9 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 		if err := addVolFeeFactors(&pfFactors, vdStats[0]); err != nil {
 			return nil, err
 		}
-		data.VolumeDiscountTier = *tier.TierNumber
+		if tier != nil {
+			data.VolumeDiscountTier = *tier.TierNumber
+		}
 	}
 	// 3. Volume Rebate stats.
 	vrStats, _, err := s.vrs.Stats(ctx, &lastE, &partyID, entities.DefaultCursorPagination(true))
@@ -165,7 +169,9 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 			return nil, err
 		}
 		pfFactors.rebate = rebate
-		data.VolumeRebateTier = *tier.TierNumber
+		if tier != nil {
+			data.VolumeRebateTier = *tier.TierNumber
+		}
 	}
 	for _, mkt := range mkts {
 		// @TODO ensure non-nil slice!
