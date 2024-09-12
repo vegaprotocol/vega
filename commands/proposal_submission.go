@@ -385,8 +385,8 @@ func checkReferralProgramChanges(changes *vegapb.ReferralProgramChanges, enactme
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("update_referral_program.changes.window_length", ErrIsRequired)
-	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("update_referral_program.changes.window_length", ErrMustBeAtMost100)
+	} else if changes.WindowLength > 200 {
+		errs.AddForProperty("update_referral_program.changes.window_length", ErrMustBeAtMost200)
 	}
 
 	tiers := map[string]struct{}{}
@@ -449,8 +449,8 @@ func checkVolumeRebateProgramChanges(changes *vegapb.VolumeRebateProgramChanges,
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrIsRequired)
-	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrMustBeAtMost100)
+	} else if changes.WindowLength > 200 {
+		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrMustBeAtMost200)
 	}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkVolumeRebateBenefitTier(i, tier))
@@ -497,8 +497,8 @@ func checkVolumeDiscountProgramChanges(changes *vegapb.VolumeDiscountProgramChan
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrIsRequired)
-	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrMustBeAtMost100)
+	} else if changes.WindowLength > 200 {
+		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrMustBeAtMost200)
 	}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkVolumeBenefitTier(i, tier))
