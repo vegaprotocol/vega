@@ -325,6 +325,7 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 	require.Nil(t, toSubmit)
 }
 
+// testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails covers 0095-HVMR-001.
 func testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails(t *testing.T) {
 	now := time.Now()
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomPositiveI64())
