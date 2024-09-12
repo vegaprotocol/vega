@@ -65,6 +65,8 @@ func TheFollowingTradesShouldBeExecuted(
 		buyerInfraFeeReferrerDiscount, hasBuyerInfraFeeReferrerDiscount := row.DecimalB("buyer infrastructure fee referrer discount")
 		buyerMakerFeeReferrerDiscount, hasBuyerMakerFeeReferrerDiscount := row.DecimalB("buyer maker fee referrer discount")
 		buyerLiqFeeReferrerDiscount, hasBuyerLiqFeeReferrerDiscount := row.DecimalB("buyer liquidity fee referrer discount")
+		buyerBuyBackFee, hasBuyerBuyBackFee := row.DecimalB("buyer buyback fee")
+		buyerTreasuryFee, hasBuyerTreasuryFee := row.DecimalB("buyer treasury fee")
 		buyerHighVolumeMakerFee, hasBuyerHighVolumeMakerFee := row.DecimalB("buyer high volume maker fee")
 
 		sellerFee, hasSellerFee := row.U64B("seller fee")
@@ -77,6 +79,8 @@ func TheFollowingTradesShouldBeExecuted(
 		sellerInfraFeeReferrerDiscount, hasSellerInfraFeeReferrerDiscount := row.DecimalB("seller infrastructure fee referrer discount")
 		sellerMakerFeeReferrerDiscount, hasSellerMakerFeeReferrerDiscount := row.DecimalB("seller maker fee referrer discount")
 		sellerLiqFeeReferrerDiscount, hasSellerLiqFeeReferrerDiscount := row.DecimalB("seller liquidity fee referrer discount")
+		sellerBuyBackFee, hasSellerBuyBackFee := row.DecimalB("seller buyback fee")
+		sellerTreasuryFee, hasSellerTreasuryFee := row.DecimalB("seller treasury fee")
 		sellerHighVolumeMakerFee, hasSellerHighVolumeMakerFee := row.DecimalB("seller high volume maker fee")
 
 		data := broker.GetTrades()
@@ -97,6 +101,8 @@ func TheFollowingTradesShouldBeExecuted(
 				(!hasBuyerInfraFeeReferrerDiscount || buyerInfraFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.InfrastructureFeeReferrerDiscount))) &&
 				(!hasBuyerMakerFeeReferrerDiscount || buyerMakerFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.MakerFeeReferrerDiscount))) &&
 				(!hasBuyerLiqFeeReferrerDiscount || buyerLiqFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.BuyerFee.LiquidityFeeReferrerDiscount))) &&
+				(!hasBuyerTreasuryFee || buyerTreasuryFee.Equal(num.MustDecimalFromString(v.BuyerFee.TreasuryFee))) &&
+				(!hasBuyerBuyBackFee || buyerBuyBackFee.Equal(num.MustDecimalFromString(v.BuyerFee.BuyBackFee))) &&
 				(!hasBuyerHighVolumeMakerFee || buyerHighVolumeMakerFee.Equal(num.MustDecimalFromString(v.BuyerFee.HighVolumeMakerFee))) &&
 				(!hasSellerFee || sellerFee == feeToU64(v.SellerFee)) &&
 				(!hasSellerInfraFee || sellerInfraFee == stringToU64(v.SellerFee.InfrastructureFee)) &&
@@ -108,6 +114,8 @@ func TheFollowingTradesShouldBeExecuted(
 				(!hasSellerInfraFeeReferrerDiscount || sellerInfraFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.SellerFee.InfrastructureFeeReferrerDiscount))) &&
 				(!hasSellerMakerFeeReferrerDiscount || sellerMakerFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.SellerFee.MakerFeeReferrerDiscount))) &&
 				(!hasSellerLiqFeeReferrerDiscount || sellerLiqFeeReferrerDiscount.Equal(num.MustDecimalFromString(v.SellerFee.LiquidityFeeReferrerDiscount))) &&
+				(!hasSellerTreasuryFee || sellerTreasuryFee.Equal(num.MustDecimalFromString(v.SellerFee.TreasuryFee))) &&
+				(!hasSellerBuyBackFee || sellerBuyBackFee.Equal(num.MustDecimalFromString(v.SellerFee.BuyBackFee))) &&
 				(!hasSellerHighVolumeMakerFee || sellerHighVolumeMakerFee.Equal(num.MustDecimalFromString(v.SellerFee.HighVolumeMakerFee))) {
 				found = true
 			}
@@ -145,6 +153,8 @@ func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 		"buyer infrastructure fee referrer discount",
 		"buyer liquidity fee referrer discount",
 		"buyer maker fee referrer discount",
+		"buyer treasury fee",
+		"buyer buyback fee",
 		"buyer high volume maker fee",
 
 		"seller fee",
@@ -157,6 +167,8 @@ func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 		"seller infrastructure fee referrer discount",
 		"seller liquidity fee referrer discount",
 		"seller maker fee referrer discount",
+		"seller treasury fee",
+		"seller buyback fee",
 		"seller high volume maker fee",
 		"is amm",
 	})
