@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/volumerebate"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -68,6 +69,7 @@ func (r volumeRebateTiersRow) rebate() num.Decimal {
 func VolumeRebateProgram(
 	vde *volumerebate.Engine,
 	tiers map[string][]*types.VolumeRebateBenefitTier,
+	ts *stubs.TimeStub,
 	table *godog.Table,
 ) error {
 	rows := parseVolumeRebateTable(table)
@@ -77,11 +79,7 @@ func VolumeRebateProgram(
 		row := volumeRebateRow{row: r}
 		vdp.ID = row.id()
 		vdp.WindowLength = row.windowLength()
-		if row.closingTimestamp() == 0 {
-			vdp.EndOfProgramTimestamp = time.Time{}
-		} else {
-			vdp.EndOfProgramTimestamp = time.Unix(row.closingTimestamp(), 0)
-		}
+		vdp.EndOfProgramTimestamp = row.closingTS(ts.GetTimeNow())
 		tierName := row.tiers()
 		if tier := tiers[tierName]; tier != nil {
 			vdp.VolumeRebateBenefitTiers = tier
@@ -97,7 +95,9 @@ func parseVolumeRebateTable(table *godog.Table) []RowWrapper {
 		"tiers",
 		"closing timestamp",
 		"window length",
-	}, []string{})
+	}, []string{
+		"closing delta",
+	})
 }
 
 type volumeRebateRow struct {
@@ -114,6 +114,24 @@ func (r volumeRebateRow) tiers() string {
 
 func (r volumeRebateRow) closingTimestamp() int64 {
 	return r.row.MustI64("closing timestamp")
+}
+
+func (r volumeRebateRow) closingTS(now time.Time) time.Time {
+	if delta, ok := r.closingDelta(); ok {
+		return now.Add(delta)
+	}
+	ts := r.closingTimestamp()
+	if ts == 0 {
+		return time.Time{}
+	}
+	return time.Unix(ts, 0)
+}
+
+func (r volumeRebateRow) closingDelta() (time.Duration, bool) {
+	if r.row.HasColumn("closing delta") {
+		return r.row.MustDurationStr("closing delta"), true
+	}
+	return 0, false
 }
 
 func (r volumeRebateRow) windowLength() uint64 {
