@@ -108,6 +108,7 @@ func testSubmittingProposalForReferralProgramUpdateSucceeds(t *testing.T) {
 	require.NotNil(t, toSubmit)
 }
 
+// testSubmittingProposalForReferralProgramUpdateWithTooManyTiersFails covers 0095-HVMR-002.
 func testSubmittingProposalForReferralProgramUpdateWithTooManyTiersFails(t *testing.T) {
 	now := time.Now()
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomPositiveI64())
@@ -324,6 +325,7 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 	require.Nil(t, toSubmit)
 }
 
+// testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails covers 0095-HVMR-001.
 func testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails(t *testing.T) {
 	now := time.Now()
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomPositiveI64())

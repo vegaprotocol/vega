@@ -42,7 +42,7 @@ Feature: Volume rebate program - rebate cap
       | party2 | USD-0-1 | 1000000 |
       
 
-  Scenario Outline: Fixed buyback, treasury and rebate factors. Rebate capped correctly where necessary. (0095-HVMR-029)(0095-HVMR-030)(0095-HVMR-31)
+  Scenario Outline: Fixed buyback, treasury and rebate factors. Rebate capped correctly where necessary. (0095-HVMR-029)(0095-HVMR-030)(0095-HVMR-031)
 
     Given the following network parameters are set:
       | name                           | value      |
@@ -252,4 +252,64 @@ Feature: Volume rebate program - rebate cap
       | 0.003  | 0.000           | 0.002            | 200                   | 0               | 0.004            | 300                   |
 
 
+  Scenario Outline: Fees updated mid epoch, fees not affected untill next epoch (0029-FEES-051)(0029-FEES-052)
+
+    Given the following network parameters are set:
+      | name                           | value              |
+      | market.fee.factors.buybackFee  | <initial buyback>  |
+      | market.fee.factors.treasuryFee | <initial treasury> |
+    And the volume rebate program tiers named "vrt":
+      | fraction | rebate   |
+      | 0.0001   | <rebate> |
+    And the volume rebate program:
+      | id | tiers | closing timestamp | window length |
+      | id | vrt   | 0                 | 1             |
+    And the network moves ahead "1" epochs
+
+    Given the parties place the following orders:
+      | party  | market id   | side | volume | price | resulting trades | type       | tif     | error |
+      | party1 | BTC/USD-0-1 | buy  | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+      | party2 | BTC/USD-0-1 | sell | 1      | 50000 | 1                | TYPE_LIMIT | TIF_GTC |       |
+    When the network moves ahead "1" blocks
+    Then the following trades should be executed:
+      | buyer  | seller | size | price | aggressor side | buyer maker fee | seller maker fee |
+      | party1 | party2 | 1    | 50000 | sell           | 0               | 500              |
+
+    Given the network moves ahead "1" epochs
+    And the parties place the following orders:
+      | party  | market id   | side | volume | price | resulting trades | type       | tif     | error |
+      | party1 | BTC/USD-0-1 | buy  | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+      | party2 | BTC/USD-0-1 | sell | 1      | 50000 | 1                | TYPE_LIMIT | TIF_GTC |       |
+    When the network moves ahead "1" blocks
+    Then the following trades should be executed:
+      | buyer  | seller | size | price | aggressor side | seller treasury fee       | seller buyback fee       | seller high volume maker fee |
+      | party1 | party2 | 1    | 50000 | sell           | <initial treasury amount> | <initial buyback amount> | <initial rebate amount>      |
+    Then the following transfers should happen:
+      | from | to     | from account            | to account           | market id   | amount                  | asset   | type                                        |
+      |      | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL | BTC/USD-0-1 | <initial rebate amount> | USD-0-1 | TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_RECEIVE |
+
+    Then clear trade events
+    Given the following network parameters are set:
+      | name                           | value              |
+      | market.fee.factors.buybackFee  | <updated buyback>  |
+      | market.fee.factors.treasuryFee | <updated treasury> |
+    And the network moves ahead "1" blocks
+    When the parties place the following orders:
+      | party  | market id   | side | volume | price | resulting trades | type       | tif     | error |
+      | party1 | BTC/USD-0-1 | buy  | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+      | party2 | BTC/USD-0-1 | sell | 1      | 50000 | 1                | TYPE_LIMIT | TIF_GTC |       |
+    When the network moves ahead "1" blocks
+    Then debug trades
+    Then the following trades should be executed:
+      | buyer  | seller | size | price | aggressor side | seller treasury fee       | seller buyback fee       | seller high volume maker fee |
+      | party1 | party2 | 1    | 50000 | sell           | <updated treasury amount> | <updated buyback amount> | <updated rebate amount>      |
+    Then the following transfers should happen:
+      | from | to     | from account            | to account           | market id   | amount                  | asset   | type                                        |
+      |      | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL | BTC/USD-0-1 | <updated rebate amount> | USD-0-1 | TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_RECEIVE |
+
+  Examples:
+      | rebate | initial buyback | initial treasury | initial buyback amount | initial treasury amount | initial rebate amount | updated buyback | updated treasury | updated buyback amount | updated treasury amount | updated rebate amount |
+      | 0.003  | 0.004           | 0                | 50                     | 0                       | 150                   | 0.001           | 0                | 0                      | 0                       | 50                    |
+      | 0.003  | 0               | 0.004            | 0                      | 50                      | 150                   | 0               | 0.001            | 0                      | 0                       | 50                    |
+      | 0.003  | 0.002           | 0.002            | 25                     | 25                      | 150                   | 0.001           | 0.001            | 0                      | 0                       | 100                   |
 

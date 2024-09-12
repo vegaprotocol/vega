@@ -819,7 +819,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the volume rebate program:$`, func(table *godog.Table) error {
-		return steps.VolumeRebateProgram(execsetup.volumeRebateProgram, volumeRebateTiers, table)
+		return steps.VolumeRebateProgram(execsetup.volumeRebateProgram, volumeRebateTiers, execsetup.timeService, table)
 	})
 	s.Step(`^the party "([^"]*)" has the following rebate factor "([^"]*)"$`, func(party, rebate string) error {
 		return steps.PartyHasTheFollowingRebate(party, rebate, execsetup.volumeRebateProgram)
