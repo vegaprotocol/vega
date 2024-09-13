@@ -18,6 +18,7 @@
 ### 🐛 Fixes
 
 - [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
+- [11681](https://github.com/vegaprotocol/vega/issues/11681) - Account for conflicts inserting funding payment records.
 
 
 ## 0.78.2
