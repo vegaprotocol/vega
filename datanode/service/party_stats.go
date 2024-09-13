@@ -83,7 +83,6 @@ type partyFeeFactors struct {
 	maker     num.Decimal
 	infra     num.Decimal
 	liquidity num.Decimal
-	rebate    num.Decimal
 }
 
 func NewPartyStatsService(epoch EpochStore, ref ReferralSetStore, vds VDSStore, vrs VRSStore, mkt MktStore, rp RPStore, vd VDStore, vr VRStore) *PSvc {
@@ -118,7 +117,10 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 	lastE := uint64(epoch.ID - 1)
 
 	data := &v2.GetPartyDiscountStatsResponse{}
-	pfFactors := partyFeeFactors{}
+	rfDiscountFactors := partyFeeFactors{}
+	rfRewardFactors := partyFeeFactors{}
+	vdDiscountFactors := partyFeeFactors{}
+
 	// now that we've gotten the epoch and all markets, get the party stats.
 	// 1. referral set stats.
 	refStats, _, err := s.ref.GetReferralSetStats(ctx, nil, &lastE, ptr.From(entities.PartyID(partyID)), entities.DefaultCursorPagination(true))
@@ -130,7 +132,7 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 		if err != nil {
 			return nil, err
 		}
-		if err := addRefFeeFactors(&pfFactors, refStats[0]); err != nil {
+		if err := setRefFeeFactors(&rfRewardFactors, &rfDiscountFactors, refStats[0]); err != nil {
 			return nil, err
 		}
 		if tier != nil {
@@ -147,7 +149,7 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 		if err != nil {
 			return nil, err
 		}
-		if err := addVolFeeFactors(&pfFactors, vdStats[0]); err != nil {
+		if err := setVolFeeFactors(&vdDiscountFactors, vdStats[0]); err != nil {
 			return nil, err
 		}
 		if tier != nil {
@@ -159,51 +161,55 @@ func (s *PSvc) GetPartyStats(ctx context.Context, partyID string, markets []stri
 	if err != nil {
 		return nil, err
 	}
+	var rebate num.Decimal
 	if len(vrStats) > 0 {
 		tier, err := s.getVolumeRebateTier(ctx, vrStats[0])
 		if err != nil {
 			return nil, err
 		}
-		rebate, err := num.DecimalFromString(vrStats[0].AdditionalRebate)
+		rebate, err = num.DecimalFromString(vrStats[0].AdditionalRebate)
 		if err != nil {
 			return nil, err
 		}
-		pfFactors.rebate = rebate
 		if tier != nil {
 			data.VolumeRebateTier = *tier.TierNumber
 		}
 	}
 	for _, mkt := range mkts {
 		// @TODO ensure non-nil slice!
-		if err := setMarketFees(data, mkt, pfFactors); err != nil {
+		if err := setMarketFees(data, mkt, rfDiscountFactors, rfRewardFactors, vdDiscountFactors, rebate); err != nil {
 			return nil, err
 		}
 	}
 	return data, nil
 }
 
-func setMarketFees(data *v2.GetPartyDiscountStatsResponse, mkt entities.Market, factors partyFeeFactors) error {
-	maker, infra, liquidity, err := feeFactors(mkt)
+func setMarketFees(data *v2.GetPartyDiscountStatsResponse, mkt entities.Market, rfDiscount, rfRewards, vdFactors partyFeeFactors, rebate num.Decimal) error {
+	maker, infra, liquidity, bb, treasury, err := feeFactors(mkt)
 	if err != nil {
 		return err
 	}
 	// undiscounted
-	base := num.DecimalZero().Add(maker).Add(infra).Add(liquidity)
+	base := num.DecimalZero().Add(maker).Add(infra).Add(liquidity).Add(bb).Add(treasury)
 	// discounted
-	discounted := num.DecimalZero().Add(maker.Sub(factors.maker)).
-		Add(infra.Sub(factors.infra)).
-		Add(liquidity.Sub(factors.liquidity))
+	discountedMaker := maker.Mul(num.DecimalOne().Sub(rfDiscount.maker)).Mul(num.DecimalOne().Sub(vdFactors.maker)).Mul(num.DecimalOne().Sub(rfRewards.maker))
+	discountedInfra := infra.Mul(num.DecimalOne().Sub(rfDiscount.infra)).Mul(num.DecimalOne().Sub(vdFactors.infra)).Mul(num.DecimalOne().Sub(rfRewards.infra))
+	discountedLiquidity := liquidity.Mul(num.DecimalOne().Sub(rfDiscount.liquidity)).Mul(num.DecimalOne().Sub(vdFactors.liquidity)).Mul(num.DecimalOne().Sub(rfRewards.liquidity))
+	discounted := discountedMaker.Add(discountedInfra).Add(discountedLiquidity).Add(bb).Add(treasury)
+
+	effRebate := num.MinD(rebate, bb.Add(treasury))
+
 	data.PartyMarketFees = append(data.PartyMarketFees, &v2.MarketFees{
 		MarketId:             mkt.ID.String(),
 		UndiscountedTakerFee: base.String(),
 		DiscountedTakerFee:   discounted.String(),
 		BaseMakerRebate:      maker.String(),
-		UserMakerRebate:      maker.Add(factors.rebate).String(),
+		UserMakerRebate:      maker.Add(effRebate).String(),
 	})
 	return nil
 }
 
-func feeFactors(mkt entities.Market) (maker, infra, liquidity num.Decimal, err error) {
+func feeFactors(mkt entities.Market) (maker, infra, liquidity, bb, treasury num.Decimal, err error) {
 	if maker, err = num.DecimalFromString(mkt.Fees.Factors.MakerFee); err != nil {
 		return
 	}
@@ -213,44 +219,68 @@ func feeFactors(mkt entities.Market) (maker, infra, liquidity num.Decimal, err e
 	if liquidity, err = num.DecimalFromString(mkt.Fees.Factors.LiquidityFee); err != nil {
 		return
 	}
+	if bb, err = num.DecimalFromString(mkt.Fees.Factors.BuyBackFee); err != nil {
+		return
+	}
+	if treasury, err = num.DecimalFromString(mkt.Fees.Factors.TreasuryFee); err != nil {
+		return
+	}
+
 	return
 }
 
-func addRefFeeFactors(ff *partyFeeFactors, stats entities.FlattenReferralSetStats) error {
+func setRefFeeFactors(rewards, discounts *partyFeeFactors, stats entities.FlattenReferralSetStats) error {
 	maker, err := num.DecimalFromString(stats.RewardFactors.MakerRewardFactor)
 	if err != nil {
 		return err
 	}
-	ff.maker = ff.maker.Add(maker)
+	rewards.maker = maker
 	infra, err := num.DecimalFromString(stats.RewardFactors.InfrastructureRewardFactor)
 	if err != nil {
 		return err
 	}
-	ff.infra = ff.infra.Add(infra)
+	rewards.infra = infra
 	liquidity, err := num.DecimalFromString(stats.RewardFactors.LiquidityRewardFactor)
 	if err != nil {
 		return err
 	}
-	ff.liquidity = ff.liquidity.Add(liquidity)
+	rewards.liquidity = liquidity
+
+	dmaker, err := num.DecimalFromString(stats.DiscountFactors.MakerDiscountFactor)
+	if err != nil {
+		return err
+	}
+	discounts.maker = dmaker
+	dinfra, err := num.DecimalFromString(stats.DiscountFactors.InfrastructureDiscountFactor)
+	if err != nil {
+		return err
+	}
+	discounts.infra = dinfra
+	dliquidity, err := num.DecimalFromString(stats.DiscountFactors.LiquidityDiscountFactor)
+	if err != nil {
+		return err
+	}
+	discounts.liquidity = dliquidity
+
 	return nil
 }
 
-func addVolFeeFactors(ff *partyFeeFactors, stats entities.FlattenVolumeDiscountStats) error {
+func setVolFeeFactors(ff *partyFeeFactors, stats entities.FlattenVolumeDiscountStats) error {
 	maker, err := num.DecimalFromString(stats.DiscountFactors.MakerDiscountFactor)
 	if err != nil {
 		return err
 	}
-	ff.maker = ff.maker.Add(maker)
+	ff.maker = maker
 	infra, err := num.DecimalFromString(stats.DiscountFactors.InfrastructureDiscountFactor)
 	if err != nil {
 		return err
 	}
-	ff.infra = ff.infra.Add(infra)
+	ff.infra = infra
 	liquidity, err := num.DecimalFromString(stats.DiscountFactors.LiquidityDiscountFactor)
 	if err != nil {
 		return err
 	}
-	ff.liquidity = ff.liquidity.Add(liquidity)
+	ff.liquidity = liquidity
 	return nil
 }
 
