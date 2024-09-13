@@ -55,8 +55,8 @@ func (fp *FundingPayments) Add(
 values ($1, $2, $3, $4, $5, $6, $7)
 	ON CONFLICT (party_id, market_id, vega_time) DO UPDATE SET
 		funding_period_seq=EXCLUDED.funding_period_seq,
-		amount=EXCLUDED.amount
-		tx_hash=EXCLUDED.tx_hash
+		amount=EXCLUDED.amount,
+		tx_hash=EXCLUDED.tx_hash,
 		loss_socialisation_amount=EXCLUDED.loss_socialisation_amount`,
 			v.MarketID, v.PartyID, v.FundingPeriodSeq, v.Amount, v.VegaTime, v.TxHash, v.LossSocialisationAmount)
 		if err != nil {
