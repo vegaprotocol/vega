@@ -68,5 +68,6 @@ func TestPartyFees(t *testing.T) {
 	// 0.0001977822198 + 0.000488922196 + 0.00000966799873 + 0.0003 + 0.0001 = 0.00109637241453
 	require.Equal(t, "0.00109637241453", data.PartyMarketFees[0].DiscountedTakerFee)
 	require.Equal(t, "0.0002", data.PartyMarketFees[0].BaseMakerRebate)
-	require.Equal(t, "0.0052", data.PartyMarketFees[0].UserMakerRebate)
+	// effective rebate is min(0.0003+0.0001=0.0004, 0.005) = 0.0004 + 0.0002 = 0.0006
+	require.Equal(t, "0.0006", data.PartyMarketFees[0].UserMakerRebate)
 }

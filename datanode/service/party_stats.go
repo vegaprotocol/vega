@@ -197,12 +197,14 @@ func setMarketFees(data *v2.GetPartyDiscountStatsResponse, mkt entities.Market, 
 	discountedLiquidity := liquidity.Mul(num.DecimalOne().Sub(rfDiscount.liquidity)).Mul(num.DecimalOne().Sub(vdFactors.liquidity)).Mul(num.DecimalOne().Sub(rfRewards.liquidity))
 	discounted := discountedMaker.Add(discountedInfra).Add(discountedLiquidity).Add(bb).Add(treasury)
 
+	effRebate := num.MinD(rebate, bb.Add(treasury))
+
 	data.PartyMarketFees = append(data.PartyMarketFees, &v2.MarketFees{
 		MarketId:             mkt.ID.String(),
 		UndiscountedTakerFee: base.String(),
 		DiscountedTakerFee:   discounted.String(),
 		BaseMakerRebate:      maker.String(),
-		UserMakerRebate:      maker.Add(rebate).String(),
+		UserMakerRebate:      maker.Add(effRebate).String(),
 	})
 	return nil
 }
