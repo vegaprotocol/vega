@@ -32,7 +32,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const MaximumWindowLength uint64 = 100
+const MaximumWindowLength uint64 = 200
 
 var (
 	ErrIsAlreadyAReferee = func(party types.PartyID) error {
