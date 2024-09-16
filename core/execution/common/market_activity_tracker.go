@@ -1393,7 +1393,7 @@ func calcNotionalAt(n *twNotional, t, tn int64, markPrice *num.Uint) *num.Uint {
 	}
 	p1 := num.UintZero().Mul(n.currentEpochTWNotional, tnOverTComp)
 	var notional *num.Uint
-	if markPrice != nil && !markPrice.IsZero() {
+	if markPrice != nil && !markPrice.IsZero() && !(n.price.IsZero() || n.notional.IsZero()) {
 		notional, _ = num.UintFromDecimal(n.notional.ToDecimal().Div(n.price.ToDecimal()).Mul(markPrice.ToDecimal()))
 	} else {
 		notional = n.notional
