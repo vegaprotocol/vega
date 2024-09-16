@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.78.6
+
+### 🐛 Fixes
+
+- [11687](https://github.com/vegaprotocol/vega/issues/11687) - Fix potential division by zero in notional reward metric evaluation.
+- [11689](https://github.com/vegaprotocol/vega/issues/11689) - Set max window length to 200.
+
 ## 0.78.5
 
 ### 🐛 Fixes
@@ -62,7 +69,7 @@
 - [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
 - [11679](https://github.com/vegaprotocol/vega/issues/11679) - Fix calculation of fees in party `stats`.
 - [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
-- [11687](https://github.com/vegaprotocol/vega/issues/11687) - Fix potential division by zero in notional reward metric evaluation. 
+- [11687](https://github.com/vegaprotocol/vega/issues/11687) - Fix potential division by zero in notional reward metric evaluation.
 ## 0.78.1
 
 ### 🐛 Fixes
