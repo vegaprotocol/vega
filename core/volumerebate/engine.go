@@ -30,7 +30,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const MaximumWindowLength uint64 = 100
+const MaximumWindowLength uint64 = 200
 
 type Engine struct {
 	broker                Broker
