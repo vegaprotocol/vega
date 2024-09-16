@@ -19,6 +19,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.78.4-patch1
+
+### 🐛 Fixes
+
+- [11689](https://github.com/vegaprotocol/vega/pull/11689) - Set max window length to 200.
+
 ## 0.78.4
 
 ### 🐛 Fixes
