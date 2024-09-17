@@ -19,6 +19,7 @@
 
 - [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
 - [11681](https://github.com/vegaprotocol/vega/issues/11681) - Account for conflicts inserting funding payment records.
+- [11696](https://github.com/vegaprotocol/vega/issues/11696) - Add binding for estimate fees API.
 
 
 ## 0.78.2
@@ -35,10 +36,10 @@
 - [11650](https://github.com/vegaprotocol/vega/issues/11650) - Add include sub accounts flag to `listPositions`.
 - [11641](https://github.com/vegaprotocol/vega/issues/11641) - Panic with pegged orders.
 - [11646](https://github.com/vegaprotocol/vega/issues/11646) - Add tier numbers to API.
-- [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch. 
-- [11679](https://github.com/vegaprotocol/vega/issues/11679) - Fix calculation of fees in party `stats`. 
 - [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
-- [11687](https://github.com/vegaprotocol/vega/issues/11687) - Fix potential division by zero in notional reward metric evaluation. 
+- [11679](https://github.com/vegaprotocol/vega/issues/11679) - Fix calculation of fees in party `stats`.
+- [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
+- [11687](https://github.com/vegaprotocol/vega/issues/11687) - Fix potential division by zero in notional reward metric evaluation.
 ## 0.78.1
 
 ### 🐛 Fixes

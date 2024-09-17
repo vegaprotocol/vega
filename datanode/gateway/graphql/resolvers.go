@@ -1434,9 +1434,18 @@ func (r *myQueryResolver) EstimateOrder(
 	}
 
 	fee := TradeFee{
-		MakerFee:          resp.Fee.MakerFee,
-		InfrastructureFee: resp.Fee.InfrastructureFee,
-		LiquidityFee:      resp.Fee.LiquidityFee,
+		MakerFee:                          resp.Fee.MakerFee,
+		InfrastructureFee:                 resp.Fee.InfrastructureFee,
+		LiquidityFee:                      resp.Fee.LiquidityFee,
+		BuyBackFee:                        resp.Fee.BuyBackFee,
+		TreasuryFee:                       resp.Fee.TreasuryFee,
+		HighVolumeMakerFee:                resp.Fee.HighVolumeMakerFee,
+		MakerFeeReferralDiscount:          ptr.From(resp.Fee.MakerFeeReferrerDiscount),
+		MakerFeeVolumeDiscount:            ptr.From(resp.Fee.MakerFeeVolumeDiscount),
+		InfrastructureFeeReferralDiscount: ptr.From(resp.Fee.InfrastructureFeeReferrerDiscount),
+		InfrastructureFeeVolumeDiscount:   ptr.From(resp.Fee.InfrastructureFeeVolumeDiscount),
+		LiquidityFeeReferralDiscount:      ptr.From(resp.Fee.LiquidityFeeReferrerDiscount),
+		LiquidityFeeVolumeDiscount:        ptr.From(resp.Fee.LiquidityFeeVolumeDiscount),
 	}
 
 	// now we calculate the margins
@@ -1529,9 +1538,18 @@ func (r *myQueryResolver) EstimateFees(
 	}
 
 	fees := &TradeFee{
-		MakerFee:          resp.Fee.MakerFee,
-		InfrastructureFee: resp.Fee.InfrastructureFee,
-		LiquidityFee:      resp.Fee.LiquidityFee,
+		MakerFee:                          resp.Fee.MakerFee,
+		InfrastructureFee:                 resp.Fee.InfrastructureFee,
+		LiquidityFee:                      resp.Fee.LiquidityFee,
+		BuyBackFee:                        resp.Fee.BuyBackFee,
+		TreasuryFee:                       resp.Fee.TreasuryFee,
+		HighVolumeMakerFee:                resp.Fee.HighVolumeMakerFee,
+		MakerFeeReferralDiscount:          ptr.From(resp.Fee.MakerFeeReferrerDiscount),
+		MakerFeeVolumeDiscount:            ptr.From(resp.Fee.MakerFeeVolumeDiscount),
+		InfrastructureFeeReferralDiscount: ptr.From(resp.Fee.InfrastructureFeeReferrerDiscount),
+		InfrastructureFeeVolumeDiscount:   ptr.From(resp.Fee.InfrastructureFeeVolumeDiscount),
+		LiquidityFeeReferralDiscount:      ptr.From(resp.Fee.LiquidityFeeReferrerDiscount),
+		LiquidityFeeVolumeDiscount:        ptr.From(resp.Fee.LiquidityFeeVolumeDiscount),
 	}
 
 	return &FeeEstimate{
