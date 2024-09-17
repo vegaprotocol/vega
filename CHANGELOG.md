@@ -19,6 +19,14 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.78.7
+
+### 🐛 Fixes
+
+- [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
+- [11694](https://github.com/vegaprotocol/vega/pull/11694) - Fix `GraphQl` bindings for fees.
+
+
 ## 0.78.6
 
 ### 🐛 Fixes
