@@ -153,6 +153,8 @@ func TestVolumeDiscountProgramLifecycle(t *testing.T) {
 		e := evt.(*events.VolumeDiscountProgramUpdated)
 		require.Equal(t, p2.IntoProto(), e.GetVolumeDiscountProgramUpdated().Program)
 	}).Times(1)
+	// expect the stats updated event
+	expectStatsUpdated(t, broker)
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 1)})
 
 	// // expire the program

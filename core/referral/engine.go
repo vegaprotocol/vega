@@ -339,10 +339,14 @@ func (e *Engine) OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
+		pp := e.currentProgram
 		e.currentEpoch = ep.Seq
 		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
+		if pp != nil && pp != e.currentProgram && !e.programHasEnded {
+			e.computeReferralSetsStats(ctx, ep, false)
+		}
 	case vegapb.EpochAction_EPOCH_ACTION_END:
-		e.computeReferralSetsStats(ctx, ep)
+		e.computeReferralSetsStats(ctx, ep, true)
 	}
 }
 
@@ -495,7 +499,7 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto []*snapshotpb.ReferralSe
 	}
 }
 
-func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch) {
+func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch, sendEvents bool) {
 	priorEpoch := uint64(0)
 	if epoch.Seq > MaximumWindowLength {
 		priorEpoch = epoch.Seq - MaximumWindowLength
@@ -522,10 +526,10 @@ func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch
 		return
 	}
 
-	e.computeFactorsByReferee(ctx, epoch.Seq, takerVolumePerReferee, referrersTakerVolume)
+	e.computeFactorsByReferee(ctx, epoch.Seq, takerVolumePerReferee, referrersTakerVolume, sendEvents)
 }
 
-func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, takerVolumePerReferee, referrersTakesVolume map[types.PartyID]*num.Uint) {
+func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, takerVolumePerReferee, referrersTakesVolume map[types.PartyID]*num.Uint, sendEvents bool) {
 	e.factorsByReferee = map[types.PartyID]*types.RefereeStats{}
 
 	allStats := map[types.ReferralSetID]*types.ReferralSetStats{}
@@ -595,6 +599,9 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 		}
 	}
 
+	if !sendEvents {
+		return
+	}
 	setIDs := maps.Keys(allStats)
 	slices.Sort(setIDs)
 	for _, setID := range setIDs {

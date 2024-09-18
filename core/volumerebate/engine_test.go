@@ -58,6 +58,7 @@ func TestVolumeRebateProgramLifecycle(t *testing.T) {
 	broker := mocks.NewMockBroker(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	engine := volumerebate.NewSnapshottedEngine(broker, marketActivityTracker)
+	marketActivityTracker.EXPECT().CalculateTotalMakerContributionInQuantum(gomock.Any()).Return(map[string]*num.Uint{}, map[string]num.Decimal{}).Times(1)
 
 	// test snapshot with empty engine
 	hashEmpty, _, err := engine.GetState(key)
@@ -83,7 +84,10 @@ func TestVolumeRebateProgramLifecycle(t *testing.T) {
 
 	// expect an event for the started program
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeRebateProgramStarted)
+		e, ok := evt.(*events.VolumeRebateProgramStarted)
+		if !ok {
+			return
+		}
 		require.Equal(t, p1.IntoProto(), e.GetVolumeRebateProgramStarted().Program)
 	}).Times(1)
 
@@ -118,14 +122,20 @@ func TestVolumeRebateProgramLifecycle(t *testing.T) {
 
 	// // expect a program updated event
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeRebateProgramUpdated)
+		e, ok := evt.(*events.VolumeRebateProgramUpdated)
+		if !ok {
+			return
+		}
 		require.Equal(t, p2.IntoProto(), e.GetVolumeRebateProgramUpdated().Program)
-	}).Times(1)
+	}).Times(2)
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 1)})
 
 	// // expire the program
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeRebateProgramEnded)
+		e, ok := evt.(*events.VolumeRebateProgramEnded)
+		if !ok {
+			return
+		}
 		require.Equal(t, p2.Version, e.GetVolumeRebateProgramEnded().Version)
 	}).Times(1)
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 2)})

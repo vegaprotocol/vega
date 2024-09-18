@@ -64,7 +64,16 @@ func New(broker Broker, marketActivityTracker MarketActivityTracker) *Engine {
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
+		// whatever current program is
+		pp := e.currentProgram
 		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
+		// has the program changed, and is the new current program active?
+		if pp != nil && pp != e.currentProgram && !e.programHasEnded {
+			// calculate volume for the window of the new program
+			e.calculatePartiesVolumeForWindow(int(e.currentProgram.WindowLength))
+			// update the factors
+			e.computeFactorsByParty(ctx, ep.Seq)
+		}
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		e.updateNotionalVolumeForEpoch()
 		if !e.programHasEnded {

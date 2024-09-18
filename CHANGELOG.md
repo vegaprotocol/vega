@@ -20,6 +20,7 @@
 - [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
 - [11681](https://github.com/vegaprotocol/vega/issues/11681) - Account for conflicts inserting funding payment records.
 - [11696](https://github.com/vegaprotocol/vega/issues/11696) - Add binding for estimate fees API.
+- [11699](https://github.com/vegaprotocol/vega/issues/11699) - Update factors of programs when they are updated.
 
 
 ## 0.78.2
