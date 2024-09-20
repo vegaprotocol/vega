@@ -342,7 +342,8 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		pp := e.currentProgram
 		e.currentEpoch = ep.Seq
 		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
-		if pp != nil && pp != e.currentProgram && !e.programHasEnded {
+		// we have an active program, and it's new (pp could be nil, or a pointer to the program before it was updated)
+		if !e.programHasEnded && pp != e.currentProgram {
 			e.computeReferralSetsStats(ctx, ep, false)
 		}
 	case vegapb.EpochAction_EPOCH_ACTION_END:

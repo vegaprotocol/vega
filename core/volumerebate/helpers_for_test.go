@@ -17,6 +17,7 @@ package volumerebate_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,9 +27,41 @@ import (
 	"code.vegaprotocol.io/vega/core/volumerebate/mocks"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
+
+// event matchers for relevant events.
+var (
+	endedEvt   = evtMatcher[events.VolumeRebateProgramEnded]{}
+	startedEvt = evtMatcher[events.VolumeRebateProgramStarted]{}
+	updatedEvt = evtMatcher[events.VolumeRebateProgramUpdated]{}
+	statsEvt   = evtMatcher[events.VolumeRebateStatsUpdated]{}
+)
+
+type evts interface {
+	events.VolumeRebateStatsUpdated | events.VolumeRebateProgramStarted | events.VolumeRebateProgramUpdated | events.VolumeRebateProgramEnded
+}
+
+type evtMatcher[T evts] struct{}
+
+func (_ evtMatcher[T]) String() string {
+	var e *T
+	return fmt.Sprintf("matches %T", e)
+}
+
+func (_ evtMatcher[T]) Matches(x any) bool {
+	_, ok := x.(*T)
+	return ok
+}
+
+// cast uses the matcher for the type assertions in the callbacks, returns nil if the input is incompatible, using the correct matcher should make that impossible.
+func (_ evtMatcher[T]) cast(v any) *T {
+	e, ok := v.(*T)
+	if !ok {
+		return nil
+	}
+	return e
+}
 
 func endEpoch(t *testing.T, engine *volumerebate.SnapshottedEngine, seq uint64, endTime time.Time) {
 	t.Helper()
@@ -53,8 +86,8 @@ func startEpoch(t *testing.T, engine *volumerebate.SnapshottedEngine, seq uint64
 func expectProgramEnded(t *testing.T, broker *mocks.MockBroker, p1 *types.VolumeRebateProgram) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeRebateProgramEnded)
+	broker.EXPECT().Send(endedEvt).DoAndReturn(func(evt events.Event) {
+		e := endedEvt.cast(evt)
 		require.Equal(t, p1.Version, e.GetVolumeRebateProgramEnded().Version)
 	}).Times(1)
 }
@@ -62,18 +95,18 @@ func expectProgramEnded(t *testing.T, broker *mocks.MockBroker, p1 *types.Volume
 func expectStatsUpdated(t *testing.T, broker *mocks.MockBroker) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-		_, ok := evt.(*events.VolumeRebateStatsUpdated)
-		require.Truef(t, ok, "expecting event of type *events.VolumeRebateStatsUpdated but got %T", evt)
+	broker.EXPECT().Send(statsEvt).Do(func(evt events.Event) {
+		e := statsEvt.cast(evt)
+		require.NotNil(t, e, "expecting non-nil event of type %s but got %T (nil)", statsEvt, evt)
 	}).Times(1)
 }
 
 func expectStatsUpdatedWithUnqualifiedParties(t *testing.T, broker *mocks.MockBroker) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-		update, ok := evt.(*events.VolumeRebateStatsUpdated)
-		require.Truef(t, ok, "expecting event of type *events.VolumeRebateStatsUpdated but got %T", evt)
+	broker.EXPECT().Send(statsEvt).Do(func(evt events.Event) {
+		update := statsEvt.cast(evt)
+		require.NotNil(t, update, "expecting event of type %s but got %T (nil)", statsEvt, evt)
 		stats := update.VolumeRebateStatsUpdated()
 		foundUnqualifiedParty := false
 		for _, s := range stats.Stats {
@@ -90,9 +123,9 @@ func expectStatsUpdatedWithUnqualifiedParties(t *testing.T, broker *mocks.MockBr
 func expectProgramStarted(t *testing.T, broker *mocks.MockBroker, p1 *types.VolumeRebateProgram) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
-		e, ok := evt.(*events.VolumeRebateProgramStarted)
-		require.Truef(t, ok, "expecting event of type *events.VolumeRebateProgramStarted but got %T", evt)
+	broker.EXPECT().Send(startedEvt).Do(func(evt events.Event) {
+		e := startedEvt.cast(evt)
+		require.NotNil(t, e, "expecting event of type %s but got %T (nil)", startedEvt, evt)
 		require.Equal(t, p1.IntoProto(), e.GetVolumeRebateProgramStarted().Program)
 	}).Times(1)
 }

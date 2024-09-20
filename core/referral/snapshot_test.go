@@ -112,7 +112,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 			return num.UintZero()
 		}
 		return v
-	}).Times(len(epochEndVals) * 2)
+	}).Times(len(epochEndVals) * 3) // once for creation, once for new epoch, once for update
 	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(10)).Times(1)
 	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(20)).Times(1)
 	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer3)).Return(num.UintFromUint64(30)).Times(1)

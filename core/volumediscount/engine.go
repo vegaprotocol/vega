@@ -67,8 +67,8 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		// whatever current program is
 		pp := e.currentProgram
 		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
-		// has the program changed, and is the new current program active?
-		if pp != nil && pp != e.currentProgram && !e.programHasEnded {
+		// we have an active program, and it's not the same one after we called applyProgramUpdate -> update factors.
+		if !e.programHasEnded && pp != e.currentProgram {
 			// calculate volume for the window of the new program
 			e.calculatePartiesVolumeForWindow(int(e.currentProgram.WindowLength))
 			// update the factors

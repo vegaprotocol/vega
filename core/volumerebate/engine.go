@@ -67,7 +67,8 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
 		pp := e.currentProgram
 		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
-		if pp != nil && pp != e.currentProgram && !e.programHasEnded {
+		// we have an active program and it changed after the apply update call -> update state and factors.
+		if !e.programHasEnded && pp != e.currentProgram {
 			// update state based on the new program window length
 			e.updateState()
 			e.computeFactorsByParty(ctx, ep.Seq)

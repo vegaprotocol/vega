@@ -98,10 +98,12 @@ func TestVolumeDiscountProgramLifecycle(t *testing.T) {
 	engine.UpdateProgram(p1)
 
 	// expect an event for the started program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountProgramStarted]{}).DoAndReturn(func(evt events.Event) {
 		e := evt.(*events.VolumeDiscountProgramStarted)
 		require.Equal(t, p1.IntoProto(), e.GetVolumeDiscountProgramStarted().Program)
 	}).Times(1)
+	// we expect the stats to be updated when a new program starts
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountStatsUpdated]{}).Times(1)
 
 	// activate the program
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now})
@@ -149,7 +151,7 @@ func TestVolumeDiscountProgramLifecycle(t *testing.T) {
 	assertSnapshotMatches(t, key, hashWithNewAndCurrent)
 
 	// // expect a program updated event
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountProgramUpdated]{}).DoAndReturn(func(evt events.Event) {
 		e := evt.(*events.VolumeDiscountProgramUpdated)
 		require.Equal(t, p2.IntoProto(), e.GetVolumeDiscountProgramUpdated().Program)
 	}).Times(1)
@@ -158,7 +160,7 @@ func TestVolumeDiscountProgramLifecycle(t *testing.T) {
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 1)})
 
 	// // expire the program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountProgramEnded]{}).DoAndReturn(func(evt events.Event) {
 		e := evt.(*events.VolumeDiscountProgramEnded)
 		require.Equal(t, p2.Version, e.GetVolumeDiscountProgramEnded().Version)
 	}).Times(1)
@@ -213,6 +215,7 @@ func TestDiscountFactor(t *testing.T) {
 	// activate the program
 	currentEpoch := uint64(1)
 	expectProgramStarted(t, broker, p1)
+	expectStatsUpdated(t, broker)
 	startEpoch(t, engine, currentEpoch, currentTime)
 
 	// so now we have a program active so at the end of the epoch lets return for some parties some notional
@@ -330,6 +333,7 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 
 	// expect an event for the started program
 	expectProgramStarted(t, broker, p1)
+	expectStatsUpdated(t, broker)
 	// activate the program
 	currentEpoch := uint64(1)
 	startEpoch(t, engine, currentEpoch, currentTime)
