@@ -6022,6 +6022,7 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 		riskFactors.Long,
 		priceFactor,
 		positionFactor,
+		market.AllowedEmptyAMMLevels,
 	)
 
 	// liquidation prices are in asset DP, convert back to market DP

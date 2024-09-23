@@ -418,6 +418,8 @@ message Market {
   string tick_size = 21;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 22;
+  // Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission.
+  uint64 allowed_empty_amm_levels = 23;
 }
 
 // Time stamps for important times about creating, enacting etc the market

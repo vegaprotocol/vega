@@ -118,6 +118,7 @@ func TestEstimate(t *testing.T) {
 			riskFactorLong,
 			num.DecimalOne(),
 			num.DecimalOne(),
+			0,
 		)
 
 		assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
@@ -161,6 +162,7 @@ func TestEstimate(t *testing.T) {
 			riskFactorLong,
 			num.DecimalOne(),
 			num.DecimalOne(),
+			0,
 		)
 
 		assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
@@ -205,6 +207,7 @@ func TestEstimatePositionFactor(t *testing.T) {
 		riskFactorLong,
 		num.DecimalFromInt64(1000000000000000000),
 		num.DecimalOne(),
+		0,
 	)
 
 	assert.Equal(t, expectedMetrics.PositionSizeAtUpper.String(), metrics.PositionSizeAtUpper.Round(3).String())
@@ -220,17 +223,18 @@ func TestEstimatePositionFactor(t *testing.T) {
 		upperPrice,
 		leverageLower,
 		leverageUpper,
-		num.UintOne(),
+		num.MustUintFromString("390500000000000000000", 10),
 		linearSlippageFactor,
 		initialMargin,
 		riskFactorShort,
 		riskFactorLong,
 		num.DecimalFromInt64(1000000000000000000),
 		num.DecimalOne(),
+		10,
 	)
 
-	assert.Equal(t, "0", metrics.PositionSizeAtUpper.Round(3).String())
-	assert.Equal(t, "0", metrics.PositionSizeAtLower.Round(3).String())
-	assert.True(t, metrics.TooWideLower)
-	assert.True(t, metrics.TooWideUpper)
+	assert.Equal(t, "-1.559", metrics.PositionSizeAtUpper.Round(3).String())
+	assert.Equal(t, "2.305", metrics.PositionSizeAtLower.Round(3).String())
+	assert.False(t, metrics.TooWideLower) // is valid as there are less than 10 empty price levels
+	assert.True(t, metrics.TooWideUpper)  // isn't valid as there are more than 10 empty price levels
 }

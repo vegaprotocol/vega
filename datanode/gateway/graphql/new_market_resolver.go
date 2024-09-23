@@ -20,6 +20,7 @@ import (
 	"errors"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -119,4 +120,12 @@ func (r *newMarketResolver) LiquidationStrategy(ctx context.Context, obj *types.
 
 func (r *newMarketResolver) MarkPriceConfiguration(ctx context.Context, obj *types.NewMarket) (*types.CompositePriceConfiguration, error) {
 	return obj.Changes.MarkPriceConfiguration, nil
+}
+
+func (r *newMarketResolver) AllowedEmptyAMMLevels(ctx context.Context, obj *types.NewMarket) (*int, error) {
+	v := obj.Changes.AllowedEmptyAmmLevels
+	if v == nil {
+		return nil, nil
+	}
+	return ptr.From(int(*obj.Changes.AllowedEmptyAmmLevels)), nil
 }

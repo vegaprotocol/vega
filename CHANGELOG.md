@@ -14,11 +14,13 @@
 
 - [11644](https://github.com/vegaprotocol/vega/issues/11644) - `liveOnly` flag has been added to the `AMM` API to show only active `AMMs`.
 - [11519](https://github.com/vegaprotocol/vega/issues/11519) - Add fees to position API types.
+- [11642](https://github.com/vegaprotocol/vega/issues/11642) - `AMMs` with empty price levels are now allowed.
 
 ### 🐛 Fixes
 
 - [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
 - [11681](https://github.com/vegaprotocol/vega/issues/11681) - Account for conflicts inserting funding payment records.
+- [11684](https://github.com/vegaprotocol/vega/issues/11684) - Better error when `Arbitrum` bridge details are missing from validator configuration.
 - [11696](https://github.com/vegaprotocol/vega/issues/11696) - Add binding for estimate fees API.
 - [11699](https://github.com/vegaprotocol/vega/issues/11699) - Update factors of programs when they are updated.
 

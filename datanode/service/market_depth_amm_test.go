@@ -208,6 +208,33 @@ func TestAMMMarketDepth(t *testing.T) {
 	assert.Equal(t, 20, int(mds.service.GetTotalVolume(marketID)))
 }
 
+func TestAMMSparseMarketDepth(t *testing.T) {
+	ctx := context.Background()
+	mds := getService(t)
+	defer mds.ctrl.Finish()
+
+	marketID := vgcrypto.RandomHash()
+
+	ensureLiveOrders(t, mds, marketID)
+	ensureDecimalPlaces(t, mds, 1, 1)
+	mds.pos.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).Return(entities.Position{OpenVolume: 0}, nil)
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(2000)}, nil)
+
+	pool := getSparseAMMDefinition(t, marketID)
+	mds.amm.EXPECT().ListActive(gomock.Any()).Return([]entities.AMMPool{pool}, nil).Times(1)
+	mds.service.Initialise(ctx)
+
+	// little volume over the range, and its all estimated
+	assert.Equal(t, 2, int(mds.service.GetTotalAMMVolume(marketID)))
+	assert.Equal(t, 2, int(mds.service.GetAMMVolume(marketID, true)))
+	assert.Equal(t, 0, int(mds.service.GetAMMVolume(marketID, false)))
+	assert.Equal(t, 22, int(mds.service.GetTotalVolume(marketID)))
+
+	// best bid and best ask
+	assert.Equal(t, "1960", mds.service.GetBestBidPrice(marketID).String())
+	assert.Equal(t, "2033", mds.service.GetBestAskPrice(marketID).String())
+}
+
 func TestAMMInitialiseNoAMM(t *testing.T) {
 	ctx := context.Background()
 	mds := getService(t)
@@ -475,6 +502,22 @@ func ensureLiveOrders(t *testing.T, mds *MDS, marketID string) {
 			SeqNum:    33,
 		},
 	}, nil).Times(1)
+}
+
+func getSparseAMMDefinition(t *testing.T, marketID string) entities.AMMPool {
+	t.Helper()
+	return entities.AMMPool{
+		PartyID:                  entities.PartyID(vgcrypto.RandomHash()),
+		AmmPartyID:               entities.PartyID(vgcrypto.RandomHash()),
+		MarketID:                 entities.MarketID(marketID),
+		ParametersLowerBound:     ptr.From(num.DecimalFromInt64(1800)),
+		LowerVirtualLiquidity:    num.DecimalFromFloat(5807.2351752738390703940959525483259),
+		LowerTheoreticalPosition: num.DecimalFromFloat(7.024119613637249),
+		ParametersBase:           num.DecimalFromInt64(2000),
+		ParametersUpperBound:     ptr.From(num.DecimalFromInt64(2200)),
+		UpperVirtualLiquidity:    num.DecimalFromFloat(6106.0011747584543685842512031629329),
+		UpperTheoreticalPosition: num.DecimalFromFloat(6.3539545218646371),
+	}
 }
 
 func getAMMDefinition(t *testing.T, marketID string) entities.AMMPool {

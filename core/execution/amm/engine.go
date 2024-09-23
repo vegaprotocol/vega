@@ -142,8 +142,9 @@ type Engine struct {
 	// a mapping of all amm-party-ids to the party owning them.
 	ammParties map[string]string
 
-	minCommitmentQuantum *num.Uint
-	maxCalculationLevels *num.Uint
+	minCommitmentQuantum  *num.Uint
+	maxCalculationLevels  *num.Uint
+	allowedEmptyAMMLevels uint64
 }
 
 func New(
@@ -157,6 +158,7 @@ func New(
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
 	parties common.Parties,
+	allowedEmptyAMMLevels uint64,
 ) *Engine {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 	return &Engine{
@@ -176,6 +178,7 @@ func New(
 		positionFactor:        positionFactor,
 		parties:               parties,
 		oneTick:               num.Max(num.UintOne(), oneTick),
+		allowedEmptyAMMLevels: allowedEmptyAMMLevels,
 	}
 }
 
@@ -191,8 +194,9 @@ func NewFromProto(
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
 	parties common.Parties,
+	allowedEmptyAMMLevels uint64,
 ) (*Engine, error) {
-	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker, parties)
+	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker, parties, allowedEmptyAMMLevels)
 
 	for _, v := range state.AmmPartyIds {
 		e.ammParties[v.Key] = v.Value
@@ -242,6 +246,10 @@ func (e *Engine) OnMaxCalculationLevelsUpdate(ctx context.Context, c *num.Uint) 
 	for _, p := range e.poolsCpy {
 		p.maxCalculationLevels = e.maxCalculationLevels.Clone()
 	}
+}
+
+func (e *Engine) UpdateAllowedEmptyLevels(allowedEmptyLevels uint64) {
+	e.allowedEmptyAMMLevels = allowedEmptyLevels
 }
 
 // OnMTM is called whenever core does an MTM and is a signal that any pool's that are closing and have 0 position can be fully removed.
@@ -311,11 +319,20 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		fp := pool.BestPrice(nil)
+		fp := pool.FairPrice()
 
-		// get the volume on the buy side by simulating an incoming sell order
-		bid := num.Max(pool.lower.low, num.UintZero().Sub(fp, pool.oneTick))
-		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
+		var volume uint64
+		bid, ok := pool.BestPrice(types.SideBuy)
+		if ok {
+			volume = 1
+
+			// if the best price is
+			bidTick := num.Max(pool.lower.low, num.UintZero().Sub(fp, pool.oneTick))
+			if bid.GTE(bidTick) {
+				bid = bidTick
+				volume = pool.TradableVolumeForPrice(types.SideSell, bid)
+			}
+		}
 
 		if volume != 0 {
 			if bestBid == nil || bid.GT(bestBid) {
@@ -326,9 +343,17 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 			}
 		}
 
-		// get the volume on the sell side by simulating an incoming buy order
-		ask := num.Min(pool.upper.high, num.UintZero().Add(fp, pool.oneTick))
-		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
+		volume = 0
+		ask, ok := pool.BestPrice(types.SideSell)
+		if ok {
+			volume = 1
+			askTick := num.Min(pool.upper.high, num.UintZero().Add(fp, pool.oneTick))
+			if ask.LTE(askTick) {
+				ask = askTick
+				volume = pool.TradableVolumeForPrice(types.SideBuy, ask)
+			}
+		}
+
 		if volume != 0 {
 			if bestAsk == nil || ask.LT(bestAsk) {
 				bestAsk = ask
@@ -347,7 +372,10 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	vol := uint64(0)
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		best := pool.BestPrice(&types.Order{Price: price, Side: side})
+		best, ok := pool.BestPrice(types.OtherSide(side))
+		if !ok {
+			continue
+		}
 
 		// make sure price is in tradable range
 		if side == types.SideBuy && best.GT(price) {
@@ -377,10 +405,14 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	for _, p := range active {
 		p.setEphemeralPosition()
 
-		price := p.BestPrice(agg)
+		price, ok := p.BestPrice(types.OtherSide(agg.Side))
+		if !ok {
+			continue
+		}
+
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("best price for pool",
-				logging.String("id", p.ID),
+				logging.String("amm-party", p.AMMParty),
 				logging.String("best-price", price.String()),
 			)
 		}
@@ -401,19 +433,15 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		useActive = append(useActive, p)
 	}
 
-	if agg.Side == types.SideSell {
-		inner, outer = outer, inner
-	}
-
 	// calculate the volume each pool has
 	var total uint64
 	volumes := []uint64{}
 	for _, p := range useActive {
-		volume := p.TradableVolumeInRange(agg.Side, inner, outer)
+		volume := p.TradableVolumeForPrice(agg.Side, outer)
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("volume available to trade",
 				logging.Uint64("volume", volume),
-				logging.String("id", p.ID),
+				logging.String("amm-party", p.AMMParty),
 			)
 		}
 
@@ -676,6 +704,7 @@ func (e *Engine) Create(
 		e.priceFactor,
 		e.positionFactor,
 		e.maxCalculationLevels,
+		e.allowedEmptyAMMLevels,
 	)
 	if err != nil {
 		return nil, err
@@ -736,7 +765,7 @@ func (e *Engine) Amend(
 		}
 	}
 
-	updated, err := pool.Update(amend, riskFactors, scalingFactors, slippage)
+	updated, err := pool.Update(amend, riskFactors, scalingFactors, slippage, e.allowedEmptyAMMLevels)
 	if err != nil {
 		return nil, nil, err
 	}

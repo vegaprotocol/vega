@@ -255,6 +255,10 @@ func newServices(
 	svcs.forwarderHeartbeat = evtforward.NewTracker(log, svcs.witness, svcs.timeService)
 
 	if svcs.conf.HaveEthClient() {
+		if len(svcs.conf.EvtForward.EVMBridges) != 1 {
+			return nil, fmt.Errorf("require exactly 1 [[EvtForward.EVMBridges]] in configuration file, got: %d", len(svcs.conf.EvtForward.EVMBridges))
+		}
+
 		svcs.primaryBridgeView = bridges.NewERC20LogicView(primaryEthClient, primaryEthConfirmations)
 		svcs.secondaryBridgeView = bridges.NewERC20LogicView(secondaryEthClient, secondaryEthConfirmations)
 		svcs.primaryEventForwarderEngine = evtforward.NewEngine(svcs.log, svcs.conf.EvtForward.Ethereum)

@@ -73,6 +73,8 @@ var (
 	ErrMaxPriceInvalid                       = errors.New("max price for capped future must be greater than zero")
 )
 
+const defaultAllowedEmptyAMMLevels = uint64(100)
+
 func assignProduct(
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
@@ -251,6 +253,12 @@ func buildMarketFromProposal(
 	if definition.Changes.LiquidationStrategy != nil {
 		lstrat = definition.Changes.LiquidationStrategy.DeepClone()
 	}
+
+	allowedEmptyAMMLevels := defaultAllowedEmptyAMMLevels
+	if definition.Changes.AllowedEmptyAmmLevels != nil {
+		allowedEmptyAMMLevels = *definition.Changes.AllowedEmptyAmmLevels
+	}
+
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	buybackFeeDec, _ := num.DecimalFromString(buybackFee)
@@ -290,6 +298,7 @@ func buildMarketFromProposal(
 		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
 		TickSize:                      definition.Changes.TickSize,
 		EnableTxReordering:            definition.Changes.EnableTxReordering,
+		AllowedEmptyAmmLevels:         allowedEmptyAMMLevels,
 	}
 	if fCap := market.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
 		marginCalc.FullyCollateralised = fCap.FullyCollateralised

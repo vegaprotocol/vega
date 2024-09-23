@@ -154,6 +154,8 @@ message NewMarketConfiguration {
   string tick_size = 16;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 17;
+  // Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission.
+  optional uint64 allowed_empty_amm_levels = 18;
 }
 
 // New spot market on Vega
@@ -229,6 +231,8 @@ message UpdateMarketConfiguration {
   string tick_size = 12;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 13;
+  // Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission.
+  optional uint64 allowed_empty_amm_levels = 14;
 }
 
 // Configuration to update a spot market on Vega
