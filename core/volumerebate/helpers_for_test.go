@@ -34,8 +34,8 @@ import (
 var (
 	endedEvt   = evtMatcher[events.VolumeRebateProgramEnded]{}
 	startedEvt = evtMatcher[events.VolumeRebateProgramStarted]{}
-	updatedEvt = evtMatcher[events.VolumeRebateProgramUpdated]{}
 	statsEvt   = evtMatcher[events.VolumeRebateStatsUpdated]{}
+	updatedEvt = evtMatcher[events.VolumeRebateProgramUpdated]{}
 )
 
 type evts interface {

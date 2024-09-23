@@ -119,21 +119,16 @@ func TestVolumeRebateProgramLifecycle(t *testing.T) {
 	assertSnapshotMatches(t, key, hashWithNewAndCurrent)
 
 	// // expect a program updated event
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e, ok := evt.(*events.VolumeRebateProgramUpdated)
-		if !ok {
-			return
-		}
+	broker.EXPECT().Send(updatedEvt).DoAndReturn(func(evt events.Event) {
+		e := evt.(*events.VolumeRebateProgramUpdated)
 		require.Equal(t, p2.IntoProto(), e.GetVolumeRebateProgramUpdated().Program)
-	}).Times(2)
+	}).Times(1)
+	broker.EXPECT().Send(statsEvt).Times(1)
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 1)})
 
 	// // expire the program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e, ok := evt.(*events.VolumeRebateProgramEnded)
-		if !ok {
-			return
-		}
+	broker.EXPECT().Send(endedEvt).DoAndReturn(func(evt events.Event) {
+		e := evt.(*events.VolumeRebateProgramEnded)
 		require.Equal(t, p2.Version, e.GetVolumeRebateProgramEnded().Version)
 	}).Times(1)
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 2)})
