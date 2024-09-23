@@ -222,7 +222,19 @@ func NewMarket(
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
-	ammEngine := amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker, parties)
+	ammEngine := amm.New(
+		log,
+		broker,
+		collateralEngine,
+		mkt.GetID(),
+		asset,
+		positionEngine,
+		priceFactor,
+		positionFactor,
+		marketActivityTracker,
+		parties,
+		mkt.AllowedEmptyAmmLevels,
+	)
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
@@ -651,6 +663,8 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings, m.as)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
+	m.amm.UpdateAllowedEmptyLevels(m.mkt.AllowedEmptyAmmLevels)
+
 	if err := m.markPriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
 		m.markPriceCalculator.SetOraclePriceScalingFunc(m.scaleOracleData)
 		return err
@@ -1441,7 +1455,13 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	}
 
 	// we're converting both offset and tick size to asset decimals so we can adjust the price (in asset) directly
-	priceInMarket, _ := num.UintFromDecimal(price.ToDecimal().Div(m.priceFactor))
+	inMarketD := price.ToDecimal().Div(m.priceFactor)
+
+	// if there are any decimals (because its an AMM price) then rounding down on a sell with 0 offset could cause a crossed book if the spread is small
+	if order.PeggedOrder.Reference == types.PeggedReferenceBestAsk {
+		inMarketD = inMarketD.Ceil()
+	}
+	priceInMarket, _ := num.UintFromDecimal(inMarketD)
 
 	// if the pegged offset is zero and the reference price is non-tick size (from an AMM) then we have to move it so it
 	// is otherwise the pegged will cross.
@@ -1458,6 +1478,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 
 	if order.Side == types.SideSell {
 		priceInMarket.AddSum(order.PeggedOrder.Offset)
+
 		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
 		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
 		// whole multiples of tick size.
@@ -5355,7 +5376,7 @@ func (m *Market) getRebasingOrder(
 	pool *amm.Pool,
 ) (*types.Order, error) {
 	var volume uint64
-	fairPrice := pool.BestPrice(nil)
+	fairPrice := pool.FairPrice()
 	oneTick, _ := num.UintFromDecimal(m.priceFactor)
 	oneTick = num.Max(num.UintOne(), oneTick)
 
@@ -5504,7 +5525,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	}
 
 	// create a rebasing order if the AMM needs it i.e its base if not within best-bid/best-ask
-	if ok, side, quote := m.needsRebase(pool.BestPrice(nil)); ok {
+	if ok, side, quote := m.needsRebase(pool.FairPrice()); ok {
 		order, err = m.getRebasingOrder(quote, side, submit.SlippageTolerance, pool)
 		if err != nil {
 			m.broker.Send(
@@ -5593,7 +5614,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	}()
 
 	var order *types.Order
-	if ok, side, quote := m.needsRebase(pool.BestPrice(nil)); ok {
+	if ok, side, quote := m.needsRebase(pool.FairPrice()); ok {
 		order, err = m.getRebasingOrder(quote, side, amend.SlippageTolerance, pool)
 		if err != nil {
 			return err

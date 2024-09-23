@@ -437,11 +437,11 @@ const (
 	EstimateAMMBoundsResponse_AMM_ERROR_UNSPECIFIED EstimateAMMBoundsResponse_AMMError = 0
 	// Commitment is below the global limit set by the network parameter `market.amm.minCommitmentQuantum`.
 	EstimateAMMBoundsResponse_AMM_ERROR_COMMITMENT_BELOW_MINIMUM EstimateAMMBoundsResponse_AMMError = 1
-	// AMM's lower price is too far from the base price for the given commitment resulting in zero volume between price levels.
+	// AMM's lower price is too far from the base price for the given commitment resulting in too many zero volume price levels.
 	EstimateAMMBoundsResponse_AMM_ERROR_LOWER_BOUND_TOO_WIDE EstimateAMMBoundsResponse_AMMError = 2
-	// AMM's upper price is too far from the base price for the given commitment resulting in zero volume between price levels.
+	// AMM's upper price is too far from the base price for the given commitment resulting in too many zero volume price levels.
 	EstimateAMMBoundsResponse_AMM_ERROR_UPPER_BOUND_TOO_WIDE EstimateAMMBoundsResponse_AMMError = 3
-	// AMM bounds are too wide for the given commitment resulting in zero volume between price levels.
+	// AMM bounds are too wide for the given commitment resulting in too many zero volume price levels.
 	EstimateAMMBoundsResponse_AMM_ERROR_BOTH_BOUNDS_TOO_WIDE EstimateAMMBoundsResponse_AMMError = 4
 )
 

@@ -1306,6 +1306,11 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorInvalidMarket, fmt.Errorf("market \"%s\" doesn't exist anymore", terms.MarketID)
 	}
 
+	allowedEmptyAMMLevels := defaultAllowedEmptyAMMLevels
+	if terms.Changes.AllowedEmptyAmmLevels != nil {
+		allowedEmptyAMMLevels = *terms.Changes.AllowedEmptyAmmLevels
+	}
+
 	newMarket := &types.NewMarket{
 		Changes: &types.NewMarketConfiguration{
 			Instrument: &types.InstrumentConfiguration{
@@ -1325,6 +1330,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			MarkPriceConfiguration:        terms.Changes.MarkPriceConfiguration,
 			TickSize:                      terms.Changes.TickSize,
 			EnableTxReordering:            terms.Changes.EnableTxReordering,
+			AllowedEmptyAmmLevels:         &allowedEmptyAMMLevels,
 		},
 	}
 

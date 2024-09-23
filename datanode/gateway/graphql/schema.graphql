@@ -2843,6 +2843,9 @@ type Market {
 
   "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
   enableTxReordering: Boolean!
+
+  "Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission"
+  allowedEmptyAMMLevels: Int!
 }
 
 """
@@ -4964,6 +4967,8 @@ type NewMarket {
   tickSize: String!
   "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
   enableTxReordering: Boolean!
+  "Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission"
+  allowedEmptyAMMLevels: Int
 }
 
 type CompositePriceConfiguration {
@@ -5029,6 +5034,8 @@ type UpdateMarketConfiguration {
   tickSize: String!
   "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
   enableTxReordering: Boolean!
+  "Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission"
+  allowedEmptyAMMLevels: Int
 }
 
 type UpdateInstrumentConfiguration {
