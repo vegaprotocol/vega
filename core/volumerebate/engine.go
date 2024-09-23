@@ -65,7 +65,14 @@ func New(broker Broker, marketActivityTracker MarketActivityTracker) *Engine {
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
+		pp := e.currentProgram
 		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
+		// we have an active program and it changed after the apply update call -> update state and factors.
+		if !e.programHasEnded && pp != e.currentProgram {
+			// update state based on the new program window length
+			e.updateState()
+			e.computeFactorsByParty(ctx, ep.Seq)
+		}
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		e.updateState()
 		if !e.programHasEnded {
