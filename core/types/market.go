@@ -1101,6 +1101,7 @@ type Market struct {
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *num.Uint
 	EnableTxReordering     bool
+	AllowedEmptyAmmLevels  uint64
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -1168,6 +1169,7 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		MarkPriceConfiguration:        markPriceConfiguration,
 		TickSize:                      tickSize,
 		EnableTxReordering:            mkt.EnableTransactionReordering,
+		AllowedEmptyAmmLevels:         mkt.AllowedEmptyAmmLevels,
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1241,6 +1243,7 @@ func (m Market) IntoProto() *vegapb.Market {
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      m.TickSize.String(),
 		EnableTransactionReordering:   m.EnableTxReordering,
+		AllowedEmptyAmmLevels:         m.AllowedEmptyAmmLevels,
 	}
 	return r
 }
@@ -1295,6 +1298,7 @@ func (m Market) DeepClone() *Market {
 		InsurancePoolFraction:   m.InsurancePoolFraction,
 		TickSize:                m.TickSize.Clone(),
 		EnableTxReordering:      m.EnableTxReordering,
+		AllowedEmptyAmmLevels:   m.AllowedEmptyAmmLevels,
 	}
 
 	if m.LiquiditySLAParams != nil {

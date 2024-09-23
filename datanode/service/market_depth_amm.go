@@ -245,17 +245,19 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 	estimated := []bool{}
 	orders := []*types.Order{}
 
+	level1 := levels[0]
 	extraVolume := int64(0)
 	for i := range levels {
 		if i == len(levels)-1 {
 			break
 		}
 
-		level1 := levels[i]
+		// level1 := levels[i]
 		level2 := levels[i+1]
 
 		// check if the interval is fully outside of the AMM range
 		if ammDefn.lower.low.GTE(level2.price) {
+			level1 = level2
 			continue
 		}
 		if ammDefn.upper.high.LTE(level1.price) {
@@ -312,11 +314,18 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 
 				// we need to add this volume to the price level we step to next
 				extraVolume = ammDefn.position.Sub(v2).Abs().IntPart()
+				level1 = level2
 				continue
 			}
 		}
 		// calculate the volume
 		volume := v1.Sub(v2).Abs().IntPart()
+
+		// if the volume is less than zero AMM must be sparse and so we want to keep adding it up until we have at least 1 volume
+		// so we'll continue and not shuffle along level1
+		if volume == 0 {
+			continue
+		}
 
 		// this is extra volume from when we stepped over the AMM's fair-price
 		if extraVolume != 0 {
@@ -329,6 +338,9 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 			m.makeOrder(retPrice, ammDefn.partyID, uint64(volume), side),
 		)
 		estimated = append(estimated, level1.estimated || level2.estimated)
+
+		// shuffle
+		level1 = level2
 	}
 	return orders, estimated, nil
 }

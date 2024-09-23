@@ -96,9 +96,9 @@ func NewMarketFromSnapshot(
 
 	var ammEngine *amm.Engine
 	if em.Amm == nil {
-		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker, parties)
+		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker, parties, mkt.AllowedEmptyAmmLevels)
 	} else {
-		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker, parties)
+		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker, parties, mkt.AllowedEmptyAmmLevels)
 		if err != nil {
 			return nil, err
 		}
