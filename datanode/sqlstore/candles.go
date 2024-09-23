@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -193,6 +194,8 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleID string
 
 	// now that we have the paged query, we can add in the subquery
 	query = fmt.Sprintf("with gap_filled_candles as (%s) %s", subQuery, query)
+	cs.log.Debug(">> Candle query", logging.String("query", query))
+	fmt.Printf(">>> QUERY: %s\n", query)
 
 	defer metrics.StartSQLQuery("Candles", "GetCandleDataForTimeSpan")()
 	err = pgxscan.Select(ctx, cs.ConnectionSource, &candles, query, args...)
