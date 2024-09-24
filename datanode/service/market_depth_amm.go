@@ -233,8 +233,11 @@ func (m *MarketDepth) getReference(ctx context.Context, marketID string) (num.De
 }
 
 func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, priceFactor num.Decimal) ([]*types.Order, []bool, error) {
-	// get positions
+	if len(levels) == 0 {
+		return nil, nil, nil
+	}
 
+	// get position
 	pos, err := m.getAMMPosition(pool.MarketID.String(), pool.AmmPartyID.String())
 	if err != nil {
 		return nil, nil, err

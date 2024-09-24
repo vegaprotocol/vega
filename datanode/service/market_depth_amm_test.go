@@ -472,6 +472,34 @@ func TestFairgroundAMM(t *testing.T) {
 	assert.Equal(t, "12956", mds.service.GetBestAskPrice(marketID).String())
 }
 
+func TestAMMDepthOutOfRange(t *testing.T) {
+	ctx := context.Background()
+
+	cfg := service.MarketDepthConfig{
+		AmmFullExpansionPercentage: 200,
+		AmmEstimatedStepPercentage: 0,
+		AmmMaxEstimatedSteps:       0,
+	}
+	mds := getServiceWithConfig(t, cfg)
+	defer mds.ctrl.Finish()
+
+	marketID := vgcrypto.RandomHash()
+
+	ensureLiveOrders(t, mds, marketID)
+	ensureDecimalPlaces(t, mds, 1, 1)
+
+	// set the mid-price to a value no where near the AMM's prices
+	mds.marketData.EXPECT().GetMarketDataByID(gomock.Any(), gomock.Any()).Times(1).Return(entities.MarketData{MidPrice: num.DecimalFromInt64(10)}, nil)
+
+	// data node is starting from network history, initialise market-depth based on whats aleady there
+	ensureAMMs(t, mds, marketID)
+	mds.service.Initialise(ctx)
+
+	assert.Equal(t, 0, int(mds.service.GetTotalAMMVolume(marketID)))
+	assert.Equal(t, 0, int(mds.service.GetAMMVolume(marketID, true)))
+	assert.Equal(t, 0, int(mds.service.GetAMMVolume(marketID, false)))
+}
+
 func ensureLiveOrders(t *testing.T, mds *MDS, marketID string) {
 	t.Helper()
 	mds.orders.EXPECT().GetLiveOrders(gomock.Any()).Return([]entities.Order{
