@@ -238,3 +238,61 @@ func TestEstimatePositionFactor(t *testing.T) {
 	assert.False(t, metrics.TooWideLower) // is valid as there are less than 10 empty price levels
 	assert.True(t, metrics.TooWideUpper)  // isn't valid as there are more than 10 empty price levels
 }
+
+func TestEstimateBoundsOneSided(t *testing.T) {
+	initialMargin := num.DecimalFromFloat(1)
+	riskFactorShort := num.DecimalFromFloat(0.01)
+	riskFactorLong := num.DecimalFromFloat(0.01)
+	linearSlippageFactor := num.DecimalFromFloat(0)
+	sqrter := NewSqrter()
+
+	lowerPrice := num.NewUint(900)
+	basePrice := num.NewUint(1000)
+	upperPrice := num.NewUint(1100)
+	leverageUpper := num.DecimalFromFloat(2.00)
+	leverageLower := num.DecimalFromFloat(2.00)
+	balance := num.NewUint(100)
+
+	// no upper bound supplied
+	metrics := EstimateBounds(
+		sqrter,
+		lowerPrice,
+		basePrice,
+		nil,
+		leverageLower,
+		leverageUpper,
+		balance,
+		linearSlippageFactor,
+		initialMargin,
+		riskFactorShort,
+		riskFactorLong,
+		num.DecimalOne(),
+		num.DecimalOne(),
+		0,
+	)
+	assert.True(t, metrics.LiquidationPriceAtUpper.IsZero())
+	assert.True(t, metrics.PositionSizeAtUpper.IsZero())
+	assert.True(t, metrics.LossOnCommitmentAtUpper.IsZero())
+
+	// no lower bound supplied
+	metrics = EstimateBounds(
+		sqrter,
+		nil,
+		basePrice,
+		upperPrice,
+		leverageLower,
+		leverageUpper,
+		balance,
+		linearSlippageFactor,
+		initialMargin,
+		riskFactorShort,
+		riskFactorLong,
+		num.DecimalOne(),
+		num.DecimalOne(),
+		0,
+	)
+	assert.True(t, metrics.LiquidationPriceAtLower.IsZero())
+	assert.True(t, metrics.PositionSizeAtLower.IsZero())
+	assert.True(t, metrics.LossOnCommitmentAtLower.IsZero())
+
+}

@@ -75,7 +75,7 @@ func EstimateBounds(
 			l:        l,
 			high:     basePrice,
 			low:      lowerPrice,
-			sqrtHigh: sqrter.sqrt(upperPrice),
+			sqrtHigh: sqrter.sqrt(basePrice),
 			isLower:  true,
 			pv:       r.PositionSizeAtLower,
 		}
