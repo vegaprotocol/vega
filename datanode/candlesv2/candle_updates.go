@@ -196,18 +196,16 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 			return nil, fmt.Errorf("getting candle updates:%w", err)
 		}
 
+		// allocate slice rather than doubling cap as we go.
+		updates = make([]entities.Candle, 0, len(candles))
 		for _, candle := range candles {
-			if candle.LastUpdateInPeriod.After(lastCandle.LastUpdateInPeriod) || candle.PeriodStart.After(lastCandle.PeriodStart) {
+			// not before so either newer, or the same (last) candle should be returned.
+			if !candle.LastUpdateInPeriod.Before(lastCandle.LastUpdateInPeriod) || !candle.PeriodStart.Before(lastCandle.PeriodStart) {
 				updates = append(updates, candle)
 			}
 		}
 	} else {
-		last := int32(1)
-		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
-		if err != nil {
-			return nil, err
-		}
-		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, nil, &now, pagination)
+		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, nil, &now, entities.CursorPagination{})
 
 		if err != nil {
 			return nil, fmt.Errorf("getting candle updates:%w", err)
