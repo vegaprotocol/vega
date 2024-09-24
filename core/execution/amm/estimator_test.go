@@ -294,5 +294,4 @@ func TestEstimateBoundsOneSided(t *testing.T) {
 	assert.True(t, metrics.LiquidationPriceAtLower.IsZero())
 	assert.True(t, metrics.PositionSizeAtLower.IsZero())
 	assert.True(t, metrics.LossOnCommitmentAtLower.IsZero())
-
 }
