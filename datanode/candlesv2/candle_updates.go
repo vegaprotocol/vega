@@ -121,7 +121,10 @@ func (s *CandleUpdates) handleSubscription(subscriptions map[string]chan entitie
 func (s *CandleUpdates) addSubscription(subscriptions map[string]chan entities.Candle, subscription subscriptionMsg, lastCandle *entities.Candle) {
 	subscriptions[subscription.id] = subscription.out
 	if lastCandle != nil {
-		s.sendCandlesToSubscribers([]entities.Candle{*lastCandle}, map[string]chan entities.Candle{subscription.id: subscription.out})
+		if rm := s.sendCandlesToSubscribers([]entities.Candle{*lastCandle}, map[string]chan entities.Candle{subscription.id: subscription.out}); len(rm) != 0 {
+			// if send returns a non-empty slice, the new subscription was removed from the map literal, and should also be removed from the main subscriptions map
+			delete(subscriptions, subscription.id)
+		}
 	}
 }
 
@@ -215,15 +218,18 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	return updates, nil
 }
 
-func (s *CandleUpdates) sendCandlesToSubscribers(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
+func (s *CandleUpdates) sendCandlesToSubscribers(candles []entities.Candle, subscriptions map[string]chan entities.Candle) []string {
+	rm := []string{}
 	for subscriptionID, outCh := range subscriptions {
 		for _, candle := range candles {
 			select {
 			case outCh <- candle:
 			default:
 				removeSubscription(subscriptions, subscriptionID)
+				rm = append(rm, subscriptionID)
 				break
 			}
 		}
 	}
+	return rm
 }
