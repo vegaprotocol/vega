@@ -15,6 +15,7 @@
 - [11644](https://github.com/vegaprotocol/vega/issues/11644) - `liveOnly` flag has been added to the `AMM` API to show only active `AMMs`.
 - [11519](https://github.com/vegaprotocol/vega/issues/11519) - Add fees to position API types.
 - [11642](https://github.com/vegaprotocol/vega/issues/11642) - `AMMs` with empty price levels are now allowed.
+- [11711](https://github.com/vegaprotocol/vega/issues/11711) - Manage closed team membership by updating the allow list.
 
 ### 🐛 Fixes
 

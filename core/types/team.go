@@ -26,6 +26,10 @@ const teamIDLength = 64
 
 type TeamID string
 
+func (t TeamID) IsNoTeam() bool {
+	return len(string(t)) <= 0
+}
+
 type Team struct {
 	ID TeamID
 
