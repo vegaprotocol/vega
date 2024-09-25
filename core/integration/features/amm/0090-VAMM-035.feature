@@ -1,4 +1,4 @@
-Feature: With two vAMMs existing on the market, and no other orders, both of which have the same fair price, another counterparty placing a large buy order for a given volume, followed by a large sell order for the same volume, results in the vAMMs both taking a position and then returning to 0 position, with a balance increase equal to the maker fees received plus those for the incoming trader crossing the spread.
+Feature: 0090-VAMM-035 With two vAMMs existing on the market, and no other orders, both of which have the same fair price, another counterparty placing a large buy order for a given volume, followed by a large sell order for the same volume, results in the vAMMs both taking a position and then returning to 0 position, with a balance increase equal to the maker fees received plus those for the incoming trader crossing the spread.
 
   Background:
     Given the average block duration is "1"      
