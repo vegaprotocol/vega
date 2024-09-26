@@ -1546,6 +1546,9 @@ enum BusEventType {
   // Event indicating the updated statistics for the volume rebate.
   BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED = 95;
 
+  // Event indicating an automated purchase auction has been scheduled.
+  BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED = 96;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1745,6 +1748,8 @@ message BusEvent {
     VolumeRebateProgramEnded volume_rebate_program_ended = 192;
     // Event notifying of an update to the volume rebate statistics.
     VolumeRebateStatsUpdated volume_rebate_stats_updated = 193;
+    // Event notifying an upcoming automated purchase of a token with the sold amount.
+    AutomatedPurchaseAnnounced automated_purchase_announced = 194;
     // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
@@ -1803,4 +1808,18 @@ message VolumeRebateProgramEnded {
   int64 ended_at = 3;
   // Epoch at which the referral program ended.
   uint64 at_epoch = 4;
+}
+
+// Event indicating the schedule of an automated purchase auction
+message AutomatedPurchaseAnnounced {
+  // Token being exchanged.
+  string from = 1;
+  // The source account type.
+  vega.AccountType from_account_type = 2;
+  // The target account type.
+  vega.AccountType to_account_type = 3;
+  // The identifier of the spot market where the auction is being scheduled.
+  string market_id = 4;
+  // Amount being exchanged.
+  string amount = 5;
 }

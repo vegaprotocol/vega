@@ -118,6 +118,7 @@ type ExecutionEngine interface {
 
 	// add this method here for testing, this is the exec engine interface used by the gastimator.
 	GetMarketCounters() map[string]*types.MarketCounters
+	NewProtocolAutomatedPurchase(ctx context.Context, ID string, automatedPurchaseConfig *types.NewProtocolAutomatedPurchaseChanges) error
 }
 
 type GovernanceEngine interface {

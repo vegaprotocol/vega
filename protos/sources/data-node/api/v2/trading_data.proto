@@ -3220,6 +3220,8 @@ message ListGovernanceDataRequest {
     TYPE_UPDATE_REFERRAL_PROGRAM = 13;
     // Proposal to update the volume discount program
     TYPE_UPDATE_VOLUME_DISCOUNT_PROGRAM = 14;
+    // Proposal for new automated purchase auction
+    TYPE_NEW_AUTOMATED_PURCHASE = 15;
   }
   // Restrict proposals to those with the given state.
   optional vega.Proposal.State proposal_state = 1;

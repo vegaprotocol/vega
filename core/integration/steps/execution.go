@@ -68,4 +68,6 @@ type Execution interface {
 	// Long block auction callback
 	OnNetworkWideAuctionDurationUpdated(ctx context.Context, v interface{}) error
 	BeginBlock(ctx context.Context, prevBlockDuration time.Duration)
+
+	NewProtocolAutomatedPurchase(ctx context.Context, ID string, automatedPurchaseConfig *types.NewProtocolAutomatedPurchaseChanges) error
 }

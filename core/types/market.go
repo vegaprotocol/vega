@@ -142,7 +142,9 @@ const (
 	// Special auction mode for market suspended via governance.
 	MarketTradingModeSuspendedViaGovernance MarketTradingMode = vegapb.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
 	// Long block auction.
-	MarketTradingModelLongBlockAuction MarketTradingMode = vegapb.Market_TRADING_MODE_LONG_BLOCK_AUCTION
+	MarketTradingModeLongBlockAuction MarketTradingMode = vegapb.Market_TRADING_MODE_LONG_BLOCK_AUCTION
+	// Automated purchase auction.
+	MarketTradingModeAutomatedPuchaseAuction MarketTradingMode = vegapb.Market_TRADING_MODE_PROTOCOL_AUTOMATED_PURCHASE_AUCTION
 )
 
 type MarketState = vegapb.Market_State
@@ -193,6 +195,8 @@ const (
 	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 	// AuctionTriggerLongBlock for market suspension due to a long block.
 	AuctionTriggerLongBlock AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_LONG_BLOCK
+	// AuctionTriggerAutomatedPurchase for market auction for automated purchase.
+	AuctionTriggerAutomatedPurchase AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_PROTOCOL_AUTOMATED_PURCHASE
 )
 
 type InstrumentMetadata struct {

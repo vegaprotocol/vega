@@ -76,6 +76,7 @@ type Market struct {
 	lastTradedPrice *num.Uint
 	markPrice       *num.Uint
 	priceFactor     num.Decimal
+	quoteAssetDP    uint32
 
 	// own engines
 	matching                      *matching.CachedOrderBook
@@ -140,6 +141,8 @@ type Market struct {
 
 	minDuration time.Duration
 	epoch       types.Epoch
+
+	pap *ProtocolAutomatedPurchase
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -265,6 +268,8 @@ func NewMarket(
 		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
+
+	market.quoteAssetDP = uint32(quoteAssetDetails.DecimalPlaces())
 	return market, nil
 }
 
@@ -489,6 +494,24 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 
 	// send order events in a single batch, it's more efficient
 	m.broker.SendBatch(evts)
+	for _, otc := range ordersToCancel {
+		if otc.Party == types.NetworkParty {
+			m.papOrderProcessingEnded(otc.ID)
+		}
+	}
+	for _, otc := range uncrossedOrders {
+		if otc.Order.ID == types.NetworkParty {
+			m.papOrderProcessingEnded(otc.Order.ID)
+		}
+		for _, t := range otc.Trades {
+			if t.Seller == types.NetworkParty {
+				m.papOrderProcessingEnded(t.SellOrder)
+			} else if t.Buyer == types.NetworkParty {
+				m.papOrderProcessingEnded(t.BuyOrder)
+			}
+		}
+	}
+
 	return uncrossedOrders, ordersToCancel
 }
 
@@ -523,7 +546,7 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 		}
 	} else {
 		m.as.StartLongBlockAuction(m.timeService.GetTimeNow(), duration)
-		m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
+		m.mkt.TradingMode = types.MarketTradingModeLongBlockAuction
 		m.mkt.State = types.MarketStateSuspended
 		m.enterAuction(ctx)
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -701,7 +724,6 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
-func (m *Market) BeginBlock(_ context.Context) {}
 
 // BlockEnd notifies the market of the end of the block.
 func (m *Market) BlockEnd(ctx context.Context) {
@@ -1132,6 +1154,9 @@ func (m *Market) validateTickSize(price *num.Uint) error {
 // validateAccounts checks that the party has the required accounts and that they have sufficient funds in the account to cover for the trade and
 // any fees due.
 func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error {
+	if order.Party == types.NetworkParty {
+		return nil
+	}
 	if (order.Side == types.SideBuy && !m.collateral.HasGeneralAccount(order.Party, m.quoteAsset)) ||
 		(order.Side == types.SideSell && !m.collateral.HasGeneralAccount(order.Party, m.baseAsset)) {
 		// adding order to the buffer first
@@ -1154,7 +1179,15 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 	}
 	// if the order is not pegged or it is pegged and we're not in an auction, check the party has sufficient balance
 	if order.PeggedOrder == nil || !m.as.InAuction() {
-		if err := m.checkSufficientFunds(order.Party, order.Side, price, order.TrueRemaining(), order.PeggedOrder != nil); err != nil {
+		accType := types.AccountTypeGeneral
+		if order.Party == types.NetworkParty {
+			var err error
+			accType, _, err = m.getACcountTypesForPAP()
+			if err != nil {
+				m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", order.ID))
+			}
+		}
+		if err := m.checkSufficientFunds(order.Party, order.Side, price, order.TrueRemaining(), order.PeggedOrder != nil, accType); err != nil {
 			return err
 		}
 	}
@@ -1485,7 +1518,7 @@ func (m *Market) canCoverTradesAndFees(party string, partySide types.Side, trade
 			totalTraded.AddSum(size.Mul(size, t.Price), fees.TotalFeesAmountPerParty()[party])
 		}
 		totalTraded, _ = num.UintFromDecimal(totalTraded.ToDecimal().Div(m.positionFactor))
-		if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, totalTraded); err != nil {
+		if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, totalTraded, types.AccountTypeGeneral); err != nil {
 			return err
 		}
 	} else {
@@ -1494,7 +1527,7 @@ func (m *Market) canCoverTradesAndFees(party string, partySide types.Side, trade
 			sizeTraded += t.Size
 		}
 		totalTraded := scaleBaseQuantityToAssetDP(sizeTraded, m.baseFactor)
-		if err := m.collateral.PartyHasSufficientBalance(m.baseAsset, party, totalTraded); err != nil {
+		if err := m.collateral.PartyHasSufficientBalance(m.baseAsset, party, totalTraded, types.AccountTypeGeneral); err != nil {
 			return err
 		}
 	}
@@ -1630,7 +1663,7 @@ func (m *Market) addParty(party string) {
 }
 
 // applyFees handles transfer of fee payment from the *buyer* to the fees account.
-func (m *Market) applyFees(ctx context.Context, fees events.FeesTransfer) error {
+func (m *Market) applyFees(ctx context.Context, fees events.FeesTransfer, sourceAccountType types.AccountType) error {
 	var (
 		transfers []*types.LedgerMovement
 		err       error
@@ -1638,10 +1671,10 @@ func (m *Market) applyFees(ctx context.Context, fees events.FeesTransfer) error 
 
 	if !m.as.InAuction() {
 		transfers, err = m.collateral.TransferSpotFeesContinuousTrading(ctx, m.GetID(), m.quoteAsset, fees)
-	} else if m.as.IsMonitorAuction() {
-		transfers, err = m.collateral.TransferSpotFees(ctx, m.GetID(), m.quoteAsset, fees)
+	} else if m.as.IsMonitorAuction() || m.as.IsPAPAuction() {
+		transfers, err = m.collateral.TransferSpotFees(ctx, m.GetID(), m.quoteAsset, fees, sourceAccountType)
 	} else if m.as.IsFBA() {
-		transfers, err = m.collateral.TransferSpotFees(ctx, m.GetID(), m.quoteAsset, fees)
+		transfers, err = m.collateral.TransferSpotFees(ctx, m.GetID(), m.quoteAsset, fees, sourceAccountType)
 	}
 
 	if len(transfers) > 0 {
@@ -2301,11 +2334,11 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		}
 
 		// verify that the party has sufficient funds in their general account to cover for this amount
-		if err := m.collateral.PartyHasSufficientBalance(asset, ret.Order.Party, num.Sum(amt, fees)); err != nil {
+		if err := m.collateral.PartyHasSufficientBalance(asset, ret.Order.Party, num.Sum(amt, fees), types.AccountTypeGeneral); err != nil {
 			return nil, nil, err
 		}
 
-		transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, ret.Order.ID, ret.Order.Party, asset, amt, fees)
+		transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, ret.Order.ID, ret.Order.Party, asset, amt, fees, types.AccountTypeGeneral)
 		if err != nil {
 			m.log.Panic("failed to transfer funds to holding account for order", logging.Order(ret.Order), logging.Error(err))
 		}
@@ -2406,7 +2439,7 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 		}
 		newHoldingRequirement := num.Sum(m.calculateAmountBySide(order.Side, price, remaining), newFeesRequirement)
 		if newHoldingRequirement.GT(oldHoldingRequirement) {
-			if m.collateral.PartyHasSufficientBalance(m.quoteAsset, order.Party, num.UintZero().Sub(newHoldingRequirement, oldHoldingRequirement)) != nil {
+			if m.collateral.PartyHasSufficientBalance(m.quoteAsset, order.Party, num.UintZero().Sub(newHoldingRequirement, oldHoldingRequirement), types.AccountTypeGeneral) != nil {
 				return fmt.Errorf("party does not have sufficient balance to cover the trade and fees")
 			}
 		}
@@ -2414,7 +2447,7 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 
 	// if the side is sell and we want to sell more, need to check we're good for it
 	if order.Side == types.SideSell && amendment.SizeDelta > 0 {
-		if m.collateral.PartyHasSufficientBalance(m.baseAsset, order.Party, scaleBaseQuantityToAssetDP(uint64(amendment.SizeDelta), m.baseFactor)) != nil {
+		if m.collateral.PartyHasSufficientBalance(m.baseAsset, order.Party, scaleBaseQuantityToAssetDP(uint64(amendment.SizeDelta), m.baseFactor), types.AccountTypeGeneral) != nil {
 			return fmt.Errorf("party does not have sufficient balance to cover the new size")
 		}
 	}
@@ -2453,7 +2486,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			if newOrder.Side == types.SideSell {
 				asset = m.baseAsset
 			}
-			transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, newOrder.ID, newOrder.Party, asset, amt, num.UintZero())
+			transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, newOrder.ID, newOrder.Party, asset, amt, num.UintZero(), types.AccountTypeGeneral)
 			if err != nil {
 				m.log.Panic("failed to transfer funds to holding account for order", logging.Order(newOrder), logging.Error(err))
 			}
@@ -2494,7 +2527,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		if newOrder.Side == types.SideSell {
 			asset = m.baseAsset
 		}
-		transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, newOrder.ID, newOrder.Party, asset, amt, fees)
+		transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, newOrder.ID, newOrder.Party, asset, amt, fees, types.AccountTypeGeneral)
 		if err != nil {
 			m.log.Panic("failed to transfer funds to holding account for order", logging.Order(newOrder), logging.Error(err))
 		}
@@ -2932,13 +2965,13 @@ func (m *Market) processFeesTransfersOnEnterAuction(ctx context.Context) {
 			if fees.IsZero() {
 				continue
 			}
-			if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, fees); err != nil {
+			if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, fees, types.AccountTypeGeneral); err != nil {
 				m.log.Error("party has insufficient funds to cover for fees for order", logging.Order(o), logging.Error(err))
 				ordersToCancel = append(ordersToCancel, o)
 				continue
 			}
 			// party has sufficient funds to cover for fees - transfer fees from the party general account to the party holding account
-			transfer, err := m.orderHoldingTracker.TransferFeeToHoldingAccount(ctx, o.ID, party, m.quoteAsset, fees)
+			transfer, err := m.orderHoldingTracker.TransferFeeToHoldingAccount(ctx, o.ID, party, m.quoteAsset, fees, types.AccountTypeGeneral)
 			if err != nil {
 				m.log.Error("failed to transfer from general account to holding account", logging.Order(o), logging.Error(err))
 				ordersToCancel = append(ordersToCancel, o)
@@ -2988,13 +3021,21 @@ func (m *Market) checkFeeTransfersWhileInAuction(ctx context.Context) {
 				// We need to recalculate the fees amount
 				var newFees num.Uint
 				newFees.Sub(fees, paidFees)
-				if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, &newFees); err != nil {
+				accType := types.AccountTypeGeneral
+				if party == types.NetworkParty {
+					var err error
+					accType, _, err = m.getACcountTypesForPAP()
+					if err != nil {
+						m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", o.ID))
+					}
+				}
+				if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, &newFees, accType); err != nil {
 					m.log.Error("party has insufficient funds to cover for fees for order", logging.Order(o), logging.Error(err))
 					ordersToCancel = append(ordersToCancel, o)
 					continue
 				}
 				// party has sufficient funds to cover for fees - transfer fees from the party general account to the party holding account
-				transfer, err := m.orderHoldingTracker.TransferFeeToHoldingAccount(ctx, o.ID, party, m.quoteAsset, &newFees)
+				transfer, err := m.orderHoldingTracker.TransferFeeToHoldingAccount(ctx, o.ID, party, m.quoteAsset, &newFees, accType)
 				if err != nil {
 					m.log.Error("failed to transfer from general account to holding account", logging.Order(o), logging.Error(err))
 					ordersToCancel = append(ordersToCancel, o)
@@ -3025,7 +3066,15 @@ func (m *Market) processFeesReleaseOnLeaveAuction(ctx context.Context) {
 		orders := m.matching.GetOrdersPerParty(party)
 		for _, o := range orders {
 			if o.Side == types.SideBuy && o.PeggedOrder == nil {
-				transfer, err := m.orderHoldingTracker.ReleaseFeeFromHoldingAccount(ctx, o.ID, party, m.quoteAsset)
+				accType := types.AccountTypeGeneral
+				if party == types.NetworkParty {
+					var err error
+					accType, _, err = m.getACcountTypesForPAP()
+					if err != nil {
+						m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", o.ID))
+					}
+				}
+				transfer, err := m.orderHoldingTracker.ReleaseFeeFromHoldingAccount(ctx, o.ID, party, m.quoteAsset, accType)
 				if err != nil {
 					// it's valid, if fees for the order were zero, we don't update the holding account
 					// cache so it can be legitimately not there.
@@ -3061,15 +3110,29 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 		var err error
 		// in auction the buyer and seller split the fees, but that just means that total they need to have in the holding account
 		// is still quantity + fees/2 because the other half of the fees (the seller half) is paid out of what is supposed to go to the seller
-		transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccountAuctionEnd(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
+		accType := types.AccountTypeGeneral
+		if trade.Buyer == types.NetworkParty {
+			accType, _, err = m.getACcountTypesForPAP()
+			if err != nil {
+				m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", trade.SellOrder))
+			}
+		}
+		transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccountAuctionEnd(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee, accType)
 
 		if err != nil {
 			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
 		}
 		transfers = append(transfers, transfer)
 
+		accType = types.AccountTypeGeneral
+		if trade.Seller == types.NetworkParty {
+			accType, _, err = m.getACcountTypesForPAP()
+			if err != nil {
+				m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", trade.SellOrder))
+			}
+		}
 		// release seller's base quantity from the holding account
-		transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.SellOrder, trade.Seller, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor), num.UintZero())
+		transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.SellOrder, trade.Seller, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor), num.UintZero(), accType)
 		if err != nil {
 			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
 		}
@@ -3077,13 +3140,13 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 	} else {
 		// if there is an aggressor, then we need to release the passive side from the holding account
 		if trade.Aggressor == types.SideSell { // the aggressor is the seller so we need to release funds for the buyer from holding
-			transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), num.UintZero())
+			transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), num.UintZero(), types.AccountTypeGeneral)
 			if err != nil {
 				m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade))
 			}
 			transfers = append(transfers, transfer)
 		} else { // the aggressor is the buyer, we release the funds for the seller from holding account
-			transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.SellOrder, trade.Seller, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor), num.UintZero())
+			transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.SellOrder, trade.Seller, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor), num.UintZero(), types.AccountTypeGeneral)
 			if err != nil {
 				m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade))
 			}
@@ -3092,19 +3155,37 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 	}
 
 	// transfer base to buyer
-	transfer, err := m.collateral.TransferSpot(ctx, trade.Seller, trade.Buyer, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor))
+	baseFromAccountType := types.AccountTypeGeneral
+	baseToAccountType := types.AccountTypeGeneral
+	quoteFromAccountType := types.AccountTypeGeneral
+	quoteToAccountType := types.AccountTypeGeneral
+
+	if trade.Seller == types.NetworkParty {
+		// if the network is the seller, then we want to transfer the base asset from the fromAccountType and the quote asset to the toAccountType
+		baseFromAccountType, quoteToAccountType, err = m.getACcountTypesForPAP()
+		if err != nil {
+			m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", trade.SellOrder))
+		}
+	} else if trade.Buyer == types.NetworkParty {
+		// if the network is the buyer, then we want to transfer the quote base asset to the toAccountType and the quote asset from the fromAccountType
+		quoteFromAccountType, baseToAccountType, err = m.getACcountTypesForPAP()
+		if err != nil {
+			m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", trade.BuyOrder))
+		}
+	}
+	transfer, err := m.collateral.TransferSpot(ctx, trade.Seller, trade.Buyer, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor), baseFromAccountType, baseToAccountType)
 	if err != nil {
 		m.log.Panic("failed to complete spot transfer", logging.Trade(trade))
 	}
 	transfers = append(transfers, transfer)
 	// transfer quote (potentially minus fees) to the seller
-	transfer, err = m.collateral.TransferSpot(ctx, trade.Buyer, trade.Seller, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor))
+	transfer, err = m.collateral.TransferSpot(ctx, trade.Buyer, trade.Seller, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), quoteFromAccountType, quoteToAccountType)
 	if err != nil {
 		m.log.Panic("failed to complete spot transfer", logging.Trade(trade))
 	}
 	transfers = append(transfers, transfer)
 	if fees != nil {
-		m.applyFees(ctx, fees)
+		m.applyFees(ctx, fees, quoteToAccountType)
 	}
 	return transfers
 }
@@ -3125,12 +3206,20 @@ func (m *Market) transferToHoldingAccount(ctx context.Context, order *types.Orde
 		asset = m.baseAsset
 	}
 
+	accountType := types.AccountTypeGeneral
+	if order.Party == types.NetworkParty {
+		accountType, _, err = m.getACcountTypesForPAP()
+		if err != nil {
+			m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", order.ID))
+		}
+	}
+
 	// verify that the party has sufficient funds in their general account to cover for this amount
-	if err := m.collateral.PartyHasSufficientBalance(asset, order.Party, num.Sum(amt, fees)); err != nil {
+	if err := m.collateral.PartyHasSufficientBalance(asset, order.Party, num.Sum(amt, fees), accountType); err != nil {
 		return err
 	}
 
-	transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, order.ID, order.Party, asset, amt, fees)
+	transfer, err := m.orderHoldingTracker.TransferToHoldingAccount(ctx, order.ID, order.Party, asset, amt, fees, accountType)
 	if err != nil {
 		m.log.Panic("failed to transfer funds to holding account for order", logging.Order(order), logging.Error(err))
 	}
@@ -3144,7 +3233,15 @@ func (m *Market) releaseOrderFromHoldingAccount(ctx context.Context, orderID, pa
 	if side == types.SideSell {
 		asset = m.baseAsset
 	}
-	transfer, err := m.orderHoldingTracker.ReleaseAllFromHoldingAccount(ctx, orderID, party, asset)
+	accType := types.AccountTypeGeneral
+	if party == types.NetworkParty {
+		var err error
+		accType, _, err = m.getACcountTypesForPAP()
+		if err != nil {
+			m.log.Panic("failed to get account types for automated purchase", logging.String("order-id", orderID))
+		}
+	}
+	transfer, err := m.orderHoldingTracker.ReleaseAllFromHoldingAccount(ctx, orderID, party, asset, accType)
 	if err != nil {
 		m.log.Panic("could not release funds from holding account", logging.String("order-id", orderID), logging.Error(err))
 	}
@@ -3191,7 +3288,7 @@ func (m *Market) calculateFeesForTrades(trades []*types.Trade) (events.FeesTrans
 	)
 	if !m.as.InAuction() {
 		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
-	} else if m.as.IsMonitorAuction() {
+	} else if m.as.IsMonitorAuction() || m.as.IsPAPAuction() {
 		// we are in auction mode
 		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService, m.volumeRebateService)
 	} else if m.as.IsFBA() {
@@ -3213,7 +3310,7 @@ func (m *Market) calculateAmountBySide(side types.Side, price *num.Uint, size ui
 }
 
 // checkSufficientFunds checks if the aggressor party has in their general account sufficient funds to cover the trade + fees.
-func (m *Market) checkSufficientFunds(party string, side types.Side, price *num.Uint, size uint64, isPegged bool) error {
+func (m *Market) checkSufficientFunds(party string, side types.Side, price *num.Uint, size uint64, isPegged bool, accountType types.AccountType) error {
 	required := m.calculateAmountBySide(side, price, size)
 	if side == types.SideBuy {
 		fees := num.UintZero()
@@ -3225,11 +3322,11 @@ func (m *Market) checkSufficientFunds(party string, side types.Side, price *num.
 			}
 		}
 
-		if m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, num.Sum(required, fees)) != nil {
+		if m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, num.Sum(required, fees), accountType) != nil {
 			return fmt.Errorf("party does not have sufficient balance to cover the trade and fees")
 		}
 	} else {
-		if m.collateral.PartyHasSufficientBalance(m.baseAsset, party, required) != nil {
+		if m.collateral.PartyHasSufficientBalance(m.baseAsset, party, required, accountType) != nil {
 			return fmt.Errorf("party does not have sufficient balance to cover the trade and fees")
 		}
 	}
@@ -3258,6 +3355,9 @@ func (m *Market) closeSpotMarket(ctx context.Context) {
 		m.markPriceLock.Lock()
 		m.markPrice = m.lastTradedPrice
 		m.markPriceLock.Unlock()
+		if m.pap != nil {
+			m.stopPAP(ctx)
+		}
 		if err := m.closeMarket(ctx); err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
@@ -3386,4 +3486,61 @@ func (m *Market) CheckOrderSubmissionForSpam(orderSubmission *types.OrderSubmiss
 		orderSubmission.PeggedOrder,
 		orderSubmission.Type,
 		quantumMultiplier)
+}
+
+func (m *Market) enterAutomatedPurchaseAuction(ctx context.Context, orderID string, orderSide types.Side, orderPrice *num.Uint, orderSize uint64, reference string, duration time.Duration) (string, error) {
+	if !m.canTrade() {
+		return "", fmt.Errorf(fmt.Sprintf("cannot trade in market %s", m.mkt.ID))
+	}
+
+	// if we're in governance auction we're not placing automated purchase orders because we don't have
+	// control over when the market will be resumed
+	if m.mkt.TradingMode == types.MarketTradingModeSuspendedViaGovernance {
+		return "", fmt.Errorf(fmt.Sprintf("cannot enter auction in market %s - market is in governance suspension", m.mkt.ID))
+	}
+
+	if m.as.InAuction() {
+		now := m.timeService.GetTimeNow()
+		aRemaining := int64(m.as.ExpiresAt().Sub(now) / time.Second)
+		if aRemaining >= int64(duration.Seconds()) {
+			return "", nil
+		}
+		m.as.ExtendAuctionAutomatedPurchase(types.AuctionDuration{
+			Duration: int64(duration.Seconds()) - aRemaining,
+		})
+		if evt := m.as.AuctionExtended(ctx, now); evt != nil {
+			m.broker.Send(evt)
+		}
+	} else {
+		m.as.StartAutomatedPurchaseAuction(m.timeService.GetTimeNow(), int64(duration.Seconds()))
+		m.mkt.TradingMode = types.MarketTradingModeAutomatedPuchaseAuction
+		m.mkt.State = types.MarketStateSuspended
+		m.enterAuction(ctx)
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	}
+	// if we were able to enter an auction, now place the order for the network account
+	if m.as.InAuction() {
+		os := &types.OrderSubmission{
+			MarketID:    m.mkt.ID,
+			Price:       orderPrice.Clone(),
+			Size:        orderSize,
+			Side:        orderSide,
+			TimeInForce: types.OrderTimeInForceGFA,
+			Type:        types.OrderTypeLimit,
+			Reference:   reference,
+		}
+		conf, err := m.SubmitOrder(ctx, os, types.NetworkParty, orderID)
+		if err != nil {
+			return "", err
+		}
+		return conf.Order.ID, nil
+	}
+	return "", nil
+}
+
+func (m *Market) getACcountTypesForPAP() (types.AccountType, types.AccountType, error) {
+	if m.pap == nil {
+		return types.AccountTypeUnspecified, types.AccountTypeUnspecified, fmt.Errorf("protocol automated purchase not defined for market")
+	}
+	return m.pap.getACcountTypesForPAP()
 }

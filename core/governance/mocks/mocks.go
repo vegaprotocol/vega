@@ -115,6 +115,21 @@ func (mr *MockMarketsMockRecorder) MarketExists(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketExists", reflect.TypeOf((*MockMarkets)(nil).MarketExists), arg0)
 }
 
+// MarketHasActivePAP mocks base method.
+func (m *MockMarkets) MarketHasActivePAP(arg0 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarketHasActivePAP", arg0)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarketHasActivePAP indicates an expected call of MarketHasActivePAP.
+func (mr *MockMarketsMockRecorder) MarketHasActivePAP(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketHasActivePAP", reflect.TypeOf((*MockMarkets)(nil).MarketHasActivePAP), arg0)
+}
+
 // RestoreMarket mocks base method.
 func (m *MockMarkets) RestoreMarket(arg0 context.Context, arg1 *types.Market) error {
 	m.ctrl.T.Helper()

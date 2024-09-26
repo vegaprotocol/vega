@@ -440,6 +440,7 @@ type ExecSpotMarket struct {
 	ExpiringStopOrders         []*Order
 	FeesStats                  *eventspb.FeesStats
 	MarketLiquidity            *snapshot.MarketLiquidity
+	ProtocolAutomatedPurchase  *snapshot.ProtocolAutomatedPurchase
 }
 
 type PriceMonitor struct {
@@ -558,6 +559,7 @@ type CPState struct {
 
 type CollateralAccounts struct {
 	Accounts            []*Account
+	Earmarked           map[string]*num.Uint
 	NextBalanceSnapshot time.Time
 }
 
@@ -2145,14 +2147,32 @@ func CollateralAccountsFromProto(ca *snapshot.CollateralAccounts) *CollateralAcc
 		ret.Accounts = append(ret.Accounts, AccountFromProto(a))
 	}
 	ret.NextBalanceSnapshot = time.Unix(0, ca.NextBalanceSnapshot)
+
+	ret.Earmarked = make(map[string]*num.Uint, len(ca.EarmarkedBalances))
+	for _, earmarked := range ca.EarmarkedBalances {
+		ret.Earmarked[earmarked.AccountId], _ = num.UintFromString(earmarked.EarmarkedBalance, 10)
+	}
 	return &ret
 }
 
 func (c CollateralAccounts) IntoProto() *snapshot.CollateralAccounts {
 	accs := Accounts(c.Accounts)
+
+	earmarked := make([]*snapshot.Earmarked, 0, len(c.Earmarked))
+	for id, balance := range c.Earmarked {
+		earmarked = append(earmarked, &snapshot.Earmarked{
+			AccountId:        id,
+			EarmarkedBalance: balance.String(),
+		})
+	}
+	sort.Slice(earmarked, func(i, j int) bool {
+		return earmarked[i].AccountId < earmarked[j].AccountId
+	})
+
 	return &snapshot.CollateralAccounts{
 		Accounts:            accs.IntoProto(),
 		NextBalanceSnapshot: c.NextBalanceSnapshot.UnixNano(),
+		EarmarkedBalances:   earmarked,
 	}
 }
 
