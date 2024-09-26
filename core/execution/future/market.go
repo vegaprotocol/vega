@@ -1571,7 +1571,7 @@ func (m *Market) EnterLongBlockAuction(ctx context.Context, duration int64) {
 	} else {
 		m.as.StartLongBlockAuction(m.timeService.GetTimeNow(), duration)
 		m.tradableInstrument.Instrument.UpdateAuctionState(ctx, true)
-		m.mkt.TradingMode = types.MarketTradingModelLongBlockAuction
+		m.mkt.TradingMode = types.MarketTradingModeLongBlockAuction
 		m.mkt.State = types.MarketStateSuspended
 		m.enterAuction(ctx)
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))

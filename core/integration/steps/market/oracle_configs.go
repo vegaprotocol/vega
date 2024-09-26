@@ -68,6 +68,7 @@ type oracleConfigs struct {
 	fullFutures           map[string]*vegapb.Future
 	perpSwap              bool
 	compositePriceOracles map[string]CompositePriceOracleConfig
+	timeTriggers          map[string]*vegapb.DataSourceSpec
 }
 
 type oConfig[T BindType] struct {
@@ -94,6 +95,7 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 		fullPerps:             map[string]*vegapb.Perpetual{},
 		fullFutures:           map[string]*vegapb.Future{},
 		compositePriceOracles: map[string]CompositePriceOracleConfig{},
+		timeTriggers:          map[string]*vegapb.DataSourceSpec{},
 	}
 	configs.futureOracleSpecs(unmarshaler)
 	configs.perpetualOracleSpecs(unmarshaler)
@@ -205,6 +207,11 @@ func (c *oracleConfigs) AddPerp(name string, perp *vegapb.Perpetual) error {
 		return err
 	}
 	c.fullPerps[name] = perp
+	return nil
+}
+
+func (c *oracleConfigs) AddTimeTrigger(name string, spec *vegapb.DataSourceSpec) error {
+	c.timeTriggers[name] = spec
 	return nil
 }
 
@@ -350,4 +357,12 @@ func (f *oConfig[T]) Get(name string, specType string) (*OracleConfig[T], error)
 		panic(fmt.Errorf("failed to deep copy oracle config: %v", err))
 	}
 	return copyConfig, nil
+}
+
+func (c *oracleConfigs) GetTimeTrigger(name string) (*vegapb.DataSourceSpec, error) {
+	ds, ok := c.timeTriggers[name]
+	if !ok {
+		return nil, fmt.Errorf("oracle name not found")
+	}
+	return ds, nil
 }

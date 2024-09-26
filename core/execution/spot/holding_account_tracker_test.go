@@ -83,10 +83,10 @@ func TestReleaseAllFromHoldingAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(1500), generalAccount.Balance)
 
-	_, err = hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2))
+	_, err = hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2), types.AccountTypeGeneral)
 	require.NoError(t, err)
 
-	_, err = hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(200), num.NewUint(3))
+	_, err = hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(200), num.NewUint(3), types.AccountTypeGeneral)
 	require.Error(t, fmt.Errorf("funds for the order have already been transferred to the holding account"), err)
 
 	holdingQty, holdingFee := hat.GetCurrentHolding("1")
@@ -97,7 +97,7 @@ func TestReleaseAllFromHoldingAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(498), generalAccount.Balance)
 
-	_, err = hat.ReleaseAllFromHoldingAccount(context.Background(), "1", "zohar", "BTC")
+	_, err = hat.ReleaseAllFromHoldingAccount(context.Background(), "1", "zohar", "BTC", types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	holdingQty, holdingFee = hat.GetCurrentHolding("1")
@@ -116,7 +116,7 @@ func TestReleaseQuantityHoldingAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(1500), generalAccount.Balance)
 
-	_, err = hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2))
+	_, err = hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2), types.AccountTypeGeneral)
 	require.NoError(t, err)
 	holdingQty, holdingFee := hat.GetCurrentHolding("1")
 	require.Equal(t, num.NewUint(1000), holdingQty)
@@ -126,7 +126,7 @@ func TestReleaseQuantityHoldingAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(498), generalAccount.Balance)
 
-	_, err = hat.ReleaseQuantityHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(500), num.NewUint(1))
+	_, err = hat.ReleaseQuantityHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(500), num.NewUint(1), types.AccountTypeGeneral)
 	require.NoError(t, err)
 	holdingQty, holdingFee = hat.GetCurrentHolding("1")
 	require.Equal(t, num.NewUint(500), holdingQty)
@@ -140,14 +140,14 @@ func TestReleaseQuantityHoldingAccount(t *testing.T) {
 func TestReleaseFeeFromHoldingAccount(t *testing.T) {
 	hat := getTestHat(t)
 
-	_, err := hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2))
+	_, err := hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2), types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	holdingQty, holdingFee := hat.GetCurrentHolding("1")
 	require.Equal(t, num.NewUint(1000), holdingQty)
 	require.Equal(t, num.NewUint(2), holdingFee)
 
-	le, err := hat.ReleaseFeeFromHoldingAccount(context.Background(), "1", "zohar", "BTC")
+	le, err := hat.ReleaseFeeFromHoldingAccount(context.Background(), "1", "zohar", "BTC", types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	_, holdingFee = hat.GetCurrentHolding("1")
@@ -157,7 +157,7 @@ func TestReleaseFeeFromHoldingAccount(t *testing.T) {
 
 func TestTransferFeeToHoldingAccount(t *testing.T) {
 	hat := getTestHat(t)
-	_, err := hat.TransferFeeToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(2))
+	_, err := hat.TransferFeeToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(2), types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	holdingQty, holdingFee := hat.GetCurrentHolding("1")
@@ -167,7 +167,7 @@ func TestTransferFeeToHoldingAccount(t *testing.T) {
 
 func TestSnapshot(t *testing.T) {
 	hat := getTestHat(t)
-	_, err := hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2))
+	_, err := hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2), types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	state, _, err := hat.GetState("market1")
@@ -187,7 +187,7 @@ func TestSnapshot(t *testing.T) {
 func TestTransferToHoldingAccount(t *testing.T) {
 	hat := getTestHat(t)
 
-	_, err := hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2))
+	_, err := hat.TransferToHoldingAccount(context.Background(), "1", "zohar", "BTC", num.NewUint(1000), num.NewUint(2), types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	holdingQty, holdingFee := hat.GetCurrentHolding("1")

@@ -159,6 +159,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the composite price oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
 		return steps.TheCompositePriceOracleSpec(marketConfig, signers, table)
 	})
+	s.Step(`^the time triggers oracle spec is:`, func(table *godog.Table) error {
+		return steps.TheTimeTriggerOracleSpec(marketConfig, table)
+	})
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
@@ -347,7 +350,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following undelegations:$`, func(table *godog.Table) error {
 		return steps.PartiesUndelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
-
+	s.Step(`the protocol automated purchase is defined as:$`, func(table *godog.Table) error {
+		return steps.TheAutomatedPurchasePrograms(marketConfig, execsetup.executionEngine, table)
+	})
 	s.Step(`^the starting auction time for market "([^"]+)" is "([^"]+)"`, func(marketID, startTime string) error {
 		return steps.MarketAuctionStartTime(execsetup.executionEngine, marketID, startTime)
 	})
@@ -404,6 +409,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the network moves ahead "([^"]+)" epochs$`, func(epochs string) error {
 		return steps.TheNetworkMovesAheadNEpochs(execsetup.broker, execsetup.block, execsetup.executionEngine, execsetup.epochEngine, execsetup.timeService, epochs)
+	})
+
+	s.Step(`^the automated purchase program for market "([^"]*)" should have a snapshot balance of "([^"]*)"$`, func(marketID, balance string) error {
+		return steps.PAPVolumeSnapshotShouldBe(execsetup.broker, marketID, balance)
 	})
 
 	// Assertion steps
@@ -487,6 +496,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the network treasury balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
 		return steps.TheNetworkTreasuryBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
+	})
+	s.Step(`^the buy back fees balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheBuyBackFeesBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
 	s.Step(`^the global insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
 		return steps.TheGlobalInsuranceBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)

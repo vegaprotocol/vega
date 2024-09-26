@@ -174,6 +174,40 @@ func SpecBindingForFutureFromProto(o *vegapb.DataSourceSpecToFutureBinding) *Spe
 	}
 }
 
+type SpecBindingForAutomatedPurchase struct {
+	AuctionScheduleProperty       string
+	AuctionVolumeSnapshotProperty string
+}
+
+func (b SpecBindingForAutomatedPurchase) String() string {
+	return fmt.Sprintf(
+		"auctionScheduleProperty(%s) auctionVolumeSnapshotProperty(%s)",
+		b.AuctionScheduleProperty,
+		b.AuctionVolumeSnapshotProperty,
+	)
+}
+
+func (b SpecBindingForAutomatedPurchase) IntoProto() *vegapb.DataSourceSpecToAutomatedPurchaseBinding {
+	return &vegapb.DataSourceSpecToAutomatedPurchaseBinding{
+		AuctionScheduleProperty:               b.AuctionScheduleProperty,
+		AuctionVolumeSnapshotScheduleProperty: b.AuctionVolumeSnapshotProperty,
+	}
+}
+
+func (b SpecBindingForAutomatedPurchase) DeepClone() *SpecBindingForAutomatedPurchase {
+	return &SpecBindingForAutomatedPurchase{
+		AuctionScheduleProperty:       b.AuctionScheduleProperty,
+		AuctionVolumeSnapshotProperty: b.AuctionVolumeSnapshotProperty,
+	}
+}
+
+func SpecBindingForAutomatedPurchaseFromProto(o *vegapb.DataSourceSpecToAutomatedPurchaseBinding) *SpecBindingForAutomatedPurchase {
+	return &SpecBindingForAutomatedPurchase{
+		AuctionScheduleProperty:       o.AuctionScheduleProperty,
+		AuctionVolumeSnapshotProperty: o.AuctionVolumeSnapshotScheduleProperty,
+	}
+}
+
 type SpecBindingForPerps struct {
 	SettlementDataProperty     string
 	SettlementScheduleProperty string

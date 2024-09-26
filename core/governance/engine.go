@@ -75,6 +75,7 @@ type Markets interface {
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	IsSucceeded(mktID string) bool
 	ValidateSettlementData(mktID string, data *num.Uint) bool
+	MarketHasActivePAP(market string) (bool, error)
 }
 
 // StakingAccounts ...
@@ -298,6 +299,8 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.volumeDiscountProgram = updatedVolumeDiscountProgramFromProposal(p)
 	case types.ProposalTermsTypeUpdateVolumeRebateProgram:
 		te.volumeRebateProgram = updatedVolumeRebateProgramFromProposal(p)
+	case types.ProposalTermsTypeNewProtocolAutomatedPurchase:
+		te.automaticPurchase = &ToEnactAutomatedPurchase{}
 	}
 	return //nolint:nakedret
 }
@@ -745,6 +748,8 @@ func (e *Engine) getProposalParams(proposalTerm types.ProposalTerm) (*types.Prop
 		return e.getVolumeDiscountProgramNetworkParameters(), nil
 	case types.ProposalTermsTypeUpdateVolumeRebateProgram:
 		return e.getVolumeRebateProgramNetworkParameters(), nil
+	case types.ProposalTermsTypeNewProtocolAutomatedPurchase:
+		return e.getAutomaticPurchaseConfigNetworkParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
@@ -1097,6 +1102,9 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateUpdateVolumeDiscountProgram(e.netp, terms.GetUpdateVolumeDiscountProgram())
 	case types.ProposalTermsTypeUpdateVolumeRebateProgram:
 		return validateUpdateVolumeRebateProgram(e.netp, terms.GetUpdateVolumeRebateProgram())
+	case types.ProposalTermsTypeNewProtocolAutomatedPurchase:
+		automatedPurchase := terms.GetAutomatedPurchase()
+		return e.validateNewProtocolAutomatedPurchaseConfiguration(automatedPurchase)
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}

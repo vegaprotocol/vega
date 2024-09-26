@@ -155,6 +155,22 @@ func (e *Engine) getVolumeRebateProgramNetworkParameters() *types.ProposalParame
 	)
 }
 
+func (e *Engine) getAutomaticPurchaseConfigNetworkParameters() *types.ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalAutomatedPurchaseConfigMinClose,
+		netparams.GovernanceProposalAutomatedPurchaseConfigMaxClose,
+		netparams.GovernanceProposalAutomatedPurchaseConfigMinEnact,
+		netparams.GovernanceProposalAutomatedPurchaseConfigMaxEnact,
+		netparams.GovernanceProposalAutomatedPurchaseConfigRequiredParticipation,
+		netparams.GovernanceProposalAutomatedPurchaseConfigRequiredMajority,
+		netparams.GovernanceProposalAutomatedPurchaseConfigMinProposerBalance,
+		netparams.GovernanceProposalAutomatedPurchaseConfigMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
 func (e *Engine) getNewAssetProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalAssetMinClose,

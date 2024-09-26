@@ -455,6 +455,20 @@ func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockExecutionEngine)(nil).Hash))
 }
 
+// NewProtocolAutomatedPurchase mocks base method.
+func (m *MockExecutionEngine) NewProtocolAutomatedPurchase(arg0 context.Context, arg1 string, arg2 *types.NewProtocolAutomatedPurchaseChanges) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewProtocolAutomatedPurchase", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NewProtocolAutomatedPurchase indicates an expected call of NewProtocolAutomatedPurchase.
+func (mr *MockExecutionEngineMockRecorder) NewProtocolAutomatedPurchase(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewProtocolAutomatedPurchase", reflect.TypeOf((*MockExecutionEngine)(nil).NewProtocolAutomatedPurchase), arg0, arg1, arg2)
+}
+
 // OnChainIDUpdate mocks base method.
 func (m *MockExecutionEngine) OnChainIDUpdate(arg0 uint64) error {
 	m.ctrl.T.Helper()

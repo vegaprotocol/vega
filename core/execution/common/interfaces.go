@@ -101,11 +101,13 @@ type AuctionState interface {
 	// are we in auction, and what auction are we in?
 	ExtendAuctionSuspension(delta types.AuctionDuration)
 	ExtendAuctionLongBlock(delta types.AuctionDuration)
+	ExtendAuctionAutomatedPurchase(delta types.AuctionDuration)
 	InAuction() bool
 	IsOpeningAuction() bool
 	IsPriceAuction() bool
 	IsFBA() bool
 	IsMonitorAuction() bool
+	IsPAPAuction() bool
 	ExceededMaxOpening(time.Time) bool
 	// is it the start/end of an auction
 	AuctionStart() bool
@@ -130,6 +132,7 @@ type AuctionState interface {
 	UpdateMaxDuration(ctx context.Context, d time.Duration)
 	StartGovernanceSuspensionAuction(t time.Time)
 	StartLongBlockAuction(t time.Time, d int64)
+	StartAutomatedPurchaseAuction(t time.Time, d int64)
 	EndGovernanceSuspensionAuction()
 }
 
@@ -167,7 +170,7 @@ type Collateral interface {
 	Hash() []byte
 	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
-	TransferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
+	TransferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer, sourceAccountType types.AccountType) ([]*types.LedgerMovement, error)
 	TransferSpotFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.LedgerMovement, []events.Margin, []events.Margin, error)
 	IsolatedMarginUpdate(updates []events.Risk) []events.Margin
@@ -182,12 +185,12 @@ type Collateral interface {
 	CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAsset string) error
 	SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement
 	ClearInsurancepool(ctx context.Context, marketID string, asset string, clearFees bool) ([]*types.LedgerMovement, error)
-	TransferToHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
-	ReleaseFromHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
+	TransferToHoldingAccount(ctx context.Context, transfer *types.Transfer, accountType types.AccountType) (*types.LedgerMovement, error)
+	ReleaseFromHoldingAccount(ctx context.Context, transfer *types.Transfer, toAccounType types.AccountType) (*types.LedgerMovement, error)
 	ClearSpotMarket(ctx context.Context, mktID, quoteAsset string, parties []string) ([]*types.LedgerMovement, error)
-	PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error
+	PartyHasSufficientBalance(asset, partyID string, amount *num.Uint, fromAccountType types.AccountType) error
 	PartyCanCoverFees(asset, mktID, partyID string, amount *num.Uint) error
-	TransferSpot(ctx context.Context, partyID, toPartyID, asset string, quantity *num.Uint) (*types.LedgerMovement, error)
+	TransferSpot(ctx context.Context, partyID, toPartyID, asset string, quantity *num.Uint, fromAccountType, toAccountType types.AccountType) (*types.LedgerMovement, error)
 	GetOrCreatePartyLiquidityFeeAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	GetPartyLiquidityFeeAccount(market, partyID, asset string) (*types.Account, error)
 	GetLiquidityFeesBonusDistributionAccount(marketID, asset string) (*types.Account, error)
@@ -196,6 +199,9 @@ type Collateral interface {
 	CheckOrderSpam(party, market string, assets []string) error
 	CheckOrderSpamAllMarkets(party string) error
 	GetAllParties() []string
+	GetSystemAccountBalance(asset, market string, accountType types.AccountType) (*num.Uint, error)
+	EarmarkForAutomatedPurchase(asset string, accountType types.AccountType, min, max *num.Uint) (*num.Uint, error)
+	UnearmarkForAutomatedPurchase(asset string, accountType types.AccountType, releaseRequest *num.Uint) error
 
 	// amm stuff
 	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)

@@ -256,6 +256,7 @@ type ToEnact struct {
 	referralProgramChanges *types.ReferralProgram
 	volumeDiscountProgram  *types.VolumeDiscountProgram
 	volumeRebateProgram    *types.VolumeRebateProgram
+	automaticPurchase      *ToEnactAutomatedPurchase
 }
 
 type ToEnactMarketStateUpdate struct{}
@@ -263,6 +264,8 @@ type ToEnactMarketStateUpdate struct{}
 type ToEnactTransfer struct{}
 
 type ToEnactCancelTransfer struct{}
+
+type ToEnactAutomatedPurchase struct{}
 
 // ToEnactNewMarket is just a empty struct, to signal
 // an enacted market. nothing to be done with it
@@ -338,6 +341,14 @@ func (t *ToEnact) MarketStateUpdate() *ToEnactMarketStateUpdate {
 
 func (t *ToEnact) NewTransfer() *ToEnactTransfer {
 	return t.t
+}
+
+func (t *ToEnact) IsAutomatedPurchase() bool {
+	return t.automaticPurchase != nil
+}
+
+func (t *ToEnact) NewProtocolAutomatedPurchase() *ToEnactAutomatedPurchase {
+	return t.automaticPurchase
 }
 
 func (t *ToEnact) CancelTransfer() *ToEnactCancelTransfer {

@@ -3366,7 +3366,7 @@ func TestHoldingAccount(t *testing.T) {
 			Asset:  "BTC",
 			Amount: num.NewUint(400),
 		},
-	})
+	}, types.AccountTypeGeneral)
 	require.NoError(t, err)
 	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
 	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
@@ -3378,7 +3378,7 @@ func TestHoldingAccount(t *testing.T) {
 			Asset:  "BTC",
 			Amount: num.NewUint(400),
 		},
-	})
+	}, types.AccountTypeGeneral)
 	require.NoError(t, err)
 	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
 	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
@@ -3395,7 +3395,7 @@ func TestHoldingAccount(t *testing.T) {
 			Asset:  "BTC",
 			Amount: num.NewUint(200),
 		},
-	})
+	}, types.AccountTypeGeneral)
 	require.NoError(t, err)
 	require.Equal(t, types.AccountTypeGeneral, le.Balances[0].Account.Type)
 	require.Equal(t, num.NewUint(200), le.Balances[0].Balance)
@@ -3407,7 +3407,79 @@ func TestHoldingAccount(t *testing.T) {
 			Asset:  "BTC",
 			Amount: num.NewUint(600),
 		},
-	})
+	}, types.AccountTypeGeneral)
+
+	require.NoError(t, err)
+	require.Equal(t, num.UintZero(), le.Entries[0].FromAccountBalance)
+	require.Equal(t, num.NewUint(1000), le.Entries[0].ToAccountBalance)
+}
+
+func TestHoldingAccountNetwork(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+
+	// create the general account for the source general account
+	id := eng.GetOrCreateBuyBackFeesAccountID(ctx, "BTC")
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	// we're have 1000 in the general account and 0 in the holding
+	// transferring 800 from the general account to the holding account in two transfers of 400
+	// expect to have the holding account balance = 800 and the general account balance = 200
+
+	// holding account does not exist yet - it will be created
+	le, err := eng.TransferToHoldingAccount(ctx, &types.Transfer{
+		Owner: types.NetworkParty,
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(400),
+		},
+	}, types.AccountTypeBuyBackFees)
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
+
+	// holding account does not exist yet - it will be created
+	le, err = eng.TransferToHoldingAccount(ctx, &types.Transfer{
+		Owner: types.NetworkParty,
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(400),
+		},
+	}, types.AccountTypeBuyBackFees)
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
+
+	// check general account balance is 200
+	z, err := eng.GetSystemAccountBalance("BTC", "!", types.AccountTypeBuyBackFees)
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(200), z)
+
+	// request to release 200 from the holding account
+	le, err = eng.ReleaseFromHoldingAccount(ctx, &types.Transfer{
+		Owner: types.NetworkParty,
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(200),
+		},
+	}, types.AccountTypeBuyBackFees)
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeBuyBackFees, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(200), le.Balances[0].Balance)
+
+	// now request to release 600 more
+	le, err = eng.ReleaseFromHoldingAccount(ctx, &types.Transfer{
+		Owner: types.NetworkParty,
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(600),
+		},
+	}, types.AccountTypeBuyBackFees)
 
 	require.NoError(t, err)
 	require.Equal(t, num.UintZero(), le.Entries[0].FromAccountBalance)
@@ -3480,7 +3552,7 @@ func TestPartyHasSufficientBalance(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// first check when general account of the source does not exist
-	err := eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000))
+	err := eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000), types.AccountTypeGeneral)
 	require.Error(t, err)
 
 	ctx := context.Background()
@@ -3491,11 +3563,36 @@ func TestPartyHasSufficientBalance(t *testing.T) {
 	// topup the source general account
 	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
 
-	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1001))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1001), types.AccountTypeGeneral)
 	require.Error(t, err)
-	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000), types.AccountTypeGeneral)
 	require.NoError(t, err)
-	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(900))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(900), types.AccountTypeGeneral)
+	require.NoError(t, err)
+}
+
+func TestNetworkPartyHasSufficientBalance(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// first check when general account of the source does not exist
+	err := eng.PartyHasSufficientBalance("BTC", types.NetworkParty, num.NewUint(1000), types.AccountTypeGeneral)
+	require.Error(t, err)
+
+	ctx := context.Background()
+	// create the buyback account for the network on btc
+	id := eng.GetOrCreateBuyBackFeesAccountID(ctx, "BTC")
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	err = eng.PartyHasSufficientBalance("BTC", types.NetworkParty, num.NewUint(1001), types.AccountTypeBuyBackFees)
+	require.Error(t, err)
+	err = eng.PartyHasSufficientBalance("BTC", types.NetworkParty, num.NewUint(1000), types.AccountTypeBuyBackFees)
+	require.NoError(t, err)
+	err = eng.PartyHasSufficientBalance("BTC", types.NetworkParty, num.NewUint(900), types.AccountTypeBuyBackFees)
 	require.NoError(t, err)
 }
 
@@ -3530,7 +3627,7 @@ func TestTransferSpot(t *testing.T) {
 
 	ctx := context.Background()
 	// first check when general account of the source does not exist
-	_, err := eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900))
+	_, err := eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900), types.AccountTypeGeneral, types.AccountTypeGeneral)
 	require.Error(t, err)
 
 	// create the general account for the source general account
@@ -3541,7 +3638,7 @@ func TestTransferSpot(t *testing.T) {
 	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
 
 	// transfer successfully
-	_, err = eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900))
+	_, err = eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900), types.AccountTypeGeneral, types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	// check balances
@@ -3555,7 +3652,7 @@ func TestTransferSpot(t *testing.T) {
 	require.Equal(t, num.NewUint(900), j.Balance)
 
 	// try to transfer more than in the account should transfer all
-	_, err = eng.TransferSpot(ctx, "jeremy", "zohar", "BTC", num.NewUint(1000))
+	_, err = eng.TransferSpot(ctx, "jeremy", "zohar", "BTC", num.NewUint(1000), types.AccountTypeGeneral, types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	// check balances
@@ -3566,6 +3663,52 @@ func TestTransferSpot(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, num.NewUint(1000), z.Balance)
+	require.Equal(t, num.UintZero(), j.Balance)
+}
+
+func TestTransferSpotToNetworkAccount(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	ctx := context.Background()
+	// first check when network account of the source does not exist
+	_, err := eng.TransferSpot(ctx, types.NetworkParty, "zohar", "BTC", num.NewUint(900), types.AccountTypeBuyBackFees, types.AccountTypeGeneral)
+	require.Error(t, err)
+
+	// create the buyback account for the source general account
+	id := eng.GetOrCreateBuyBackFeesAccountID(ctx, "BTC")
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	// transfer successfully
+	_, err = eng.TransferSpot(ctx, types.NetworkParty, "zohar", "BTC", num.NewUint(900), types.AccountTypeBuyBackFees, types.AccountTypeGeneral)
+	require.NoError(t, err)
+
+	// check balances
+	bb, err := eng.GetAccountByID(id)
+	require.NoError(t, err)
+
+	j, err := eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+
+	require.Equal(t, num.NewUint(100), bb.Balance)
+	require.Equal(t, num.NewUint(900), j.Balance)
+
+	// try to transfer more than in the account should transfer all
+	_, err = eng.TransferSpot(ctx, "zohar", types.NetworkParty, "BTC", num.NewUint(1000), types.AccountTypeGeneral, types.AccountTypeBuyBackFees)
+	require.NoError(t, err)
+
+	// check balances
+	bb, err = eng.GetAccountByID(id)
+	require.NoError(t, err)
+
+	j, err = eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+
+	require.Equal(t, num.NewUint(1000), bb.Balance)
 	require.Equal(t, num.UintZero(), j.Balance)
 }
 
@@ -3702,4 +3845,57 @@ func TestBalanceSnapshot(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, d, got)
 	}
+}
+
+func TestEarmarking(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	rewardAcc, _ := eng.GetGlobalRewardAccount("ETH")
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.IncrementBalance(context.Background(), rewardAcc.ID, num.NewUint(1000))
+
+	// test non existing account id
+	_, err := eng.EarmarkForAutomatedPurchase("nonexisting", types.AccountTypeGlobalReward, num.UintZero(), num.NewUint(10000))
+	require.Error(t, err)
+	require.Equal(t, fmt.Errorf("account does not exist: !*nonexisting<"), err)
+
+	// require less than the min should earmark nothing
+	_, err = eng.EarmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(2000), num.NewUint(10000))
+	require.Error(t, err)
+	require.Equal(t, fmt.Errorf("insufficient balance to earmark"), err)
+
+	// require to earmark more than the max should only earmark the max
+	amt, err := eng.EarmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(100), num.NewUint(500))
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(500), amt)
+
+	// now we have a balance of 1000 and 500 earmarked, so 500 more can be earmarked, let set the min to 501 and see nothing gets earmarked
+	_, err = eng.EarmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(501), num.NewUint(1000))
+	require.Equal(t, fmt.Errorf("insufficient balance to earmark"), err)
+
+	// earmark 500 more
+	amt, err = eng.EarmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(500), num.NewUint(500))
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(500), amt)
+
+	// now we unearmarked balance of the account is 0
+	_, err = eng.EarmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(0), num.NewUint(1))
+	require.Equal(t, fmt.Errorf("insufficient balance to earmark"), err)
+
+	// so now we have 1000 earmarked, lets start testing unearmark
+	err = eng.UnearmarkForAutomatedPurchase("nonexisting", types.AccountTypeGlobalReward, num.NewUint(1000))
+	require.Equal(t, fmt.Errorf("account does not exist: !*nonexisting<"), err)
+
+	// lets unearmark 600 first, should be fine
+	require.NoError(t, eng.UnearmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(600)))
+
+	// we now have 400 earmarked so lets try to unearmark 401 - should panic
+	require.Panics(t, func() { eng.UnearmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(401)) })
+
+	// finally unearmark the last 400 successfully
+	require.NoError(t, eng.UnearmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(400)))
 }

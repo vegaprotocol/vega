@@ -4348,6 +4348,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
   "Volume rebate program proposal is invalid"
   PROPOSAL_ERROR_INVALID_VOLUME_REBATE_PROGRAM
+  "Invalid automated purchase proposal"
+  PROPOSAL_ERROR_INVALID_PROTOCOL_AUTOMATED_PURCHASE
 }
 
 "Why the order was rejected by the core node"
@@ -4573,6 +4575,9 @@ enum MarketTradingMode {
 
   "Auction triggered by a long block"
   TRADING_MODE_LONG_BLOCK_AUCTION
+
+  "Auction triggered by automated purchase"
+  TRADING_MODE_PROTOCOL_AUTOMATED_PURCHASE_AUCTION
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -5382,6 +5387,7 @@ union ProposalChange =
   | UpdateVolumeDiscountProgram
   | UpdateReferralProgram
   | UpdateVolumeRebateProgram
+  | NewProtocolAutomatedPurchase
 
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
@@ -5809,6 +5815,8 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
   "Auction triggered following a long block, e.g. due to protocol upgrade"
   AUCTION_TRIGGER_LONG_BLOCK
+  "Auction triggered by automated purchase"
+  AUCTION_TRIGGER_PROTOCOL_AUTOMATED_PURCHASE
 }
 
 "Event types"
@@ -7844,6 +7852,35 @@ enum AMMStatusReason {
   STATUS_REASON_COMMITMENT_TOO_LOW
   "The AMM was unable to rebase its fair-price such that it does not cross with existing orders"
   STATUS_REASON_CANNOT_REBASE
+}
+
+type NewProtocolAutomatedPurchase {
+  "The source token that will be swapped"
+  from: ID!
+  "The account type for the network from which the tokens will be sourced"
+  fromAccountType: AccountType!
+  "The account type for the network to which the purchased tokens will be sent"
+  toAccountType: AccountType!
+  "The market that will be used to enact the purchase/sale"
+  marketId: ID
+  "The oracle that will define an approximate acceptable price for the transaction"
+  priceOracle: DataSourceDefinition!
+  "The final acceptable price is the price oracle value weighted by this factor (e.g. 1.05 to allow for 5% slippage on the purchase)"
+  oracleOffsetFactor: String! 
+  "A time based oracle for when auctions will occur"
+  auctionSchedule: DataSourceDefinition
+  "The duration of the auction"
+  auctionDuration: String!
+  "A time based oracle for when an observation will be taken of the balance of the source account. This will emit an event notifying of the balance planned to exchange, along with storing this value. When an auction occurs, the latest reading for this value will be used for the volume to trade, rather than the full balance of the account"
+  auctionVolumeSnapshotSchedule: DataSourceDefinition!
+  "Minimum number of tokens to be sold (specified in asset decimals). If less than this is available in the account at the last snapshot before auction, no auction will occur and the balance will roll over to the next scheduled auction"
+  minimumAuctionSize: String!
+  "Maximum number of tokens to be sold (specified in asset decimals). If more than this is available in the account at the last snapshot before auction, this maximum value will be used instead, and the remainder will be rolled over to the next scheduled auction"
+  maximumAuctionSize: String!
+  "The expiry timestamp in seconds of the automated purchase. 0 if no expiry configured"
+  expiryTimestamp: Int!
+  "For how long the price from the price oracle is considered usable, in seconds"
+  oraclePriceStalenessTolerance: String!
 }
 
 type UpdateVolumeRebateProgram {

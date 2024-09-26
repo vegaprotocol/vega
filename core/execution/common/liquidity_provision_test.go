@@ -143,7 +143,7 @@ func createPartyAndPayLiquidityFee(t *testing.T, amount *num.Uint, testLiquidity
 		testLiquidity.ctx,
 		testLiquidity.marketID,
 		testLiquidity.asset,
-		common.NewFeeTransfer([]*types.Transfer{transfer}, nil),
+		common.NewFeeTransfer([]*types.Transfer{transfer}, nil), types.AccountTypeGeneral,
 	)
 	assert.NoError(t, err)
 }
