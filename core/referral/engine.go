@@ -422,9 +422,9 @@ func (e *Engine) loadFactorsByReferee(factors []*snapshotpb.FactorByReferee) {
 
 		factors := types.Factors{}
 		if fbr.DiscountFactors != nil {
-			factors.Infra, _ = num.UnmarshalBinaryDecimal([]byte(fbr.DiscountFactors.InfrastructureDiscountFactor))
-			factors.Liquidity, _ = num.UnmarshalBinaryDecimal([]byte(fbr.DiscountFactors.LiquidityDiscountFactor))
-			factors.Maker, _ = num.UnmarshalBinaryDecimal([]byte(fbr.DiscountFactors.MakerDiscountFactor))
+			factors.Infra, _ = num.DecimalFromString(fbr.DiscountFactors.InfrastructureDiscountFactor)
+			factors.Liquidity, _ = num.DecimalFromString(fbr.DiscountFactors.LiquidityDiscountFactor)
+			factors.Maker, _ = num.DecimalFromString(fbr.DiscountFactors.MakerDiscountFactor)
 		}
 		if len(fbr.DiscountFactor) > 0 {
 			defaultDF, _ := num.UnmarshalBinaryDecimal(fbr.DiscountFactor)
