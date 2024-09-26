@@ -256,6 +256,18 @@ func (t *Teams) RefereeJoinedTeam(ctx context.Context, referee *entities.TeamMem
 func (t *Teams) RefereeSwitchedTeam(ctx context.Context, referee *entities.RefereeTeamSwitch) error {
 	defer metrics.StartSQLQuery("Teams", "RefereeSwitchedTeam")()
 
+	// in case the party was removed from the team owner from a team
+	if len(referee.ToTeamID) <= 0 {
+		_, err := t.Exec(
+			ctx,
+			"DELETE FROM team_members WHERE party_id = $1",
+			referee.PartyID,
+		)
+
+		return err
+	}
+
+	// normal path, team_members just being updated.
 	_, err := t.Exec(ctx,
 		`INSERT INTO team_members(team_id, party_id, joined_at, joined_at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5)`,
 		referee.ToTeamID,
