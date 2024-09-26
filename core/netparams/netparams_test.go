@@ -456,12 +456,3 @@ func TestCrossNetParamUpdatesInGenesis(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, netp.UponGenesis(context.Background(), buf))
 }
-
-func TestDefaultStateHidesDeprecated(t *testing.T) {
-	st := netparams.DefaultGenesisState()
-
-	for v := range st {
-		_, ok := netparams.Deprecated[v]
-		assert.False(t, ok)
-	}
-}

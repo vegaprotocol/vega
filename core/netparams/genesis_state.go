@@ -29,9 +29,6 @@ func DefaultGenesisState() GenesisState {
 	netp := defaultNetParams()
 
 	for k, v := range netp {
-		if _, ok := Deprecated[k]; ok {
-			continue
-		}
 		state[k] = v.String()
 	}
 

@@ -35,11 +35,8 @@ const (
 	MinimumMarginQuantumMultiple  = "spam.order.minimumMarginQuantumMultiple"
 	MinimumHoldingQuantumMultiple = "spam.order.minimumHoldingQuantumMultiple"
 
-	MarketTargetStakeTimeWindow               = "market.stake.target.timeWindow"
-	MarketTargetStakeScalingFactor            = "market.stake.target.scalingFactor"
-	MarketLiquidityTargetStakeTriggeringRatio = "market.liquidity.targetstake.triggering.ratio"
-	MarketValueWindowLength                   = "market.value.windowLength"
-	MarketPriceMonitoringDefaultParameters    = "market.monitor.price.defaultParameters"
+	MarketValueWindowLength                = "market.value.windowLength"
+	MarketPriceMonitoringDefaultParameters = "market.monitor.price.defaultParameters"
 
 	MarketMinLpStakeQuantumMultiple          = "market.liquidityProvision.minLpStakeQuantumMultiple"
 	MarketProbabilityOfTradingTauScaling     = "market.liquidity.probabilityOfTrading.tau.scaling"
@@ -165,13 +162,10 @@ const (
 	GovernanceProposalVolumeRebateProgramMinVoterBalance       = "governance.proposal.VolumeRebateProgram.minVoterBalance"
 
 	// staking and delegation reward network params.
-	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
-	StakingAndDelegationRewardPayoutDelay             = "reward.staking.delegation.payoutDelay"
 	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
 	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
-	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
@@ -289,15 +283,6 @@ const (
 	MarketAMMMaxCalculationLevels = "market.liquidity.maxAmmCalculationLevels"
 )
 
-var Deprecated = map[string]struct{}{
-	StakingAndDelegationRewardPayoutFraction:    {},
-	StakingAndDelegationRewardPayoutDelay:       {},
-	StakingAndDelegationRewardMaxPayoutPerEpoch: {},
-	MarketLiquidityTargetStakeTriggeringRatio:   {},
-	MarketTargetStakeTimeWindow:                 {},
-	MarketTargetStakeScalingFactor:              {},
-}
-
 var AllKeys = map[string]struct{}{
 	NetworkWideAuctionDuration:                                   {},
 	RewardsUpdateFrequency:                                       {},
@@ -341,15 +326,12 @@ var AllKeys = map[string]struct{}{
 	MarketAuctionMaximumDuration:                                 {},
 	MarketLiquidityBondPenaltyParameter:                          {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:                {},
-	MarketLiquidityTargetStakeTriggeringRatio:                    {},
 	MarketLiquidityEarlyExitPenalty:                              {},
 	MarketLiquiditySLANonPerformanceBondPenaltySlope:             {},
 	MarketLiquiditySLANonPerformanceBondPenaltyMax:               {},
 	MarketLiquidityStakeToCCYVolume:                              {},
 	MarketLiquidityProvidersFeeCalculationTimeStep:               {},
 	MarketLiquidityEquityLikeShareFeeFraction:                    {},
-	MarketTargetStakeTimeWindow:                                  {},
-	MarketTargetStakeScalingFactor:                               {},
 	MarketPriceMonitoringDefaultParameters:                       {},
 	MarketMinLpStakeQuantumMultiple:                              {},
 	RewardAsset:                                                  {},
@@ -427,15 +409,12 @@ var AllKeys = map[string]struct{}{
 	MarketMinProbabilityOfTradingForLPOrders:                     {},
 	ValidatorsEpochLength:                                        {},
 	DelegationMinAmount:                                          {},
-	StakingAndDelegationRewardPayoutFraction:                     {},
 	StakingAndDelegationRewardMaxPayoutPerParticipant:            {},
-	StakingAndDelegationRewardPayoutDelay:                        {},
 	StakingAndDelegationRewardDelegatorShare:                     {},
 	StakingAndDelegationRewardMinimumValidatorStake:              {},
 	ValidatorsVoteRequired:                                       {},
 	NetworkCheckpointTimeElapsedBetweenCheckpoints:               {},
 	MarketValueWindowLength:                                      {},
-	StakingAndDelegationRewardMaxPayoutPerEpoch:                  {},
 	SpamProtectionMinTokensForProposal:                           {},
 	SpamProtectionMaxVotes:                                       {},
 	SpamProtectionMaxProposals:                                   {},

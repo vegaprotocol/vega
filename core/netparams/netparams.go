@@ -477,10 +477,6 @@ func (s *Store) IsUpdateAllowed(key string) error {
 		return ErrUnknownKey
 	}
 
-	if _, ok := Deprecated[key]; ok {
-		return ErrNetworkParameterDeprecated(key)
-	}
-
 	for _, v := range updateDisallowed {
 		if v == key {
 			return ErrNetworkParameterUpdateDisabledFor(key)
