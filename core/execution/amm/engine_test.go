@@ -498,7 +498,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	expectSubaccountCreation(t, tst, party, subAccount)
 	whenAMMIsSubmitted(t, tst, submit)
 
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(7).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(10).Return(
 		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
 	)
 
@@ -509,7 +509,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	assert.Equal(t, 1192, int(avolume))
 
 	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(7).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(10).Return(
 		[]events.MarketPosition{&marketPosition{size: -222000, averageEntry: num.NewUint(0)}},
 	)
 
@@ -520,7 +520,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	assert.Equal(t, 104, int(avolume))
 
 	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(7).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(10).Return(
 		[]events.MarketPosition{&marketPosition{size: 270400, averageEntry: num.NewUint(0)}},
 	)
 
