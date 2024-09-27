@@ -37,6 +37,7 @@ type testNotary struct {
 	ctrl   *gomock.Controller
 	top    *mocks.MockValidatorTopology
 	cmd    *mocks.MockCommander
+	broker *bmocks.MockBroker
 	onTick func(context.Context, time.Time)
 }
 
@@ -46,14 +47,13 @@ func getTestNotary(t *testing.T) *testNotary {
 	top := mocks.NewMockValidatorTopology(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
-	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	notr := notary.NewWithSnapshot(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd)
 	return &testNotary{
 		SnapshotNotary: notr,
 		top:            top,
 		ctrl:           ctrl,
 		cmd:            cmd,
+		broker:         broker,
 		onTick:         notr.OnTick,
 	}
 }
@@ -61,7 +61,7 @@ func getTestNotary(t *testing.T) *testNotary {
 func TestNotary(t *testing.T) {
 	t.Run("test add key for unknow resource - fail", testAddKeyForKOResource)
 	t.Run("test add bad signature for known resource - success", testAddBadSignatureForOKResource)
-	t.Run("test add key finalize all sig", testAddKeyFinalize)
+	t.Run("test add key finalize all sig", TestAddKeyFinalize)
 	t.Run("test add key finalize all fails if sigs aren't tendermint validators", testAddKeyFinalizeFails)
 }
 
@@ -114,12 +114,13 @@ func testAddBadSignatureForOKResource(t *testing.T) {
 	assert.EqualError(t, err, notary.ErrNotAValidatorSignature.Error())
 }
 
-func testAddKeyFinalize(t *testing.T) {
+func TestAddKeyFinalize(t *testing.T) {
 	notr := getTestNotary(t)
 
 	kind := types.NodeSignatureKindAssetNew
 	resID := "resid"
 	key := "123456"
+	key2 := "98765"
 	sig := []byte("123456")
 
 	// add a valid node
@@ -140,14 +141,28 @@ func testAddKeyFinalize(t *testing.T) {
 		Kind: kind,
 	}
 
-	// first try to add a key for invalid resource
+	// signature will get shot out
+	notr.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+
 	notr.top.EXPECT().SelfVegaPubKey().Times(1).Return(key)
 	err := notr.RegisterSignature(context.Background(), key, ns)
-	assert.NoError(t, err, notary.ErrUnknownResourceID.Error())
+	assert.NoError(t, err)
 
 	signatures, ok := notr.IsSigned(context.Background(), resID, kind)
 	assert.True(t, ok)
 	assert.Len(t, signatures, 1)
+
+	// this send out nothing because we've already sent out the sigs
+	notr.onTick(context.Background(), time.Now())
+
+	// but oh look a new signature has arrived
+	// signature will get shot out
+	notr.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+
+	notr.top.EXPECT().SelfVegaPubKey().Times(1).Return(key)
+	err = notr.RegisterSignature(context.Background(), key2, ns)
+	assert.NoError(t, err)
+
 }
 
 func testAddKeyFinalizeFails(t *testing.T) {
