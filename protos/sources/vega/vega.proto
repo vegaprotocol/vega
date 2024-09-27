@@ -240,6 +240,8 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_GOVERNANCE_SUSPENSION = 7;
   // Market is suspended in response to a long block
   AUCTION_TRIGGER_LONG_BLOCK = 8;
+  // Market is in auction for automated purchase.
+  AUCTION_TRIGGER_PROTOCOL_AUTOMATED_PURCHASE = 9;
 }
 
 // Pegged reference defines which price point a pegged order is linked to - meaning

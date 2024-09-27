@@ -143,7 +143,7 @@ func addMarketData(t *testing.T, ctx context.Context, trigger, priceType string)
 func shouldWorkForAllValuesOfAuctionTrigger(t *testing.T) {
 	var auctionTrigger vegapb.AuctionTrigger
 	enums := getEnums(t, auctionTrigger)
-	assert.Len(t, enums, 9)
+	require.Len(t, enums, 10)
 
 	for e, trigger := range enums {
 		t.Run(trigger, func(t *testing.T) {

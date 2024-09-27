@@ -216,6 +216,15 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalVolumeRebateProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("10000000000000000000000"),
 		GovernanceProposalVolumeRebateProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
 
+		GovernanceProposalAutomatedPurchaseConfigMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
+		GovernanceProposalAutomatedPurchaseConfigMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalAutomatedPurchaseConfigMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
+		GovernanceProposalAutomatedPurchaseConfigMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalAutomatedPurchaseConfigRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		GovernanceProposalAutomatedPurchaseConfigRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalAutomatedPurchaseConfigMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("10000000000000000000000"),
+		GovernanceProposalAutomatedPurchaseConfigMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
+
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
 

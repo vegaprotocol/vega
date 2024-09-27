@@ -122,7 +122,7 @@ func (t *TransferBase) IsValid() error {
 			return ErrInvalidToForRewardAccountType
 		}
 	case AccountTypeGeneral, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward,
-		AccountTypeAverageNotionalReward, AccountTypeRelativeReturnReward, AccountTypeValidatorRankingReward, AccountTypeReturnVolatilityReward, AccountTypeRealisedReturnReward, AccountTypeEligibleEntitiesReward: /*, AccountTypeLockedForStaking*/
+		AccountTypeAverageNotionalReward, AccountTypeRelativeReturnReward, AccountTypeValidatorRankingReward, AccountTypeReturnVolatilityReward, AccountTypeRealisedReturnReward, AccountTypeEligibleEntitiesReward, AccountTypeBuyBackFees: /*, AccountTypeLockedForStaking*/
 		break
 	default:
 		return ErrUnsupportedToAccountType
