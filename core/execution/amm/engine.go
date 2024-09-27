@@ -318,22 +318,8 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 	var bestBidVolume, bestAskVolume uint64
 
 	for _, pool := range e.poolsCpy {
-		// get the pool's current price
-		fp := pool.FairPrice()
-
 		var volume uint64
-		bid, ok := pool.BestPrice(types.SideBuy)
-		if ok {
-			volume = 1
-
-			// if the best price is
-			bidTick := num.Max(pool.lower.low, num.UintZero().Sub(fp, pool.oneTick))
-			if bid.GTE(bidTick) {
-				bid = bidTick
-				volume = pool.TradableVolumeForPrice(types.SideSell, bid)
-			}
-		}
-
+		bid, volume := pool.BestPriceAndVolume(types.SideBuy)
 		if volume != 0 {
 			if bestBid == nil || bid.GT(bestBid) {
 				bestBid = bid
@@ -343,17 +329,7 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 			}
 		}
 
-		volume = 0
-		ask, ok := pool.BestPrice(types.SideSell)
-		if ok {
-			volume = 1
-			askTick := num.Min(pool.upper.high, num.UintZero().Add(fp, pool.oneTick))
-			if ask.LTE(askTick) {
-				ask = askTick
-				volume = pool.TradableVolumeForPrice(types.SideBuy, ask)
-			}
-		}
-
+		ask, volume := pool.BestPriceAndVolume(types.SideSell)
 		if volume != 0 {
 			if bestAsk == nil || ask.LT(bestAsk) {
 				bestAsk = ask

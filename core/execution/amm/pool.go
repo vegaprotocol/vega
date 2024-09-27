@@ -155,7 +155,7 @@ type Pool struct {
 	maxCalculationLevels *num.Uint // maximum number of price levels the AMM will be expanded into
 	oneTick              *num.Uint // one price tick
 
-	fpCache map[int64]*num.Uint
+	cache *poolCache
 }
 
 func NewPool(
@@ -194,7 +194,7 @@ func NewPool(
 		oneTick:              num.Max(num.UintOne(), oneTick),
 		status:               types.AMMPoolStatusActive,
 		maxCalculationLevels: maxCalculationLevels,
-		fpCache:              map[int64]*num.Uint{},
+		cache:                NewPoolCache(),
 	}
 	err := pool.setCurves(rf, sf, linearSlippage, allowedEmptyAMMLevels)
 	if err != nil {
@@ -424,7 +424,7 @@ func (p *Pool) Update(
 		sqrt:                 p.sqrt,
 		oneTick:              p.oneTick,
 		maxCalculationLevels: p.maxCalculationLevels,
-		fpCache:              map[int64]*num.Uint{},
+		cache:                NewPoolCache(),
 	}
 	if err := updated.setCurves(rf, sf, linearSlippage, allowedEmptyAMMLevels); err != nil {
 		return nil, err
@@ -806,7 +806,7 @@ func (p *Pool) FairPrice() *num.Uint {
 		return p.lower.high.Clone()
 	}
 
-	if fp, ok := p.fpCache[pos]; ok {
+	if fp, ok := p.cache.getFairPrice(pos); ok {
 		return fp.Clone()
 	}
 
@@ -842,9 +842,8 @@ func (p *Pool) FairPrice() *num.Uint {
 
 	fairPrice, _ := num.UintFromDecimal(fp)
 
-	p.fpCache = map[int64]*num.Uint{
-		pos: fairPrice.Clone(),
-	}
+	p.cache.setFairPrice(pos, fairPrice.Clone())
+
 	return fairPrice
 }
 
@@ -955,6 +954,46 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 	default:
 		panic("should never reach here")
 	}
+}
+
+// BestPriceAndVolume returns the AMM's best price on a given side and the volume available to trade.
+func (p *Pool) BestPriceAndVolume(side types.Side) (*num.Uint, uint64) {
+	// check cache
+	pos := p.getPosition()
+
+	if p, v, ok := p.cache.getBestPrice(pos, side, p.status); ok {
+		return p, v
+	}
+
+	price, ok := p.BestPrice(side)
+	if !ok {
+		return price, 0
+	}
+
+	// now calculate the volume
+	fp := p.FairPrice()
+	if side == types.SideBuy {
+		priceTick := num.Max(p.lower.low, num.UintZero().Sub(fp, p.oneTick))
+
+		if !price.GTE(priceTick) {
+			p.cache.setBestPrice(pos, side, p.status, price, 1)
+			return price, 1 // its low volume so 1 by construction
+		}
+
+		volume := p.TradableVolumeForPrice(types.SideSell, priceTick)
+		p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
+		return priceTick, volume
+	}
+
+	priceTick := num.Min(p.upper.high, num.UintZero().Add(fp, p.oneTick))
+	if !price.LTE(priceTick) {
+		p.cache.setBestPrice(pos, side, p.status, price, 1)
+		return price, 1 // its low volume so 1 by construction
+	}
+
+	volume := p.TradableVolumeForPrice(types.SideBuy, priceTick)
+	p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
+	return priceTick, volume
 }
 
 func (p *Pool) LiquidityFee() num.Decimal {
