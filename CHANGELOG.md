@@ -19,6 +19,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.78.8
+
+### 🐛 Fixes
+
+- [11712](https://github.com/vegaprotocol/vega/issues/11712) -  Fix program discount factors properly when loading from snapshot.
+
+
 ## 0.78.7
 
 ### 🐛 Fixes
