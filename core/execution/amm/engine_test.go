@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -46,6 +47,7 @@ var (
 func TestSubmitAMM(t *testing.T) {
 	t.Run("test one pool per party", testOnePoolPerParty)
 	t.Run("test creation of sparse AMM", testSparseAMMEngine)
+	t.Run("test AMM snapshot", testAMMSnapshot)
 }
 
 func TestAMMTrading(t *testing.T) {
@@ -717,6 +719,63 @@ func testSparseAMMEngine(t *testing.T) {
 	assert.Equal(t, 1, int(av))
 }
 
+func testAMMSnapshot(t *testing.T) {
+	tst := getTestEngine(t)
+
+	// create three pools
+	for i := 0; i < 3; i++ {
+		party, subAccount := getParty(t, tst)
+		submit := getPoolSubmission(t, party, tst.marketID)
+
+		expectSubaccountCreation(t, tst, party, subAccount)
+		whenAMMIsSubmitted(t, tst, submit)
+	}
+
+	ensurePositionN(t, tst.pos, 0, num.NewUint(0), 3)
+
+	// now submit an order against it
+	agg := &types.Order{
+		Size:      666,
+		Remaining: 666,
+		Side:      types.SideBuy,
+		Price:     num.NewUint(2100),
+	}
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2010), num.NewUint(2020))
+	require.Len(t, orders, 3)
+	for _, o := range orders {
+		assert.Equal(t, "2000", o.Price.String())
+		assert.Equal(t, uint64(222), o.Size)
+	}
+
+	bb1, bv1, ba1, av1 := tst.engine.BestPricesAndVolumes()
+
+	// now snapshot
+	state := tst.engine.IntoProto()
+	tst2 := getTestEngineWithProto(t, state)
+
+	// now do some stuff with it
+	ensurePositionN(t, tst2.pos, -222, num.NewUint(0), -1)
+	bb2, bv2, ba2, av2 := tst2.engine.BestPricesAndVolumes()
+	assert.Equal(t, bb1, bb2)
+	assert.Equal(t, bv1, bv2)
+	assert.Equal(t, ba1, ba2)
+	assert.Equal(t, av1, av2)
+
+	// now submit an order against it
+	agg = &types.Order{
+		Size:      666,
+		Remaining: 666,
+		Side:      types.SideSell,
+		Price:     num.NewUint(1000),
+	}
+	orders = tst2.engine.SubmitOrder(agg, nil, nil)
+	require.Len(t, orders, 3)
+	for _, o := range orders {
+		assert.Equal(t, "2000", o.Price.String())
+		assert.Equal(t, uint64(222), o.Size)
+	}
+}
+
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {
 	t.Helper()
 
@@ -862,6 +921,45 @@ func getTestEngineWithFactors(t *testing.T, priceFactor, positionFactor num.Deci
 	// do an ontick to initialise the idgen
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	eng.OnTick(ctx, time.Now())
+
+	return &tstEngine{
+		engine:   eng,
+		broker:   broker,
+		col:      col,
+		pos:      pos,
+		ctrl:     ctrl,
+		parties:  parties,
+		marketID: marketID,
+		assetID:  assetID,
+	}
+}
+
+func getTestEngineWithProto(t *testing.T, state *v1.AmmState) *tstEngine {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	col := mocks.NewMockCollateral(ctrl)
+	pos := mocks.NewMockPosition(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
+
+	marketID := vgcrypto.RandomHash()
+	assetID := vgcrypto.RandomHash()
+
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	col.EXPECT().GetAssetQuantum(assetID).AnyTimes().Return(num.DecimalOne(), nil)
+
+	teams := cmocks.NewMockTeams(ctrl)
+	balanceChecker := cmocks.NewMockAccountBalanceChecker(ctrl)
+
+	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker, col)
+
+	parties := cmocks.NewMockParties(ctrl)
+	parties.EXPECT().AssignDeriveKey(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	priceFactor := num.DecimalOne()
+	positionFactor := num.DecimalOne()
+
+	eng, err := NewFromProto(logging.NewTestLogger(), broker, col, marketID, assetID, pos, state, priceFactor, positionFactor, mat, parties, 0)
+	require.NoError(t, err)
 
 	return &tstEngine{
 		engine:   eng,
