@@ -292,6 +292,7 @@ func NewPoolFromProto(
 		positionFactor: positionFactor,
 		oneTick:        num.Max(num.UintOne(), oneTick),
 		status:         state.Status,
+		cache:          NewPoolCache(),
 	}, nil
 }
 
