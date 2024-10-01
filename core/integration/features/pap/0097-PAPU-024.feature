@@ -74,9 +74,9 @@ Feature: Once the volume snapshot of a program is triggered, if the balance of t
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 30    |
-            | auction_vol_snap_schedule | 0       | 30    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 30    |
+            | auction_vol_snap_schedule | 1727136000 | 30    |
 
         And the average block duration is "1"
 
@@ -104,7 +104,7 @@ Feature: Once the volume snapshot of a program is triggered, if the balance of t
         # transfer 100 more BTC to the buy back account so that for the next round of auction we have enough funds
         And the parties submit the following one off transfers:
             | id | from                                                             | from_account_type    | to                                                               | to_account_type            | asset | amount | delivery_time        |
-            | 2  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_BUY_BACK_FEES | BTC   | 100   | 2024-09-23T00:00:00Z |
+            | 2  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_BUY_BACK_FEES | BTC   | 100    | 2024-09-23T00:00:00Z |
 
         Then the oracles broadcast data with block time signed with "0xCAFECAFE2":
             | name             | value   | time offset |

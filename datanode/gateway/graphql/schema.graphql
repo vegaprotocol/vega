@@ -379,6 +379,15 @@ type MarketData {
   nextNetworkCloseout: String!
   "State of the underlying internal composite price"
   markPriceState: CompositePriceState
+  "State of the active protocol automated purchase for the market if available (spot market only)"
+  activeProtocolAutomatedPurchase: ProtocolAutomatedPurchaseState
+}
+
+type ProtocolAutomatedPurchaseState {
+  "The ID of the active protocol automated purchase"
+  id: String!
+  "The order ID of the active order placed on behalf of the active protocol automated purchase"
+  orderId: String
 }
 
 "Live data of a Market"
@@ -451,6 +460,8 @@ type ObservableMarketData {
   markPriceType: CompositePriceType!
   "State of the underlying internal composite price"
   markPriceState: CompositePriceState
+  "State of the active protocol automated purchase for the market if available (spot market only)"
+  activeProtocolAutomatedPurchase: ProtocolAutomatedPurchaseState
 }
 
 "Timestamps for when the market changes state"

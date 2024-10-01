@@ -581,7 +581,7 @@ type NewProtocolAutomatedPurchase struct {
 	MaximumAuctionSize string `json:"maximumAuctionSize"`
 	// The expiry timestamp in seconds of the automated purchase. 0 if no expiry configured
 	ExpiryTimestamp int `json:"expiryTimestamp"`
-	// For how long the price from the price oracle is considered usable
+	// For how long the price from the price oracle is considered usable, in seconds
 	OraclePriceStalenessTolerance string `json:"oraclePriceStalenessTolerance"`
 }
 
@@ -779,6 +779,13 @@ type ProposalVotes struct {
 	Yes *ProposalVoteSide `json:"yes"`
 	// No votes cast for this proposal
 	No *ProposalVoteSide `json:"no"`
+}
+
+type ProtocolAutomatedPurchaseState struct {
+	// The ID of the active protocol automated purchase
+	ID string `json:"id"`
+	// The order ID of the active order placed on behalf of the active protocol automated purchase
+	OrderID *string `json:"orderId,omitempty"`
 }
 
 // Indicator showing whether the data-node is ready for the protocol upgrade to begin.

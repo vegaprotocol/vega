@@ -19,6 +19,7 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -72,6 +73,13 @@ func NewProtocolAutomatedPurchase(r apRow, config *market.Config) (*types.NewPro
 	auctionVolumeSnapshotSchedule, _ := config.OracleConfigs.GetTimeTrigger(r.row.MustStr("auction volume snapshot schedule oracle"))
 
 	auctionPriceOracle, priceOracleBinding, _ := config.OracleConfigs.GetOracleDefinitionForCompositePrice(r.row.MustStr("price oracle"))
+	expiry := r.row.MustI64("expiry timestamp")
+	var expiryTime time.Time
+	if expiry > 0 {
+		expiryTime = time.Unix(expiry, 0)
+	}
+
+	priceOracle := datasource.FromOracleSpecProto(auctionPriceOracle)
 
 	return &types.NewProtocolAutomatedPurchaseChanges{
 		From:                          r.row.MustStr("from"),
@@ -81,12 +89,12 @@ func NewProtocolAutomatedPurchase(r apRow, config *market.Config) (*types.NewPro
 		AuctionDuration:               duration,
 		MinimumAuctionSize:            minSize,
 		MaximumAuctionSize:            maxSize,
-		ExpiryTimestamp:               time.Unix(0, r.row.MustI64("expiry timestamp")),
+		ExpiryTimestamp:               expiryTime,
 		OraclePriceStalenessTolerance: stalnessTol,
 		OracleOffsetFactor:            oracleOffset,
-		AuctionSchedule:               auctionSchedule.Data,
-		AuctionVolumeSnapshotSchedule: auctionVolumeSnapshotSchedule.Data,
-		PriceOracle:                   auctionPriceOracle.ExternalDataSourceSpec.Spec.Data,
+		AuctionSchedule:               auctionSchedule.GetDefinition(),
+		AuctionVolumeSnapshotSchedule: auctionVolumeSnapshotSchedule.GetDefinition(),
+		PriceOracle:                   priceOracle,
 		PriceOracleBinding:            priceOracleBinding,
 		AutomatedPurchaseSpecBinding: &vega.DataSourceSpecToAutomatedPurchaseBinding{
 			AuctionScheduleProperty:               "vegaprotocol.builtin.timetrigger",

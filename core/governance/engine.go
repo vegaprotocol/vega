@@ -1104,7 +1104,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateUpdateVolumeRebateProgram(e.netp, terms.GetUpdateVolumeRebateProgram())
 	case types.ProposalTermsTypeNewProtocolAutomatedPurchase:
 		automatedPurchase := terms.GetAutomatedPurchase()
-		return e.validateNewProtocolAutomatedPurchaseConfiguration(automatedPurchase)
+		return e.validateNewProtocolAutomatedPurchaseConfiguration(automatedPurchase, enct, e.timeService.GetTimeNow())
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}

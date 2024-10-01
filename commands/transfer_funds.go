@@ -109,7 +109,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 	} else {
 		switch k := cmd.Kind.(type) {
 		case *commandspb.Transfer_OneOff:
-			if cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
+			if cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES {
 				errs.AddForProperty("transfer.to_account_type", errors.New("account type is not valid for one off transfer"))
 			}
 			if k.OneOff.GetDeliverOn() < 0 {

@@ -75,9 +75,9 @@ Feature: Given the market is currently in continuous trading, once an auction tr
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 30    |
-            | auction_vol_snap_schedule | 0       | 30    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 30    |
+            | auction_vol_snap_schedule | 1727136000 | 30    |
 
         And the average block duration is "1"
 
@@ -109,6 +109,6 @@ Feature: Given the market is currently in continuous trading, once an auction tr
         And the trading mode should be "TRADING_MODE_PROTOCOL_AUTOMATED_PURCHASE_AUCTION" for the market "BTC/ETH"
 
         # 24 September 2024 00:00:02 GMT
-        Then the starting auction time for market "BTC/ETH" is "1727136002000000000" 
+        Then the starting auction time for market "BTC/ETH" is "1727136002000000000"
         # 60 seconds later
         And the ending auction time for market "BTC/ETH" is "1727136062000000000"

@@ -17,12 +17,13 @@ package governance
 
 import (
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/types"
 )
 
-func (e *Engine) validateNewProtocolAutomatedPurchaseConfiguration(automatedPurchase *types.NewProtocolAutomatedPurchase) (types.ProposalError, error) {
+func (e *Engine) validateNewProtocolAutomatedPurchaseConfiguration(automatedPurchase *types.NewProtocolAutomatedPurchase, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
 	if _, ok := e.markets.GetMarket(automatedPurchase.Changes.MarketID, false); !ok {
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
@@ -43,5 +44,20 @@ func (e *Engine) validateNewProtocolAutomatedPurchaseConfiguration(automatedPurc
 	if papConfigured, _ := e.markets.MarketHasActivePAP(automatedPurchase.Changes.MarketID); papConfigured {
 		return types.ProposalErrorInvalidMarket, fmt.Errorf("market already has an active protocol automated purchase program")
 	}
+
+	tt := automatedPurchase.Changes.AuctionSchedule.GetInternalTimeTriggerSpecConfiguration()
+	currentTime = currentTime.Truncate(time.Second)
+	if tt.Triggers[0].Initial == nil {
+		tt.SetInitial(time.Unix(et.current, 0), currentTime)
+	}
+	tt.SetNextTrigger(currentTime)
+
+	tt = automatedPurchase.Changes.AuctionVolumeSnapshotSchedule.GetInternalTimeTriggerSpecConfiguration()
+	currentTime = currentTime.Truncate(time.Second)
+	if tt.Triggers[0].Initial == nil {
+		tt.SetInitial(time.Unix(et.current, 0), currentTime)
+	}
+	tt.SetNextTrigger(currentTime)
+
 	return types.ProposalErrorUnspecified, nil
 }

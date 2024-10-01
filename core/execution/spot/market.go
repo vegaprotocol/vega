@@ -441,6 +441,18 @@ func (m *Market) GetMarketData() types.MarketData {
 		mode = m.mkt.TradingMode
 	}
 
+	var papState *vega.ProtocolAutomatedPurchaseData
+	if m.pap != nil {
+		var activeOrder *string
+		if len(m.pap.activeOrder) > 0 {
+			activeOrder = &m.pap.activeOrder
+		}
+		papState = &vega.ProtocolAutomatedPurchaseData{
+			Id:      m.pap.ID,
+			OrderId: activeOrder,
+		}
+	}
+
 	return types.MarketData{
 		Market:                    m.GetID(),
 		BestBidPrice:              m.priceToMarketPrecision(bestBidPrice),
@@ -471,6 +483,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidity.GetAverageLiquidityScores()),
 		LiquidityProviderSLA:      m.liquidityEngine.LiquidityProviderSLAStats(m.timeService.GetTimeNow()),
+		PAPState:                  papState,
 	}
 }
 
@@ -689,6 +702,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	if m.closed {
 		return true
 	}
+
+	m.checkPAP(ctx)
 
 	// first we expire orders
 	if !m.closed && m.canTrade() {
@@ -3544,3 +3559,5 @@ func (m *Market) getACcountTypesForPAP() (types.AccountType, types.AccountType, 
 	}
 	return m.pap.getACcountTypesForPAP()
 }
+
+func (m *Market) BeginBlock(ctx context.Context) {}

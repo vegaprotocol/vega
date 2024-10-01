@@ -80,11 +80,11 @@ Feature: Given a network with two PAP programs, A and B, funded from the same ac
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                       | initial | every |
-            | auction_vol_snap_schedule1 | 5       | 30    |
-            | auction_vol_snap_schedule2 | 10      | 30    |
-            | auction_schedule1          | 12      | 30    |
-            | auction_schedule2          | 11      | 30    |
+            | name                       | initial    | every |
+            | auction_vol_snap_schedule1 | 1727136005 | 30    |
+            | auction_vol_snap_schedule2 | 1727136010 | 30    |
+            | auction_schedule1          | 1727136012 | 30    |
+            | auction_schedule2          | 1727136011 | 30    |
 
         And the average block duration is "1"
 

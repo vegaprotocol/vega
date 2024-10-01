@@ -160,7 +160,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheCompositePriceOracleSpec(marketConfig, signers, table)
 	})
 	s.Step(`^the time triggers oracle spec is:`, func(table *godog.Table) error {
-		return steps.TheTimeTriggerOracleSpec(marketConfig, table)
+		return steps.TheTimeTriggerOracleSpec(marketConfig, execsetup.timeService.GetTimeNow(), table)
 	})
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
@@ -230,6 +230,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
 		return nil
+	})
+
+	s.Step(`^the active pap id should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
+		return steps.TheActivePAPIDShouldBeForMarket(execsetup.executionEngine, marketID, mpAlgo)
+	})
+	s.Step(`^the active pap order id should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
+		return steps.TheActivePAPOrderIDShouldBeForMarket(execsetup.executionEngine, marketID, mpAlgo)
 	})
 
 	s.Step(`^the mark price algo should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
