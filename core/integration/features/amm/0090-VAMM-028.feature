@@ -418,7 +418,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     # Now to move from 110 down to 90, the volume ought to be 421 (=347+74)
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party6 | ETH/MAR23 | sell | 421    | 90    | 1                | TYPE_LIMIT | TIF_GTC |
+      | party6 | ETH/MAR23 | sell | 421    | 90    | 2                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR23" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price | best offer price | best bid price |
       | 100        | TRADING_MODE_CONTINUOUS | 13915        | 1000           | 348           | 100       | 90        | 90               | 91               | 89             |
