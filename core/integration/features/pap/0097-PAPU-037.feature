@@ -74,9 +74,9 @@ Feature: Given the end of an auction is reached and the book is crossed, if the 
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 30    |
-            | auction_vol_snap_schedule | 0       | 30    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 30    |
+            | auction_vol_snap_schedule | 1727136000 | 30    |
 
         And the average block duration is "1"
 

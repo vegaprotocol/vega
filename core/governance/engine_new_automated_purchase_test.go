@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -26,10 +28,79 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
+
+func defaultPriceOracle() *datasource.Spec {
+	dp := uint64(5)
+	spec := &vega.DataSourceSpec{
+		Data: &vega.DataSourceDefinition{
+			SourceType: vega.DataSourceDefinition{
+				SourceType: &vega.DataSourceDefinition_External{
+					External: &vega.DataSourceDefinitionExternal{
+						SourceType: &vega.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vega.DataSourceSpecConfiguration{
+								Signers: []*v1.Signer{
+									{
+										Signer: &v1.Signer_PubKey{
+											PubKey: &v1.PubKey{
+												Key: "0xiBADC0FFEE0DDF00D",
+											},
+										},
+									},
+								},
+								Filters: []*v1.Filter{
+									{
+										Key: &v1.PropertyKey{
+											Name:                "oracle.price",
+											Type:                v1.PropertyKey_TYPE_INTEGER,
+											NumberDecimalPlaces: &dp,
+										},
+										Conditions: []*v1.Condition{
+											{
+												Operator: v1.Condition_OPERATOR_UNSPECIFIED,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}.SourceType,
+		},
+	}
+	specDef, _ := definition.FromProto(spec.Data, nil)
+	return datasource.SpecFromDefinition(*definition.NewWith(specDef))
+}
+
+func defaultTimeTrigger() definition.Definition {
+	spec := &vega.DataSourceSpec{
+		Data: &vega.DataSourceDefinition{
+			SourceType: vega.DataSourceDefinition{
+				SourceType: &vega.DataSourceDefinition_Internal{
+					Internal: &vega.DataSourceDefinitionInternal{
+						SourceType: &vega.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vega.DataSourceSpecConfigurationTimeTrigger{
+								Triggers: []*v1.InternalTimeTrigger{
+									{
+										Every: 10,
+									},
+								},
+							},
+						},
+					},
+				},
+			}.SourceType,
+		},
+	}
+
+	specDef, _ := definition.FromProto(spec.Data, nil)
+	return datasource.SpecFromDefinition(*definition.NewWith(specDef)).GetDefinition()
+}
 
 func TestProposalForNewProtocolAutomatedPurchase(t *testing.T) {
 	t.Run("Submitting a proposal for new automated purchase succeeds", testSubmittingProposalForNewProtocolAutomatedPurchaseSucceeds)
@@ -81,13 +152,13 @@ func testSubmittingProposalForNewProtocolAutomatedPurchaseSucceeds(t *testing.T)
 		FromAccountType: types.AccountTypeBuyBackFees,
 		ToAccountType:   types.AccountTypeBuyBackFees,
 		MarketID:        crypto.RandomHash(),
-		PriceOracle:     &vega.DataSourceDefinition{},
+		PriceOracle:     defaultPriceOracle(),
 		PriceOracleBinding: &vega.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
 		OracleOffsetFactor:            num.DecimalFromFloat(0.1),
-		AuctionSchedule:               &vega.DataSourceDefinition{},
-		AuctionVolumeSnapshotSchedule: &vega.DataSourceDefinition{},
+		AuctionSchedule:               defaultTimeTrigger(),
+		AuctionVolumeSnapshotSchedule: defaultTimeTrigger(),
 		AutomatedPurchaseSpecBinding:  &vega.DataSourceSpecToAutomatedPurchaseBinding{},
 		AuctionDuration:               time.Hour,
 		MinimumAuctionSize:            num.NewUint(1000),
@@ -148,13 +219,13 @@ func setupPAP(t *testing.T) (*tstEngine, types.Proposal) {
 		FromAccountType: types.AccountTypeBuyBackFees,
 		ToAccountType:   types.AccountTypeBuyBackFees,
 		MarketID:        crypto.RandomHash(),
-		PriceOracle:     &vega.DataSourceDefinition{},
+		PriceOracle:     defaultPriceOracle(),
 		PriceOracleBinding: &vega.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
 		OracleOffsetFactor:            num.DecimalFromFloat(0.1),
-		AuctionSchedule:               &vega.DataSourceDefinition{},
-		AuctionVolumeSnapshotSchedule: &vega.DataSourceDefinition{},
+		AuctionSchedule:               defaultTimeTrigger(),
+		AuctionVolumeSnapshotSchedule: defaultTimeTrigger(),
 		AutomatedPurchaseSpecBinding:  &vega.DataSourceSpecToAutomatedPurchaseBinding{},
 		AuctionDuration:               time.Hour,
 		MinimumAuctionSize:            num.NewUint(1000),
@@ -232,13 +303,13 @@ func testSubmittingProposalForNewProtocolAutomatedPurchaseInvalidAssetFails(t *t
 		FromAccountType: types.AccountTypeBuyBackFees,
 		ToAccountType:   types.AccountTypeBuyBackFees,
 		MarketID:        crypto.RandomHash(),
-		PriceOracle:     &vega.DataSourceDefinition{},
+		PriceOracle:     defaultPriceOracle(),
 		PriceOracleBinding: &vega.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
 		OracleOffsetFactor:            num.DecimalFromFloat(0.1),
-		AuctionSchedule:               &vega.DataSourceDefinition{},
-		AuctionVolumeSnapshotSchedule: &vega.DataSourceDefinition{},
+		AuctionSchedule:               defaultTimeTrigger(),
+		AuctionVolumeSnapshotSchedule: defaultTimeTrigger(),
 		AutomatedPurchaseSpecBinding:  &vega.DataSourceSpecToAutomatedPurchaseBinding{},
 		AuctionDuration:               time.Hour,
 		MinimumAuctionSize:            num.NewUint(1000),
@@ -281,13 +352,13 @@ func testSubmittingProposalForNewProtocolAutomatedPurchaseInvalidMarketFails(t *
 		FromAccountType: types.AccountTypeBuyBackFees,
 		ToAccountType:   types.AccountTypeBuyBackFees,
 		MarketID:        crypto.RandomHash(),
-		PriceOracle:     &vega.DataSourceDefinition{},
+		PriceOracle:     defaultPriceOracle(),
 		PriceOracleBinding: &vega.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
 		OracleOffsetFactor:            num.DecimalFromFloat(0.1),
-		AuctionSchedule:               &vega.DataSourceDefinition{},
-		AuctionVolumeSnapshotSchedule: &vega.DataSourceDefinition{},
+		AuctionSchedule:               defaultTimeTrigger(),
+		AuctionVolumeSnapshotSchedule: defaultTimeTrigger(),
 		AutomatedPurchaseSpecBinding:  &vega.DataSourceSpecToAutomatedPurchaseBinding{},
 		AuctionDuration:               time.Hour,
 		MinimumAuctionSize:            num.NewUint(1000),
@@ -347,13 +418,13 @@ func testSubmittingProposalForNewProtocolAutomatedPurchaseInvalidAssetForMarketF
 		FromAccountType: types.AccountTypeBuyBackFees,
 		ToAccountType:   types.AccountTypeBuyBackFees,
 		MarketID:        crypto.RandomHash(),
-		PriceOracle:     &vega.DataSourceDefinition{},
+		PriceOracle:     defaultPriceOracle(),
 		PriceOracleBinding: &vega.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
 		OracleOffsetFactor:            num.DecimalFromFloat(0.1),
-		AuctionSchedule:               &vega.DataSourceDefinition{},
-		AuctionVolumeSnapshotSchedule: &vega.DataSourceDefinition{},
+		AuctionSchedule:               defaultTimeTrigger(),
+		AuctionVolumeSnapshotSchedule: defaultTimeTrigger(),
 		AutomatedPurchaseSpecBinding:  &vega.DataSourceSpecToAutomatedPurchaseBinding{},
 		AuctionDuration:               time.Hour,
 		MinimumAuctionSize:            num.NewUint(1000),
@@ -415,13 +486,13 @@ func testSubmittingProposalForNewProtocolAutomatedPurchaseNotSpotMarketFails(t *
 		FromAccountType: types.AccountTypeBuyBackFees,
 		ToAccountType:   types.AccountTypeBuyBackFees,
 		MarketID:        crypto.RandomHash(),
-		PriceOracle:     &vega.DataSourceDefinition{},
+		PriceOracle:     defaultPriceOracle(),
 		PriceOracleBinding: &vega.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
 		OracleOffsetFactor:            num.DecimalFromFloat(0.1),
-		AuctionSchedule:               &vega.DataSourceDefinition{},
-		AuctionVolumeSnapshotSchedule: &vega.DataSourceDefinition{},
+		AuctionSchedule:               defaultTimeTrigger(),
+		AuctionVolumeSnapshotSchedule: defaultTimeTrigger(),
 		AutomatedPurchaseSpecBinding:  &vega.DataSourceSpecToAutomatedPurchaseBinding{},
 		AuctionDuration:               time.Hour,
 		MinimumAuctionSize:            num.NewUint(1000),
@@ -484,13 +555,13 @@ func testSubmittingProposalForNewProtocolAutomatedPurchaseStoppedMarketFailes(t 
 		FromAccountType: types.AccountTypeBuyBackFees,
 		ToAccountType:   types.AccountTypeBuyBackFees,
 		MarketID:        crypto.RandomHash(),
-		PriceOracle:     &vega.DataSourceDefinition{},
+		PriceOracle:     defaultPriceOracle(),
 		PriceOracleBinding: &vega.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
 		OracleOffsetFactor:            num.DecimalFromFloat(0.1),
-		AuctionSchedule:               &vega.DataSourceDefinition{},
-		AuctionVolumeSnapshotSchedule: &vega.DataSourceDefinition{},
+		AuctionSchedule:               defaultTimeTrigger(),
+		AuctionVolumeSnapshotSchedule: defaultTimeTrigger(),
 		AutomatedPurchaseSpecBinding:  &vega.DataSourceSpecToAutomatedPurchaseBinding{},
 		AuctionDuration:               time.Hour,
 		MinimumAuctionSize:            num.NewUint(1000),

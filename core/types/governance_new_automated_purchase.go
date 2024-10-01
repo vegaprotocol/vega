@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
@@ -111,11 +112,11 @@ type NewProtocolAutomatedPurchaseChanges struct {
 	FromAccountType               AccountType
 	ToAccountType                 AccountType
 	MarketID                      string
-	PriceOracle                   *vegapb.DataSourceDefinition
+	PriceOracle                   *datasource.Spec
 	PriceOracleBinding            *vegapb.SpecBindingForCompositePrice
 	OracleOffsetFactor            num.Decimal
-	AuctionSchedule               *vegapb.DataSourceDefinition
-	AuctionVolumeSnapshotSchedule *vegapb.DataSourceDefinition
+	AuctionSchedule               dsdefinition.Definition
+	AuctionVolumeSnapshotSchedule dsdefinition.Definition
 	AutomatedPurchaseSpecBinding  *vegapb.DataSourceSpecToAutomatedPurchaseBinding
 	AuctionDuration               time.Duration
 	MinimumAuctionSize            *num.Uint
@@ -139,14 +140,12 @@ func (apc *NewProtocolAutomatedPurchaseChanges) DeepClone() *NewProtocolAutomate
 		ExpiryTimestamp:               apc.ExpiryTimestamp,
 		OraclePriceStalenessTolerance: apc.OraclePriceStalenessTolerance,
 	}
-
-	asDefinition, _ := dsdefinition.FromProto(apc.AuctionSchedule, nil)
-	cloned.AuctionSchedule, _ = asDefinition.DeepClone().ToDefinitionProto()
-	opDefinition, _ := dsdefinition.FromProto(apc.PriceOracle, nil)
-	cloned.PriceOracle, _ = opDefinition.DeepClone().ToDefinitionProto()
-	avssoDefinition, _ := dsdefinition.FromProto(apc.AuctionVolumeSnapshotSchedule, nil)
-	cloned.AuctionVolumeSnapshotSchedule, _ = avssoDefinition.DeepClone().ToDefinitionProto()
-
+	cloned.AuctionSchedule = *apc.AuctionSchedule.DeepClone().(*dsdefinition.Definition)
+	definition := apc.PriceOracle.GetDefinition()
+	definition = *definition.DeepClone().(*dsdefinition.Definition)
+	spec := &datasource.Spec{}
+	cloned.PriceOracle = spec.FromDefinition(&definition)
+	cloned.AuctionVolumeSnapshotSchedule = *apc.AuctionVolumeSnapshotSchedule.DeepClone().(*dsdefinition.Definition)
 	return cloned
 }
 
@@ -156,11 +155,11 @@ func (apc *NewProtocolAutomatedPurchaseChanges) IntoProto() *vegapb.NewProtocolA
 		FromAccountType:               apc.FromAccountType,
 		ToAccountType:                 apc.ToAccountType,
 		MarketId:                      apc.MarketID,
-		PriceOracle:                   apc.PriceOracle,
+		PriceOracle:                   apc.PriceOracle.Data.IntoProto(),
 		PriceOracleSpecBinding:        apc.PriceOracleBinding,
 		OracleOffsetFactor:            apc.OracleOffsetFactor.String(),
-		AuctionSchedule:               apc.AuctionSchedule,
-		AuctionVolumeSnapshotSchedule: apc.AuctionVolumeSnapshotSchedule,
+		AuctionSchedule:               apc.AuctionSchedule.IntoProto(),
+		AuctionVolumeSnapshotSchedule: apc.AuctionVolumeSnapshotSchedule.IntoProto(),
 		AutomatedPurchaseSpecBinding:  apc.AutomatedPurchaseSpecBinding,
 		AuctionDuration:               apc.AuctionDuration.String(),
 		MinimumAuctionSize:            apc.MinimumAuctionSize.String(),
@@ -175,17 +174,34 @@ func NewProtocolAutomatedPurchaseChangesFromProto(p *vegapb.NewProtocolAutomated
 	minSize, _ := num.UintFromString(p.MinimumAuctionSize, 10)
 	maxSize, _ := num.UintFromString(p.MaximumAuctionSize, 10)
 	oraclePriceStalenessTolerance, _ := time.ParseDuration(p.OraclePriceStalenessTolerance)
+
+	specDef, err := dsdefinition.FromProto(p.PriceOracle, nil)
+	if err != nil {
+		return nil
+	}
+
+	priceOracle := datasource.SpecFromDefinition(*dsdefinition.NewWith(specDef))
+
+	auctionScheduleOracle, err := datasource.DefinitionFromProto(p.AuctionSchedule)
+	if err != nil {
+		return nil
+	}
+	auctionVolumeSnapshotScheduleOracle, err := datasource.DefinitionFromProto(p.AuctionVolumeSnapshotSchedule)
+	if err != nil {
+		return nil
+	}
+
 	return &NewProtocolAutomatedPurchaseChanges{
 		From:                          p.From,
 		FromAccountType:               p.FromAccountType,
 		ToAccountType:                 p.ToAccountType,
 		MarketID:                      p.MarketId,
-		PriceOracle:                   p.PriceOracle,
+		PriceOracle:                   priceOracle,
 		PriceOracleBinding:            p.PriceOracleSpecBinding,
 		OracleOffsetFactor:            num.MustDecimalFromString(p.OracleOffsetFactor),
-		AuctionSchedule:               p.AuctionSchedule,
+		AuctionSchedule:               *datasource.NewDefinitionWith(auctionScheduleOracle),
 		AuctionDuration:               auctionDuration,
-		AuctionVolumeSnapshotSchedule: p.AuctionVolumeSnapshotSchedule,
+		AuctionVolumeSnapshotSchedule: *datasource.NewDefinitionWith(auctionVolumeSnapshotScheduleOracle),
 		AutomatedPurchaseSpecBinding:  p.AutomatedPurchaseSpecBinding,
 		MinimumAuctionSize:            minSize,
 		MaximumAuctionSize:            maxSize,

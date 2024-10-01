@@ -80,11 +80,11 @@ Feature: Given a network with two PAP programs, A and B, funded from the same ac
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                       | initial | every |
-            | auction_vol_snap_schedule1 | 5       | 30    |
-            | auction_vol_snap_schedule2 | 10      | 30    |
-            | auction_schedule1          | 12      | 30    |
-            | auction_schedule2          | 11      | 30    |
+            | name                       | initial    | every |
+            | auction_vol_snap_schedule1 | 1727136005 | 30    |
+            | auction_vol_snap_schedule2 | 1727136010 | 30    |
+            | auction_schedule1          | 1727136012 | 30    |
+            | auction_schedule2          | 1727136011 | 30    |
 
 
 
@@ -112,8 +112,8 @@ Feature: Given a network with two PAP programs, A and B, funded from the same ac
 
         And the network moves ahead "30" blocks
 
-        # the volume snapshot for the market BTC/ETH ticks first so it earmarks the maximum it is allowed, i.e. 750 
-        # the volume snapshot for the market BTC/ETH2 ticks second so it earmarks the maximum it is has remaining, i.e. 250 
+        # the volume snapshot for the market BTC/ETH ticks first so it earmarks the maximum it is allowed, i.e. 750
+        # the volume snapshot for the market BTC/ETH2 ticks second so it earmarks the maximum it is has remaining, i.e. 250
         Then the automated purchase program for market "BTC/ETH" should have a snapshot balance of "750"
         Then the automated purchase program for market "BTC/ETH2" should have a snapshot balance of "250"
 
@@ -126,7 +126,7 @@ Feature: Given a network with two PAP programs, A and B, funded from the same ac
             | side | price   | volume |
             | sell | 1010000 | 750    |
 
-         # for BTC/ETH2: an order for sell BTC with size 250 and price 1.01 * 1000000 is placed
+        # for BTC/ETH2: an order for sell BTC with size 250 and price 1.01 * 1000000 is placed
         And the order book should have the following volumes for market "BTC/ETH2":
             | side | price   | volume |
             | sell | 1010000 | 250    |

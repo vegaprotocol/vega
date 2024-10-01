@@ -74,9 +74,9 @@ Feature: Given an auction trigger occurs, if the price oracle has not yet report
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 30    |
-            | auction_vol_snap_schedule | 0       | 30    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 30    |
+            | auction_vol_snap_schedule | 1727136000 | 30    |
 
         And the average block duration is "1"
 
@@ -99,12 +99,12 @@ Feature: Given an auction trigger occurs, if the price oracle has not yet report
 
         # we do not enter a pap auction
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
-        
+
         # now tick a valid price
         Then the oracles broadcast data with block time signed with "0xCAFECAFE2":
             | name             | value   | time offset |
             | prices.ETH.value | 1000000 | -1s         |
-        
+
         And the network moves ahead "30" blocks
         # we now have entered a pap auction
         And the trading mode should be "TRADING_MODE_PROTOCOL_AUTOMATED_PURCHASE_AUCTION" for the market "BTC/ETH"

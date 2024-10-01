@@ -24,6 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
@@ -114,6 +115,8 @@ type MarketData struct {
 	MarkPriceType string
 	// The internal state of the mark price composite price.
 	MarkPriceState *CompositePriceState
+	// The state of the active protocol
+	ActiveProtocolAutomatedPurchase *vega.ProtocolAutomatedPurchaseData
 }
 
 type PriceMonitoringTrigger struct {
@@ -180,39 +183,40 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 	nextNC := time.Unix(0, data.NextNetworkCloseout)
 
 	marketData := &MarketData{
-		LastTradedPrice:            lastTradedPrice,
-		MarkPrice:                  mark,
-		BestBidPrice:               bid,
-		BestBidVolume:              data.BestBidVolume,
-		BestOfferPrice:             offer,
-		BestOfferVolume:            data.BestOfferVolume,
-		BestStaticBidPrice:         staticBid,
-		BestStaticBidVolume:        data.BestStaticBidVolume,
-		BestStaticOfferPrice:       staticOffer,
-		BestStaticOfferVolume:      data.BestStaticOfferVolume,
-		MidPrice:                   mid,
-		StaticMidPrice:             staticMid,
-		Market:                     MarketID(data.Market),
-		OpenInterest:               data.OpenInterest,
-		AuctionEnd:                 data.AuctionEnd,
-		AuctionStart:               data.AuctionStart,
-		IndicativePrice:            indicative,
-		IndicativeVolume:           data.IndicativeVolume,
-		MarketState:                data.MarketState.String(),
-		MarketTradingMode:          data.MarketTradingMode.String(),
-		AuctionTrigger:             data.Trigger.String(),
-		ExtensionTrigger:           data.ExtensionTrigger.String(),
-		TargetStake:                targetStake,
-		SuppliedStake:              suppliedStake,
-		PriceMonitoringBounds:      data.PriceMonitoringBounds,
-		MarketValueProxy:           data.MarketValueProxy,
-		LiquidityProviderFeeShares: data.LiquidityProviderFeeShare,
-		LiquidityProviderSLA:       data.LiquidityProviderSla,
-		TxHash:                     txHash,
-		NextMarkToMarket:           nextMTM,
-		MarketGrowth:               growth,
-		NextNetworkCloseout:        nextNC,
-		MarkPriceType:              data.MarkPriceType.String(),
+		LastTradedPrice:                 lastTradedPrice,
+		MarkPrice:                       mark,
+		BestBidPrice:                    bid,
+		BestBidVolume:                   data.BestBidVolume,
+		BestOfferPrice:                  offer,
+		BestOfferVolume:                 data.BestOfferVolume,
+		BestStaticBidPrice:              staticBid,
+		BestStaticBidVolume:             data.BestStaticBidVolume,
+		BestStaticOfferPrice:            staticOffer,
+		BestStaticOfferVolume:           data.BestStaticOfferVolume,
+		MidPrice:                        mid,
+		StaticMidPrice:                  staticMid,
+		Market:                          MarketID(data.Market),
+		OpenInterest:                    data.OpenInterest,
+		AuctionEnd:                      data.AuctionEnd,
+		AuctionStart:                    data.AuctionStart,
+		IndicativePrice:                 indicative,
+		IndicativeVolume:                data.IndicativeVolume,
+		MarketState:                     data.MarketState.String(),
+		MarketTradingMode:               data.MarketTradingMode.String(),
+		AuctionTrigger:                  data.Trigger.String(),
+		ExtensionTrigger:                data.ExtensionTrigger.String(),
+		TargetStake:                     targetStake,
+		SuppliedStake:                   suppliedStake,
+		PriceMonitoringBounds:           data.PriceMonitoringBounds,
+		MarketValueProxy:                data.MarketValueProxy,
+		LiquidityProviderFeeShares:      data.LiquidityProviderFeeShare,
+		LiquidityProviderSLA:            data.LiquidityProviderSla,
+		TxHash:                          txHash,
+		NextMarkToMarket:                nextMTM,
+		MarketGrowth:                    growth,
+		NextNetworkCloseout:             nextNC,
+		MarkPriceType:                   data.MarkPriceType.String(),
+		ActiveProtocolAutomatedPurchase: data.ActiveProtocolAutomatedPurchase,
 	}
 
 	if data.MarkPriceState != nil {
@@ -258,6 +262,9 @@ func (md MarketData) Equal(other MarketData) bool {
 		markPriceState2, _ = other.MarkPriceState.MarshalJSON()
 	}
 
+	papStateIsEqual := (md.ActiveProtocolAutomatedPurchase == nil) == (other.ActiveProtocolAutomatedPurchase == nil) &&
+		(md.ActiveProtocolAutomatedPurchase == nil || md.ActiveProtocolAutomatedPurchase.Id == other.ActiveProtocolAutomatedPurchase.Id && md.ActiveProtocolAutomatedPurchase.OrderId == other.ActiveProtocolAutomatedPurchase.OrderId)
+
 	return md.LastTradedPrice.Equals(other.LastTradedPrice) &&
 		md.MarkPrice.Equals(other.MarkPrice) &&
 		md.BestBidPrice.Equals(other.BestBidPrice) &&
@@ -292,7 +299,7 @@ func (md MarketData) Equal(other MarketData) bool {
 		bytes.Equal(productData1, productData2) &&
 		md.NextNetworkCloseout.Equal(other.NextNetworkCloseout) &&
 		md.MarkPriceType == other.MarkPriceType &&
-		bytes.Equal(markPriceState1, markPriceState2)
+		bytes.Equal(markPriceState1, markPriceState2) && papStateIsEqual
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -359,39 +366,40 @@ func liquidityProviderSLAMatches(slas, other []*types.LiquidityProviderSLA) bool
 
 func (md MarketData) ToProto() *types.MarketData {
 	result := types.MarketData{
-		LastTradedPrice:           md.LastTradedPrice.String(),
-		MarkPrice:                 md.MarkPrice.String(),
-		BestBidPrice:              md.BestBidPrice.String(),
-		BestBidVolume:             md.BestBidVolume,
-		BestOfferPrice:            md.BestOfferPrice.String(),
-		BestOfferVolume:           md.BestOfferVolume,
-		BestStaticBidPrice:        md.BestStaticBidPrice.String(),
-		BestStaticBidVolume:       md.BestStaticBidVolume,
-		BestStaticOfferPrice:      md.BestStaticOfferPrice.String(),
-		BestStaticOfferVolume:     md.BestStaticOfferVolume,
-		MidPrice:                  md.MidPrice.String(),
-		StaticMidPrice:            md.StaticMidPrice.String(),
-		Market:                    md.Market.String(),
-		Timestamp:                 md.VegaTime.UnixNano(),
-		OpenInterest:              md.OpenInterest,
-		AuctionEnd:                md.AuctionEnd,
-		AuctionStart:              md.AuctionStart,
-		IndicativePrice:           md.IndicativePrice.String(),
-		IndicativeVolume:          md.IndicativeVolume,
-		MarketState:               types.Market_State(types.Market_State_value[md.MarketState]),
-		MarketTradingMode:         types.Market_TradingMode(types.Market_TradingMode_value[md.MarketTradingMode]),
-		Trigger:                   types.AuctionTrigger(types.AuctionTrigger_value[md.AuctionTrigger]),
-		ExtensionTrigger:          types.AuctionTrigger(types.AuctionTrigger_value[md.ExtensionTrigger]),
-		TargetStake:               md.TargetStake.String(),
-		SuppliedStake:             md.SuppliedStake.String(),
-		PriceMonitoringBounds:     md.PriceMonitoringBounds,
-		MarketValueProxy:          md.MarketValueProxy,
-		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
-		LiquidityProviderSla:      md.LiquidityProviderSLA,
-		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
-		MarketGrowth:              md.MarketGrowth.String(),
-		NextNetworkCloseout:       md.NextNetworkCloseout.UnixNano(),
-		MarkPriceType:             types.CompositePriceType(types.CompositePriceType_value[md.MarkPriceType]),
+		LastTradedPrice:                 md.LastTradedPrice.String(),
+		MarkPrice:                       md.MarkPrice.String(),
+		BestBidPrice:                    md.BestBidPrice.String(),
+		BestBidVolume:                   md.BestBidVolume,
+		BestOfferPrice:                  md.BestOfferPrice.String(),
+		BestOfferVolume:                 md.BestOfferVolume,
+		BestStaticBidPrice:              md.BestStaticBidPrice.String(),
+		BestStaticBidVolume:             md.BestStaticBidVolume,
+		BestStaticOfferPrice:            md.BestStaticOfferPrice.String(),
+		BestStaticOfferVolume:           md.BestStaticOfferVolume,
+		MidPrice:                        md.MidPrice.String(),
+		StaticMidPrice:                  md.StaticMidPrice.String(),
+		Market:                          md.Market.String(),
+		Timestamp:                       md.VegaTime.UnixNano(),
+		OpenInterest:                    md.OpenInterest,
+		AuctionEnd:                      md.AuctionEnd,
+		AuctionStart:                    md.AuctionStart,
+		IndicativePrice:                 md.IndicativePrice.String(),
+		IndicativeVolume:                md.IndicativeVolume,
+		MarketState:                     types.Market_State(types.Market_State_value[md.MarketState]),
+		MarketTradingMode:               types.Market_TradingMode(types.Market_TradingMode_value[md.MarketTradingMode]),
+		Trigger:                         types.AuctionTrigger(types.AuctionTrigger_value[md.AuctionTrigger]),
+		ExtensionTrigger:                types.AuctionTrigger(types.AuctionTrigger_value[md.ExtensionTrigger]),
+		TargetStake:                     md.TargetStake.String(),
+		SuppliedStake:                   md.SuppliedStake.String(),
+		PriceMonitoringBounds:           md.PriceMonitoringBounds,
+		MarketValueProxy:                md.MarketValueProxy,
+		LiquidityProviderFeeShare:       md.LiquidityProviderFeeShares,
+		LiquidityProviderSla:            md.LiquidityProviderSLA,
+		NextMarkToMarket:                md.NextMarkToMarket.UnixNano(),
+		MarketGrowth:                    md.MarketGrowth.String(),
+		NextNetworkCloseout:             md.NextNetworkCloseout.UnixNano(),
+		MarkPriceType:                   types.CompositePriceType(types.CompositePriceType_value[md.MarkPriceType]),
+		ActiveProtocolAutomatedPurchase: md.ActiveProtocolAutomatedPurchase,
 	}
 
 	if md.ProductData != nil {

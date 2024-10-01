@@ -74,9 +74,9 @@ Feature: Given an auction trigger occurs, if the price oracle has reported a val
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 5       | 30    |
-            | auction_vol_snap_schedule | 0       | 30    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136005 | 30    |
+            | auction_vol_snap_schedule | 1727136000 | 30    |
 
         And the average block duration is "1"
 
@@ -95,7 +95,7 @@ Feature: Given an auction trigger occurs, if the price oracle has reported a val
             | id    | from | from account type          | to account type               | market id | price oracle | price oracle staleness tolerance | oracle offset factor | auction schedule oracle | auction volume snapshot schedule oracle | auction duration | minimum auction size | maximum auction size | expiry timestamp |
             | 12345 | BTC  | ACCOUNT_TYPE_BUY_BACK_FEES | ACCOUNT_TYPE_NETWORK_TREASURY | BTC/ETH   | price_oracle | 3s                               | 1.01                 | auction_schedule        | auction_vol_snap_schedule               | 60s              | 100                  | 200                  | 0                |
 
-         # now tick a valid price at t0
+        # now tick a valid price at t0
         Then the oracles broadcast data with block time signed with "0xCAFECAFE2":
             | name             | value   | time offset |
             | prices.ETH.value | 1000000 | -1s         |
@@ -106,7 +106,7 @@ Feature: Given an auction trigger occurs, if the price oracle has reported a val
         # we do not enter a pap auction
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
 
-        # we're now at t0+34, lets tick the oracle price again so that it is valid for the next pap auction round 
+        # we're now at t0+34, lets tick the oracle price again so that it is valid for the next pap auction round
         Then the oracles broadcast data with block time signed with "0xCAFECAFE2":
             | name             | value   | time offset |
             | prices.ETH.value | 1000000 | -1s         |

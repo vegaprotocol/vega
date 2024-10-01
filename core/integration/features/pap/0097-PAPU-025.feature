@@ -74,9 +74,9 @@ Feature: Once the volume snapshot of a program is triggered, if the balance of t
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 30    |
-            | auction_vol_snap_schedule | 0       | 30    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 30    |
+            | auction_vol_snap_schedule | 1727136000 | 30    |
 
         And the average block duration is "1"
 

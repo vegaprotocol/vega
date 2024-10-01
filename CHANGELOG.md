@@ -18,6 +18,7 @@
 - [11642](https://github.com/vegaprotocol/vega/issues/11642) - `AMMs` with empty price levels are now allowed.
 - [11685](https://github.com/vegaprotocol/vega/issues/11685) - Automated purchase support added.  
 - [11711](https://github.com/vegaprotocol/vega/issues/11711) - Manage closed team membership by updating the allow list.
+- [11722](https://github.com/vegaprotocol/vega/issues/11722) - Expose active protocol automated purchase identifier in market data API. 
 
 ### 🐛 Fixes
 
@@ -26,7 +27,7 @@
 - [11684](https://github.com/vegaprotocol/vega/issues/11684) - Better error when `Arbitrum` bridge details are missing from validator configuration.
 - [11696](https://github.com/vegaprotocol/vega/issues/11696) - Add binding for estimate fees API.
 - [11699](https://github.com/vegaprotocol/vega/issues/11699) - Update factors of programs when they are updated.
-
+- [11724](https://github.com/vegaprotocol/vega/issues/11724) - Allow nil initial time in time trigger.
 
 ## 0.78.2
 

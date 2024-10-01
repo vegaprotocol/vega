@@ -74,9 +74,9 @@ Feature: If a volume snapshot is triggered and then before the next auction, ano
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 20    |
-            | auction_vol_snap_schedule | 0       | 10    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 20    |
+            | auction_vol_snap_schedule | 1727136000 | 10    |
 
         And the average block duration is "1"
 

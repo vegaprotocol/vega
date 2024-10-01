@@ -75,9 +75,9 @@ Feature: Given the end of an auction is reached and the book is not crossed, the
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 90    |
-            | auction_vol_snap_schedule | 0       | 90    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 90    |
+            | auction_vol_snap_schedule | 1727136000 | 90    |
 
         And the average block duration is "1"
 
@@ -116,8 +116,8 @@ Feature: Given the end of an auction is reached and the book is not crossed, the
         # progress time till after the expected end of the auction
         And the network moves ahead "60" blocks
 
-        # we left the auction and nothing was traded 
+        # we left the auction and nothing was traded
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
         And the buy back fees balance should be "5000" for the asset "BTC"
-     
+
 

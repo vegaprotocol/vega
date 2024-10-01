@@ -75,9 +75,9 @@ Feature: Given the market is currently in a monitoring auction, once an auction 
             | price_oracle | prices.ETH.value | TYPE_INTEGER | 0              |
 
         And the time triggers oracle spec is:
-            | name                      | initial | every |
-            | auction_schedule          | 1       | 30    |
-            | auction_vol_snap_schedule | 0       | 30    |
+            | name                      | initial    | every |
+            | auction_schedule          | 1727136001 | 30    |
+            | auction_vol_snap_schedule | 1727136000 | 30    |
 
         And the average block duration is "1"
 
@@ -120,5 +120,5 @@ Feature: Given the market is currently in a monitoring auction, once an auction 
         And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "BTC/ETH"
 
         Then the starting auction time for market "BTC/ETH" is "1727136000000000000"
-        # the pap auction begins 2 second into the monitoring auction so we expect the monitoring auction to be extended by 12 seconds 
+        # the pap auction begins 2 second into the monitoring auction so we expect the monitoring auction to be extended by 12 seconds
         And the ending auction time for market "BTC/ETH" is "1727136042000000000"

@@ -17,7 +17,10 @@ package steps
 
 import (
 	"fmt"
+	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
@@ -26,7 +29,7 @@ import (
 	"github.com/cucumber/godog"
 )
 
-func TheTimeTriggerOracleSpec(config *market.Config, table *godog.Table) error {
+func TheTimeTriggerOracleSpec(config *market.Config, now time.Time, table *godog.Table) error {
 	rows := parseTimeTriggerSpecTable(table)
 	for _, r := range rows {
 		row := internalTimeTriggerOracleSpecRow{row: r}
@@ -57,7 +60,14 @@ func TheTimeTriggerOracleSpec(config *market.Config, table *godog.Table) error {
 				},
 			},
 		}
-		config.OracleConfigs.AddTimeTrigger(name, spec)
+		specDef, err := definition.FromProto(spec.Data, nil)
+		if err != nil {
+			return err
+		}
+		specFromDef := datasource.SpecFromDefinition(*definition.NewWith(specDef))
+		tt := specFromDef.Data.GetInternalTimeTriggerSpecConfiguration()
+		tt.SetNextTrigger(now.Truncate(time.Second))
+		config.OracleConfigs.AddTimeTrigger(name, specFromDef)
 	}
 	return nil
 }

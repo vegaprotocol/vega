@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -27,35 +29,81 @@ import (
 )
 
 func TestNewProtocolAutomatedPurchaseChangesFromProto(t *testing.T) {
-	apc := &types.NewProtocolAutomatedPurchaseChanges{
-		From:            "abc",
-		FromAccountType: types.AccountTypeBuyBackFees,
-		ToAccountType:   types.AccountTypeBuyBackFees,
-		MarketID:        "def",
-		PriceOracle: &vegapb.DataSourceDefinition{
-			SourceType: &vegapb.DataSourceDefinition_External{
-				External: &vegapb.DataSourceDefinitionExternal{
-					SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
-						Oracle: &vegapb.DataSourceSpecConfiguration{
-							Signers: []*v1.Signer{
-								{
-									Signer: &v1.Signer_PubKey{
-										PubKey: &v1.PubKey{
-											Key: "0xiBADC0FFEE0DDF00D",
-										},
+	spec := &vegapb.DataSourceSpec{
+		Data: &vegapb.DataSourceDefinition{
+			SourceType: vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+								Triggers: []*v1.InternalTimeTrigger{
+									{
+										Initial: nil,
+										Every:   1000,
 									},
 								},
 							},
-							Filters: []*v1.Filter{
-								{
-									Key: &v1.PropertyKey{
-										Name:                "oracle.price",
-										Type:                v1.PropertyKey_TYPE_INTEGER,
-										NumberDecimalPlaces: ptr[uint64](5),
+						},
+					},
+				},
+			}.SourceType,
+		},
+	}
+
+	specDef, _ := definition.FromProto(spec.Data, nil)
+	auctionScheduleSpecDef := datasource.SpecFromDefinition(*definition.NewWith(specDef))
+
+	spec = &vegapb.DataSourceSpec{
+		Data: &vegapb.DataSourceDefinition{
+			SourceType: vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+								Triggers: []*v1.InternalTimeTrigger{
+									{
+										Initial: nil,
+										Every:   800,
 									},
-									Conditions: []*v1.Condition{
-										{
-											Operator: v1.Condition_OPERATOR_UNSPECIFIED,
+								},
+							},
+						},
+					},
+				},
+			}.SourceType,
+		},
+	}
+
+	specDef, _ = definition.FromProto(spec.Data, nil)
+	auctionVolumeSnapshotScheduleSpecDef := datasource.SpecFromDefinition(*definition.NewWith(specDef))
+
+	spec = &vegapb.DataSourceSpec{
+		Data: &vegapb.DataSourceDefinition{
+			SourceType: vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*v1.Signer{
+									{
+										Signer: &v1.Signer_PubKey{
+											PubKey: &v1.PubKey{
+												Key: "0xiBADC0FFEE0DDF00D",
+											},
+										},
+									},
+								},
+								Filters: []*v1.Filter{
+									{
+										Key: &v1.PropertyKey{
+											Name:                "oracle.price",
+											Type:                v1.PropertyKey_TYPE_INTEGER,
+											NumberDecimalPlaces: ptr[uint64](5),
+										},
+										Conditions: []*v1.Condition{
+											{
+												Operator: v1.Condition_OPERATOR_UNSPECIFIED,
+											},
 										},
 									},
 								},
@@ -63,45 +111,25 @@ func TestNewProtocolAutomatedPurchaseChangesFromProto(t *testing.T) {
 						},
 					},
 				},
-			},
+			}.SourceType,
 		},
+	}
+	specDef, _ = definition.FromProto(spec.Data, nil)
+	priceOracle := datasource.SpecFromDefinition(*definition.NewWith(specDef))
+
+	apc := &types.NewProtocolAutomatedPurchaseChanges{
+		From:               "abc",
+		FromAccountType:    types.AccountTypeBuyBackFees,
+		ToAccountType:      types.AccountTypeBuyBackFees,
+		MarketID:           "def",
+		PriceOracle:        priceOracle,
 		OracleOffsetFactor: num.MustDecimalFromString("0.99"),
 		PriceOracleBinding: &vegapb.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
-		AuctionDuration: time.Hour,
-		AuctionSchedule: &vegapb.DataSourceDefinition{
-			SourceType: &vegapb.DataSourceDefinition_Internal{
-				Internal: &vegapb.DataSourceDefinitionInternal{
-					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
-						TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
-							Triggers: []*v1.InternalTimeTrigger{
-								{
-									Initial: nil,
-									Every:   1000,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		AuctionVolumeSnapshotSchedule: &vegapb.DataSourceDefinition{
-			SourceType: &vegapb.DataSourceDefinition_Internal{
-				Internal: &vegapb.DataSourceDefinitionInternal{
-					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
-						TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
-							Triggers: []*v1.InternalTimeTrigger{
-								{
-									Initial: nil,
-									Every:   800,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		AuctionDuration:               time.Hour,
+		AuctionSchedule:               auctionScheduleSpecDef.GetDefinition(),
+		AuctionVolumeSnapshotSchedule: auctionVolumeSnapshotScheduleSpecDef.GetDefinition(),
 		AutomatedPurchaseSpecBinding: &vegapb.DataSourceSpecToAutomatedPurchaseBinding{
 			AuctionScheduleProperty:               "",
 			AuctionVolumeSnapshotScheduleProperty: "",
@@ -118,35 +146,81 @@ func TestNewProtocolAutomatedPurchaseChangesFromProto(t *testing.T) {
 }
 
 func TestAutomatedPurchaseChangesClone(t *testing.T) {
-	apc := &types.NewProtocolAutomatedPurchaseChanges{
-		From:            "abc",
-		FromAccountType: types.AccountTypeBuyBackFees,
-		ToAccountType:   types.AccountTypeBuyBackFees,
-		MarketID:        "def",
-		PriceOracle: &vegapb.DataSourceDefinition{
-			SourceType: &vegapb.DataSourceDefinition_External{
-				External: &vegapb.DataSourceDefinitionExternal{
-					SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
-						Oracle: &vegapb.DataSourceSpecConfiguration{
-							Signers: []*v1.Signer{
-								{
-									Signer: &v1.Signer_PubKey{
-										PubKey: &v1.PubKey{
-											Key: "0xiBADC0FFEE0DDF00D",
-										},
+	spec := &vegapb.DataSourceSpec{
+		Data: &vegapb.DataSourceDefinition{
+			SourceType: vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+								Triggers: []*v1.InternalTimeTrigger{
+									{
+										Initial: nil,
+										Every:   1000,
 									},
 								},
 							},
-							Filters: []*v1.Filter{
-								{
-									Key: &v1.PropertyKey{
-										Name:                "oracle.price",
-										Type:                v1.PropertyKey_TYPE_INTEGER,
-										NumberDecimalPlaces: ptr[uint64](5),
+						},
+					},
+				},
+			}.SourceType,
+		},
+	}
+
+	specDef, _ := definition.FromProto(spec.Data, nil)
+	auctionScheduleSpecDef := datasource.SpecFromDefinition(*definition.NewWith(specDef))
+
+	spec = &vegapb.DataSourceSpec{
+		Data: &vegapb.DataSourceDefinition{
+			SourceType: vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+								Triggers: []*v1.InternalTimeTrigger{
+									{
+										Initial: nil,
+										Every:   800,
 									},
-									Conditions: []*v1.Condition{
-										{
-											Operator: v1.Condition_OPERATOR_UNSPECIFIED,
+								},
+							},
+						},
+					},
+				},
+			}.SourceType,
+		},
+	}
+
+	specDef, _ = definition.FromProto(spec.Data, nil)
+	auctionVolumeSnapshotScheduleSpecDef := datasource.SpecFromDefinition(*definition.NewWith(specDef))
+
+	spec = &vegapb.DataSourceSpec{
+		Data: &vegapb.DataSourceDefinition{
+			SourceType: vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*v1.Signer{
+									{
+										Signer: &v1.Signer_PubKey{
+											PubKey: &v1.PubKey{
+												Key: "0xiBADC0FFEE0DDF00D",
+											},
+										},
+									},
+								},
+								Filters: []*v1.Filter{
+									{
+										Key: &v1.PropertyKey{
+											Name:                "oracle.price",
+											Type:                v1.PropertyKey_TYPE_INTEGER,
+											NumberDecimalPlaces: ptr[uint64](5),
+										},
+										Conditions: []*v1.Condition{
+											{
+												Operator: v1.Condition_OPERATOR_UNSPECIFIED,
+											},
 										},
 									},
 								},
@@ -154,45 +228,25 @@ func TestAutomatedPurchaseChangesClone(t *testing.T) {
 						},
 					},
 				},
-			},
+			}.SourceType,
 		},
+	}
+	specDef, _ = definition.FromProto(spec.Data, nil)
+	priceOracle := datasource.SpecFromDefinition(*definition.NewWith(specDef))
+
+	apc := &types.NewProtocolAutomatedPurchaseChanges{
+		From:               "abc",
+		FromAccountType:    types.AccountTypeBuyBackFees,
+		ToAccountType:      types.AccountTypeBuyBackFees,
+		MarketID:           "def",
+		PriceOracle:        priceOracle,
 		OracleOffsetFactor: num.MustDecimalFromString("0.99"),
 		PriceOracleBinding: &vegapb.SpecBindingForCompositePrice{
 			PriceSourceProperty: "oracle.price",
 		},
-		AuctionDuration: time.Hour,
-		AuctionSchedule: &vegapb.DataSourceDefinition{
-			SourceType: &vegapb.DataSourceDefinition_Internal{
-				Internal: &vegapb.DataSourceDefinitionInternal{
-					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
-						TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
-							Triggers: []*v1.InternalTimeTrigger{
-								{
-									Initial: nil,
-									Every:   1000,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		AuctionVolumeSnapshotSchedule: &vegapb.DataSourceDefinition{
-			SourceType: &vegapb.DataSourceDefinition_Internal{
-				Internal: &vegapb.DataSourceDefinitionInternal{
-					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
-						TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
-							Triggers: []*v1.InternalTimeTrigger{
-								{
-									Initial: nil,
-									Every:   800,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		AuctionDuration:               time.Hour,
+		AuctionSchedule:               auctionScheduleSpecDef.GetDefinition(),
+		AuctionVolumeSnapshotSchedule: auctionVolumeSnapshotScheduleSpecDef.GetDefinition(),
 		AutomatedPurchaseSpecBinding: &vegapb.DataSourceSpecToAutomatedPurchaseBinding{
 			AuctionScheduleProperty:               "",
 			AuctionVolumeSnapshotScheduleProperty: "",

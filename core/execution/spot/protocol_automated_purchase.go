@@ -23,7 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
-	"code.vegaprotocol.io/vega/core/datasource/definition"
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/products"
@@ -87,32 +87,20 @@ func (m *Market) NewProtocolAutomatedPurchase(ctx context.Context, ID string, co
 		readyToStop: false,
 		side:        side,
 	}
-	specDef, err := definition.FromProto(config.PriceOracle, nil)
-	if err != nil {
-		return err
-	}
-	dataSource := datasource.SpecFromDefinition(*definition.NewWith(specDef))
-	oracle, err := products.NewCompositePriceOracle(ctx, oracleEngine, dataSource, datasource.SpecBindingForCompositePriceFromProto(config.PriceOracleBinding), m.updatePAPPriceOracle)
-	if err != nil {
-		return err
-	}
-	pap.priceOracle = oracle
-	auctionScheduleSpecDef, err := definition.FromProto(config.AuctionSchedule, nil)
-	if err != nil {
-		return err
-	}
-	auctionSchedule := datasource.SpecFromDefinition(*definition.NewWith(auctionScheduleSpecDef))
-	auctionSchedule.Data.GetInternalTimeTriggerSpecConfiguration().Triggers[0].SetNextTrigger(m.timeService.GetTimeNow())
-	auctionVolumeSnapshotScheduleSpecDef, err := definition.FromProto(config.AuctionVolumeSnapshotSchedule, nil)
-	if err != nil {
-		return err
-	}
-	auctionVolumeSnapshotSchedule := datasource.SpecFromDefinition(*definition.NewWith(auctionVolumeSnapshotScheduleSpecDef))
-	auctionVolumeSnapshotSchedule.Data.GetInternalTimeTriggerSpecConfiguration().Triggers[0].SetNextTrigger(m.timeService.GetTimeNow())
+
+	auctionVolumeSnapshotSchedule := datasource.SpecFromDefinition(config.AuctionVolumeSnapshotSchedule)
+	auctionSchedule := datasource.SpecFromDefinition(config.AuctionSchedule)
+	var err error
 	pap.scheuldingOracles, err = products.NewProtocolAutomatedPurchaseScheduleOracle(ctx, oracleEngine, auctionSchedule, auctionVolumeSnapshotSchedule, datasource.SpecBindingForAutomatedPurchaseFromProto(config.AutomatedPurchaseSpecBinding), m.papAuctionSchedule, m.papAuctionVolumeSnapshot)
 	if err != nil {
 		return err
 	}
+	oracle, err := products.NewCompositePriceOracle(ctx, oracleEngine, config.PriceOracle, datasource.SpecBindingForCompositePriceFromProto(config.PriceOracleBinding), m.updatePAPPriceOracle)
+	if err != nil {
+		return err
+	}
+	pap.priceOracle = oracle
+
 	m.pap = pap
 	return nil
 }
@@ -136,26 +124,18 @@ func (m *Market) NewProtocolAutomatedPurchaseFromSnapshot(ctx context.Context, o
 		ap.nextAuctionAmount = num.MustUintFromString(apProto.NextAuctionAmount, 10)
 	}
 
-	specDef, err := definition.FromProto(ap.config.PriceOracle, nil)
-	if err != nil {
-		return nil, err
-	}
-	dataSource := datasource.SpecFromDefinition(*definition.NewWith(specDef))
-	oracle, err := products.NewCompositePriceOracle(ctx, oracleEngine, dataSource, datasource.SpecBindingForCompositePriceFromProto(ap.config.PriceOracleBinding), m.updatePAPPriceOracle)
+	specDef, _ := dsdefinition.FromProto(apProto.Config.PriceOracle, nil)
+	priceOracle := datasource.SpecFromDefinition(*dsdefinition.NewWith(specDef))
+
+	oracle, err := products.NewCompositePriceOracle(ctx, oracleEngine, priceOracle, datasource.SpecBindingForCompositePriceFromProto(apProto.Config.PriceOracleSpecBinding), m.updatePAPPriceOracle)
 	if err != nil {
 		return nil, err
 	}
 	ap.priceOracle = oracle
-	auctionScheduleSpecDef, err := definition.FromProto(ap.config.AuctionSchedule, nil)
-	if err != nil {
-		return nil, err
-	}
-	auctionSchedule := datasource.SpecFromDefinition(*definition.NewWith(auctionScheduleSpecDef))
-	auctionVolumeSnapshotScheduleSpecDef, err := definition.FromProto(ap.config.AuctionVolumeSnapshotSchedule, nil)
-	if err != nil {
-		return nil, err
-	}
-	auctionVolumeSnapshotSchedule := datasource.SpecFromDefinition(*definition.NewWith(auctionVolumeSnapshotScheduleSpecDef))
+	auctionSchedule := datasource.SpecFromDefinition(ap.config.AuctionSchedule)
+	auctionSchedule.Data.GetInternalTimeTriggerSpecConfiguration().Triggers[0].SetNextTrigger(m.timeService.GetTimeNow().Truncate(time.Second))
+	auctionVolumeSnapshotSchedule := datasource.SpecFromDefinition(ap.config.AuctionVolumeSnapshotSchedule)
+	auctionVolumeSnapshotSchedule.Data.GetInternalTimeTriggerSpecConfiguration().Triggers[0].SetNextTrigger(m.timeService.GetTimeNow().Truncate(time.Second))
 	ap.scheuldingOracles, err = products.NewProtocolAutomatedPurchaseScheduleOracle(ctx, oracleEngine, auctionSchedule, auctionVolumeSnapshotSchedule, datasource.SpecBindingForAutomatedPurchaseFromProto(ap.config.AutomatedPurchaseSpecBinding), m.papAuctionSchedule, m.papAuctionVolumeSnapshot)
 	if err != nil {
 		return nil, err
@@ -346,8 +326,8 @@ func (m *Market) stopPAP(ctx context.Context) {
 	m.pap.nextAuctionAmount = nil
 }
 
-// BeginBlock checks if a pap has expired, if so and it.
-func (m *Market) BeginBlock(ctx context.Context) {
+// checkPAP checks if a pap has expired, if so and it.
+func (m *Market) checkPAP(ctx context.Context) {
 	// no pap - nothing to do
 	if m.pap == nil {
 		return
