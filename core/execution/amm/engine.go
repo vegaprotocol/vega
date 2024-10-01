@@ -568,8 +568,22 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 		// pool is active in range add it to the slice
 		active = append(active, p)
 
+		// we hit a discontinuity where an AMM's two curves meet if we try to trade over its base-price
+		// so we partition the inner/outer price range at the base price so that we instead trade across it
+		// in two steps.
+		boundary := p.upper.low
+		if inner != nil && outer != nil {
+			if boundary.LT(outer) && boundary.GT(inner) {
+				bounds[boundary.String()] = boundary.Clone()
+			}
+		} else if outer == nil && boundary.GT(inner) {
+			bounds[boundary.String()] = boundary.Clone()
+		} else if inner == nil && boundary.LT(outer) {
+			bounds[boundary.String()] = boundary.Clone()
+		}
+
 		// if a pool's upper or lower boundary exists within (inner, outer) then we consider that a sub-level
-		boundary := p.upper.high
+		boundary = p.upper.high
 		if outer == nil || boundary.LT(outer) {
 			bounds[boundary.String()] = boundary.Clone()
 		}

@@ -234,11 +234,14 @@ func testBasicSubmitOrder(t *testing.T) {
 	assert.Equal(t, "2021", ba.String())
 
 	orders = tst.engine.SubmitOrder(agg, num.NewUint(2020), num.NewUint(1990))
-	require.Len(t, orders, 1)
-	assert.Equal(t, "2004", orders[0].Price.String())
-	// note that this volume being bigger than 242367 above means we've moved back to position, then flipped
-	// sign, and took volume from the other curve.
-	assert.Equal(t, 362325, int(orders[0].Size))
+
+	// two orders because we have to split it when we trade across the base-price as thats where we move from one curve to the other.
+	require.Len(t, orders, 2)
+	assert.Equal(t, "2009", orders[0].Price.String())
+	assert.Equal(t, 236855, int(orders[0].Size))
+
+	assert.Equal(t, "1994", orders[1].Price.String())
+	assert.Equal(t, 125470, int(orders[1].Size))
 }
 
 func testSubmitOrderAtBestPrice(t *testing.T) {
