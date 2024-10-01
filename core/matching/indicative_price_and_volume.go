@@ -492,11 +492,30 @@ func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side 
 			cpm = func(p *num.Uint) bool { return p.GT(price) }
 		}
 
+		var combined *types.Order
 		for _, o := range oo {
 			if cpm(o.Price) {
 				continue
 			}
-			orders = append(orders, o)
+
+			// we want to combine all the uncrossing orders into one big one of the combined volume so that
+			// we only uncross with 1 order and not 1000s of expanded ones for a single AMM. We can take the price
+			// to the best of the lot so that it trades -- it'll get overridden by the uncrossing price after uncrossing
+			// anyway.
+			if combined == nil {
+				combined = o.Clone()
+				orders = append(orders, combined)
+			} else {
+				combined.Size += o.Size
+				combined.Remaining += o.Remaining
+
+				if side == types.SideBuy {
+					combined.Price = num.Max(combined.Price, o.Price)
+				} else {
+					combined.Price = num.Min(combined.Price, o.Price)
+				}
+			}
+
 			volume += o.Size
 
 			// if we're extracted enough we can stop now
