@@ -17,6 +17,7 @@
 - [11714](https://github.com/vegaprotocol/vega/issues/11714) - Improve `AMM` performance by caching best prices and volumes.
 - [11642](https://github.com/vegaprotocol/vega/issues/11642) - `AMMs` with empty price levels are now allowed.
 - [11685](https://github.com/vegaprotocol/vega/issues/11685) - Automated purchase support added.  
+- [11726](https://github.com/vegaprotocol/vega/issues/11726) - Combined `AMM` uncrossing orders for better performance when uncrossing the book.
 - [11711](https://github.com/vegaprotocol/vega/issues/11711) - Manage closed team membership by updating the allow list.
 - [11722](https://github.com/vegaprotocol/vega/issues/11722) - Expose active protocol automated purchase identifier in market data API. 
 
