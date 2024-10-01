@@ -83,7 +83,7 @@ func (s *CandleUpdates) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case subscriptionMsg := <-s.subscriptionMsgChan:
-			s.handleSubscription(subscriptions, subscriptionMsg, lastCandle)
+			subscriptions = s.handleSubscription(subscriptions, subscriptionMsg, lastCandle)
 		case now := <-ticker.C:
 			if len(subscriptions) == 0 {
 				lastCandle = nil
@@ -105,34 +105,37 @@ func (s *CandleUpdates) run(ctx context.Context) {
 				lastCandle = &candles[len(candles)-1]
 			}
 
-			s.sendCandlesToSubscribers(candles, subscriptions)
+			subscriptions = s.sendCandlesToSubscribers(candles, subscriptions)
 		}
 	}
 }
 
-func (s *CandleUpdates) handleSubscription(subscriptions map[string]chan entities.Candle, subscription subscriptionMsg, lastCandle *entities.Candle) {
+func (s *CandleUpdates) handleSubscription(subscriptions map[string]chan entities.Candle, subscription subscriptionMsg, lastCandle *entities.Candle) map[string]chan entities.Candle {
 	if subscription.subscribe {
-		s.addSubscription(subscriptions, subscription, lastCandle)
-	} else {
-		removeSubscription(subscriptions, subscription.id)
+		return s.addSubscription(subscriptions, subscription, lastCandle)
 	}
+	return removeSubscription(subscriptions, subscription.id)
 }
 
-func (s *CandleUpdates) addSubscription(subscriptions map[string]chan entities.Candle, subscription subscriptionMsg, lastCandle *entities.Candle) {
-	subscriptions[subscription.id] = subscription.out
+func (s *CandleUpdates) addSubscription(subscriptions map[string]chan entities.Candle, subscription subscriptionMsg, lastCandle *entities.Candle) map[string]chan entities.Candle {
 	if lastCandle != nil {
-		if rm := s.sendCandlesToSubscribers([]entities.Candle{*lastCandle}, map[string]chan entities.Candle{subscription.id: subscription.out}); len(rm) != 0 {
-			// if send returns a non-empty slice, the new subscription was removed from the map literal, and should also be removed from the main subscriptions map
-			delete(subscriptions, subscription.id)
+		if rm := s.sendCandlesToSubscribers([]entities.Candle{*lastCandle}, map[string]chan entities.Candle{subscription.id: subscription.out}); len(rm) == 0 {
+			// try to send the last candle data to the new subscription, if it fails, don't update the map
+			return subscriptions
 		}
 	}
+	subscriptions[subscription.id] = subscription.out
+	return subscriptions
 }
 
-func removeSubscription(subscriptions map[string]chan entities.Candle, subscriptionID string) {
-	if _, ok := subscriptions[subscriptionID]; ok {
-		close(subscriptions[subscriptionID])
+func removeSubscription(subscriptions map[string]chan entities.Candle, subscriptionID string) map[string]chan entities.Candle {
+	if ch, ok := subscriptions[subscriptionID]; ok {
+		// first delete
 		delete(subscriptions, subscriptionID)
+		// then close
+		close(ch)
 	}
+	return subscriptions
 }
 
 func closeAllSubscriptions(subscribers map[string]chan entities.Candle) {
@@ -218,18 +221,17 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	return updates, nil
 }
 
-func (s *CandleUpdates) sendCandlesToSubscribers(candles []entities.Candle, subscriptions map[string]chan entities.Candle) []string {
-	rm := []string{}
+func (s *CandleUpdates) sendCandlesToSubscribers(candles []entities.Candle, subscriptions map[string]chan entities.Candle) map[string]chan entities.Candle {
+	ret := subscriptions
 	for subscriptionID, outCh := range subscriptions {
 		for _, candle := range candles {
 			select {
 			case outCh <- candle:
 			default:
-				removeSubscription(subscriptions, subscriptionID)
-				rm = append(rm, subscriptionID)
+				ret = removeSubscription(subscriptions, subscriptionID)
 				break
 			}
 		}
 	}
-	return rm
+	return ret
 }
