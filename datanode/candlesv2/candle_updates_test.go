@@ -18,6 +18,7 @@ package candlesv2_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type nonReturningCandleSource struct{}
@@ -67,14 +69,74 @@ func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleI
 	}
 }
 
+func TestSubscribeAndUnsubscribeCloseChannelPanic(t *testing.T) {
+	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle, 3), errorCh: make(chan error)}
+	// ensure the sub channels are buffered
+	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
+		testCandleSource, newTestCandleConfig(5).CandleUpdates)
+	startTime := time.Now()
+
+	updated := startTime
+	firstCandle := createCandle(startTime, updated, 1, 1, 1, 1, 10, 200)
+	lastCandle := firstCandle // just for the sake of types
+	fCh := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		testCandleSource.candles <- []entities.Candle{firstCandle}
+		close(fCh)
+		// keep updating the most recent candle
+		for i := 0; i < 3; i++ {
+			updated = updated.Add(time.Second * time.Duration(i))
+			lastCandle = createCandle(startTime, updated, 1, 1, 1, 1, 10, 200)
+			testCandleSource.candles <- []entities.Candle{lastCandle}
+		}
+	}()
+	<-fCh
+	// ensure the first candle is sent
+	sub1Id, out1, _ := updates.Subscribe()
+	sub2Id, out2, _ := updates.Subscribe()
+
+	candle1 := <-out1
+	assert.Equal(t, firstCandle, candle1)
+
+	candle2 := <-out2
+	assert.Equal(t, firstCandle, candle2)
+
+	// unsubscribe the first subscriber
+	updates.Unsubscribe(sub1Id)
+	// now wait for the updates:
+	wg.Wait()
+	sub3Id, out3, _ := updates.Subscribe()
+	candle3 := <-out3
+	require.Equal(t, lastCandle, candle3)
+	// this should unsubscribe sub2 already
+	testCandleSource.errorCh <- fmt.Errorf("transient error")
+
+	// this sub should get instantly unsubscribed.
+	errSub, eOut, _ := updates.Subscribe()
+	require.NotNil(t, eOut)
+	// reading from the channel should indicate it was closed already due to the error
+	// once the channel is closed, the subscriber effectively has to have been removed.
+	_, closed := <-eOut
+	require.True(t, closed)
+	// we can still safely call unsubscribe, though:
+	updates.Unsubscribe(errSub)
+	updates.Unsubscribe(sub2Id)
+	updates.Unsubscribe(sub3Id)
+}
+
 func TestSubscribeAndUnsubscribeWhenCandleSourceErrorsAlways(t *testing.T) {
 	errorsAlwaysCandleSource := &errorsAlwaysCandleSource{}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
 		errorsAlwaysCandleSource, newTestCandleConfig(0).CandleUpdates)
 
-	sub1Id, _, _ := updates.Subscribe()
-	sub2Id, _, _ := updates.Subscribe()
+	sub1Id, _, err1 := updates.Subscribe()
+	sub2Id, _, err2 := updates.Subscribe()
+	require.NoError(t, err1)
+	require.NoError(t, err2)
 
 	updates.Unsubscribe(sub1Id)
 	updates.Unsubscribe(sub2Id)
