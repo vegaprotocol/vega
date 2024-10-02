@@ -74,10 +74,7 @@ func NewProtocolAutomatedPurchase(r apRow, config *market.Config) (*types.NewPro
 
 	auctionPriceOracle, priceOracleBinding, _ := config.OracleConfigs.GetOracleDefinitionForCompositePrice(r.row.MustStr("price oracle"))
 	expiry := r.row.MustI64("expiry timestamp")
-	var expiryTime time.Time
-	if expiry > 0 {
-		expiryTime = time.Unix(expiry, 0)
-	}
+	expiryTime := time.Unix(expiry, 0)
 
 	priceOracle := datasource.FromOracleSpecProto(auctionPriceOracle)
 

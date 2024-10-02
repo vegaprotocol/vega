@@ -338,7 +338,8 @@ func (m *Market) checkPAP(ctx context.Context) {
 		return
 	}
 	// pap has expired
-	if !m.pap.readyToStop && !m.pap.config.ExpiryTimestamp.IsZero() && m.pap.config.ExpiryTimestamp.Before(m.timeService.GetTimeNow()) {
+	if !m.pap.readyToStop && m.pap.config.ExpiryTimestamp.Unix() > 0 && m.pap.config.ExpiryTimestamp.Before(m.timeService.GetTimeNow()) {
+		m.log.Info("protocol automated purchase has expired, going to stop", logging.String("ID", m.pap.ID))
 		m.stopPAP(ctx)
 	}
 }
