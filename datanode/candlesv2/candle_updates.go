@@ -104,7 +104,6 @@ func (s *CandleUpdates) run(ctx context.Context) {
 			if len(candles) > 0 {
 				lastCandle = &candles[len(candles)-1]
 			}
-
 			subscriptions = s.sendCandlesToSubscribers(candles, subscriptions)
 		}
 	}
@@ -224,12 +223,13 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 func (s *CandleUpdates) sendCandlesToSubscribers(candles []entities.Candle, subscriptions map[string]chan entities.Candle) map[string]chan entities.Candle {
 	ret := subscriptions
 	for subscriptionID, outCh := range subscriptions {
+	loop:
 		for _, candle := range candles {
 			select {
 			case outCh <- candle:
 			default:
-				ret = removeSubscription(subscriptions, subscriptionID)
-				break
+				ret = removeSubscription(ret, subscriptionID)
+				break loop
 			}
 		}
 	}
