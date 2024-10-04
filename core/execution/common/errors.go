@@ -91,4 +91,6 @@ var (
 	// ErrSettlementDataOutOfRange is returned when a capped future receives settlement data that is outside of the acceptable range (either > max price, or neither 0 nor max for binary settlements).
 	ErrSettlementDataOutOfRange = errors.New("settlement data is outside of the price cap")
 	ErrAMMBoundsOutsidePriceCap = errors.New("an AMM bound is outside of the price cap")
+	// ErrSellOrderNotAllowed no sell orders are allowed in the current state.
+	ErrSellOrderNotAllowed = errors.New("sell order not allowed")
 )

@@ -94,6 +94,7 @@ const (
 	StopOrderRejectionNotAllowedDuringOpeningAuction StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION
 	StopOrderRejectionOCONotAllowedSameExpiryTime    StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES
 	StopOrderRejectionSizeOverrideUnsupportedForSpot StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT
+	StopOrderRejectionSellOrderNotAllowed            StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_SELL_ORDER_NOT_ALLOWED
 )
 
 type StopOrderExpiry struct {

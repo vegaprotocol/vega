@@ -131,6 +131,7 @@ type UpdateSpotMarketConfiguration struct {
 	Instrument                *InstrumentConfiguration
 	LiquidityFeeSettings      *LiquidityFeeSettings
 	EnableTxReordering        bool
+	AllowedSellers            []string
 }
 
 func (n UpdateSpotMarketConfiguration) String() string {
@@ -156,6 +157,7 @@ func (n UpdateSpotMarketConfiguration) DeepClone() *UpdateSpotMarketConfiguratio
 			Name: n.Instrument.Name,
 		},
 		EnableTxReordering: n.EnableTxReordering,
+		AllowedSellers:     append([]string{}, n.AllowedSellers...),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.PriceMonitoringParameters != nil {
@@ -202,6 +204,7 @@ func (n UpdateSpotMarketConfiguration) IntoProto() *vegapb.UpdateSpotMarketConfi
 		},
 		LiquidityFeeSettings:        liquidityFeeSettings,
 		EnableTransactionReordering: n.EnableTxReordering,
+		AllowedSellers:              append([]string{}, n.AllowedSellers...),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateSpotMarketConfiguration_Simple:
@@ -240,6 +243,7 @@ func UpdateSpotMarketConfigurationFromProto(p *vegapb.UpdateSpotMarketConfigurat
 			Code: p.Instrument.Code,
 		},
 		EnableTxReordering: p.EnableTransactionReordering,
+		AllowedSellers:     append([]string{}, p.AllowedSellers...),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
