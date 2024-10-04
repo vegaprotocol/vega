@@ -128,6 +128,8 @@ func (err OrderError) Error() string {
 		return "OrderError: price not in tick size"
 	case OrderError_ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE:
 		return "OrderError: price exceeds max price"
+	case OrderError_ORDER_ERROR_SELL_ORDER_NOT_ALLOWED:
+		return "OrderError: sell order not allowed"
 	default:
 		return "invalid OrderError"
 	}

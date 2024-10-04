@@ -121,6 +121,7 @@ type NewSpotMarketConfiguration struct {
 	LiquidityFeeSettings      *LiquidityFeeSettings
 	TickSize                  *num.Uint
 	EnableTxReordering        bool
+	AllowedSellers            []string
 
 	// New market risk model parameters
 	//
@@ -165,6 +166,7 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 		LiquidityFeeSettings:        n.LiquidityFeeSettings.IntoProto(),
 		TickSize:                    n.TickSize.String(),
 		EnableTransactionReordering: n.EnableTxReordering,
+		AllowedSellers:              append([]string{}, n.AllowedSellers...),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewSpotMarketConfiguration_Simple:
@@ -183,6 +185,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 		SLAParams:          n.SLAParams.DeepClone(),
 		TickSize:           n.TickSize.Clone(),
 		EnableTxReordering: n.EnableTxReordering,
+		AllowedSellers:     append([]string{}, n.AllowedSellers...),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -261,6 +264,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		LiquidityFeeSettings:      liquidityFeeSettings,
 		TickSize:                  tickSize,
 		EnableTxReordering:        p.EnableTransactionReordering,
+		AllowedSellers:            append([]string{}, p.AllowedSellers...),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

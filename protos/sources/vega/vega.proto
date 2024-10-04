@@ -100,6 +100,8 @@ message StopOrder {
     REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES = 9;
     // Stop orders with a position size override are not supported for spot markets
     REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT = 10;
+    // Stop orders containing sell order submissions are not allowed for this market
+    REJECTION_REASON_SELL_ORDER_NOT_ALLOWED = 11;
   }
 
   // ID of this stop order
@@ -542,6 +544,8 @@ enum OrderError {
   ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE = 53;
   // Order price exceeds the max price of the capped future market
   ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE = 54;
+  // Sell orders are not allowed in this market
+  ORDER_ERROR_SELL_ORDER_NOT_ALLOWED = 55;
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
   //       - gateway/graphql/schema.graphql (enum RejectionReason)

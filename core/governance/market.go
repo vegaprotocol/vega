@@ -388,6 +388,7 @@ func buildSpotMarketFromProposal(
 		MarkPriceConfiguration:        defaultMarkPriceConfig,
 		TickSize:                      definition.Changes.TickSize,
 		EnableTxReordering:            definition.Changes.EnableTxReordering,
+		AllowedSellers:                append([]string{}, definition.Changes.AllowedSellers...),
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err

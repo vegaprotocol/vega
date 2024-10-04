@@ -220,6 +220,12 @@ func NewMarketFromSnapshot(
 	marketType := mkt.MarketType()
 
 	markPriceCalculator := common.NewCompositePriceCalculatorFromSnapshot(ctx, em.CurrentMarkPrice, timeService, oracleEngine, em.MarkPriceCalculator)
+
+	allowedSellers := map[string]struct{}{}
+	for _, v := range mkt.AllowedSellers {
+		allowedSellers[v] = struct{}{}
+	}
+
 	market := &Market{
 		log:                           log,
 		mkt:                           mkt,
