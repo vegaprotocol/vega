@@ -1427,7 +1427,7 @@ func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, end
 	for party, twNotional := range mt.twNotional {
 		tn := int64(endEpochTime.Sub(twNotional.t).Seconds()) * scalingFactor
 		var notional *num.Uint
-		if mt.markPrice != nil && !mt.markPrice.IsZero() {
+		if mt.markPrice != nil && !mt.markPrice.IsZero() && twNotional.price != nil && !twNotional.price.IsZero() {
 			notional, _ = num.UintFromDecimal(twNotional.notional.ToDecimal().Div(twNotional.price.ToDecimal()).Mul(mt.markPrice.ToDecimal()))
 		} else {
 			notional = twNotional.notional
