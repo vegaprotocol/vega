@@ -248,10 +248,10 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, now time.Time) ([]
 		}
 
 		// allocate slice rather than doubling cap as we go.
-		updates = make([]entities.Candle, 0, len(candles))
+		updates = make([]entities.Candle, 0, len(candles)+1)
 		for _, candle := range candles {
-			// not before so either newer, or the same (last) candle should be returned.
-			if !candle.LastUpdateInPeriod.Before(s.lastCandle.LastUpdateInPeriod) || !candle.PeriodStart.Before(s.lastCandle.PeriodStart) {
+			// last candle or newer should be considered an update.
+			if !candle.PeriodStart.Before(s.lastCandle.PeriodStart) {
 				updates = append(updates, candle)
 			}
 		}
