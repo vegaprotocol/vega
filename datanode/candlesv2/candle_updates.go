@@ -107,7 +107,15 @@ func (s *CandleUpdates) run(ctx context.Context) {
 		}
 		// send the new data to all subscribers.
 		_ = s.sendCandlesToSubscribers(candles, s.subs)
-		return &candles[len(candles)-1] // update last candle reference
+		// find the most recent, non zero candle as the last candle we know exists
+		for i := len(candles) - 1; i >= 0; i-- {
+			last := candles[i]
+			if !last.High.IsZero() && !last.Low.IsZero() {
+				return &last
+			}
+		}
+		// if no last candle was found, the last candle remains whatever s.lastCandle was
+		return s.lastCandle
 	}
 	for {
 		select {
