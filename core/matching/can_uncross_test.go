@@ -80,10 +80,10 @@ func TestBidAndAskPresentAfterAuction(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	indicativePrice, indicativeVolume, indicativeSide, _ := book.GetIndicativePriceAndVolume()
-	assert.Equal(t, indicativePrice.Uint64(), uint64(1975))
-	assert.Equal(t, int(indicativeVolume), 5)
-	assert.Equal(t, indicativeSide, types.SideBuy)
+	r := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, r.price.Uint64(), uint64(1975))
+	assert.Equal(t, int(r.volume), 5)
+	assert.Equal(t, r.side, types.SideBuy)
 	assert.True(t, book.BidAndAskPresentAfterAuction())
 }
 
@@ -143,9 +143,9 @@ func TestBidAndAskPresentAfterAuctionInverse(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	indicativePrice, indicativeVolume, indicativeSide, _ := book.GetIndicativePriceAndVolume()
-	assert.Equal(t, indicativePrice.Uint64(), uint64(1950))
-	assert.Equal(t, int(indicativeVolume), 5)
-	assert.Equal(t, indicativeSide, types.SideBuy)
+	r := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, r.price.Uint64(), uint64(1950))
+	assert.Equal(t, int(r.volume), 5)
+	assert.Equal(t, r.side, types.SideBuy)
 	assert.True(t, book.BidAndAskPresentAfterAuction())
 }

@@ -970,32 +970,30 @@ func (e *Engine) UpdateSubAccountBalance(
 
 // OrderbookShape expands all registered AMM's into orders between the given prices. If `ammParty` is supplied then just the pool
 // with that party id is expanded.
-func (e *Engine) OrderbookShape(st, nd *num.Uint, ammParty *string) ([]*types.Order, []*types.Order) {
+func (e *Engine) OrderbookShape(st, nd *num.Uint, ammParty *string) []*types.OrderbookShapeResult {
 	if ammParty == nil {
 		// no party give, expand all registered
-		buys, sells := []*types.Order{}, []*types.Order{}
+		res := make([]*types.OrderbookShapeResult, 0, len(e.poolsCpy))
 		for _, p := range e.poolsCpy {
-			b, s := p.OrderbookShape(st, nd, e.idgen)
-			buys = append(buys, b...)
-			sells = append(sells, s...)
+			res = append(res, p.OrderbookShape(st, nd, e.idgen))
 		}
-		return buys, sells
+		return res
 	}
 
 	// asked to expand just one AMM, lets find it, first amm-party -> owning party
 	owner, ok := e.ammParties[*ammParty]
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	// now owning party -> pool
 	p, ok := e.pools[owner]
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	// expand it
-	return p.OrderbookShape(st, nd, e.idgen)
+	return []*types.OrderbookShapeResult{p.OrderbookShape(st, nd, e.idgen)}
 }
 
 func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
