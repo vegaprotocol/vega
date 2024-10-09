@@ -417,10 +417,384 @@ Feature: Eligible parties metric rewards
         And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have general account balance of "990000" for asset "VEGA"
         And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
 
-        # for reward (1) is paid only to trader 3 
+        # for reward (1) is paid only to trader 3
         # for reward (2) split 4 ways - all have notional, no staking requirement
-        # for reward (3) is paid only to trader 3 
+        # for reward (3) is paid only to trader 3
         And "aux1" should have vesting account balance of "7500" for asset "VEGA"
         And "aux2" should have vesting account balance of "2500" for asset "VEGA"
         And "trader3" should have vesting account balance of "27500" for asset "VEGA"
         And "trader4" should have vesting account balance of "2500" for asset "VEGA"
+
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. a dispatch asset specified,a set of markets specified,a staking requirement specified,a position requirement specified,an eligible keys list specified (0056-REWA-225).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets   | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | eligible_keys   |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          | ETH/DEC21 | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 500                 | 500                  | trader3,trader4 |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        Then the network moves ahead "1" epochs
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # each would get a quarter but only trader3 and trader4 are in the eligible so they get half each
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+        And "trader4" should have vesting account balance of "5000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. a dispatch asset specified,no set of markets specified,no staking requirement specified,a position requirement specified,an eligible keys list specified (0056-REWA-224).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | eligible_keys   |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 500                  | trader3,trader4 |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        Then the network moves ahead "1" epochs
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # each would get a quarter but only trader3 and trader4 are in the eligible so they get half each
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+        And "trader4" should have vesting account balance of "5000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. no dispatch asset specified,no set of markets specified,a staking requirement specified,no position requirement specified,an eligible keys list specified (0056-REWA-223).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | eligible_keys   |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 500                 | 0                    | trader3,trader4 |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # each would get a quarter but only trader3 and trader4 are in the eligible so they get half each
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+        And "trader4" should have vesting account balance of "5000" for asset "VEGA"
+
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. no dispatch asset specified,no set of markets specified,no staking requirement specified,no position requirement specified,an eligible keys list specified (0056-REWA-222).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | eligible_keys   |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    | trader3,trader4 |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # each would get a quarter but only trader3 and trader4 are in the eligible so they get half each
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+        And "trader4" should have vesting account balance of "5000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. no dispatch asset specified,no set of markets specified,no staking requirement specified,no position requirement specified,an eligible keys list specified (0056-REWA-222).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | eligible_keys   |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    | trader3,trader4 |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # each would get a quarter but only trader3 and trader4 are in the eligible so they get half each
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+        And "trader4" should have vesting account balance of "5000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. no dispatch asset specified,no set of markets specified,no staking requirement specified,no position requirement specified,no eligible keys list specified (0056-REWA-171).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        Then the network moves ahead "1" epochs
+
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # split 8 ways
+        And "aux1" should have vesting account balance of "1250" for asset "VEGA"
+        And "aux2" should have vesting account balance of "1250" for asset "VEGA"
+        And "trader3" should have vesting account balance of "1250" for asset "VEGA"
+        And "trader4" should have vesting account balance of "1250" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2dda" should have vesting account balance of "1250" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddb" should have vesting account balance of "1250" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddc" should have vesting account balance of "1250" for asset "VEGA"
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have vesting account balance of "1250" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. no dispatch asset specified,no set of markets specified,no staking requirement specified,no position requirement specified,no eligible keys list specified (0056-REWA-172).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES |              |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1200                | 0                    |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        Then the network moves ahead "1" epochs
+
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # split equally between parties with stake >= 1200, i.e. aux1 and trader3
+        And "aux1" should have vesting account balance of "5000" for asset "VEGA"
+        And "trader3" should have vesting account balance of "5000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. no dispatch asset specified,no set of markets specified,no staking requirement specified,no position requirement specified,no eligible keys list specified (0056-REWA-173).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          |         | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 5000                 |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # split equally between aux1, aux2. trader3 and trader4 do not meet the notional requirement
+        And "aux1" should have vesting account balance of "5000" for asset "VEGA"
+        And "aux2" should have vesting account balance of "5000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements.a dispatch asset specified,a set of markets specified,no staking requirement specified,no position requirement specified,no eligible keys list specified (0056-REWA-174).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets   | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          | ETH/DEC21 | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 5000                 |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        And the market data for the market "ETH/DEC22" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC22 | buy  | 10     | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC22 | sell | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # split equally between aux1, aux2. trader3 and trader4 do not meet the notional requirement for the market in scope although they do for the market ETH/DEC22.
+        And "aux1" should have vesting account balance of "5000" for asset "VEGA"
+        And "aux2" should have vesting account balance of "5000" for asset "VEGA"
+
+    Scenario: Given a recurring transfer using the eligible entities metric and the below combination of fields, rewards should be uniformly distributed amongst all entities in the eligible keys meeting the staking and trading activity requirements. dispatch asset specified,a set of markets specified,a staking requirement specified,a position requirement specified,with eligible keys list specified (0056-REWA-225).
+        # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+        Given the parties submit the following recurring transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets   | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | eligible_keys |
+            | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_ELIGIBLE_ENTITIES | ETH          | ETH/DEC21 | 2           | 1             | PRO_RATA              | INDIVIDUALS  | ALL              | 1200                | 5000                 | aux1          |
+
+        Then the parties place the following orders:
+            | party | market id | side | volume | price | resulting trades | type       | tif     |
+            | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux1  | ETH/DEC22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+            | aux2  | ETH/DEC22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the opening auction period ends for market "ETH/DEC21"
+        And the market data for the market "ETH/DEC21" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        And the market data for the market "ETH/DEC22" should be:
+            | mark price | trading mode            |
+            | 1000       | TRADING_MODE_CONTINUOUS |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC22 | buy  | 10     | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC22 | sell | 10     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        When the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+        Then the parties place the following orders with ticks:
+            | party   | market id | side | volume | price | resulting trades | type       | tif     |
+            | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+        Then the network moves ahead "1" epochs
+
+        # we have trade3 statisfying the notional requirement so distributed
+        And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddd" should have general account balance of "990000" for asset "VEGA"
+
+        # only aux1 meets all criteria and is in the eligible keys
+        And "aux1" should have vesting account balance of "10000" for asset "VEGA"

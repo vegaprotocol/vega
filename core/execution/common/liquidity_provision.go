@@ -125,7 +125,7 @@ func (m *MarketLiquidity) bondUpdate(ctx context.Context, transfer *types.Transf
 func (m *MarketLiquidity) transferFees(ctx context.Context, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	switch m.marketType {
 	case SpotMarketType:
-		return m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, ft)
+		return m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, ft, types.AccountTypeGeneral)
 	default:
 		return m.collateral.TransferFees(ctx, m.marketID, m.asset, ft)
 	}

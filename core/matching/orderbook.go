@@ -48,7 +48,7 @@ type OffbookSource interface {
 	BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64)
 	SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order
 	NotifyFinished()
-	OrderbookShape(st, nd *num.Uint, id *string) ([]*types.Order, []*types.Order)
+	OrderbookShape(st, nd *num.Uint, id *string) []*types.OrderbookShapeResult
 }
 
 // OrderBook represents the book holding all orders in the system.
@@ -90,6 +90,17 @@ type CumulativeVolumeLevel struct {
 	// keep track of how much of the cumulative volume is from AMMs
 	cumulativeBidOffbook uint64
 	cumulativeAskOffbook uint64
+}
+
+type ipvResult struct {
+	price         *num.Uint  // uncrossing price
+	side          types.Side // uncrossing side
+	volume        uint64     // uncrossing volume
+	offbookVolume uint64     // how much of the uncrossing volume comes from AMMs
+
+	// volume maximising range
+	vmrMin *num.Uint
+	vmrMax *num.Uint
 }
 
 func (b *OrderBook) Hash() []byte {
@@ -349,7 +360,8 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 	if buyMatch && sellMatch {
 		return true
 	}
-	_, v, _, _ := b.GetIndicativePriceAndVolume()
+	r := b.GetIndicativePriceAndVolume()
+
 	// no buy orders remaining on the book after uncrossing, it buyMatches exactly
 	vol := uint64(0)
 	if !buyMatch {
@@ -362,7 +374,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 			for _, o := range l.orders {
 				vol += o.Remaining
 				// we've filled the uncrossing volume, and found an order that is not GFA
-				if vol > v && o.TimeInForce != types.OrderTimeInForceGFA {
+				if vol > r.volume && o.TimeInForce != types.OrderTimeInForceGFA {
 					buyMatch = true
 					break
 				}
@@ -387,7 +399,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 		}
 		for _, o := range l.orders {
 			vol += o.Remaining
-			if vol > v && o.TimeInForce != types.OrderTimeInForceGFA {
+			if vol > r.volume && o.TimeInForce != types.OrderTimeInForceGFA {
 				sellMatch = true
 				break
 			}
@@ -397,15 +409,50 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 	return sellMatch
 }
 
+// GetRefinedIndicativePriceAndVolume calculates a refined ipv. This is required if an AMM was approximately expanded and steps
+// over the boundaries of the volume maximising range.
+func (b *OrderBook) GetRefinedIndicativePriceAndVolume(r ipvResult) ipvResult {
+	ipv := b.indicativePriceAndVolume
+
+	if len(ipv.generated) == 0 {
+		return r
+	}
+
+	for party, gen := range ipv.generated {
+		if !gen.approx {
+			// this AMM was already expanded accurately so we don't need to refine it
+			continue
+		}
+
+		// remove the volume from this AMM
+		ipv.removeOffbookShape(party)
+
+		// and add it in three parts so that we can get accurate orders within the volume-maximising range
+		// min-price -> min-vmr -> max-vmr -> max-price
+
+		ipv.addOffbookShape(ptr.From(party), ipv.lastMinPrice, r.vmrMin, false, false)
+
+		if r.vmrMin.NEQ(r.vmrMax) {
+			ipv.addOffbookShape(ptr.From(party), r.vmrMin, r.vmrMax, true, true)
+		}
+
+		ipv.addOffbookShape(ptr.From(party), r.vmrMax, ipv.lastMaxPrice, false, false)
+
+		ipv.needsUpdate = true
+	}
+
+	return b.GetIndicativePriceAndVolume()
+}
+
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state.
-func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol uint64, retside types.Side, offbookVolume uint64) {
+func (b *OrderBook) GetIndicativePriceAndVolume() ipvResult {
 	// Generate a set of price level pairs with their maximum tradable volumes
 	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
 	if err != nil {
 		if b.log.GetLevel() <= logging.DebugLevel {
 			b.log.Debug("could not get cumulative price levels", logging.Error(err))
 		}
-		return num.UintZero(), 0, types.SideUnspecified, 0
+		return ipvResult{price: num.UintZero()}
 	}
 
 	// Pull out all prices that match that volume
@@ -418,8 +465,11 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 
 	// get the maximum volume price from the average of the maximum and minimum tradable price levels
 	var (
-		uncrossPrice = num.UintZero()
-		uncrossSide  types.Side
+		uncrossPrice  = num.UintZero()
+		uncrossSide   types.Side
+		offbookVolume uint64
+		vmrMin        *num.Uint
+		vmrMax        *num.Uint
 	)
 	if len(prices) > 0 {
 		// uncrossPrice = (prices[len(prices)-1] + prices[0]) / 2
@@ -427,6 +477,9 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 			num.UintZero().Add(prices[len(prices)-1], prices[0]),
 			num.NewUint(2),
 		)
+
+		vmrMin = prices[len(prices)-1]
+		vmrMax = prices[0]
 	}
 
 	// See which side we should fully process when we uncross
@@ -446,7 +499,14 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 		}
 	}
 
-	return uncrossPrice, maxTradableAmount, uncrossSide, offbookVolume
+	return ipvResult{
+		price:         uncrossPrice,
+		volume:        maxTradableAmount,
+		side:          uncrossSide,
+		offbookVolume: offbookVolume,
+		vmrMin:        vmrMin,
+		vmrMax:        vmrMax,
+	}
 }
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state.
@@ -481,10 +541,10 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 
 func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	// Get the uncrossing price and which side has the most volume at that price
-	price, volume, uncrossSide, offbookVolume := b.GetIndicativePriceAndVolume()
+	r := b.GetIndicativePriceAndVolume()
 
 	// If we have no uncrossing price, we have nothing to do
-	if price.IsZero() && volume == 0 {
+	if r.price.IsZero() && r.volume == 0 {
 		return nil, nil
 	}
 
@@ -493,21 +553,21 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 		uncrossingSide *OrderBookSide
 	)
 
-	if uncrossSide == types.SideBuy {
+	if r.side == types.SideBuy {
 		uncrossingSide = b.buy
 	} else {
 		uncrossingSide = b.sell
 	}
 
 	// extract uncrossing orders from all AMMs
-	uncrossOrders = b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
+	uncrossOrders = b.indicativePriceAndVolume.ExtractOffbookOrders(r.price, r.side, r.offbookVolume)
 
 	// the remaining volume should now come from the orderbook
-	volume -= offbookVolume
+	volume := r.volume - r.offbookVolume
 
 	// Remove all the orders from that side of the book up to the given volume
-	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, false)...)
-	opSide := b.getOppositeSide(uncrossSide)
+	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(r.price, volume, false)...)
+	opSide := b.getOppositeSide(r.side)
 	output := make([]*types.Trade, 0, len(uncrossOrders))
 	trades, err := opSide.fakeUncrossAuction(uncrossOrders)
 	if err != nil {
@@ -515,7 +575,7 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	}
 	// Update all the trades to have the correct uncrossing price
 	for _, t := range trades {
-		t.Price = price.Clone()
+		t.Price = r.price.Clone()
 	}
 	output = append(output, trades...)
 
@@ -547,30 +607,34 @@ func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint6
 // if removeOrders is set to true then matched orders get removed from the book.
 func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	// Get the uncrossing price and which side has the most volume at that price
-	price, volume, uncrossSide, offbookVolume := b.GetIndicativePriceAndVolume()
+	r := b.GetIndicativePriceAndVolume()
 
 	// If we have no uncrossing price, we have nothing to do
-	if price.IsZero() && volume == 0 {
+	if r.price.IsZero() && r.volume == 0 {
 		return nil, nil
 	}
 
+	// if any offbook order step over the boundaries of the volume maximising range we need to refine the
+	// AMM expansion in this region to get a more accurate uncrossing volume
+	r = b.GetRefinedIndicativePriceAndVolume(r)
+
 	var uncrossingSide *OrderBookSide
 
-	if uncrossSide == types.SideBuy {
+	if r.side == types.SideBuy {
 		uncrossingSide = b.buy
 	} else {
 		uncrossingSide = b.sell
 	}
 
 	// extract uncrossing orders from all AMMs
-	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(price, uncrossSide, offbookVolume)
+	uncrossOrders := b.indicativePriceAndVolume.ExtractOffbookOrders(r.price, r.side, r.offbookVolume)
 
 	// the remaining volume should now come from the orderbook
-	volume -= offbookVolume
+	volume := r.volume - r.offbookVolume
 
 	// Remove all the orders from that side of the book up to the given volume
-	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(price, volume, true)...)
-	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone())
+	uncrossOrders = append(uncrossOrders, uncrossingSide.ExtractOrders(r.price, volume, true)...)
+	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(r.side), r.price.Clone())
 }
 
 // Takes extracted order from a side of the book, and uncross them
@@ -882,7 +946,7 @@ func (b *OrderBook) UpdateAMM(party string) {
 		return
 	}
 
-	ipv.addOffbookShape(ptr.From(party), ipv.lastMinPrice, ipv.lastMaxPrice)
+	ipv.addOffbookShape(ptr.From(party), ipv.lastMinPrice, ipv.lastMaxPrice, false, false)
 	ipv.needsUpdate = true
 }
 

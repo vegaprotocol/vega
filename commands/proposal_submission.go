@@ -29,8 +29,6 @@ import (
 	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/protos/vega"
-	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -38,55 +36,66 @@ import (
 
 const ReferenceMaxLen int = 100
 
-var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struct{}{
-	protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY: {
-		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
-		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
+var validFromAccountTypesForPAP = map[vegapb.AccountType]struct{}{
+	vegapb.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES: {},
+}
+
+var validToAccountTypesForPAP = map[vegapb.AccountType]struct{}{
+	vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {},
+	vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:    {},
+	vegapb.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY: {},
+	vegapb.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES:    {},
+}
+
+var validTransfers = map[vegapb.AccountType]map[vegapb.AccountType]struct{}{
+	vegapb.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY: {
+		vegapb.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
+		vegapb.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
-	protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE: {
-		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
-		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
-		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
+	vegapb.AccountType_ACCOUNT_TYPE_INSURANCE: {
+		vegapb.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
+		vegapb.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		vegapb.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
+		vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
-	protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
-		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
-		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
-		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
+	vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
+		vegapb.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		vegapb.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		vegapb.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
+		vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL:    {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN:     {},
+		vegapb.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES:   {},
 	},
 }
 
@@ -142,7 +151,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 
 	// check for enactment timestamp
 	switch cmd.Terms.Change.(type) {
-	case *protoTypes.ProposalTerms_NewFreeform:
+	case *vegapb.ProposalTerms_NewFreeform:
 		if cmd.Terms.EnactmentTimestamp != 0 {
 			errs.AddForProperty("proposal_submission.terms.enactment_timestamp", ErrIsNotSupported)
 		}
@@ -160,7 +169,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 
 	// check for validation timestamp
 	switch cmd.Terms.Change.(type) {
-	case *protoTypes.ProposalTerms_NewAsset:
+	case *vegapb.ProposalTerms_NewAsset:
 		if cmd.Terms.ValidationTimestamp == 0 {
 			errs.AddForProperty("proposal_submission.terms.validation_timestamp", ErrMustBePositive)
 		}
@@ -180,7 +189,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 	return errs
 }
 
-func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
+func checkProposalChanges(terms *vegapb.ProposalTerms) Errors {
 	errs := NewErrors()
 
 	if terms.Change == nil {
@@ -188,34 +197,36 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	}
 
 	switch c := terms.Change.(type) {
-	case *protoTypes.ProposalTerms_NewMarket:
+	case *vegapb.ProposalTerms_NewMarket:
 		errs.Merge(checkNewMarketChanges(c))
-	case *protoTypes.ProposalTerms_UpdateMarket:
+	case *vegapb.ProposalTerms_UpdateMarket:
 		errs.Merge(checkUpdateMarketChanges(c))
-	case *protoTypes.ProposalTerms_NewSpotMarket:
+	case *vegapb.ProposalTerms_NewSpotMarket:
 		errs.Merge(checkNewSpotMarketChanges(c))
-	case *protoTypes.ProposalTerms_UpdateSpotMarket:
+	case *vegapb.ProposalTerms_UpdateSpotMarket:
 		errs.Merge(checkUpdateSpotMarketChanges(c))
-	case *protoTypes.ProposalTerms_UpdateNetworkParameter:
+	case *vegapb.ProposalTerms_UpdateNetworkParameter:
 		errs.Merge(checkNetworkParameterUpdateChanges(c))
-	case *protoTypes.ProposalTerms_NewAsset:
+	case *vegapb.ProposalTerms_NewAsset:
 		errs.Merge(checkNewAssetChanges(c))
-	case *protoTypes.ProposalTerms_UpdateAsset:
+	case *vegapb.ProposalTerms_UpdateAsset:
 		errs.Merge(checkUpdateAssetChanges(c))
-	case *protoTypes.ProposalTerms_NewFreeform:
+	case *vegapb.ProposalTerms_NewFreeform:
 		errs.Merge(CheckNewFreeformChanges(c))
-	case *protoTypes.ProposalTerms_NewTransfer:
+	case *vegapb.ProposalTerms_NewTransfer:
 		errs.Merge(checkNewTransferChanges(c))
-	case *protoTypes.ProposalTerms_CancelTransfer:
+	case *vegapb.ProposalTerms_CancelTransfer:
 		errs.Merge(checkCancelTransferChanges(c))
-	case *protoTypes.ProposalTerms_UpdateMarketState:
+	case *vegapb.ProposalTerms_UpdateMarketState:
 		errs.Merge(checkMarketUpdateState(c))
-	case *protoTypes.ProposalTerms_UpdateReferralProgram:
+	case *vegapb.ProposalTerms_UpdateReferralProgram:
 		errs.Merge(checkUpdateReferralProgram(terms, c))
-	case *protoTypes.ProposalTerms_UpdateVolumeDiscountProgram:
+	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
 		errs.Merge(checkVolumeDiscountProgram(terms, c))
-	case *protoTypes.ProposalTerms_UpdateVolumeRebateProgram:
+	case *vegapb.ProposalTerms_UpdateVolumeRebateProgram:
 		errs.Merge(checkVolumeRebateProgram(terms, c))
+	case *vegapb.ProposalTerms_NewProtocolAutomatedPurchase:
+		errs.Merge(checkAutomatedPurchaseConfig(c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -223,7 +234,7 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	return errs
 }
 
-func checkNetworkParameterUpdateChanges(change *protoTypes.ProposalTerms_UpdateNetworkParameter) Errors {
+func checkNetworkParameterUpdateChanges(change *vegapb.ProposalTerms_UpdateNetworkParameter) Errors {
 	errs := NewErrors()
 
 	if change.UpdateNetworkParameter == nil {
@@ -250,7 +261,7 @@ func checkNetworkParameterUpdate(parameter *vegapb.NetworkParameter) Errors {
 	return errs
 }
 
-func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
+func checkNewAssetChanges(change *vegapb.ProposalTerms_NewAsset) Errors {
 	errs := NewErrors()
 
 	if change.NewAsset == nil {
@@ -281,9 +292,9 @@ func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	}
 
 	switch s := change.NewAsset.Changes.Source.(type) {
-	case *protoTypes.AssetDetails_BuiltinAsset:
+	case *vegapb.AssetDetails_BuiltinAsset:
 		errs.Merge(checkBuiltinAssetSource(s))
-	case *protoTypes.AssetDetails_Erc20:
+	case *vegapb.AssetDetails_Erc20:
 		errs.Merge(checkERC20AssetSource(s))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsNotValid)
@@ -292,7 +303,7 @@ func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	return errs
 }
 
-func checkBatchNewAssetChanges(change *protoTypes.BatchProposalTermsChange_NewAsset) Errors {
+func checkBatchNewAssetChanges(change *vegapb.BatchProposalTermsChange_NewAsset) Errors {
 	errs := NewErrors()
 
 	if change.NewAsset == nil {
@@ -323,9 +334,9 @@ func checkBatchNewAssetChanges(change *protoTypes.BatchProposalTermsChange_NewAs
 	}
 
 	switch s := change.NewAsset.Changes.Source.(type) {
-	case *protoTypes.AssetDetails_BuiltinAsset:
+	case *vegapb.AssetDetails_BuiltinAsset:
 		errs.Merge(checkBuiltinAssetSource(s))
-	case *protoTypes.AssetDetails_Erc20:
+	case *vegapb.AssetDetails_Erc20:
 		errs.Merge(checkERC20AssetSource(s))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsNotValid)
@@ -334,7 +345,7 @@ func checkBatchNewAssetChanges(change *protoTypes.BatchProposalTermsChange_NewAs
 	return errs
 }
 
-func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Errors {
+func CheckNewFreeformChanges(change *vegapb.ProposalTerms_NewFreeform) Errors {
 	errs := NewErrors()
 
 	if change.NewFreeform == nil {
@@ -343,7 +354,7 @@ func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Error
 	return errs
 }
 
-func checkCancelTransferChanges(change *protoTypes.ProposalTerms_CancelTransfer) Errors {
+func checkCancelTransferChanges(change *vegapb.ProposalTerms_CancelTransfer) Errors {
 	errs := NewErrors()
 	if change.CancelTransfer == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer", ErrIsRequired)
@@ -385,8 +396,8 @@ func checkReferralProgramChanges(changes *vegapb.ReferralProgramChanges, enactme
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("update_referral_program.changes.window_length", ErrIsRequired)
-	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("update_referral_program.changes.window_length", ErrMustBeAtMost100)
+	} else if changes.WindowLength > 200 {
+		errs.AddForProperty("update_referral_program.changes.window_length", ErrMustBeAtMost200)
 	}
 
 	tiers := map[string]struct{}{}
@@ -407,6 +418,119 @@ func checkReferralProgramChanges(changes *vegapb.ReferralProgramChanges, enactme
 			errs.AddForProperty(fmt.Sprintf("update_referral_program.changes.staking_tiers.%d", i), fmt.Errorf("duplicate staking tier"))
 		}
 		tiers[k] = struct{}{}
+	}
+	return errs
+}
+
+func checkAutomatedPurchaseConfig(newAutoPurchase *vegapb.ProposalTerms_NewProtocolAutomatedPurchase) Errors {
+	errs := NewErrors()
+	if newAutoPurchase.NewProtocolAutomatedPurchase == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.protocol_automated_purchase", ErrIsRequired)
+	}
+	if newAutoPurchase.NewProtocolAutomatedPurchase.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes", ErrIsRequired)
+	}
+
+	change := newAutoPurchase.NewProtocolAutomatedPurchase.Changes
+	if len(change.From) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.from", ErrIsRequired)
+	}
+
+	if change.FromAccountType == vegapb.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.from_account_type", ErrIsRequired)
+	}
+	if _, ok := validFromAccountTypesForPAP[change.FromAccountType]; !ok {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.from_account_type", ErrIsNotValid)
+	}
+	if change.ToAccountType == vegapb.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.to_account_type", ErrIsRequired)
+	}
+	if _, ok := validToAccountTypesForPAP[change.ToAccountType]; !ok {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.to_account_type", ErrIsNotValid)
+	}
+	if len(change.MarketId) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.market_id", ErrIsRequired)
+	}
+	if change.PriceOracle == nil {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.price_oracle", ErrIsRequired)
+	} else {
+		errs.Merge(checkDataSourceSpec(change.PriceOracle, "data_spec_for_price_oracle", "proposal_submission.terms.change.protocol_automated_purchase.changes", false))
+	}
+	if len(change.OracleOffsetFactor) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.oracle_offset_factor", ErrIsRequired)
+	} else {
+		d, err := num.DecimalFromString(change.OracleOffsetFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.oracle_offset_factor", ErrNotAValidFloat)
+		} else if !d.IsPositive() {
+			errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.oracle_offset_factor", ErrMustBePositive)
+		}
+	}
+	if change.AuctionSchedule == nil {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_schedule", ErrIsRequired)
+	} else {
+		switch tp := change.AuctionSchedule.SourceType.(type) {
+		case *vegapb.DataSourceDefinition_External:
+			errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_schedule", fmt.Errorf("auction schedule must be an internal time trigger"))
+		case *vegapb.DataSourceDefinition_Internal:
+			switch tp.Internal.SourceType.(type) {
+			case *vegapb.DataSourceDefinitionInternal_Time:
+				errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_schedule", fmt.Errorf("auction schedule must be an internal time trigger"))
+			default:
+			}
+		}
+		errs.Merge(checkDataSourceSpec(change.AuctionSchedule, "data_spec_for_auction_schedule", "proposal_submission.terms.change.protocol_automated_purchase.changes", false))
+	}
+	if len(change.AuctionDuration) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_duration", ErrIsRequired)
+	} else {
+		if _, err := time.ParseDuration(change.AuctionDuration); err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_duration", fmt.Errorf("must be a valid duration"))
+		}
+	}
+
+	if change.AuctionVolumeSnapshotSchedule == nil {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_volume_snapshot_schedule", ErrIsRequired)
+	} else {
+		switch tp := change.AuctionVolumeSnapshotSchedule.SourceType.(type) {
+		case *vegapb.DataSourceDefinition_External:
+			errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_volume_snapshot_schedule", fmt.Errorf("auction volume snapshot schedule must be an internal time trigger"))
+		case *vegapb.DataSourceDefinition_Internal:
+			switch tp.Internal.SourceType.(type) {
+			case *vegapb.DataSourceDefinitionInternal_Time:
+				errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.auction_volume_snapshot_schedule", fmt.Errorf("auction volume snapshot schedule must be an internal time trigger"))
+			default:
+			}
+		}
+		errs.Merge(checkDataSourceSpec(change.AuctionVolumeSnapshotSchedule, "data_spec_for_auction_volume_snapshot_schedule", "proposal_submission.terms.change.protocol_automated_purchase.changes", false))
+	}
+
+	var min, max *num.Uint
+	if len(change.MinimumAuctionSize) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.minimum_auction_size", ErrIsRequired)
+	} else {
+		minSize, overflow := num.UintFromString(change.MinimumAuctionSize, 10)
+		if overflow || minSize.IsZero() || minSize.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.minimum_auction_size", ErrMustBePositive)
+		} else {
+			min = minSize
+		}
+	}
+	if len(change.MaximumAuctionSize) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.maximum_auction_size", ErrIsRequired)
+	} else {
+		maxSize, overflow := num.UintFromString(change.MaximumAuctionSize, 10)
+		if overflow || maxSize.IsZero() || maxSize.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.maximum_auction_size", ErrMustBePositive)
+		} else {
+			max = maxSize
+		}
+	}
+	if min != nil && max != nil && min.GT(max) {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.maximum_auction_size", fmt.Errorf("must be greater than or equal to minimum_auction_size"))
+	}
+	if change.ExpiryTimestamp < 0 {
+		errs.AddForProperty("proposal_submission.terms.change.protocol_automated_purchase.changes.expiry_timestamp", ErrMustBePositiveOrZero)
 	}
 	return errs
 }
@@ -449,8 +573,8 @@ func checkVolumeRebateProgramChanges(changes *vegapb.VolumeRebateProgramChanges,
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrIsRequired)
-	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrMustBeAtMost100)
+	} else if changes.WindowLength > 200 {
+		errs.AddForProperty("update_volume_rebate_program.changes.window_length", ErrMustBeAtMost200)
 	}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkVolumeRebateBenefitTier(i, tier))
@@ -461,7 +585,7 @@ func checkVolumeRebateProgramChanges(changes *vegapb.VolumeRebateProgramChanges,
 
 func checkVolumeRebateBenefitTier(index int, tier *vegapb.VolumeRebateBenefitTier) Errors {
 	errs := NewErrors()
-	propertyPath := fmt.Sprintf("update_volume_discount_program.changes.benefit_tiers.%d", index)
+	propertyPath := fmt.Sprintf("update_volume_rebate_program.changes.benefit_tiers.%d", index)
 	if len(tier.MinimumPartyMakerVolumeFraction) == 0 {
 		errs.AddForProperty(propertyPath+".minimum_party_maker_volume_fraction", ErrIsRequired)
 	} else {
@@ -497,8 +621,8 @@ func checkVolumeDiscountProgramChanges(changes *vegapb.VolumeDiscountProgramChan
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrIsRequired)
-	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrMustBeAtMost100)
+	} else if changes.WindowLength > 200 {
+		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrMustBeAtMost200)
 	}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkVolumeBenefitTier(i, tier))
@@ -675,7 +799,7 @@ func checkStakingTier(index int, tier *vegapb.StakingTier) Errors {
 	return errs
 }
 
-func checkMarketUpdateState(change *protoTypes.ProposalTerms_UpdateMarketState) Errors {
+func checkMarketUpdateState(change *vegapb.ProposalTerms_UpdateMarketState) Errors {
 	errs := NewErrors()
 	if change.UpdateMarketState == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state", ErrIsRequired)
@@ -696,12 +820,12 @@ func checkMarketUpdateConfiguration(changes *vegapb.UpdateMarketStateConfigurati
 		return errs.FinalAddForProperty("update_market_state.changes.updateType", ErrIsRequired)
 	}
 	// if the update type is not terminate, price must be empty
-	if changes.UpdateType != vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil {
+	if changes.UpdateType != vegapb.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil {
 		return errs.FinalAddForProperty("update_market_state.changes.price", ErrMustBeEmpty)
 	}
 
 	// if termination and price is provided it must be a valid uint
-	if changes.UpdateType == vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil && len(*changes.Price) > 0 {
+	if changes.UpdateType == vegapb.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil && len(*changes.Price) > 0 {
 		n, overflow := num.UintFromString(*changes.Price, 10)
 		if overflow || n.IsNegative() {
 			return errs.FinalAddForProperty("update_market_state.changes.price", ErrIsNotValid)
@@ -710,7 +834,7 @@ func checkMarketUpdateConfiguration(changes *vegapb.UpdateMarketStateConfigurati
 	return errs
 }
 
-func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Errors {
+func checkNewTransferChanges(change *vegapb.ProposalTerms_NewTransfer) Errors {
 	errs := NewErrors()
 	if change.NewTransfer == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer", ErrIsRequired)
@@ -726,7 +850,7 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Errors {
 	errs := NewErrors()
 
-	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+	if changes.SourceType == vegapb.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("new_transfer.changes.source_type", ErrIsRequired)
 	}
 	validDest, ok := validTransfers[changes.SourceType]
@@ -734,7 +858,7 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 	if !ok {
 		return errs.FinalAddForProperty("new_transfer.changes.source_type", ErrIsNotValid)
 	}
-	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+	if changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("new_transfer.changes.destination_type", ErrIsRequired)
 	}
 
@@ -744,12 +868,12 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 	dest := changes.DestinationType
 
 	// party accounts: check pubkey
-	if dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL && !IsVegaPublicKey(changes.Destination) {
+	if dest == vegapb.AccountType_ACCOUNT_TYPE_GENERAL && !IsVegaPublicKey(changes.Destination) {
 		errs.AddForProperty("new_transfer.changes.destination", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	// insurance account type requires a source, other sources are global
-	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE {
+	if changes.SourceType == vegapb.AccountType_ACCOUNT_TYPE_INSURANCE {
 		if len(changes.Source) == 0 {
 			return errs.FinalAddForProperty("new_transfer.changes.source", ErrIsNotValid)
 		}
@@ -762,13 +886,13 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 	}
 
 	// global destination accounts == no source
-	if (dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL ||
-		dest == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE) &&
+	if (dest == vegapb.AccountType_ACCOUNT_TYPE_GENERAL ||
+		dest == vegapb.AccountType_ACCOUNT_TYPE_INSURANCE) &&
 		len(changes.Destination) == 0 {
 		return errs.FinalAddForProperty("new_transfer.changes.destination", ErrIsNotValid)
 	}
 
-	if changes.TransferType == protoTypes.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED {
+	if changes.TransferType == vegapb.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("new_transfer.changes.transfer_type", ErrIsRequired)
 	}
 
@@ -802,16 +926,16 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 	}
 
 	if oneoff := changes.GetOneOff(); oneoff != nil {
-		if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES {
+		if changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_REALISED_RETURN ||
+			changes.DestinationType == vegapb.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES {
 			errs.AddForProperty("new_transfer.changes.destination_type", ErrIsNotValid)
 		}
 		if oneoff.DeliverOn < 0 {
@@ -848,7 +972,7 @@ func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Err
 	return errs
 }
 
-func checkBuiltinAssetSource(s *protoTypes.AssetDetails_BuiltinAsset) Errors {
+func checkBuiltinAssetSource(s *vegapb.AssetDetails_BuiltinAsset) Errors {
 	errs := NewErrors()
 
 	if s.BuiltinAsset == nil {
@@ -870,7 +994,7 @@ func checkBuiltinAssetSource(s *protoTypes.AssetDetails_BuiltinAsset) Errors {
 	return errs
 }
 
-func checkERC20AssetSource(s *protoTypes.AssetDetails_Erc20) Errors {
+func checkERC20AssetSource(s *vegapb.AssetDetails_Erc20) Errors {
 	errs := NewErrors()
 
 	if s.Erc20 == nil {
@@ -912,7 +1036,7 @@ func checkERC20AssetSource(s *protoTypes.AssetDetails_Erc20) Errors {
 	return errs
 }
 
-func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Errors {
+func checkUpdateAssetChanges(change *vegapb.ProposalTerms_UpdateAsset) Errors {
 	errs := NewErrors()
 
 	if change.UpdateAsset == nil {
@@ -948,7 +1072,7 @@ func checkUpdateAsset(updateAsset *vegapb.UpdateAsset) Errors {
 	}
 
 	switch s := updateAsset.Changes.Source.(type) {
-	case *protoTypes.AssetDetailsUpdate_Erc20:
+	case *vegapb.AssetDetailsUpdate_Erc20:
 		errs.Merge(checkERC20UpdateAssetSource(s))
 	default:
 		return errs.FinalAddForProperty("update_asset.changes.source", ErrIsNotValid)
@@ -957,7 +1081,7 @@ func checkUpdateAsset(updateAsset *vegapb.UpdateAsset) Errors {
 	return errs
 }
 
-func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors {
+func checkERC20UpdateAssetSource(s *vegapb.AssetDetailsUpdate_Erc20) Errors {
 	errs := NewErrors()
 
 	if s.Erc20 == nil {
@@ -993,7 +1117,7 @@ func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors 
 	return errs
 }
 
-func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) Errors {
+func checkNewSpotMarketChanges(change *vegapb.ProposalTerms_NewSpotMarket) Errors {
 	errs := NewErrors()
 
 	if change.NewSpotMarket == nil {
@@ -1024,7 +1148,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	}
 
 	switch changes.Instrument.Product.(type) {
-	case *protoTypes.InstrumentConfiguration_Spot:
+	case *vegapb.InstrumentConfiguration_Spot:
 		isCorrectProduct = true
 	default:
 		isCorrectProduct = false
@@ -1051,7 +1175,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	return errs
 }
 
-func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
+func checkNewMarketChanges(change *vegapb.ProposalTerms_NewMarket) Errors {
 	errs := NewErrors()
 
 	if change.NewMarket == nil {
@@ -1153,7 +1277,7 @@ func checkTickSize(tickSize string, parent string) Errors {
 	return errs
 }
 
-func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Errors {
+func checkUpdateMarketChanges(change *vegapb.ProposalTerms_UpdateMarket) Errors {
 	errs := NewErrors()
 
 	if change.UpdateMarket == nil {
@@ -1201,7 +1325,7 @@ func checkUpdateMarket(updateMarket *vegapb.UpdateMarket) Errors {
 	return errs
 }
 
-func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMarket) Errors {
+func checkUpdateSpotMarketChanges(change *vegapb.ProposalTerms_UpdateSpotMarket) Errors {
 	errs := NewErrors()
 
 	if change.UpdateSpotMarket == nil {
@@ -1234,7 +1358,7 @@ func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
 	return errs
 }
 
-func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, parentProperty string) Errors {
+func checkPriceMonitoring(parameters *vegapb.PriceMonitoringParameters, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if parameters == nil || len(parameters.Triggers) == 0 {
@@ -1270,7 +1394,7 @@ func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, pare
 	return errs
 }
 
-func checkLiquidationStrategy(params *protoTypes.LiquidationStrategy, parent string) Errors {
+func checkLiquidationStrategy(params *vegapb.LiquidationStrategy, parent string) Errors {
 	errs := NewErrors()
 	if params == nil {
 		// @TODO these will be required, in that case the check for nil should be removed
@@ -1297,7 +1421,7 @@ func checkLiquidationStrategy(params *protoTypes.LiquidationStrategy, parent str
 	return errs
 }
 
-func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParameters, parentProperty string) Errors {
+func checkLiquidityMonitoring(parameters *vegapb.LiquidityMonitoringParameters, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if parameters == nil {
@@ -1317,7 +1441,7 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 	return errs
 }
 
-func checkTargetStakeParams(targetStakeParameters *protoTypes.TargetStakeParameters, parentProperty string) Errors {
+func checkTargetStakeParams(targetStakeParameters *vegapb.TargetStakeParameters, parentProperty string) Errors {
 	errs := NewErrors()
 	if targetStakeParameters == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.target_stake_parameters", parentProperty), ErrIsRequired)
@@ -1332,7 +1456,7 @@ func checkTargetStakeParams(targetStakeParameters *protoTypes.TargetStakeParamet
 	return errs
 }
 
-func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent, tickSize string) Errors {
+func checkNewInstrument(instrument *vegapb.InstrumentConfiguration, parent, tickSize string) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -1351,11 +1475,11 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent, 
 	}
 
 	switch product := instrument.Product.(type) {
-	case *protoTypes.InstrumentConfiguration_Future:
+	case *vegapb.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future, tickSize))
-	case *protoTypes.InstrumentConfiguration_Perpetual:
+	case *vegapb.InstrumentConfiguration_Perpetual:
 		errs.Merge(checkNewPerps(product.Perpetual, fmt.Sprintf("%s.product", parent)))
-	case *protoTypes.InstrumentConfiguration_Spot:
+	case *vegapb.InstrumentConfiguration_Spot:
 		errs.Merge(checkNewSpot(product.Spot))
 	default:
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.product", parent), ErrIsNotValid)
@@ -1364,7 +1488,7 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent, 
 	return errs
 }
 
-func checkUpdateSpotInstrument(instrument *protoTypes.UpdateSpotInstrumentConfiguration) Errors {
+func checkUpdateSpotInstrument(instrument *vegapb.UpdateSpotInstrumentConfiguration) Errors {
 	errs := NewErrors()
 	if instrument == nil {
 		return errs.FinalAddForProperty("update_spot_market.changes.instrument", ErrIsRequired)
@@ -1379,7 +1503,7 @@ func checkUpdateSpotInstrument(instrument *protoTypes.UpdateSpotInstrumentConfig
 	return errs
 }
 
-func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration) Errors {
+func checkUpdateInstrument(instrument *vegapb.UpdateInstrumentConfiguration) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -1399,9 +1523,9 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	}
 
 	switch product := instrument.Product.(type) {
-	case *protoTypes.UpdateInstrumentConfiguration_Future:
+	case *vegapb.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
-	case *protoTypes.UpdateInstrumentConfiguration_Perpetual:
+	case *vegapb.UpdateInstrumentConfiguration_Perpetual:
 		errs.Merge(checkUpdatePerps(product.Perpetual, "update_market.changes.instrument.product"))
 	default:
 		return errs.FinalAddForProperty("update_market.changes.instrument.product", ErrIsNotValid)
@@ -1410,7 +1534,7 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	return errs
 }
 
-func checkNewFuture(future *protoTypes.FutureProduct, tickSize string) Errors {
+func checkNewFuture(future *vegapb.FutureProduct, tickSize string) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -1450,7 +1574,7 @@ func checkNewFuture(future *protoTypes.FutureProduct, tickSize string) Errors {
 	return errs
 }
 
-func checkNewPerps(perps *protoTypes.PerpetualProduct, parentProperty string) Errors {
+func checkNewPerps(perps *vegapb.PerpetualProduct, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
@@ -1562,7 +1686,7 @@ func checkNewPerps(perps *protoTypes.PerpetualProduct, parentProperty string) Er
 	return errs
 }
 
-func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
+func checkNewSpot(spot *vegapb.SpotProduct) Errors {
 	errs := NewErrors()
 
 	if spot == nil {
@@ -1582,7 +1706,7 @@ func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	return errs
 }
 
-func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
+func checkUpdateFuture(future *vegapb.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -1600,7 +1724,7 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, parentProperty string) Errors {
+func checkUpdatePerps(perps *vegapb.UpdatePerpetualProduct, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
@@ -1971,7 +2095,7 @@ func checkCompositePriceBinding(binding *vegapb.SpecBindingForCompositePrice, de
 	return errs
 }
 
-func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
+func checkNewOracleBinding(future *vegapb.FutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
 		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
@@ -1996,7 +2120,7 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
-func checkNewPerpsOracleBinding(perps *protoTypes.PerpetualProduct) Errors {
+func checkNewPerpsOracleBinding(perps *vegapb.PerpetualProduct) Errors {
 	errs := NewErrors()
 
 	if perps.DataSourceSpecBinding != nil {
@@ -2014,7 +2138,7 @@ func checkNewPerpsOracleBinding(perps *protoTypes.PerpetualProduct) Errors {
 	return errs
 }
 
-func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
+func checkUpdateOracleBinding(future *vegapb.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
 		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
@@ -2039,7 +2163,7 @@ func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpetualProduct) Errors {
+func checkUpdatePerpsOracleBinding(perps *vegapb.UpdatePerpetualProduct) Errors {
 	errs := NewErrors()
 	if perps.DataSourceSpecBinding != nil {
 		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
@@ -2056,7 +2180,7 @@ func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpetualProduct) Err
 	return errs
 }
 
-func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
+func checkNewRiskParameters(config *vegapb.NewMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -2064,9 +2188,9 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *protoTypes.NewMarketConfiguration_Simple:
+	case *vegapb.NewMarketConfiguration_Simple:
 		errs.Merge(checkNewSimpleParameters(parameters))
-	case *protoTypes.NewMarketConfiguration_LogNormal:
+	case *vegapb.NewMarketConfiguration_LogNormal:
 		errs.Merge(checkNewLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("new_market.changes.risk_parameters", ErrIsNotValid)
@@ -2075,7 +2199,7 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	return errs
 }
 
-func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Errors {
+func checkSLAParams(config *vegapb.LiquiditySLAParameters, parent string) Errors {
 	errs := NewErrors()
 	if config == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.sla_params", parent), ErrIsRequired)
@@ -2109,26 +2233,26 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 	return errs
 }
 
-func checkLiquidityFeeSettings(config *protoTypes.LiquidityFeeSettings, parent string) Errors {
+func checkLiquidityFeeSettings(config *vegapb.LiquidityFeeSettings, parent string) Errors {
 	errs := NewErrors()
 	if config == nil {
 		return nil // no error, we'll default to margin-cost method
 	}
 
 	// check for valid enum range
-	if config.Method == protoTypes.LiquidityFeeSettings_METHOD_UNSPECIFIED {
+	if config.Method == vegapb.LiquidityFeeSettings_METHOD_UNSPECIFIED {
 		errs.AddForProperty(fmt.Sprintf("%s.method", parent), ErrIsRequired)
 	}
-	if _, ok := protoTypes.LiquidityFeeSettings_Method_name[int32(config.Method)]; !ok {
+	if _, ok := vegapb.LiquidityFeeSettings_Method_name[int32(config.Method)]; !ok {
 		errs.AddForProperty(fmt.Sprintf("%s.method", parent), ErrIsNotValid)
 	}
 
-	if config.FeeConstant == nil && config.Method == protoTypes.LiquidityFeeSettings_METHOD_CONSTANT {
+	if config.FeeConstant == nil && config.Method == vegapb.LiquidityFeeSettings_METHOD_CONSTANT {
 		errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrIsRequired)
 	}
 
 	if config.FeeConstant != nil {
-		if config.Method != protoTypes.LiquidityFeeSettings_METHOD_CONSTANT {
+		if config.Method != vegapb.LiquidityFeeSettings_METHOD_CONSTANT {
 			errs.AddForProperty(fmt.Sprintf("%s.method", parent), ErrIsNotValid)
 		}
 
@@ -2146,21 +2270,21 @@ func checkLiquidityFeeSettings(config *protoTypes.LiquidityFeeSettings, parent s
 	return errs
 }
 
-func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfiguration, parent string) Errors {
+func checkCompositePriceConfiguration(config *vegapb.CompositePriceConfiguration, parent string) Errors {
 	errs := NewErrors()
 	if config == nil {
 		errs.AddForProperty(parent, ErrIsRequired)
 		return errs
 	}
-	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_UNSPECIFIED {
+	if config.CompositePriceType == vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_UNSPECIFIED {
 		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), ErrIsRequired)
 	}
 
-	if _, ok := protoTypes.CompositePriceType_name[int32(config.CompositePriceType)]; !ok {
+	if _, ok := vegapb.CompositePriceType_name[int32(config.CompositePriceType)]; !ok {
 		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), ErrIsNotValid)
 	}
 
-	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE {
+	if config.CompositePriceType != vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE {
 		if config.DecayPower > 3 || config.DecayPower < 1 {
 			errs.AddForProperty(fmt.Sprintf("%s.decay_power", parent), fmt.Errorf("must be in {1, 2, 3}"))
 		}
@@ -2203,15 +2327,15 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 		}
 	}
 
-	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) > 0 {
+	if config.CompositePriceType != vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) > 0 {
 		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must be empty if composite price type is not weighted"))
 	}
 
-	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) != 3+len(config.DataSourcesSpec) {
+	if config.CompositePriceType == vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) != 3+len(config.DataSourcesSpec) {
 		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must be defined for all price sources"))
 	}
 
-	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) != len(config.SourceStalenessTolerance) {
+	if config.CompositePriceType == vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) != len(config.SourceStalenessTolerance) {
 		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must have the same length as source_weights"))
 	}
 
@@ -2225,7 +2349,7 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 			weightSum = weightSum.Add(d)
 		}
 	}
-	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && weightSum.IsZero() {
+	if config.CompositePriceType == vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && weightSum.IsZero() {
 		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must have at least one none zero weight"))
 	}
 
@@ -2240,11 +2364,11 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 	if len(config.DataSourcesSpec) > 5 {
 		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("too many data source specs - must be less than or equal to 5"))
 	}
-	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.SourceStalenessTolerance) != 3+len(config.DataSourcesSpec) {
+	if config.CompositePriceType != vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.SourceStalenessTolerance) != 3+len(config.DataSourcesSpec) {
 		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must included staleness information for all price sources"))
 	}
 
-	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.DataSourcesSpec) > 0 {
+	if config.CompositePriceType == vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.DataSourcesSpec) > 0 {
 		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("are not supported for last trade composite price type"))
 	}
 	if len(config.DataSourcesSpec) != len(config.DataSourcesSpecBinding) {
@@ -2259,7 +2383,7 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 	return errs
 }
 
-func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) Errors {
+func checkNewSpotRiskParameters(config *vegapb.NewSpotMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -2267,9 +2391,9 @@ func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) E
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *protoTypes.NewSpotMarketConfiguration_Simple:
+	case *vegapb.NewSpotMarketConfiguration_Simple:
 		errs.Merge(checkNewSpotSimpleParameters(parameters))
-	case *protoTypes.NewSpotMarketConfiguration_LogNormal:
+	case *vegapb.NewSpotMarketConfiguration_LogNormal:
 		errs.Merge(checkNewSpotLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("new_spot_market.changes.risk_parameters", ErrIsNotValid)
@@ -2278,7 +2402,7 @@ func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) E
 	return errs
 }
 
-func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Errors {
+func checkUpdateRiskParameters(config *vegapb.UpdateMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -2286,9 +2410,9 @@ func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Err
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *protoTypes.UpdateMarketConfiguration_Simple:
+	case *vegapb.UpdateMarketConfiguration_Simple:
 		errs.Merge(checkUpdateSimpleParameters(parameters))
-	case *protoTypes.UpdateMarketConfiguration_LogNormal:
+	case *vegapb.UpdateMarketConfiguration_LogNormal:
 		errs.Merge(checkUpdateLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("update_market.changes.risk_parameters", ErrIsNotValid)
@@ -2297,7 +2421,7 @@ func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Err
 	return errs
 }
 
-func checkUpdateSpotRiskParameters(config *protoTypes.UpdateSpotMarketConfiguration) Errors {
+func checkUpdateSpotRiskParameters(config *vegapb.UpdateSpotMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -2305,9 +2429,9 @@ func checkUpdateSpotRiskParameters(config *protoTypes.UpdateSpotMarketConfigurat
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *protoTypes.UpdateSpotMarketConfiguration_Simple:
+	case *vegapb.UpdateSpotMarketConfiguration_Simple:
 		errs.Merge(checkUpdateSpotSimpleParameters(parameters))
-	case *protoTypes.UpdateSpotMarketConfiguration_LogNormal:
+	case *vegapb.UpdateSpotMarketConfiguration_LogNormal:
 		errs.Merge(checkUpdateSpotLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("update_spot_market.changes.risk_parameters", ErrIsNotValid)
@@ -2316,7 +2440,7 @@ func checkUpdateSpotRiskParameters(config *protoTypes.UpdateSpotMarketConfigurat
 	return errs
 }
 
-func checkNewSimpleParameters(params *protoTypes.NewMarketConfiguration_Simple) Errors {
+func checkNewSimpleParameters(params *vegapb.NewMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -2340,7 +2464,7 @@ func checkNewSimpleParameters(params *protoTypes.NewMarketConfiguration_Simple) 
 	return errs
 }
 
-func checkNewSpotSimpleParameters(params *protoTypes.NewSpotMarketConfiguration_Simple) Errors {
+func checkNewSpotSimpleParameters(params *vegapb.NewSpotMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -2364,7 +2488,7 @@ func checkNewSpotSimpleParameters(params *protoTypes.NewSpotMarketConfiguration_
 	return errs
 }
 
-func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Simple) Errors {
+func checkUpdateSimpleParameters(params *vegapb.UpdateMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -2388,7 +2512,7 @@ func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Si
 	return errs
 }
 
-func checkUpdateSpotSimpleParameters(params *protoTypes.UpdateSpotMarketConfiguration_Simple) Errors {
+func checkUpdateSpotSimpleParameters(params *vegapb.UpdateSpotMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -2412,7 +2536,7 @@ func checkUpdateSpotSimpleParameters(params *protoTypes.UpdateSpotMarketConfigur
 	return errs
 }
 
-func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_LogNormal) Errors {
+func checkNewLogNormalRiskParameters(params *vegapb.NewMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
@@ -2485,7 +2609,7 @@ func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_L
 	return errs
 }
 
-func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfiguration_LogNormal) Errors {
+func checkUpdateLogNormalRiskParameters(params *vegapb.UpdateMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
@@ -2550,7 +2674,7 @@ func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfigura
 	return errs
 }
 
-func checkNewSpotLogNormalRiskParameters(params *protoTypes.NewSpotMarketConfiguration_LogNormal) Errors {
+func checkNewSpotLogNormalRiskParameters(params *vegapb.NewSpotMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
@@ -2596,7 +2720,7 @@ func checkNewSpotLogNormalRiskParameters(params *protoTypes.NewSpotMarketConfigu
 	return errs
 }
 
-func checkUpdateSpotLogNormalRiskParameters(params *protoTypes.UpdateSpotMarketConfiguration_LogNormal) Errors {
+func checkUpdateSpotLogNormalRiskParameters(params *vegapb.UpdateSpotMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {

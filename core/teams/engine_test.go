@@ -708,3 +708,54 @@ func testMinEpochsRequired(t *testing.T) {
 	members = te.engine.GetTeamMembers(string(teamID1), 5)
 	assert.Len(t, members, 2)
 }
+
+func TestRemoveFromAllowListRemoveFromTheTeam(t *testing.T) {
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
+
+	te := newEngine(t)
+
+	require.False(t, te.engine.TeamExists(newTeamID(t)))
+
+	referrer1 := newPartyID(t)
+	referee1 := newPartyID(t)
+	teamID1 := newTeamID(t)
+	name := vgrand.RandomStr(5)
+	teamURL := "https://" + name + ".io"
+	avatarURL := "https://avatar." + name + ".io"
+
+	// create the team
+	expectTeamCreatedEvent(t, te)
+	team1CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
+
+	te.engine.OnEpoch(ctx, types.Epoch{Seq: 1, Action: vegapb.EpochAction_EPOCH_ACTION_START})
+
+	require.NoError(t, te.engine.CreateTeam(ctx, referrer1, teamID1,
+		createTeamWithAllowListCmd(t, name, teamURL, avatarURL, true, []string{referee1.String()})))
+	require.True(t, te.engine.TeamExists(teamID1))
+
+	// referee join the team
+	expectRefereeJoinedTeamEvent(t, te)
+	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate.Add(10 * time.Second)).Times(1)
+
+	require.NoError(t, te.engine.JoinTeam(ctx, referee1, joinTeamCmd(t, teamID1)))
+	require.True(t, te.engine.IsTeamMember(referee1))
+	// two members in the team
+	assert.Len(t, te.engine.GetTeamMembers(string(teamID1), 0), 2)
+
+	te.engine.OnEpoch(ctx, types.Epoch{Seq: 2, Action: vegapb.EpochAction_EPOCH_ACTION_START})
+
+	// referrer update the team to remove all allowlisted parties
+	expectTeamUpdatedEvent(t, te)
+	// te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate.Add(20 * time.Second)).Times(1)
+	require.NoError(t, te.engine.UpdateTeam(ctx, referrer1, teamID1,
+		updateTeamCmd(t, name, teamURL, avatarURL, true, []string{})))
+	require.True(t, te.engine.TeamExists(teamID1))
+
+	// move to the next epoch
+	expectRefereeSwitchedTeamEvent(t, te)
+	te.engine.OnEpoch(ctx, types.Epoch{Seq: 2, Action: vegapb.EpochAction_EPOCH_ACTION_START})
+	require.False(t, te.engine.IsTeamMember(referee1))
+	// only referrer is team member now
+	assert.Len(t, te.engine.GetTeamMembers(string(teamID1), 0), 1)
+}

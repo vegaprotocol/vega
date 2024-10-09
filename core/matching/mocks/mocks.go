@@ -65,12 +65,11 @@ func (mr *MockOffbookSourceMockRecorder) NotifyFinished() *gomock.Call {
 }
 
 // OrderbookShape mocks base method.
-func (m *MockOffbookSource) OrderbookShape(arg0, arg1 *num.Uint, arg2 *string) ([]*types.Order, []*types.Order) {
+func (m *MockOffbookSource) OrderbookShape(arg0, arg1 *num.Uint, arg2 *string) []*types.OrderbookShapeResult {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OrderbookShape", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*types.Order)
-	ret1, _ := ret[1].([]*types.Order)
-	return ret0, ret1
+	ret0, _ := ret[0].([]*types.OrderbookShapeResult)
+	return ret0
 }
 
 // OrderbookShape indicates an expected call of OrderbookShape.

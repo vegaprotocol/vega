@@ -63,7 +63,7 @@ func (s *VolumeDiscountStats) Add(ctx context.Context, stats *entities.VolumeDis
 }
 
 func (s *VolumeDiscountStats) LatestStats(ctx context.Context, partyID string) (entities.VolumeDiscountStats, error) {
-	query := `SELECT * FROM public.volume_discount_stats WHERE
+	query := `SELECT * FROM volume_discount_stats WHERE
 	at_epoch = (SELECT id - 1 from current_epochs ORDER BY id DESC, vega_time DESC FETCH FIRST ROW ONLY) AND
 	EXISTS (SELECT TRUE FROM jsonb_array_elements(parties_volume_discount_stats) ps WHERE ps->>'party_id' = '$1')`
 	ent := []entities.VolumeDiscountStats{}

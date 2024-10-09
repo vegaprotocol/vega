@@ -59,6 +59,7 @@ type positionSettlement interface {
 type lossSocialization interface {
 	positionEventBase
 	Amount() *num.Int
+	IsFunding() bool
 }
 
 type settleDistressed interface {

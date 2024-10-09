@@ -413,6 +413,7 @@ type NewMarketConfiguration struct {
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *num.Uint
 	EnableTxReordering     bool
+	AllowedEmptyAmmLevels  *uint64
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -461,6 +462,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      n.TickSize.String(),
 		EnableTransactionReordering:   n.EnableTxReordering,
+		AllowedEmptyAmmLevels:         n.AllowedEmptyAmmLevels,
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -483,6 +485,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 		TickSize:                n.TickSize.Clone(),
 		EnableTxReordering:      n.EnableTxReordering,
+		AllowedEmptyAmmLevels:   n.AllowedEmptyAmmLevels,
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -632,6 +635,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		MarkPriceConfiguration:        markPriceConfig,
 		TickSize:                      tickSize,
 		EnableTxReordering:            p.EnableTransactionReordering,
+		AllowedEmptyAmmLevels:         p.AllowedEmptyAmmLevels,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

@@ -98,7 +98,7 @@ Feature: vAMM rebasing when created or amended
    When the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
       | buyer     | price | size | seller    | is amm |
-      | vamm1-id  | 100   | 46   | vamm2-id  | true   |
+      | vamm1-id  | 100   | 91   | vamm2-id  | true   |
       
     Then the network moves ahead "1" blocks
 
@@ -406,7 +406,7 @@ Feature: vAMM rebasing when created or amended
     When the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
       | buyer     | price | size | seller    | is amm |
-      | vamm2-id  | 100   | 46   | vamm1-id  | true   |
+      | vamm2-id  | 100   | 91   | vamm1-id  | true   |
 
       
     Then the network moves ahead "1" blocks
@@ -549,3 +549,48 @@ Feature: vAMM rebasing when created or amended
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price |
       | 155        | TRADING_MODE_CONTINUOUS  | 109            | 0                |
+
+  @VAMM
+  Scenario: Two AMMs crossed with large order expansion
+
+    Then the parties submit the following AMM:
+      | party | market id | amount   | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 1000000  | 0.05     | 150  | 100         | 200         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount  | status        | base | lower bound | upper bound | 
+      | vamm1 | ETH/MAR22 | 1000000 | STATUS_ACTIVE | 150  | 100         | 200         | 
+
+    And the market data for the market "ETH/MAR22" should be:
+      | trading mode                 | indicative price | indicative volume |
+      | TRADING_MODE_OPENING_AUCTION | 0                | 0                 |
+   
+    Then the parties submit the following AMM:
+      | party | market id | amount   | slippage | base  | lower bound | upper bound | proposed fee |
+      | vamm2 | ETH/MAR22 | 1000000  | 0.05     | 250   | 200         | 300         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount  | status        | base | lower bound | upper bound | 
+      | vamm2 | ETH/MAR22 | 1000000 | STATUS_ACTIVE |  250  | 200        | 300         | 
+
+    
+    And set the following AMM sub account aliases:
+      | party | market id | alias    |
+      | vamm1 | ETH/MAR22 | vamm1-id |
+      | vamm2 | ETH/MAR22 | vamm2-id |
+
+   And the market data for the market "ETH/MAR22" should be:
+      | trading mode                 | indicative price | indicative volume |
+      | TRADING_MODE_OPENING_AUCTION | 201              | 2238              |
+
+   When the opening auction period ends for market "ETH/MAR22"
+
+   # note that this is one big order instead of a hundred small orders
+   Then the following trades should be executed:
+      | buyer     | price | size   | seller    | is amm |
+      | vamm2-id  | 201   | 2238   | vamm1-id  | true   |
+      
+    Then the network moves ahead "1" blocks
+
+    # two AMMs are now prices at ~100 which is between their base values
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode             | best bid price | best offer price |
+      | 201        | TRADING_MODE_CONTINUOUS  | 202            | 204              |

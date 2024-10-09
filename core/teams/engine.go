@@ -134,42 +134,61 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 }
 
 func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, teamID types.TeamID, params *commandspb.UpdateReferralSet_Team) error {
-	teamsToUpdate, exists := e.teams[teamID]
+	teamToUpdate, exists := e.teams[teamID]
 	if !exists {
 		return ErrNoTeamMatchesID(teamID)
 	}
 
-	if teamsToUpdate.Referrer.PartyID != referrer {
+	if teamToUpdate.Referrer.PartyID != referrer {
 		return ErrOnlyReferrerCanUpdateTeam
 	}
 
 	// can't update if empty and nil as it's a mandatory field
 	if params.Name != nil && len(*params.Name) > 0 {
-		teamsToUpdate.Name = ptr.UnBox(params.Name)
+		teamToUpdate.Name = ptr.UnBox(params.Name)
 	}
 
 	// those apply change if not nil only?
 	// to be sure to not erase things by mistake?
 	if params.TeamUrl != nil {
-		teamsToUpdate.TeamURL = ptr.UnBox(params.TeamUrl)
+		teamToUpdate.TeamURL = ptr.UnBox(params.TeamUrl)
 	}
 
 	if params.AvatarUrl != nil {
-		teamsToUpdate.AvatarURL = ptr.UnBox(params.AvatarUrl)
+		teamToUpdate.AvatarURL = ptr.UnBox(params.AvatarUrl)
 	}
 
 	if params.Closed != nil {
-		teamsToUpdate.Closed = ptr.UnBox(params.Closed)
+		teamToUpdate.Closed = ptr.UnBox(params.Closed)
 	}
 
-	if len(params.AllowList) > 0 {
-		teamsToUpdate.AllowList = make([]types.PartyID, 0, len(params.AllowList))
-		for _, key := range params.AllowList {
-			teamsToUpdate.AllowList = append(teamsToUpdate.AllowList, types.PartyID(key))
+	// prepare the teamSwitches based on the new allowlist
+	newAllowList := map[string]struct{}{}
+	for _, v := range params.AllowList {
+		newAllowList[v] = struct{}{}
+	}
+
+	for _, v := range teamToUpdate.Referees {
+		// if the referee is not part of the new allowlist,
+		// set it to switch teams at the end of the epoch
+		if _, ok := newAllowList[v.PartyID.String()]; !ok {
+			e.teamSwitches[v.PartyID] = teamSwitch{
+				fromTeam: teamID,
+				// keep it empty to notify the intent of removing this
+				// party completely from the team.
+				toTeam: "",
+			}
 		}
 	}
 
-	e.notifyTeamUpdated(ctx, teamsToUpdate)
+	if len(params.AllowList) > 0 {
+		teamToUpdate.AllowList = make([]types.PartyID, 0, len(params.AllowList))
+		for _, key := range params.AllowList {
+			teamToUpdate.AllowList = append(teamToUpdate.AllowList, types.PartyID(key))
+		}
+	}
+
+	e.notifyTeamUpdated(ctx, teamToUpdate)
 
 	return nil
 }
@@ -296,10 +315,18 @@ func (e *Engine) moveMembers(ctx context.Context, startEpochTime time.Time, epoc
 			JoinedAt:       startEpochTime,
 			StartedAtEpoch: epoch,
 		}
-		toTeam := e.teams[move.toTeam]
-		toTeam.Referees = append(toTeam.Referees, membership)
 
-		e.allTeamMembers[partyID] = toTeam.ID
+		// if there's no to team, this is a referee which have been
+		// remove from an allowlist of a private team.
+		if move.toTeam.IsNoTeam() {
+			// just fully remove the party from the mapping.
+			delete(e.allTeamMembers, partyID)
+		} else {
+			// do as usual.
+			toTeam := e.teams[move.toTeam]
+			toTeam.Referees = append(toTeam.Referees, membership)
+			e.allTeamMembers[partyID] = toTeam.ID
+		}
 		e.notifyRefereeSwitchedTeam(ctx, move, membership)
 	}
 

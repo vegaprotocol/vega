@@ -252,7 +252,7 @@ func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 		},
 		Type: types.TransferTypeLiquidityFeeUnpaidCollect,
 	}
-	_, err = e.TransferSpotFees(context.Background(), "market1", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpSpotTransfers}})
+	_, err = e.TransferSpotFees(context.Background(), "market1", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpSpotTransfers}}, types.AccountTypeGeneral)
 	require.NoError(t, err)
 
 	// setup some balance on the LP fee pay account for MYASSET1/market2

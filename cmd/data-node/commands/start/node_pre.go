@@ -181,6 +181,12 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		return fmt.Errorf("failed to apply data retention policies:%w", err)
 	}
 
+	// check that the schema version matches the latest migration, because if it doesn't queries might fail if rows/tables
+	// it expects to exist don't
+	if err := sqlstore.CheckSchemaVersionsSynced(l.Log, conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
+		return err
+	}
+
 	preLog.Info("Enabling SQL stores")
 
 	l.transactionalConnectionSource, err = sqlstore.NewTransactionalConnectionSource(l.ctx, preLog, l.conf.SQLStore.ConnectionConfig)

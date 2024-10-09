@@ -249,6 +249,9 @@ message MarketActivityTracker {
 
   repeated PartyFees buy_back_fees = 24;
   repeated PartyFees treasury_fees = 25;
+
+  string notional_volume_for_epoch = 26;
+  repeated string epoch_notional_volume = 27;
 }
 
 message GameEligibilityTracker {

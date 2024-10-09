@@ -22,6 +22,13 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
+type OrderbookShapeResult struct {
+	AmmParty string
+	Buys     []*Order
+	Sells    []*Order
+	Approx   bool
+}
+
 // AMMBaseCommand these 3 parameters should be always specified
 // in both the the submit and amend commands.
 type AMMBaseCommand struct {

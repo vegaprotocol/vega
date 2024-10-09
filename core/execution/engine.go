@@ -1563,3 +1563,17 @@ func (e *Engine) GetFillPriceForMarket(marketID string, volume uint64, side type
 	}
 	return nil, types.ErrInvalidMarketID
 }
+
+func (e *Engine) NewProtocolAutomatedPurchase(ctx context.Context, ID string, automatedPurchaseConfig *types.NewProtocolAutomatedPurchaseChanges) error {
+	if _, ok := e.spotMarkets[automatedPurchaseConfig.MarketID]; !ok {
+		return types.ErrInvalidMarketID
+	}
+	return e.spotMarkets[automatedPurchaseConfig.MarketID].NewProtocolAutomatedPurchase(ctx, ID, automatedPurchaseConfig, e.oracle)
+}
+
+func (e *Engine) MarketHasActivePAP(marketID string) (bool, error) {
+	if _, ok := e.spotMarkets[marketID]; !ok {
+		return false, types.ErrInvalidMarketID
+	}
+	return e.spotMarkets[marketID].MarketHasActivePAP(), nil
+}

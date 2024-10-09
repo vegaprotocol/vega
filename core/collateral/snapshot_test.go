@@ -315,6 +315,7 @@ func testSnapshotRestore(t *testing.T) {
 		"party1",
 		"party2",
 		"party3",
+		"*",
 	}
 	balances := map[string]map[types.AccountType]*num.Uint{
 		parties[0]: {
@@ -329,12 +330,15 @@ func testSnapshotRestore(t *testing.T) {
 			types.AccountTypeBond:    num.NewUint(100),
 			types.AccountTypeMargin:  num.NewUint(500),
 		},
+		"*": {
+			types.AccountTypeBuyBackFees: num.NewUint(1000),
+		},
 	}
 	inc := num.NewUint(50)
 	var last string
 	for _, p := range parties {
 		// always create general account first
-		if gb, ok := balances[p][types.AccountTypeGeneral]; ok {
+		if gb, ok := balances[p][types.AccountTypeGeneral]; ok && p != "!" {
 			id, err := eng.CreatePartyGeneralAccount(ctx, p, asset.ID)
 			require.NoError(t, err)
 			require.NoError(t, eng.IncrementBalance(ctx, id, gb))
@@ -354,9 +358,17 @@ func testSnapshotRestore(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, eng.IncrementBalance(ctx, id, b))
 				last = id
+			case types.AccountTypeBuyBackFees:
+				id := eng.GetOrCreateBuyBackFeesAccountID(ctx, asset.ID)
+				require.NoError(t, eng.IncrementBalance(ctx, id, b))
+				last = id
 			}
 		}
 	}
+	// earmark 500 out of the 1000 in the buy back account
+	_, err := eng.EarmarkForAutomatedPurchase(asset.ID, types.AccountTypeBuyBackFees, num.UintZero(), num.NewUint(500))
+	require.NoError(t, err)
+
 	keys := eng.Keys()
 	payloads := make(map[string]*types.Payload, len(keys))
 	data := make(map[string][]byte, len(keys))
@@ -385,6 +397,8 @@ func testSnapshotRestore(t *testing.T) {
 		require.EqualValues(t, d, got)
 	}
 	require.NoError(t, eng.IncrementBalance(ctx, last, inc))
+	// unearmark 200 on eng
+	require.NoError(t, eng.UnearmarkForAutomatedPurchase(asset.ID, types.AccountTypeBuyBackFees, num.NewUint(200)))
 	// now we expect 1 different hash
 	diff := 0
 	for k, h := range data {
@@ -399,6 +413,7 @@ func testSnapshotRestore(t *testing.T) {
 	}
 	require.Equal(t, 1, diff)
 	require.NoError(t, newEng.IncrementBalance(ctx, last, inc))
+	require.NoError(t, newEng.UnearmarkForAutomatedPurchase(asset.ID, types.AccountTypeBuyBackFees, num.NewUint(200)))
 	// now the state should match up once again
 	for k := range data {
 		old, _, err := eng.GetState(k)

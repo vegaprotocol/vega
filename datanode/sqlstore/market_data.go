@@ -51,7 +51,7 @@ const selectMarketDataColumns = `synthetic_time, tx_hash, vega_time, seq_num,
 			market_trading_mode, auction_trigger, extension_trigger, target_stake,
 			supplied_stake, price_monitoring_bounds, market_value_proxy, liquidity_provider_fee_shares,
 			market_state, next_mark_to_market, coalesce(market_growth, 0) as market_growth,
-			coalesce(last_traded_price, 0) as last_traded_price, product_data, liquidity_provider_sla, next_network_closeout, mark_price_type, mark_price_state`
+			coalesce(last_traded_price, 0) as last_traded_price, product_data, liquidity_provider_sla, next_network_closeout, mark_price_type, mark_price_state, active_protocol_automated_purchase`
 
 func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 	return &MarketData{
@@ -65,7 +65,7 @@ func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 			"market_trading_mode", "auction_trigger", "extension_trigger", "target_stake",
 			"supplied_stake", "price_monitoring_bounds", "market_value_proxy", "liquidity_provider_fee_shares",
 			"market_state", "next_mark_to_market", "market_growth", "last_traded_price", "product_data",
-			"liquidity_provider_sla", "next_network_closeout", "mark_price_type", "mark_price_state",
+			"liquidity_provider_sla", "next_network_closeout", "mark_price_type", "mark_price_state", "active_protocol_automated_purchase",
 		},
 	}
 }
@@ -88,7 +88,7 @@ func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error)
 			data.AuctionTrigger, data.ExtensionTrigger, data.TargetStake, data.SuppliedStake,
 			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares, data.MarketState,
 			data.NextMarkToMarket, data.MarketGrowth, data.LastTradedPrice,
-			data.ProductData, data.LiquidityProviderSLA, data.NextNetworkCloseout, data.MarkPriceType, data.MarkPriceState,
+			data.ProductData, data.LiquidityProviderSLA, data.NextNetworkCloseout, data.MarkPriceType, data.MarkPriceState, data.ActiveProtocolAutomatedPurchase,
 		})
 	}
 	defer metrics.StartSQLQuery("MarketData", "Flush")()

@@ -200,6 +200,12 @@ func NewMarketFromSnapshot(
 		market.closed = true
 		stateVarEngine.UnregisterStateVariable(quoteAsset, mkt.ID)
 	}
+	market.quoteAssetDP = uint32(quoteAssetDetails.DecimalPlaces())
+	pap, err := market.NewProtocolAutomatedPurchaseFromSnapshot(ctx, oracleEngine, em.ProtocolAutomatedPurchase)
+	if err != nil {
+		return nil, err
+	}
+	market.pap = pap
 	return market, nil
 }
 
@@ -208,6 +214,10 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 	sort.Strings(parties)
 	quoteAssetQuantum, _ := m.collateral.GetAssetQuantum(m.quoteAsset)
 
+	var pap *snapshot.ProtocolAutomatedPurchase
+	if m.pap != nil {
+		pap = m.pap.IntoProto()
+	}
 	em := &types.ExecSpotMarket{
 		Market:                     m.mkt.DeepClone(),
 		PriceMonitor:               m.pMonitor.GetState(),
@@ -232,6 +242,7 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 		MarketLiquidity:            m.liquidity.GetState(),
 		StopOrders:                 m.stopOrders.ToProto(),
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
+		ProtocolAutomatedPurchase:  pap,
 	}
 
 	return em

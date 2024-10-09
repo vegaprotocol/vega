@@ -30,7 +30,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const MaximumWindowLength uint64 = 100
+const MaximumWindowLength uint64 = 200
 
 type Engine struct {
 	broker                Broker
@@ -64,7 +64,16 @@ func New(broker Broker, marketActivityTracker MarketActivityTracker) *Engine {
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
+		// whatever current program is
+		pp := e.currentProgram
 		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
+		// we have an active program, and it's not the same one after we called applyProgramUpdate -> update factors.
+		if !e.programHasEnded && pp != e.currentProgram {
+			// calculate volume for the window of the new program
+			e.calculatePartiesVolumeForWindow(int(e.currentProgram.WindowLength))
+			// update the factors
+			e.computeFactorsByParty(ctx, ep.Seq)
+		}
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		e.updateNotionalVolumeForEpoch()
 		if !e.programHasEnded {

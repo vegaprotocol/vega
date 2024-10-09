@@ -37,6 +37,7 @@ type simpleDistributor struct {
 	collected       *num.Uint
 	requests        []request
 	ts              int64
+	lType           types.LossType
 }
 
 func (s *simpleDistributor) LossSocializationEnabled() bool {
@@ -73,7 +74,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 			v := v
 			netReq = &v
 		}
-		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts, s.lType)
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
 			logging.BigInt("amount", evt.Amount()),
@@ -99,7 +100,9 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 			evt.MarketID(),
 			loss,
 			!profit, // true if party still lost out, false if mismatch > shortfall
-			s.ts)
+			s.ts,
+			s.lType,
+		)
 	}
 	return evts
 }

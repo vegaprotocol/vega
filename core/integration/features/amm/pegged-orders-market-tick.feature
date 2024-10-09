@@ -149,6 +149,6 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
       | buy  | 40    | 0      |
       | buy  | 93    | 10     |
       | sell | 99    | 0      |
-      | sell | 105   | 10     |
+      | sell | 106   | 10     |
       | sell | 160   | 0      |
 

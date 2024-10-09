@@ -98,7 +98,7 @@ func (m *Market) reSubmitPeggedOrders(ctx context.Context, toSubmitOrders []*typ
 
 	// Reinsert all the orders
 	for _, order := range toSubmitOrders {
-		if err := m.checkSufficientFunds(order.Party, order.Side, order.Price, order.TrueRemaining(), order.PeggedOrder != nil); err != nil {
+		if err := m.checkSufficientFunds(order.Party, order.Side, order.Price, order.TrueRemaining(), order.PeggedOrder != nil, types.AccountTypeGeneral); err != nil {
 			order.Status = types.OrderStatusStopped
 			m.removePeggedOrder(order)
 			evts = append(evts, events.NewOrderEvent(ctx, order))

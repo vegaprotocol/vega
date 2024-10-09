@@ -64,7 +64,7 @@ func (hat *HoldingAccountTracker) GetCurrentHolding(orderID string) (*num.Uint, 
 	return qty, fees
 }
 
-func (hat *HoldingAccountTracker) TransferToHoldingAccount(ctx context.Context, orderID, party, asset string, quantity *num.Uint, fee *num.Uint) (*types.LedgerMovement, error) {
+func (hat *HoldingAccountTracker) TransferToHoldingAccount(ctx context.Context, orderID, party, asset string, quantity *num.Uint, fee *num.Uint, accountType types.AccountType) (*types.LedgerMovement, error) {
 	if _, ok := hat.orderIDToQuantity[orderID]; ok {
 		return nil, fmt.Errorf("funds for the order have already been transferred to the holding account")
 	}
@@ -78,7 +78,7 @@ func (hat *HoldingAccountTracker) TransferToHoldingAccount(ctx context.Context, 
 		},
 		Type: types.TransferTypeHoldingAccount,
 	}
-	le, err := hat.collateral.TransferToHoldingAccount(ctx, transfer)
+	le, err := hat.collateral.TransferToHoldingAccount(ctx, transfer, accountType)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (hat *HoldingAccountTracker) TransferToHoldingAccount(ctx context.Context, 
 	return le, nil
 }
 
-func (hat *HoldingAccountTracker) TransferFeeToHoldingAccount(ctx context.Context, orderID, party, asset string, feeQuantity *num.Uint) (*types.LedgerMovement, error) {
+func (hat *HoldingAccountTracker) TransferFeeToHoldingAccount(ctx context.Context, orderID, party, asset string, feeQuantity *num.Uint, fromAccountType types.AccountType) (*types.LedgerMovement, error) {
 	if feeQuantity.IsZero() {
 		return nil, nil
 	}
@@ -101,7 +101,7 @@ func (hat *HoldingAccountTracker) TransferFeeToHoldingAccount(ctx context.Contex
 		},
 		Type: types.TransferTypeHoldingAccount,
 	}
-	le, err := hat.collateral.TransferToHoldingAccount(ctx, transfer)
+	le, err := hat.collateral.TransferToHoldingAccount(ctx, transfer, fromAccountType)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (hat *HoldingAccountTracker) TransferFeeToHoldingAccount(ctx context.Contex
 	return le, nil
 }
 
-func (hat *HoldingAccountTracker) ReleaseFeeFromHoldingAccount(ctx context.Context, orderID, party, asset string) (*types.LedgerMovement, error) {
+func (hat *HoldingAccountTracker) ReleaseFeeFromHoldingAccount(ctx context.Context, orderID, party, asset string, toAccountType types.AccountType) (*types.LedgerMovement, error) {
 	feeQuantity, ok := hat.orderIDToFee[orderID]
 	if !ok {
 		return nil, fmt.Errorf("failed to find locked fee amount for order id %s", orderID)
@@ -128,14 +128,14 @@ func (hat *HoldingAccountTracker) ReleaseFeeFromHoldingAccount(ctx context.Conte
 		Type: types.TransferTypeHoldingAccount,
 	}
 	delete(hat.orderIDToFee, orderID)
-	le, err := hat.collateral.ReleaseFromHoldingAccount(ctx, transfer)
+	le, err := hat.collateral.ReleaseFromHoldingAccount(ctx, transfer, toAccountType)
 	if err != nil {
 		return nil, err
 	}
 	return le, err
 }
 
-func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccount(ctx context.Context, orderID, party, asset string, quantity *num.Uint, fee *num.Uint) (*types.LedgerMovement, error) {
+func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccount(ctx context.Context, orderID, party, asset string, quantity *num.Uint, fee *num.Uint, toAccountType types.AccountType) (*types.LedgerMovement, error) {
 	total := num.Sum(quantity, fee)
 	if !fee.IsZero() {
 		lockedFee, ok := hat.orderIDToFee[orderID]
@@ -159,14 +159,14 @@ func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccount(ctx context.Cont
 		},
 		Type: types.TransferTypeReleaseHoldingAccount,
 	}
-	le, err := hat.collateral.ReleaseFromHoldingAccount(ctx, transfer)
+	le, err := hat.collateral.ReleaseFromHoldingAccount(ctx, transfer, toAccountType)
 	if err != nil {
 		return nil, err
 	}
 	return le, err
 }
 
-func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccountAuctionEnd(ctx context.Context, orderID, party, asset string, quantity *num.Uint, fee *num.Uint) (*types.LedgerMovement, error) {
+func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccountAuctionEnd(ctx context.Context, orderID, party, asset string, quantity *num.Uint, fee *num.Uint, toAccountType types.AccountType) (*types.LedgerMovement, error) {
 	effectiveFee := num.UintZero().Div(fee, num.NewUint(2))
 	total := num.Sum(quantity, effectiveFee)
 
@@ -194,14 +194,14 @@ func (hat *HoldingAccountTracker) ReleaseQuantityHoldingAccountAuctionEnd(ctx co
 		},
 		Type: types.TransferTypeReleaseHoldingAccount,
 	}
-	le, err := hat.collateral.ReleaseFromHoldingAccount(ctx, transfer)
+	le, err := hat.collateral.ReleaseFromHoldingAccount(ctx, transfer, toAccountType)
 	if err != nil {
 		return nil, err
 	}
 	return le, err
 }
 
-func (hat *HoldingAccountTracker) ReleaseAllFromHoldingAccount(ctx context.Context, orderID, party, asset string) (*types.LedgerMovement, error) {
+func (hat *HoldingAccountTracker) ReleaseAllFromHoldingAccount(ctx context.Context, orderID, party, asset string, toAccountType types.AccountType) (*types.LedgerMovement, error) {
 	fee := num.UintZero()
 	amt := num.UintZero()
 	if f, ok := hat.orderIDToFee[orderID]; ok {
@@ -226,7 +226,7 @@ func (hat *HoldingAccountTracker) ReleaseAllFromHoldingAccount(ctx context.Conte
 		},
 		Type: types.TransferTypeReleaseHoldingAccount,
 	}
-	return hat.collateral.ReleaseFromHoldingAccount(ctx, transfer)
+	return hat.collateral.ReleaseFromHoldingAccount(ctx, transfer, toAccountType)
 }
 
 func (hat *HoldingAccountTracker) StopSnapshots() {

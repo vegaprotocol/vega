@@ -132,7 +132,7 @@ Scenario: As a user I can create a recurring transfer that decreases over time w
     Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "21900" for asset "VEGA"
 
     # end of epoch 5 - the transfer is ended so can't be cancelled
-    When the network moves ahead "7" blocks
+    When the network moves ahead "8" blocks
     Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "962005" for asset "VEGA"
     Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "25330" for asset "VEGA"
 
@@ -174,7 +174,7 @@ Scenario: As a user I can create a recurring transfer that decreases over time w
     Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "21900" for asset "VEGA"
 
     # end of epoch 5 - the transfer is ended so can't be cancelled
-    When the network moves ahead "7" blocks
+    When the network moves ahead "8" blocks
     Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "956340" for asset "VEGA"
     Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "25330" for asset "VEGA"
 

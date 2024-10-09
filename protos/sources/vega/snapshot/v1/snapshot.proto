@@ -246,6 +246,14 @@ message EventForwarder {
 message CollateralAccounts {
   repeated vega.Account accounts = 1;
   int64 next_balance_snapshot = 2;
+  repeated Earmarked earmarked_balances = 3;
+}
+
+message Earmarked {
+  // the earmarked account id
+  string account_id = 1;
+  // the earmarked balance
+  string earmarked_balance = 2;
 }
 
 message CollateralAssets {
@@ -520,6 +528,7 @@ message SpotMarket {
   vega.events.v1.FeesStats fees_stats = 21;
   bool has_traded = 22;
   MarketLiquidity market_liquidity = 23;
+  ProtocolAutomatedPurchase protocol_automated_purchase = 24;
 }
 
 message Market {
@@ -1483,4 +1492,15 @@ message EVMFwdLastSeen {
 message EVMFwdHeartbeats {
   repeated EVMFwdPendingHeartbeat pending_heartbeats = 1;
   repeated EVMFwdLastSeen last_seen = 2;
+}
+
+message ProtocolAutomatedPurchase {
+  string id = 1;
+  vega.NewProtocolAutomatedPurchaseChanges config = 2;
+  string next_auction_amount = 3;
+  string last_oracle_price = 4;
+  int64 last_oracle_update_time = 5;
+  string active_order = 6;
+  vega.Side side = 7;
+  bool ready_to_stop = 8;
 }

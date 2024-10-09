@@ -149,14 +149,14 @@ func testSubmissionForReferralProgramUpdateWithWindowLengthOverLimitFails(t *tes
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
 					Changes: &types.ReferralProgramChanges{
-						WindowLength: 101,
+						WindowLength: 201,
 					},
 				},
 			},
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.window_length"), commands.ErrMustBeAtMost100)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.window_length"), commands.ErrMustBeAtMost200)
 }
 
 func testSubmissionForReferralProgramUpdateWithoutTierMinimumRunningNotionalTakerVolumeFails(t *testing.T) {

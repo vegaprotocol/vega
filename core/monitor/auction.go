@@ -106,8 +106,17 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 }
 
 func (a *AuctionState) StartLongBlockAuction(t time.Time, d int64) {
-	a.mode = types.MarketTradingModelLongBlockAuction
+	a.mode = types.MarketTradingModeLongBlockAuction
 	a.trigger = types.AuctionTriggerLongBlock
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = &types.AuctionDuration{Duration: d}
+}
+
+func (a *AuctionState) StartAutomatedPurchaseAuction(t time.Time, d int64) {
+	a.mode = types.MarketTradingModeAutomatedPuchaseAuction
+	a.trigger = types.AuctionTriggerAutomatedPurchase
 	a.start = true
 	a.stop = false
 	a.begin = &t
@@ -167,6 +176,14 @@ func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 
 func (a *AuctionState) ExtendAuctionLongBlock(delta types.AuctionDuration) {
 	t := types.AuctionTriggerLongBlock
+	if a.trigger != t {
+		a.extension = &t
+	}
+	a.ExtendAuction(delta)
+}
+
+func (a *AuctionState) ExtendAuctionAutomatedPurchase(delta types.AuctionDuration) {
+	t := types.AuctionTriggerAutomatedPurchase
 	if a.trigger != t {
 		a.extension = &t
 	}
@@ -274,6 +291,10 @@ func (a AuctionState) IsMonitorAuction() bool {
 	// the compatibility on 72 > 73 snapshots.
 
 	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidityTargetNotMet || a.trigger == types.AuctionTriggerUnableToDeployLPOrders
+}
+
+func (a AuctionState) IsPAPAuction() bool {
+	return a.trigger == types.AuctionTriggerAutomatedPurchase
 }
 
 // CanLeave bool indicating whether auction should be closed or not, if true, we can still extend the auction

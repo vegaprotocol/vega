@@ -494,10 +494,32 @@ func EventType(rawValue string) (events.Type, error) {
 	return *ty, nil
 }
 
+func (r RowWrapper) LossType(name string) types.LossType {
+	lt, err := LossType(r.Str(name))
+	if err != nil {
+		return types.LossTypeUnspecified
+	}
+	return lt
+}
+
+func (r RowWrapper) MustLossType(name string) types.LossType {
+	lt, err := LossType(r.MustStr(name))
+	panicW(name, err)
+	return lt
+}
+
 func (r RowWrapper) MustOrderType(name string) types.OrderType {
 	orderType, err := OrderType(r.MustStr(name))
 	panicW(name, err)
 	return orderType
+}
+
+func LossType(rawValue string) (types.LossType, error) {
+	lt, ok := eventspb.LossSocialization_Type_value[rawValue]
+	if !ok {
+		return types.LossType(lt), fmt.Errorf("invalid loss socialisation type: %v", rawValue)
+	}
+	return types.LossType(lt), nil
 }
 
 func OrderType(rawValue string) (types.OrderType, error) {

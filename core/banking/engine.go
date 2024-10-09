@@ -109,12 +109,13 @@ type Topology interface {
 type MarketActivityTracker interface {
 	CalculateMetricForIndividuals(ctx context.Context, ds *vega.DispatchStrategy) []*types.PartyContributionScore
 	CalculateMetricForTeams(ctx context.Context, ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
-	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore
+	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string, eligibleKeys []string) []*types.MarketContributionScore
 	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
 	MarketTrackedForAsset(market, asset string) bool
 	TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint
 	PublishGameMetric(ctx context.Context, dispatchStrategy []*vega.DispatchStrategy, now time.Time)
 	GameFinished(gameID string)
+	GetNotionalVolumeForAsset(asset string, markets []string, windowSize int) *num.Uint
 }
 
 type EthereumEventSource interface {

@@ -645,6 +645,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 		MarkPriceConfiguration:        markPriceConfig,
 		TickSize:                      row.tickSize(),
+		AllowedEmptyAmmLevels:         row.allowedEmptyAMMLevels(),
 	}
 
 	if row.isSuccessor() {
@@ -717,6 +718,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"max price cap",
 		"binary",
 		"fully collateralised",
+		"allowed empty amm levels",
 	})
 }
 
@@ -915,6 +917,13 @@ func (r marketRow) tickSize() *num.Uint {
 		return num.MustUintFromString(r.row.MustStr("tick size"), 10)
 	}
 	return num.UintOne()
+}
+
+func (r marketRow) allowedEmptyAMMLevels() uint64 {
+	if r.row.HasColumn("allowed empty AMM levels") {
+		return r.row.MustU64("allowed empty AMM levels")
+	}
+	return 100
 }
 
 func (r marketRow) id() string {

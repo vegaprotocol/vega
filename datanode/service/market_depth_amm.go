@@ -233,8 +233,11 @@ func (m *MarketDepth) getReference(ctx context.Context, marketID string) (num.De
 }
 
 func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, priceFactor num.Decimal) ([]*types.Order, []bool, error) {
-	// get positions
+	if len(levels) == 0 {
+		return nil, nil, nil
+	}
 
+	// get position
 	pos, err := m.getAMMPosition(pool.MarketID.String(), pool.AmmPartyID.String())
 	if err != nil {
 		return nil, nil, err
@@ -244,16 +247,20 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 
 	estimated := []bool{}
 	orders := []*types.Order{}
+
+	level1 := levels[0]
+	extraVolume := int64(0)
 	for i := range levels {
 		if i == len(levels)-1 {
 			break
 		}
 
-		level1 := levels[i]
+		// level1 := levels[i]
 		level2 := levels[i+1]
 
 		// check if the interval is fully outside of the AMM range
 		if ammDefn.lower.low.GTE(level2.price) {
+			level1 = level2
 			continue
 		}
 		if ammDefn.upper.high.LTE(level1.price) {
@@ -296,25 +303,47 @@ func (m *MarketDepth) expandByLevels(pool entities.AMMPool, levels []*level, pri
 			side = types.SideSell
 			retPrice = level2.price
 
-			// if we've stepped over the pool's position we need to split the step
+			// if we've stepped over the pool's position we need to split the volume and add it to the outer levels
 			if v1.GreaterThan(ammDefn.position) {
 				volume := v1.Sub(ammDefn.position).Abs().IntPart()
-				o := m.makeOrder(level1.price, ammDefn.partyID, uint64(volume), types.SideBuy)
-				orders = append(orders, o)
-				estimated = append(estimated, level1.estimated)
 
-				// now set v1 ready for the second half of this split
-				v1 = ammDefn.position
+				// we want to add the volume to the previous order, because thats the price in marketDP when rounded away
+				// from the fair-price
+				if len(orders) != 0 {
+					o := orders[len(orders)-1]
+					o.Size += uint64(volume)
+					o.Remaining += uint64(volume)
+				}
+
+				// we need to add this volume to the price level we step to next
+				extraVolume = ammDefn.position.Sub(v2).Abs().IntPart()
+				level1 = level2
+				continue
 			}
 		}
 		// calculate the volume
 		volume := v1.Sub(v2).Abs().IntPart()
+
+		// if the volume is less than zero AMM must be sparse and so we want to keep adding it up until we have at least 1 volume
+		// so we'll continue and not shuffle along level1
+		if volume == 0 {
+			continue
+		}
+
+		// this is extra volume from when we stepped over the AMM's fair-price
+		if extraVolume != 0 {
+			volume += extraVolume
+			extraVolume = 0
+		}
 
 		orders = append(
 			orders,
 			m.makeOrder(retPrice, ammDefn.partyID, uint64(volume), side),
 		)
 		estimated = append(estimated, level1.estimated || level2.estimated)
+
+		// shuffle
+		level1 = level2
 	}
 	return orders, estimated, nil
 }

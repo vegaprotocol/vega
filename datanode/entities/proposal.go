@@ -45,6 +45,7 @@ var (
 	ProposalTypeUpdateMarketState           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET_STATE)
 	ProposalTypeUpdateReferralProgram       = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_REFERRAL_PROGRAM)
 	ProposalTypeUpdateVolumeDiscountProgram = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_VOLUME_DISCOUNT_PROGRAM)
+	ProposalTypeAutomatedPurchase           = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_AUTOMATED_PURCHASE)
 )
 
 func (p *ProposalType) String() string {
@@ -80,6 +81,8 @@ func (p *ProposalType) String() string {
 		return "updateReferralProgram"
 	case ProposalTypeUpdateVolumeDiscountProgram:
 		return "updateVolumeDiscountProgram"
+	case ProposalTypeAutomatedPurchase:
+		return "NewProtocolAutomatedPurchase"
 	default:
 		return "unknown"
 	}

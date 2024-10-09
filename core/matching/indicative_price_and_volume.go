@@ -58,8 +58,9 @@ type ipvVolume struct {
 }
 
 type ipvGeneratedOffbook struct {
-	buy  []*types.Order
-	sell []*types.Order
+	buy    []*types.Order
+	sell   []*types.Order
+	approx bool
 }
 
 func (g *ipvGeneratedOffbook) add(order *types.Order) {
@@ -130,39 +131,44 @@ func (ipv *IndicativePriceAndVolume) buildInitialOffbookShape(offbook OffbookSou
 	}
 
 	// expand all AMM's into orders within the crossed region and add them to the price-level cache
-	buys, sells := offbook.OrderbookShape(min, max, nil)
+	r := offbook.OrderbookShape(min, max, nil)
 
-	for i := len(buys) - 1; i >= 0; i-- {
-		o := buys[i]
-		mpl, ok := mplm[*o.Price]
-		if !ok {
-			mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0, 0}, sellpl: ipvVolume{0, 0}}
-		}
-		// increment the volume at this level
-		mpl.buypl.volume += o.Size
-		mpl.buypl.offbookVolume += o.Size
-		mplm[*o.Price] = mpl
+	for _, shape := range r {
+		buys := shape.Buys
+		sells := shape.Sells
 
-		if ipv.generated[o.Party] == nil {
-			ipv.generated[o.Party] = &ipvGeneratedOffbook{}
-		}
-		ipv.generated[o.Party].add(o)
-	}
+		for i := len(buys) - 1; i >= 0; i-- {
+			o := buys[i]
+			mpl, ok := mplm[*o.Price]
+			if !ok {
+				mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0, 0}, sellpl: ipvVolume{0, 0}}
+			}
+			// increment the volume at this level
+			mpl.buypl.volume += o.Size
+			mpl.buypl.offbookVolume += o.Size
+			mplm[*o.Price] = mpl
 
-	for _, o := range sells {
-		mpl, ok := mplm[*o.Price]
-		if !ok {
-			mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0, 0}, sellpl: ipvVolume{0, 0}}
+			if ipv.generated[o.Party] == nil {
+				ipv.generated[o.Party] = &ipvGeneratedOffbook{approx: shape.Approx}
+			}
+			ipv.generated[o.Party].add(o)
 		}
 
-		mpl.sellpl.volume += o.Size
-		mpl.sellpl.offbookVolume += o.Size
-		mplm[*o.Price] = mpl
+		for _, o := range sells {
+			mpl, ok := mplm[*o.Price]
+			if !ok {
+				mpl = ipvPriceLevel{price: o.Price, buypl: ipvVolume{0, 0}, sellpl: ipvVolume{0, 0}}
+			}
 
-		if ipv.generated[o.Party] == nil {
-			ipv.generated[o.Party] = &ipvGeneratedOffbook{}
+			mpl.sellpl.volume += o.Size
+			mpl.sellpl.offbookVolume += o.Size
+			mplm[*o.Price] = mpl
+
+			if ipv.generated[o.Party] == nil {
+				ipv.generated[o.Party] = &ipvGeneratedOffbook{approx: shape.Approx}
+			}
+			ipv.generated[o.Party].add(o)
 		}
-		ipv.generated[o.Party].add(o)
 	}
 }
 
@@ -184,29 +190,49 @@ func (ipv *IndicativePriceAndVolume) removeOffbookShape(party string) {
 	delete(ipv.generated, party)
 }
 
-func (ipv *IndicativePriceAndVolume) addOffbookShape(party *string, minPrice, maxPrice *num.Uint) {
+func (ipv *IndicativePriceAndVolume) addOffbookShape(party *string, minPrice, maxPrice *num.Uint, excludeMin, excludeMax bool) {
 	// recalculate new orders for the shape and add the volume in
-	buys, sells := ipv.offbook.OrderbookShape(minPrice, maxPrice, party)
+	r := ipv.offbook.OrderbookShape(minPrice, maxPrice, party)
 
-	// add buys backwards so that the best-bid is first
-	for i := len(buys) - 1; i >= 0; i-- {
-		o := buys[i]
-		ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side, true)
+	for _, shape := range r {
+		buys := shape.Buys
+		sells := shape.Sells
 
-		if ipv.generated[o.Party] == nil {
-			ipv.generated[o.Party] = &ipvGeneratedOffbook{}
+		if len(buys) == 0 && len(sells) == 0 {
+			continue
 		}
-		ipv.generated[o.Party].add(o)
-	}
 
-	// add buys fowards so that the best-ask is first
-	for _, o := range sells {
-		ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side, true)
-
-		if ipv.generated[o.Party] == nil {
-			ipv.generated[o.Party] = &ipvGeneratedOffbook{}
+		if _, ok := ipv.generated[shape.AmmParty]; !ok {
+			ipv.generated[shape.AmmParty] = &ipvGeneratedOffbook{approx: shape.Approx}
 		}
-		ipv.generated[o.Party].add(o)
+
+		// add buys backwards so that the best-bid is first
+		for i := len(buys) - 1; i >= 0; i-- {
+			o := buys[i]
+
+			if excludeMin && o.Price.EQ(minPrice) {
+				continue
+			}
+			if excludeMax && o.Price.EQ(maxPrice) {
+				continue
+			}
+
+			ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side, true)
+			ipv.generated[shape.AmmParty].add(o)
+		}
+
+		// add buys fowards so that the best-ask is first
+		for _, o := range sells {
+			if excludeMin && o.Price.EQ(minPrice) {
+				continue
+			}
+			if excludeMax && o.Price.EQ(maxPrice) {
+				continue
+			}
+
+			ipv.AddVolumeAtPrice(o.Price, o.Size, o.Side, true)
+			ipv.generated[shape.AmmParty].add(o)
+		}
 	}
 }
 
@@ -221,7 +247,7 @@ func (ipv *IndicativePriceAndVolume) updateOffbookState(minPrice, maxPrice *num.
 		return
 	}
 
-	ipv.addOffbookShape(nil, minPrice, maxPrice)
+	ipv.addOffbookShape(nil, minPrice, maxPrice, false, false)
 }
 
 // this will be used to build the initial set of price levels, when the auction is being started.
@@ -471,7 +497,7 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 	return cumulativeVolumes, maxTradable
 }
 
-// ExtractOffbookOrders returns the cached expanded orders of AMM's in the crossed region of the given side. These
+// ExtractOffbookOrders returns the cached expanded orders of AM M's in the crossed region of the given side. These
 // are the order that we will send in aggressively to uncrossed the book.
 func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side types.Side, target uint64) []*types.Order {
 	if target == 0 {
@@ -492,11 +518,29 @@ func (ipv *IndicativePriceAndVolume) ExtractOffbookOrders(price *num.Uint, side 
 			cpm = func(p *num.Uint) bool { return p.GT(price) }
 		}
 
+		var combined *types.Order
 		for _, o := range oo {
 			if cpm(o.Price) {
 				continue
 			}
-			orders = append(orders, o)
+
+			// we want to combine all the uncrossing orders into one big one of the combined volume so that
+			// we only uncross with 1 order and not 1000s of expanded ones for a single AMM. We can take the price
+			// to the best of the lot so that it trades -- it'll get overridden by the uncrossing price after uncrossing
+			// anyway.
+			if combined == nil {
+				combined = o.Clone()
+				orders = append(orders, combined)
+			} else {
+				combined.Size += o.Size
+				combined.Remaining += o.Remaining
+
+				if side == types.SideBuy {
+					combined.Price = num.Max(combined.Price, o.Price)
+				} else {
+					combined.Price = num.Min(combined.Price, o.Price)
+				}
+			}
 			volume += o.Size
 
 			// if we're extracted enough we can stop now

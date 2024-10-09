@@ -111,7 +111,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		return
 	}
 
-	if m.as.Trigger() == types.AuctionTriggerLongBlock || m.as.ExtensionTrigger() == types.AuctionTriggerLongBlock {
+	if m.as.Trigger() == types.AuctionTriggerLongBlock || m.as.ExtensionTrigger() == types.AuctionTriggerLongBlock ||
+		m.as.Trigger() == types.AuctionTriggerAutomatedPurchase || m.as.ExtensionTrigger() == types.AuctionTriggerAutomatedPurchase {
 		if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(now) {
 			m.as.SetReadyToLeave()
 		}

@@ -58,6 +58,7 @@ func TestVolumeRebateProgramLifecycle(t *testing.T) {
 	broker := mocks.NewMockBroker(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	engine := volumerebate.NewSnapshottedEngine(broker, marketActivityTracker)
+	marketActivityTracker.EXPECT().CalculateTotalMakerContributionInQuantum(gomock.Any()).Return(map[string]*num.Uint{}, map[string]num.Decimal{}).Times(2)
 
 	// test snapshot with empty engine
 	hashEmpty, _, err := engine.GetState(key)
@@ -82,10 +83,11 @@ func TestVolumeRebateProgramLifecycle(t *testing.T) {
 	engine.UpdateProgram(p1)
 
 	// expect an event for the started program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeRebateProgramStarted)
+	broker.EXPECT().Send(startedEvt).DoAndReturn(func(evt events.Event) {
+		e := startedEvt.cast(evt)
 		require.Equal(t, p1.IntoProto(), e.GetVolumeRebateProgramStarted().Program)
 	}).Times(1)
+	broker.EXPECT().Send(statsEvt).Times(1)
 
 	// activate the program
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now})
@@ -117,14 +119,15 @@ func TestVolumeRebateProgramLifecycle(t *testing.T) {
 	assertSnapshotMatches(t, key, hashWithNewAndCurrent)
 
 	// // expect a program updated event
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
+	broker.EXPECT().Send(updatedEvt).DoAndReturn(func(evt events.Event) {
 		e := evt.(*events.VolumeRebateProgramUpdated)
 		require.Equal(t, p2.IntoProto(), e.GetVolumeRebateProgramUpdated().Program)
 	}).Times(1)
+	broker.EXPECT().Send(statsEvt).Times(1)
 	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 1)})
 
 	// // expire the program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
+	broker.EXPECT().Send(endedEvt).DoAndReturn(func(evt events.Event) {
 		e := evt.(*events.VolumeRebateProgramEnded)
 		require.Equal(t, p2.Version, e.GetVolumeRebateProgramEnded().Version)
 	}).Times(1)
@@ -164,6 +167,8 @@ func TestRebateFactor(t *testing.T) {
 	// activate the program
 	currentEpoch := uint64(1)
 	expectProgramStarted(t, broker, p1)
+	marketActivityTracker.EXPECT().CalculateTotalMakerContributionInQuantum(gomock.Any()).Return(map[string]*num.Uint{}, map[string]num.Decimal{}).Times(1)
+	expectStatsUpdated(t, broker)
 	startEpoch(t, engine, currentEpoch, currentTime)
 
 	// so now we have a program active so at the end of the epoch lets return for some parties some notional
@@ -277,6 +282,8 @@ func TestRebateFactorWithWindow(t *testing.T) {
 
 	// expect an event for the started program
 	expectProgramStarted(t, broker, p1)
+	marketActivityTracker.EXPECT().CalculateTotalMakerContributionInQuantum(gomock.Any()).Return(map[string]*num.Uint{}, map[string]num.Decimal{}).Times(1)
+	expectStatsUpdated(t, broker)
 	// activate the program
 	currentEpoch := uint64(1)
 	startEpoch(t, engine, currentEpoch, currentTime)

@@ -176,6 +176,35 @@ func (b *BrokerStub) GetImmBatch(t events.Type) []events.Event {
 	return r
 }
 
+func (b *BrokerStub) GetPAPVolumeSnapshotByID(marketID string) *events.AutomatedPurchaseAnnounced {
+	paps := b.GetPAPVolumeSnapshot()
+	for i := 0; i < len(paps); i++ {
+		p := paps[len(paps)-i-1]
+		if p.MarketID == marketID {
+			return &p
+		}
+	}
+	return nil
+}
+
+func (b *BrokerStub) GetPAPVolumeSnapshot() []events.AutomatedPurchaseAnnounced {
+	batch := b.GetBatch(events.AutomatedPurchaseAnnouncedEvent)
+
+	if len(batch) == 0 {
+		return nil
+	}
+	b.mu.Lock()
+	ret := make([]events.AutomatedPurchaseAnnounced, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.AutomatedPurchaseAnnounced:
+			ret = append(ret, *et)
+		}
+	}
+	b.mu.Unlock()
+	return ret
+}
+
 // GetLedgerMovements returns ledger movements, `mutable` argument specifies if these should be all the scenario events or events that can be cleared by the user.
 func (b *BrokerStub) GetLedgerMovements(mutable bool) []events.LedgerMovements {
 	batch := b.GetBatch(events.LedgerMovementsEvent)
@@ -621,6 +650,23 @@ func (b *BrokerStub) GetFundingPeriodEvents() []events.FundingPeriod {
 	return ret
 }
 
+func (b *BrokerStub) GetFundginPaymentEvents() []events.FundingPayments {
+	batch := b.GetBatch(events.FundingPaymentsEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.FundingPayments, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.FundingPayments:
+			ret = append(ret, *et)
+		case events.FundingPayments:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
 func (b *BrokerStub) GetTradeEvents() []events.Trade {
 	batch := b.GetBatch(events.TradeEvent)
 	if len(batch) == 0 {
@@ -875,6 +921,17 @@ func (b *BrokerStub) GetAssetNetworkTreasuryAccount(asset string) (vegapb.Accoun
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == "*" && v.Asset == asset && v.Type == vegapb.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
+			return v, nil
+		}
+	}
+	return vegapb.Account{}, errors.New("account does not exist")
+}
+
+func (b *BrokerStub) GetAssetBuyBackFeesAccount(asset string) (vegapb.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.Asset == asset && v.Type == vegapb.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES {
 			return v, nil
 		}
 	}

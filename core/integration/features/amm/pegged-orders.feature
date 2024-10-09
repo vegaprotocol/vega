@@ -35,7 +35,7 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
     #risk factor long:0.801225765
     And the following assets are registered:
       | id  | decimal places |
-      | USD | 0              |
+      | USD | 5              |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.0004    | 0.001              |
@@ -45,26 +45,26 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
       | 0.5         | 0.6                          | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |  decimal places |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         | SLA-22     |  1               |
 
     # Setting up the accounts and vAMM submission now is part of the background, because we'll be running scenarios 0090-VAMM-006 through 0090-VAMM-014 on this setup
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount  |
-      | lp1    | USD   | 1000000 |
-      | lp2    | USD   | 1000000 |
-      | lp3    | USD   | 1000000 |
-      | party1 | USD   | 1000000 |
-      | party2 | USD   | 1000000 |
-      | party3 | USD   | 1000000 |
-      | party4 | USD   | 1000000 |
-      | party5 | USD   | 1000000 |
-      | vamm1  | USD   | 1000000 |
+      | party  | asset | amount       |
+      | lp1    | USD   | 100000000000 |
+      | lp2    | USD   | 100000000000 |
+      | lp3    | USD   | 100000000000 |
+      | party1 | USD   | 100000000000 |
+      | party2 | USD   | 100000000000 |
+      | party3 | USD   | 100000000000 |
+      | party4 | USD   | 100000000000 |
+      | party5 | USD   | 100000000000 |
+      | vamm1  | USD   | 100000000000 |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
-      | lp_1 | lp1   | ETH/MAR22 | 600               | 0.02  | submission |
-      | lp_2 | lp2   | ETH/MAR22 | 400               | 0.015 | submission |
+      | lp_1 | lp1   | ETH/MAR22 | 60000000          | 0.02  | submission |
+      | lp_2 | lp2   | ETH/MAR22 | 40000000          | 0.015 | submission |
     Then the network moves ahead "4" blocks
     And the current epoch is "0"
 
@@ -81,20 +81,20 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
+      | 100        | TRADING_MODE_CONTINUOUS | 399880       | 100000000      | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
-      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
+      | party | market id | amount      | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
+      | vamm1 | ETH/MAR22 | 10000000000 | 0.1      | 100  | 85          | 150         | 4              | 4              | 0.01         |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
-      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
+      | party | market id | amount      | status        | base | lower bound | upper bound | lower leverage | upper leverage |
+      | vamm1 | ETH/MAR22 | 10000000000 | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
 
     And set the following AMM sub account aliases:
       | party | market id | alias    |
       | vamm1 | ETH/MAR22 | vamm1-id |
     And the following transfers should happen:
-      | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                  |
-      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
+      | from  | from account         | to       | to account           | market id | amount      | asset | is amm | type                  |
+      | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 10000000000 | USD   | true   | TRANSFER_TYPE_AMM_LOW |
 
   @VAMM
   Scenario: Simply submit pegged orders, cancel all orders on the orderbook, the pegged orders should be pegged to the AMM orders.
@@ -138,3 +138,25 @@ Feature: 0090-VAMM-036: With an existing book consisting solely of vAMM orders, 
       | buy  | 94    | 10     |
       | sell | 106   | 10     |
       | sell | 160   | 0      |
+
+
+  @VAMM
+  Scenario: AMM decimal best ask rounds up to peg 0 offset
+
+    # trade with the AMM so its fair price is non-tick
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     |
+      | party3 | ETH/MAR22 | buy  | 100    | 0     | 1                | TYPE_MARKET | TIF_IOC |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode             | best bid price | best offer price | best bid volume | best offer volume |
+      | 100        | TRADING_MODE_CONTINUOUS  | 100            | 102              | 79              | 77                |
+
+    When the parties place the following pegged iceberg orders:
+      | party | market id | side | volume | peak size | minimum visible size | pegged reference | offset |
+      | lp1   | ETH/MAR22 | buy  | 100    | 10        | 2                    | BID              | 0      |
+      | lp1   | ETH/MAR22 | sell | 100    | 10        | 2                    | ASK              | 0      |
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 100   | 10     |
+      | sell | 103   | 10     |

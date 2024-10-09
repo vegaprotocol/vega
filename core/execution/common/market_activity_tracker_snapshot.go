@@ -318,6 +318,11 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 	ammParties := maps.Keys(mt.ammPartiesCache)
 	sort.Strings(ammParties)
 
+	epochNotionalVolume := make([]string, 0, len(mt.epochNotionalVolume))
+	for _, env := range mt.epochNotionalVolume {
+		epochNotionalVolume = append(epochNotionalVolume, env.String())
+	}
+
 	return &checkpoint.MarketActivityTracker{
 		Market:                          market,
 		Asset:                           mt.asset,
@@ -344,6 +349,8 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		RealisedReturns:                 returnsDataToProto(mt.partyRealisedReturn),
 		RealisedReturnsHistory:          epochReturnDataToProto(mt.epochPartyRealisedReturn),
 		AmmParties:                      ammParties,
+		NotionalVolumeForEpoch:          mt.notionalVolumeForEpoch.String(),
+		EpochNotionalVolume:             epochNotionalVolume,
 	}
 }
 
@@ -419,6 +426,16 @@ func (mat *MarketActivityTracker) LoadState(_ context.Context, p *types.Payload)
 
 func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTracker {
 	valueTrades, _ := num.UintFromString(tracker.ValueTraded, 10)
+	notionalVolumeForEpoch := num.UintZero()
+	if len(tracker.NotionalVolumeForEpoch) > 0 {
+		notionalVolumeForEpoch, _ = num.UintFromString(tracker.NotionalVolumeForEpoch, 10)
+	}
+	epochNotionalVolume := []*num.Uint{}
+	for _, envStr := range tracker.EpochNotionalVolume {
+		env, _ := num.UintFromString(envStr, 10)
+		epochNotionalVolume = append(epochNotionalVolume, env)
+	}
+
 	mft := &marketTracker{
 		asset:                  tracker.Asset,
 		proposer:               tracker.Proposer,
@@ -452,6 +469,8 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
 		ammPartiesCache:             map[string]struct{}{},
+		notionalVolumeForEpoch:      notionalVolumeForEpoch,
+		epochNotionalVolume:         epochNotionalVolume,
 	}
 
 	for _, party := range tracker.AmmParties {

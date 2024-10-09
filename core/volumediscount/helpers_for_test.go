@@ -17,6 +17,7 @@ package volumediscount_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,9 +27,24 @@ import (
 	"code.vegaprotocol.io/vega/core/volumediscount/mocks"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
+
+type vdEvents interface {
+	*events.VolumeDiscountStatsUpdated | *events.VolumeDiscountProgramStarted | *events.VolumeDiscountProgramUpdated | *events.VolumeDiscountProgramEnded
+}
+
+type eventMatcher[T vdEvents] struct{}
+
+func (_ eventMatcher[T]) Matches(x any) bool {
+	_, ok := x.(T)
+	return ok
+}
+
+func (_ eventMatcher[T]) String() string {
+	var e T
+	return fmt.Sprintf("matches %T", e)
+}
 
 func endEpoch(t *testing.T, engine *volumediscount.SnapshottedEngine, seq uint64, endTime time.Time) {
 	t.Helper()
@@ -53,7 +69,7 @@ func startEpoch(t *testing.T, engine *volumediscount.SnapshottedEngine, seq uint
 func expectProgramEnded(t *testing.T, broker *mocks.MockBroker, p1 *types.VolumeDiscountProgram) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountProgramEnded]{}).DoAndReturn(func(evt events.Event) {
 		e := evt.(*events.VolumeDiscountProgramEnded)
 		require.Equal(t, p1.Version, e.GetVolumeDiscountProgramEnded().Version)
 	}).Times(1)
@@ -62,7 +78,7 @@ func expectProgramEnded(t *testing.T, broker *mocks.MockBroker, p1 *types.Volume
 func expectStatsUpdated(t *testing.T, broker *mocks.MockBroker) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountStatsUpdated]{}).Do(func(evt events.Event) {
 		_, ok := evt.(*events.VolumeDiscountStatsUpdated)
 		require.Truef(t, ok, "expecting event of type *events.VolumeDiscountStatsUpdated but got %T", evt)
 	}).Times(1)
@@ -71,7 +87,7 @@ func expectStatsUpdated(t *testing.T, broker *mocks.MockBroker) {
 func expectStatsUpdatedWithUnqualifiedParties(t *testing.T, broker *mocks.MockBroker) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountStatsUpdated]{}).Do(func(evt events.Event) {
 		update, ok := evt.(*events.VolumeDiscountStatsUpdated)
 		require.Truef(t, ok, "expecting event of type *events.VolumeDiscountStatsUpdated but got %T", evt)
 		stats := update.VolumeDiscountStatsUpdated()
@@ -90,7 +106,7 @@ func expectStatsUpdatedWithUnqualifiedParties(t *testing.T, broker *mocks.MockBr
 func expectProgramStarted(t *testing.T, broker *mocks.MockBroker, p1 *types.VolumeDiscountProgram) {
 	t.Helper()
 
-	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+	broker.EXPECT().Send(eventMatcher[*events.VolumeDiscountProgramStarted]{}).Do(func(evt events.Event) {
 		e, ok := evt.(*events.VolumeDiscountProgramStarted)
 		require.Truef(t, ok, "expecting event of type *events.VolumeDiscountProgramStarted but got %T", evt)
 		require.Equal(t, p1.IntoProto(), e.GetVolumeDiscountProgramStarted().Program)

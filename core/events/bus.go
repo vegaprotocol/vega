@@ -178,6 +178,7 @@ const (
 	VolumeRebateProgramEndedEvent
 	VolumeRebateProgramUpdatedEvent
 	VolumeRebateStatsUpdatedEvent
+	AutomatedPurchaseAnnouncedEvent
 )
 
 var (
@@ -285,6 +286,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_ENDED:             VolumeRebateProgramEndedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED:           VolumeRebateProgramUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED:             VolumeRebateStatsUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED:            AutomatedPurchaseAnnouncedEvent,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -383,6 +385,7 @@ var (
 		VolumeRebateProgramEndedEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_ENDED,
 		VolumeRebateProgramUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED,
 		VolumeRebateStatsUpdatedEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED,
+		AutomatedPurchaseAnnouncedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED,
 
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
@@ -481,6 +484,7 @@ var (
 		VolumeRebateProgramEndedEvent:            "VolumeRebateProgramEndedEvent",
 		VolumeRebateProgramUpdatedEvent:          "VolumeRebateProgramUpdatedEvent",
 		VolumeRebateStatsUpdatedEvent:            "VolumeRebateStatsUpdatedEvent",
+		AutomatedPurchaseAnnouncedEvent:          "AutomatedPurchaseAnnouncedEvent",
 	}
 )
 

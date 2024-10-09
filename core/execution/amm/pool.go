@@ -47,26 +47,6 @@ type curve struct {
 	sqrtHigh   num.Decimal
 }
 
-func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
-	if c.l.IsZero() || c.empty {
-		return 0
-	}
-
-	st = num.Max(st, c.low)
-	nd = num.Min(nd, c.high)
-
-	if st.GTE(nd) {
-		return 0
-	}
-
-	stP := impliedPosition(sqrt(st), c.sqrtHigh, c.l)
-	ndP := impliedPosition(sqrt(nd), c.sqrtHigh, c.l)
-
-	// abs(P(st) - P(nd))
-	volume := stP.Sub(ndP).Abs()
-	return uint64(volume.IntPart())
-}
-
 // positionAtPrice returns the position of the AMM if its fair-price were the given price. This
 // will be signed for long/short as usual.
 func (c *curve) positionAtPrice(sqrt sqrtFn, price *num.Uint) int64 {
@@ -78,6 +58,66 @@ func (c *curve) positionAtPrice(sqrt sqrtFn, price *num.Uint) int64 {
 	// if we are in the upper curve the position of 0 in "curve-space" is -cu.pv in Vega position
 	// so we need to flip the interval
 	return -c.pv.Sub(pos).IntPart()
+}
+
+// singleVolumePrice returns the price that is 1 volume away from the given price in the given direction.
+// If the AMM's commitment is low this may be more than one-tick away from `p`.
+func (c *curve) singleVolumePrice(sqrt sqrtFn, p *num.Uint, side types.Side) *num.Uint {
+	if c.empty {
+		panic("should not be calculating single-volume step on empty curve")
+	}
+
+	// for best buy:  (L * sqrt(pu) / (L + sqrt(pu)))^2
+	// for best sell: (L * sqrt(pu) / (L - sqrt(pu)))^2
+	var denom num.Decimal
+	if side == types.SideBuy {
+		denom = c.l.Add(sqrt(p))
+	} else {
+		denom = c.l.Sub(sqrt(p))
+	}
+
+	np := c.l.Mul(sqrt(p)).Div(denom)
+	np = np.Mul(np)
+
+	if side == types.SideSell {
+		// have to make sure we round away `p`
+		np = np.Ceil()
+	}
+
+	adj, _ := num.UintFromDecimal(np)
+	return adj
+}
+
+// singleVolumeDelta returns the price interval between p and the price that represents 1 volume movement.
+func (c *curve) singleVolumeDelta(sqrt sqrtFn, p *num.Uint, side types.Side) *num.Uint {
+	adj := c.singleVolumePrice(sqrt, p, side)
+	delta, _ := num.UintZero().Delta(p, adj)
+	return delta
+}
+
+// check will return an error is the curve contains too many price-levels where there is 0 volume.
+func (c *curve) check(sqrt sqrtFn, oneTick *num.Uint, allowedEmptyLevels uint64) error {
+	if c.empty {
+		return nil
+	}
+
+	if c.pv.LessThan(num.DecimalOne()) {
+		return ErrCommitmentTooLow
+	}
+
+	// curve is valid if
+	// n * oneTick > pu - (L * sqrt(pu) / (L + sqrt(pu)))^2
+	adj := c.singleVolumePrice(sqrt, c.high, types.SideBuy)
+	delta := num.UintZero().Sub(c.high, adj)
+
+	// the plus one is because if allowable empty levels is 0, then the biggest delta allowed is 1
+	maxDelta := num.UintZero().Mul(oneTick, num.NewUint(allowedEmptyLevels+1))
+
+	// now this price delta must be less that the given maximum
+	if delta.GT(maxDelta) {
+		return ErrCommitmentTooLow
+	}
+	return nil
 }
 
 type Pool struct {
@@ -115,7 +155,7 @@ type Pool struct {
 	maxCalculationLevels *num.Uint // maximum number of price levels the AMM will be expanded into
 	oneTick              *num.Uint // one price tick
 
-	fpCache map[int64]*num.Uint
+	cache *poolCache
 }
 
 func NewPool(
@@ -133,6 +173,7 @@ func NewPool(
 	priceFactor num.Decimal,
 	positionFactor num.Decimal,
 	maxCalculationLevels *num.Uint,
+	allowedEmptyAMMLevels uint64,
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 	pool := &Pool{
@@ -153,9 +194,9 @@ func NewPool(
 		oneTick:              num.Max(num.UintOne(), oneTick),
 		status:               types.AMMPoolStatusActive,
 		maxCalculationLevels: maxCalculationLevels,
-		fpCache:              map[int64]*num.Uint{},
+		cache:                NewPoolCache(),
 	}
-	err := pool.setCurves(rf, sf, linearSlippage)
+	err := pool.setCurves(rf, sf, linearSlippage, allowedEmptyAMMLevels)
 	if err != nil {
 		return nil, err
 	}
@@ -251,6 +292,7 @@ func NewPoolFromProto(
 		positionFactor: positionFactor,
 		oneTick:        num.Max(num.UintOne(), oneTick),
 		status:         state.Status,
+		cache:          NewPoolCache(),
 	}, nil
 }
 
@@ -337,6 +379,7 @@ func (p *Pool) Update(
 	rf *types.RiskFactor,
 	sf *types.ScalingFactors,
 	linearSlippage num.Decimal,
+	allowedEmptyAMMLevels uint64,
 ) (*Pool, error) {
 	commitment := p.Commitment.Clone()
 	if amend.CommitmentAmount != nil {
@@ -382,9 +425,9 @@ func (p *Pool) Update(
 		sqrt:                 p.sqrt,
 		oneTick:              p.oneTick,
 		maxCalculationLevels: p.maxCalculationLevels,
-		fpCache:              map[int64]*num.Uint{},
+		cache:                NewPoolCache(),
 	}
-	if err := updated.setCurves(rf, sf, linearSlippage); err != nil {
+	if err := updated.setCurves(rf, sf, linearSlippage, allowedEmptyAMMLevels); err != nil {
 		return nil, err
 	}
 
@@ -497,6 +540,7 @@ func (p *Pool) setCurves(
 	rfs *types.RiskFactor,
 	sfs *types.ScalingFactors,
 	linearSlippage num.Decimal,
+	allowedEmptyAMMLevels uint64,
 ) error {
 	// convert the bounds into asset precision
 	base, _ := num.UintFromDecimal(p.Parameters.Base.ToDecimal().Mul(p.priceFactor))
@@ -518,10 +562,8 @@ func (p *Pool) setCurves(
 			true,
 		)
 
-		highPriceMinusOne := num.UintZero().Sub(p.lower.high, p.oneTick)
-		// verify that the lower curve maintains sufficient volume from highPrice - 1 to the end of the curve.
-		if p.lower.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.lower.high) < 1 {
-			return fmt.Errorf("insufficient commitment - less than one volume at price levels on lower curve")
+		if err := p.lower.check(p.sqrt, p.oneTick.Clone(), allowedEmptyAMMLevels); err != nil {
+			return err
 		}
 	}
 
@@ -540,10 +582,9 @@ func (p *Pool) setCurves(
 			false,
 		)
 
-		highPriceMinusOne := num.UintZero().Sub(p.upper.high, p.oneTick)
-		// verify that the upper curve maintains sufficient volume from highPrice - 1 to the end of the curve.
-		if p.upper.volumeBetweenPrices(p.sqrt, highPriceMinusOne, p.upper.high) < 1 {
-			return fmt.Errorf("insufficient commitment - less than one volume at price levels on upper curve")
+		// lets find an interval that represents one volume, it might be a sparse curve
+		if err := p.upper.check(p.sqrt, p.oneTick.Clone(), allowedEmptyAMMLevels); err != nil {
+			return err
 		}
 	}
 
@@ -570,7 +611,7 @@ func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
 		volume,
 		side,
 		p.getPosition(),
-		p.fairPrice(),
+		p.FairPrice(),
 	)
 }
 
@@ -608,6 +649,7 @@ func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *
 	if !p.canTrade(side) {
 		return 0
 	}
+
 	pos := p.getPosition()
 	st, nd := price1, price2
 
@@ -758,14 +800,14 @@ func (p *Pool) getPosition() int64 {
 //
 // this transformation is needed since for each curve its virtual position is 0 at the lower bound which maps to the Vega position when the pool is
 // long, but when the pool is short Vega position == 0 at the upper bounds and -ve at the lower.
-func (p *Pool) fairPrice() *num.Uint {
+func (p *Pool) FairPrice() *num.Uint {
 	pos := p.getPosition()
 	if pos == 0 {
 		// if no position fair price is base price
 		return p.lower.high.Clone()
 	}
 
-	if fp, ok := p.fpCache[pos]; ok {
+	if fp, ok := p.cache.getFairPrice(pos); ok {
 		return fp.Clone()
 	}
 
@@ -801,9 +843,8 @@ func (p *Pool) fairPrice() *num.Uint {
 
 	fairPrice, _ := num.UintFromDecimal(fp)
 
-	p.fpCache = map[int64]*num.Uint{
-		pos: fairPrice.Clone(),
-	}
+	p.cache.setFairPrice(pos, fairPrice.Clone())
+
 	return fairPrice
 }
 
@@ -880,22 +921,80 @@ func (p *Pool) virtualBalances(pos int64, fp *num.Uint, side types.Side) (num.De
 	}
 }
 
-// BestPrice returns the price that the pool is willing to trade for the given order side.
-func (p *Pool) BestPrice(order *types.Order) *num.Uint {
-	fairPrice := p.fairPrice()
-	switch {
-	case order == nil:
-		// special case where we've been asked for a fair price
-		return fairPrice
-	case order.Side == types.SideBuy:
-		// incoming is a buy, so we +1 to the fair price
-		return fairPrice.AddSum(p.oneTick)
-	case order.Side == types.SideSell:
-		// incoming is a sell so we - 1 the fair price
-		return fairPrice.Sub(fairPrice, p.oneTick)
+// BestPrice returns the AMM's quote price on the given side. If the AMM's position is fully at a boundary
+// then there is no quote price on that side and false is returned.
+func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
+	pos := p.getPosition()
+	fairPrice := p.FairPrice()
+
+	switch side {
+	case types.SideSell:
+		cu := p.lower
+		if pos <= 0 {
+			cu = p.upper
+			// we're short, and want the sell quote price, if we're at the boundary there is not volume left
+			if p.closing() || num.AbsV(pos) >= cu.pv.IntPart() {
+				return nil, false
+			}
+		}
+
+		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
+		return num.Min(p.upper.high, num.Max(np, fairPrice.AddSum(p.oneTick))), true
+	case types.SideBuy:
+		cu := p.upper
+		if pos >= 0 {
+			cu = p.lower
+			// we're long, and want the buy quote price, if we're at the boundary there is not volume left
+			if p.closing() || pos >= cu.pv.IntPart() {
+				return nil, false
+			}
+		}
+
+		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
+		return num.Max(p.lower.low, num.Min(np, num.UintZero().Sub(fairPrice, p.oneTick))), true
 	default:
 		panic("should never reach here")
 	}
+}
+
+// BestPriceAndVolume returns the AMM's best price on a given side and the volume available to trade.
+func (p *Pool) BestPriceAndVolume(side types.Side) (*num.Uint, uint64) {
+	// check cache
+	pos := p.getPosition()
+
+	if p, v, ok := p.cache.getBestPrice(pos, side, p.status); ok {
+		return p, v
+	}
+
+	price, ok := p.BestPrice(side)
+	if !ok {
+		return price, 0
+	}
+
+	// now calculate the volume
+	fp := p.FairPrice()
+	if side == types.SideBuy {
+		priceTick := num.Max(p.lower.low, num.UintZero().Sub(fp, p.oneTick))
+
+		if !price.GTE(priceTick) {
+			p.cache.setBestPrice(pos, side, p.status, price, 1)
+			return price, 1 // its low volume so 1 by construction
+		}
+
+		volume := p.TradableVolumeForPrice(types.SideSell, priceTick)
+		p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
+		return priceTick, volume
+	}
+
+	priceTick := num.Min(p.upper.high, num.UintZero().Add(fp, p.oneTick))
+	if !price.LTE(priceTick) {
+		p.cache.setBestPrice(pos, side, p.status, price, 1)
+		return price, 1 // its low volume so 1 by construction
+	}
+
+	volume := p.TradableVolumeForPrice(types.SideBuy, priceTick)
+	p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
+	return priceTick, volume
 }
 
 func (p *Pool) LiquidityFee() num.Decimal {

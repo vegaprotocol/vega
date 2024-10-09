@@ -222,7 +222,7 @@ Feature: Volume rebate program - contributions from trades
       | MXN-0-10/USD-0-1 | 2             | "2"                   | 0             | 50            |
 
 
-  Scenario Outline: Derivative and spot markets using assets with different quantums scale maker volume correctly (0095-HVMR-022)(0095-HVMR-023)(0095-HVMR-023)
+  Scenario Outline: Derivative and spot markets using assets with different quantums scale maker volume correctly (0095-HVMR-023)(0095-HVMR-024)(0095-HVMR-025)
 
     Given the volume rebate program tiers named "vrt":
       | fraction | rebate |

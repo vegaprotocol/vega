@@ -39,6 +39,7 @@ func EstimateBounds(
 	linearSlippageFactor, initialMargin,
 	riskFactorShort, riskFactorLong,
 	priceFactor, positionFactor num.Decimal,
+	allowedMaxEmptyLevels uint64,
 ) EstimatedBounds {
 	r := EstimatedBounds{}
 
@@ -70,8 +71,16 @@ func EstimateBounds(
 		// now lets check that the lower bound is not too wide that the volume is spread too thin
 		l := unitLower.Mul(boundPosLower).Abs()
 
-		pos := impliedPosition(sqrter.sqrt(num.UintZero().Sub(basePrice, oneTick)), sqrter.sqrt(basePrice), l)
-		if pos.LessThan(num.DecimalOne()) {
+		cu := &curve{
+			l:        l,
+			high:     basePrice,
+			low:      lowerPrice,
+			sqrtHigh: sqrter.sqrt(basePrice),
+			isLower:  true,
+			pv:       r.PositionSizeAtLower,
+		}
+
+		if err := cu.check(sqrter.sqrt, oneTick, allowedMaxEmptyLevels); err != nil {
 			r.TooWideLower = true
 		}
 	}
@@ -99,8 +108,14 @@ func EstimateBounds(
 		// now lets check that the lower bound is not too wide that the volume is spread too thin
 		l := unitUpper.Mul(boundPosUpper).Abs()
 
-		pos := impliedPosition(sqrter.sqrt(num.UintZero().Sub(upperPrice, oneTick)), sqrter.sqrt(upperPrice), l)
-		if pos.LessThan(num.DecimalOne()) {
+		cu := &curve{
+			l:        l,
+			high:     upperPrice,
+			low:      basePrice,
+			sqrtHigh: sqrter.sqrt(upperPrice),
+			pv:       r.PositionSizeAtUpper.Neg(),
+		}
+		if err := cu.check(sqrter.sqrt, oneTick, allowedMaxEmptyLevels); err != nil {
 			r.TooWideUpper = true
 		}
 	}

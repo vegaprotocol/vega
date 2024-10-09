@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -111,6 +112,8 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
 	e.updateNextBalanceSnapshot(accs.NextBalanceSnapshot)
 	e.snapshotBalances()
+	e.earmarkedBalance = accs.Earmarked
+	e.state.updateEarmarked(e.earmarkedBalance)
 	return err
 }
 
@@ -171,6 +174,10 @@ func (a *accState) updateAsset(asset types.Asset) {
 
 func (a *accState) updateAccs(accs []*types.Account) {
 	a.accPL.CollateralAccounts.Accounts = accs[:]
+}
+
+func (a *accState) updateEarmarked(earmarked map[string]*num.Uint) {
+	a.accPL.CollateralAccounts.Earmarked = earmarked
 }
 
 func (a *accState) updateBalanceSnapshotTime(t time.Time) {

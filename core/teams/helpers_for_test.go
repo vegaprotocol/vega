@@ -241,6 +241,18 @@ func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.Cr
 	}
 }
 
+func createTeamWithAllowListCmd(t *testing.T, name, teamURL, avatarURL string, closed bool, allowList []string) *commandspb.CreateReferralSet_Team {
+	t.Helper()
+
+	return &commandspb.CreateReferralSet_Team{
+		Name:      name,
+		TeamUrl:   ptr.From(teamURL),
+		AvatarUrl: ptr.From(avatarURL),
+		Closed:    closed,
+		AllowList: allowList,
+	}
+}
+
 func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool, allowList []string) *commandspb.UpdateReferralSet_Team {
 	t.Helper()
 

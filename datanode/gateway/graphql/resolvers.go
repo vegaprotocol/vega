@@ -1434,9 +1434,18 @@ func (r *myQueryResolver) EstimateOrder(
 	}
 
 	fee := TradeFee{
-		MakerFee:          resp.Fee.MakerFee,
-		InfrastructureFee: resp.Fee.InfrastructureFee,
-		LiquidityFee:      resp.Fee.LiquidityFee,
+		MakerFee:                          resp.Fee.MakerFee,
+		InfrastructureFee:                 resp.Fee.InfrastructureFee,
+		LiquidityFee:                      resp.Fee.LiquidityFee,
+		BuyBackFee:                        resp.Fee.BuyBackFee,
+		TreasuryFee:                       resp.Fee.TreasuryFee,
+		HighVolumeMakerFee:                resp.Fee.HighVolumeMakerFee,
+		MakerFeeReferralDiscount:          ptr.From(resp.Fee.MakerFeeReferrerDiscount),
+		MakerFeeVolumeDiscount:            ptr.From(resp.Fee.MakerFeeVolumeDiscount),
+		InfrastructureFeeReferralDiscount: ptr.From(resp.Fee.InfrastructureFeeReferrerDiscount),
+		InfrastructureFeeVolumeDiscount:   ptr.From(resp.Fee.InfrastructureFeeVolumeDiscount),
+		LiquidityFeeReferralDiscount:      ptr.From(resp.Fee.LiquidityFeeReferrerDiscount),
+		LiquidityFeeVolumeDiscount:        ptr.From(resp.Fee.LiquidityFeeVolumeDiscount),
 	}
 
 	// now we calculate the margins
@@ -1529,9 +1538,18 @@ func (r *myQueryResolver) EstimateFees(
 	}
 
 	fees := &TradeFee{
-		MakerFee:          resp.Fee.MakerFee,
-		InfrastructureFee: resp.Fee.InfrastructureFee,
-		LiquidityFee:      resp.Fee.LiquidityFee,
+		MakerFee:                          resp.Fee.MakerFee,
+		InfrastructureFee:                 resp.Fee.InfrastructureFee,
+		LiquidityFee:                      resp.Fee.LiquidityFee,
+		BuyBackFee:                        resp.Fee.BuyBackFee,
+		TreasuryFee:                       resp.Fee.TreasuryFee,
+		HighVolumeMakerFee:                resp.Fee.HighVolumeMakerFee,
+		MakerFeeReferralDiscount:          ptr.From(resp.Fee.MakerFeeReferrerDiscount),
+		MakerFeeVolumeDiscount:            ptr.From(resp.Fee.MakerFeeVolumeDiscount),
+		InfrastructureFeeReferralDiscount: ptr.From(resp.Fee.InfrastructureFeeReferrerDiscount),
+		InfrastructureFeeVolumeDiscount:   ptr.From(resp.Fee.InfrastructureFeeVolumeDiscount),
+		LiquidityFeeReferralDiscount:      ptr.From(resp.Fee.LiquidityFeeReferrerDiscount),
+		LiquidityFeeVolumeDiscount:        ptr.From(resp.Fee.LiquidityFeeVolumeDiscount),
 	}
 
 	return &FeeEstimate{
@@ -3043,6 +3061,9 @@ func (r *myTradeResolver) BuyerFee(_ context.Context, obj *vegapb.Trade) (*Trade
 		fee.LiquidityFee = obj.BuyerFee.LiquidityFee
 		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeReferrerDiscount)
 		fee.LiquidityFeeVolumeDiscount = setIfExists(obj.BuyerFee.LiquidityFeeVolumeDiscount)
+		fee.TreasuryFee = obj.BuyerFee.TreasuryFee
+		fee.BuyBackFee = obj.BuyerFee.BuyBackFee
+		fee.HighVolumeMakerFee = obj.BuyerFee.HighVolumeMakerFee
 	}
 	return &fee, nil
 }
@@ -3068,6 +3089,9 @@ func (r *myTradeResolver) SellerFee(_ context.Context, obj *vegapb.Trade) (*Trad
 		fee.LiquidityFee = obj.SellerFee.LiquidityFee
 		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeReferrerDiscount)
 		fee.LiquidityFeeVolumeDiscount = setIfExists(obj.SellerFee.LiquidityFeeVolumeDiscount)
+		fee.TreasuryFee = obj.SellerFee.TreasuryFee
+		fee.BuyBackFee = obj.SellerFee.BuyBackFee
+		fee.HighVolumeMakerFee = obj.SellerFee.HighVolumeMakerFee
 	}
 
 	return &fee, nil

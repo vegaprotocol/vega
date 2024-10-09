@@ -100,6 +100,7 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		}
 
 		amount, err := e.processGovernanceTransfer(ctx, gTransfer)
+		amount = e.scaleAmountByTargetNotional(gTransfer.Config.RecurringTransferConfig.DispatchStrategy, amount)
 		e.log.Info("processed transfer", logging.String("amount", amount.String()))
 
 		if err != nil {
@@ -233,7 +234,7 @@ func (e *Engine) processGovernanceTransfer(
 		ds := gTransfer.Config.RecurringTransferConfig.DispatchStrategy
 		// if the metric is market value we make the transfer to the market account (as opposed to the metric's hash account)
 		if ds.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
-			marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets, gTransfer.Config.Asset, gTransfer.Config.Source)
+			marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets, gTransfer.Config.Asset, gTransfer.Config.Source, ds.EligibleKeys)
 			for _, fms := range marketProposersScore {
 				amt, _ := num.UintFromDecimal(transferAmount.ToDecimal().Mul(fms.Score))
 				if amt.IsZero() {

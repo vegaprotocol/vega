@@ -357,3 +357,35 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
+  Scenario: checking auction price
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount    |
+      | party1 | BTC   | 100000000 |
+      | party2 | BTC   | 100000000 |
+      | party3 | BTC   | 100000000 |
+      | party4 | BTC   | 100000000 |
+
+    Then the market data for the market "ETH/DEC19" should be:
+      | trading mode                 |
+      | TRADING_MODE_OPENING_AUCTION |
+    # Ensure an indicative price/volume of 10, although we will not uncross at this price point
+    And the parties place the following orders:
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC19 | buy  | 20     | 90000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
+      | party2 | ETH/DEC19 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
+      | party3 | ETH/DEC19 | buy  | 9      | 107000 | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
+      | party1 | ETH/DEC19 | sell | 10     | 95000  | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
+      | party4 | ETH/DEC19 | sell | 20     | 200000 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-1    |
+    When the network moves ahead "6" blocks
+    Then the market data for the market "ETH/DEC19" should be:
+      | trading mode            |
+      | TRADING_MODE_CONTINUOUS |
+
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party3 | 97500 | 9    | party1 |
+      | party2 | 97500 | 1    | party1 |
+
+    And the mark price should be "97500" for the market "ETH/DEC19"
+

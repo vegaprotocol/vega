@@ -62,6 +62,17 @@ func (r *VegaResolverRoot) ObservableMarketData() ObservableMarketDataResolver {
 
 type myMarketDataResolver VegaResolverRoot
 
+// ActiveProtocolAutomatedPurchase implements MarketDataResolver.
+func (r *myMarketDataResolver) ActiveProtocolAutomatedPurchase(ctx context.Context, obj *vegapb.MarketData) (*ProtocolAutomatedPurchaseState, error) {
+	if obj.ActiveProtocolAutomatedPurchase != nil {
+		return &ProtocolAutomatedPurchaseState{
+			ID:      obj.ActiveProtocolAutomatedPurchase.Id,
+			OrderID: obj.ActiveProtocolAutomatedPurchase.OrderId,
+		}, nil
+	}
+	return nil, nil
+}
+
 func (r *myMarketDataResolver) MarkPriceType(_ context.Context, m *types.MarketData) (CompositePriceType, error) {
 	if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED {
 		return CompositePriceTypeCompositePriceTypeWeighted, nil
@@ -262,6 +273,17 @@ func (r *myMarketDataResolver) ProductData(_ context.Context, m *types.MarketDat
 }
 
 type myObservableMarketDataResolver myMarketDataResolver
+
+// ActiveProtocolAutomatedPurchase implements ObservableMarketDataResolver.
+func (r *myObservableMarketDataResolver) ActiveProtocolAutomatedPurchase(ctx context.Context, obj *vegapb.MarketData) (*ProtocolAutomatedPurchaseState, error) {
+	if obj.ActiveProtocolAutomatedPurchase != nil {
+		return &ProtocolAutomatedPurchaseState{
+			ID:      obj.ActiveProtocolAutomatedPurchase.Id,
+			OrderID: obj.ActiveProtocolAutomatedPurchase.OrderId,
+		}, nil
+	}
+	return nil, nil
+}
 
 func (r *myObservableMarketDataResolver) MarketID(ctx context.Context, m *types.MarketData) (string, error) {
 	return m.Market, nil

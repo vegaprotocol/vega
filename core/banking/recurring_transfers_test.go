@@ -148,6 +148,8 @@ func TestMaturation(t *testing.T) {
 	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_END})
 	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_START})
 	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_END})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 13, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 13, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	require.Equal(t, 10, len(seenEvts))
 	stoppedIDs := map[string]struct{}{}

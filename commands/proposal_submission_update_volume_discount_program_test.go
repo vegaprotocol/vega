@@ -134,14 +134,14 @@ func testSubmissionForVolumeDiscountProgramUpdateWithWindowLengthOverLimitFails(
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
 					Changes: &types.VolumeDiscountProgramChanges{
-						WindowLength: 101,
+						WindowLength: 201,
 					},
 				},
 			},
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.window_length"), commands.ErrMustBeAtMost100)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_volume_discount_program.changes.window_length"), commands.ErrMustBeAtMost200)
 }
 
 func testSubmissionForVolumeDiscountProgramUpdateWithoutTierMinimumRunningNotionalTakerVolumeFails(t *testing.T) {
