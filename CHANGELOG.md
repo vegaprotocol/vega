@@ -30,6 +30,7 @@
 - [11696](https://github.com/vegaprotocol/vega/issues/11696) - Add binding for estimate fees API.
 - [11699](https://github.com/vegaprotocol/vega/issues/11699) - Update factors of programs when they are updated.
 - [11724](https://github.com/vegaprotocol/vega/issues/11724) - Allow nil initial time in time trigger.
+- [11733](https://github.com/vegaprotocol/vega/issues/11733) - Fix division by zero.
 
 ## 0.78.2
 
