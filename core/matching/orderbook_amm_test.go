@@ -421,8 +421,14 @@ func expectCrossedAMMs(t *testing.T, tst *tstOrderbook, min, max int) {
 
 	orders1 := createOrderbookShape(t, tst, min, max, types.SideBuy, "A")
 	orders2 := createOrderbookShape(t, tst, min, max, types.SideSell, "B")
+	res := []*types.OrderbookShapeResult{
+		{
+			Buys:  orders1,
+			Sells: orders2,
+		},
+	}
 
-	tst.obs.EXPECT().OrderbookShape(gomock.Any(), gomock.Any(), gomock.Any()).Return(orders1, orders2)
+	tst.obs.EXPECT().OrderbookShape(gomock.Any(), gomock.Any(), gomock.Any()).Return(res)
 }
 
 type tstOrderbook struct {

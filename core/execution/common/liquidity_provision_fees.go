@@ -159,13 +159,14 @@ func (m *MarketLiquidity) updateAMMCommitment(count int64) {
 
 	pools := m.amm.GetAMMPoolsBySubAccount()
 	for ammParty, pool := range pools {
-		buy, sell := pool.OrderbookShape(minP, maxP, nil)
+		r := pool.OrderbookShape(minP, maxP, nil)
+
 		buyTotal, sellTotal := num.UintZero(), num.UintZero()
-		for _, b := range buy {
+		for _, b := range r.Buys {
 			size := num.UintFromUint64(b.Size)
 			buyTotal.AddSum(size.Mul(size, b.Price))
 		}
-		for _, s := range sell {
+		for _, s := range r.Sells {
 			size := num.UintFromUint64(s.Size)
 			sellTotal.AddSum(size.Mul(size, s.Price))
 		}
@@ -183,7 +184,7 @@ func (m *MarketLiquidity) updateAMMCommitment(count int64) {
 		score := as.score
 		if !skipScore {
 			bb, ba := num.DecimalFromUint(bestB), num.DecimalFromUint(bestA)
-			score = m.liquidityEngine.GetPartyLiquidityScore(append(buy, sell...), bb, ba, minP, maxP)
+			score = m.liquidityEngine.GetPartyLiquidityScore(append(r.Buys, r.Sells...), bb, ba, minP, maxP)
 		}
 
 		// set the stake and score

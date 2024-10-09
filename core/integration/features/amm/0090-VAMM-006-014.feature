@@ -432,7 +432,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party5   | 130    | 0              | 0            |        |
       | vamm1-id | 0      | 0              | -257         | true   |
 
-  @VAMM3
+  @VAMM
   Scenario: 0090-VAMM-014: If other traders trade to move the market mid price to 90 and then in one trade move the mid price to 110 then trade to move the mid price to 120 the vAMM will have a larger (more negative) but comparable position to if they had been moved straight from 100 to 120.
     # Move mid price to 90
     When the parties place the following orders:

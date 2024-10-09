@@ -339,7 +339,7 @@ type EquityLikeShares interface {
 }
 
 type AMMPool interface {
-	OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order)
+	OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) *types.OrderbookShapeResult
 	LiquidityFee() num.Decimal
 	CommitmentAmount() *num.Uint
 }

@@ -550,8 +550,7 @@ Feature: vAMM rebasing when created or amended
       | mark price | trading mode             | best bid price | best offer price |
       | 155        | TRADING_MODE_CONTINUOUS  | 109            | 0                |
 
-
-    @VAMM3
+  @VAMM
   Scenario: Two AMMs crossed with large order expansion
 
     Then the parties submit the following AMM:

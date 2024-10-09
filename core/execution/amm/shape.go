@@ -449,10 +449,10 @@ func (sm *shapeMaker) adjustRegion() bool {
 	return true
 }
 
-func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
+func (sm *shapeMaker) makeShape() {
 	if !sm.adjustRegion() {
 		// if there is no overlap between the input region and the AMM's bounds then there are no orders
-		return sm.buys, sm.sells
+		return
 	}
 
 	// create accurate orders at the boundary of the adjusted region (even if we are going to make approximate internal steps)
@@ -481,15 +481,22 @@ func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
 			logging.Int("sells", len(sm.sells)),
 		)
 	}
-	return sm.buys, sm.sells
 }
 
-func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order) {
-	return newShapeMaker(
+func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) *types.OrderbookShapeResult {
+	sm := newShapeMaker(
 		p.log,
 		p,
 		from,
 		to,
-		idgen).
-		makeShape()
+		idgen)
+
+	sm.makeShape()
+
+	return &types.OrderbookShapeResult{
+		AmmParty: sm.pool.AMMParty,
+		Buys:     sm.buys,
+		Sells:    sm.sells,
+		Approx:   sm.approx,
+	}
 }
