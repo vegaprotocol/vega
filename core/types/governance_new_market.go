@@ -414,6 +414,7 @@ type NewMarketConfiguration struct {
 	TickSize               *num.Uint
 	EnableTxReordering     bool
 	AllowedEmptyAmmLevels  *uint64
+	AllowedSellers         []string
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -486,11 +487,13 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		TickSize:                n.TickSize.Clone(),
 		EnableTxReordering:      n.EnableTxReordering,
 		AllowedEmptyAmmLevels:   n.AllowedEmptyAmmLevels,
+		AllowedSellers:          append([]string{}, n.AllowedSellers...),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
 		cpy.Instrument = n.Instrument.DeepClone()
 	}
+	cpy.AllowedSellers = append(cpy.AllowedSellers, n.AllowedSellers...)
 	if n.PriceMonitoringParameters != nil {
 		cpy.PriceMonitoringParameters = n.PriceMonitoringParameters.DeepClone()
 	}

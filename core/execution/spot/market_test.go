@@ -36,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -184,6 +185,17 @@ func newTestMarket(
 	now time.Time,
 ) *testMarket {
 	t.Helper()
+	return newTestMarketWithAllowedSellers(t, pMonitorSettings, openingAuctionDuration, now, nil)
+}
+
+func newTestMarketWithAllowedSellers(
+	t *testing.T,
+	pMonitorSettings *types.PriceMonitoringSettings,
+	openingAuctionDuration *types.AuctionDuration,
+	now time.Time,
+	allowedSellers []string,
+) *testMarket {
+	t.Helper()
 	base := "BTC"
 	quote := "ETH"
 	quoteDP := uint64(0)
@@ -202,6 +214,7 @@ func newTestMarket(
 
 	statevarEngine := stubs.NewStateVar()
 	mkt := getMarketWithDP(base, quote, pMonitorSettings, openingAuctionDuration, quoteDP, positionDP)
+	mkt.AllowedSellers = allowedSellers
 
 	as := monitor.NewAuctionState(&mkt, now)
 	epoch := mocks.NewMockEpochEngine(ctrl)
@@ -301,4 +314,52 @@ func getGTCLimitOrder(tm *testMarket,
 		Reference:   "marketorder",
 	}
 	return order
+}
+
+//nolint:unparam
+func getStopOrderSubmission(tm *testMarket,
+	now time.Time,
+	id string,
+	side1 types.Side,
+	side2 types.Side,
+	partyID string,
+	size uint64,
+	price uint64,
+) *types.StopOrdersSubmission {
+	return &types.StopOrdersSubmission{
+		RisesAbove: &types.StopOrderSetup{
+			OrderSubmission: &types.OrderSubmission{
+				Type:        types.OrderTypeLimit,
+				TimeInForce: types.OrderTimeInForceGTC,
+				Side:        side1,
+				MarketID:    tm.market.GetID(),
+				Size:        size,
+				Price:       num.NewUint(price),
+				Reference:   "marketorder",
+			},
+			Expiry: &types.StopOrderExpiry{
+				ExpiryStrategy: ptr.From(types.StopOrderExpiryStrategyCancels),
+			},
+			Trigger:             types.NewTrailingStopOrderTrigger(types.StopOrderTriggerDirectionRisesAbove, num.DecimalFromFloat(0.9)),
+			SizeOverrideSetting: types.StopOrderSizeOverrideSettingNone,
+			SizeOverrideValue:   nil,
+		},
+		FallsBelow: &types.StopOrderSetup{
+			OrderSubmission: &types.OrderSubmission{
+				Type:        types.OrderTypeLimit,
+				TimeInForce: types.OrderTimeInForceGTC,
+				Side:        side2,
+				MarketID:    tm.market.GetID(),
+				Size:        size,
+				Price:       num.NewUint(price),
+				Reference:   "marketorder",
+			},
+			Expiry: &types.StopOrderExpiry{
+				ExpiryStrategy: ptr.From(types.StopOrderExpiryStrategyCancels),
+			},
+			Trigger:             types.NewTrailingStopOrderTrigger(types.StopOrderTriggerDirectionRisesAbove, num.DecimalFromFloat(0.9)),
+			SizeOverrideSetting: types.StopOrderSizeOverrideSettingNone,
+			SizeOverrideValue:   nil,
+		},
+	}
 }

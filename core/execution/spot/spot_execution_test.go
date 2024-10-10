@@ -21,10 +21,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/stretchr/testify/require"
 )
@@ -162,6 +164,100 @@ func TestAmend(t *testing.T) {
 	haBalance1, err = tm.collateralEngine.GetPartyHoldingAccount("party1", tm.quoteAsset)
 	require.NoError(t, err)
 	require.Equal(t, "60000", haBalance1.Balance.String())
+}
+
+func TestMarketWithAllowedSellers(t *testing.T) {
+	now := time.Now()
+	ctx := context.Background()
+	ctx = vegacontext.WithTraceID(ctx, crypto.RandomHash())
+	tm := newTestMarketWithAllowedSellers(t, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 1}, now, []string{"party1", "party2"})
+
+	addAccountWithAmount(tm, "party1", 100000, "ETH")
+	addAccountWithAmount(tm, "party2", 100000, "ETH")
+	addAccountWithAmount(tm, "party3", 100000, "ETH")
+	addAccountWithAmount(tm, "party1", 100000, "BTC")
+	addAccountWithAmount(tm, "party2", 100000, "BTC")
+	addAccountWithAmount(tm, "party3", 100000, "BTC")
+	tm.market.StartOpeningAuction(ctx)
+
+	t.Run("allowed seller can post sell orders", func(t *testing.T) {
+		order1 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideSell, "party1", 1, 300)
+		_, err := tm.market.SubmitOrder(ctx, order1.IntoSubmission(), order1.Party, crypto.RandomHash())
+		require.NoError(t, err)
+		order2 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideSell, "party2", 1, 300)
+		_, err = tm.market.SubmitOrder(ctx, order2.IntoSubmission(), order2.Party, crypto.RandomHash())
+		require.NoError(t, err)
+	})
+
+	t.Run("allowed seller can post buy orders", func(t *testing.T) {
+		order1 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideBuy, "party1", 2, 200)
+		_, err := tm.market.SubmitOrder(ctx, order1.IntoSubmission(), order1.Party, crypto.RandomHash())
+		require.NoError(t, err)
+		order2 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideBuy, "party2", 2, 200)
+		_, err = tm.market.SubmitOrder(ctx, order2.IntoSubmission(), order2.Party, crypto.RandomHash())
+		require.NoError(t, err)
+	})
+
+	t.Run("non allowed seller cannot post sell orders", func(t *testing.T) {
+		order1 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideSell, "party3", 2, 300)
+		_, err := tm.market.SubmitOrder(ctx, order1.IntoSubmission(), order1.Party, crypto.RandomHash())
+		require.EqualError(t, err, "sell order not allowed")
+	})
+
+	t.Run("non allowed seller can post buy orders", func(t *testing.T) {
+		order1 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideBuy, "party3", 2, 200)
+		_, err := tm.market.SubmitOrder(ctx, order1.IntoSubmission(), order1.Party, crypto.RandomHash())
+		require.NoError(t, err)
+	})
+
+	t.Run("exit auction", func(t *testing.T) {
+		order1 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideBuy, "party1", 2, 30000)
+		_, err := tm.market.SubmitOrder(ctx, order1.IntoSubmission(), order1.Party, crypto.RandomHash())
+		require.NoError(t, err)
+
+		order2 := getGTCLimitOrder(tm, now, crypto.RandomHash(), types.SideSell, "party2", 1, 30000)
+		_, err = tm.market.SubmitOrder(ctx, order2.IntoSubmission(), order2.Party, crypto.RandomHash())
+		require.NoError(t, err)
+
+		tm.market.OnTick(ctx, now.Add(2*time.Second))
+		md := tm.market.GetMarketData()
+		require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	})
+
+	t.Run("increase max stop orders per parties", func(t *testing.T) {
+		tm.market.OnMarketPartiesMaximumStopOrdersUpdate(
+			context.Background(), num.NewUint(1000))
+	})
+
+	t.Run("allowed seller can post sell stop orders", func(t *testing.T) {
+		idgen := idgeneration.New(crypto.RandomHash())
+		order1 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideSell, types.SideBuy, "party1", 1, 300)
+		_, err := tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order1, "party1", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		require.NoError(t, err)
+
+		order2 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideSell, types.SideBuy, "party2", 1, 300)
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order2, "party2", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		require.NoError(t, err)
+
+		order3 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideBuy, types.SideSell, "party1", 1, 300)
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order3, "party1", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		require.NoError(t, err)
+
+		order4 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideBuy, types.SideSell, "party2", 1, 300)
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order4, "party2", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		require.NoError(t, err)
+	})
+
+	t.Run("non allowed seller cannot post sell stop orders", func(t *testing.T) {
+		idgen := idgeneration.New(crypto.RandomHash())
+		order1 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideSell, types.SideBuy, "party3", 1, 300)
+		_, err := tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order1, "party3", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		require.EqualError(t, err, "sell order not allowed")
+
+		order2 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideBuy, types.SideSell, "party3", 1, 300)
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order2, "party3", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		require.EqualError(t, err, "sell order not allowed")
+	})
 }
 
 func TestCancelAll(t *testing.T) {

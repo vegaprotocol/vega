@@ -422,6 +422,8 @@ message Market {
   bool enable_transaction_reordering = 22;
   // Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission.
   uint64 allowed_empty_amm_levels = 23;
+  // Proposer of the market, to be used to restrict the sell side
+  repeated string allowed_sellers = 24;
 }
 
 // Time stamps for important times about creating, enacting etc the market
