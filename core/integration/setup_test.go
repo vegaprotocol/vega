@@ -202,7 +202,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 	execsetup.volumeRebateProgram = volumerebate.New(execsetup.broker, execsetup.marketActivityTracker)
 
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventHeartbeat, execsetup.profilesEngine)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventHeartbeat, execsetup.profilesEngine, execsetup.stakingAccount)
 
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
@@ -233,7 +233,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.activityStreak = activitystreak.New(execsetup.log, execsetup.executionEngine, execsetup.broker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
 
-	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine, execsetup.profilesEngine)
+	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine, execsetup.profilesEngine, execsetup.timeService)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.

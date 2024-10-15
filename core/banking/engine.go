@@ -40,7 +40,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource,Parties
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource,Parties,StakeAccounting
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
@@ -104,6 +104,11 @@ type EpochService interface {
 // Topology ...
 type Topology interface {
 	IsValidator() bool
+}
+
+// StakeAccounting ...
+type StakeAccounting interface {
+	AddEvent(ctx context.Context, evt *types.StakeLinking)
 }
 
 type MarketActivityTracker interface {
@@ -223,6 +228,9 @@ type Engine struct {
 
 	// transient cache used to market a dispatch strategy as checked for eligibility for this round so we don't check again.
 	dispatchRequiredCache map[string]bool
+
+	stakingAsset    string
+	stakeAccounting StakeAccounting
 }
 
 type withdrawalRef struct {
@@ -244,6 +252,7 @@ func New(log *logging.Logger,
 	secondaryBridgeView ERC20BridgeView,
 	ethEventSource EthereumEventSource,
 	parties Parties,
+	stakeAccounting StakeAccounting,
 ) (e *Engine) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -290,7 +299,13 @@ func New(log *logging.Logger,
 		primaryBridgeView:                         primaryBridgeView,
 		secondaryBridgeView:                       secondaryBridgeView,
 		dispatchRequiredCache:                     map[string]bool{},
+		stakeAccounting:                           stakeAccounting,
 	}
+}
+
+func (e *Engine) OnStakingAsset(_ context.Context, a string) error {
+	e.stakingAsset = a
+	return nil
 }
 
 func (e *Engine) OnMaxFractionChanged(ctx context.Context, f num.Decimal) error {

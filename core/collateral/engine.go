@@ -356,6 +356,18 @@ func (e *Engine) GetAllVestingQuantumBalance(party string) num.Decimal {
 	return balance
 }
 
+func (e *Engine) GetAllVestingAndVestedAccountForAsset(asset string) []*types.Account {
+	accs := []*types.Account{}
+
+	for _, v := range e.hashableAccs {
+		if v.Asset == asset && (v.Type == types.AccountTypeVestingRewards || v.Type == types.AccountTypeVestedRewards) {
+			accs = append(accs, v.Clone())
+		}
+	}
+
+	return accs
+}
+
 func (e *Engine) GetVestingRecovery() map[string]map[string]*num.Uint {
 	out := e.vesting
 	e.vesting = map[string]map[string]*num.Uint{}
