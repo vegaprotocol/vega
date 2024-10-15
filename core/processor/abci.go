@@ -1207,6 +1207,12 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 	if !app.nilSpam {
 		app.spam.EndPrepareProposal()
 	}
+
+	fmt.Printf("DEBUG GAS: HEIGHT       : %v\n", height)
+	fmt.Printf("DEBUG GAS: TOTAL WANTED : %v\n", totalGasWanted)
+	fmt.Printf("DEBUG GAS: MAX          : %v\n", totalGasWanted)
+	fmt.Printf("DEBUG GAS: NB TXS       : %v\n", len(blockTxs))
+
 	return blockTxs
 }
 
