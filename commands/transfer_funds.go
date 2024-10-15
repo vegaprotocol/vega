@@ -74,7 +74,8 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 	}
 
 	if cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL &&
-		cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS {
+		cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS &&
+		cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_LOCKED_FOR_STAKING {
 		errs.AddForProperty("transfer.from_account_type", ErrIsNotValid)
 	}
 
@@ -109,7 +110,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 	} else {
 		switch k := cmd.Kind.(type) {
 		case *commandspb.Transfer_OneOff:
-			if cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES {
+			if cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_BUY_BACK_FEES && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_LOCKED_FOR_STAKING {
 				errs.AddForProperty("transfer.to_account_type", errors.New("account type is not valid for one off transfer"))
 			}
 			if k.OneOff.GetDeliverOn() < 0 {

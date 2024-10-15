@@ -363,15 +363,15 @@ func (m *MockVesting) EXPECT() *MockVestingMockRecorder {
 }
 
 // AddReward mocks base method.
-func (m *MockVesting) AddReward(arg0, arg1 string, arg2 *num.Uint, arg3 uint64) {
+func (m *MockVesting) AddReward(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint, arg4 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddReward", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "AddReward", arg0, arg1, arg2, arg3, arg4)
 }
 
 // AddReward indicates an expected call of AddReward.
-func (mr *MockVestingMockRecorder) AddReward(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockVestingMockRecorder) AddReward(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReward", reflect.TypeOf((*MockVesting)(nil).AddReward), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReward", reflect.TypeOf((*MockVesting)(nil).AddReward), arg0, arg1, arg2, arg3, arg4)
 }
 
 // GetSingleAndSummedRewardBonusMultipliers mocks base method.

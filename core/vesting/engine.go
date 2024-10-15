@@ -24,6 +24,8 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -33,12 +35,13 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/vesting ActivityStreakVestingMultiplier,Assets,Parties
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/vesting ActivityStreakVestingMultiplier,Assets,Parties,StakeAccounting,Time
 
 type Collateral interface {
 	TransferVestedRewards(ctx context.Context, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
 	GetVestingRecovery() map[string]map[string]*num.Uint
 	GetAllVestingQuantumBalance(party string) num.Decimal
+	GetAllVestingAndVestedAccountForAsset(asset string) []*types.Account
 }
 
 type ActivityStreakVestingMultiplier interface {
@@ -47,6 +50,7 @@ type ActivityStreakVestingMultiplier interface {
 
 type Broker interface {
 	Send(events events.Event)
+	Stage(event events.Event)
 }
 
 type Assets interface {
@@ -55,6 +59,14 @@ type Assets interface {
 
 type Parties interface {
 	RelatedKeys(key string) (*types.PartyID, []string)
+}
+
+type StakeAccounting interface {
+	AddEvent(ctx context.Context, evt *types.StakeLinking)
+}
+
+type Time interface {
+	GetTimeNow() time.Time
 }
 
 type PartyRewards struct {
@@ -93,6 +105,11 @@ type Engine struct {
 
 	// cache the reward bonus multiplier and quantum balance
 	rewardBonusMultiplierCache map[string]MultiplierAndQuantBalance
+
+	stakingAsset    string
+	stakeAccounting StakeAccounting
+
+	t Time
 }
 
 func New(
@@ -102,6 +119,7 @@ func New(
 	broker Broker,
 	assets Assets,
 	parties Parties,
+	t Time,
 ) *Engine {
 	log = log.Named(namedLogger)
 
@@ -114,6 +132,7 @@ func New(
 		parties:                    parties,
 		state:                      map[string]*PartyRewards{},
 		rewardBonusMultiplierCache: map[string]MultiplierAndQuantBalance{},
+		t:                          t,
 	}
 }
 
@@ -136,6 +155,11 @@ func (e *Engine) OnBenefitTiersUpdate(_ context.Context, v interface{}) error {
 	sort.Slice(e.benefitTiers, func(i, j int) bool {
 		return e.benefitTiers[i].MinimumQuantumBalance.LT(e.benefitTiers[j].MinimumQuantumBalance)
 	})
+	return nil
+}
+
+func (e *Engine) OnStakingAssetUpdate(_ context.Context, stakingAsset string) error {
+	e.stakingAsset = stakingAsset
 	return nil
 }
 
@@ -165,11 +189,50 @@ func (e *Engine) OnEpochRestore(_ context.Context, epoch types.Epoch) {
 	e.epochSeq = epoch.Seq
 }
 
+func (e *Engine) updateStakingAccount(
+	ctx context.Context,
+	party string,
+	amount *num.Uint,
+	logIndex uint64,
+	brokerFunc func(events.Event),
+) {
+	var (
+		now       = e.t.GetTimeNow().Unix()
+		height, _ = vgcontext.BlockHeightFromContext(ctx)
+		txhash, _ = vgcontext.TxHashFromContext(ctx)
+		id        = crypto.HashStrToHex(fmt.Sprintf("%v%v%v", party, txhash, height))
+	)
+
+	stakeLinking := &types.StakeLinking{
+		ID:              id,
+		Type:            types.StakeLinkingTypeDeposited,
+		TS:              now,
+		Party:           party,
+		Amount:          amount,
+		Status:          types.StakeLinkingStatusAccepted,
+		FinalizedAt:     now,
+		TxHash:          txhash,
+		BlockHeight:     height,
+		BlockTime:       now,
+		LogIndex:        logIndex,
+		EthereumAddress: party,
+	}
+
+	e.stakeAccounting.AddEvent(context.Background(), stakeLinking)
+	brokerFunc(events.NewStakeLinking(ctx, *stakeLinking))
+}
+
 func (e *Engine) AddReward(
+	ctx context.Context,
 	party, asset string,
 	amount *num.Uint,
 	lockedForEpochs uint64,
 ) {
+	// send to staking
+	if asset == e.stakingAsset {
+		e.updateStakingAccount(ctx, party, amount.Clone(), 1, e.broker.Send)
+	}
+
 	// no locktime, just increase the amount in vesting
 	if lockedForEpochs == 0 {
 		e.increaseVestingBalance(party, asset, amount)

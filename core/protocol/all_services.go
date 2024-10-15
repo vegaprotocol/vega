@@ -340,7 +340,7 @@ func newServices(
 	svcs.volumeRebate = volumerebate.NewSnapshottedEngine(svcs.broker, svcs.marketActivityTracker)
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService,
 		svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.primaryBridgeView,
-		svcs.secondaryBridgeView, svcs.forwarderHeartbeat, svcs.partiesEngine)
+		svcs.secondaryBridgeView, svcs.forwarderHeartbeat, svcs.partiesEngine, svcs.stakingAccounts)
 
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
@@ -392,7 +392,7 @@ func newServices(
 		svcs.activityStreak.OnEpochRestore,
 	)
 
-	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets, svcs.partiesEngine)
+	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets, svcs.partiesEngine, svcs.timeService)
 	svcs.timeService.NotifyOnTick(svcs.vesting.OnTick)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
 
@@ -673,6 +673,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	}
 
 	watchers := []netparams.WatchParam{
+		{
+			Param:   netparams.RewardAsset,
+			Watcher: svcs.banking.OnStakingAsset,
+		},
+		{
+			Param:   netparams.RewardAsset,
+			Watcher: svcs.vesting.OnStakingAssetUpdate,
+		},
 		{
 			Param:   netparams.SpamProtectionBalanceSnapshotFrequency,
 			Watcher: svcs.collateral.OnBalanceSnapshotFrequencyUpdated,

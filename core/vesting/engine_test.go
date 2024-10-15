@@ -98,7 +98,7 @@ func TestDistributeAfterDelay(t *testing.T) {
 	})
 
 	t.Run("Add a reward locked for 3 epochs", func(t *testing.T) {
-		v.AddReward(party, vegaAsset, num.NewUint(100), 3)
+		v.AddReward(context.Background(), party, vegaAsset, num.NewUint(100), 3)
 	})
 
 	t.Run("Wait for 3 epochs", func(t *testing.T) {
@@ -332,7 +332,7 @@ func TestDistributeWithNoDelay(t *testing.T) {
 	})
 
 	t.Run("Add a reward without epoch lock", func(t *testing.T) {
-		v.AddReward(party, vegaAsset, num.NewUint(100), 0)
+		v.AddReward(context.Background(), party, vegaAsset, num.NewUint(100), 0)
 	})
 
 	t.Run("First reward payment", func(t *testing.T) {
@@ -514,7 +514,7 @@ func TestDistributeWithStreakRate(t *testing.T) {
 	})
 
 	t.Run("Add a reward without epoch lock", func(t *testing.T) {
-		v.AddReward(party, vegaAsset, num.NewUint(100), 0)
+		v.AddReward(context.Background(), party, vegaAsset, num.NewUint(100), 0)
 	})
 
 	t.Run("First reward payment", func(t *testing.T) {
@@ -696,11 +696,11 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 	})
 
 	t.Run("Add a reward locked for 2 epochs", func(t *testing.T) {
-		v.AddReward(party, vegaAsset, num.NewUint(100), 2)
+		v.AddReward(context.Background(), party, vegaAsset, num.NewUint(100), 2)
 	})
 
 	t.Run("Add another reward locked for 1 epoch", func(t *testing.T) {
-		v.AddReward(party, vegaAsset, num.NewUint(100), 1)
+		v.AddReward(context.Background(), party, vegaAsset, num.NewUint(100), 1)
 	})
 
 	t.Run("Wait for 1 epoch", func(t *testing.T) {
@@ -1046,10 +1046,10 @@ func TestDistributeWithRelatedKeys(t *testing.T) {
 	})
 
 	t.Run("Add a reward without epoch lock", func(t *testing.T) {
-		v.AddReward(party, vegaAsset, num.NewUint(100), 0)
+		v.AddReward(context.Background(), party, vegaAsset, num.NewUint(100), 0)
 
 		for _, key := range derivedKeys {
-			v.AddReward(key, vegaAsset, num.NewUint(50), 0)
+			v.AddReward(context.Background(), key, vegaAsset, num.NewUint(50), 0)
 		}
 	})
 

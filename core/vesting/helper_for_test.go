@@ -46,6 +46,7 @@ type testEngine struct {
 	broker  *bmocks.MockBroker
 	assets  *mocks.MockAssets
 	parties *mocks.MockParties
+	t       *mocks.MockTime
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -57,10 +58,11 @@ func getTestEngine(t *testing.T) *testEngine {
 	asvm := mocks.NewMockActivityStreakVestingMultiplier(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	parties := mocks.NewMockParties(ctrl)
+	tim := mocks.NewMockTime(ctrl)
 
 	return &testEngine{
 		Engine: vesting.New(
-			logger, col, asvm, broker, assets, parties,
+			logger, col, asvm, broker, assets, parties, tim,
 		),
 		ctrl:    ctrl,
 		broker:  broker,
@@ -68,6 +70,7 @@ func getTestEngine(t *testing.T) *testEngine {
 		asvm:    asvm,
 		assets:  assets,
 		parties: parties,
+		t:       tim,
 	}
 }
 
@@ -80,6 +83,7 @@ type testSnapshotEngine struct {
 	broker  *bmocks.MockBroker
 	assets  *mocks.MockAssets
 	parties *mocks.MockParties
+	t       *mocks.MockTime
 
 	currentEpoch uint64
 }
@@ -92,10 +96,11 @@ func newEngine(t *testing.T) *testSnapshotEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	parties := mocks.NewMockParties(ctrl)
+	tim := mocks.NewMockTime(ctrl)
 
 	return &testSnapshotEngine{
 		engine: vesting.NewSnapshotEngine(
-			logging.NewTestLogger(), col, asvm, broker, assets, parties,
+			logging.NewTestLogger(), col, asvm, broker, assets, parties, tim,
 		),
 		ctrl:         ctrl,
 		col:          col,
@@ -104,6 +109,7 @@ func newEngine(t *testing.T) *testSnapshotEngine {
 		assets:       assets,
 		parties:      parties,
 		currentEpoch: 10,
+		t:            tim,
 	}
 }
 
@@ -168,6 +174,10 @@ func (c *collateralMock) ResetVestingQuantumBalanceCallCount() {
 
 func (c *collateralMock) GetVestingQuantumBalanceCallCount() int {
 	return c.vestingQuantumBalanceCallCount
+}
+
+func (c *collateralMock) GetAllVestingAndVestedAccountForAsset(asset string) []*types.Account {
+	return nil
 }
 
 func newCollateralMock(t *testing.T) *collateralMock {
