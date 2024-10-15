@@ -1235,6 +1235,8 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 	}
 	foundDelayedTxs := make(map[string]struct{}, len(expectedDelayedAtHeight))
 
+	fmt.Printf("DEBUG GAS: HEIGHT       : %v\n", height)
+
 	for _, tx := range txs {
 		size += int64(tx.GetLength())
 		if size > maxBytes {
@@ -1244,7 +1246,7 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 		if err != nil {
 			return false
 		}
-		fmt.Printf("DEBUG GAS: TX : %v -> %v", tx.Command(), gw)
+		fmt.Printf("DEBUG GAS: TX           : %v -> %v\n", tx.Command(), gw)
 		totalGasWanted += int(gw)
 		if totalGasWanted > int(maxGas) {
 			return false
@@ -1274,7 +1276,8 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 		return false
 	}
 
-	fmt.Printf("DEBUG GAS: HEIGHT       : %v\n", height)
+	fmt.Printf("DEBUG GAS: MAXBYTES     : %v\n", maxBytes)
+	fmt.Printf("DEBUG GAS: BYTES        : %v\n", size)
 	fmt.Printf("DEBUG GAS: TOTAL WANTED : %v\n", totalGasWanted)
 	fmt.Printf("DEBUG GAS: MAX          : %v\n", app.getMaxGas())
 	fmt.Printf("DEBUG GAS: NB TXS       : %v\n", len(txs))
