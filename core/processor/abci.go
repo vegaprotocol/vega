@@ -978,6 +978,7 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 			break
 		}
 		totalGasWanted += tx.gasWanted
+
 		if totalGasWanted > maxGas {
 			break
 		}
@@ -1208,11 +1209,6 @@ func (app *App) prepareProposal(height uint64, txs []abci.Tx, rawTxs [][]byte) [
 		app.spam.EndPrepareProposal()
 	}
 
-	fmt.Printf("DEBUG GAS: HEIGHT       : %v\n", height)
-	fmt.Printf("DEBUG GAS: TOTAL WANTED : %v\n", totalGasWanted)
-	fmt.Printf("DEBUG GAS: MAX          : %v\n", totalGasWanted)
-	fmt.Printf("DEBUG GAS: NB TXS       : %v\n", len(blockTxs))
-
 	return blockTxs
 }
 
@@ -1248,6 +1244,7 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 		if err != nil {
 			return false
 		}
+		fmt.Printf("DEBUG GAS: TX : %v -> %v", tx.Command(), gw)
 		totalGasWanted += int(gw)
 		if totalGasWanted > int(maxGas) {
 			return false
@@ -1276,6 +1273,12 @@ func (app *App) processProposal(height uint64, txs []abci.Tx) bool {
 	if !app.nilSpam && !app.spam.ProcessProposal(txs) {
 		return false
 	}
+
+	fmt.Printf("DEBUG GAS: HEIGHT       : %v\n", height)
+	fmt.Printf("DEBUG GAS: TOTAL WANTED : %v\n", totalGasWanted)
+	fmt.Printf("DEBUG GAS: MAX          : %v\n", app.getMaxGas())
+	fmt.Printf("DEBUG GAS: NB TXS       : %v\n", len(txs))
+
 	return true
 }
 
