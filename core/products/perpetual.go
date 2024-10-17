@@ -417,11 +417,14 @@ type dataPoint struct {
 type Perpetual struct {
 	p   *types.Perps
 	log *logging.Logger
-	// oracle                 oracle
-	settlementDataListener func(context.Context, *num.Numeric)
-	broker                 Broker
-	oracle                 scheduledOracle
-	timeService            TimeService
+
+	// oracle
+	settlementDataListener func(context.Context, *num.Numeric) // funding payment
+	dataPointListener      func(context.Context, *num.Uint)    // pass through data-points
+
+	broker      Broker
+	oracle      scheduledOracle
+	timeService TimeService
 
 	// id should be the same as the market id
 	id string
@@ -531,6 +534,10 @@ func (p *Perpetual) NotifyOnSettlementData(listener func(context.Context, *num.N
 
 func (p *Perpetual) NotifyOnTradingTerminated(listener func(context.Context, bool)) {
 	p.log.Panic("not expecting trading terminated with perpetual")
+}
+
+func (p *Perpetual) NotifyOnDataSourcePropagation(listener func(context.Context, *num.Uint)) {
+	p.dataPointListener = listener
 }
 
 func (p *Perpetual) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint32) (*num.Uint, error) {
@@ -701,7 +708,6 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) er
 			logging.String("settlementData", odata.settlData.String()),
 		)
 	}
-
 	return nil
 }
 
@@ -721,6 +727,9 @@ func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t
 		return
 	}
 	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal, twap))
+
+	// send it out to anyone thats listening (AMM's mostly)
+	p.dataPointListener(ctx, price)
 }
 
 func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data) error {

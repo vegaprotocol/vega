@@ -82,6 +82,10 @@ func (f *Future) GetMarginIncrease(_ int64) num.Decimal {
 	return num.DecimalZero()
 }
 
+func (f *Future) NotifyOnDataSourcePropagation(listener func(context.Context, *num.Uint)) {
+	f.log.Panic("not implemented")
+}
+
 func (f *Future) NotifyOnSettlementData(listener func(context.Context, *num.Numeric)) {
 	f.settlementDataListener = listener
 }
