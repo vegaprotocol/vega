@@ -1115,7 +1115,7 @@ func testStopOrderExpiryStatus(t *testing.T) {
 func testStopOrderExpiryRejectionReason(t *testing.T) {
 	var stopOrderRejectionReason vegapb.StopOrder_RejectionReason
 	reasons := getEnums(t, stopOrderRejectionReason)
-	assert.Len(t, reasons, 11)
+	assert.Len(t, reasons, 12)
 	for r, reason := range reasons {
 		t.Run(reason, func(t *testing.T) {
 			ctx := tempTransaction(t)

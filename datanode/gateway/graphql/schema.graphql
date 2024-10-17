@@ -1430,7 +1430,7 @@ type EstimatedAMMBounds {
   liquidationPriceAtLower: String
   "If populated the bounds could be calculated but the AMM is invalid for other reasons."
   ammError: EstimatedAMMError
-  
+
 }
 
 "Defines the types of a dispatch strategy's scope the API can filter on."
@@ -1643,7 +1643,7 @@ type DispatchStrategy {
   "Interval for the distribution of the transfer"
   transferInterval: Int
 
-  "A list of party keys that are in scope for the reward" 
+  "A list of party keys that are in scope for the reward"
   eligibleKeys: [String!]
 
   "The target notional factor used to scale the amount to be taken from the source account"
@@ -2575,7 +2575,7 @@ type FeeFactors {
   "The factor applied to calculate LiquidityFees, a non-negative float"
   liquidityFee: String!
   "The fee used to purchase governance tokens via regular auctions (network wide)"
-  buyBackFee: String! 
+  buyBackFee: String!
   "The fee sent to the network treasury for later use based on governance actions (network wide)."
   treasuryFee: String!
 }
@@ -2857,6 +2857,9 @@ type Market {
 
   "Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission"
   allowedEmptyAMMLevels: Int!
+
+  "A list of keys allowed to place sell orders on the market"
+  allowedSellers: [String!]
 }
 
 """
@@ -3546,6 +3549,8 @@ enum StopOrderRejectionReason {
   REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES
   "Stop orders on spot markets cannot have a position size override"
   REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT
+  "Sell order not allowed on this market"
+  REJECTION_REASON_SELL_ORDER_NOT_ALLOWED
 }
 
 "Stop order size override settings"
@@ -4517,6 +4522,9 @@ enum OrderRejectionReason {
 
   "Order price exceeds the max price of the capped future market"
   ORDER_ERROR_PRICE_MUST_BE_LESS_THAN_OR_EQUAL_TO_MAX_PRICE
+
+  "Sell order not allowed on this market"
+  ORDER_ERROR_SELL_ORDER_NOT_ALLOWED
 }
 
 "Types of orders"
@@ -5311,6 +5319,8 @@ type NewSpotMarket {
   tickSize: String!
   "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
   enableTxReordering: Boolean!
+  "A list of keys allowed to place sell orders on the market"
+  allowedSellers: [String!]
 }
 
 "Update an existing spot market on Vega"
@@ -5347,6 +5357,8 @@ type UpdateSpotMarketConfiguration {
   tickSize: String!
   "If enabled aggressive orders sent to the market will be delayed by the configured number of blocks"
   enableTxReordering: Boolean!
+  "A list of keys allowed to place sell orders on the market"
+  allowedSellers: [String!]
 }
 
 type LiquiditySLAParameters {
@@ -7877,7 +7889,7 @@ type NewProtocolAutomatedPurchase {
   "The oracle that will define an approximate acceptable price for the transaction"
   priceOracle: DataSourceDefinition!
   "The final acceptable price is the price oracle value weighted by this factor (e.g. 1.05 to allow for 5% slippage on the purchase)"
-  oracleOffsetFactor: String! 
+  oracleOffsetFactor: String!
   "A time based oracle for when auctions will occur"
   auctionSchedule: DataSourceDefinition
   "The duration of the auction"

@@ -140,6 +140,7 @@ type UpdateMarketConfiguration struct {
 	TickSize                      *num.Uint
 	EnableTxReordering            bool
 	AllowedEmptyAmmLevels         *uint64
+	AllowedSellers                []string
 }
 
 func (n UpdateMarketConfiguration) String() string {
@@ -166,6 +167,7 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 		TickSize:                n.TickSize.Clone(),
 		EnableTxReordering:      n.EnableTxReordering,
 		AllowedEmptyAmmLevels:   n.AllowedEmptyAmmLevels,
+		AllowedSellers:          append([]string{}, n.AllowedSellers...),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {

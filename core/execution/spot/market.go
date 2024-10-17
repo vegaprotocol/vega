@@ -142,7 +142,8 @@ type Market struct {
 	minDuration time.Duration
 	epoch       types.Epoch
 
-	pap *ProtocolAutomatedPurchase
+	pap            *ProtocolAutomatedPurchase
+	allowedSellers map[string]struct{}
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -226,6 +227,12 @@ func NewMarket(
 	els := common.NewEquityShares(num.DecimalZero())
 	// @TODO pass in AMM
 	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil)
+
+	allowedSellers := map[string]struct{}{}
+	for _, v := range mkt.AllowedSellers {
+		allowedSellers[v] = struct{}{}
+	}
+
 	market := &Market{
 		log:                           log,
 		idgen:                         nil,
@@ -266,6 +273,7 @@ func NewMarket(
 		stopOrders:                    stoporders.New(log),
 		expiringStopOrders:            common.NewExpiringOrders(),
 		banking:                       banking,
+		allowedSellers:                allowedSellers,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
@@ -309,6 +317,11 @@ func (m *Market) Update(ctx context.Context, config *types.Market) error {
 	m.pMonitor.UpdateSettings(riskModel, m.mkt.PriceMonitoringSettings, m.as)
 	m.liquidity.UpdateMarketConfig(riskModel, m.pMonitor)
 	m.updateLiquidityFee(ctx)
+
+	clear(m.allowedSellers)
+	for _, v := range config.AllowedSellers {
+		m.allowedSellers[v] = struct{}{}
+	}
 
 	if tickSizeChanged {
 		tickSizeInAsset, _ := num.UintFromDecimal(m.mkt.TickSize.ToDecimal().Mul(m.priceFactor))
@@ -1259,6 +1272,16 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		return nil, common.ErrTradingNotAllowed
 	}
 
+	if fallsBelow != nil && fallsBelow.OrderSubmission != nil && !m.canSubmitMaybeSell(fallsBelow.Party, fallsBelow.OrderSubmission.Side) {
+		rejectStopOrders(types.StopOrderRejectionSellOrderNotAllowed, fallsBelow, risesAbove)
+		return nil, common.ErrSellOrderNotAllowed
+	}
+
+	if risesAbove != nil && risesAbove.OrderSubmission != nil && !m.canSubmitMaybeSell(risesAbove.Party, risesAbove.OrderSubmission.Side) {
+		rejectStopOrders(types.StopOrderRejectionSellOrderNotAllowed, risesAbove, risesAbove)
+		return nil, common.ErrSellOrderNotAllowed
+	}
+
 	now := m.timeService.GetTimeNow()
 	orderCnt := 0
 	if fallsBelow != nil {
@@ -1466,6 +1489,13 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(ctx context.Context, order
 		order.Reason = types.OrderErrorMarketClosed
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, common.ErrTradingNotAllowed
+	}
+
+	if !m.canSubmitMaybeSell(order.Party, order.Side) {
+		order.Status = types.OrderStatusRejected
+		order.Reason = types.OrderErrorSellOrderNotAllowed
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, common.ErrSellOrderNotAllowed
 	}
 
 	conf, _, err := m.submitOrder(ctx, order)
@@ -2874,6 +2904,19 @@ func (m *Market) canTrade() bool {
 		m.mkt.State == types.MarketStatePending ||
 		m.mkt.State == types.MarketStateSuspended ||
 		m.mkt.State == types.MarketStateSuspendedViaGovernance
+}
+
+func (m *Market) canSubmitMaybeSell(party string, side types.Side) bool {
+	// buy side
+	// or network party
+	// or no empty allowedSellers list
+	// are always fine
+	if len(m.allowedSellers) <= 0 || side == types.SideBuy || party == types.NetworkParty {
+		return true
+	}
+
+	_, isAllowed := m.allowedSellers[party]
+	return isAllowed
 }
 
 // cleanupOnReject removes all resources created while the market was on PREPARED state.

@@ -148,6 +148,10 @@ func NewMarketFromSnapshot(
 	}
 
 	now := timeService.GetTimeNow()
+	allowedSellers := map[string]struct{}{}
+	for _, v := range mkt.AllowedSellers {
+		allowedSellers[v] = struct{}{}
+	}
 	market := &Market{
 		log:                           log,
 		mkt:                           mkt,
@@ -190,6 +194,7 @@ func NewMarketFromSnapshot(
 		hasTraded:                     em.HasTraded,
 		orderHoldingTracker:           NewHoldingAccountTracker(mkt.ID, log, collateralEngine),
 		banking:                       banking,
+		allowedSellers:                allowedSellers,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	for _, p := range em.Parties {

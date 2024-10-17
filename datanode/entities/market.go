@@ -72,6 +72,7 @@ type Market struct {
 	TickSize               *decimal.Decimal
 	EnableTXReordering     bool
 	AllowedEmptyAMMLevels  uint64
+	AllowedSellers         []string
 }
 
 func (m *Market) HasCap() (cap *vega.FutureCap, hasCap bool) {
@@ -229,6 +230,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		TickSize:                      &tickSize,
 		EnableTXReordering:            market.EnableTransactionReordering,
 		AllowedEmptyAMMLevels:         market.AllowedEmptyAmmLevels,
+		AllowedSellers:                append([]string{}, market.AllowedSellers...),
 	}, nil
 }
 
@@ -297,6 +299,7 @@ func (m Market) ToProto() *vega.Market {
 		TickSize:                      m.TickSize.String(),
 		EnableTransactionReordering:   m.EnableTXReordering,
 		AllowedEmptyAmmLevels:         m.AllowedEmptyAMMLevels,
+		AllowedSellers:                append([]string{}, m.AllowedSellers...),
 	}
 }
 

@@ -109,6 +109,8 @@ message NewSpotMarketConfiguration {
   string tick_size = 9;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 10;
+  // Allowed sellers
+  repeated string allowed_sellers = 11;
 }
 
 // Configuration for a new futures market on Vega
@@ -260,6 +262,8 @@ message UpdateSpotMarketConfiguration {
   UpdateSpotInstrumentConfiguration instrument = 7;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 8;
+  // Allowed sellers
+  repeated string allowed_sellers = 9;
 }
 
 message UpdateSpotInstrumentConfiguration {

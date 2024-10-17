@@ -79,5 +79,3 @@ END;
 $$;
 
 -- +goose StatementEnd
-
-
