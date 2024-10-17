@@ -60,6 +60,7 @@ type Product interface {
 	ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint32) (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementData(listener func(context.Context, *num.Numeric))
+	NotifyOnDataSourcePropagation(listener func(context.Context, *num.Uint))
 	Update(ctx context.Context, pp interface{}, oe OracleEngine) error
 	UnsubscribeTradingTerminated(ctx context.Context)
 	UnsubscribeSettlementData(ctx context.Context)
