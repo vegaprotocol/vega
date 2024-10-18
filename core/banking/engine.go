@@ -72,6 +72,7 @@ type Collateral interface {
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetPartyLockedForStaking(party, asset string) (*types.Account, error)
 	GetPartyVestedRewardAccount(partyID, asset string) (*types.Account, error)
 	TransferFunds(ctx context.Context,
 		transfers []*types.Transfer,

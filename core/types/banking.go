@@ -45,18 +45,21 @@ const (
 )
 
 var (
-	ErrMissingTransferKind           = errors.New("missing transfer kind")
-	ErrCannotTransferZeroFunds       = errors.New("cannot transfer zero funds")
-	ErrInvalidFromAccount            = errors.New("invalid from account")
-	ErrInvalidFromDerivedKey         = errors.New("invalid from derived key")
-	ErrInvalidToAccount              = errors.New("invalid to account")
-	ErrUnsupportedFromAccountType    = errors.New("unsupported from account type")
-	ErrUnsupportedToAccountType      = errors.New("unsupported to account type")
-	ErrEndEpochIsZero                = errors.New("end epoch is zero")
-	ErrStartEpochIsZero              = errors.New("start epoch is zero")
-	ErrInvalidFactor                 = errors.New("invalid factor")
-	ErrStartEpochAfterEndEpoch       = errors.New("start epoch after end epoch")
-	ErrInvalidToForRewardAccountType = errors.New("to party is invalid for reward account type")
+	ErrMissingTransferKind                                        = errors.New("missing transfer kind")
+	ErrCannotTransferZeroFunds                                    = errors.New("cannot transfer zero funds")
+	ErrInvalidFromAccount                                         = errors.New("invalid from account")
+	ErrInvalidFromDerivedKey                                      = errors.New("invalid from derived key")
+	ErrInvalidToAccount                                           = errors.New("invalid to account")
+	ErrUnsupportedFromAccountType                                 = errors.New("unsupported from account type")
+	ErrUnsupportedToAccountType                                   = errors.New("unsupported to account type")
+	ErrEndEpochIsZero                                             = errors.New("end epoch is zero")
+	ErrStartEpochIsZero                                           = errors.New("start epoch is zero")
+	ErrInvalidFactor                                              = errors.New("invalid factor")
+	ErrStartEpochAfterEndEpoch                                    = errors.New("start epoch after end epoch")
+	ErrInvalidToForRewardAccountType                              = errors.New("to party is invalid for reward account type")
+	ErrTransferFromLockedForStakingAllowedOnlyToOwnGeneralAccount = errors.New("transfers from locked for staking allowed only to own general account")
+	ErrTransferToLockedForStakingAllowedOnlyFromOwnGeneralAccount = errors.New("transfers to locked for staking allowed only from own general account")
+	ErrCanOnlyTransferFromLockedForStakingToGeneralAccount        = errors.New("can only transfer from locked for staking to general account")
 )
 
 type TransferCommandKind int
@@ -93,6 +96,18 @@ func (t *TransferBase) IsValid() error {
 		return ErrCannotTransferZeroFunds
 	}
 
+	if t.FromAccountType == AccountTypeLockedForStaking && t.ToAccountType != AccountTypeGeneral {
+		return ErrCanOnlyTransferFromLockedForStakingToGeneralAccount
+	}
+
+	if t.FromAccountType == AccountTypeGeneral && t.ToAccountType == AccountTypeLockedForStaking && t.From != t.To {
+		return ErrTransferToLockedForStakingAllowedOnlyFromOwnGeneralAccount
+	}
+
+	if t.ToAccountType == AccountTypeGeneral && t.FromAccountType == AccountTypeLockedForStaking && t.From != t.To {
+		return ErrTransferFromLockedForStakingAllowedOnlyToOwnGeneralAccount
+	}
+
 	// check for derived account transfer
 	if t.FromDerivedKey != nil {
 		if !vgcrypto.IsValidVegaPubKey(*t.FromDerivedKey) {
@@ -110,7 +125,7 @@ func (t *TransferBase) IsValid() error {
 
 	// check for any other transfers
 	switch t.FromAccountType {
-	case AccountTypeGeneral, AccountTypeVestedRewards /*, AccountTypeLockedForStaking*/ :
+	case AccountTypeGeneral, AccountTypeVestedRewards, AccountTypeLockedForStaking:
 		break
 	default:
 		return ErrUnsupportedFromAccountType
@@ -122,7 +137,7 @@ func (t *TransferBase) IsValid() error {
 			return ErrInvalidToForRewardAccountType
 		}
 	case AccountTypeGeneral, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward,
-		AccountTypeAverageNotionalReward, AccountTypeRelativeReturnReward, AccountTypeValidatorRankingReward, AccountTypeReturnVolatilityReward, AccountTypeRealisedReturnReward, AccountTypeEligibleEntitiesReward, AccountTypeBuyBackFees: /*, AccountTypeLockedForStaking*/
+		AccountTypeAverageNotionalReward, AccountTypeRelativeReturnReward, AccountTypeValidatorRankingReward, AccountTypeReturnVolatilityReward, AccountTypeRealisedReturnReward, AccountTypeEligibleEntitiesReward, AccountTypeBuyBackFees, AccountTypeLockedForStaking:
 		break
 	default:
 		return ErrUnsupportedToAccountType

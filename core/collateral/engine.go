@@ -4091,6 +4091,12 @@ func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, 
 	return e.GetAccountByID(generalID)
 }
 
+// GetPartyLockedForStaking returns a general account given the partyID.
+func (e *Engine) GetPartyLockedForStaking(partyID, asset string) (*types.Account, error) {
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountTypeLockedForStaking)
+	return e.GetAccountByID(generalID)
+}
+
 // GetPartyBondAccount returns a general account given the partyID.
 func (e *Engine) GetPartyBondAccount(market, partyID, asset string) (*types.Account, error) {
 	id := e.accountID(
