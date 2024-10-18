@@ -40,13 +40,14 @@ import (
 type testEngine struct {
 	*vesting.Engine
 
-	ctrl    *gomock.Controller
-	col     *collateralMock
-	asvm    *mocks.MockActivityStreakVestingMultiplier
-	broker  *bmocks.MockBroker
-	assets  *mocks.MockAssets
-	parties *mocks.MockParties
-	t       *mocks.MockTime
+	ctrl            *gomock.Controller
+	col             *collateralMock
+	asvm            *mocks.MockActivityStreakVestingMultiplier
+	broker          *bmocks.MockBroker
+	assets          *mocks.MockAssets
+	parties         *mocks.MockParties
+	t               *mocks.MockTime
+	stakeAccounting *mocks.MockStakeAccounting
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -59,31 +60,34 @@ func getTestEngine(t *testing.T) *testEngine {
 	assets := mocks.NewMockAssets(ctrl)
 	parties := mocks.NewMockParties(ctrl)
 	tim := mocks.NewMockTime(ctrl)
+	stakeAccounting := mocks.NewMockStakeAccounting(ctrl)
 
 	return &testEngine{
 		Engine: vesting.New(
-			logger, col, asvm, broker, assets, parties, tim,
+			logger, col, asvm, broker, assets, parties, tim, stakeAccounting,
 		),
-		ctrl:    ctrl,
-		broker:  broker,
-		col:     col,
-		asvm:    asvm,
-		assets:  assets,
-		parties: parties,
-		t:       tim,
+		ctrl:            ctrl,
+		broker:          broker,
+		col:             col,
+		asvm:            asvm,
+		assets:          assets,
+		parties:         parties,
+		t:               tim,
+		stakeAccounting: stakeAccounting,
 	}
 }
 
 type testSnapshotEngine struct {
 	engine *vesting.SnapshotEngine
 
-	ctrl    *gomock.Controller
-	col     *collateralMock
-	asvm    *mocks.MockActivityStreakVestingMultiplier
-	broker  *bmocks.MockBroker
-	assets  *mocks.MockAssets
-	parties *mocks.MockParties
-	t       *mocks.MockTime
+	ctrl            *gomock.Controller
+	col             *collateralMock
+	asvm            *mocks.MockActivityStreakVestingMultiplier
+	broker          *bmocks.MockBroker
+	assets          *mocks.MockAssets
+	parties         *mocks.MockParties
+	t               *mocks.MockTime
+	stakeAccounting *mocks.MockStakeAccounting
 
 	currentEpoch uint64
 }
@@ -97,19 +101,21 @@ func newEngine(t *testing.T) *testSnapshotEngine {
 	assets := mocks.NewMockAssets(ctrl)
 	parties := mocks.NewMockParties(ctrl)
 	tim := mocks.NewMockTime(ctrl)
+	stakeAccounting := mocks.NewMockStakeAccounting(ctrl)
 
 	return &testSnapshotEngine{
 		engine: vesting.NewSnapshotEngine(
-			logging.NewTestLogger(), col, asvm, broker, assets, parties, tim,
+			logging.NewTestLogger(), col, asvm, broker, assets, parties, tim, stakeAccounting,
 		),
-		ctrl:         ctrl,
-		col:          col,
-		asvm:         asvm,
-		broker:       broker,
-		assets:       assets,
-		parties:      parties,
-		currentEpoch: 10,
-		t:            tim,
+		ctrl:            ctrl,
+		col:             col,
+		asvm:            asvm,
+		broker:          broker,
+		assets:          assets,
+		parties:         parties,
+		currentEpoch:    10,
+		t:               tim,
+		stakeAccounting: stakeAccounting,
 	}
 }
 

@@ -42,9 +42,10 @@ func NewSnapshotEngine(
 	assets Assets,
 	parties Parties,
 	t Time,
+	stakeAccounting StakeAccounting,
 ) *SnapshotEngine {
 	se := &SnapshotEngine{
-		Engine: New(log, c, asvm, broker, assets, parties, t),
+		Engine: New(log, c, asvm, broker, assets, parties, t, stakeAccounting),
 	}
 
 	return se
