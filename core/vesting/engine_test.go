@@ -18,6 +18,7 @@ package vesting_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -30,6 +31,28 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestAutomatedStaking(t *testing.T) {
+	v := getTestEngine(t)
+
+	ctx := context.Background()
+
+	require.NoError(t, v.OnRewardVestingBaseRateUpdate(ctx, num.MustDecimalFromString("0.9")))
+	require.NoError(t, v.OnRewardVestingMinimumTransferUpdate(ctx, num.MustDecimalFromString("1")))
+	require.NoError(t, v.OnStakingAssetUpdate(ctx, "ETH"))
+
+	// this is not the most useful test, but at least we know that on payment for the
+	// staking asset, the staking account are being notified of the amounts as new stake deposits
+	// via the calls to the mocks
+	t.Run("On add reward for the staking asset, stake accounting is called", func(t *testing.T) {
+		// one call to add event, and one call to broadcast it
+		// one for the time
+		v.stakeAccounting.EXPECT().AddEvent(gomock.Any(), gomock.Any()).Times(1)
+		v.broker.EXPECT().Send(gomock.Any()).Times(1)
+		v.t.EXPECT().GetTimeNow().Times(1).Return(time.Unix(0, 0))
+		v.AddReward(ctx, "party1", "ETH", num.NewUint(1000), 0)
+	})
+}
 
 func TestDistributeAfterDelay(t *testing.T) {
 	v := getTestEngine(t)

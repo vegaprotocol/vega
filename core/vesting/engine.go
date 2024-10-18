@@ -120,6 +120,7 @@ func New(
 	assets Assets,
 	parties Parties,
 	t Time,
+	stakeAccounting StakeAccounting,
 ) *Engine {
 	log = log.Named(namedLogger)
 
@@ -133,6 +134,7 @@ func New(
 		state:                      map[string]*PartyRewards{},
 		rewardBonusMultiplierCache: map[string]MultiplierAndQuantBalance{},
 		t:                          t,
+		stakeAccounting:            stakeAccounting,
 	}
 }
 
