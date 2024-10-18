@@ -125,7 +125,7 @@ func TestCheckAmendAMM(t *testing.T) {
 					Base: "",
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.base (is not a valid number)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.base (is required)",
 		},
 		{
 			submission: commandspb.AmendAMM{

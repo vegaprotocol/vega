@@ -450,6 +450,10 @@ func (sm *shapeMaker) adjustRegion() bool {
 }
 
 func (sm *shapeMaker) makeShape() {
+	if sm.pool.IsPending() {
+		return
+	}
+
 	if !sm.adjustRegion() {
 		// if there is no overlap between the input region and the AMM's bounds then there are no orders
 		return

@@ -97,6 +97,8 @@ func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 		"upper bound",    // uint
 		"lower leverage", // dec
 		"upper leverage", // dec
+		"data source id",
+		"minimum price change trigger",
 		"error",
 	})
 }
@@ -114,6 +116,8 @@ func parseAmendAMMTable(table *godog.Table) []RowWrapper {
 		"upper bound",    // uint
 		"lower leverage", // dec
 		"upper leverage", // dec
+		"data source id",
+		"minimum price change trigger",
 		"error",
 	})
 }
@@ -140,10 +144,11 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 
 	return &types.SubmitAMM{
 		AMMBaseCommand: types.AMMBaseCommand{
-			MarketID:          a.marketID(),
-			Party:             a.party(),
-			SlippageTolerance: a.slippage(),
-			ProposedFee:       a.proposedFee(),
+			MarketID:                  a.marketID(),
+			Party:                     a.party(),
+			SlippageTolerance:         a.slippage(),
+			ProposedFee:               a.proposedFee(),
+			MinimumPriceChangeTrigger: a.minimumPriceChangeTrigger(),
 		},
 		CommitmentAmount: a.amount(),
 		Parameters: &types.ConcentratedLiquidityParameters{
@@ -152,6 +157,7 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 			UpperBound:           a.upperBound(),
 			LeverageAtLowerBound: a.lowerLeverage(),
 			LeverageAtUpperBound: a.upperLeverage(),
+			DataSourceID:         a.dataSourceID(),
 		},
 	}
 }
@@ -159,16 +165,19 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 func (a ammRow) toAmendment() *types.AmendAMM {
 	ret := &types.AmendAMM{
 		AMMBaseCommand: types.AMMBaseCommand{
-			MarketID:          a.marketID(),
-			Party:             a.party(),
-			SlippageTolerance: a.slippage(),
-			ProposedFee:       a.proposedFee(),
+			MarketID:                  a.marketID(),
+			Party:                     a.party(),
+			SlippageTolerance:         a.slippage(),
+			ProposedFee:               a.proposedFee(),
+			MinimumPriceChangeTrigger: a.minimumPriceChangeTrigger(),
 		},
 	}
 	if a.r.HasColumn("amount") {
 		ret.CommitmentAmount = a.amount()
 	}
-	params := &types.ConcentratedLiquidityParameters{}
+	params := &types.ConcentratedLiquidityParameters{
+		DataSourceID: a.dataSourceID(),
+	}
 	paramSet := false
 	if a.r.HasColumn("base") {
 		params.Base = a.base()
@@ -247,6 +256,20 @@ func (a ammRow) upperBound() *num.Uint {
 		return nil
 	}
 	return a.r.MustUint("upper bound")
+}
+
+func (a ammRow) dataSourceID() *string {
+	if !a.r.HasColumn("data source id") {
+		return nil
+	}
+	return ptr.From(a.r.Str("data source id"))
+}
+
+func (a ammRow) minimumPriceChangeTrigger() num.Decimal {
+	if !a.r.HasColumn("minimum price change trigger") {
+		return num.DecimalZero()
+	}
+	return a.r.MustDecimal("minimum price change trigger")
 }
 
 func (a ammRow) lowerLeverage() *num.Decimal {
