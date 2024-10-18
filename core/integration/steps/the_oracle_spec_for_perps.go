@@ -95,7 +95,7 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 			FundingRateLowerBound:    row.FundingRateLowerBound(),
 			FundingRateUpperBound:    row.FundingRateUpperBound(),
 			DataSourceSpecForSettlementData: &protoTypes.DataSourceSpec{
-				Id: vgrand.RandomStr(10),
+				Id: row.SpecID(),
 				Data: protoTypes.NewDataSourceDefinition(
 					protoTypes.DataSourceContentTypeOracle,
 				).SetOracleConfig(
@@ -154,6 +154,7 @@ func parseOraclePerpsTable(table *godog.Table) []RowWrapper {
 		"cash amount",
 		"source weights",
 		"source staleness tolerance",
+		"spec id",
 	})
 }
 
@@ -292,4 +293,11 @@ func (r perpOracleRow) PriceSourceStalnessTolerance() []string {
 		}
 	}
 	return durations
+}
+
+func (r perpOracleRow) SpecID() string {
+	if !r.row.HasColumn("spec id") {
+		return vgrand.RandomStr(10)
+	}
+	return r.row.MustStr("spec id")
 }

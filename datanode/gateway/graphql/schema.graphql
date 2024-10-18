@@ -7828,6 +7828,8 @@ type AMM {
   statusReason: AMMStatusReason!
   "Proposed fee"
   proposedFee: String
+  "An AMM with an oracle driven base price will only be updated if abs(new-base-price / old-base-price - 1) >= minimum_price_change_trigger"
+  minimumPriceChangeTrigger: String!
 }
 
 type ConcentratedLiquidityParameters {
@@ -7841,6 +7843,8 @@ type ConcentratedLiquidityParameters {
   leverageAtUpperBound: String!
   "Margin ratio at the lower bound"
   leverageAtLowerBound: String!
+  "ID of a data source already used by the market which will be used as the base price for the AMM"
+  dataSourceId: String
 }
 
 enum AMMStatus {

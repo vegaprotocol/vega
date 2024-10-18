@@ -68,16 +68,26 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 		}
 	}
 
+	if cmd.MinimumPriceChangeTrigger != nil {
+		if minPriceChange, err := num.DecimalFromString(*cmd.MinimumPriceChangeTrigger); err != nil {
+			errs.AddForProperty("submit_amm.mimimum_price_change_trigger", ErrIsNotValid)
+		} else if minPriceChange.LessThan(num.DecimalZero()) {
+			errs.AddForProperty("submit_amm.proposed_fee", ErrMustBePositiveOrZero)
+		}
+	}
+
 	if cmd.ConcentratedLiquidityParameters != nil {
+		var haveLower, haveUpper, emptyBase bool
 		hasUpdate = true
 		var base, lowerBound, upperBound *big.Int
-		if base, _ = big.NewInt(0).SetString(cmd.ConcentratedLiquidityParameters.Base, 10); base == nil {
+		if len(cmd.ConcentratedLiquidityParameters.Base) == 0 {
+			emptyBase = true
+		} else if base, _ = big.NewInt(0).SetString(cmd.ConcentratedLiquidityParameters.Base, 10); base == nil {
 			errs.FinalAddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrIsNotValidNumber)
 		} else if base.Cmp(big.NewInt(0)) <= 0 {
 			errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrMustBePositive)
 		}
 
-		var haveLower, haveUpper bool
 		if cmd.ConcentratedLiquidityParameters.LowerBound != nil {
 			haveLower = true
 			if lowerBound, _ = big.NewInt(0).SetString(*cmd.ConcentratedLiquidityParameters.LowerBound, 10); lowerBound == nil {
@@ -124,11 +134,19 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 		}
 
 		if len(cmd.SlippageTolerance) <= 0 {
-			errs.AddForProperty("submit_amm.slippage_tolerance", ErrIsRequired)
+			errs.AddForProperty("amend_amm.slippage_tolerance", ErrIsRequired)
 		} else if slippageTolerance, err := num.DecimalFromString(cmd.SlippageTolerance); err != nil {
-			errs.AddForProperty("submit_amm.slippage_tolerance", ErrIsNotValidNumber)
+			errs.AddForProperty("amend_amm.slippage_tolerance", ErrIsNotValidNumber)
 		} else if slippageTolerance.LessThan(num.DecimalZero()) {
-			errs.AddForProperty("submit_amm.slippage_tolerance", ErrMustBePositive)
+			errs.AddForProperty("amend_amm.slippage_tolerance", ErrMustBePositive)
+		}
+
+		if cmd.ConcentratedLiquidityParameters.DataSourceId == nil && emptyBase {
+			errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.base", ErrIsRequired)
+		}
+
+		if cmd.ConcentratedLiquidityParameters.DataSourceId != nil && !IsVegaID(*cmd.ConcentratedLiquidityParameters.DataSourceId) {
+			errs.AddForProperty("amend_amm.data_source_id", ErrShouldBeAValidVegaID)
 		}
 	}
 

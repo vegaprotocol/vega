@@ -295,6 +295,7 @@ func NewMarketFromSnapshot(
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	case types.MarketTypePerp:
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementDataPerp)
+		market.tradableInstrument.Instrument.Product.NotifyOnDataSourcePropagation(market.productDataSourcePropagation)
 	case types.MarketTypeSpot:
 	default:
 		log.Panic("unexpected market type", logging.Int("type", int(marketType)))

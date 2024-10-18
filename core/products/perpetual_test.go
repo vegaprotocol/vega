@@ -474,6 +474,8 @@ func testRegisteredCallbacks(t *testing.T) {
 	require.NotNil(t, period)
 	// register the callback
 	perpetual.NotifyOnSettlementData(marketSettle)
+	perpetual.NotifyOnDataSourcePropagation(func(context.Context, *num.Uint) {})
+
 	ts.EXPECT().GetTimeNow().Times(1).Return(time.Unix(0, points[0].t))
 	perpetual.UpdateAuctionState(ctx, false)
 
@@ -553,6 +555,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 	require.NotNil(t, period)
 	// register the callback
 	perpetual.NotifyOnSettlementData(marketSettle)
+	perpetual.NotifyOnDataSourcePropagation(func(context.Context, *num.Uint) {})
 
 	// start the funding period
 	ts.EXPECT().GetTimeNow().Times(1).Return(time.Unix(0, points[0].t))
@@ -1069,6 +1072,8 @@ func testPerpetual(t *testing.T) *tstPerp {
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}
+
+	perpetual.NotifyOnDataSourcePropagation(func(context.Context, *num.Uint) {})
 
 	tp.perpetual = perpetual
 	return tp

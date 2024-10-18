@@ -598,6 +598,8 @@ message PoolMapEntry {
     Curve upper = 8;
     vega.events.v1.AMM.Status status = 9;
     string proposed_fee = 10;
+    string slippage_tolerance = 11;
+    string minimum_price_change_trigger = 12;
   }
 
   string party = 1;
