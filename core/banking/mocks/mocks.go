@@ -213,6 +213,21 @@ func (mr *MockCollateralMockRecorder) GetPartyGeneralAccount(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyGeneralAccount), arg0, arg1)
 }
 
+// GetPartyLockedForStaking mocks base method.
+func (m *MockCollateral) GetPartyLockedForStaking(arg0, arg1 string) (*types.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartyLockedForStaking", arg0, arg1)
+	ret0, _ := ret[0].(*types.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPartyLockedForStaking indicates an expected call of GetPartyLockedForStaking.
+func (mr *MockCollateralMockRecorder) GetPartyLockedForStaking(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyLockedForStaking", reflect.TypeOf((*MockCollateral)(nil).GetPartyLockedForStaking), arg0, arg1)
+}
+
 // GetPartyVestedRewardAccount mocks base method.
 func (m *MockCollateral) GetPartyVestedRewardAccount(arg0, arg1 string) (*types.Account, error) {
 	m.ctrl.T.Helper()

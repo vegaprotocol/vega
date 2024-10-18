@@ -279,7 +279,7 @@ func (e *Engine) makeFeeTransferForFundsTransfer(
 	}
 
 	switch fromAccountType {
-	case types.AccountTypeGeneral, types.AccountTypeVestedRewards:
+	case types.AccountTypeGeneral, types.AccountTypeVestedRewards, types.AccountTypeLockedForStaking:
 	default:
 		e.log.Panic("from account not supported",
 			logging.String("account-type", fromAccountType.String()),
@@ -329,6 +329,11 @@ func (e *Engine) ensureEnoughFundsForTransfer(
 	switch fromAccountType {
 	case types.AccountTypeGeneral:
 		account, err = e.col.GetPartyGeneralAccount(from, asset.ID)
+		if err != nil {
+			return err
+		}
+	case types.AccountTypeLockedForStaking:
+		account, err = e.col.GetPartyLockedForStaking(from, asset.ID)
 		if err != nil {
 			return err
 		}
