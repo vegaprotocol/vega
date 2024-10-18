@@ -32,6 +32,8 @@ type StakingAccountStub struct {
 	currentEpoch         *types.Epoch
 }
 
+func (t *StakingAccountStub) AddEvent(ctx context.Context, evt *types.StakeLinking) {}
+
 func (t *StakingAccountStub) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if t.currentEpoch == nil || t.currentEpoch.Seq != epoch.Seq {
 		t.currentEpoch = &epoch

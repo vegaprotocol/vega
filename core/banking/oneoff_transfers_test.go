@@ -35,6 +35,7 @@ func TestTransfers(t *testing.T) {
 	t.Run("onefoff not enough funds to transfer", testOneOffTransferNotEnoughFundsToTransfer)
 	t.Run("onefoff invalid transfers", testOneOffTransferInvalidTransfers)
 	t.Run("valid oneoff transfer", testValidOneOffTransfer)
+	t.Run("valid staking transfers", testStakingTransfers)
 	t.Run("valid oneoff with deliverOn", testValidOneOffTransferWithDeliverOn)
 	t.Run("valid oneoff with deliverOn in the past is done straight away", testValidOneOffTransferWithDeliverOnInThePastStraightAway)
 	t.Run("rejected if doesn't reach minimal amount", testRejectedIfDoesntReachMinimalAmount)
@@ -271,6 +272,199 @@ func testValidOneOffTransfer(t *testing.T) {
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
+}
+
+func testStakingTransfers(t *testing.T) {
+	e := getTestEngine(t)
+
+	// let's do a massive fee, easy to test
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+	e.OnStakingAsset(context.Background(), "ETH")
+
+	ctx := context.Background()
+
+	t.Run("cannot transfer to another pubkey lock_for_staking", func(t *testing.T) {
+		transfer := &types.TransferFunds{
+			Kind: types.TransferCommandKindOneOff,
+			OneOff: &types.OneOffTransfer{
+				TransferBase: &types.TransferBase{
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeGeneral,
+					To:              "10ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					ToAccountType:   types.AccountTypeLockedForStaking,
+					Asset:           assetNameETH,
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+			},
+		}
+
+		// asset exists
+		e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+			assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		assert.EqualError(t, e.TransferFunds(ctx, transfer), "transfers to locked for staking allowed only from own general account")
+	})
+
+	t.Run("cannot transfer from lock_for_staking to another general account", func(t *testing.T) {
+		transfer := &types.TransferFunds{
+			Kind: types.TransferCommandKindOneOff,
+			OneOff: &types.OneOffTransfer{
+				TransferBase: &types.TransferBase{
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeLockedForStaking,
+					To:              "10ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					ToAccountType:   types.AccountTypeGeneral,
+					Asset:           assetNameETH,
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+			},
+		}
+
+		// asset exists
+		e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+			assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		assert.EqualError(t, e.TransferFunds(ctx, transfer), "transfers from locked for staking allowed only to own general account")
+	})
+
+	t.Run("can only transfer from lock_for_staking to own general account", func(t *testing.T) {
+		transfer := &types.TransferFunds{
+			Kind: types.TransferCommandKindOneOff,
+			OneOff: &types.OneOffTransfer{
+				TransferBase: &types.TransferBase{
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeLockedForStaking,
+					To:              "0000000000000000000000000000000000000000000000000000000000000000",
+					ToAccountType:   types.AccountTypeGlobalReward,
+					Asset:           assetNameETH,
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+			},
+		}
+
+		// asset exists
+		e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+			assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
+		assert.EqualError(t, e.TransferFunds(ctx, transfer), "can only transfer from locked for staking to general account")
+	})
+
+	t.Run("can transfer from general to locked_for_staking and emit stake deposited", func(t *testing.T) {
+		transfer := &types.TransferFunds{
+			Kind: types.TransferCommandKindOneOff,
+			OneOff: &types.OneOffTransfer{
+				TransferBase: &types.TransferBase{
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeGeneral,
+					To:              "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					ToAccountType:   types.AccountTypeLockedForStaking,
+					Asset:           assetNameETH,
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+			},
+		}
+
+		fromAcc := types.Account{
+			Balance: num.NewUint(100),
+		}
+
+		// asset exists
+		e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+			assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+		e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+
+		// assert the calculation of fees and transfer request are correct
+		e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+
+		e.broker.EXPECT().Send(gomock.Any()).Times(4)
+
+		// expect a call to the stake accounting
+		e.stakeAccounting.EXPECT().AddEvent(gomock.Any(), gomock.Any()).Times(1).Do(
+			func(_ context.Context, evt *types.StakeLinking) {
+				assert.Equal(t, evt.Type, types.StakeLinkingTypeDeposited)
+			})
+		assert.NoError(t, e.TransferFunds(ctx, transfer))
+	})
+
+	t.Run("can transfer from locked_for_staking to general and emit stake removed", func(t *testing.T) {
+		transfer := &types.TransferFunds{
+			Kind: types.TransferCommandKindOneOff,
+			OneOff: &types.OneOffTransfer{
+				TransferBase: &types.TransferBase{
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeLockedForStaking,
+					To:              "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					ToAccountType:   types.AccountTypeGeneral,
+					Asset:           assetNameETH,
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+			},
+		}
+
+		fromAcc := types.Account{
+			Balance: num.NewUint(100),
+		}
+
+		// asset exists
+		e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+			assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+		e.col.EXPECT().GetPartyLockedForStaking(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+
+		// assert the calculation of fees and transfer request are correct
+		e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+
+		e.broker.EXPECT().Send(gomock.Any()).Times(4)
+
+		// expect a call to the stake accounting
+		e.stakeAccounting.EXPECT().AddEvent(gomock.Any(), gomock.Any()).Times(1).Do(
+			func(_ context.Context, evt *types.StakeLinking) {
+				assert.Equal(t, evt.Type, types.StakeLinkingTypeRemoved)
+			})
+		assert.NoError(t, e.TransferFunds(ctx, transfer))
+	})
+
+	t.Run("can transfer from vested to general and emit stake removed", func(t *testing.T) {
+		transfer := &types.TransferFunds{
+			Kind: types.TransferCommandKindOneOff,
+			OneOff: &types.OneOffTransfer{
+				TransferBase: &types.TransferBase{
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeVestedRewards,
+					To:              "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					ToAccountType:   types.AccountTypeGeneral,
+					Asset:           assetNameETH,
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+			},
+		}
+
+		fromAcc := types.Account{
+			Balance: num.NewUint(100),
+		}
+
+		// asset exists
+		e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+			assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+		e.col.EXPECT().GetPartyVestedRewardAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+
+		// assert the calculation of fees and transfer request are correct
+		e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+
+		e.broker.EXPECT().Send(gomock.Any()).Times(4)
+
+		// expect a call to the stake accounting
+		e.stakeAccounting.EXPECT().AddEvent(gomock.Any(), gomock.Any()).Times(1).Do(
+			func(_ context.Context, evt *types.StakeLinking) {
+				assert.Equal(t, evt.Type, types.StakeLinkingTypeRemoved)
+			})
+		assert.NoError(t, e.TransferFunds(ctx, transfer))
+	})
 }
 
 func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {

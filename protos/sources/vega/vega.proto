@@ -971,6 +971,9 @@ enum AccountType {
   // Reward account for the eligible entities metric.
   ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES = 33;
 
+  // Locked for staking.
+  ACCOUNT_TYPE_LOCKED_FOR_STAKING = 34;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
