@@ -761,7 +761,7 @@ const (
 	AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL AccountType = 32
 	// Reward account for the eligible entities metric.
 	AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES AccountType = 33
-	// Locked for staking.
+	// Account for assets that are locked for staking.
 	AccountType_ACCOUNT_TYPE_LOCKED_FOR_STAKING AccountType = 34
 )
 
