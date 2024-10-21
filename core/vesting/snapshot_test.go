@@ -48,19 +48,19 @@ func TestSnapshotEngine(t *testing.T) {
 	setupMocks(t, te1)
 	setupNetParams(ctx, t, te1)
 
-	te1.engine.AddReward("party1", "eth", num.NewUint(100), 4)
-	te1.engine.AddReward("party1", "btc", num.NewUint(150), 1)
-	te1.engine.AddReward("party1", "eth", num.NewUint(200), 0)
+	te1.engine.AddReward(context.Background(), "party1", "eth", num.NewUint(100), 4)
+	te1.engine.AddReward(context.Background(), "party1", "btc", num.NewUint(150), 1)
+	te1.engine.AddReward(context.Background(), "party1", "eth", num.NewUint(200), 0)
 
 	nextEpoch(ctx, t, te1, time.Now())
 
-	te1.engine.AddReward("party2", "btc", num.NewUint(100), 2)
-	te1.engine.AddReward("party3", "btc", num.NewUint(100), 0)
+	te1.engine.AddReward(context.Background(), "party2", "btc", num.NewUint(100), 2)
+	te1.engine.AddReward(context.Background(), "party3", "btc", num.NewUint(100), 0)
 
 	nextEpoch(ctx, t, te1, time.Now())
 
-	te1.engine.AddReward("party4", "eth", num.NewUint(100), 1)
-	te1.engine.AddReward("party5", "doge", num.NewUint(100), 0)
+	te1.engine.AddReward(context.Background(), "party4", "eth", num.NewUint(100), 1)
+	te1.engine.AddReward(context.Background(), "party5", "doge", num.NewUint(100), 0)
 
 	// Take a snapshot.
 	hash1, err := snapshotEngine1.SnapshotNow(ctx)
@@ -69,12 +69,12 @@ func TestSnapshotEngine(t *testing.T) {
 
 	// This is what must be replayed after snapshot restoration.
 	replayFn := func(te *testSnapshotEngine) {
-		te.engine.AddReward("party6", "doge", num.NewUint(100), 3)
+		te.engine.AddReward(context.Background(), "party6", "doge", num.NewUint(100), 3)
 
 		nextEpoch(ctx, t, te, time.Now())
 
-		te.engine.AddReward("party7", "eth", num.NewUint(100), 2)
-		te.engine.AddReward("party8", "vega", num.NewUint(100), 10)
+		te.engine.AddReward(context.Background(), "party7", "eth", num.NewUint(100), 2)
+		te.engine.AddReward(context.Background(), "party8", "vega", num.NewUint(100), 10)
 
 		nextEpoch(ctx, t, te, time.Now())
 	}

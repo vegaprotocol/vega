@@ -450,7 +450,7 @@ func getEngine(t *testing.T) *testEngine {
 	topology := mocks.NewMockTopology(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	vesting := mocks.NewMockVesting(ctrl)
-	vesting.EXPECT().AddReward(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	vesting.EXPECT().AddReward(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	transfers := mocks.NewMockTransfers(ctrl)
 	activityStreak := mocks.NewMockActivityStreak(ctrl)
 	engine := New(logger, conf, broker, delegation, epochEngine, collateralEng, ts, marketActivityTracker, topology, vesting, transfers, activityStreak)

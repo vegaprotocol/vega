@@ -356,6 +356,18 @@ func (e *Engine) GetAllVestingQuantumBalance(party string) num.Decimal {
 	return balance
 }
 
+func (e *Engine) GetAllVestingAndVestedAccountForAsset(asset string) []*types.Account {
+	accs := []*types.Account{}
+
+	for _, v := range e.hashableAccs {
+		if v.Asset == asset && (v.Type == types.AccountTypeVestingRewards || v.Type == types.AccountTypeVestedRewards) {
+			accs = append(accs, v.Clone())
+		}
+	}
+
+	return accs
+}
+
 func (e *Engine) GetVestingRecovery() map[string]map[string]*num.Uint {
 	out := e.vesting
 	e.vesting = map[string]map[string]*num.Uint{}
@@ -4076,6 +4088,12 @@ func (e *Engine) GetPartyHoldingAccount(party, asset string) (*types.Account, er
 // GetPartyGeneralAccount returns a general account given the partyID.
 func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountTypeGeneral)
+	return e.GetAccountByID(generalID)
+}
+
+// GetPartyLockedForStaking returns a general account given the partyID.
+func (e *Engine) GetPartyLockedForStaking(partyID, asset string) (*types.Account, error) {
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountTypeLockedForStaking)
 	return e.GetAccountByID(generalID)
 }
 
