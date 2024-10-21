@@ -658,6 +658,11 @@ message TransactionResult {
     commands.v1.SubmitAMM submit_amm = 131;
     commands.v1.AmendAMM amend_amm = 132;
     commands.v1.CancelAMM cancel_amm = 133;
+    commands.v1.CreateVault create_vault = 134;
+    commands.v1.UpdateVault update_vault = 135;
+    commands.v1.DepositToVault deposit_to_vault = 136;
+    commands.v1.WithdrawFromVault withdraw_from_vault = 137;
+    commands.v1.ChangeVaultOwnership change_vault_ownership = 138;
   }
 
   // extra details about the transaction processing

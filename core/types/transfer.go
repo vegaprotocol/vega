@@ -229,4 +229,8 @@ const (
 	TransferTypeHighMakerRebatePay TransferType = proto.TransferType_TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_PAY
 	// Receive high maker rebate.
 	TransferTypeHighMakerRebateReceive TransferType = proto.TransferType_TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_RECEIVE
+	// Deposit to vault.
+	TransferTypeDepositToVault TransferType = proto.TransferType_TRANSFER_TYPE_DEPOSIT_TO_VAULT
+	// Withdraw from vault.
+	TransferTypeWithdrawFromVault TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW_FROM_VAULT
 )

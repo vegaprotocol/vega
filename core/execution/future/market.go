@@ -2121,7 +2121,7 @@ func rejectStopOrders(rejectionReason types.StopOrderRejectionReason, orders ...
 func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	ctx context.Context,
 	submission *types.StopOrdersSubmission,
-	party string,
+	fallsBelowParty, risesAboveParty string,
 	idgen common.IDGenerator,
 	fallsBelowID, risesAboveID *string,
 ) (*types.OrderConfirmation, error) {
@@ -2129,7 +2129,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	defer func() { m.idgen = nil }()
 
 	fallsBelow, risesAbove := submission.IntoStopOrders(
-		party, ptr.UnBox(fallsBelowID), ptr.UnBox(risesAboveID), m.timeService.GetTimeNow())
+		risesAboveParty, fallsBelowParty, ptr.UnBox(fallsBelowID), ptr.UnBox(risesAboveID), m.timeService.GetTimeNow())
 
 	defer func() {
 		evts := []events.Event{}
@@ -2188,17 +2188,28 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	// now check if that party hasn't exceeded the max amount per market
-	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
+	if m.stopOrders.CountForParty(risesAboveParty)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() ||
+		m.stopOrders.CountForParty(fallsBelowParty)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
 		rejectStopOrders(types.StopOrderRejectionMaxStopOrdersPerPartyReached, fallsBelow, risesAbove)
 		return nil, common.ErrMaxStopOrdersPerPartyReached
 	}
 
 	// now check for the parties position
-	if positions := m.position.GetPositionsByParty(party); len(positions) > 1 {
-		m.log.Panic("only one position expected", logging.Int("got", len(positions)))
-	} else if len(positions) < 1 {
-		rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
-		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
+	if risesAbove != nil {
+		if positions := m.position.GetPositionsByParty(risesAboveParty); len(positions) > 1 {
+			m.log.Panic("only one position expected", logging.Int("got", len(positions)))
+		} else if len(positions) < 1 {
+			rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
+		}
+	}
+	if fallsBelow != nil {
+		if positions := m.position.GetPositionsByParty(fallsBelowParty); len(positions) > 1 {
+			m.log.Panic("only one position expected", logging.Int("got", len(positions)))
+		} else if len(positions) < 1 {
+			rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
+		}
 	}
 
 	fallsBelowTriggered, risesAboveTriggered := m.stopOrderWouldTriggerAtSubmission(fallsBelow),
@@ -2245,7 +2256,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		}
 		fallsBelow.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
-			ctx, fallsBelow.OrderSubmission, party, idgen, fallsBelow.OrderID, true,
+			ctx, fallsBelow.OrderSubmission, fallsBelowParty, idgen, fallsBelow.OrderID, true,
 		)
 		if err != nil && confirmation != nil {
 			fallsBelow.OrderID = confirmation.Order.ID
@@ -2257,7 +2268,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		}
 		risesAbove.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
-			ctx, risesAbove.OrderSubmission, party, idgen, risesAbove.OrderID, true,
+			ctx, risesAbove.OrderSubmission, risesAboveParty, idgen, risesAbove.OrderID, true,
 		)
 		if err != nil && confirmation != nil {
 			risesAbove.OrderID = confirmation.Order.ID

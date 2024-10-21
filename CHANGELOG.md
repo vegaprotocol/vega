@@ -21,6 +21,7 @@
 - [11726](https://github.com/vegaprotocol/vega/issues/11726) - Combined `AMM` uncrossing orders for better performance when uncrossing the book.
 - [11711](https://github.com/vegaprotocol/vega/issues/11711) - Manage closed team membership by updating the allow list.
 - [11722](https://github.com/vegaprotocol/vega/issues/11722) - Expose active protocol automated purchase identifier in market data API. 
+- [11745](https://github.com/vegaprotocol/vega/issues/11745) - Implement vault accounts 
 
 ### 🐛 Fixes
 

@@ -38,5 +38,8 @@ func checkOrderCancellation(cmd *commandspb.OrderCancellation) Errors {
 		errs.AddForProperty("order_cancellation.order_id", ErrShouldBeAValidVegaID)
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("order_cancellation.vault_id", ErrInvalidVaultID)
+	}
 	return errs
 }

@@ -154,6 +154,16 @@ func (t Tx) Command() txn.Command {
 		return txn.AmendAMMCommand
 	case *commandspb.InputData_CancelAmm:
 		return txn.CancelAMMCommand
+	case *commandspb.InputData_CreateVault:
+		return txn.CreateVaultCommand
+	case *commandspb.InputData_UpdateVault:
+		return txn.UpdateVaultCommand
+	case *commandspb.InputData_DepositToVault:
+		return txn.DepositToVaultCommand
+	case *commandspb.InputData_WithdrawFromVault:
+		return txn.WithdrawFromVaultCommand
+	case *commandspb.InputData_ChangeVaultOwnership:
+		return txn.ChangeVaultOwnershipCommand
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
@@ -265,6 +275,16 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.CancelAmm
 	case *commandspb.InputData_DelayedTransactionsWrapper:
 		return cmd.DelayedTransactionsWrapper
+	case *commandspb.InputData_CreateVault:
+		return cmd.CreateVault
+	case *commandspb.InputData_UpdateVault:
+		return cmd.UpdateVault
+	case *commandspb.InputData_DepositToVault:
+		return cmd.DepositToVault
+	case *commandspb.InputData_WithdrawFromVault:
+		return cmd.WithdrawFromVault
+	case *commandspb.InputData_ChangeVaultOwnership:
+		return cmd.ChangeVaultOwnership
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -500,6 +520,36 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to DelayedTransactionsWrapper")
 		}
 		*underlyingCmd = *cmd.DelayedTransactionsWrapper
+	case *commandspb.InputData_CreateVault:
+		underlyingCmd, ok := i.(*commandspb.CreateVault)
+		if !ok {
+			return errors.New("failed to unmarshall to CreateVault")
+		}
+		*underlyingCmd = *cmd.CreateVault
+	case *commandspb.InputData_UpdateVault:
+		underlyingCmd, ok := i.(*commandspb.UpdateVault)
+		if !ok {
+			return errors.New("failed to unmarshall to UpdateVault")
+		}
+		*underlyingCmd = *cmd.UpdateVault
+	case *commandspb.InputData_DepositToVault:
+		underlyingCmd, ok := i.(*commandspb.DepositToVault)
+		if !ok {
+			return errors.New("failed to unmarshall to DepositToVault")
+		}
+		*underlyingCmd = *cmd.DepositToVault
+	case *commandspb.InputData_WithdrawFromVault:
+		underlyingCmd, ok := i.(*commandspb.WithdrawFromVault)
+		if !ok {
+			return errors.New("failed to unmarshall to WithdrawFromVault")
+		}
+		*underlyingCmd = *cmd.WithdrawFromVault
+	case *commandspb.InputData_ChangeVaultOwnership:
+		underlyingCmd, ok := i.(*commandspb.ChangeVaultOwnership)
+		if !ok {
+			return errors.New("failed to unmarshall to ChangeVaultOwnership")
+		}
+		*underlyingCmd = *cmd.ChangeVaultOwnership
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}

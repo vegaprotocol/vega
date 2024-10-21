@@ -123,6 +123,10 @@ func checkOrderAmendment(cmd *commandspb.OrderAmendment) Errors {
 		}
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("order_amendment.vault_id", ErrInvalidVaultID)
+	}
+
 	if !isAmending {
 		errs.Add(errors.New("order_amendment does not amend anything"))
 	}

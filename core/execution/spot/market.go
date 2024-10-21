@@ -144,6 +144,7 @@ type Market struct {
 
 	pap            *ProtocolAutomatedPurchase
 	allowedSellers map[string]struct{}
+	vaultService   common.VaultService
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -166,6 +167,7 @@ func NewMarket(
 	volumeDiscountService fee.VolumeDiscountService,
 	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
+	vaultService common.VaultService,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -273,6 +275,7 @@ func NewMarket(
 		stopOrders:                    stoporders.New(log),
 		expiringStopOrders:            common.NewExpiringOrders(),
 		banking:                       banking,
+		vaultService:                  vaultService,
 		allowedSellers:                allowedSellers,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
@@ -1238,7 +1241,7 @@ func rejectStopOrders(rejectionReason types.StopOrderRejectionReason, orders ...
 func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	ctx context.Context,
 	submission *types.StopOrdersSubmission,
-	party string,
+	fallsBelowParty, risesAboveParty string,
 	idgen common.IDGenerator,
 	fallsBelowID, risesAboveID *string,
 ) (*types.OrderConfirmation, error) {
@@ -1246,7 +1249,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	defer func() { m.idgen = nil }()
 
 	fallsBelow, risesAbove := submission.IntoStopOrders(
-		party, ptr.UnBox(fallsBelowID), ptr.UnBox(risesAboveID), m.timeService.GetTimeNow())
+		fallsBelowParty, risesAboveParty, ptr.UnBox(fallsBelowID), ptr.UnBox(risesAboveID), m.timeService.GetTimeNow())
 
 	defer func() {
 		evts := []events.Event{}
@@ -1293,11 +1296,11 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
 		}
-		if fallsBelow.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(party, m.quoteAsset) {
+		if fallsBelow.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(fallsBelowParty, m.quoteAsset) {
 			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
-		if !m.collateral.HasGeneralAccount(party, m.baseAsset) {
+		if !m.collateral.HasGeneralAccount(fallsBelowParty, m.baseAsset) {
 			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
@@ -1312,11 +1315,11 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
 		}
-		if risesAbove.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(party, m.quoteAsset) {
+		if risesAbove.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(risesAboveParty, m.quoteAsset) {
 			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
-		if !m.collateral.HasGeneralAccount(party, m.baseAsset) {
+		if !m.collateral.HasGeneralAccount(risesAboveParty, m.baseAsset) {
 			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
@@ -1331,7 +1334,8 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	// now check if that party hasn't exceeded the max amount per market
-	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
+	if m.stopOrders.CountForParty(risesAboveParty)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() ||
+		m.stopOrders.CountForParty(fallsBelowParty)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
 		rejectStopOrders(types.StopOrderRejectionMaxStopOrdersPerPartyReached, fallsBelow, risesAbove)
 		return nil, common.ErrMaxStopOrdersPerPartyReached
 	}
@@ -1358,7 +1362,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		}
 		fallsBelow.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
-			ctx, fallsBelow.OrderSubmission, party, idgen, fallsBelow.OrderID, true,
+			ctx, fallsBelow.OrderSubmission, fallsBelowParty, idgen, fallsBelow.OrderID, true,
 		)
 		if err != nil && confirmation != nil {
 			fallsBelow.OrderID = confirmation.Order.ID
@@ -1370,7 +1374,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		}
 		risesAbove.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
-			ctx, risesAbove.OrderSubmission, party, idgen, risesAbove.OrderID, true,
+			ctx, risesAbove.OrderSubmission, risesAboveParty, idgen, risesAbove.OrderID, true,
 		)
 		if err != nil && confirmation != nil {
 			risesAbove.OrderID = confirmation.Order.ID
@@ -3147,6 +3151,38 @@ func (m *Market) processFeesReleaseOnLeaveAuction(ctx context.Context) {
 	}
 }
 
+// if the receiver of spot is a vault we need to immediately distribut the full content of the general account in the target asset.
+func (m *Market) distributeSpotToVaultSubscribers(ctx context.Context, asset, vaultID string, transfers []*types.LedgerMovement) error {
+	acc, err := m.collateral.GetPartyGeneralAccount(vaultID, asset)
+	if err != nil {
+		return err
+	}
+
+	shareHolders := m.vaultService.GetVaultShares(vaultID)
+	spotQuantity := make(map[string]*num.Uint, len(shareHolders))
+	tradeSizeD := acc.Balance.ToDecimal()
+	for party, share := range shareHolders {
+		spotQuantity[party], _ = num.UintFromDecimal(share.Mul(tradeSizeD))
+	}
+	keys := make([]string, 0, len(spotQuantity))
+	for k := range spotQuantity {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, party := range keys {
+		quant := spotQuantity[party]
+		if quant.IsZero() {
+			continue
+		}
+		transfer, err := m.collateral.TransferSpot(ctx, vaultID, party, m.baseAsset, quant, types.AccountTypeGeneral, types.AccountTypeGeneral)
+		if err != nil {
+			m.log.Panic("failed to complete spot transfer to vault party", logging.String("party", party))
+		}
+		transfers = append(transfers, transfer)
+	}
+	return nil
+}
+
 func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.LedgerMovement {
 	transfers := []*types.LedgerMovement{}
 	// we need to transfer base from the seller to the buyer,
@@ -3244,6 +3280,12 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 	transfers = append(transfers, transfer)
 	if fees != nil {
 		m.applyFees(ctx, fees, quoteToAccountType)
+	}
+	if m.vaultService.GetVaultOwner(trade.Buyer) != nil {
+		m.distributeSpotToVaultSubscribers(ctx, trade.Buyer, m.baseAsset, transfers)
+	}
+	if m.vaultService.GetVaultOwner(trade.Seller) != nil {
+		m.distributeSpotToVaultSubscribers(ctx, trade.Seller, m.quoteAsset, transfers)
 	}
 	return transfers
 }

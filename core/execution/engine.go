@@ -123,6 +123,7 @@ type Engine struct {
 	lock sync.RWMutex
 
 	delayTransactionsTarget common.DelayTransactionsTarget
+	vaultService            common.VaultService
 }
 
 // NewEngine takes stores and engines and returns
@@ -143,6 +144,7 @@ func NewEngine(
 	banking common.Banking,
 	parties common.Parties,
 	delayTransactionsTarget common.DelayTransactionsTarget,
+	vaultService common.VaultService,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -173,6 +175,7 @@ func NewEngine(
 		banking:                 banking,
 		parties:                 parties,
 		delayTransactionsTarget: delayTransactionsTarget,
+		vaultService:            vaultService,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -798,6 +801,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		e.volumeDiscountService,
 		e.volumeRebateService,
 		e.banking,
+		e.vaultService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -878,7 +882,8 @@ func (e *Engine) canSubmitPeggedOrder() bool {
 func (e *Engine) SubmitStopOrders(
 	ctx context.Context,
 	submission *types.StopOrdersSubmission,
-	party string,
+	fallsBelowParty string,
+	risesAboveParty string,
 	idgen common.IDGenerator,
 	fallsBelowID *string,
 	risesAboveID *string,
@@ -892,7 +897,7 @@ func (e *Engine) SubmitStopOrders(
 
 	if mkt, ok := e.allMarkets[market]; ok {
 		conf, err := mkt.SubmitStopOrdersWithIDGeneratorAndOrderIDs(
-			ctx, submission, party, idgen, fallsBelowID, risesAboveID)
+			ctx, submission, fallsBelowParty, risesAboveParty, idgen, fallsBelowID, risesAboveID)
 		if err != nil {
 			return nil, err
 		}

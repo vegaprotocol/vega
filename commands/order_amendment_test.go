@@ -45,6 +45,7 @@ func TestCheckOrderAmendment(t *testing.T) {
 	t.Run("amend order tif to GFA - fail", testAmendOrderToGFA)
 	t.Run("amend order tif to GFN - fail", testAmendOrderToGFN)
 	t.Run("amend order pegged_offset", testAmendOrderPeggedOffset)
+	t.Run("amend order on bahalf of a vault with invalid id", testAmendInvalidVaultID)
 }
 
 func testNilOrderAmendmentFails(t *testing.T) {
@@ -212,6 +213,18 @@ func testAmendOrderToGFN(t *testing.T) {
 	}
 	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
+}
+
+func testAmendInvalidVaultID(t *testing.T) {
+	banana := "banana"
+	arg := &commandspb.OrderAmendment{
+		OrderId:   "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		MarketId:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		SizeDelta: 100,
+		VaultId:   &banana,
+	}
+	err := checkOrderAmendment(arg)
+	assert.Equal(t, "order_amendment.vault_id (is not a valid vault identifier)", err.Error())
 }
 
 func testAmendOrderToGFA(t *testing.T) {

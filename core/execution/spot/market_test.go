@@ -238,8 +238,10 @@ func newTestMarketWithAllowedSellers(
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(types.EmptyFactors).AnyTimes()
 	volumeRebate.EXPECT().VolumeRebateFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	banking := mocks.NewMockBanking(ctrl)
+	vaultService := mocks.NewMockVaultService(ctrl)
+	vaultService.EXPECT().GetVaultOwner(gomock.Any()).Return(nil).AnyTimes()
 
-	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking)
+	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, volumeRebate, banking, vaultService)
 
 	tm := &testMarket{
 		market:           market,

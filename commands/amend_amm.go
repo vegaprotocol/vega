@@ -48,6 +48,10 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 		errs.AddForProperty("amend_amm.slippage_tolerance", ErrMustBeBetween01)
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("amend_amm.vault_id", ErrInvalidVaultID)
+	}
+
 	var hasUpdate bool
 
 	if cmd.CommitmentAmount != nil {
