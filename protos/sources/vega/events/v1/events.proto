@@ -52,6 +52,8 @@ message AMM {
   string proposed_fee = 9;
   optional Curve lower_curve = 10;
   optional Curve upper_curve = 11;
+  // An AMM with an oracle driven base price will only be updated if abs(new-base-price / old-base-price - 1) >= minimum_price_change_trigger.
+  string minimum_price_change_trigger = 12;
 
   enum Status {
     STATUS_UNSPECIFIED = 0;
@@ -65,6 +67,8 @@ message AMM {
     STATUS_STOPPED = 4;
     // AMM will only trade such that it will reduce its position.
     STATUS_REDUCE_ONLY = 5;
+    // AMM is waiting for a base price from its configured data source.
+    STATUS_PENDING = 6;
   }
 
   enum StatusReason {
@@ -97,6 +101,8 @@ message AMM {
     optional string leverage_at_upper_bound = 4;
     // Leverage at lower bounds.
     optional string leverage_at_lower_bound = 5;
+    // Data source that is used to re-price the AMM's base.
+    optional string data_source_id = 6;
   }
 
   message Curve {

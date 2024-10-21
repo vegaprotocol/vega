@@ -50,6 +50,8 @@ type AMMPool struct {
 	LowerTheoreticalPosition       num.Decimal
 	UpperVirtualLiquidity          num.Decimal
 	UpperTheoreticalPosition       num.Decimal
+	DataSourceID                   SpecID
+	MinimumPriceChangeTrigger      num.Decimal
 }
 
 type AMMFilterType interface {
@@ -159,6 +161,16 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		}
 	}
 
+	minimumPriceChangeTrigger, err := num.DecimalFromString(pool.MinimumPriceChangeTrigger)
+	if err != nil {
+		return AMMPool{}, err
+	}
+
+	specID := SpecID("")
+	if pool.Parameters.DataSourceId != nil {
+		specID = SpecID(*pool.Parameters.DataSourceId)
+	}
+
 	return AMMPool{
 		PartyID:                        partyID,
 		MarketID:                       marketID,
@@ -179,6 +191,8 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		LowerTheoreticalPosition:       lowerPv,
 		UpperVirtualLiquidity:          upperL,
 		UpperTheoreticalPosition:       upperPv,
+		DataSourceID:                   specID,
+		MinimumPriceChangeTrigger:      minimumPriceChangeTrigger,
 	}, nil
 }
 
@@ -205,21 +219,28 @@ func (p AMMPool) ToProto() *eventspb.AMM {
 		fee = p.ProposedFee.String()
 	}
 
+	var specID *string
+	if p.DataSourceID.String() != "" {
+		specID = ptr.From((p.DataSourceID).String())
+	}
+
 	return &eventspb.AMM{
-		PartyId:      p.PartyID.String(),
-		MarketId:     p.MarketID.String(),
-		Id:           p.ID.String(),
-		AmmPartyId:   p.AmmPartyID.String(),
-		Commitment:   p.Commitment.String(),
-		Status:       eventspb.AMM_Status(p.Status),
-		StatusReason: eventspb.AMM_StatusReason(p.StatusReason),
-		ProposedFee:  fee,
+		PartyId:                   p.PartyID.String(),
+		MarketId:                  p.MarketID.String(),
+		Id:                        p.ID.String(),
+		AmmPartyId:                p.AmmPartyID.String(),
+		Commitment:                p.Commitment.String(),
+		Status:                    eventspb.AMM_Status(p.Status),
+		StatusReason:              eventspb.AMM_StatusReason(p.StatusReason),
+		ProposedFee:               fee,
+		MinimumPriceChangeTrigger: p.MinimumPriceChangeTrigger.String(),
 		Parameters: &eventspb.AMM_ConcentratedLiquidityParameters{
 			Base:                 p.ParametersBase.String(),
 			LowerBound:           lowerBound,
 			UpperBound:           upperBound,
 			LeverageAtLowerBound: lowerLeverage,
 			LeverageAtUpperBound: upperLeverage,
+			DataSourceId:         specID,
 		},
 	}
 }

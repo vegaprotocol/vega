@@ -28,6 +28,7 @@ import (
 )
 
 func TestOrderbookShape(t *testing.T) {
+	t.Run("test orderbook shape pending AMM", testOrderbookShapePendingAMM)
 	t.Run("test orderbook shape when AMM is 0", testOrderbookShapeZeroPosition)
 	t.Run("test orderbook shape when AMM is long", testOrderbookShapeLong)
 	t.Run("test orderbook shape when AMM is short", testOrderbookShapeShort)
@@ -39,6 +40,19 @@ func TestOrderbookShape(t *testing.T) {
 	t.Run("test orderbook shape region not divisible by tick", testOrderbookSubTick)
 	t.Run("test orderbook shape closing pool close to base", testClosingCloseToBase)
 	t.Run("test orderbook shape point expansion at fair price", testPointExpansionAtFairPrice)
+}
+
+func testOrderbookShapePendingAMM(t *testing.T) {
+	p := newTestPoolWithRanges(t, num.NewUint(7), num.NewUint(10), num.NewUint(13))
+	defer p.ctrl.Finish()
+
+	p.pool.status = types.AMMPoolStatusPending
+	low := p.submission.Parameters.LowerBound
+	high := p.submission.Parameters.UpperBound
+
+	r := p.pool.OrderbookShape(low, high, nil)
+	assert.Equal(t, 0, len(r.Buys))
+	assert.Equal(t, 0, len(r.Sells))
 }
 
 func testOrderbookShapeZeroPosition(t *testing.T) {

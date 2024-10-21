@@ -695,6 +695,8 @@ func (e *Engine) Create(
 		e.positionFactor,
 		e.maxCalculationLevels,
 		e.allowedEmptyAMMLevels,
+		submit.SlippageTolerance,
+		submit.MinimumPriceChangeTrigger,
 	)
 	if err != nil {
 		return nil, err
@@ -727,7 +729,6 @@ func (e *Engine) Confirm(
 		logging.String("poolID", pool.ID),
 	)
 
-	pool.status = types.AMMPoolStatusActive
 	pool.maxCalculationLevels = e.maxCalculationLevels
 
 	e.add(pool)
@@ -770,6 +771,23 @@ func (e *Engine) Amend(
 		logging.String("poolID", pool.ID),
 	)
 	return updated, pool, nil
+}
+
+// GetDataSourcedAMMs returns any AMM's whose base price is determined by the given data source ID.
+func (e *Engine) GetDataSourcedAMMs(dataSourceID string) []*Pool {
+	pools := []*Pool{}
+	for _, p := range e.poolsCpy {
+		if p.Parameters.DataSourceID == nil {
+			continue
+		}
+
+		if *p.Parameters.DataSourceID != dataSourceID {
+			continue
+		}
+
+		pools = append(pools, p)
+	}
+	return pools
 }
 
 func (e *Engine) CancelAMM(
@@ -849,6 +867,7 @@ func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 				VirtualLiquidity:    pool.upper.l,
 				TheoreticalPosition: pool.upper.pv,
 			},
+			pool.MinimumPriceChangeTrigger,
 		),
 	)
 }

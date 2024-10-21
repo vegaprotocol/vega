@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -46,6 +47,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -383,8 +385,12 @@ func NewMarket(
 		if internalCompositePriceConfig != nil {
 			market.internalCompositePriceCalculator = common.NewCompositePriceCalculator(ctx, internalCompositePriceConfig, oracleEngine, timeService)
 			market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
+
+			market.internalCompositePriceCalculator.NotifyOnDataSourcePropagation(market.dataSourcePropagation)
 		}
 	}
+
+	market.markPriceCalculator.NotifyOnDataSourcePropagation(market.dataSourcePropagation)
 
 	// now set AMM engine on liquidity market.
 	market.liquidity.SetAMM(market.amm)
@@ -400,6 +406,7 @@ func NewMarket(
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	case types.MarketTypePerp:
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementDataPerp)
+		market.tradableInstrument.Instrument.Product.NotifyOnDataSourcePropagation(market.productDataSourcePropagation)
 	case types.MarketTypeSpot:
 	default:
 		log.Panic("unexpected market type", logging.Int("type", int(marketType)))
@@ -5457,10 +5464,16 @@ Walk:
 }
 
 // needsRebase returns whether an AMM at fair-price needs to submit a rebasing order given the current spread on the market.
-func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) {
+func (m *Market) needsRebase(pool *amm.Pool) (bool, types.Side, *num.Uint) {
+	if pool.IsPending() {
+		return false, types.SideUnspecified, nil
+	}
+
 	if m.as.InAuction() {
 		return false, types.SideUnspecified, nil
 	}
+
+	fairPrice := pool.FairPrice()
 
 	ask, err := m.matching.GetBestAskPrice()
 	if err == nil && fairPrice.GT(ask) {
@@ -5475,14 +5488,17 @@ func (m *Market) needsRebase(fairPrice *num.Uint) (bool, types.Side, *num.Uint) 
 }
 
 func VerifyAMMBounds(params *types.ConcentratedLiquidityParameters, cap *num.Uint, priceFactor num.Decimal) error {
-	base, _ := num.UintFromDecimal(params.Base.ToDecimal().Mul(priceFactor))
-	if cap != nil && base.GTE(cap) {
-		return common.ErrAMMBoundsOutsidePriceCap
+	var lower, upper, base *num.Uint
+	if params.DataSourceID == nil {
+		base, _ = num.UintFromDecimal(params.Base.ToDecimal().Mul(priceFactor))
+		if cap != nil && base.GTE(cap) {
+			return common.ErrAMMBoundsOutsidePriceCap
+		}
 	}
 
 	if params.LowerBound != nil {
-		lower, _ := num.UintFromDecimal(params.LowerBound.ToDecimal().Mul(priceFactor))
-		if lower.GTE(base) {
+		lower, _ = num.UintFromDecimal(params.LowerBound.ToDecimal().Mul(priceFactor))
+		if base != nil && lower.GTE(base) {
 			return fmt.Errorf("base (%s) as factored by market and asset decimals must be greater than lower bound (%s)", base.String(), lower.String())
 		}
 
@@ -5492,8 +5508,8 @@ func VerifyAMMBounds(params *types.ConcentratedLiquidityParameters, cap *num.Uin
 	}
 
 	if params.UpperBound != nil {
-		upper, _ := num.UintFromDecimal(params.UpperBound.ToDecimal().Mul(priceFactor))
-		if base.GTE(upper) {
+		upper, _ = num.UintFromDecimal(params.UpperBound.ToDecimal().Mul(priceFactor))
+		if base != nil && base.GTE(upper) {
 			return fmt.Errorf("upper bound (%s) as factored by market and asset decimals must be greater than base (%s)", upper.String(), base.String())
 		}
 
@@ -5502,7 +5518,76 @@ func VerifyAMMBounds(params *types.ConcentratedLiquidityParameters, cap *num.Uin
 		}
 	}
 
+	if lower != nil && upper != nil && lower.GTE(upper) {
+		return fmt.Errorf("upper bound (%s) as factored by market and asset decimals must be greater than lower (%s)", upper.String(), lower.String())
+	}
+
 	return nil
+}
+
+// productDataSourcePropagation is a call back for whenever the product receives a data-point used to drive any settlement data
+// we want to hijack it to use as the base point for AMM's.
+func (m *Market) productDataSourcePropagation(ctx context.Context, assetPrice *num.Uint) {
+	if perp := m.mkt.TradableInstrument.Instrument.GetPerps(); perp != nil {
+		m.dataSourcePropagation(ctx, perp.DataSourceSpecForSettlementData.ID, assetPrice)
+	}
+}
+
+// dataSourcePropagation is a call back for whenever a data-point used to drive any settlement data
+// we want to hijack it to use as the base point for AMM's.
+func (m *Market) dataSourcePropagation(ctx context.Context, dataSourceID string, assetPrice *num.Uint) {
+	_, blockHash := vgcontext.TraceIDFromContext(ctx)
+
+	// we want to update any AMM's which have this id as their base price source
+	pools := m.amm.GetDataSourcedAMMs(dataSourceID)
+
+	// now one buy one lets update, treating it like an amend
+	for i, p := range pools {
+		params := p.Parameters.Clone()
+
+		// scale to market DP
+		params.Base, _ = num.UintFromDecimal(assetPrice.ToDecimal().Div(m.priceFactor))
+
+		// if base price hasn't moved enough we won't update
+		if !p.IsPending() && p.MinimumPriceChangeTrigger.IsPositive() {
+			d := p.Parameters.Base.ToDecimal().Div(params.Base.ToDecimal()).Sub(num.DecimalOne()).Abs()
+			if d.LessThan(p.MinimumPriceChangeTrigger) {
+				m.log.Info("not rebasing pool, price change too small",
+					logging.String("market-id", m.mkt.GetID()),
+					logging.String("amm-party-id", p.AMMParty),
+					logging.String("base", p.Parameters.Base.String()),
+					logging.String("new base", params.Base.String()),
+				)
+				continue
+			}
+		}
+
+		params.DataSourceID = nil
+		if err := VerifyAMMBounds(params, m.capMax, m.priceFactor); err != nil {
+			m.log.Error("unable to update AMM base price from data source", logging.Error(err), logging.String("amm-party", p.AMMParty))
+			continue
+		}
+
+		params.DataSourceID = p.Parameters.DataSourceID
+
+		// lets treat the update as an amend
+		amend := &types.AmendAMM{
+			AMMBaseCommand: types.AMMBaseCommand{
+				Party:                     p.Owner(),
+				MarketID:                  m.mkt.GetID(),
+				SlippageTolerance:         p.SlippageTolerance,
+				ProposedFee:               p.ProposedFee,
+				MinimumPriceChangeTrigger: p.MinimumPriceChangeTrigger,
+			},
+			CommitmentAmount: nil,
+			Parameters:       params,
+		}
+		deterministicID := blockHash + crypto.HashStrToHex("amm-oracle-rebase"+m.mkt.ID+strconv.FormatInt(int64(i), 10))
+		err := m.AmendAMM(ctx, amend, deterministicID)
+		if err != nil {
+			m.log.Error("unable to update AMM base price from data source", logging.Error(err), logging.String("amm-party", p.AMMParty))
+		}
+	}
 }
 
 func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, deterministicID string) error {
@@ -5525,7 +5610,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	}
 
 	// create a rebasing order if the AMM needs it i.e its base if not within best-bid/best-ask
-	if ok, side, quote := m.needsRebase(pool.FairPrice()); ok {
+	if ok, side, quote := m.needsRebase(pool); ok {
 		order, err = m.getRebasingOrder(quote, side, submit.SlippageTolerance, pool)
 		if err != nil {
 			m.broker.Send(
@@ -5533,7 +5618,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 					ctx, pool.Owner(), m.GetID(), pool.AMMParty, pool.ID,
 					pool.CommitmentAmount(), pool.Parameters,
 					types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
-					pool.ProposedFee, nil, nil,
+					pool.ProposedFee, nil, nil, num.DecimalZero(),
 				),
 			)
 			return err
@@ -5547,7 +5632,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotFillCommitment,
-				pool.ProposedFee, nil, nil,
+				pool.ProposedFee, nil, nil, num.DecimalZero(),
 			),
 		)
 		return err
@@ -5573,7 +5658,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
-				pool.ProposedFee, nil, nil,
+				pool.ProposedFee, nil, nil, num.DecimalZero(),
 			),
 		)
 		return err
@@ -5614,7 +5699,7 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, determinis
 	}()
 
 	var order *types.Order
-	if ok, side, quote := m.needsRebase(pool.FairPrice()); ok {
+	if ok, side, quote := m.needsRebase(pool); ok {
 		order, err = m.getRebasingOrder(quote, side, amend.SlippageTolerance, pool)
 		if err != nil {
 			return err
