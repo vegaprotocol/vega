@@ -27,6 +27,7 @@ import (
 )
 
 func TestCheckSubmitAMM(t *testing.T) {
+	banana := "banana"
 	cases := []struct {
 		submission commandspb.SubmitAMM
 		errStr     string
@@ -299,6 +300,23 @@ func TestCheckSubmitAMM(t *testing.T) {
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (lower_bound and upper_bound cannot both be empty)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				SlippageTolerance: "0.09",
+				CommitmentAmount:  "10000",
+				ProposedFee:       "0.03",
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					Base:                 "20000",
+					UpperBound:           ptr.From("30000"),
+					LowerBound:           ptr.From("10000"),
+					LeverageAtUpperBound: ptr.From("0.1"),
+					LeverageAtLowerBound: ptr.From("0.1"),
+				},
+				VaultId: &banana,
+			},
+			errStr: "submit_amm.vault_id (is not a valid vault identifier)",
 		},
 		{
 			submission: commandspb.SubmitAMM{

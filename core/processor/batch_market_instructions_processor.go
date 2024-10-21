@@ -116,6 +116,7 @@ func (p *BMIProcessor) ProcessBatch(
 	batch *commandspb.BatchMarketInstructions,
 	party, determinitisticID string,
 	stats Stats,
+	verifyVaultOwnership func(*string, string) error,
 ) error {
 	errs := &BMIError{
 		Errors: commands.NewErrors(),
@@ -139,13 +140,23 @@ func (p *BMIProcessor) ProcessBatch(
 	for _, umm := range batch.UpdateMarginMode {
 		err := p.validator.CheckUpdateMarginMode(umm)
 		if err == nil {
+			if err = verifyVaultOwnership(umm.VaultId, party); err != nil {
+				errs.AddForProperty("updateMarginMode", err)
+				errCnt++
+				failedMarkets[umm.MarketId] = fmt.Errorf("Update margin mode transaction failed for market %s. Ignoring all transactions for the market", umm.MarketId)
+				continue
+			}
 			var marginFactor num.Decimal
 			if umm.MarginFactor == nil || len(*umm.MarginFactor) == 0 {
 				marginFactor = num.DecimalZero()
 			} else {
 				marginFactor = num.MustDecimalFromString(*umm.MarginFactor)
 			}
-			err = p.exec.UpdateMarginMode(ctx, party, umm.MarketId, vega.MarginMode(umm.Mode), marginFactor)
+			pty := party
+			if umm.VaultId != nil {
+				pty = *umm.VaultId
+			}
+			err = p.exec.UpdateMarginMode(ctx, pty, umm.MarketId, vega.MarginMode(umm.Mode), marginFactor)
 		}
 		if err != nil {
 			errs.AddForProperty("updateMarginMode", err)
@@ -166,6 +177,11 @@ func (p *BMIProcessor) ProcessBatch(
 	for i, cancel := range batch.Cancellations {
 		err := p.validator.CheckOrderCancellation(cancel)
 		if err == nil {
+			if err = verifyVaultOwnership(cancel.VaultId, party); err != nil {
+				errs.AddForProperty(fmt.Sprintf("%d", i), err)
+				errCnt++
+				continue
+			}
 			if err, ok := failedMarkets[cancel.MarketId]; ok {
 				errs.AddForProperty(fmt.Sprintf("%d", i), err)
 				errCnt++
@@ -173,8 +189,12 @@ func (p *BMIProcessor) ProcessBatch(
 				continue
 			}
 			stats.IncTotalCancelOrder()
+			pty := party
+			if cancel.VaultId != nil {
+				pty = *cancel.VaultId
+			}
 			_, err = p.exec.CancelOrder(
-				ctx, types.OrderCancellationFromProto(cancel), party, idgen)
+				ctx, types.OrderCancellationFromProto(cancel), pty, idgen)
 		}
 
 		if err != nil {
@@ -197,6 +217,11 @@ func (p *BMIProcessor) ProcessBatch(
 		} else {
 			err = p.validator.CheckOrderAmendment(protoAmend)
 			if err == nil {
+				if err = verifyVaultOwnership(protoAmend.VaultId, party); err != nil {
+					errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+					errCnt++
+					continue
+				}
 				if err, ok := failedMarkets[protoAmend.MarketId]; ok {
 					errs.AddForProperty(fmt.Sprintf("%d", idx), err)
 					errCnt++
@@ -206,8 +231,12 @@ func (p *BMIProcessor) ProcessBatch(
 				stats.IncTotalAmendOrder()
 				var amend *types.OrderAmendment
 				amend, err = types.NewOrderAmendmentFromProto(protoAmend)
+				pty := party
+				if protoAmend.VaultId != nil {
+					pty = *protoAmend.VaultId
+				}
 				if err == nil {
-					_, err = p.exec.AmendOrder(ctx, amend, party, idgen)
+					_, err = p.exec.AmendOrder(ctx, amend, pty, idgen)
 				}
 			}
 		}
@@ -228,6 +257,11 @@ func (p *BMIProcessor) ProcessBatch(
 	for i, protoSubmit := range batch.Submissions {
 		err := p.validator.CheckOrderSubmission(protoSubmit)
 		if err == nil {
+			if err = verifyVaultOwnership(protoSubmit.VaultId, party); err != nil {
+				errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+				errCnt++
+				continue
+			}
 			var submit *types.OrderSubmission
 			if err, ok := failedMarkets[protoSubmit.MarketId]; ok {
 				errs.AddForProperty(fmt.Sprintf("%d", idx), err)
@@ -235,10 +269,14 @@ func (p *BMIProcessor) ProcessBatch(
 				idx++
 				continue
 			}
+			pty := party
+			if protoSubmit.VaultId != nil {
+				pty = *protoSubmit.VaultId
+			}
 			stats.IncTotalCreateOrder()
 			if submit, err = types.NewOrderSubmissionFromProto(protoSubmit); err == nil {
 				var conf *types.OrderConfirmation
-				conf, err = p.exec.SubmitOrder(ctx, submit, party, idgen, submissionsIDs[i])
+				conf, err = p.exec.SubmitOrder(ctx, submit, pty, idgen, submissionsIDs[i])
 				if conf != nil {
 					stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 					stats.AddTotalTrades(uint64(len(conf.Trades)))
@@ -260,6 +298,11 @@ func (p *BMIProcessor) ProcessBatch(
 	for i, cancel := range batch.StopOrdersCancellation {
 		err := p.validator.CheckStopOrdersCancellation(cancel)
 		if err == nil {
+			if err = verifyVaultOwnership(cancel.VaultId, party); err != nil {
+				errs.AddForProperty(fmt.Sprintf("%d", i), err)
+				errCnt++
+				continue
+			}
 			if err, ok := failedMarkets[*cancel.MarketId]; ok {
 				errs.AddForProperty(fmt.Sprintf("%d", i), err)
 				errCnt++
@@ -267,8 +310,12 @@ func (p *BMIProcessor) ProcessBatch(
 				continue
 			}
 			stats.IncTotalCancelOrder()
+			pty := party
+			if cancel.VaultId != nil {
+				pty = *cancel.VaultId
+			}
 			err = p.exec.CancelStopOrders(
-				ctx, types.NewStopOrderCancellationFromProto(cancel), party, idgen)
+				ctx, types.NewStopOrderCancellationFromProto(cancel), pty, idgen)
 		}
 
 		if err != nil {
@@ -283,6 +330,11 @@ func (p *BMIProcessor) ProcessBatch(
 		if err == nil {
 			var submit *types.StopOrdersSubmission
 			if protoSubmit.RisesAbove != nil && protoSubmit.RisesAbove.OrderSubmission != nil {
+				if err = verifyVaultOwnership(protoSubmit.RisesAbove.OrderSubmission.VaultId, party); err != nil {
+					errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+					errCnt++
+					continue
+				}
 				if err, ok := failedMarkets[protoSubmit.RisesAbove.OrderSubmission.MarketId]; ok {
 					errs.AddForProperty(fmt.Sprintf("%d", i), err)
 					errCnt++
@@ -291,6 +343,11 @@ func (p *BMIProcessor) ProcessBatch(
 				}
 			}
 			if protoSubmit.FallsBelow != nil && protoSubmit.FallsBelow.OrderSubmission != nil {
+				if err = verifyVaultOwnership(protoSubmit.FallsBelow.OrderSubmission.VaultId, party); err != nil {
+					errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+					errCnt++
+					continue
+				}
 				if err, ok := failedMarkets[protoSubmit.FallsBelow.OrderSubmission.MarketId]; ok {
 					errs.AddForProperty(fmt.Sprintf("%d", i), err)
 					errCnt++
@@ -313,7 +370,16 @@ func (p *BMIProcessor) ProcessBatch(
 					id2 = ptr.From(submissionsIDs[i+idIdx])
 				}
 
-				conf, err := p.exec.SubmitStopOrders(ctx, submit, party, idgen, id1, id2)
+				fallsBelowParty := party
+				risesAboveParty := party
+				if protoSubmit.FallsBelow != nil && protoSubmit.FallsBelow.OrderSubmission.VaultId != nil {
+					fallsBelowParty = *protoSubmit.FallsBelow.OrderSubmission.VaultId
+				}
+				if protoSubmit.RisesAbove != nil && protoSubmit.RisesAbove.OrderSubmission.VaultId != nil {
+					risesAboveParty = *protoSubmit.RisesAbove.OrderSubmission.VaultId
+				}
+
+				conf, err := p.exec.SubmitStopOrders(ctx, submit, fallsBelowParty, risesAboveParty, idgen, id1, id2)
 				if err == nil && conf != nil {
 					stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 					stats.AddTotalTrades(uint64(len(conf.Trades)))

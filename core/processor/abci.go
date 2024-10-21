@@ -268,6 +268,7 @@ type App struct {
 	gastimator                     *Gastimator
 	ethCallEngine                  EthCallEngine
 	balanceChecker                 BalanceChecker
+	vaultService                   VaultService
 
 	nilPow  bool
 	nilSpam bool
@@ -321,6 +322,7 @@ func NewApp(log *logging.Logger,
 	balanceChecker BalanceChecker,
 	partiesEngine PartiesEngine,
 	txCache TxCache,
+	vaultService VaultService,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -372,6 +374,7 @@ func NewApp(log *logging.Logger,
 		balanceChecker:                 balanceChecker,
 		partiesEngine:                  partiesEngine,
 		txCache:                        txCache,
+		vaultService:                   vaultService,
 	}
 
 	// setup handlers
@@ -564,7 +567,22 @@ func NewApp(log *logging.Logger,
 			app.SendTransactionResult(app.UpdatePartyProfile),
 		).
 		HandleDeliverTx(txn.DelayedTransactionsWrapper,
-			app.SendTransactionResult(app.handleDelayedTransactionWrapper))
+			app.SendTransactionResult(app.handleDelayedTransactionWrapper)).
+		HandleDeliverTx(txn.CreateVaultCommand,
+			app.SendTransactionResult(app.CreateVault),
+		).
+		HandleDeliverTx(txn.UpdateVaultCommand,
+			app.SendTransactionResult(app.UpdateVault),
+		).
+		HandleDeliverTx(txn.ChangeVaultOwnershipCommand,
+			app.SendTransactionResult(app.ChangeVaultOwnership),
+		).
+		HandleDeliverTx(txn.DepositToVaultCommand,
+			app.SendTransactionResult(app.DepositToVault),
+		).
+		HandleDeliverTx(txn.WithdrawFromVaultCommand,
+			app.SendTransactionResult(app.WithdrawFromVault),
+		)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -1847,16 +1865,64 @@ func (app *App) CheckBatchMarketInstructions(_ context.Context, tx abci.Tx) erro
 			return err
 		}
 
-		if err := app.exec.CheckOrderSubmissionForSpam(os, tx.Party()); err != nil {
+		if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
+			return err
+		}
+
+		party := tx.Party()
+		if s.VaultId != nil {
+			party = *s.VaultId
+		}
+
+		if err := app.exec.CheckOrderSubmissionForSpam(os, party); err != nil {
 			return err
 		}
 	}
 
 	for _, s := range bmi.Amendments {
-		if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), s.MarketId); err != nil {
+		if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
 			return err
 		}
+		party := tx.Party()
+		if s.VaultId != nil {
+			party = *s.VaultId
+		}
+		if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(party, s.MarketId); err != nil {
+			return err
+		}
+
 		// TODO add amend checks
+	}
+
+	for _, s := range bmi.Cancellations {
+		if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
+			return err
+		}
+	}
+
+	for _, s := range bmi.StopOrdersCancellation {
+		if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
+			return err
+		}
+	}
+
+	for _, s := range bmi.UpdateMarginMode {
+		if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
+			return err
+		}
+	}
+
+	for _, s := range bmi.StopOrdersSubmission {
+		if s.FallsBelow != nil && s.FallsBelow.OrderSubmission != nil {
+			if err := app.verifyVaultOwnership(s.FallsBelow.OrderSubmission.VaultId, tx.Party()); err != nil {
+				return err
+			}
+		}
+		if s.RisesAbove != nil && s.RisesAbove.OrderSubmission != nil {
+			if err := app.verifyVaultOwnership(s.RisesAbove.OrderSubmission.VaultId, tx.Party()); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -1872,7 +1938,7 @@ func (app *App) DeliverBatchMarketInstructions(
 	}
 
 	return NewBMIProcessor(app.log, app.exec, Validate{}).
-		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats)
+		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats, app.verifyVaultOwnership)
 }
 
 func (app *App) RequireValidatorMasterPubKey(_ context.Context, tx abci.Tx) error {
@@ -1990,14 +2056,32 @@ func (app *App) DeliverStopOrdersSubmission(ctx context.Context, tx abci.Tx, det
 	// Submit the create order request to the execution engine
 	idgen := idgeneration.New(deterministicID)
 	var fallsBelow, risesAbove *string
+	fallsBelowParty := tx.Party()
+	risesAboveParty := tx.Party()
 	if os.FallsBelow != nil {
 		fallsBelow = ptr.From(idgen.NextID())
+		if os.FallsBelow.OrderSubmission != nil {
+			if err := app.verifyVaultOwnership(s.FallsBelow.OrderSubmission.VaultId, tx.Party()); err != nil {
+				return err
+			}
+			if s.FallsBelow.OrderSubmission.VaultId != nil {
+				fallsBelowParty = *s.FallsBelow.OrderSubmission.VaultId
+			}
+		}
 	}
 	if os.RisesAbove != nil {
 		risesAbove = ptr.From(idgen.NextID())
+		if os.RisesAbove.OrderSubmission != nil {
+			if err := app.verifyVaultOwnership(s.RisesAbove.OrderSubmission.VaultId, tx.Party()); err != nil {
+				return err
+			}
+			if s.RisesAbove.OrderSubmission.VaultId != nil {
+				risesAboveParty = *s.RisesAbove.OrderSubmission.VaultId
+			}
+		}
 	}
 
-	_, err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen, fallsBelow, risesAbove)
+	_, err = app.exec.SubmitStopOrders(ctx, os, fallsBelowParty, risesAboveParty, idgen, fallsBelow, risesAbove)
 	if err != nil {
 		app.log.Error("could not submit stop order",
 			logging.StopOrderSubmission(os), logging.Error(err))
@@ -2017,12 +2101,30 @@ func (app *App) DeliverStopOrdersCancellation(ctx context.Context, tx abci.Tx, d
 
 	// Submit the create order request to the execution engine
 	idgen := idgeneration.New(deterministicID)
-	err := app.exec.CancelStopOrders(ctx, os, tx.Party(), idgen)
+	if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	party := tx.Party()
+	if s.VaultId != nil {
+		party = *s.VaultId
+	}
+
+	err := app.exec.CancelStopOrders(ctx, os, party, idgen)
 	if err != nil {
 		app.log.Error("could not submit stop order",
 			logging.StopOrderCancellation(os), logging.Error(err))
 	}
 
+	return nil
+}
+
+func (app *App) verifyVaultOwnership(vaultID *string, party string) error {
+	if vaultID != nil {
+		owner := app.vaultService.GetVaultOwner(*vaultID)
+		if owner == nil || *owner != party {
+			return fmt.Errorf("only vault owner can submit commands on behalf of the vault")
+		}
+	}
 	return nil
 }
 
@@ -2039,9 +2141,19 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 	if err != nil {
 		return err
 	}
+
 	// Submit the create order request to the execution engine
 	idgen := idgeneration.New(deterministicID)
-	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), idgen, idgen.NextID())
+
+	if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	party := tx.Party()
+	if s.VaultId != nil {
+		party = *s.VaultId
+	}
+
+	conf, err := app.exec.SubmitOrder(ctx, os, party, idgen, idgen.NextID())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
@@ -2080,7 +2192,15 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
 	idgen := idgeneration.New(deterministicID)
-	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), idgen)
+	if err := app.verifyVaultOwnership(porder.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	party := tx.Party()
+	if porder.VaultId != nil {
+		party = *porder.VaultId
+	}
+
+	msg, err := app.exec.CancelOrder(ctx, order, party, idgen)
 	if err != nil {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
@@ -2107,6 +2227,14 @@ func (app *App) DeliverAmendOrder(
 	app.stats.IncTotalAmendOrder()
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
+	if err := app.verifyVaultOwnership(order.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	party := tx.Party()
+	if order.VaultId != nil {
+		party = *order.VaultId
+	}
+
 	// Convert protobuf into local domain type
 	oa, err := types.NewOrderAmendmentFromProto(order)
 	if err != nil {
@@ -2115,7 +2243,7 @@ func (app *App) DeliverAmendOrder(
 
 	// Submit the cancel new order request to the Vega trading core
 	idgen := idgeneration.New(deterministicID)
-	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), idgen)
+	msg, err := app.exec.AmendOrder(ctx, oa, party, idgen)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -2153,7 +2281,14 @@ func (app *App) CheckCancelOrderForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2164,7 +2299,14 @@ func (app *App) CheckCancelAmmForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2175,7 +2317,14 @@ func (app *App) CheckCancelLPForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2186,7 +2335,14 @@ func (app *App) CheckAmendOrderForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2197,7 +2353,15 @@ func (app *App) CheckAmendAmmForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2208,7 +2372,15 @@ func (app *App) CheckSubmitAmmForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2219,7 +2391,14 @@ func (app *App) CheckLPSubmissionForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2230,7 +2409,14 @@ func (app *App) CheckLPAmendForSpam(_ context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), sub.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, sub.MarketId); err != nil {
 		return err
 	}
 	return nil
@@ -2242,7 +2428,15 @@ func (app *App) CheckOrderSubmissionForSpam(_ context.Context, tx abci.Tx) error
 		return err
 	}
 
-	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(tx.Party(), s.MarketId); err != nil {
+	if err := app.verifyVaultOwnership(s.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if s.VaultId != nil {
+		p = *s.VaultId
+	}
+
+	if err := app.exec.CheckCanSubmitOrderOrLiquidityCommitment(p, s.MarketId); err != nil {
 		return err
 	}
 
@@ -2252,7 +2446,7 @@ func (app *App) CheckOrderSubmissionForSpam(_ context.Context, tx abci.Tx) error
 		return err
 	}
 
-	return app.exec.CheckOrderSubmissionForSpam(os, tx.Party())
+	return app.exec.CheckOrderSubmissionForSpam(os, p)
 }
 
 func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {
@@ -2512,6 +2706,14 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
+	if err := app.verifyVaultOwnership(sub.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if sub.VaultId != nil {
+		p = *sub.VaultId
+	}
+
 	// Convert protobuf message to local domain type
 	lps, err := types.LiquidityProvisionSubmissionFromProto(sub)
 	if err != nil {
@@ -2522,13 +2724,21 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
-	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicID)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, p, deterministicID)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
 	cancel := &commandspb.LiquidityProvisionCancellation{}
 	if err := tx.Unmarshal(cancel); err != nil {
 		return err
+	}
+
+	if err := app.verifyVaultOwnership(cancel.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if cancel.VaultId != nil {
+		p = *cancel.VaultId
 	}
 
 	app.log.Debug("Blockchain service received a CANCEL Liquidity Provision request", logging.String("liquidity-provision-market-id", cancel.MarketId))
@@ -2542,7 +2752,7 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 		return err
 	}
 
-	err = app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
+	err = app.exec.CancelLiquidityProvision(ctx, lpc, p)
 	if err != nil {
 		app.log.Debug("error on cancelling order",
 			logging.PartyID(tx.Party()),
@@ -2565,6 +2775,14 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, 
 
 	app.log.Debug("Blockchain service received a AMEND Liquidity Provision request", logging.String("liquidity-provision-market-id", lp.MarketId))
 
+	if err := app.verifyVaultOwnership(lp.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if lp.VaultId != nil {
+		p = *lp.VaultId
+	}
+
 	// Convert protobuf into local domain type
 	lpa, err := types.LiquidityProvisionAmendmentFromProto(lp)
 	if err != nil {
@@ -2572,7 +2790,7 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, 
 	}
 
 	// Submit the amend liquidity provision request to the Vega trading core
-	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicID)
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, p, deterministicID)
 	if err != nil {
 		app.log.Debug("error on amending Liquidity Provision",
 			logging.String("liquidity-provision-market-id", lpa.MarketID),
@@ -3041,6 +3259,14 @@ func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
 	if err = tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize UpdateMarginMode command: %w", err)
 	}
+	if err := app.verifyVaultOwnership(params.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if params.VaultId != nil {
+		p = *params.VaultId
+	}
+
 	marginFactor := num.DecimalZero()
 	if params.MarginFactor != nil && len(*params.MarginFactor) > 0 {
 		marginFactor, err = num.DecimalFromString(*params.MarginFactor)
@@ -3048,7 +3274,7 @@ func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
 			return err
 		}
 	}
-	return app.exec.UpdateMarginMode(ctx, tx.Party(), params.MarketId, types.MarginMode(params.Mode), marginFactor)
+	return app.exec.UpdateMarginMode(ctx, p, params.MarketId, types.MarginMode(params.Mode), marginFactor)
 }
 
 func (app *App) DeliverSubmitAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
@@ -3056,8 +3282,14 @@ func (app *App) DeliverSubmitAMM(ctx context.Context, tx abci.Tx, deterministicI
 	if err := tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize SubmitAMM command: %w", err)
 	}
-
-	submit := types.NewSubmitAMMFromProto(params, tx.Party())
+	if err := app.verifyVaultOwnership(params.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if params.VaultId != nil {
+		p = *params.VaultId
+	}
+	submit := types.NewSubmitAMMFromProto(params, p)
 	return app.exec.SubmitAMM(ctx, submit, deterministicID)
 }
 
@@ -3067,7 +3299,14 @@ func (app *App) DeliverAmendAMM(ctx context.Context, tx abci.Tx, deterministicID
 		return fmt.Errorf("could not deserialize AmendAMM command: %w", err)
 	}
 
-	amend := types.NewAmendAMMFromProto(params, tx.Party())
+	if err := app.verifyVaultOwnership(params.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if params.VaultId != nil {
+		p = *params.VaultId
+	}
+	amend := types.NewAmendAMMFromProto(params, p)
 	return app.exec.AmendAMM(ctx, amend, deterministicID)
 }
 
@@ -3077,7 +3316,15 @@ func (app *App) DeliverCancelAMM(ctx context.Context, tx abci.Tx, deterministicI
 		return fmt.Errorf("could not deserialize CancelAMM command: %w", err)
 	}
 
-	cancel := types.NewCancelAMMFromProto(params, tx.Party())
+	if err := app.verifyVaultOwnership(params.VaultId, tx.Party()); err != nil {
+		return err
+	}
+	p := tx.Party()
+	if params.VaultId != nil {
+		p = *params.VaultId
+	}
+
+	cancel := types.NewCancelAMMFromProto(params, p)
 	return app.exec.CancelAMM(ctx, cancel, deterministicID)
 }
 
@@ -3204,6 +3451,90 @@ func (app *App) UpdatePartyProfile(ctx context.Context, tx abci.Tx) error {
 	}
 
 	return nil
+}
+
+func (app *App) CreateVault(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.CreateVault{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize CreateVault command: %w", err)
+	}
+	feePeriod, err := time.ParseDuration(params.FeePeriod)
+	if err != nil {
+		return err
+	}
+	managementFeeFactor, err := num.DecimalFromString(params.ManagementFeeFactor)
+	if err != nil {
+		return err
+	}
+	performanceFeeFactor, err := num.DecimalFromString(params.PerformanceFeeFactor)
+	if err != nil {
+		return err
+	}
+	vault := &types.Vault{
+		ID:                   hex.EncodeToString(tx.Hash()),
+		Owner:                tx.Party(),
+		Asset:                params.Asset,
+		MetaData:             params.VaultMetadata,
+		FeePeriod:            feePeriod,
+		ManagementFeeFactor:  managementFeeFactor,
+		PerformanceFeeFactor: performanceFeeFactor,
+	}
+	return app.vaultService.CreateVault(ctx, vault)
+}
+
+func (app *App) UpdateVault(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.UpdateVault{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdateVault command: %w", err)
+	}
+
+	feePeriod, err := time.ParseDuration(params.FeePeriod)
+	if err != nil {
+		return err
+	}
+	managementFeeFactor, err := num.DecimalFromString(params.ManagementFeeFactor)
+	if err != nil {
+		return err
+	}
+	performanceFeeFactor, err := num.DecimalFromString(params.PerformanceFeeFactor)
+	if err != nil {
+		return err
+	}
+	vault := &types.Vault{
+		ID:                   hex.EncodeToString(tx.Hash()),
+		Owner:                tx.Party(),
+		MetaData:             params.VaultMetadata,
+		FeePeriod:            feePeriod,
+		ManagementFeeFactor:  managementFeeFactor,
+		PerformanceFeeFactor: performanceFeeFactor,
+	}
+	return app.vaultService.UpdateVault(ctx, vault)
+}
+
+func (app *App) ChangeVaultOwnership(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.ChangeVaultOwnership{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize ChangeVaultOwnership command: %w", err)
+	}
+	return app.vaultService.ChangeVaultOwnership(ctx, params.VaultId, tx.Party(), params.NewOwner)
+}
+
+func (app *App) DepositToVault(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.DepositToVault{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize DepositToVault command: %w", err)
+	}
+	amt, _ := num.UintFromString(params.Amount, 10)
+	return app.vaultService.DepositToVault(ctx, tx.Party(), params.VaultId, amt)
+}
+
+func (app *App) WithdrawFromVault(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.WithdrawFromVault{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize WithdrawFromVault command: %w", err)
+	}
+	amt, _ := num.UintFromString(params.Amount, 10)
+	return app.vaultService.WithdrawFromVault(ctx, tx.Party(), params.VaultId, amt)
 }
 
 func (app *App) OnBlockchainPrimaryEthereumConfigUpdate(_ context.Context, conf any) error {

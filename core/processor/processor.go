@@ -37,7 +37,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,EvtForwarderHeartbeat,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint,Broker,SpamEngine,PoWEngine,SnapshotEngine,StateVarEngine,TeamsEngine,ReferralProgram,VolumeDiscountProgram,VolumeRebateProgram,BlockchainClient,ProtocolUpgradeService,EthCallEngine,BalanceChecker,PartiesEngine,TxCache,EthereumOracleVerifier,Codec
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,EvtForwarderHeartbeat,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint,Broker,SpamEngine,PoWEngine,SnapshotEngine,StateVarEngine,TeamsEngine,ReferralProgram,VolumeDiscountProgram,VolumeRebateProgram,BlockchainClient,ProtocolUpgradeService,EthCallEngine,BalanceChecker,PartiesEngine,TxCache,EthereumOracleVerifier,Codec,VaultService
 
 var (
 	ErrChainEventFromNonValidator             = errors.New("chain event emitted from a non-validator node")
@@ -81,7 +81,7 @@ type ExecutionEngine interface {
 	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error)
 
 	// stop orders stuff
-	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator, stopOrderID1, stopOrderID2 *string) (*types.OrderConfirmation, error)
+	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, fallsBelowParty, risesAboveParty string, idgen common.IDGenerator, stopOrderID1, stopOrderID2 *string) (*types.OrderConfirmation, error)
 	CancelStopOrders(ctx context.Context, stopOrdersCancellation *types.StopOrdersCancellation, party string, idgen common.IDGenerator) error
 
 	// Future stuff
@@ -119,6 +119,15 @@ type ExecutionEngine interface {
 	// add this method here for testing, this is the exec engine interface used by the gastimator.
 	GetMarketCounters() map[string]*types.MarketCounters
 	NewProtocolAutomatedPurchase(ctx context.Context, ID string, automatedPurchaseConfig *types.NewProtocolAutomatedPurchaseChanges) error
+}
+
+type VaultService interface {
+	GetVaultOwner(vaultID string) *string
+	CreateVault(ctx context.Context, vault *types.Vault) error
+	UpdateVault(ctx context.Context, vault *types.Vault) error
+	ChangeVaultOwnership(ctx context.Context, vaultID, owner, newOwner string) error
+	DepositToVault(ctx context.Context, party, vaultKey string, amount *num.Uint) error
+	WithdrawFromVault(ctx context.Context, party, vaultKey string, amount *num.Uint) error
 }
 
 type GovernanceEngine interface {

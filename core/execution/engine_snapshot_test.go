@@ -101,7 +101,8 @@ func getMockedEngine(t *testing.T) *engineFake {
 	delayTarget := mocks.NewMockDelayTransactionsTarget(ctrl)
 	delayTarget.EXPECT().MarketDelayRequiredUpdated(gomock.Any(), gomock.Any()).AnyTimes()
 	mat := common.NewMarketActivityTracker(log, teams, balanceChecker, broker, collateralService)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties, delayTarget)
+	vaultService := mocks.NewMockVaultService(ctrl)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties, delayTarget, vaultService)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return &engineFake{
 		Engine:     exec,
@@ -170,7 +171,8 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	parties := mocks.NewMockParties(ctrl)
 	delayTarget := mocks.NewMockDelayTransactionsTarget(ctrl)
 	delayTarget.EXPECT().MarketDelayRequiredUpdated(gomock.Any(), gomock.Any()).AnyTimes()
-	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties, delayTarget)
+	vaultService := mocks.NewMockVaultService(ctrl)
+	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, volumeRebate, banking, parties, delayTarget, vaultService)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return e, ctrl
 }
@@ -623,7 +625,7 @@ func TestValidSpotMarketSnapshot(t *testing.T) {
 	}
 
 	stopSubmission, _ := types.NewStopOrderSubmissionFromProto(submissionProto)
-	require.NotPanics(t, func() { engine2.SubmitStopOrders(ctx, stopSubmission, "zohar", nil, nil, nil) })
+	require.NotPanics(t, func() { engine2.SubmitStopOrders(ctx, stopSubmission, "zohar", "zohar", nil, nil, nil) })
 }
 
 func TestValidSettledMarketSnapshot(t *testing.T) {

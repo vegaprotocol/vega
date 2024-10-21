@@ -154,6 +154,7 @@ func New(
 			svcs.collateral,
 			svcs.partiesEngine,
 			svcs.txCache,
+			svcs.vaultService,
 		),
 		log:         log,
 		confWatcher: confWatcher,

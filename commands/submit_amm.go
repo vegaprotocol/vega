@@ -157,5 +157,9 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 		}
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("submit_amm.vault_id", ErrInvalidVaultID)
+	}
+
 	return errs
 }

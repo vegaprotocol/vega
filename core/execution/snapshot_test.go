@@ -633,6 +633,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	parties := mocks.NewMockParties(ctrl)
 	delayTarget := mocks.NewMockDelayTransactionsTarget(ctrl)
 	delayTarget.EXPECT().MarketDelayRequiredUpdated(gomock.Any(), gomock.Any()).AnyTimes()
+	vaultService := mocks.NewMockVaultService(ctrl)
 	eng := execution.NewEngine(
 		log,
 		cfg,
@@ -649,6 +650,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 		banking,
 		parties,
 		delayTarget,
+		vaultService,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())
@@ -709,6 +711,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	partiesMock := mocks.NewMockParties(ctrl)
 	delayTarget := mocks.NewMockDelayTransactionsTarget(ctrl)
 	delayTarget.EXPECT().MarketDelayRequiredUpdated(gomock.Any(), gomock.Any()).AnyTimes()
+	vaultService := mocks.NewMockVaultService(ctrl)
 	eng := execution.NewEngine(
 		log,
 		cfg,
@@ -725,6 +728,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 		banking,
 		partiesMock,
 		delayTarget,
+		vaultService,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())

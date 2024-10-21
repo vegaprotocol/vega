@@ -151,6 +151,7 @@ message Payload {
     TxCache tx_cache = 88;
     EVMFwdHeartbeats evm_fwd_heartbeats = 89;
     VolumeRebateProgram volume_rebate_program = 90;
+    Vault vaults = 91;
   }
 }
 
@@ -247,6 +248,7 @@ message CollateralAccounts {
   repeated vega.Account accounts = 1;
   int64 next_balance_snapshot = 2;
   repeated Earmarked earmarked_balances = 3;
+  repeated string vault_owner = 4;
 }
 
 message Earmarked {
@@ -1505,4 +1507,33 @@ message ProtocolAutomatedPurchase {
   string active_order = 6;
   vega.Side side = 7;
   bool ready_to_stop = 8;
+}
+
+message Vault {
+  repeated VaultState vault_state = 1;
+}
+
+message VaultState {
+  vega.Vault vault = 1;
+  repeated ShareHolder share_holders = 2;
+  string high_watermark = 3;
+  string invested_amount = 4;
+  int64 next_fee_calc = 5;
+  int64 next_redemption_date_index = 6;
+  vega.VaultStatus status = 7;
+  repeated RedeemRequest redeem_queue = 8;
+  repeated RedeemRequest late_redemptions = 9;
+}
+
+message ShareHolder {
+  string party = 1;
+  string share = 2;
+}
+
+message RedeemRequest {
+  string party = 1;
+  int64 date = 2;
+  string amount = 3;
+  string remaining = 4;
+  vega.RedeemStatus status = 5;
 }

@@ -114,6 +114,7 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.snapshotBalances()
 	e.earmarkedBalance = accs.Earmarked
 	e.state.updateEarmarked(e.earmarkedBalance)
+	e.state.updateVaultOwners(e.vaultOwners)
 	return err
 }
 
@@ -182,6 +183,10 @@ func (a *accState) updateEarmarked(earmarked map[string]*num.Uint) {
 
 func (a *accState) updateBalanceSnapshotTime(t time.Time) {
 	a.accPL.CollateralAccounts.NextBalanceSnapshot = t
+}
+
+func (a *accState) updateVaultOwners(vaultOwners map[string]struct{}) {
+	a.accPL.CollateralAccounts.VaultOwners = vaultOwners
 }
 
 func (a *accState) hashAssets() ([]byte, error) {

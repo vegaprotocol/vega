@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/test"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -773,6 +774,21 @@ func testPeggedOrderSubmissionWithSideSellAndMidReferenceAndPositiveOffsetSuccee
 	})
 
 	assert.NotContains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be positive"))
+}
+
+func TestOrderSubmissionWithInvalidVaultIDFails(t *testing.T) {
+	banana := "banana"
+	err := checkOrderSubmission(&commandspb.OrderSubmission{
+		MarketId:    crypto.RandomHash(),
+		Price:       "100",
+		Size:        100,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		Side:        types.Side_SIDE_SELL,
+		Type:        types.Order_TYPE_LIMIT,
+		VaultId:     &banana,
+	})
+
+	assert.Equal(t, "order_submission.vault_id (is not a valid vault identifier)", err.Error())
 }
 
 func checkOrderSubmission(cmd *commandspb.OrderSubmission) commands.Errors {

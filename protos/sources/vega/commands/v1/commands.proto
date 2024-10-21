@@ -70,6 +70,8 @@ message StopOrdersCancellation {
   optional string market_id = 1;
   // Restrict cancellations to a stop order with the given ID. If set, then a market ID must also be provided.
   optional string stop_order_id = 2;
+  // If set and if submitted by the owner of the vault the order will be submitted with the party being the vault owner.
+  optional string vault_id = 3;
 }
 
 // A command that submits an order to the Vega network for a given market.
@@ -102,6 +104,8 @@ message OrderSubmission {
   bool reduce_only = 11;
   // Iceberg order details. If set, the order will exist on the order book in chunks.
   optional IcebergOpts iceberg_opts = 12;
+  // If set and if submitted by the owner of the vault the order will be submitted with the party being the vault owner.
+  optional string vault_id = 13;
 }
 
 // Iceberg order options
@@ -127,6 +131,8 @@ message UpdateMarginMode {
   Mode mode = 2;
   // Margin factor to use for margin in isolated mode. It is a multiplier that defines how much margin needs to be set aside
   optional string margin_factor = 3;
+  // Optional vault id
+  optional string vault_id = 4;
 }
 
 // A command that instructs the network to cancel orders, active or partially filled, that were previously submitted by the sender of this transaction.
@@ -136,6 +142,8 @@ message OrderCancellation {
   string order_id = 1;
   // Restrict cancellations to those submitted to the given market. If not set, all stop orders across all markets will be cancelled.
   string market_id = 2;
+  // If set and if submitted by the owner of the vault the order will be submitted with the party being the vault owner.
+  optional string vault_id = 3;
 }
 
 // A command that allows a party to update the details of an existing order.
@@ -172,6 +180,8 @@ message OrderAmendment {
   // This field is an unsigned integer scaled to the market's decimal places.
   // If specified, size_delta must be set to 0.
   optional uint64 size = 9;
+  // If set and if submitted by the owner of the vault the order will be submitted with the party being the vault owner.
+  optional string vault_id = 10;
 }
 
 // A command that indicates to the network the party's intention to supply liquidity to the given market and become a liquidity provider.
@@ -187,12 +197,16 @@ message LiquidityProvisionSubmission {
   string fee = 3;
   // Arbitrary reference to be added to every order created out of this liquidity provision submission.
   string reference = 6;
+  // Optional vault id
+  optional string vault_id = 7;
 }
 
 // Command that allows a liquidity provider to inform the network that they will stop providing liquidity for a market.
 message LiquidityProvisionCancellation {
   // Market that the submitter will stop providing liquidity for.
   string market_id = 1;
+  // Optional vault id
+  optional string vault_id = 2;
 }
 
 // Command that allows a liquidity provider to update the details of their existing liquidity commitment.
@@ -207,6 +221,8 @@ message LiquidityProvisionAmendment {
   string fee = 3;
   // New arbitrary reference to be added to every order created out of this liquidity provision submission.
   string reference = 6;
+  // Optional vault id
+  optional string vault_id = 7;
 }
 
 // Command to instruct the network to process an asset withdrawal from the Vega network.
@@ -453,6 +469,8 @@ message SubmitAMM {
   ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   string proposed_fee = 5;
+  // Optional vault id.
+  optional string vault_id = 6;
   // Liquidity parameters that define the size and range of the AMM's tradeable volume.
   message ConcentratedLiquidityParameters {
     // Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
@@ -484,6 +502,8 @@ message AmendAMM {
   optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market. If not supplied the proposed fee will remain unchanged.
   optional string proposed_fee = 5;
+  // Optional vault id.
+  optional string vault_id = 6;
   // Liquidity parameters that define the size and range of the AMM's tradeable volume.
   message ConcentratedLiquidityParameters {
     // Price at which the AMM will stop quoting sell volume. If not supplied the AMM will never hold a short position.
@@ -516,6 +536,63 @@ message CancelAMM {
   string market_id = 1;
   // Method to use to cancel the AMM.
   Method method = 2;
+  // Optional vault id.
+  optional string vault_id = 3;
+}
+
+message CreateVault {
+  // Settlement asset for the vault.
+  string asset = 1;
+  // Metadata describing the vault.
+  vega.VaultMetaData vault_metadata = 2;
+  // Fee period is the frequency for the vault's fees assessment.
+  string fee_period = 3;
+  // Management fee factor.
+  string management_fee_factor = 4;
+  // Performance fee factor.
+  string performance_fee_factor = 5;
+  // Redemption dates and strategies.
+  repeated vega.RedemptionDate redemption_dates = 6;
+  // The cutoff period following the redemption date until which the redemption request is queued.
+  int64 cut_off_period_length = 7;
+}
+
+message ChangeVaultOwnership {
+  // Identifier of the vault
+  string vault_id = 1;
+  // New owner of the vault
+  string new_owner = 2;
+}
+
+message UpdateVault {
+  // Identifier of the vault
+  string vault_id = 1;
+  // Metadata describing the vault.
+  vega.VaultMetaData vault_metadata = 2;
+  // Fee period is the frequency for the vault's fees assessment.
+  string fee_period = 3;
+  // Management fee factor.
+  string management_fee_factor = 4;
+  // Performance fee factor.
+  string performance_fee_factor = 5;
+  // Redemption dates and strategies.
+  repeated vega.RedemptionDate redemption_dates = 6;
+  // The cutoff period following the redemption date until which the redemption request is queued.
+  int64 cut_off_period_length = 7;
+}
+
+message DepositToVault {
+  // Vault to deposit to
+  string vault_id = 1;
+  // Amount to deposit
+  string amount = 2;
+}
+
+message WithdrawFromVault {
+  // Vault to deposit to
+  string vault_id = 1;
+  // Amount to withdraw
+  string amount = 2;
 }
 
 // Internal transactions used to convey delayed transactions to be included in the next block.
