@@ -64,20 +64,28 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 		errs.AddForProperty("submit_amm.proposed_fee", ErrMustBePositive)
 	}
 
+	if cmd.MinimumPriceChangeTrigger != nil {
+		if minPriceChange, err := num.DecimalFromString(*cmd.MinimumPriceChangeTrigger); err != nil {
+			errs.AddForProperty("submit_amm.mimimum_price_change_trigger", ErrIsNotValid)
+		} else if minPriceChange.LessThan(num.DecimalZero()) {
+			errs.AddForProperty("submit_amm.proposed_fee", ErrMustBePositiveOrZero)
+		}
+	}
+
 	if cmd.ConcentratedLiquidityParameters == nil {
 		errs.FinalAddForProperty("submit_amm.concentrated_liquidity_parameters", ErrIsRequired)
 	} else {
+		var emptyLower, emptyUpper, emptyBase bool
 		var base, lowerBound, upperBound *big.Int
 
 		if len(cmd.ConcentratedLiquidityParameters.Base) <= 0 {
-			errs.FinalAddForProperty("submit_amm.concentrated_liquidity_parameters.base", ErrIsRequired)
+			emptyBase = true
 		} else if base, _ = big.NewInt(0).SetString(cmd.ConcentratedLiquidityParameters.Base, 10); base == nil {
 			errs.FinalAddForProperty("submit_amm.concentrated_liquidity_parameters.base", ErrIsNotValidNumber)
 		} else if base.Cmp(big.NewInt(0)) <= 0 {
 			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.base", ErrMustBePositive)
 		}
 
-		var emptyLower, emptyUpper bool
 		if cmd.ConcentratedLiquidityParameters.LowerBound == nil {
 			emptyLower = true
 		} else if len(*cmd.ConcentratedLiquidityParameters.LowerBound) <= 0 {
@@ -138,6 +146,14 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 		// base is >= to upper bound == error
 		if base != nil && upperBound != nil && base.Cmp(upperBound) >= 0 {
 			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.base", errors.New("should be a smaller value than upper_bound"))
+		}
+
+		if cmd.ConcentratedLiquidityParameters.DataSourceId == nil && emptyBase {
+			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.base", ErrIsRequired)
+		}
+
+		if cmd.ConcentratedLiquidityParameters.DataSourceId != nil && !IsVegaID(*cmd.ConcentratedLiquidityParameters.DataSourceId) {
+			errs.AddForProperty("submit_amm.data_source_id", ErrShouldBeAValidVegaID)
 		}
 	}
 

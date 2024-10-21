@@ -465,7 +465,11 @@ message SubmitAMM {
     optional string leverage_at_upper_bound = 4;
     // Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
     optional string leverage_at_lower_bound = 5;
+    // ID of a data source already used by the market which will be used as the base price for the AMM.
+    optional string data_source_id = 6;
   }
+  // An AMM with an oracle driven base price will only be updated if abs(new-base-price / old-base-price - 1) >= minimum_price_change_trigger.
+  optional string minimum_price_change_trigger = 7;
 }
 
 // Command to amend an existing automated market maker on a market.
@@ -492,7 +496,11 @@ message AmendAMM {
     optional string leverage_at_upper_bound = 4;
     // Leverage at lower bound. If not set the markets risk-factors will be used to calculate leverage.
     optional string leverage_at_lower_bound = 5;
+    // ID of a data source already used by the market which will be used as the base price for the AMM.
+    optional string data_source_id = 6;
   }
+  // An AMM with an oracle driven base price will only be updated if abs(new-base-price / old-base-price - 1) >= minimum_price_change_trigger.
+  optional string minimum_price_change_trigger = 7;
 }
 
 // Command to cancel an automated market maker for a given market.

@@ -45,6 +45,8 @@ type CompositePriceCalculator struct {
 	oracles      []*products.CompositePriceOracle
 	scalingFunc  func(context.Context, *num.Numeric, int64) *num.Uint
 	maxPrice     *num.Uint
+
+	dataPointListener func(context.Context, string, *num.Uint) // pass through data-points
 }
 
 const (
@@ -146,6 +148,10 @@ func NewCompositePriceCalculator(ctx context.Context, config *types.CompositePri
 	return mpc
 }
 
+func (mpc *CompositePriceCalculator) NotifyOnDataSourcePropagation(listener func(context.Context, string, *num.Uint)) {
+	mpc.dataPointListener = listener
+}
+
 func (mpc *CompositePriceCalculator) UpdateConfig(ctx context.Context, oe OracleEngine, config *types.CompositePriceConfiguration) error {
 	// special case for only resetting the oracles
 	if mpc.oracles != nil {
@@ -227,15 +233,21 @@ func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) f
 		if err != nil {
 			return err
 		}
+
 		p := mpc.scalingFunc(ctx, pd, mpc.oracles[oracleIndex].GetDecimals())
 		// ignore prices that exceed the cap
 		if p == nil || p.IsZero() {
 			return nil
 		}
+
 		// ignore price data > max price
 		if mpc.maxPrice != nil && p.GT(mpc.maxPrice) {
 			return nil
 		}
+
+		// propagate oracle price further along the chain
+		mpc.dataPointListener(ctx, mpc.config.DataSources[oracleIndex].ID, p)
+
 		mpc.priceSources[FirstOraclePriceIndex+oracleIndex] = p.Clone()
 		mpc.sourceLastUpdate[FirstOraclePriceIndex+oracleIndex] = mpc.timeService.GetTimeNow().UnixNano()
 		return nil

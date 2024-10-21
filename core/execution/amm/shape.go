@@ -484,6 +484,10 @@ func (sm *shapeMaker) makeShape() {
 }
 
 func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) *types.OrderbookShapeResult {
+	if p.IsPending() {
+		return &types.OrderbookShapeResult{AmmParty: p.AMMParty}
+	}
+
 	sm := newShapeMaker(
 		p.log,
 		p,

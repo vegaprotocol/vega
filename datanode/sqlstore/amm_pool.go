@@ -59,7 +59,8 @@ parameters_lower_bound, parameters_upper_bound,
 parameters_leverage_at_lower_bound, parameters_leverage_at_upper_bound,
 created_at, last_updated, proposed_fee,
 lower_virtual_liquidity, lower_theoretical_position,
-upper_virtual_liquidity, upper_theoretical_position) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+upper_virtual_liquidity, upper_theoretical_position, data_source_id,
+minimum_price_change_trigger)values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 on conflict (party_id, market_id, id, amm_party_id) do update set
 	commitment=excluded.commitment,
 	status=excluded.status,
@@ -74,7 +75,9 @@ on conflict (party_id, market_id, id, amm_party_id) do update set
 	lower_virtual_liquidity=excluded.lower_virtual_liquidity,
 	lower_theoretical_position=excluded.lower_theoretical_position,
 	upper_virtual_liquidity=excluded.upper_virtual_liquidity,
-	upper_theoretical_position=excluded.upper_theoretical_position;`,
+	upper_theoretical_position=excluded.upper_theoretical_position,
+	data_source_id=excluded.data_source_id,
+	minimum_price_change_trigger=excluded.minimum_price_change_trigger;`,
 		pool.PartyID,
 		pool.MarketID,
 		pool.ID,
@@ -94,6 +97,8 @@ on conflict (party_id, market_id, id, amm_party_id) do update set
 		pool.LowerTheoreticalPosition,
 		pool.UpperVirtualLiquidity,
 		pool.UpperTheoreticalPosition,
+		pool.DataSourceID,
+		pool.MinimumPriceChangeTrigger,
 	); err != nil {
 		return fmt.Errorf("could not upsert AMM Pool: %w", err)
 	}

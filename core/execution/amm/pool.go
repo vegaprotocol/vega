@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
@@ -128,13 +129,15 @@ type Pool struct {
 	ProposedFee num.Decimal
 	Parameters  *types.ConcentratedLiquidityParameters
 
-	asset          string
-	market         string
-	owner          string
-	collateral     Collateral
-	position       Position
-	priceFactor    num.Decimal
-	positionFactor num.Decimal
+	asset                     string
+	market                    string
+	owner                     string
+	collateral                Collateral
+	position                  Position
+	priceFactor               num.Decimal
+	positionFactor            num.Decimal
+	SlippageTolerance         num.Decimal
+	MinimumPriceChangeTrigger num.Decimal
 
 	// current pool status
 	status types.AMMPoolStatus
@@ -174,28 +177,40 @@ func NewPool(
 	positionFactor num.Decimal,
 	maxCalculationLevels *num.Uint,
 	allowedEmptyAMMLevels uint64,
+	slippageTolerance num.Decimal,
+	minimumPriceChangeTrigger num.Decimal,
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 	pool := &Pool{
-		log:                  log,
-		ID:                   id,
-		AMMParty:             ammParty,
-		Commitment:           submit.CommitmentAmount,
-		ProposedFee:          submit.ProposedFee,
-		Parameters:           submit.Parameters,
-		market:               submit.MarketID,
-		owner:                submit.Party,
-		asset:                asset,
-		sqrt:                 sqrt,
-		collateral:           collateral,
-		position:             position,
-		priceFactor:          priceFactor,
-		positionFactor:       positionFactor,
-		oneTick:              num.Max(num.UintOne(), oneTick),
-		status:               types.AMMPoolStatusActive,
-		maxCalculationLevels: maxCalculationLevels,
-		cache:                NewPoolCache(),
+		log:                       log,
+		ID:                        id,
+		AMMParty:                  ammParty,
+		Commitment:                submit.CommitmentAmount,
+		ProposedFee:               submit.ProposedFee,
+		Parameters:                submit.Parameters,
+		market:                    submit.MarketID,
+		owner:                     submit.Party,
+		asset:                     asset,
+		sqrt:                      sqrt,
+		collateral:                collateral,
+		position:                  position,
+		priceFactor:               priceFactor,
+		positionFactor:            positionFactor,
+		oneTick:                   num.Max(num.UintOne(), oneTick),
+		status:                    types.AMMPoolStatusActive,
+		maxCalculationLevels:      maxCalculationLevels,
+		cache:                     NewPoolCache(),
+		SlippageTolerance:         slippageTolerance,
+		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
 	}
+
+	if submit.Parameters.DataSourceID != nil {
+		pool.status = types.AMMPoolStatusPending
+		pool.lower = emptyCurve(num.UintZero(), true)
+		pool.upper = emptyCurve(num.UintZero(), false)
+		return pool, nil
+	}
+
 	err := pool.setCurves(rf, sf, linearSlippage, allowedEmptyAMMLevels)
 	if err != nil {
 		return nil, err
@@ -267,6 +282,22 @@ func NewPoolFromProto(
 		return nil, err
 	}
 
+	var slippageTolerance num.Decimal
+	if state.SlippageTolerance != "" {
+		slippageTolerance, err = num.DecimalFromString(state.SlippageTolerance)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	minimumPriceChangeTrigger := num.DecimalZero()
+	if state.MinimumPriceChangeTrigger != "" {
+		minimumPriceChangeTrigger, err = num.DecimalFromString(state.MinimumPriceChangeTrigger)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Pool{
 		log:         log,
 		ID:          state.Id,
@@ -279,20 +310,23 @@ func NewPoolFromProto(
 			UpperBound:           upper,
 			LeverageAtLowerBound: lowerLeverage,
 			LeverageAtUpperBound: upperLeverage,
+			DataSourceID:         state.Parameters.DataSourceId,
 		},
-		owner:          party,
-		market:         state.Market,
-		asset:          state.Asset,
-		sqrt:           sqrt,
-		collateral:     collateral,
-		position:       position,
-		lower:          lowerCu,
-		upper:          upperCu,
-		priceFactor:    priceFactor,
-		positionFactor: positionFactor,
-		oneTick:        num.Max(num.UintOne(), oneTick),
-		status:         state.Status,
-		cache:          NewPoolCache(),
+		owner:                     party,
+		market:                    state.Market,
+		asset:                     state.Asset,
+		sqrt:                      sqrt,
+		collateral:                collateral,
+		position:                  position,
+		lower:                     lowerCu,
+		upper:                     upperCu,
+		priceFactor:               priceFactor,
+		positionFactor:            positionFactor,
+		oneTick:                   num.Max(num.UintOne(), oneTick),
+		status:                    state.Status,
+		cache:                     NewPoolCache(),
+		SlippageTolerance:         slippageTolerance,
+		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
 	}, nil
 }
 
@@ -317,8 +351,11 @@ func NewCurveFromProto(c *snapshotpb.PoolMapEntry_Curve) (*curve, error) {
 		return nil, fmt.Errorf("failed to convert string to Uint: %s", c.Low)
 	}
 
-	sqrtHigh := num.UintOne().Sqrt(high)
-	lDivSqrtPu := l.Div(sqrtHigh)
+	var sqrtHigh, lDivSqrtPu num.Decimal
+	if !c.Empty {
+		sqrtHigh = num.UintOne().Sqrt(high)
+		lDivSqrtPu = l.Div(sqrtHigh)
+	}
 
 	return &curve{
 		l:          l,
@@ -354,7 +391,9 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 			Empty: p.upper.empty,
 			Pv:    p.upper.pv.String(),
 		},
-		Status: p.status,
+		Status:                    p.status,
+		SlippageTolerance:         p.SlippageTolerance.String(),
+		MinimumPriceChangeTrigger: p.MinimumPriceChangeTrigger.String(),
 	}
 }
 
@@ -362,6 +401,7 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 // is invalid.
 func (p *Pool) checkPosition() bool {
 	pos := p.getPosition()
+
 	if pos > p.lower.pv.IntPart() {
 		return false
 	}
@@ -408,25 +448,55 @@ func (p *Pool) Update(
 	}
 
 	updated := &Pool{
-		log:                  p.log,
-		ID:                   p.ID,
-		AMMParty:             p.AMMParty,
-		Commitment:           commitment,
-		ProposedFee:          proposedFee,
-		Parameters:           parameters,
-		asset:                p.asset,
-		market:               p.market,
-		owner:                p.owner,
-		collateral:           p.collateral,
-		position:             p.position,
-		priceFactor:          p.priceFactor,
-		positionFactor:       p.positionFactor,
-		status:               types.AMMPoolStatusActive,
-		sqrt:                 p.sqrt,
-		oneTick:              p.oneTick,
-		maxCalculationLevels: p.maxCalculationLevels,
-		cache:                NewPoolCache(),
+		log:                       p.log,
+		ID:                        p.ID,
+		AMMParty:                  p.AMMParty,
+		Commitment:                commitment,
+		ProposedFee:               proposedFee,
+		Parameters:                parameters,
+		asset:                     p.asset,
+		market:                    p.market,
+		owner:                     p.owner,
+		collateral:                p.collateral,
+		position:                  p.position,
+		priceFactor:               p.priceFactor,
+		positionFactor:            p.positionFactor,
+		status:                    types.AMMPoolStatusActive,
+		sqrt:                      p.sqrt,
+		oneTick:                   p.oneTick,
+		maxCalculationLevels:      p.maxCalculationLevels,
+		cache:                     NewPoolCache(),
+		SlippageTolerance:         amend.SlippageTolerance,
+		MinimumPriceChangeTrigger: amend.MinimumPriceChangeTrigger,
 	}
+
+	// data source has changed, if the old base price is within bounds we'll keep it until the update comes in
+	// otherwise we'll kick it into pending
+	if ptr.UnBox(parameters.DataSourceID) != ptr.UnBox(p.Parameters.DataSourceID) {
+		base := p.lower.high
+		outside := p.IsPending()
+
+		if parameters.UpperBound != nil {
+			bound, _ := num.UintFromDecimal(parameters.UpperBound.ToDecimal().Mul(p.priceFactor))
+			outside = outside || base.GTE(bound)
+		}
+
+		if parameters.LowerBound != nil {
+			bound, _ := num.UintFromDecimal(parameters.LowerBound.ToDecimal().Mul(p.priceFactor))
+			outside = outside || base.LTE(bound)
+		}
+
+		if outside {
+			updated.status = types.AMMPoolStatusPending
+			updated.lower = emptyCurve(num.UintZero(), true)
+			updated.upper = emptyCurve(num.UintZero(), false)
+			return updated, nil
+		}
+
+		// inherit the old base price
+		parameters.Base = p.Parameters.Base.Clone()
+	}
+
 	if err := updated.setCurves(rf, sf, linearSlippage, allowedEmptyAMMLevels); err != nil {
 		return nil, err
 	}
@@ -441,13 +511,15 @@ func (p *Pool) Update(
 // emptyCurve creates the curve details that represent no liquidity.
 func emptyCurve(
 	base *num.Uint,
+	isLower bool,
 ) *curve {
 	return &curve{
-		l:     num.DecimalZero(),
-		pv:    num.DecimalZero(),
-		low:   base.Clone(),
-		high:  base.Clone(),
-		empty: true,
+		l:       num.DecimalZero(),
+		pv:      num.DecimalZero(),
+		low:     base.Clone(),
+		high:    base.Clone(),
+		empty:   true,
+		isLower: isLower,
 	}
 }
 
@@ -544,8 +616,8 @@ func (p *Pool) setCurves(
 ) error {
 	// convert the bounds into asset precision
 	base, _ := num.UintFromDecimal(p.Parameters.Base.ToDecimal().Mul(p.priceFactor))
-	p.lower = emptyCurve(base)
-	p.upper = emptyCurve(base)
+	p.lower = emptyCurve(base, true)
+	p.upper = emptyCurve(base, false)
 
 	if p.Parameters.LowerBound != nil {
 		lowerBound, _ := num.UintFromDecimal(p.Parameters.LowerBound.ToDecimal().Mul(p.priceFactor))
@@ -820,7 +892,11 @@ func (p *Pool) FairPrice() *num.Uint {
 	}
 
 	if cu.empty {
-		panic("should not be calculating fair-price on empty-curve side")
+		p.log.Panic("should not be calculating fair-price on empty-curve side",
+			logging.Bool("lower", cu.isLower),
+			logging.Int64("pos", pos),
+			logging.String("amm-party", p.AMMParty),
+		)
 	}
 
 	// pv * sqrt(pu) * (1/L) + 1
@@ -924,6 +1000,10 @@ func (p *Pool) virtualBalances(pos int64, fp *num.Uint, side types.Side) (num.De
 // BestPrice returns the AMM's quote price on the given side. If the AMM's position is fully at a boundary
 // then there is no quote price on that side and false is returned.
 func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
+	if p.IsPending() {
+		return nil, false
+	}
+
 	pos := p.getPosition()
 	fairPrice := p.FairPrice()
 
@@ -1013,7 +1093,15 @@ func (p *Pool) closing() bool {
 	return p.status == types.AMMPoolStatusReduceOnly
 }
 
+func (p *Pool) IsPending() bool {
+	return p.status == types.AMMPoolStatusPending
+}
+
 func (p *Pool) canTrade(side types.Side) bool {
+	if p.IsPending() {
+		return false
+	}
+
 	if !p.closing() {
 		return true
 	}

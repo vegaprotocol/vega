@@ -83,6 +83,8 @@ func TestAMMPool_Upsert(t *testing.T) {
 				UpperVirtualLiquidity:          num.DecimalOne(),
 				LowerTheoreticalPosition:       num.DecimalOne(),
 				UpperTheoreticalPosition:       num.DecimalOne(),
+				MinimumPriceChangeTrigger:      num.DecimalOne(),
+				DataSourceID:                   entities.SpecID(""),
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -124,6 +126,7 @@ func TestAMMPool_Upsert(t *testing.T) {
 				UpperVirtualLiquidity:          num.DecimalOne(),
 				LowerTheoreticalPosition:       num.DecimalOne(),
 				UpperTheoreticalPosition:       num.DecimalOne(),
+				MinimumPriceChangeTrigger:      num.DecimalOne(),
 			}
 			require.NoError(t, ps.Upsert(ctx, pool))
 			var upserted entities.AMMPool
@@ -159,6 +162,7 @@ func TestAMMPool_Upsert(t *testing.T) {
 			UpperVirtualLiquidity:          num.DecimalOne(),
 			LowerTheoreticalPosition:       num.DecimalOne(),
 			UpperTheoreticalPosition:       num.DecimalOne(),
+			MinimumPriceChangeTrigger:      num.DecimalOne(),
 		}
 		require.NoError(t, ps.Upsert(ctx, pool))
 		var upserted entities.AMMPool
@@ -233,6 +237,7 @@ func setupAMMPoolsTest(ctx context.Context, t *testing.T) (
 					UpperVirtualLiquidity:          num.DecimalOne(),
 					LowerTheoreticalPosition:       num.DecimalOne(),
 					UpperTheoreticalPosition:       num.DecimalOne(),
+					MinimumPriceChangeTrigger:      num.DecimalOne(),
 				}
 				require.NoError(t, ps.Upsert(ctx, pool))
 				pools = append(pools, pool)
