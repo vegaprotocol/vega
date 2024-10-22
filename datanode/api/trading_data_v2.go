@@ -5728,6 +5728,8 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 		req.FromAccountType,
 		req.FromAmmKey,
 		req.ToAccount,
+		// irrelvant here
+		vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED,
 	)
 
 	return &v2.EstimateTransferFeeResponse{

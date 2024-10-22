@@ -21,6 +21,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -40,9 +41,11 @@ func NewSnapshotEngine(
 	broker Broker,
 	assets Assets,
 	parties Parties,
+	t Time,
+	stakeAccounting StakeAccounting,
 ) *SnapshotEngine {
 	se := &SnapshotEngine{
-		Engine: New(log, c, asvm, broker, assets, parties),
+		Engine: New(log, c, asvm, broker, assets, parties, t, stakeAccounting),
 	}
 
 	return se
@@ -79,7 +82,7 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 	}
 }
 
-func (e *SnapshotEngine) loadStateFromSnapshot(_ context.Context, state *snapshotpb.Vesting) {
+func (e *SnapshotEngine) loadStateFromSnapshot(ctx context.Context, state *snapshotpb.Vesting) {
 	for _, entry := range state.PartiesReward {
 		for _, v := range entry.InVesting {
 			balance, underflow := num.UintFromString(v.Balance, 10)
@@ -100,6 +103,18 @@ func (e *SnapshotEngine) loadStateFromSnapshot(_ context.Context, state *snapsho
 				e.increaseLockedForAsset(entry.Party, locked.Asset, balance, epochBalance.Epoch)
 			}
 		}
+	}
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.78.8") {
+		e.updateStakingOnUpgrade79(ctx)
+	}
+}
+
+// updateStakingOnUpgrade79 update staking balance for party which had
+// rewards vesting before the upgrade.
+func (e *SnapshotEngine) updateStakingOnUpgrade79(ctx context.Context) {
+	for i, v := range e.c.GetAllVestingAndVestedAccountForAsset(e.stakingAsset) {
+		e.updateStakingAccount(ctx, v.Owner, v.Balance.Clone(), uint64(i), e.broker.Stage)
 	}
 }
 

@@ -356,6 +356,18 @@ func (e *Engine) GetAllVestingQuantumBalance(party string) num.Decimal {
 	return balance
 }
 
+func (e *Engine) GetAllVestingAndVestedAccountForAsset(asset string) []*types.Account {
+	accs := []*types.Account{}
+
+	for _, v := range e.hashableAccs {
+		if v.Asset == asset && (v.Type == types.AccountTypeVestingRewards || v.Type == types.AccountTypeVestedRewards) {
+			accs = append(accs, v.Clone())
+		}
+	}
+
+	return accs
+}
+
 func (e *Engine) GetVestingRecovery() map[string]map[string]*num.Uint {
 	out := e.vesting
 	e.vesting = map[string]map[string]*num.Uint{}
@@ -2820,6 +2832,17 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 			// we always pay onto the pending transfers accounts
 			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
 
+		case types.AccountTypeLockedForStaking:
+			fromAcc, err = e.GetPartyLockedForStaking(t.Owner, t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Owner, t.Amount.Asset,
+				)
+			}
+
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
 		case types.AccountTypeVestedRewards:
 			fromAcc = e.GetOrCreatePartyVestedRewardAccount(ctx, t.Owner, t.Amount.Asset)
 			// we always pay onto the pending transfers accounts
@@ -2839,6 +2862,21 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 			if err != nil {
 				// account does not exists, let's just create it
 				id, err := e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
+				if err != nil {
+					return nil, err
+				}
+				toAcc, err = e.GetAccountByID(id)
+				if err != nil {
+					// shouldn't happen, we just created it...
+					return nil, err
+				}
+			}
+
+		case types.AccountTypeLockedForStaking:
+			toAcc, err = e.GetPartyLockedForStaking(t.Owner, t.Amount.Asset)
+			if err != nil {
+				// account does not exists, let's just create it
+				id, err := e.CreatePartyLockedForStakingAccount(ctx, t.Owner, t.Amount.Asset)
 				if err != nil {
 					return nil, err
 				}
@@ -2901,6 +2939,13 @@ func (e *Engine) getTransferFundsFeesTransferRequest(ctx context.Context, t *typ
 	switch accountType {
 	case types.AccountTypeGeneral:
 		fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+		if err != nil {
+			return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+				accountType, t.Owner, t.Amount.Asset,
+			)
+		}
+	case types.AccountTypeLockedForStaking:
+		fromAcc, err = e.GetPartyLockedForStaking(t.Owner, t.Amount.Asset)
 		if err != nil {
 			return nil, fmt.Errorf("account does not exists: %v, %v, %v",
 				accountType, t.Owner, t.Amount.Asset,
@@ -4079,6 +4124,12 @@ func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, 
 	return e.GetAccountByID(generalID)
 }
 
+// GetPartyLockedForStaking returns a general account given the partyID.
+func (e *Engine) GetPartyLockedForStaking(partyID, asset string) (*types.Account, error) {
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountTypeLockedForStaking)
+	return e.GetAccountByID(generalID)
+}
+
 // GetPartyBondAccount returns a general account given the partyID.
 func (e *Engine) GetPartyBondAccount(market, partyID, asset string) (*types.Account, error) {
 	id := e.accountID(
@@ -4117,6 +4168,32 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	}
 
 	return generalID, nil
+}
+
+// CreatePartyLockedForStakingAccount create the general account for a party.
+func (e *Engine) CreatePartyLockedForStakingAccount(ctx context.Context, partyID, asset string) (string, error) {
+	if !e.AssetExists(asset) {
+		return "", ErrInvalidAssetID
+	}
+
+	lockedForStakingID := e.accountID(noMarket, partyID, asset, types.AccountTypeLockedForStaking)
+	if _, ok := e.accs[lockedForStakingID]; !ok {
+		acc := types.Account{
+			ID:       lockedForStakingID,
+			Asset:    asset,
+			MarketID: noMarket,
+			Balance:  num.UintZero(),
+			Owner:    partyID,
+			Type:     types.AccountTypeLockedForStaking,
+		}
+		e.accs[lockedForStakingID] = &acc
+		e.addPartyAccount(partyID, lockedForStakingID, &acc)
+		e.addAccountToHashableSlice(&acc)
+		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
+	}
+
+	return lockedForStakingID, nil
 }
 
 // GetOrCreatePartyVestingRewardAccount create the general account for a party.

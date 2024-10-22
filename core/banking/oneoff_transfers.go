@@ -24,6 +24,8 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 )
@@ -61,6 +63,65 @@ func scheduledTransferFromProto(p *checkpoint.ScheduledTransfer) (scheduledTrans
 	}, nil
 }
 
+func (e *Engine) updateStakingAccounts(
+	ctx context.Context, transfer *types.OneOffTransfer,
+) {
+	if transfer.Asset != e.stakingAsset {
+		// nothing to do
+		return
+	}
+
+	var (
+		now          = e.timeService.GetTimeNow().Unix()
+		height, _    = vgcontext.BlockHeightFromContext(ctx)
+		txhash, _    = vgcontext.TxHashFromContext(ctx)
+		id           = crypto.HashStrToHex(fmt.Sprintf("%v%v", txhash, height))
+		stakeLinking *types.StakeLinking
+	)
+
+	// manually send funds from the general account to the locked for staking
+	if transfer.FromAccountType == types.AccountTypeGeneral && transfer.ToAccountType == types.AccountTypeLockedForStaking {
+		stakeLinking = &types.StakeLinking{
+			ID:              id,
+			Type:            types.StakeLinkingTypeDeposited,
+			TS:              now,
+			Party:           transfer.From,
+			Amount:          transfer.Amount.Clone(),
+			Status:          types.StakeLinkingStatusAccepted,
+			FinalizedAt:     now,
+			TxHash:          txhash,
+			BlockHeight:     height,
+			BlockTime:       now,
+			LogIndex:        1,
+			EthereumAddress: "",
+		}
+	}
+
+	// from staking account or vested rewards, we send a remove event
+	if (transfer.FromAccountType == types.AccountTypeLockedForStaking && transfer.ToAccountType == types.AccountTypeGeneral) ||
+		(transfer.FromAccountType == types.AccountTypeVestedRewards && transfer.ToAccountType == types.AccountTypeGeneral) {
+		stakeLinking = &types.StakeLinking{
+			ID:              id,
+			Type:            types.StakeLinkingTypeRemoved,
+			TS:              now,
+			Party:           transfer.From,
+			Amount:          transfer.Amount.Clone(),
+			Status:          types.StakeLinkingStatusAccepted,
+			FinalizedAt:     now,
+			TxHash:          txhash,
+			BlockHeight:     height,
+			BlockTime:       now,
+			LogIndex:        1,
+			EthereumAddress: "",
+		}
+	}
+
+	if stakeLinking != nil {
+		e.stakeAccounting.AddEvent(ctx, stakeLinking)
+		e.broker.Send(events.NewStakeLinking(ctx, *stakeLinking))
+	}
+}
+
 func (e *Engine) oneOffTransfer(
 	ctx context.Context,
 	transfer *types.OneOffTransfer,
@@ -70,6 +131,7 @@ func (e *Engine) oneOffTransfer(
 			e.broker.Send(events.NewOneOffTransferFundsEventWithReason(ctx, transfer, err.Error()))
 		} else {
 			e.broker.Send(events.NewOneOffTransferFundsEvent(ctx, transfer))
+			e.updateStakingAccounts(ctx, transfer)
 		}
 	}()
 
