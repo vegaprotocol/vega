@@ -17,7 +17,7 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/google/btree v1.1.2
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
-	github.com/holiman/uint256 v1.2.2-0.20230321075855-87b91420868c
+	github.com/holiman/uint256 v1.3.0
 	github.com/imdario/mergo v0.3.13
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jinzhu/copier v0.3.5
@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rs/cors v1.8.3
 	github.com/satori/go.uuid v1.2.0
-	github.com/shopspring/decimal v1.3.1
+	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -389,5 +389,5 @@ replace (
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.23.3
 	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb
 	github.com/muesli/cancelreader => github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449
-	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
+	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.4.0-uint256
 )
