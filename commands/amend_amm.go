@@ -70,9 +70,17 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 
 	if cmd.MinimumPriceChangeTrigger != nil {
 		if minPriceChange, err := num.DecimalFromString(*cmd.MinimumPriceChangeTrigger); err != nil {
-			errs.AddForProperty("submit_amm.mimimum_price_change_trigger", ErrIsNotValid)
+			errs.AddForProperty("amend_amm.mimimum_price_change_trigger", ErrIsNotValid)
 		} else if minPriceChange.LessThan(num.DecimalZero()) {
-			errs.AddForProperty("submit_amm.proposed_fee", ErrMustBePositiveOrZero)
+			errs.AddForProperty("amend_amm.mimimum_price_change_trigger", ErrMustBePositiveOrZero)
+		}
+	}
+
+	if cmd.Spread != nil {
+		if spread, err := num.DecimalFromString(*cmd.Spread); err != nil {
+			errs.AddForProperty("amend_amm.spread", ErrIsNotValid)
+		} else if spread.LessThan(num.DecimalZero()) {
+			errs.AddForProperty("amend_amm.spread", ErrMustBePositiveOrZero)
 		}
 	}
 

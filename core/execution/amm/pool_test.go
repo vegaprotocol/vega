@@ -591,8 +591,6 @@ func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error
 		num.DecimalOne(),
 		num.NewUint(10000),
 		0,
-		num.DecimalZero(),
-		num.DecimalZero(),
 	)
 }
 
@@ -762,8 +760,6 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 		positionFactor,
 		num.NewUint(100000),
 		allowedEmptyAMMLevels,
-		num.DecimalZero(),
-		num.DecimalZero(),
 	)
 	assert.NoError(t, err)
 
@@ -805,8 +801,6 @@ func newTestPoolWithSubmission(t *testing.T, positionFactor, priceFactor num.Dec
 		positionFactor,
 		num.NewUint(1000),
 		allowedEmptyAMMLevels,
-		num.DecimalZero(),
-		num.DecimalZero(),
 	)
 	require.NoError(t, err)
 

@@ -129,13 +129,15 @@ type Pool struct {
 	ProposedFee num.Decimal
 	Parameters  *types.ConcentratedLiquidityParameters
 
-	asset                     string
-	market                    string
-	owner                     string
-	collateral                Collateral
-	position                  Position
-	priceFactor               num.Decimal
-	positionFactor            num.Decimal
+	asset          string
+	market         string
+	owner          string
+	collateral     Collateral
+	position       Position
+	priceFactor    num.Decimal
+	positionFactor num.Decimal
+
+	spread                    num.Decimal
 	SlippageTolerance         num.Decimal
 	MinimumPriceChangeTrigger num.Decimal
 
@@ -177,8 +179,6 @@ func NewPool(
 	positionFactor num.Decimal,
 	maxCalculationLevels *num.Uint,
 	allowedEmptyAMMLevels uint64,
-	slippageTolerance num.Decimal,
-	minimumPriceChangeTrigger num.Decimal,
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 	pool := &Pool{
@@ -200,8 +200,9 @@ func NewPool(
 		status:                    types.AMMPoolStatusActive,
 		maxCalculationLevels:      maxCalculationLevels,
 		cache:                     NewPoolCache(),
-		SlippageTolerance:         slippageTolerance,
-		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
+		spread:                    submit.Spread,
+		SlippageTolerance:         submit.SlippageTolerance,
+		MinimumPriceChangeTrigger: submit.MinimumPriceChangeTrigger,
 	}
 
 	if submit.Parameters.DataSourceID != nil {
@@ -468,6 +469,7 @@ func (p *Pool) Update(
 		cache:                     NewPoolCache(),
 		SlippageTolerance:         amend.SlippageTolerance,
 		MinimumPriceChangeTrigger: amend.MinimumPriceChangeTrigger,
+		spread:                    amend.Spread,
 	}
 
 	// data source has changed, if the old base price is within bounds we'll keep it until the update comes in

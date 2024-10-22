@@ -695,8 +695,6 @@ func (e *Engine) Create(
 		e.positionFactor,
 		e.maxCalculationLevels,
 		e.allowedEmptyAMMLevels,
-		submit.SlippageTolerance,
-		submit.MinimumPriceChangeTrigger,
 	)
 	if err != nil {
 		return nil, err
