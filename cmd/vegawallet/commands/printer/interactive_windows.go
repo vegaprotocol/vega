@@ -40,7 +40,7 @@ func NewInteractivePrinter(w io.Writer) *InteractivePrinter {
 	}
 }
 
-// enableANSIColors enables support for ANSI color sequences in the Windows
+// enableLegacyWindowsANSI enables support for ANSI color sequences in the Windows
 // default console (cmd.exe and the PowerShell application). Note that this
 // only works with Windows 10. Also note that Windows Terminal supports colors
 // by default.
