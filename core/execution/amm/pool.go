@@ -1020,8 +1020,20 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 			}
 		}
 
+		bestPrice := fairPrice.AddSum(p.oneTick)
+		if !p.spread.IsZero() {
+			// calculate the spread from the fair price
+
+			fairPriceD := fairPrice.ToDecimal()
+			spreadPrice := fairPriceD.Add(p.spread.Mul(fairPrice.ToDecimal()))
+
+			spreadPriceU, _ := num.UintFromDecimal(spreadPrice)
+			bestPrice = num.Max(bestPrice, spreadPriceU)
+
+		}
+
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
-		return num.Min(p.upper.high, num.Max(np, fairPrice.AddSum(p.oneTick))), true
+		return num.Min(p.upper.high, num.Max(np, bestPrice)), true
 	case types.SideBuy:
 		cu := p.upper
 		if pos >= 0 {
@@ -1032,8 +1044,20 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 			}
 		}
 
+		bestPrice := num.UintZero().Sub(fairPrice, p.oneTick)
+		if !p.spread.IsZero() {
+			// calculate the spread from the fair price
+
+			fairPriceD := fairPrice.ToDecimal()
+			spreadPrice := fairPriceD.Sub(p.spread.Mul(fairPrice.ToDecimal()))
+
+			spreadPriceU, _ := num.UintFromDecimal(spreadPrice)
+			bestPrice = num.Min(bestPrice, spreadPriceU)
+
+		}
+
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
-		return num.Max(p.lower.low, num.Min(np, num.UintZero().Sub(fairPrice, p.oneTick))), true
+		return num.Max(p.lower.low, num.Min(np, bestPrice)), true
 	default:
 		panic("should never reach here")
 	}
