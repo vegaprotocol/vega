@@ -340,3 +340,66 @@ Feature: Volume rebate program - contributions from trades
       | party2 | aux1   | 1    | 50000 | sell           | 500              | 500                          |
 
 
+
+  Scenario Outline: Trades on auction uncrossing do not generate maker rebates but do generate buyback and treassury fees
+
+    Given the volume rebate program tiers named "vrt":
+      | fraction | rebate |
+      | 0.0001   | 0.001  |
+    And the volume rebate program:
+      | id | tiers | closing timestamp | window length |
+      | id | vrt   | 0                 | 1             |
+    And the network moves ahead "1" epochs
+
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | error |
+      | party1 | <market>  | buy  | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+      | party2 | <market>  | sell | 1      | 50000 | 1                | TYPE_LIMIT | TIF_GTC |       |
+    When the network moves ahead "1" blocks
+    Then the following trades should be executed:
+      | buyer  | seller | size | price | aggressor side | buyer maker fee | seller maker fee |
+      | party1 | party2 | 1    | 50000 | sell           | 0               | 500              |
+
+    # In the following epoch, party1 and party2 are both the maker of a
+    # trade but only party1 recevieves a rebate.
+    Given the network moves ahead "1" epochs
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | error |
+      | party1 | <market>  | buy  | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+      | party2 | <market>  | buy  | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+      | aux1   | <market>  | sell | 2      | 50000 | 2                | TYPE_LIMIT | TIF_GTC |       |
+    When the network moves ahead "1" blocks
+    Then the following trades should be executed:
+      | buyer  | seller | size | price | aggressor side | buyer high volume maker fee | seller high volume maker fee |
+      | party1 | aux1   | 1    | 50000 | sell           | 0                           | 50                           |
+      | party2 | aux1   | 1    | 50000 | sell           | 0                           | 0                            |
+    Then the following transfers should happen:
+      | from | to     | from account            | to account           | market id | amount | asset   | type                                        |
+      |      | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL | <market>  | 50     | USD-0-1 | TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_RECEIVE |
+
+    Given the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | error | reference          |
+      | aux1  | <market>  | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |       | auction-order-aux1 |
+      | aux2  | <market>  | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |       | auction-order-aux2 |
+    And the parties cancel the following orders:
+      | party | reference          |
+      | aux1  | auction-order-aux1 |
+      | aux2  | auction-order-aux2 |
+    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market <market string>
+
+    # Exit the PM auction - no rebate should be collected
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | error |
+      | party1 | <market>  | buy  | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+      | party2 | <market>  | sell | 1      | 50000 | 0                | TYPE_LIMIT | TIF_GTC |       |
+    When the network moves ahead "2" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market <market string>
+    And the following trades should be executed:
+      | buyer  | seller | size | price | aggressor side | buyer buyback fee | buyer treasury fee | seller buyback fee | seller treasury fee | buyer high volume maker fee | seller high volume maker fee |
+      | party1 | party2 | 1    | 50000 |                | 2500              | 2500               | 2500               | 2500                | 0                           | 0                            |
+
+
+  Examples:
+      | market           | market string      |
+      | BTC/USD-0-1      | "BTC/USD-0-1"      |
+      | MXN-0-10/USD-0-1 | "MXN-0-10/USD-0-1" |
