@@ -217,7 +217,7 @@ func (e *Engine) updateStakingAccount(
 		BlockHeight:     height,
 		BlockTime:       now,
 		LogIndex:        logIndex,
-		EthereumAddress: party,
+		EthereumAddress: "",
 	}
 
 	e.stakeAccounting.AddEvent(context.Background(), stakeLinking)

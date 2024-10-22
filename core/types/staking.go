@@ -141,6 +141,10 @@ func (s *StakeLinking) IntoProto() *eventspb.StakeLinking {
 
 func StakeLinkingFromProto(sl *eventspb.StakeLinking) *StakeLinking {
 	amt, _ := num.UintFromString(sl.Amount, 10)
+	var ethereumAddress string
+	if len(sl.EthereumAddress) > 0 {
+		ethereumAddress = crypto.EthereumChecksumAddress(sl.EthereumAddress)
+	}
 	return &StakeLinking{
 		ID:              sl.Id,
 		Type:            sl.Type,
@@ -153,7 +157,7 @@ func StakeLinkingFromProto(sl *eventspb.StakeLinking) *StakeLinking {
 		BlockHeight:     sl.BlockHeight,
 		BlockTime:       sl.BlockTime,
 		LogIndex:        sl.LogIndex,
-		EthereumAddress: crypto.EthereumChecksumAddress(sl.EthereumAddress),
+		EthereumAddress: ethereumAddress,
 	}
 }
 

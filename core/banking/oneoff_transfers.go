@@ -93,7 +93,7 @@ func (e *Engine) updateStakingAccounts(
 			BlockHeight:     height,
 			BlockTime:       now,
 			LogIndex:        1,
-			EthereumAddress: transfer.From,
+			EthereumAddress: "",
 		}
 	}
 
@@ -112,7 +112,7 @@ func (e *Engine) updateStakingAccounts(
 			BlockHeight:     height,
 			BlockTime:       now,
 			LogIndex:        1,
-			EthereumAddress: transfer.From,
+			EthereumAddress: "",
 		}
 	}
 
