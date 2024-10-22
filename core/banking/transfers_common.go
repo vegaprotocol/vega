@@ -95,7 +95,7 @@ func (e *Engine) CheckTransfer(t *types.TransferBase) error {
 		return err
 	}
 
-	if err = e.ensureFeeForTransferFunds(a, t.Amount, t.From, t.FromAccountType, t.FromDerivedKey, t.To); err != nil {
+	if err = e.ensureFeeForTransferFunds(a, t.Amount, t.From, t.FromAccountType, t.FromDerivedKey, t.To, t.ToAccountType); err != nil {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
 	return nil
@@ -166,7 +166,7 @@ func (e *Engine) processTransfer(
 
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
-	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(ctx, assetType, amount, from, fromAcc, fromDerivedKey, to)
+	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(ctx, assetType, amount, from, fromAcc, fromDerivedKey, to, toAcc)
 	if err != nil {
 		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
@@ -249,6 +249,7 @@ func (e *Engine) calculateFeeTransferForTransfer(
 	fromAccountType types.AccountType,
 	fromDerivedKey *string,
 	to string,
+	toAccountType types.AccountType,
 ) *num.Uint {
 	return calculateFeeForTransfer(
 		asset.Details.Quantum,
@@ -259,6 +260,7 @@ func (e *Engine) calculateFeeTransferForTransfer(
 		fromAccountType,
 		fromDerivedKey,
 		to,
+		toAccountType,
 	)
 }
 
@@ -270,8 +272,9 @@ func (e *Engine) makeFeeTransferForFundsTransfer(
 	fromAccountType types.AccountType,
 	fromDerivedKey *string,
 	to string,
+	toAccountType types.AccountType,
 ) (*types.Transfer, *num.Uint, error) {
-	theoreticalFee := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, fromDerivedKey, to)
+	theoreticalFee := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, fromDerivedKey, to, toAccountType)
 	feeAmount, discountAmount := e.ApplyFeeDiscount(ctx, asset.ID, from, theoreticalFee)
 
 	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, fromDerivedKey, feeAmount); err != nil {
@@ -279,7 +282,7 @@ func (e *Engine) makeFeeTransferForFundsTransfer(
 	}
 
 	switch fromAccountType {
-	case types.AccountTypeGeneral, types.AccountTypeVestedRewards:
+	case types.AccountTypeGeneral, types.AccountTypeVestedRewards, types.AccountTypeLockedForStaking:
 	default:
 		e.log.Panic("from account not supported",
 			logging.String("account-type", fromAccountType.String()),
@@ -306,9 +309,10 @@ func (e *Engine) ensureFeeForTransferFunds(
 	fromAccountType types.AccountType,
 	fromDerivedKey *string,
 	to string,
+	toAccountType types.AccountType,
 ) error {
 	assetType := asset.ToAssetType()
-	theoreticalFee := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, fromDerivedKey, to)
+	theoreticalFee := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, fromDerivedKey, to, toAccountType)
 	feeAmount, _ := e.EstimateFeeDiscount(assetType.ID, from, theoreticalFee)
 	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, fromDerivedKey, feeAmount)
 }
@@ -329,6 +333,11 @@ func (e *Engine) ensureEnoughFundsForTransfer(
 	switch fromAccountType {
 	case types.AccountTypeGeneral:
 		account, err = e.col.GetPartyGeneralAccount(from, asset.ID)
+		if err != nil {
+			return err
+		}
+	case types.AccountTypeLockedForStaking:
+		account, err = e.col.GetPartyLockedForStaking(from, asset.ID)
 		if err != nil {
 			return err
 		}

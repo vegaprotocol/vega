@@ -154,7 +154,7 @@ func PartiesSubmitRecurringTransfers(
 func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "start_epoch", "end_epoch", "factor",
-	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "ranks", "cap_reward_fee_multiple", "transfer_interval", "error"})
+	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "ranks", "cap_reward_fee_multiple", "transfer_interval", "target_notional_volume", "eligible_keys", "error"})
 }
 
 func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
@@ -196,6 +196,16 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 		if r.HasColumn("transfer_interval") {
 			interval := r.I32("transfer_interval")
 			transferInterval = &interval
+		}
+
+		var eligibleKeys []string
+		if r.HasColumn("eligible_keys") {
+			eligibleKeys = r.StrSlice("eligible_keys", ",")
+		}
+		var targetNotionalVolume *string
+		if r.HasColumn("target_notional_volume") {
+			tnv := r.Str("target_notional_volume")
+			targetNotionalVolume = &tnv
 		}
 
 		distributionStrategy := proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
@@ -286,8 +296,10 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 			NTopPerformers:       ntop,
 			StakingRequirement:   stakingRequirement,
 			NotionalTimeWeightedAveragePositionRequirement: notionalRequirement,
-			RankTable:        ranks,
-			TransferInterval: transferInterval,
+			RankTable:            ranks,
+			TransferInterval:     transferInterval,
+			EligibleKeys:         eligibleKeys,
+			TargetNotionalVolume: targetNotionalVolume,
 		}
 		if capRewardFeeMultiple != "" {
 			dispatchStrategy.CapRewardFeeMultiple = &capRewardFeeMultiple

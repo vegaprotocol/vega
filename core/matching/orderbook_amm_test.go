@@ -305,17 +305,19 @@ func TestIndicativeTradesAMMOnly(t *testing.T) {
 	expectCrossedAMMs(t, tst, 100, 150)
 	tst.book.EnterAuction()
 
-	ret := []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
+	ret := createOrder(t, tst, 10, num.NewUint(100))
 	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
 		func(o *types.Order, _, _ *num.Uint) []*types.Order {
-			o.Remaining = 0
-			return ret
+			ret.Size = o.Remaining
+			ret.Remaining = o.Remaining
+			return []*types.Order{ret.Clone()}
 		},
 	)
 
 	trades, err := tst.book.GetIndicativeTrades()
 	require.NoError(t, err)
-	assert.Equal(t, 26, len(trades))
+	assert.Equal(t, 1, len(trades))
+	assert.Equal(t, 260, int(trades[0].Size))
 }
 
 func TestIndicativeTradesAMMOrderbookNotCrosses(t *testing.T) {
@@ -337,17 +339,19 @@ func TestIndicativeTradesAMMOrderbookNotCrosses(t *testing.T) {
 	_, err = tst.book.SubmitOrder(o)
 	require.NoError(t, err)
 
-	ret := []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
-	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(26).DoAndReturn(
+	ret := createOrder(t, tst, 10, num.NewUint(100))
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
 		func(o *types.Order, _, _ *num.Uint) []*types.Order {
-			o.Remaining = 0
-			return ret
+			ret.Size = o.Remaining
+			ret.Remaining = o.Remaining
+			return []*types.Order{ret.Clone()}
 		},
 	)
 
 	trades, err := tst.book.GetIndicativeTrades()
 	require.NoError(t, err)
-	assert.Equal(t, 26, len(trades))
+	assert.Equal(t, 1, len(trades))
+	assert.Equal(t, 260, int(trades[0].Size))
 }
 
 func TestIndicativeTradesAMMCrossedOrders(t *testing.T) {
@@ -358,15 +362,9 @@ func TestIndicativeTradesAMMCrossedOrders(t *testing.T) {
 	expectCrossedAMMs(t, tst, 100, 150)
 	tst.book.EnterAuction()
 
-	// submit an order each side outside of the crossed region
-	o := createOrder(t, tst, 10, num.NewUint(110))
-	o.Side = types.SideBuy
-	_, err := tst.book.SubmitOrder(o)
-	require.NoError(t, err)
-
-	o = createOrder(t, tst, 5, num.NewUint(125))
+	o := createOrder(t, tst, 5, num.NewUint(125))
 	o.Side = types.SideSell
-	_, err = tst.book.SubmitOrder(o)
+	_, err := tst.book.SubmitOrder(o)
 	require.NoError(t, err)
 
 	o = createOrder(t, tst, 5, num.NewUint(126))
@@ -374,18 +372,19 @@ func TestIndicativeTradesAMMCrossedOrders(t *testing.T) {
 	_, err = tst.book.SubmitOrder(o)
 	require.NoError(t, err)
 
-	ret := []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
-	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(ret)
+	ret := createOrder(t, tst, 250, num.NewUint(100))
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return([]*types.Order{ret.Clone()})
 
-	ret = []*types.Order{createOrder(t, tst, 5, num.NewUint(100))}
-	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(ret)
-
-	ret = []*types.Order{createOrder(t, tst, 100, num.NewUint(100))}
-	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(23).Return(ret)
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	trades, err := tst.book.GetIndicativeTrades()
 	require.NoError(t, err)
-	assert.Equal(t, 27, len(trades))
+	assert.Equal(t, 3, len(trades))
+	var total int
+	for _, t := range trades {
+		total += int(t.Size)
+	}
+	assert.Equal(t, 260, total)
 }
 
 func TestUncrossedBookDoesNotExpandAMMs(t *testing.T) {
@@ -422,8 +421,14 @@ func expectCrossedAMMs(t *testing.T, tst *tstOrderbook, min, max int) {
 
 	orders1 := createOrderbookShape(t, tst, min, max, types.SideBuy, "A")
 	orders2 := createOrderbookShape(t, tst, min, max, types.SideSell, "B")
+	res := []*types.OrderbookShapeResult{
+		{
+			Buys:  orders1,
+			Sells: orders2,
+		},
+	}
 
-	tst.obs.EXPECT().OrderbookShape(gomock.Any(), gomock.Any(), gomock.Any()).Return(orders1, orders2)
+	tst.obs.EXPECT().OrderbookShape(gomock.Any(), gomock.Any(), gomock.Any()).Return(res)
 }
 
 type tstOrderbook struct {

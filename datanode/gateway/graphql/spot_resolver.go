@@ -95,6 +95,10 @@ func (r *newSpotMarketResolver) EnableTxReordering(ctx context.Context, obj *typ
 	return obj.Changes.EnableTransactionReordering, nil
 }
 
+func (r *newSpotMarketResolver) AllowedSellers(ctx context.Context, obj *types.NewSpotMarket) ([]string, error) {
+	return obj.Changes.AllowedSellers, nil
+}
+
 func (r *newSpotMarketResolver) TickSize(_ context.Context, obj *types.NewSpotMarket) (string, error) {
 	return obj.Changes.TickSize, nil
 }

@@ -83,8 +83,8 @@ func TestAMMStateSnapshot(t *testing.T) {
 
 type dummyAMM struct{}
 
-func (d dummyAMM) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order) {
-	return nil, nil
+func (d dummyAMM) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) *types.OrderbookShapeResult {
+	return &types.OrderbookShapeResult{}
 }
 
 func (d dummyAMM) LiquidityFee() num.Decimal {

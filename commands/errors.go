@@ -33,6 +33,7 @@ var (
 	ErrMustBeLessThan150                               = errors.New("must be less than 150")
 	ErrMustBeAtMost1M                                  = errors.New("must be at most 1000000")
 	ErrMustBeAtMost100                                 = errors.New("must be at most 100")
+	ErrMustBeAtMost200                                 = errors.New("must be at most 200")
 	ErrMustBeAtMost2048                                = errors.New("must be at most 2048")
 	ErrMustBeWithinRange7                              = errors.New("must be between -7 and 7")
 	ErrIsNotValid                                      = errors.New("is not a valid value")

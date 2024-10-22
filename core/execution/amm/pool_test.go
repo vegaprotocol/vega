@@ -41,6 +41,7 @@ func TestAMMPool(t *testing.T) {
 	t.Run("test one sided pool", testOneSidedPool)
 	t.Run("test near zero volume curve triggers and error", testNearZeroCurveErrors)
 	t.Run("test volume between prices when closing", testTradeableVolumeInRangeClosing)
+	t.Run("test sparse AMM", testSparseAMM)
 }
 
 func testTradeableVolumeInRange(t *testing.T) {
@@ -337,12 +338,13 @@ func TestTradeableVolumeWhenAtBoundary(t *testing.T) {
 		num.DecimalFromInt64(1000),
 		num.DecimalFromFloat(10000000000000000),
 		submit,
+		0,
 	)
 	defer p.ctrl.Finish()
 
 	// when position is zero fair-price should be the base
 	ensurePositionN(t, p.pos, 0, num.UintZero(), 2)
-	fp := p.pool.BestPrice(nil)
+	fp := p.pool.FairPrice()
 	assert.Equal(t, "6765400000000000000000", fp.String())
 
 	fullLong := 12546
@@ -353,7 +355,7 @@ func TestTradeableVolumeWhenAtBoundary(t *testing.T) {
 
 	// now lets pretend the AMM has fully traded out in that direction, best price will be near but not quite the lower bound
 	ensurePositionN(t, p.pos, int64(fullLong), num.UintZero(), 2)
-	fp = p.pool.BestPrice(nil)
+	fp = p.pool.FairPrice()
 	assert.Equal(t, "6712721893865935337785", fp.String())
 	assert.True(t, fp.GTE(num.MustUintFromString("6712720000000000000000", 10)))
 
@@ -378,7 +380,7 @@ func testPoolPositionFactor(t *testing.T) {
 
 	ensurePositionN(t, p.pos, -1, num.NewUint(2000), 1)
 	// now best price should be the same as if the factor were 1, since its a price and not a volume
-	fairPrice := p.pool.BestPrice(nil)
+	fairPrice := p.pool.FairPrice()
 	assert.Equal(t, "2001", fairPrice.String())
 }
 
@@ -389,55 +391,45 @@ func testBestPrice(t *testing.T) {
 	tests := []struct {
 		name          string
 		position      int64
-		balance       uint64
 		expectedPrice string
-		order         *types.Order
+		side          types.Side
 	}{
 		{
-			name:          "best price is base price when position is zero",
-			expectedPrice: "2000",
-		},
-		{
-			name:          "best price positive position",
-			expectedPrice: "1999",
-			position:      1,
-			balance:       100000,
-		},
-
-		{
-			name:          "fair price negative position",
-			expectedPrice: "2001",
-			position:      -1,
-			balance:       100000,
-		},
-		{
-			name:          "best price incoming buy",
+			name:          "best price sell",
 			expectedPrice: "2000",
 			position:      1,
-			balance:       100000,
-			order: &types.Order{
-				Side: types.SideBuy,
-				Size: 1,
-			},
+			side:          types.SideSell,
 		},
 		{
-			name:          "best price incoming buy",
+			name:          "best price buy",
 			expectedPrice: "1998",
 			position:      1,
-			balance:       100000,
-			order: &types.Order{
-				Side: types.SideSell,
-				Size: 1,
-			},
+			side:          types.SideBuy,
+		},
+		{
+			name:          "best price buy, amm fully long",
+			expectedPrice: "",
+			position:      702,
+			side:          types.SideBuy,
+		},
+		{
+			name:          "best price sell, amm fully short",
+			expectedPrice: "",
+			position:      -635,
+			side:          types.SideSell,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			order := tt.order
-			ensurePosition(t, p.pos, tt.position, num.UintZero())
-			fairPrice := p.pool.BestPrice(order)
-			assert.Equal(t, tt.expectedPrice, fairPrice.String())
+			ensurePositionN(t, p.pos, tt.position, num.UintZero(), 2)
+			quote, ok := p.pool.BestPrice(tt.side)
+			if tt.expectedPrice == "" {
+				assert.False(t, ok)
+			} else {
+				assert.True(t, ok)
+				require.Equal(t, tt.expectedPrice, quote.String())
+			}
 		})
 	}
 }
@@ -465,18 +457,18 @@ func testOneSidedPool(t *testing.T) {
 
 	// fair price at 0 position is still ok
 	ensurePosition(t, p.pos, 0, num.UintZero())
-	price := p.pool.BestPrice(nil)
+	price := p.pool.FairPrice()
 	assert.Equal(t, "2000", price.String())
 
 	// fair price at short position is still ok
 	ensurePosition(t, p.pos, -10, num.UintZero())
-	price = p.pool.BestPrice(nil)
+	price = p.pool.FairPrice()
 	assert.Equal(t, "2003", price.String())
 
 	// fair price when long should panic since AMM should never be able to get into that state
 	// fair price at short position is still ok
 	ensurePosition(t, p.pos, 10, num.UintZero())
-	assert.Panics(t, func() { p.pool.BestPrice(nil) })
+	assert.Panics(t, func() { p.pool.FairPrice() })
 }
 
 func testNearZeroCurveErrors(t *testing.T) {
@@ -500,7 +492,7 @@ func testNearZeroCurveErrors(t *testing.T) {
 	// test that creating a pool with a near zero volume curve will error
 	pool, err := newBasicPoolWithSubmit(t, submit)
 	assert.Nil(t, pool)
-	assert.ErrorContains(t, err, "insufficient commitment - less than one volume at price levels on lower curve")
+	assert.ErrorContains(t, err, "commitment amount too low")
 
 	// test that a pool with higher commitment amount will not error
 	submit.CommitmentAmount = num.NewUint(100000)
@@ -518,18 +510,42 @@ func testNearZeroCurveErrors(t *testing.T) {
 		amend,
 		&types.RiskFactor{Short: num.DecimalFromFloat(0.02), Long: num.DecimalFromFloat(0.02)},
 		&types.ScalingFactors{InitialMargin: num.DecimalFromFloat(1.25)},
-		num.DecimalZero(),
+		num.DecimalZero(), 0,
 	)
-	assert.ErrorContains(t, err, "insufficient commitment - less than one volume at price levels on lower curve")
+	assert.ErrorContains(t, err, "commitment amount too low")
 
 	amend.CommitmentAmount = num.NewUint(1000000)
 	_, err = pool.Update(
 		amend,
 		&types.RiskFactor{Short: num.DecimalFromFloat(0.02), Long: num.DecimalFromFloat(0.02)},
 		&types.ScalingFactors{InitialMargin: num.DecimalFromFloat(1.25)},
-		num.DecimalZero(),
+		num.DecimalZero(), 0,
 	)
 	assert.NoError(t, err)
+}
+
+func testSparseAMM(t *testing.T) {
+	baseCmd := types.AMMBaseCommand{
+		Party:             vgcrypto.RandomHash(),
+		MarketID:          vgcrypto.RandomHash(),
+		SlippageTolerance: num.DecimalFromFloat(0.1),
+	}
+
+	submit := &types.SubmitAMM{
+		AMMBaseCommand:   baseCmd,
+		CommitmentAmount: num.NewUint(1000),
+		Parameters: &types.ConcentratedLiquidityParameters{
+			Base:                 num.NewUint(1900),
+			LowerBound:           num.NewUint(1800),
+			UpperBound:           num.NewUint(2000),
+			LeverageAtLowerBound: ptr.From(num.DecimalFromFloat(50)),
+			LeverageAtUpperBound: ptr.From(num.DecimalFromFloat(50)),
+		},
+	}
+	// test that creating a pool with a near zero volume curve will error
+	pool, err := newBasicPoolWithSubmit(t, submit)
+	assert.Nil(t, pool)
+	assert.ErrorContains(t, err, "commitment amount too low")
 }
 
 func assertOrderPrices(t *testing.T, orders []*types.Order, side types.Side, st, nd int) {
@@ -574,6 +590,9 @@ func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error
 		num.DecimalOne(),
 		num.DecimalOne(),
 		num.NewUint(10000),
+		0,
+		num.DecimalZero(),
+		num.DecimalZero(),
 	)
 }
 
@@ -656,11 +675,11 @@ func TestNotebook(t *testing.T) {
 	assert.Equal(t, int(306), int(volume))
 
 	ensurePosition(t, p.pos, -500, upmid.Clone())
-	fairPrice := p.pool.BestPrice(nil)
+	fairPrice := p.pool.FairPrice()
 	assert.Equal(t, "2155", fairPrice.String())
 
 	ensurePosition(t, p.pos, 500, lowmid.Clone())
-	fairPrice = p.pool.BestPrice(nil)
+	fairPrice = p.pool.FairPrice()
 	assert.Equal(t, "1854", fairPrice.String())
 
 	// fair price is 2000 and the AMM quotes a best-buy at 1999 so incoming SELL should have a price <= 1999
@@ -689,15 +708,15 @@ func newTestPool(t *testing.T) *tstPool {
 
 func newTestPoolWithRanges(t *testing.T, low, base, high *num.Uint) *tstPool {
 	t.Helper()
-	return newTestPoolWithOpts(t, num.DecimalOne(), low, base, high)
+	return newTestPoolWithOpts(t, num.DecimalOne(), low, base, high, num.NewUint(100000), 0)
 }
 
 func newTestPoolWithPositionFactor(t *testing.T, positionFactor num.Decimal) *tstPool {
 	t.Helper()
-	return newTestPoolWithOpts(t, positionFactor, num.NewUint(1800), num.NewUint(2000), num.NewUint(2200))
+	return newTestPoolWithOpts(t, positionFactor, num.NewUint(1800), num.NewUint(2000), num.NewUint(2200), num.NewUint(100000), 0)
 }
 
-func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, high *num.Uint) *tstPool {
+func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, high *num.Uint, commitment *num.Uint, allowedEmptyAMMLevels uint64) *tstPool {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
@@ -712,7 +731,7 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 			SlippageTolerance: num.DecimalFromFloat(0.1),
 		},
 		// 0000000000000
-		CommitmentAmount: num.NewUint(100000),
+		CommitmentAmount: commitment,
 		Parameters: &types.ConcentratedLiquidityParameters{
 			Base:                 base,
 			LowerBound:           low,
@@ -742,6 +761,9 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 		num.DecimalOne(),
 		positionFactor,
 		num.NewUint(100000),
+		allowedEmptyAMMLevels,
+		num.DecimalZero(),
+		num.DecimalZero(),
 	)
 	assert.NoError(t, err)
 
@@ -754,7 +776,7 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 	}
 }
 
-func newTestPoolWithSubmission(t *testing.T, positionFactor, priceFactor num.Decimal, submit *types.SubmitAMM) *tstPool {
+func newTestPoolWithSubmission(t *testing.T, positionFactor, priceFactor num.Decimal, submit *types.SubmitAMM, allowedEmptyAMMLevels uint64) *tstPool {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
@@ -778,12 +800,15 @@ func newTestPoolWithSubmission(t *testing.T, positionFactor, priceFactor num.Dec
 		&types.ScalingFactors{
 			InitialMargin: num.DecimalFromFloat(1.5), // this is 1/0.8 which is margin_usage_at_bound_above in the note-book
 		},
-		num.DecimalFromFloat(0.001),
+		num.DecimalFromFloat(0),
 		priceFactor,
 		positionFactor,
 		num.NewUint(1000),
+		allowedEmptyAMMLevels,
+		num.DecimalZero(),
+		num.DecimalZero(),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return &tstPool{
 		submission: submit,

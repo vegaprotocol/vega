@@ -205,6 +205,44 @@ func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs 
 	return nil
 }
 
+// CheckSchemaVersionsSynced checks if if the current migrated version of the DB matches the latest available version.
+// If they are not in sync then we are running code expecting a particular version, but the rows/columns we ask for
+// might not exist.
+func CheckSchemaVersionsSynced(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.GooseLogger())
+	goose.SetVerbose(true)
+
+	log.Info("Checking database version matches code version")
+	poolConfig, err := config.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config: %w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	current, err := goose.GetDBVersion(db)
+	if err != nil {
+		return err
+	}
+
+	migrations, err := goose.CollectMigrations(SQLMigrationsDir, current, current+1)
+	if err != nil {
+		return err
+	}
+
+	if migrations.Len() != 0 {
+		last, err := migrations.Last()
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("Schema is version %d, latest should be %d", current, last.Version)
+	}
+
+	return nil
+}
+
 func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config ConnectionConfig, version int64, fs fs.FS, verbose bool) error {
 	log = log.Named("db-wipe-migrate")
 	goose.SetBaseFS(fs)

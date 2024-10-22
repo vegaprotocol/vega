@@ -77,6 +77,8 @@ type marketTracker struct {
 	treasuryFeesPaid  map[string]*num.Uint
 	markPrice         *num.Uint
 
+	notionalVolumeForEpoch *num.Uint
+
 	totalMakerFeesReceived *num.Uint
 	totalMakerFeesPaid     *num.Uint
 	totalLpFees            *num.Uint
@@ -97,6 +99,7 @@ type marketTracker struct {
 	epochTimeWeightedNotional   []map[string]*num.Uint
 	epochPartyM2M               []map[string]num.Decimal
 	epochPartyRealisedReturn    []map[string]num.Decimal
+	epochNotionalVolume         []*num.Uint
 
 	valueTraded     *num.Uint
 	proposersPaid   map[string]struct{} // identifier of payout_asset : funder : markets_in_scope
@@ -203,6 +206,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		lpPaidFees:                  map[string]*num.Uint{},
 		buybackFeesPaid:             map[string]*num.Uint{},
 		treasuryFeesPaid:            map[string]*num.Uint{},
+		notionalVolumeForEpoch:      num.UintZero(),
 		totalMakerFeesReceived:      num.UintZero(),
 		totalMakerFeesPaid:          num.UintZero(),
 		totalLpFees:                 num.UintZero(),
@@ -219,6 +223,7 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		epochPartyM2M:               []map[string]num.Decimal{},
 		epochPartyRealisedReturn:    []map[string]decimal.Decimal{},
 		epochTimeWeightedPosition:   []map[string]uint64{},
+		epochNotionalVolume:         []*num.Uint{},
 		epochTimeWeightedNotional:   []map[string]*num.Uint{},
 		allPartiesCache:             map[string]struct{}{},
 		ammPartiesCache:             map[string]struct{}{},
@@ -344,7 +349,12 @@ func (mat *MarketActivityTracker) RemoveAMMParty(asset, marketID, ammParty strin
 
 // GetMarketsWithEligibleProposer gets all the markets within the given asset (or just all the markets in scope passed as a parameter) that
 // are eligible for proposer bonus.
-func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore {
+func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string, eligibleKeys []string) []*types.MarketContributionScore {
+	eligibleKeySet := make(map[string]struct{}, len(eligibleKeys))
+	for _, ek := range eligibleKeys {
+		eligibleKeySet[ek] = struct{}{}
+	}
+
 	var mkts []string
 	if len(markets) > 0 {
 		mkts = markets
@@ -377,7 +387,10 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 	for _, a := range assets {
 		for _, v := range mkts {
 			if t, ok := mat.getMarketTracker(a, v); ok && (len(asset) == 0 || t.asset == asset) && mat.IsMarketEligibleForBonus(a, v, payoutAsset, markets, funder) {
-				eligibleMarkets = append(eligibleMarkets, v)
+				proposer := mat.GetProposer(v)
+				if _, ok := eligibleKeySet[proposer]; len(eligibleKeySet) == 0 || ok {
+					eligibleMarkets = append(eligibleMarkets, v)
+				}
 			}
 		}
 	}
@@ -543,6 +556,11 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 				mt.processM2MEndOfEpoch()
 				mt.processPartyRealisedReturnOfEpoch()
 				mt.clearFeeActivity()
+				if len(mt.epochNotionalVolume) == maxWindowSize {
+					mt.epochNotionalVolume = mt.epochNotionalVolume[1:]
+				}
+				mt.epochNotionalVolume = append(mt.epochNotionalVolume, mt.notionalVolumeForEpoch)
+				mt.notionalVolumeForEpoch = num.UintZero()
 			}
 		}
 		if len(mat.takerFeesPaidInEpoch) == maxWindowSize {
@@ -564,6 +582,33 @@ func (mat *MarketActivityTracker) clearDeletedMarkets() {
 			}
 		}
 	}
+}
+
+func (mat *MarketActivityTracker) GetNotionalVolumeForAsset(asset string, markets []string, windowSize int) *num.Uint {
+	total := num.UintZero()
+	trackers, ok := mat.assetToMarketTrackers[asset]
+	if !ok {
+		return total
+	}
+	marketsInScope := map[string]struct{}{}
+	for _, mkt := range markets {
+		marketsInScope[mkt] = struct{}{}
+	}
+	if len(markets) == 0 {
+		for mkt := range trackers {
+			marketsInScope[mkt] = struct{}{}
+		}
+	}
+	for mkt := range marketsInScope {
+		for i := 0; i < windowSize; i++ {
+			idx := len(trackers[mkt].epochNotionalVolume) - i - 1
+			if idx < 0 {
+				break
+			}
+			total.AddSum(trackers[mkt].epochNotionalVolume[idx])
+		}
+	}
+	return total
 }
 
 func (mat *MarketActivityTracker) CalculateTotalMakerContributionInQuantum(windowSize int) (map[string]*num.Uint, map[string]num.Decimal) {
@@ -843,6 +888,19 @@ func (mat *MarketActivityTracker) getPartiesInScope(ds *vega.DispatchStrategy) [
 		parties = sortedK(excludePartiesInTeams(mat.getAllParties(ds.AssetForMetric, ds.Markets), mat.teams.GetAllPartiesInTeams(mat.minEpochsInTeamForRewardEligibility)))
 	} else if ds.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_AMM {
 		parties = sortedK(mat.GetAllAMMParties(ds.AssetForMetric, ds.Markets))
+	}
+	if len(ds.EligibleKeys) > 0 {
+		eligibleParties := make([]string, 0, len(parties))
+		ep := make(map[string]struct{}, len(ds.EligibleKeys))
+		for _, ek := range ds.EligibleKeys {
+			ep[ek] = struct{}{}
+		}
+		for _, pp := range parties {
+			if _, ok := ep[pp]; ok {
+				eligibleParties = append(eligibleParties, pp)
+			}
+		}
+		parties = eligibleParties
 	}
 	return parties
 }
@@ -1202,6 +1260,12 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	return num.DecimalZero(), found
 }
 
+func (mat *MarketActivityTracker) RecordNotionalTraded(asset, marketID string, notional *num.Uint) {
+	if tracker, ok := mat.getMarketTracker(asset, marketID); ok {
+		tracker.notionalVolumeForEpoch.AddSum(notional)
+	}
+}
+
 func (mat *MarketActivityTracker) RecordNotionalTakerVolume(marketID string, party string, volumeToAdd *num.Uint) {
 	if _, ok := mat.partyTakerNotionalVolume[party]; !ok {
 		mat.partyTakerNotionalVolume[party] = volumeToAdd
@@ -1329,7 +1393,7 @@ func calcNotionalAt(n *twNotional, t, tn int64, markPrice *num.Uint) *num.Uint {
 	}
 	p1 := num.UintZero().Mul(n.currentEpochTWNotional, tnOverTComp)
 	var notional *num.Uint
-	if markPrice != nil && !markPrice.IsZero() {
+	if markPrice != nil && !markPrice.IsZero() && !(n.price.IsZero() || n.notional.IsZero()) {
 		notional, _ = num.UintFromDecimal(n.notional.ToDecimal().Div(n.price.ToDecimal()).Mul(markPrice.ToDecimal()))
 	} else {
 		notional = n.notional
@@ -1363,7 +1427,7 @@ func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, end
 	for party, twNotional := range mt.twNotional {
 		tn := int64(endEpochTime.Sub(twNotional.t).Seconds()) * scalingFactor
 		var notional *num.Uint
-		if mt.markPrice != nil && !mt.markPrice.IsZero() {
+		if mt.markPrice != nil && !mt.markPrice.IsZero() && twNotional.price != nil && !twNotional.price.IsZero() {
 			notional, _ = num.UintFromDecimal(twNotional.notional.ToDecimal().Div(twNotional.price.ToDecimal()).Mul(mt.markPrice.ToDecimal()))
 		} else {
 			notional = twNotional.notional

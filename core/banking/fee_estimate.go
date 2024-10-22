@@ -31,9 +31,10 @@ func EstimateFee(
 	fromAccountType types.AccountType,
 	fromDerivedKey *string,
 	to string,
+	toAccountType types.AccountType,
 ) (fee *num.Uint, discount *num.Uint) {
 	tFee := calculateFeeForTransfer(assetQuantum, maxQuantumAmount, transferFeeFactor, amount, from,
-		fromAccountType, fromDerivedKey, to)
+		fromAccountType, fromDerivedKey, to, toAccountType)
 	return calculateDiscount(accumulatedDiscount, tFee)
 }
 
@@ -46,12 +47,15 @@ func calculateFeeForTransfer(
 	fromAccountType types.AccountType,
 	fromDerivedKey *string,
 	to string,
+	toAccountType types.AccountType,
 ) *num.Uint {
 	feeAmount := num.UintZero()
 
 	// no fee for Vested account
 	// either from owner's vested to their general account or from derived key vested to owner's general account
-	if fromAccountType == types.AccountTypeVestedRewards && (from == to || fromDerivedKey != nil) {
+	if (fromAccountType == types.AccountTypeVestedRewards && (from == to || fromDerivedKey != nil)) ||
+		(fromAccountType == types.AccountTypeLockedForStaking && from == to) ||
+		(fromAccountType == types.AccountTypeGeneral && toAccountType == types.AccountTypeLockedForStaking && from == to) {
 		return feeAmount
 	}
 

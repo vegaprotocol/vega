@@ -139,6 +139,8 @@ type UpdateMarketConfiguration struct {
 	MarkPriceConfiguration        *CompositePriceConfiguration
 	TickSize                      *num.Uint
 	EnableTxReordering            bool
+	AllowedEmptyAmmLevels         *uint64
+	AllowedSellers                []string
 }
 
 func (n UpdateMarketConfiguration) String() string {
@@ -164,6 +166,8 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 		TickSize:                n.TickSize.Clone(),
 		EnableTxReordering:      n.EnableTxReordering,
+		AllowedEmptyAmmLevels:   n.AllowedEmptyAmmLevels,
+		AllowedSellers:          append([]string{}, n.AllowedSellers...),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -236,6 +240,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      n.TickSize.String(),
 		EnableTransactionReordering:   n.EnableTxReordering,
+		AllowedEmptyAmmLevels:         n.AllowedEmptyAmmLevels,
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -337,6 +342,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		MarkPriceConfiguration:        CompositePriceConfigurationFromProto(p.MarkPriceConfiguration),
 		TickSize:                      tickSize,
 		EnableTxReordering:            p.EnableTransactionReordering,
+		AllowedEmptyAmmLevels:         p.AllowedEmptyAmmLevels,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

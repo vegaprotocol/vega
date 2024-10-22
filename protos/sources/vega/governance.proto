@@ -109,6 +109,8 @@ message NewSpotMarketConfiguration {
   string tick_size = 9;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 10;
+  // Allowed sellers
+  repeated string allowed_sellers = 11;
 }
 
 // Configuration for a new futures market on Vega
@@ -154,6 +156,8 @@ message NewMarketConfiguration {
   string tick_size = 16;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 17;
+  // Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission.
+  optional uint64 allowed_empty_amm_levels = 18;
 }
 
 // New spot market on Vega
@@ -229,6 +233,8 @@ message UpdateMarketConfiguration {
   string tick_size = 12;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 13;
+  // Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission.
+  optional uint64 allowed_empty_amm_levels = 14;
 }
 
 // Configuration to update a spot market on Vega
@@ -256,6 +262,8 @@ message UpdateSpotMarketConfiguration {
   UpdateSpotInstrumentConfiguration instrument = 7;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 8;
+  // Allowed sellers
+  repeated string allowed_sellers = 9;
 }
 
 message UpdateSpotInstrumentConfiguration {
@@ -386,6 +394,8 @@ message ProposalTerms {
     UpdateVolumeDiscountProgram update_volume_discount_program = 113;
     // Proposal change for updating the volume rebate program.
     UpdateVolumeRebateProgram update_volume_rebate_program = 114;
+    // Proposal for a new automated purchase auction
+    NewProtocolAutomatedPurchase new_protocol_automated_purchase = 115;
   }
 }
 
@@ -428,6 +438,8 @@ message BatchProposalTermsChange {
     NewAsset new_asset = 113;
     // Proposal change for updating the volume rebate program.
     UpdateVolumeRebateProgram update_volume_rebate_program = 114;
+    // Proposal for a new automated purchase auction
+    NewProtocolAutomatedPurchase new_protocol_automated_purchase = 115;
   }
 }
 
@@ -689,6 +701,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SIZE_DECIMAL_PLACES = 60;
   // Volume rebate program proposal is invalid
   PROPOSAL_ERROR_INVALID_VOLUME_REBATE_PROGRAM = 61;
+  // Automated purchase proposal is invalid
+  PROPOSAL_ERROR_INVALID_PROTOCOL_AUTOMATED_PURCHASE = 62;
 }
 
 // Governance vote
@@ -881,4 +895,42 @@ message RecurringTransfer {
   // Factor that the initial transfer amount is multiplied by for each epoch that it is executed.
   // For example if the initial transfer amount is 1000 and the factor is 0.5, then the amounts transferred per epoch will be 1000, 500, 250, 125, etc.
   string factor = 4;
+}
+
+message NewProtocolAutomatedPurchase {
+  // Configuration for a change to create a new automated purchase auction
+  NewProtocolAutomatedPurchaseChanges changes = 1;
+}
+
+message NewProtocolAutomatedPurchaseChanges {
+  // The source token that will be swapped
+  string from = 1;
+  // The account type for the network from which the tokens will be sourced
+  vega.AccountType from_account_type = 2;
+  // The account type for the network to which the purchased tokens will be sent
+  vega.AccountType to_account_type = 3;
+  // The market that will be used to enact the purchase/sale
+  string market_id = 4;
+  // The oracle which will define an approximate acceptable price for the transaction
+  vega.DataSourceDefinition price_oracle = 5;
+  // The spec binding for the price oracle
+  vega.SpecBindingForCompositePrice price_oracle_spec_binding = 6;
+  // The final acceptable price is the price oracle value weighted by this factor (e.g. 1.05 to allow for 5% slippage on the purchase)
+  string oracle_offset_factor = 7;
+  // A time based oracle for when auctions will occur
+  vega.DataSourceDefinition auction_schedule = 8;
+  // A time based oracle for when an observation will be taken of the balance of the source account. This will emit an event notifying of the balance planned to exchange, along with storing this value. When an auction occurs, the latest reading for this value will be used for the volume to trade, rather than the full balance of the account.
+  vega.DataSourceDefinition auction_volume_snapshot_schedule = 9;
+  // The spec binding for the auction schedule and volume snapshot schedule
+  vega.DataSourceSpecToAutomatedPurchaseBinding automated_purchase_spec_binding = 10;
+  // The duration of the auction
+  string auction_duration = 11;
+  // Minimum number of tokens to be sold (specified in asset decimals). If less than this are available in the account at the last snapshot before auction, no auction will occur and the balance will roll over to the next scheduled auction.
+  string minimum_auction_size = 12;
+  // Maximum number of tokens to be sold (specified in asset decimals). If more than this are available in the account at the last snapshot before auction, this maximum value will be used instead, and the remainder will be rolled over to the next scheduled auction.
+  string maximum_auction_size = 13;
+  // Timestamp in Unix seconds, when the automated purchase is stopped. If an auction is in action it will be removed when the auction is finished.
+  int64 expiry_timestamp = 14;
+  // For how long the oracle price source is considered valid
+  string oracle_price_staleness_tolerance = 15;
 }

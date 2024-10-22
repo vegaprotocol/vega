@@ -39,6 +39,7 @@ type positionSettlement interface {
 type lossSocialization interface {
 	Amount() *num.Int
 	TxHash() string
+	IsFunding() bool
 }
 
 type settleDistressed interface {
@@ -73,6 +74,14 @@ type Position struct {
 	PendingAverageEntryMarketPrice decimal.Decimal
 	LossSocialisationAmount        decimal.Decimal
 	DistressedStatus               PositionStatus
+	TakerFeesPaid                  num.Decimal
+	MakerFeesReceived              num.Decimal
+	FeesPaid                       num.Decimal
+	TakerFeesPaidSince             num.Decimal
+	MakerFeesReceivedSince         num.Decimal
+	FeesPaidSince                  num.Decimal
+	FundingPaymentAmount           num.Decimal
+	FundingPaymentAmountSince      num.Decimal
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
@@ -93,6 +102,14 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 		PendingAverageEntryMarketPrice: num.DecimalZero(),
 		LossSocialisationAmount:        num.DecimalZero(),
 		DistressedStatus:               PositionStatusUnspecified,
+		TakerFeesPaid:                  num.DecimalZero(),
+		MakerFeesReceived:              num.DecimalZero(),
+		FeesPaid:                       num.DecimalZero(),
+		TakerFeesPaidSince:             num.DecimalZero(),
+		MakerFeesReceivedSince:         num.DecimalZero(),
+		FeesPaidSince:                  num.DecimalZero(),
+		FundingPaymentAmount:           num.DecimalZero(),
+		FundingPaymentAmountSince:      num.DecimalZero(),
 	}
 }
 
@@ -123,6 +140,14 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	if seller {
 		size *= -1
 	}
+	// add fees paid/received
+	fees := getFeeAmountsForSide(&trade, seller)
+	maker, taker, other := num.DecimalFromUint(fees.maker), num.DecimalFromUint(fees.taker), num.DecimalFromUint(fees.other)
+	p.MakerFeesReceived = p.MakerFeesReceived.Add(maker)
+	p.TakerFeesPaid = p.TakerFeesPaid.Add(taker)
+	p.FeesPaid = p.FeesPaid.Add(other)
+	// check if we should reset the "since" fields for fees
+	since := p.PendingOpenVolume == 0
 	// close out trade doesn't require the MTM calculation to be performed
 	// the distressed trader will be handled through a settle distressed event, the network
 	// open volume should just be updated, the average entry price is unchanged.
@@ -133,6 +158,8 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
 	realisedPnlDelta := assetPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
 	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
+	// did we start with a positive/negative position?
+	pos := p.PendingOpenVolume > 0
 	p.PendingOpenVolume -= closed
 
 	marketPriceUint, _ := num.UintFromDecimal(marketPrice)
@@ -141,6 +168,18 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, assetPriceUint)
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
+	// either the position is no longer 0, or the position has flipped sides (and is non-zero)
+	if since || (pos != (p.PendingOpenVolume > 0) && p.PendingOpenVolume != 0) {
+		p.MakerFeesReceivedSince = num.DecimalZero()
+		p.TakerFeesPaidSince = num.DecimalZero()
+		p.FeesPaidSince = num.DecimalZero()
+	}
+	if p.PendingOpenVolume != 0 {
+		// running total of fees paid since get incremented
+		p.MakerFeesReceivedSince = p.MakerFeesReceivedSince.Add(maker)
+		p.TakerFeesPaidSince = p.TakerFeesPaidSince.Add(taker)
+		p.FeesPaidSince = p.FeesPaidSince.Add(other)
+	}
 	p.pendingMTM(assetPrice, pf)
 	if trade.Type == types.TradeTypeNetworkCloseOutBad {
 		p.updateWithBadTrade(trade, seller, pf)
@@ -152,9 +191,12 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {
-	da := num.DecimalFromInt(amount)
-	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(da)
-	p.RealisedPnl = p.RealisedPnl.Add(da)
+	amt := num.DecimalFromInt(amount)
+	p.FundingPaymentAmount = p.FundingPaymentAmount.Add(amt)
+	p.FundingPaymentAmountSince = p.FundingPaymentAmountSince.Add(amt)
+	// da := num.DecimalFromInt(amount)
+	// p.PendingRealisedPnl = p.PendingRealisedPnl.Add(da)
+	// p.RealisedPnl = p.RealisedPnl.Add(da)
 }
 
 func (p *Position) UpdateOrdersClosed() {
@@ -173,17 +215,29 @@ func (p *Position) ToggleDistressedStatus() {
 
 func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
 	pf := e.PositionFactor()
+	resetFP := false
 	for _, t := range e.Trades() {
+		if p.OpenVolume == 0 {
+			resetFP = true
+		}
 		openedVolume, closedVolume := CalculateOpenClosedVolume(p.OpenVolume, t.Size())
 		// Deal with any volume we have closed
 		realisedPnlDelta := num.DecimalFromUint(t.Price()).Sub(p.AverageEntryPrice).Mul(num.DecimalFromInt64(closedVolume)).Div(pf)
 		p.RealisedPnl = p.RealisedPnl.Add(realisedPnlDelta)
+		pos := p.OpenVolume > 0
 		p.OpenVolume -= closedVolume
 
 		// Then with any we have opened
 		p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, t.Price())
 		p.AverageEntryMarketPrice = updateVWAP(p.AverageEntryMarketPrice, p.OpenVolume, openedVolume, t.MarketPrice())
 		p.OpenVolume += openedVolume
+		// check if position flipped
+		if !resetFP && (pos != (p.OpenVolume > 0) && p.OpenVolume != 0) {
+			resetFP = true
+		}
+	}
+	if resetFP {
+		p.FundingPaymentAmountSince = num.DecimalZero()
 	}
 	p.mtm(e.Price(), pf)
 	p.TxHash = TxHash(e.TxHash())
@@ -209,6 +263,11 @@ func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
 		p.Adjustment = p.Adjustment.Add(amountLoss)
 		p.LossSocialisationAmount = p.LossSocialisationAmount.Add(amountLoss)
 	}
+	if e.IsFunding() {
+		// adjust if this is a loss socialisation resulting from a funding payment settlement.
+		p.FundingPaymentAmount = p.FundingPaymentAmount.Add(amountLoss)
+		p.FundingPaymentAmountSince = p.FundingPaymentAmountSince.Add(amountLoss)
+	}
 
 	p.RealisedPnl = p.RealisedPnl.Add(amountLoss)
 	p.TxHash = TxHash(e.TxHash())
@@ -225,6 +284,10 @@ func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
 	p.DistressedStatus = PositionStatusClosedOut
+	p.FundingPaymentAmountSince = num.DecimalZero()
+	p.FeesPaidSince = num.DecimalZero()
+	p.MakerFeesReceivedSince = num.DecimalZero()
+	p.TakerFeesPaidSince = num.DecimalZero()
 	p.syncPending()
 }
 
@@ -248,15 +311,23 @@ func (p Position) ToProto() *vega.Position {
 	// we use the pending values when converting to protos
 	// so trades are reflected as accurately as possible
 	return &vega.Position{
-		MarketId:                p.MarketID.String(),
-		PartyId:                 p.PartyID.String(),
-		OpenVolume:              p.PendingOpenVolume,
-		RealisedPnl:             p.PendingRealisedPnl.Round(0).String(),
-		UnrealisedPnl:           p.PendingUnrealisedPnl.Round(0).String(),
-		AverageEntryPrice:       p.PendingAverageEntryMarketPrice.Round(0).String(),
-		UpdatedAt:               timestamp,
-		LossSocialisationAmount: p.LossSocialisationAmount.Round(0).String(),
-		PositionStatus:          vega.PositionStatus(p.DistressedStatus),
+		MarketId:                  p.MarketID.String(),
+		PartyId:                   p.PartyID.String(),
+		OpenVolume:                p.PendingOpenVolume,
+		RealisedPnl:               p.PendingRealisedPnl.Round(0).String(),
+		UnrealisedPnl:             p.PendingUnrealisedPnl.Round(0).String(),
+		AverageEntryPrice:         p.PendingAverageEntryMarketPrice.Round(0).String(),
+		UpdatedAt:                 timestamp,
+		LossSocialisationAmount:   p.LossSocialisationAmount.Round(0).String(),
+		PositionStatus:            vega.PositionStatus(p.DistressedStatus),
+		TakerFeesPaid:             p.TakerFeesPaid.String(),
+		MakerFeesReceived:         p.MakerFeesReceived.String(),
+		FeesPaid:                  p.FeesPaid.String(),
+		TakerFeesPaidSince:        p.TakerFeesPaidSince.String(),
+		MakerFeesReceivedSince:    p.MakerFeesReceivedSince.String(),
+		FeesPaidSince:             p.FeesPaidSince.String(),
+		FundingPaymentAmount:      p.FundingPaymentAmount.String(),
+		FundingPaymentAmountSince: p.FundingPaymentAmountSince.String(),
 	}
 }
 
@@ -352,7 +423,8 @@ var PositionColumns = []string{
 	"market_id", "party_id", "open_volume", "realised_pnl", "unrealised_pnl",
 	"average_entry_price", "average_entry_market_price", "loss", "adjustment", "tx_hash", "vega_time", "pending_open_volume",
 	"pending_realised_pnl", "pending_unrealised_pnl", "pending_average_entry_price", "pending_average_entry_market_price",
-	"loss_socialisation_amount", "distressed_status",
+	"loss_socialisation_amount", "distressed_status", "taker_fees_paid", "maker_fees_received", "fees_paid",
+	"taker_fees_paid_since", "maker_fees_received_since", "fees_paid_since", "funding_payment_amount", "funding_payment_amount_since",
 }
 
 func (p Position) ToRow() []interface{} {
@@ -360,7 +432,8 @@ func (p Position) ToRow() []interface{} {
 		p.MarketID, p.PartyID, p.OpenVolume, p.RealisedPnl, p.UnrealisedPnl,
 		p.AverageEntryPrice, p.AverageEntryMarketPrice, p.Loss, p.Adjustment, p.TxHash, p.VegaTime, p.PendingOpenVolume,
 		p.PendingRealisedPnl, p.PendingUnrealisedPnl, p.PendingAverageEntryPrice, p.PendingAverageEntryMarketPrice,
-		p.LossSocialisationAmount, p.DistressedStatus,
+		p.LossSocialisationAmount, p.DistressedStatus, p.TakerFeesPaid, p.MakerFeesReceived, p.FeesPaid,
+		p.TakerFeesPaidSince, p.MakerFeesReceivedSince, p.FeesPaidSince, p.FundingPaymentAmount, p.FundingPaymentAmountSince,
 	}
 }
 

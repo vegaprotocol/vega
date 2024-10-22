@@ -89,7 +89,7 @@ type Teams interface {
 }
 
 type Vesting interface {
-	AddReward(party, asset string, amount *num.Uint, lockedForEpochs uint64)
+	AddReward(ctx context.Context, party, asset string, amount *num.Uint, lockedForEpochs uint64)
 	GetSingleAndSummedRewardBonusMultipliers(party string) (vesting.MultiplierAndQuantBalance, vesting.MultiplierAndQuantBalance)
 }
 
@@ -492,7 +492,7 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 	if po.rewardType != types.AccountTypeFeesInfrastructure {
 		for _, party := range partyIDs {
 			amt := po.partyToAmount[party]
-			e.vesting.AddReward(party, po.asset, amt, po.lockedForEpochs)
+			e.vesting.AddReward(ctx, party, po.asset, amt, po.lockedForEpochs)
 		}
 	}
 	e.broker.Send(events.NewLedgerMovements(ctx, responses))

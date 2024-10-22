@@ -234,6 +234,23 @@ func (e *Engine) dispatchRequired(ctx context.Context, ds *vegapb.DispatchStrate
 	return required
 }
 
+func (e *Engine) scaleAmountByTargetNotional(ds *vegapb.DispatchStrategy, amount *num.Uint) *num.Uint {
+	if ds == nil {
+		return amount
+	}
+	if ds.TargetNotionalVolume == nil {
+		return amount
+	}
+	actualVolumeInWindow := e.marketActivityTracker.GetNotionalVolumeForAsset(ds.AssetForMetric, ds.Markets, int(ds.WindowLength))
+	if actualVolumeInWindow.IsZero() {
+		return num.UintZero()
+	}
+	targetNotional := num.MustUintFromString(*ds.TargetNotionalVolume, 10)
+	ratio := num.MinD(actualVolumeInWindow.ToDecimal().Div(targetNotional.ToDecimal()), num.DecimalOne())
+	amt, _ := num.UintFromDecimal(ratio.Mul(amount.ToDecimal()))
+	return amt
+}
+
 func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint64) {
 	var (
 		transfersDone = []events.Event{}
@@ -273,6 +290,9 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			)
 		)
 
+		// scale transfer amount as necessary
+		amount = e.scaleAmountByTargetNotional(v.DispatchStrategy, amount)
+
 		// check if the amount is still enough
 		// ensure asset exists
 		a, err := e.assets.Get(v.Asset)
@@ -301,13 +321,13 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			)
 		} else {
 			// check if the amount + fees can be covered by the party issuing the transfer
-			if err = e.ensureFeeForTransferFunds(a, amount, v.From, v.FromAccountType, v.FromDerivedKey, v.To); err == nil {
+			if err = e.ensureFeeForTransferFunds(a, amount, v.From, v.FromAccountType, v.FromDerivedKey, v.To, v.ToAccountType); err == nil {
 				// NB: if the metric is market value we're going to transfer the bonus if any directly
 				// to the market account of the asset/reward type - this is similar to previous behaviour and
 				// different to how all other metric based rewards behave. The reason is that we need the context of the funder
 				// and this context is lost when the transfer has already gone through
 				if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
-					marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(v.DispatchStrategy.AssetForMetric, v.DispatchStrategy.Markets, v.Asset, v.From)
+					marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(v.DispatchStrategy.AssetForMetric, v.DispatchStrategy.Markets, v.Asset, v.From, v.DispatchStrategy.EligibleKeys)
 					for _, fms := range marketProposersScore {
 						amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
 						if amt.IsZero() {
@@ -363,13 +383,6 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		}
 
 		tresps = append(tresps, resps...)
-
-		// if we don't have anymore
-		if v.EndEpoch != nil && *v.EndEpoch == e.currentEpoch {
-			v.Status = types.TransferStatusDone
-			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v, e.getGameID(v)))
-			doneIDs = append(doneIDs, v.ID)
-		}
 	}
 
 	// send events

@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.78.2";
+    version: "v0.79.0";
   }
   schemes: [
     HTTP,
@@ -3220,6 +3220,8 @@ message ListGovernanceDataRequest {
     TYPE_UPDATE_REFERRAL_PROGRAM = 13;
     // Proposal to update the volume discount program
     TYPE_UPDATE_VOLUME_DISCOUNT_PROGRAM = 14;
+    // Proposal for new automated purchase auction
+    TYPE_NEW_AUTOMATED_PURCHASE = 15;
   }
   // Restrict proposals to those with the given state.
   optional vega.Proposal.State proposal_state = 1;
@@ -3970,6 +3972,8 @@ message FundingPayment {
   int64 timestamp = 4;
   // Funding payment amount, where a positive value indicates an earned payment received and a negative value a loss.
   string amount = 5;
+  // Amount missed out on due to loss socialization.
+  string loss_amount = 6;
 }
 
 // Request to list a a party's funding payments
@@ -5090,11 +5094,11 @@ message EstimateAMMBoundsResponse {
     AMM_ERROR_UNSPECIFIED = 0;
     // Commitment is below the global limit set by the network parameter `market.amm.minCommitmentQuantum`.
     AMM_ERROR_COMMITMENT_BELOW_MINIMUM = 1;
-    // AMM's lower price is too far from the base price for the given commitment resulting in zero volume between price levels.
+    // AMM's lower price is too far from the base price for the given commitment resulting in too many zero volume price levels.
     AMM_ERROR_LOWER_BOUND_TOO_WIDE = 2;
-    // AMM's upper price is too far from the base price for the given commitment resulting in zero volume between price levels.
+    // AMM's upper price is too far from the base price for the given commitment resulting in too many zero volume price levels.
     AMM_ERROR_UPPER_BOUND_TOO_WIDE = 3;
-    // AMM bounds are too wide for the given commitment resulting in zero volume between price levels.
+    // AMM bounds are too wide for the given commitment resulting in too many zero volume price levels.
     AMM_ERROR_BOTH_BOUNDS_TOO_WIDE = 4;
   }
 

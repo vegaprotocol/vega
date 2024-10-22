@@ -148,6 +148,10 @@ func NewMarketFromSnapshot(
 	}
 
 	now := timeService.GetTimeNow()
+	allowedSellers := map[string]struct{}{}
+	for _, v := range mkt.AllowedSellers {
+		allowedSellers[v] = struct{}{}
+	}
 	market := &Market{
 		log:                           log,
 		mkt:                           mkt,
@@ -190,6 +194,7 @@ func NewMarketFromSnapshot(
 		hasTraded:                     em.HasTraded,
 		orderHoldingTracker:           NewHoldingAccountTracker(mkt.ID, log, collateralEngine),
 		banking:                       banking,
+		allowedSellers:                allowedSellers,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	for _, p := range em.Parties {
@@ -200,6 +205,12 @@ func NewMarketFromSnapshot(
 		market.closed = true
 		stateVarEngine.UnregisterStateVariable(quoteAsset, mkt.ID)
 	}
+	market.quoteAssetDP = uint32(quoteAssetDetails.DecimalPlaces())
+	pap, err := market.NewProtocolAutomatedPurchaseFromSnapshot(ctx, oracleEngine, em.ProtocolAutomatedPurchase)
+	if err != nil {
+		return nil, err
+	}
+	market.pap = pap
 	return market, nil
 }
 
@@ -208,6 +219,10 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 	sort.Strings(parties)
 	quoteAssetQuantum, _ := m.collateral.GetAssetQuantum(m.quoteAsset)
 
+	var pap *snapshot.ProtocolAutomatedPurchase
+	if m.pap != nil {
+		pap = m.pap.IntoProto()
+	}
 	em := &types.ExecSpotMarket{
 		Market:                     m.mkt.DeepClone(),
 		PriceMonitor:               m.pMonitor.GetState(),
@@ -232,6 +247,7 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 		MarketLiquidity:            m.liquidity.GetState(),
 		StopOrders:                 m.stopOrders.ToProto(),
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
+		ProtocolAutomatedPurchase:  pap,
 	}
 
 	return em

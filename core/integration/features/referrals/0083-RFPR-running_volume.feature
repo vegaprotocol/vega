@@ -358,6 +358,6 @@ Feature: Calculating referral set running volumes
     # Check running volume correctly calculated for a variety of window lengths
     Examples:
       | window length | running volume 1 | running volume 2 | running volume 3 | running volume 4 |
-      | 1             | 10000            | 10000            | 10000            | 10000            |
-      | 2             | 10000            | 20000            | 20000            | 20000            |
-      | 3             | 10000            | 20000            | 30000            | 30000            |
+      | 1             | 10000            | 20000            | 10000            | 10000            |
+      | 2             | 10000            | 30000            | 30000            | 20000            |
+      | 3             | 10000            | 30000            | 40000            | 40000            |

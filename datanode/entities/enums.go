@@ -252,6 +252,7 @@ const (
 	OrderErrorUnableToAmendPriceOnPeggedOrder OrderError = vega.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds.
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = vega.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
+	OrderErrorSellOrderNotAllowed                OrderError = vega.OrderError_ORDER_ERROR_SELL_ORDER_NOT_ALLOWED
 )
 
 type PositionStatus int32
@@ -972,6 +973,7 @@ const (
 	StopOrderRejectionReasonOCONotAllowedSameExpiryTime  = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES)
 	StopOrderRejectionSizeOverrideUnSupportedForSpot     = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_SIZE_OVERRIDE_UNSUPPORTED_FOR_SPOT)
 	StopOrderRejectionLinkedPercentageInvalid            = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID)
+	StopeOrderRejectionReasonSellOrderNotAllowed         = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_SELL_ORDER_NOT_ALLOWED)
 )
 
 func (s StopOrderRejectionReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

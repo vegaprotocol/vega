@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.79.0
+## Unreleased 0.80.0
 
 ### 🚨 Breaking changes
 
@@ -19,6 +19,33 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 
+## 0.79.0
+
+### 🛠 Improvements
+
+- [11644](https://github.com/vegaprotocol/vega/issues/11644) - `liveOnly` flag has been added to the `AMM` API to show only active `AMMs`.
+- [11519](https://github.com/vegaprotocol/vega/issues/11519) - Add fees to position API types.
+- [11714](https://github.com/vegaprotocol/vega/issues/11714) - Improve `AMM` performance by caching best prices and volumes.
+- [11642](https://github.com/vegaprotocol/vega/issues/11642) - `AMMs` with empty price levels are now allowed.
+- [11685](https://github.com/vegaprotocol/vega/issues/11685) - Automated purchase support added.
+- [11732](https://github.com/vegaprotocol/vega/issues/11732) - `AMMs` can now have their base price automatically updated by a market's data source.
+- [11685](https://github.com/vegaprotocol/vega/issues/11685) - Automated purchase support added.
+- [11726](https://github.com/vegaprotocol/vega/issues/11726) - Combined `AMM` uncrossing orders for better performance when uncrossing the book.
+- [11711](https://github.com/vegaprotocol/vega/issues/11711) - Manage closed team membership by updating the allow list.
+- [11722](https://github.com/vegaprotocol/vega/issues/11722) - Expose active protocol automated purchase identifier in market data API.
+- [11744](https://github.com/vegaprotocol/vega/issues/11744) - Staking from collateral bridged assets.
+
+### 🐛 Fixes
+
+- [11672](https://github.com/vegaprotocol/vega/issues/11672) - Add missing fees in GraphQL bindings.
+- [11681](https://github.com/vegaprotocol/vega/issues/11681) - Account for conflicts inserting funding payment records.
+- [11715](https://github.com/vegaprotocol/vega/issues/11715) - Trade across an `AMMs` base price in two steps since the curves either side will be different.
+- [11684](https://github.com/vegaprotocol/vega/issues/11684) - Better error when `Arbitrum` bridge details are missing from validator configuration.
+- [11696](https://github.com/vegaprotocol/vega/issues/11696) - Add binding for estimate fees API.
+- [11699](https://github.com/vegaprotocol/vega/issues/11699) - Update factors of programs when they are updated.
+- [11724](https://github.com/vegaprotocol/vega/issues/11724) - Allow nil initial time in time trigger.
+- [11733](https://github.com/vegaprotocol/vega/issues/11733) - Fix division by zero.
+
 ## 0.78.2
 
 ### 🛠 Improvements
@@ -33,8 +60,10 @@
 - [11650](https://github.com/vegaprotocol/vega/issues/11650) - Add include sub accounts flag to `listPositions`.
 - [11641](https://github.com/vegaprotocol/vega/issues/11641) - Panic with pegged orders.
 - [11646](https://github.com/vegaprotocol/vega/issues/11646) - Add tier numbers to API.
-
-
+- [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
+- [11679](https://github.com/vegaprotocol/vega/issues/11679) - Fix calculation of fees in party `stats`.
+- [11665](https://github.com/vegaprotocol/vega/issues/11665) - Delay the final termination of a transfer to the following epoch.
+- [11687](https://github.com/vegaprotocol/vega/issues/11687) - Fix potential division by zero in notional reward metric evaluation.
 ## 0.78.1
 
 ### 🐛 Fixes
@@ -65,7 +94,10 @@
 - [11533](https://github.com/vegaprotocol/vega/issues/11533) - Suppose per party fee discounts in fee estimation.
 - [11577](https://github.com/vegaprotocol/vega/issues/11577) - Add API for party discounts and rewards.
 - [10716](https://github.com/vegaprotocol/vega/issues/10716) - Set Tendermint defaults during init.
+- [11612](https://github.com/vegaprotocol/vega/issues/11612) - Reward scaling support.
 - [11624](https://github.com/vegaprotocol/vega/issues/11624) - prevent creation of rewards with no payout, but with high computational cost.
+- [11512](https://github.com/vegaprotocol/vega/issues/11512) - Add loss socialisation amounts to funding payment API.
+- [11627](https://github.com/vegaprotocol/vega/issues/11627) - Add eligible keys filter to reward transfers.
 
 ### 🐛 Fixes
 
@@ -78,7 +110,6 @@
 - [11568](https://github.com/vegaprotocol/vega/issues/11568) - order book shape on closing `AMM` no longer panics.
 - [11540](https://github.com/vegaprotocol/vega/issues/11540) - Fix spam check for spots to use not double count quantum.
 - [11542](https://github.com/vegaprotocol/vega/issues/11542) - Fix non determinism in lottery ranking.
-- [11616](https://github.com/vegaprotocol/vega/issues/11616) - `AMM` tradable volume now calculated purely in positions to prevent loss of precision.
 - [11544](https://github.com/vegaprotocol/vega/issues/11544) - Fix empty candles stream.
 - [11583](https://github.com/vegaprotocol/vega/issues/11583) - Rough bound on price interval when matching with `AMMs` is now looser and calculated in the `AMM` engine.
 - [11633](https://github.com/vegaprotocol/vega/issues/11633) - Use bridge deployment heights from network parameter when starting network from genesis.
@@ -89,7 +120,6 @@
 - [11607](https://github.com/vegaprotocol/vega/issues/11607) - Wire rank lottery distribution to team reward payout.
 - [959](https://github.com/vegaprotocol/core-test-coverage/issues/959) - Include `ELS` for `AMM` sub keys to the parent key `ELS`.
 - [11592](https://github.com/vegaprotocol/vega/issues/11592) - Fix the order of calls at end of epoch between rebate engine and market tracker.
-- [10907](https://github.com/vegaprotocol/vega/issues/10907) - Fix position API distressed status not getting updated once the party has been closed out.
 
 
 ## 0.77.5

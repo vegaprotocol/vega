@@ -159,6 +159,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the composite price oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
 		return steps.TheCompositePriceOracleSpec(marketConfig, signers, table)
 	})
+	s.Step(`^the time triggers oracle spec is:`, func(table *godog.Table) error {
+		return steps.TheTimeTriggerOracleSpec(marketConfig, execsetup.timeService.GetTimeNow(), table)
+	})
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
@@ -227,6 +230,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
 		return nil
+	})
+
+	s.Step(`^the active pap id should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
+		return steps.TheActivePAPIDShouldBeForMarket(execsetup.executionEngine, marketID, mpAlgo)
+	})
+	s.Step(`^the active pap order id should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
+		return steps.TheActivePAPOrderIDShouldBeForMarket(execsetup.executionEngine, marketID, mpAlgo)
 	})
 
 	s.Step(`^the mark price algo should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
@@ -347,7 +357,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following undelegations:$`, func(table *godog.Table) error {
 		return steps.PartiesUndelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
-
+	s.Step(`the protocol automated purchase is defined as:$`, func(table *godog.Table) error {
+		return steps.TheAutomatedPurchasePrograms(marketConfig, execsetup.executionEngine, table)
+	})
 	s.Step(`^the starting auction time for market "([^"]+)" is "([^"]+)"`, func(marketID, startTime string) error {
 		return steps.MarketAuctionStartTime(execsetup.executionEngine, marketID, startTime)
 	})
@@ -404,6 +416,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the network moves ahead "([^"]+)" epochs$`, func(epochs string) error {
 		return steps.TheNetworkMovesAheadNEpochs(execsetup.broker, execsetup.block, execsetup.executionEngine, execsetup.epochEngine, execsetup.timeService, epochs)
+	})
+
+	s.Step(`^the automated purchase program for market "([^"]*)" should have a snapshot balance of "([^"]*)"$`, func(marketID, balance string) error {
+		return steps.PAPVolumeSnapshotShouldBe(execsetup.broker, marketID, balance)
 	})
 
 	// Assertion steps
@@ -487,6 +503,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the network treasury balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
 		return steps.TheNetworkTreasuryBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
+	})
+	s.Step(`^the buy back fees balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheBuyBackFeesBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
 	s.Step(`^the global insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
 		return steps.TheGlobalInsuranceBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
@@ -698,6 +717,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug network parameter "([^"]*)"$`, func(name string) error {
 		return steps.DebugNetworkParameter(execsetup.log, execsetup.netParams, name)
 	})
+	s.Step(`^debug funding payment events$`, func() error {
+		steps.DebugFundingPaymentsEvents(execsetup.broker, execsetup.log)
+		return nil
+	})
 
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
@@ -711,6 +734,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^the following funding period events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingFundingPeriodEventsShouldBeEmitted(execsetup.broker, table)
+	})
+	s.Step(`^the following funding payment events should be emitted:$`, func(table *godog.Table) error {
+		return steps.TheFollowingFundingPaymentEventsShouldBeEmitted(execsetup.broker, table)
 	})
 	s.Step(`^the following events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
@@ -812,7 +838,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the volume rebate program:$`, func(table *godog.Table) error {
-		return steps.VolumeRebateProgram(execsetup.volumeRebateProgram, volumeRebateTiers, table)
+		return steps.VolumeRebateProgram(execsetup.volumeRebateProgram, volumeRebateTiers, execsetup.timeService, table)
 	})
 	s.Step(`^the party "([^"]*)" has the following rebate factor "([^"]*)"$`, func(party, rebate string) error {
 		return steps.PartyHasTheFollowingRebate(party, rebate, execsetup.volumeRebateProgram)

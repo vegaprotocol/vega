@@ -304,3 +304,7 @@ func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.
 func (r *myMarketResolver) LiquiditySLAParameters(ctx context.Context, obj *types.Market) (*types.LiquiditySLAParameters, error) {
 	return obj.LiquiditySlaParams, nil
 }
+
+func (r *myMarketResolver) AllowedEmptyAMMLevels(ctx context.Context, obj *types.Market) (int, error) {
+	return int(obj.AllowedEmptyAmmLevels), nil
+}

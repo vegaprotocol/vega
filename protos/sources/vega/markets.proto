@@ -363,6 +363,8 @@ message Market {
     TRADING_MODE_SUSPENDED_VIA_GOVERNANCE = 6;
     // Auction triggered globally by long block
     TRADING_MODE_LONG_BLOCK_AUCTION = 7;
+    // Scheduled auction for automated purchase
+    TRADING_MODE_PROTOCOL_AUTOMATED_PURCHASE_AUCTION = 8;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -418,6 +420,10 @@ message Market {
   string tick_size = 21;
   // If enabled aggressive orders sent to the market will be delayed by the configured number of blocks
   bool enable_transaction_reordering = 22;
+  // Number of allowed price levels between an AMM's fair price and its quote prices. An AMM definition that exceeds this will be rejected at submission.
+  uint64 allowed_empty_amm_levels = 23;
+  // Proposer of the market, to be used to restrict the sell side
+  repeated string allowed_sellers = 24;
 }
 
 // Time stamps for important times about creating, enacting etc the market
@@ -477,4 +483,13 @@ message CompositePriceConfiguration {
   repeated vega.DataSourceDefinition data_sources_spec = 7;
   // List of each price source and its corresponding binding
   repeated vega.SpecBindingForCompositePrice data_sources_spec_binding = 8;
+}
+
+// Describes which properties of the data source data are to be
+// used for automated purchase.
+message DataSourceSpecToAutomatedPurchaseBinding {
+  // Name of the property in the source data that should be used to determine the automated purchase schedule.
+  string auction_schedule_property = 1;
+  // Name of the property in the source data that should be used to determine the schedule of the automated purchase auction.
+  string auction_volume_snapshot_schedule_property = 2;
 }

@@ -40,7 +40,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource,Parties
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource,Parties,StakeAccounting
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
@@ -72,6 +72,7 @@ type Collateral interface {
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetPartyLockedForStaking(party, asset string) (*types.Account, error)
 	GetPartyVestedRewardAccount(partyID, asset string) (*types.Account, error)
 	TransferFunds(ctx context.Context,
 		transfers []*types.Transfer,
@@ -106,15 +107,21 @@ type Topology interface {
 	IsValidator() bool
 }
 
+// StakeAccounting ...
+type StakeAccounting interface {
+	AddEvent(ctx context.Context, evt *types.StakeLinking)
+}
+
 type MarketActivityTracker interface {
 	CalculateMetricForIndividuals(ctx context.Context, ds *vega.DispatchStrategy) []*types.PartyContributionScore
 	CalculateMetricForTeams(ctx context.Context, ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
-	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore
+	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string, eligibleKeys []string) []*types.MarketContributionScore
 	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
 	MarketTrackedForAsset(market, asset string) bool
 	TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint
 	PublishGameMetric(ctx context.Context, dispatchStrategy []*vega.DispatchStrategy, now time.Time)
 	GameFinished(gameID string)
+	GetNotionalVolumeForAsset(asset string, markets []string, windowSize int) *num.Uint
 }
 
 type EthereumEventSource interface {
@@ -222,6 +229,9 @@ type Engine struct {
 
 	// transient cache used to market a dispatch strategy as checked for eligibility for this round so we don't check again.
 	dispatchRequiredCache map[string]bool
+
+	stakingAsset    string
+	stakeAccounting StakeAccounting
 }
 
 type withdrawalRef struct {
@@ -243,6 +253,7 @@ func New(log *logging.Logger,
 	secondaryBridgeView ERC20BridgeView,
 	ethEventSource EthereumEventSource,
 	parties Parties,
+	stakeAccounting StakeAccounting,
 ) (e *Engine) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -289,7 +300,13 @@ func New(log *logging.Logger,
 		primaryBridgeView:                         primaryBridgeView,
 		secondaryBridgeView:                       secondaryBridgeView,
 		dispatchRequiredCache:                     map[string]bool{},
+		stakeAccounting:                           stakeAccounting,
 	}
+}
+
+func (e *Engine) OnStakingAsset(_ context.Context, a string) error {
+	e.stakingAsset = a
+	return nil
 }
 
 func (e *Engine) OnMaxFractionChanged(ctx context.Context, f num.Decimal) error {

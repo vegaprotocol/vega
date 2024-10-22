@@ -96,9 +96,9 @@ func NewMarketFromSnapshot(
 
 	var ammEngine *amm.Engine
 	if em.Amm == nil {
-		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker, parties)
+		ammEngine = amm.New(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, priceFactor, positionFactor, marketActivityTracker, parties, mkt.AllowedEmptyAmmLevels)
 	} else {
-		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker, parties)
+		ammEngine, err = amm.NewFromProto(log, broker, collateralEngine, mkt.GetID(), asset, positionEngine, em.Amm, priceFactor, positionFactor, marketActivityTracker, parties, mkt.AllowedEmptyAmmLevels)
 		if err != nil {
 			return nil, err
 		}
@@ -220,6 +220,7 @@ func NewMarketFromSnapshot(
 	marketType := mkt.MarketType()
 
 	markPriceCalculator := common.NewCompositePriceCalculatorFromSnapshot(ctx, em.CurrentMarkPrice, timeService, oracleEngine, em.MarkPriceCalculator)
+
 	market := &Market{
 		log:                           log,
 		mkt:                           mkt,
@@ -268,6 +269,7 @@ func NewMarketFromSnapshot(
 		amm:                           ammEngine,
 	}
 
+	market.markPriceCalculator.NotifyOnDataSourcePropagation(market.dataSourcePropagation)
 	markPriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 	if fCap := mkt.TradableInstrument.Instrument.Product.Cap(); fCap != nil {
 		market.fCap = fCap
@@ -278,6 +280,7 @@ func NewMarketFromSnapshot(
 	if em.InternalCompositePriceCalculator != nil {
 		market.internalCompositePriceCalculator = common.NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.InternalCompositePriceCalculator)
 		market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
+		market.internalCompositePriceCalculator.NotifyOnDataSourcePropagation(market.dataSourcePropagation)
 	}
 
 	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, positionEngine, pMonitor, market.amm)
@@ -294,6 +297,7 @@ func NewMarketFromSnapshot(
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	case types.MarketTypePerp:
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementDataPerp)
+		market.tradableInstrument.Instrument.Product.NotifyOnDataSourcePropagation(market.productDataSourcePropagation)
 	case types.MarketTypeSpot:
 	default:
 		log.Panic("unexpected market type", logging.Int("type", int(marketType)))

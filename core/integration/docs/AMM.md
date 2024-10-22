@@ -26,11 +26,11 @@ Lastly, cancelling an existing AMM can be done through:
 
 ```
 And the parties cancel the following AMM:
-  | party    | market id | method              | error                    |
-  | party id | market ID | cancellation method | OPTIONAL: error expected |
+  | party    | market id | method           | error                    |
+  | party id | market ID | CancelAMM_Method | OPTIONAL: error expected |
 ```
 
-The possible values for `method` are `METHOD_IMMEDIATE` or `METHOD_REDUCE_ONLY`. Technically `METHOD_UNSPECIFIED` is also a valid value for `method`, but doesn't apply for integration tests.
+Details on the [`CancelAMM_Method` type](types.md#Cancel-AMM-Method)
 
 ### Checking AMM pools
 
@@ -38,43 +38,28 @@ To see what's going on with an existing AMM, we can check the AMM pool events wi
 
 ```
 Then the AMM pool status should be:
-  | party    | market id | amount           | status          | reason                      | base | lower bound | upper bound | lower leverage | upper leverage |
-  | party ID | market ID | commitment amout | AMM pool status | OPTIONAL: AMM status reason | uint | uint        | uint        | float              | float              |
+  | party    | market id | amount           | status     | reason           | base | lower bound | upper bound | lower leverage | upper leverage |
+  | party ID | market ID | commitment amout | AMM_Status | AMM_StatusReason | uint | uint        | uint        | float          | float          |
 ```
 
-Required fields are `party`, `market id`, `amount`, and `status`. All others are optional. possible values for AMM pool status are:
+Required fields are `party`, `market id`, `amount`, and `status`. All others are optional.
 
-```
-STATUS_UNSPECIFIED (not applicable)
-STATUS_ACTIVE
-STATUS_REJECTED
-STATUS_CANCELLED
-STATUS_STOPPED
-STATUS_REDUCE_ONLY
-```
-
-The possible `AMM status reason` values are:
-
-```
-STATUS_REASON_UNSPECIFIED
-STATUS_REASON_CANCELLED_BY_PARTY
-STATUS_REASON_CANNOT_FILL_COMMITMENT
-STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL
-STATUS_REASON_PARTY_CLOSED_OUT
-STATUS_REASON_MARKET_CLOSED
-STATUS_REASON_COMMITMENT_TOO_LOW
-STATUS_REASON_CANNOT_REBASE
-```
+Details on the [`AMM_Status` type](types.md#AMM-Status)
+Details on the [`AMM_StatusReason` type](types.md#AMM-Status-Reason)
 
 Checking the status for a given AMM only checks the most recent AMMPool event that was emitted. If we need to check all statuses a given AMM passed through during a scenario, use the following step:
 
 ```
 And the following AMM pool events should be emitted:
-  | party    | market id | amount           | status          | reason                      | base | lower bound | upper bound | lower leverage | upper leverage |
-  | party ID | market ID | commitment amout | AMM pool status | OPTIONAL: AMM status reason | uint | uint        | uint        | float              | float              |
+  | party    | market id | amount           | status     | reason           | base | lower bound | upper bound | lower leverage | upper leverage |
+  | party ID | market ID | commitment amout | AMM_Status | AMM_StatusReason | uint | uint        | uint        | float          | float          |
 ```
 
 The table data is identical to that used in the previous step, with the same optional/required fields. The difference here is that we can check whether the correct events were emitted in a scenario like this:
+
+Details on the [`AMM_Status` type](types.md#AMM-Status)
+Details on the [`AMM_StatusReason` type](types.md#AMM-Status-Reason)
+
 
 ```
 When 
@@ -153,6 +138,8 @@ And the following transfers should happen:
   | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 88     | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
   | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 274    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
 ```
+
+For more details on how to check transfer data [see here](transfers.md).
 
 ### Checking AMM trades
 

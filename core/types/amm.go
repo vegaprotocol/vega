@@ -22,13 +22,21 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
+type OrderbookShapeResult struct {
+	AmmParty string
+	Buys     []*Order
+	Sells    []*Order
+	Approx   bool
+}
+
 // AMMBaseCommand these 3 parameters should be always specified
 // in both the the submit and amend commands.
 type AMMBaseCommand struct {
-	MarketID          string
-	Party             string
-	SlippageTolerance num.Decimal
-	ProposedFee       num.Decimal
+	MarketID                  string
+	Party                     string
+	SlippageTolerance         num.Decimal
+	ProposedFee               num.Decimal
+	MinimumPriceChangeTrigger num.Decimal
 }
 
 type ConcentratedLiquidityParameters struct {
@@ -37,6 +45,7 @@ type ConcentratedLiquidityParameters struct {
 	UpperBound           *num.Uint
 	LeverageAtLowerBound *num.Decimal
 	LeverageAtUpperBound *num.Decimal
+	DataSourceID         *string
 }
 
 func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMM_ConcentratedLiquidityParameters {
@@ -63,6 +72,7 @@ func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMM_Concentra
 		UpperBound:           upper,
 		LeverageAtUpperBound: upperLeverage,
 		LeverageAtLowerBound: lowerLeverage,
+		DataSourceId:         p.DataSourceID,
 	}
 }
 
@@ -84,6 +94,16 @@ func (p ConcentratedLiquidityParameters) Clone() *ConcentratedLiquidityParameter
 	if p.LeverageAtUpperBound != nil {
 		cpy := *p.LeverageAtUpperBound
 		ret.LeverageAtUpperBound = &cpy
+	}
+
+	if p.DataSourceID != nil {
+		cpy := *p.DataSourceID
+		ret.DataSourceID = &cpy
+	}
+
+	if p.DataSourceID != nil {
+		cpy := *p.DataSourceID
+		ret.DataSourceID = &cpy
 	}
 	return ret
 }
@@ -131,14 +151,25 @@ func NewSubmitAMMFromProto(
 		upperLeverage = ptr.From(leverage)
 	}
 
+	if params.LeverageAtUpperBound != nil {
+		leverage, _ := num.DecimalFromString(*params.LeverageAtUpperBound)
+		upperLeverage = ptr.From(leverage)
+	}
+
+	minimumPriceChangeTrigger := num.DecimalZero()
+	if submitAMM.MinimumPriceChangeTrigger != nil {
+		minimumPriceChangeTrigger, _ = num.DecimalFromString(*submitAMM.MinimumPriceChangeTrigger)
+	}
+
 	slippage, _ := num.DecimalFromString(submitAMM.SlippageTolerance)
 	proposedFee, _ := num.DecimalFromString(submitAMM.ProposedFee)
 	return &SubmitAMM{
 		AMMBaseCommand: AMMBaseCommand{
-			Party:             party,
-			MarketID:          submitAMM.MarketId,
-			SlippageTolerance: slippage,
-			ProposedFee:       proposedFee,
+			Party:                     party,
+			MarketID:                  submitAMM.MarketId,
+			SlippageTolerance:         slippage,
+			ProposedFee:               proposedFee,
+			MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{
@@ -147,6 +178,7 @@ func NewSubmitAMMFromProto(
 			UpperBound:           upperBound,
 			LeverageAtLowerBound: lowerLeverage,
 			LeverageAtUpperBound: upperLeverage,
+			DataSourceID:         submitAMM.ConcentratedLiquidityParameters.DataSourceId,
 		},
 	}
 }
@@ -182,6 +214,8 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 	if s.Parameters.Base != nil {
 		base = s.Parameters.Base.String()
 	}
+
+	minimumPriceChangeTrigger := ptr.From(s.MinimumPriceChangeTrigger.String())
 	return &commandspb.SubmitAMM{
 		MarketId:          s.MarketID,
 		CommitmentAmount:  s.CommitmentAmount.String(),
@@ -194,6 +228,7 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 			LeverageAtUpperBound: leverageUpper,
 			LeverageAtLowerBound: leverageLower,
 		},
+		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
 	}
 }
 
@@ -235,6 +270,7 @@ func (a AmendAMM) IntoProto() *commandspb.AmendAMM {
 	if a.Parameters.LeverageAtUpperBound != nil {
 		ret.ConcentratedLiquidityParameters.LeverageAtUpperBound = ptr.From(a.Parameters.LeverageAtUpperBound.String())
 	}
+	ret.MinimumPriceChangeTrigger = ptr.From(a.MinimumPriceChangeTrigger.String())
 	return ret
 }
 
@@ -246,6 +282,7 @@ func NewAmendAMMFromProto(
 
 	var commitment, base, lowerBound, upperBound *num.Uint
 	var leverageAtUpperBound, leverageAtLowerBound *num.Decimal
+	var dataSourceID *string
 
 	// this is optional
 	if amendAMM.CommitmentAmount != nil {
@@ -269,6 +306,8 @@ func NewAmendAMMFromProto(
 			leverage, _ := num.DecimalFromString(*amendAMM.ConcentratedLiquidityParameters.LeverageAtUpperBound)
 			leverageAtUpperBound = ptr.From(leverage)
 		}
+
+		dataSourceID = amendAMM.ConcentratedLiquidityParameters.DataSourceId
 	}
 
 	slippage, _ := num.DecimalFromString(amendAMM.SlippageTolerance)
@@ -278,12 +317,18 @@ func NewAmendAMMFromProto(
 		proposedFee, _ = num.DecimalFromString(*amendAMM.ProposedFee)
 	}
 
+	minimumPriceChangeTrigger := num.DecimalZero()
+	if amendAMM.MinimumPriceChangeTrigger != nil {
+		minimumPriceChangeTrigger, _ = num.DecimalFromString(*amendAMM.MinimumPriceChangeTrigger)
+	}
+
 	return &AmendAMM{
 		AMMBaseCommand: AMMBaseCommand{
-			Party:             party,
-			MarketID:          amendAMM.MarketId,
-			SlippageTolerance: slippage,
-			ProposedFee:       proposedFee,
+			Party:                     party,
+			MarketID:                  amendAMM.MarketId,
+			SlippageTolerance:         slippage,
+			ProposedFee:               proposedFee,
+			MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{
@@ -292,6 +337,7 @@ func NewAmendAMMFromProto(
 			UpperBound:           upperBound,
 			LeverageAtUpperBound: leverageAtUpperBound,
 			LeverageAtLowerBound: leverageAtLowerBound,
+			DataSourceID:         dataSourceID,
 		},
 	}
 }
@@ -350,4 +396,5 @@ const (
 	AMMPoolStatusCancelled                 = eventspb.AMM_STATUS_CANCELLED
 	AMMPoolStatusStopped                   = eventspb.AMM_STATUS_STOPPED
 	AMMPoolStatusReduceOnly                = eventspb.AMM_STATUS_REDUCE_ONLY
+	AMMPoolStatusPending                   = eventspb.AMM_STATUS_PENDING
 )

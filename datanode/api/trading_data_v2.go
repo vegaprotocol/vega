@@ -5728,6 +5728,8 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 		req.FromAccountType,
 		req.FromAmmKey,
 		req.ToAccount,
+		// irrelvant here
+		vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED,
 	)
 
 	return &v2.EstimateTransferFeeResponse{
@@ -6022,6 +6024,7 @@ func (t *TradingDataServiceV2) EstimateAMMBounds(ctx context.Context, req *v2.Es
 		riskFactors.Long,
 		priceFactor,
 		positionFactor,
+		market.AllowedEmptyAMMLevels,
 	)
 
 	// liquidation prices are in asset DP, convert back to market DP

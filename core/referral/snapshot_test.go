@@ -91,19 +91,41 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	// Simulating end of epoch.
 	// The program should be applied.
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(10)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(20)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer3)).Return(num.UintFromUint64(30)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer4)).Return(num.UintFromUint64(40)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(50)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(60)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(70)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee4)).Return(num.UintFromUint64(80)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee5)).Return(num.UintFromUint64(90)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee6)).Return(num.UintFromUint64(100)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(110)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(120)).Times(1)
-	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(130)).Times(1)
+	epochEndVals := map[string]*num.Uint{
+		string(referrer1): num.UintFromUint64(10),
+		string(referrer2): num.UintFromUint64(20),
+		string(referrer3): num.UintFromUint64(30),
+		string(referrer4): num.UintFromUint64(40),
+		string(referee1):  num.UintFromUint64(50),
+		string(referee2):  num.UintFromUint64(60),
+		string(referee3):  num.UintFromUint64(70),
+		string(referee4):  num.UintFromUint64(80),
+		string(referee5):  num.UintFromUint64(90),
+		string(referee6):  num.UintFromUint64(100),
+		string(referee7):  num.UintFromUint64(110),
+		string(referee8):  num.UintFromUint64(120),
+		string(referee9):  num.UintFromUint64(130),
+	}
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(gomock.Any()).DoAndReturn(func(k string) *num.Uint {
+		v, ok := epochEndVals[k]
+		if !ok {
+			return num.UintZero()
+		}
+		return v
+	}).Times(len(epochEndVals) * 3) // once for creation, once for new epoch, once for update
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(10)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(20)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer3)).Return(num.UintFromUint64(30)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer4)).Return(num.UintFromUint64(40)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(50)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(60)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(70)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee4)).Return(num.UintFromUint64(80)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee5)).Return(num.UintFromUint64(90)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee6)).Return(num.UintFromUint64(100)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(110)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(120)).Times(1)
+	// te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(130)).Times(1)
 
 	expectReferralProgramStartedEvent(t, te1)
 	lastEpochStartTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)

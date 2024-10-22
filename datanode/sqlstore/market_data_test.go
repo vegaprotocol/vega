@@ -107,12 +107,26 @@ func shouldWorkForAllValuesOfCompositePriceType(t *testing.T) {
 	}
 }
 
+func TestGetPAPState(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	addMarketData(t, ctx, "AUCTION_TRIGGER_LIQUIDITY", "COMPOSITE_PRICE_TYPE_LAST_TRADE")
+	var got entities.MarketData
+
+	err := connectionSource.QueryRow(ctx, `select active_protocol_automated_purchase from market_data`).Scan(&got.ActiveProtocolAutomatedPurchase)
+	require.NoError(t, err)
+
+	require.Equal(t, "1", got.ActiveProtocolAutomatedPurchase.Id)
+	require.Equal(t, "2", *got.ActiveProtocolAutomatedPurchase.OrderId)
+}
+
 func addMarketData(t *testing.T, ctx context.Context, trigger, priceType string) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 
 	md := sqlstore.NewMarketData(connectionSource)
+	orderID := "2"
 	err := md.Add(&entities.MarketData{
 		Market:            entities.MarketID("deadbeef"),
 		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
@@ -133,6 +147,10 @@ func addMarketData(t *testing.T, ctx context.Context, trigger, priceType string)
 			},
 		},
 		VegaTime: block.VegaTime,
+		ActiveProtocolAutomatedPurchase: &vegapb.ProtocolAutomatedPurchaseData{
+			Id:      "1",
+			OrderId: &orderID,
+		},
 	})
 	require.NoError(t, err)
 
@@ -143,7 +161,7 @@ func addMarketData(t *testing.T, ctx context.Context, trigger, priceType string)
 func shouldWorkForAllValuesOfAuctionTrigger(t *testing.T) {
 	var auctionTrigger vegapb.AuctionTrigger
 	enums := getEnums(t, auctionTrigger)
-	assert.Len(t, enums, 9)
+	require.Len(t, enums, 10)
 
 	for e, trigger := range enums {
 		t.Run(trigger, func(t *testing.T) {

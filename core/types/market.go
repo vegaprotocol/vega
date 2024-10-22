@@ -142,7 +142,9 @@ const (
 	// Special auction mode for market suspended via governance.
 	MarketTradingModeSuspendedViaGovernance MarketTradingMode = vegapb.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
 	// Long block auction.
-	MarketTradingModelLongBlockAuction MarketTradingMode = vegapb.Market_TRADING_MODE_LONG_BLOCK_AUCTION
+	MarketTradingModeLongBlockAuction MarketTradingMode = vegapb.Market_TRADING_MODE_LONG_BLOCK_AUCTION
+	// Automated purchase auction.
+	MarketTradingModeAutomatedPuchaseAuction MarketTradingMode = vegapb.Market_TRADING_MODE_PROTOCOL_AUTOMATED_PURCHASE_AUCTION
 )
 
 type MarketState = vegapb.Market_State
@@ -193,6 +195,8 @@ const (
 	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 	// AuctionTriggerLongBlock for market suspension due to a long block.
 	AuctionTriggerLongBlock AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_LONG_BLOCK
+	// AuctionTriggerAutomatedPurchase for market auction for automated purchase.
+	AuctionTriggerAutomatedPurchase AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_PROTOCOL_AUTOMATED_PURCHASE
 )
 
 type InstrumentMetadata struct {
@@ -935,6 +939,7 @@ type MarketData struct {
 	NextNetClose   int64
 	MarkPriceType  CompositePriceType
 	MarkPriceState *CompositePriceState
+	PAPState       *vega.ProtocolAutomatedPurchaseData
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -966,6 +971,12 @@ func (m MarketData) DeepClone() *MarketData {
 	}
 	cpy.LiquidityProviderSLA = lpsla
 	cpy.MarkPriceState = m.MarkPriceState.DeepClone()
+	if m.PAPState != nil {
+		cpy.PAPState = &vegapb.ProtocolAutomatedPurchaseData{
+			Id:      m.PAPState.Id,
+			OrderId: m.PAPState.OrderId,
+		}
+	}
 	return &cpy
 }
 
@@ -976,40 +987,41 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 	}
 
 	r := &vegapb.MarketData{
-		MarkPrice:                 num.UintToString(m.MarkPrice),
-		LastTradedPrice:           num.UintToString(m.LastTradedPrice),
-		BestBidPrice:              num.UintToString(m.BestBidPrice),
-		BestBidVolume:             m.BestBidVolume,
-		BestOfferPrice:            num.UintToString(m.BestOfferPrice),
-		BestOfferVolume:           m.BestOfferVolume,
-		BestStaticBidPrice:        num.UintToString(m.BestStaticBidPrice),
-		BestStaticBidVolume:       m.BestStaticBidVolume,
-		BestStaticOfferPrice:      num.UintToString(m.BestStaticOfferPrice),
-		BestStaticOfferVolume:     m.BestStaticOfferVolume,
-		MidPrice:                  num.UintToString(m.MidPrice),
-		StaticMidPrice:            num.UintToString(m.StaticMidPrice),
-		Market:                    m.Market,
-		Timestamp:                 m.Timestamp,
-		OpenInterest:              m.OpenInterest,
-		AuctionEnd:                m.AuctionEnd,
-		AuctionStart:              m.AuctionStart,
-		IndicativePrice:           num.UintToString(m.IndicativePrice),
-		IndicativeVolume:          m.IndicativeVolume,
-		MarketTradingMode:         m.MarketTradingMode,
-		MarketState:               m.MarketState,
-		Trigger:                   m.Trigger,
-		ExtensionTrigger:          m.ExtensionTrigger,
-		TargetStake:               m.TargetStake,
-		SuppliedStake:             m.SuppliedStake,
-		PriceMonitoringBounds:     make([]*vegapb.PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds)),
-		MarketValueProxy:          m.MarketValueProxy,
-		LiquidityProviderFeeShare: make([]*vegapb.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
-		LiquidityProviderSla:      make([]*vegapb.LiquidityProviderSLA, 0, len(m.LiquidityProviderSLA)),
-		NextMarkToMarket:          m.NextMTM,
-		MarketGrowth:              m.MarketGrowth.String(),
-		NextNetworkCloseout:       m.NextNetClose,
-		MarkPriceType:             m.MarkPriceType,
-		MarkPriceState:            markPriceState,
+		MarkPrice:                       num.UintToString(m.MarkPrice),
+		LastTradedPrice:                 num.UintToString(m.LastTradedPrice),
+		BestBidPrice:                    num.UintToString(m.BestBidPrice),
+		BestBidVolume:                   m.BestBidVolume,
+		BestOfferPrice:                  num.UintToString(m.BestOfferPrice),
+		BestOfferVolume:                 m.BestOfferVolume,
+		BestStaticBidPrice:              num.UintToString(m.BestStaticBidPrice),
+		BestStaticBidVolume:             m.BestStaticBidVolume,
+		BestStaticOfferPrice:            num.UintToString(m.BestStaticOfferPrice),
+		BestStaticOfferVolume:           m.BestStaticOfferVolume,
+		MidPrice:                        num.UintToString(m.MidPrice),
+		StaticMidPrice:                  num.UintToString(m.StaticMidPrice),
+		Market:                          m.Market,
+		Timestamp:                       m.Timestamp,
+		OpenInterest:                    m.OpenInterest,
+		AuctionEnd:                      m.AuctionEnd,
+		AuctionStart:                    m.AuctionStart,
+		IndicativePrice:                 num.UintToString(m.IndicativePrice),
+		IndicativeVolume:                m.IndicativeVolume,
+		MarketTradingMode:               m.MarketTradingMode,
+		MarketState:                     m.MarketState,
+		Trigger:                         m.Trigger,
+		ExtensionTrigger:                m.ExtensionTrigger,
+		TargetStake:                     m.TargetStake,
+		SuppliedStake:                   m.SuppliedStake,
+		PriceMonitoringBounds:           make([]*vegapb.PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds)),
+		MarketValueProxy:                m.MarketValueProxy,
+		LiquidityProviderFeeShare:       make([]*vegapb.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
+		LiquidityProviderSla:            make([]*vegapb.LiquidityProviderSLA, 0, len(m.LiquidityProviderSLA)),
+		NextMarkToMarket:                m.NextMTM,
+		MarketGrowth:                    m.MarketGrowth.String(),
+		NextNetworkCloseout:             m.NextNetClose,
+		MarkPriceType:                   m.MarkPriceType,
+		MarkPriceState:                  markPriceState,
+		ActiveProtocolAutomatedPurchase: m.PAPState,
 	}
 
 	for _, pmb := range m.PriceMonitoringBounds {
@@ -1101,6 +1113,8 @@ type Market struct {
 	MarkPriceConfiguration *CompositePriceConfiguration
 	TickSize               *num.Uint
 	EnableTxReordering     bool
+	AllowedEmptyAmmLevels  uint64
+	AllowedSellers         []string
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -1168,6 +1182,8 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		MarkPriceConfiguration:        markPriceConfiguration,
 		TickSize:                      tickSize,
 		EnableTxReordering:            mkt.EnableTransactionReordering,
+		AllowedEmptyAmmLevels:         mkt.AllowedEmptyAmmLevels,
+		AllowedSellers:                mkt.AllowedSellers,
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1241,6 +1257,8 @@ func (m Market) IntoProto() *vegapb.Market {
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.IntoProto(),
 		TickSize:                      m.TickSize.String(),
 		EnableTransactionReordering:   m.EnableTxReordering,
+		AllowedEmptyAmmLevels:         m.AllowedEmptyAmmLevels,
+		AllowedSellers:                m.AllowedSellers,
 	}
 	return r
 }
@@ -1295,6 +1313,8 @@ func (m Market) DeepClone() *Market {
 		InsurancePoolFraction:   m.InsurancePoolFraction,
 		TickSize:                m.TickSize.Clone(),
 		EnableTxReordering:      m.EnableTxReordering,
+		AllowedEmptyAmmLevels:   m.AllowedEmptyAmmLevels,
+		AllowedSellers:          append([]string{}, m.AllowedSellers...),
 	}
 
 	if m.LiquiditySLAParams != nil {

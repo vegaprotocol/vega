@@ -30,7 +30,9 @@ type shapeMaker struct {
 	pos       int64     // the AMM's current position
 	fairPrice *num.Uint // the AMM's fair-price
 
-	step    *num.Uint // price step we will be taking as we walk over the curves
+	stepLower  *num.Uint // price step we will be taking as we walk over the lower curve
+	stepHigher *num.Uint // price step we will be taking as we walk over the upper curve
+
 	approx  bool      // whether we are taking approximate steps
 	oneTick *num.Uint // one price level tick which may be bigger than one given the markets price factor
 
@@ -40,6 +42,9 @@ type shapeMaker struct {
 
 	from *num.Uint // the adjusted start region i.e the input region capped to the AMM's bounds
 	to   *num.Uint // the adjusted end region
+
+	fromLower bool // whether the price at "from" evaluates on the lower or upper curve of the AMM
+	toLower   bool // whether the price at "to" evaluates on the lower or upper curve of the AMM
 }
 
 func newShapeMaker(log *logging.Logger, p *Pool, from, to *num.Uint, idgen *idgeneration.IDGenerator) *shapeMaker {
@@ -50,13 +55,13 @@ func newShapeMaker(log *logging.Logger, p *Pool, from, to *num.Uint, idgen *idge
 		log:       log,
 		pool:      p,
 		pos:       p.getPosition(),
-		fairPrice: p.fairPrice(),
+		fairPrice: p.FairPrice(),
 		buys:      buys,
 		sells:     sells,
 		from:      from.Clone(),
 		to:        to.Clone(),
 		side:      types.SideBuy,
-		oneTick:   p.oneTick.Clone(),
+		oneTick:   p.oneTick,
 		idgen:     idgen,
 	}
 }
@@ -86,11 +91,29 @@ func (sm *shapeMaker) appendOrder(o *types.Order) {
 
 // makeBoundaryOrder creates an accurrate order for the given one-tick interval which will exist at the edges
 // of the adjusted expansion region.
-func (sm *shapeMaker) makeBoundaryOrder(st, nd *num.Uint) *types.Order {
+func (sm *shapeMaker) makeBoundaryOrder(price *num.Uint, start bool) *types.Order {
 	// lets do the starting boundary order
-	cu := sm.pool.lower
-	if st.GTE(sm.pool.lower.high) {
-		cu = sm.pool.upper
+	cu := sm.pool.upper
+	if start && sm.fromLower {
+		cu = sm.pool.lower
+	}
+
+	if !start && sm.toLower {
+		cu = sm.pool.lower
+	}
+
+	var st, nd *num.Uint
+	if start {
+		// step inwards
+		step := num.Max(sm.oneTick, cu.singleVolumeDelta(sm.pool.sqrt, price, types.SideSell))
+
+		sm.from.Add(price, step)
+		st, nd = price, sm.from
+	} else {
+		step := num.Max(sm.oneTick, cu.singleVolumeDelta(sm.pool.sqrt, price, types.SideBuy))
+
+		sm.to.Sub(price, step)
+		st, nd = sm.to, price
 	}
 
 	// if one of the boundaries it equal to the fair-price then the equivalent position
@@ -105,15 +128,13 @@ func (sm *shapeMaker) makeBoundaryOrder(st, nd *num.Uint) *types.Order {
 		ndPosition = cu.positionAtPrice(sm.pool.sqrt, nd)
 	}
 
-	volume := num.DeltaV(
-		stPosition,
-		ndPosition,
-	)
+	// for sparse AMM's there may be some precision loss in going from price -> position
+	// we by construction is should be at least one, we so make sure it is.
+	volume := num.MaxV(1, num.DeltaV(stPosition, ndPosition))
 
 	if st.GTE(sm.fairPrice) {
 		return sm.pool.makeOrder(uint64(volume), nd, types.SideSell, sm.idgen)
 	}
-
 	return sm.pool.makeOrder(uint64(volume), st, types.SideBuy, sm.idgen)
 }
 
@@ -131,17 +152,7 @@ func (sm *shapeMaker) calculateBoundaryOrders() (*types.Order, *types.Order) {
 	// - the expansion region is too large and we have to limit calculations and approximate orders
 	// - the expansion region isn't divisible by `oneTick` and so we have to merge a sub-tick step in with the previous
 
-	st := sm.from.Clone()
-	nd := sm.to.Clone()
-
-	sm.from.Add(st, sm.oneTick)
-	sm.to.Sub(nd, sm.oneTick)
-
-	if sm.from.GTE(sm.fairPrice) {
-		sm.side = types.SideSell
-	}
-
-	bnd1 := sm.makeBoundaryOrder(st, sm.from)
+	bnd1 := sm.makeBoundaryOrder(sm.from.Clone(), true)
 
 	if sm.log.IsDebug() {
 		sm.log.Debug("created boundary order",
@@ -152,7 +163,7 @@ func (sm *shapeMaker) calculateBoundaryOrders() (*types.Order, *types.Order) {
 		)
 	}
 
-	bnd2 := sm.makeBoundaryOrder(sm.to, nd)
+	bnd2 := sm.makeBoundaryOrder(sm.to.Clone(), false)
 
 	if sm.log.IsDebug() {
 		sm.log.Debug("created boundary order",
@@ -163,29 +174,67 @@ func (sm *shapeMaker) calculateBoundaryOrders() (*types.Order, *types.Order) {
 		)
 	}
 
+	if sm.from.GTE(sm.fairPrice) {
+		sm.side = types.SideSell
+	}
+
 	return bnd1, bnd2
+}
+
+func (sm *shapeMaker) calculateVolumeTick() *num.Uint {
+	lowerTick := num.UintZero()
+	upperTick := num.UintZero()
+
+	pool := sm.pool
+	if !pool.lower.empty {
+		lowerTick = pool.lower.singleVolumeDelta(pool.sqrt, pool.lower.high, types.SideBuy)
+		sm.stepLower = num.Max(sm.oneTick, lowerTick)
+	}
+
+	if !pool.upper.empty {
+		upperTick = pool.upper.singleVolumeDelta(pool.sqrt, pool.upper.high, types.SideBuy)
+		sm.stepHigher = num.Max(sm.oneTick, upperTick)
+	}
+
+	volumeTick := num.Max(lowerTick, upperTick)
+	if volumeTick.GT(sm.oneTick) {
+		return volumeTick
+	}
+
+	return sm.oneTick.Clone()
 }
 
 // calculateStepSize looks at the size of the expansion region and increases the step size if it is too large.
 func (sm *shapeMaker) calculateStepSize() {
+	// first we check if it is a sparse AMM, since if it is our accurate step size will be bigger than one tick
+	// work out the minimum price delta to cover one volume, and if thats bigger than oneTick
+	// set oneTick to that. This is for sparse AMM's where there might be less than one volume
+	// between price levels
+
+	volumeTick := sm.calculateVolumeTick()
 	delta, _ := num.UintZero().Delta(sm.from, sm.to)
-	delta.Div(delta, sm.oneTick)
-	sm.step = sm.oneTick.Clone()
+
+	delta1 := num.UintOne().Div(delta, sm.oneTick)
+	deltav := num.UintOne().Div(delta, volumeTick)
 
 	// if taking steps of one-tick doesn't breach the max-calculation levels then we can happily expand accurately
-	if delta.LTE(sm.pool.maxCalculationLevels) {
+	if deltav.LTE(sm.pool.maxCalculationLevels) {
 		return
 	}
 
 	// if the expansion region is too wide, we need to approximate with bigger steps
-	sm.step.Div(delta, sm.pool.maxCalculationLevels)
-	sm.step.AddSum(num.UintOne()) // if delta / maxcals = 1.9 we're going to want steps of 2
-	sm.step.Mul(sm.step, sm.oneTick)
+
+	step := num.UintZero().Div(delta1, sm.pool.maxCalculationLevels)
+	step.AddSum(num.UintOne()) // if delta / maxcals = 1.9 we're going to want steps of 2
+	step.Mul(step, sm.oneTick)
+
 	sm.approx = true
+	sm.stepLower = step
+	sm.stepHigher = step.Clone()
 
 	if sm.log.IsDebug() {
 		sm.log.Debug("approximating orderbook expansion",
-			logging.String("step", sm.step.String()),
+			logging.String("step", step.String()),
 			logging.String("pool-party", sm.pool.AMMParty),
 		)
 	}
@@ -226,15 +275,19 @@ func (sm *shapeMaker) expandCurve(cu *curve, from, to *num.Uint) {
 	from = num.Max(from, cu.low)
 	to = num.Min(to, cu.high)
 
+	step := sm.stepHigher
+	if cu.isLower {
+		step = sm.stepLower
+	}
+
 	// the price we have currently stepped to and the position of the AMM at that price
 	current := from
 	position := cu.positionAtPrice(sm.pool.sqrt, current)
-
 	fairPrice := sm.fairPrice
 
 	for current.LT(to) && current.LT(cu.high) {
 		// take the next step
-		next := num.UintZero().AddSum(current, sm.step)
+		next := num.UintZero().AddSum(current, step)
 
 		if sm.log.IsDebug() {
 			sm.log.Debug("step taken",
@@ -342,18 +395,49 @@ func (sm *shapeMaker) adjustRegion() bool {
 		return false
 	}
 
+	// work out which curve from/to will lie in
+	base := sm.pool.lower.high
+
+	sm.fromLower = from.LT(base)
+
+	if from.EQ(base) {
+		// if we're equal to base and equal to fair-price then we want the upper curve because
+		// we're matching forward so will want volume from base -> base +1
+		sm.fromLower = sm.from.GT(sm.fairPrice)
+	}
+	sm.toLower = to.LT(base)
+	if to.EQ(base) {
+		// if we're equal to base and equal to fair-price then we want the lower curve because
+		// we're matching forward so will want to end at base - 1 -> base
+		sm.toLower = sm.to.GTE(sm.fairPrice)
+	}
+
 	switch {
 	case sm.from.GT(sm.fairPrice):
 		// if we are expanding entirely in the sell range to calculate the order at price `from`
 		// we need to ask the AMM for volume in the range `from - 1 -> from` so we simply
 		// sub one here to cover than.
 		sm.side = types.SideSell
-		from.Sub(from, sm.oneTick)
+
+		cu := sm.pool.upper
+		if sm.fromLower {
+			cu = sm.pool.lower
+		}
+
+		step := num.Max(sm.oneTick, cu.singleVolumeDelta(sm.pool.sqrt, from, types.SideBuy))
+		from.Sub(from, step)
 	case to.LT(sm.fairPrice):
 		// if we are expanding entirely in the buy range to calculate the order at price `to`
 		// we need to ask the AMM for volume in the range `to -> to + 1` so we simply
 		// add one here to cover than.
-		to.Add(to, sm.oneTick)
+
+		cu := sm.pool.upper
+		if sm.toLower {
+			cu = sm.pool.lower
+		}
+
+		step := num.Max(sm.oneTick, cu.singleVolumeDelta(sm.pool.sqrt, to, types.SideSell))
+		to.Add(to, step)
 	case from.EQ(sm.fairPrice):
 		// if we are starting the expansion at the fair-price all orders will be sells
 		sm.side = types.SideSell
@@ -365,10 +449,10 @@ func (sm *shapeMaker) adjustRegion() bool {
 	return true
 }
 
-func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
+func (sm *shapeMaker) makeShape() {
 	if !sm.adjustRegion() {
 		// if there is no overlap between the input region and the AMM's bounds then there are no orders
-		return sm.buys, sm.sells
+		return
 	}
 
 	// create accurate orders at the boundary of the adjusted region (even if we are going to make approximate internal steps)
@@ -397,15 +481,26 @@ func (sm *shapeMaker) makeShape() ([]*types.Order, []*types.Order) {
 			logging.Int("sells", len(sm.sells)),
 		)
 	}
-	return sm.buys, sm.sells
 }
 
-func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) ([]*types.Order, []*types.Order) {
-	return newShapeMaker(
+func (p *Pool) OrderbookShape(from, to *num.Uint, idgen *idgeneration.IDGenerator) *types.OrderbookShapeResult {
+	if p.IsPending() {
+		return &types.OrderbookShapeResult{AmmParty: p.AMMParty}
+	}
+
+	sm := newShapeMaker(
 		p.log,
 		p,
 		from,
 		to,
-		idgen).
-		makeShape()
+		idgen)
+
+	sm.makeShape()
+
+	return &types.OrderbookShapeResult{
+		AmmParty: sm.pool.AMMParty,
+		Buys:     sm.buys,
+		Sells:    sm.sells,
+		Approx:   sm.approx,
+	}
 }

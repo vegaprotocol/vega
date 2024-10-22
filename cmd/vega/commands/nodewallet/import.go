@@ -16,6 +16,7 @@
 package nodewallet
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -135,6 +136,12 @@ func (opts *importCmd) Execute(_ []string) error {
 			if err != nil {
 				return fmt.Errorf("couldn't retrieve tendermint public key: %w", err)
 			}
+		}
+
+		// validate the key is base64
+		_, err := base64.StdEncoding.DecodeString(tendermintPubkey)
+		if err != nil {
+			return fmt.Errorf("tendermint pubkey must be base64 encoded: %w", err)
 		}
 
 		data, err = nodewallets.ImportTendermintPubkey(vegaPaths, registryPass, tendermintPubkey, opts.Force)

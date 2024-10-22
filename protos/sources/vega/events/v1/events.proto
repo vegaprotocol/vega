@@ -52,6 +52,8 @@ message AMM {
   string proposed_fee = 9;
   optional Curve lower_curve = 10;
   optional Curve upper_curve = 11;
+  // An AMM with an oracle driven base price will only be updated if abs(new-base-price / old-base-price - 1) >= minimum_price_change_trigger.
+  string minimum_price_change_trigger = 12;
 
   enum Status {
     STATUS_UNSPECIFIED = 0;
@@ -65,6 +67,8 @@ message AMM {
     STATUS_STOPPED = 4;
     // AMM will only trade such that it will reduce its position.
     STATUS_REDUCE_ONLY = 5;
+    // AMM is waiting for a base price from its configured data source.
+    STATUS_PENDING = 6;
   }
 
   enum StatusReason {
@@ -97,6 +101,8 @@ message AMM {
     optional string leverage_at_upper_bound = 4;
     // Leverage at lower bounds.
     optional string leverage_at_lower_bound = 5;
+    // Data source that is used to re-price the AMM's base.
+    optional string data_source_id = 6;
   }
 
   message Curve {
@@ -749,6 +755,17 @@ message LossSocialization {
   string party_id = 2;
   // Amount distributed
   string amount = 3;
+  // Type of transfer that resulted in loss socialization.
+  Type loss_type = 4;
+
+  enum Type {
+    // Default value.
+    TYPE_UNSPECIFIED = 0;
+    // Loss socialisation occurred during a settlement transfer (mark to market or final settlement).
+    TYPE_SETTLEMENT = 1;
+    // Loss socialisation occurred during a funding payment.
+    TYPE_FUNDING_PAYMENT = 2;
+  }
 }
 
 // Trade settlement is part of the settle position event
@@ -1535,6 +1552,9 @@ enum BusEventType {
   // Event indicating the updated statistics for the volume rebate.
   BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED = 95;
 
+  // Event indicating an automated purchase auction has been scheduled.
+  BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED = 96;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1734,6 +1754,8 @@ message BusEvent {
     VolumeRebateProgramEnded volume_rebate_program_ended = 192;
     // Event notifying of an update to the volume rebate statistics.
     VolumeRebateStatsUpdated volume_rebate_stats_updated = 193;
+    // Event notifying an upcoming automated purchase of a token with the sold amount.
+    AutomatedPurchaseAnnounced automated_purchase_announced = 194;
     // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
@@ -1792,4 +1814,18 @@ message VolumeRebateProgramEnded {
   int64 ended_at = 3;
   // Epoch at which the referral program ended.
   uint64 at_epoch = 4;
+}
+
+// Event indicating the schedule of an automated purchase auction
+message AutomatedPurchaseAnnounced {
+  // Token being exchanged.
+  string from = 1;
+  // The source account type.
+  vega.AccountType from_account_type = 2;
+  // The target account type.
+  vega.AccountType to_account_type = 3;
+  // The identifier of the spot market where the auction is being scheduled.
+  string market_id = 4;
+  // Amount being exchanged.
+  string amount = 5;
 }

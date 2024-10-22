@@ -142,8 +142,9 @@ type Engine struct {
 	// a mapping of all amm-party-ids to the party owning them.
 	ammParties map[string]string
 
-	minCommitmentQuantum *num.Uint
-	maxCalculationLevels *num.Uint
+	minCommitmentQuantum  *num.Uint
+	maxCalculationLevels  *num.Uint
+	allowedEmptyAMMLevels uint64
 }
 
 func New(
@@ -157,6 +158,7 @@ func New(
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
 	parties common.Parties,
+	allowedEmptyAMMLevels uint64,
 ) *Engine {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 	return &Engine{
@@ -176,6 +178,7 @@ func New(
 		positionFactor:        positionFactor,
 		parties:               parties,
 		oneTick:               num.Max(num.UintOne(), oneTick),
+		allowedEmptyAMMLevels: allowedEmptyAMMLevels,
 	}
 }
 
@@ -191,8 +194,9 @@ func NewFromProto(
 	positionFactor num.Decimal,
 	marketActivityTracker *common.MarketActivityTracker,
 	parties common.Parties,
+	allowedEmptyAMMLevels uint64,
 ) (*Engine, error) {
-	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker, parties)
+	e := New(log, broker, collateral, marketID, assetID, position, priceFactor, positionFactor, marketActivityTracker, parties, allowedEmptyAMMLevels)
 
 	for _, v := range state.AmmPartyIds {
 		e.ammParties[v.Key] = v.Value
@@ -242,6 +246,10 @@ func (e *Engine) OnMaxCalculationLevelsUpdate(ctx context.Context, c *num.Uint) 
 	for _, p := range e.poolsCpy {
 		p.maxCalculationLevels = e.maxCalculationLevels.Clone()
 	}
+}
+
+func (e *Engine) UpdateAllowedEmptyLevels(allowedEmptyLevels uint64) {
+	e.allowedEmptyAMMLevels = allowedEmptyLevels
 }
 
 // OnMTM is called whenever core does an MTM and is a signal that any pool's that are closing and have 0 position can be fully removed.
@@ -310,13 +318,8 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 	var bestBidVolume, bestAskVolume uint64
 
 	for _, pool := range e.poolsCpy {
-		// get the pool's current price
-		fp := pool.BestPrice(nil)
-
-		// get the volume on the buy side by simulating an incoming sell order
-		bid := num.Max(pool.lower.low, num.UintZero().Sub(fp, pool.oneTick))
-		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
-
+		var volume uint64
+		bid, volume := pool.BestPriceAndVolume(types.SideBuy)
 		if volume != 0 {
 			if bestBid == nil || bid.GT(bestBid) {
 				bestBid = bid
@@ -326,9 +329,7 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 			}
 		}
 
-		// get the volume on the sell side by simulating an incoming buy order
-		ask := num.Min(pool.upper.high, num.UintZero().Add(fp, pool.oneTick))
-		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
+		ask, volume := pool.BestPriceAndVolume(types.SideSell)
 		if volume != 0 {
 			if bestAsk == nil || ask.LT(bestAsk) {
 				bestAsk = ask
@@ -347,7 +348,10 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	vol := uint64(0)
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		best := pool.BestPrice(&types.Order{Price: price, Side: side})
+		best, ok := pool.BestPrice(types.OtherSide(side))
+		if !ok {
+			continue
+		}
 
 		// make sure price is in tradable range
 		if side == types.SideBuy && best.GT(price) {
@@ -377,10 +381,14 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	for _, p := range active {
 		p.setEphemeralPosition()
 
-		price := p.BestPrice(agg)
+		price, ok := p.BestPrice(types.OtherSide(agg.Side))
+		if !ok {
+			continue
+		}
+
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("best price for pool",
-				logging.String("id", p.ID),
+				logging.String("amm-party", p.AMMParty),
 				logging.String("best-price", price.String()),
 			)
 		}
@@ -401,19 +409,15 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 		useActive = append(useActive, p)
 	}
 
-	if agg.Side == types.SideSell {
-		inner, outer = outer, inner
-	}
-
 	// calculate the volume each pool has
 	var total uint64
 	volumes := []uint64{}
 	for _, p := range useActive {
-		volume := p.TradableVolumeInRange(agg.Side, inner, outer)
+		volume := p.TradableVolumeForPrice(agg.Side, outer)
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("volume available to trade",
 				logging.Uint64("volume", volume),
-				logging.String("id", p.ID),
+				logging.String("amm-party", p.AMMParty),
 			)
 		}
 
@@ -564,8 +568,22 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 		// pool is active in range add it to the slice
 		active = append(active, p)
 
+		// we hit a discontinuity where an AMM's two curves meet if we try to trade over its base-price
+		// so we partition the inner/outer price range at the base price so that we instead trade across it
+		// in two steps.
+		boundary := p.upper.low
+		if inner != nil && outer != nil {
+			if boundary.LT(outer) && boundary.GT(inner) {
+				bounds[boundary.String()] = boundary.Clone()
+			}
+		} else if outer == nil && boundary.GT(inner) {
+			bounds[boundary.String()] = boundary.Clone()
+		} else if inner == nil && boundary.LT(outer) {
+			bounds[boundary.String()] = boundary.Clone()
+		}
+
 		// if a pool's upper or lower boundary exists within (inner, outer) then we consider that a sub-level
-		boundary := p.upper.high
+		boundary = p.upper.high
 		if outer == nil || boundary.LT(outer) {
 			bounds[boundary.String()] = boundary.Clone()
 		}
@@ -676,6 +694,9 @@ func (e *Engine) Create(
 		e.priceFactor,
 		e.positionFactor,
 		e.maxCalculationLevels,
+		e.allowedEmptyAMMLevels,
+		submit.SlippageTolerance,
+		submit.MinimumPriceChangeTrigger,
 	)
 	if err != nil {
 		return nil, err
@@ -708,7 +729,6 @@ func (e *Engine) Confirm(
 		logging.String("poolID", pool.ID),
 	)
 
-	pool.status = types.AMMPoolStatusActive
 	pool.maxCalculationLevels = e.maxCalculationLevels
 
 	e.add(pool)
@@ -736,7 +756,7 @@ func (e *Engine) Amend(
 		}
 	}
 
-	updated, err := pool.Update(amend, riskFactors, scalingFactors, slippage)
+	updated, err := pool.Update(amend, riskFactors, scalingFactors, slippage, e.allowedEmptyAMMLevels)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -751,6 +771,23 @@ func (e *Engine) Amend(
 		logging.String("poolID", pool.ID),
 	)
 	return updated, pool, nil
+}
+
+// GetDataSourcedAMMs returns any AMM's whose base price is determined by the given data source ID.
+func (e *Engine) GetDataSourcedAMMs(dataSourceID string) []*Pool {
+	pools := []*Pool{}
+	for _, p := range e.poolsCpy {
+		if p.Parameters.DataSourceID == nil {
+			continue
+		}
+
+		if *p.Parameters.DataSourceID != dataSourceID {
+			continue
+		}
+
+		pools = append(pools, p)
+	}
+	return pools
 }
 
 func (e *Engine) CancelAMM(
@@ -830,6 +867,7 @@ func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 				VirtualLiquidity:    pool.upper.l,
 				TheoreticalPosition: pool.upper.pv,
 			},
+			pool.MinimumPriceChangeTrigger,
 		),
 	)
 }
@@ -951,32 +989,30 @@ func (e *Engine) UpdateSubAccountBalance(
 
 // OrderbookShape expands all registered AMM's into orders between the given prices. If `ammParty` is supplied then just the pool
 // with that party id is expanded.
-func (e *Engine) OrderbookShape(st, nd *num.Uint, ammParty *string) ([]*types.Order, []*types.Order) {
+func (e *Engine) OrderbookShape(st, nd *num.Uint, ammParty *string) []*types.OrderbookShapeResult {
 	if ammParty == nil {
 		// no party give, expand all registered
-		buys, sells := []*types.Order{}, []*types.Order{}
+		res := make([]*types.OrderbookShapeResult, 0, len(e.poolsCpy))
 		for _, p := range e.poolsCpy {
-			b, s := p.OrderbookShape(st, nd, e.idgen)
-			buys = append(buys, b...)
-			sells = append(sells, s...)
+			res = append(res, p.OrderbookShape(st, nd, e.idgen))
 		}
-		return buys, sells
+		return res
 	}
 
 	// asked to expand just one AMM, lets find it, first amm-party -> owning party
 	owner, ok := e.ammParties[*ammParty]
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	// now owning party -> pool
 	p, ok := e.pools[owner]
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	// expand it
-	return p.OrderbookShape(st, nd, e.idgen)
+	return []*types.OrderbookShapeResult{p.OrderbookShape(st, nd, e.idgen)}
 }
 
 func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {

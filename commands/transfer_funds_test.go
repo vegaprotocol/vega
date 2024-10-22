@@ -47,6 +47,11 @@ func TestTransferFunds(t *testing.T) {
 	zeroTransferInterval := int32(0)
 	negativeTransferInterval := int32(-1)
 
+	notionalVolumeInvalidNumber := "banana"
+	notionalVolumeNegative := "-1"
+	notionalVolumeZero := "0"
+	notionalVolumeValid := "100"
+
 	cases := []struct {
 		transfer  commandspb.Transfer
 		errString string
@@ -1444,6 +1449,114 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
+							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+							WindowLength:         100,
+							TransferInterval:     &tooLongTransferInterval,
+							TargetNotionalVolume: &notionalVolumeInvalidNumber,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.target_notional_volume (is not a valid number)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
+							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+							WindowLength:         100,
+							TransferInterval:     &tooLongTransferInterval,
+							TargetNotionalVolume: &notionalVolumeNegative,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.target_notional_volume (must be positive)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_NOTIONAL,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_NOTIONAL,
+							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+							WindowLength:         100,
+							TransferInterval:     &tooLongTransferInterval,
+							TargetNotionalVolume: &notionalVolumeZero,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.target_notional_volume (must be positive)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+							WindowLength:         100,
+							TransferInterval:     &tooLongTransferInterval,
+							TargetNotionalVolume: &notionalVolumeValid,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.target_notional_volume (not allowed for metric DISPATCH_METRIC_MARKET_VALUE)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_ELIGIBLE_ENTITIES,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
@@ -1453,8 +1566,11 @@ func TestTransferFunds(t *testing.T) {
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric:       "",
 							Metric:               vega.DispatchMetric_DISPATCH_METRIC_ELIGIBLE_ENTITIES,
+							EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+							WindowLength:         100,
+							TransferInterval:     &tooLongTransferInterval,
 							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
-							EntityScope:          vega.EntityScope_ENTITY_SCOPE_TEAMS,
 							// no asset for metric, no markets in scope, no position requirement, no staking requirement
 						},
 					},

@@ -2720,6 +2720,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsVolumeRebateProgramUpdate():
 			prop.State = types.ProposalStateEnacted
 			app.volumeRebateProgram.UpdateProgram(toEnact.VolumeRebateProgramUpdate())
+		case toEnact.IsAutomatedPurchase():
+			app.enactNewAutomatePurahce(ctx, prop)
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -2841,6 +2843,15 @@ func (app *App) enactNewTransfer(ctx context.Context, prop *types.Proposal) {
 	}
 
 	_ = app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
+}
+
+func (app *App) enactNewAutomatePurahce(ctx context.Context, prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
+	proposal := prop.Terms.GetAutomatedPurchase().Changes
+	if err := app.exec.NewProtocolAutomatedPurchase(ctx, prop.ID, proposal); err != nil {
+		app.log.Error("failed to enact governance automated purchase", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
+	}
 }
 
 func (app *App) enactCancelTransfer(ctx context.Context, prop *types.Proposal) {

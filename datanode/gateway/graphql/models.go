@@ -556,6 +556,37 @@ type MarketTick struct {
 	Time string `json:"time"`
 }
 
+type NewProtocolAutomatedPurchase struct {
+	// The source token that will be swapped
+	From string `json:"from"`
+	// The account type for the network from which the tokens will be sourced
+	FromAccountType vega.AccountType `json:"fromAccountType"`
+	// The account type for the network to which the purchased tokens will be sent
+	ToAccountType vega.AccountType `json:"toAccountType"`
+	// The market that will be used to enact the purchase/sale
+	MarketID *string `json:"marketId,omitempty"`
+	// The oracle that will define an approximate acceptable price for the transaction
+	PriceOracle *vega.DataSourceDefinition `json:"priceOracle"`
+	// The final acceptable price is the price oracle value weighted by this factor (e.g. 1.05 to allow for 5% slippage on the purchase)
+	OracleOffsetFactor string `json:"oracleOffsetFactor"`
+	// A time based oracle for when auctions will occur
+	AuctionSchedule *vega.DataSourceDefinition `json:"auctionSchedule,omitempty"`
+	// The duration of the auction
+	AuctionDuration string `json:"auctionDuration"`
+	// A time based oracle for when an observation will be taken of the balance of the source account. This will emit an event notifying of the balance planned to exchange, along with storing this value. When an auction occurs, the latest reading for this value will be used for the volume to trade, rather than the full balance of the account
+	AuctionVolumeSnapshotSchedule *vega.DataSourceDefinition `json:"auctionVolumeSnapshotSchedule"`
+	// Minimum number of tokens to be sold (specified in asset decimals). If less than this is available in the account at the last snapshot before auction, no auction will occur and the balance will roll over to the next scheduled auction
+	MinimumAuctionSize string `json:"minimumAuctionSize"`
+	// Maximum number of tokens to be sold (specified in asset decimals). If more than this is available in the account at the last snapshot before auction, this maximum value will be used instead, and the remainder will be rolled over to the next scheduled auction
+	MaximumAuctionSize string `json:"maximumAuctionSize"`
+	// The expiry timestamp in seconds of the automated purchase. 0 if no expiry configured
+	ExpiryTimestamp int `json:"expiryTimestamp"`
+	// For how long the price from the price oracle is considered usable, in seconds
+	OraclePriceStalenessTolerance string `json:"oraclePriceStalenessTolerance"`
+}
+
+func (NewProtocolAutomatedPurchase) IsProposalChange() {}
+
 // Details on the collection of nodes for particular validator status
 type NodeSet struct {
 	// Total number of nodes in the node set
@@ -748,6 +779,13 @@ type ProposalVotes struct {
 	Yes *ProposalVoteSide `json:"yes"`
 	// No votes cast for this proposal
 	No *ProposalVoteSide `json:"no"`
+}
+
+type ProtocolAutomatedPurchaseState struct {
+	// The ID of the active protocol automated purchase
+	ID string `json:"id"`
+	// The order ID of the active order placed on behalf of the active protocol automated purchase
+	OrderID *string `json:"orderId,omitempty"`
 }
 
 // Indicator showing whether the data-node is ready for the protocol upgrade to begin.

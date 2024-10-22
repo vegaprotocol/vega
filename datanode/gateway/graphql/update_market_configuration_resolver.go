@@ -20,6 +20,7 @@ import (
 	"errors"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -148,4 +149,12 @@ func (r *updateMarketConfigurationResolver) RiskParameters(ctx context.Context,
 	}
 
 	return params, nil
+}
+
+func (r *updateMarketConfigurationResolver) AllowedEmptyAMMLevels(ctx context.Context, obj *vega.UpdateMarketConfiguration) (*int, error) {
+	v := obj.AllowedEmptyAmmLevels
+	if v == nil {
+		return nil, nil
+	}
+	return ptr.From(int(*obj.AllowedEmptyAmmLevels)), nil
 }
