@@ -1020,12 +1020,14 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 			}
 		}
 
-		bestPrice := fairPrice.AddSum(p.oneTick)
+		bestPrice := num.UintZero().Add(fairPrice, p.oneTick)
 		if !p.spread.IsZero() {
 			// calculate the spread from the fair price
 
 			fairPriceD := fairPrice.ToDecimal()
 			spreadPrice := fairPriceD.Add(p.spread.Mul(fairPrice.ToDecimal()))
+
+			fmt.Println("sell spread price", p.spread.Mul(fairPrice.ToDecimal()), spreadPrice)
 
 			spreadPriceU, _ := num.UintFromDecimal(spreadPrice)
 			bestPrice = num.Max(bestPrice, spreadPriceU)
@@ -1050,7 +1052,7 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 
 			fairPriceD := fairPrice.ToDecimal()
 			spreadPrice := fairPriceD.Sub(p.spread.Mul(fairPrice.ToDecimal()))
-
+			fmt.Println("buy spread price", p.spread.Mul(fairPrice.ToDecimal()), spreadPrice)
 			spreadPriceU, _ := num.UintFromDecimal(spreadPrice)
 			bestPrice = num.Min(bestPrice, spreadPriceU)
 
@@ -1082,10 +1084,11 @@ func (p *Pool) BestPriceAndVolume(side types.Side) (*num.Uint, uint64) {
 	if side == types.SideBuy {
 		priceTick := num.Max(p.lower.low, num.UintZero().Sub(fp, p.oneTick))
 
-		if !price.GTE(priceTick) {
+		if false && !price.GTE(priceTick) {
 			p.cache.setBestPrice(pos, side, p.status, price, 1)
 			return price, 1 // its low volume so 1 by construction
 		}
+		priceTick = price
 
 		volume := p.TradableVolumeForPrice(types.SideSell, priceTick)
 		p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
@@ -1093,10 +1096,11 @@ func (p *Pool) BestPriceAndVolume(side types.Side) (*num.Uint, uint64) {
 	}
 
 	priceTick := num.Min(p.upper.high, num.UintZero().Add(fp, p.oneTick))
-	if !price.LTE(priceTick) {
+	if false && !price.LTE(priceTick) {
 		p.cache.setBestPrice(pos, side, p.status, price, 1)
 		return price, 1 // its low volume so 1 by construction
 	}
+	priceTick = price
 
 	volume := p.TradableVolumeForPrice(types.SideBuy, priceTick)
 	p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
