@@ -1033,15 +1033,10 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 		bestPrice := num.UintZero().Add(fairPrice, p.oneTick)
 		if !p.spread.IsZero() {
 			// calculate the spread from the fair price
-
-			fairPriceD := fairPrice.ToDecimal()
-			spreadPrice := fairPriceD.Add(p.spread.Mul(fairPrice.ToDecimal()))
-
-			fmt.Println("sell spread price", p.spread.Mul(fairPrice.ToDecimal()), spreadPrice)
-
-			spreadPriceU, _ := num.UintFromDecimal(spreadPrice)
-			bestPrice = num.Max(bestPrice, spreadPriceU)
-
+			spreadPrice := p.spread.Add(num.DecimalOne()).Mul(fairPrice.ToDecimal())
+			if spreadPrice.GreaterThan(bestPrice.ToDecimal()) {
+				bestPrice, _ = num.UintFromDecimal(spreadPrice.Ceil())
+			}
 		}
 
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
@@ -1058,17 +1053,10 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 
 		bestPrice := num.UintZero().Sub(fairPrice, p.oneTick)
 		if !p.spread.IsZero() {
-			// calculate the spread from the fair price
-
-			fairPriceD := fairPrice.ToDecimal()
-
-			// fp - fp * s => fp (1 - s)
-			// fp + fp * s => fp (1 + s)
-			spreadPrice := fairPriceD.Sub(p.spread.Mul(fairPrice.ToDecimal()))
-			fmt.Println("buy spread price", p.spread.Mul(fairPrice.ToDecimal()), spreadPrice)
-			spreadPriceU, _ := num.UintFromDecimal(spreadPrice)
-			bestPrice = num.Min(bestPrice, spreadPriceU)
-
+			spreadPrice := p.spread.Sub(num.DecimalOne()).Mul(fairPrice.ToDecimal())
+			if spreadPrice.LessThan(bestPrice.ToDecimal()) {
+				bestPrice, _ = num.UintFromDecimal(spreadPrice)
+			}
 		}
 
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
