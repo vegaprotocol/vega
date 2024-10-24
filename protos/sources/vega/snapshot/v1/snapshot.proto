@@ -600,6 +600,7 @@ message PoolMapEntry {
     string proposed_fee = 10;
     string slippage_tolerance = 11;
     string minimum_price_change_trigger = 12;
+    string spread = 13;
   }
 
   string party = 1;

@@ -299,6 +299,14 @@ func NewPoolFromProto(
 		}
 	}
 
+	spread := num.DecimalZero()
+	if state.Spread != "" {
+		spread, err = num.DecimalFromString(state.Spread)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Pool{
 		log:         log,
 		ID:          state.Id,
@@ -328,6 +336,7 @@ func NewPoolFromProto(
 		cache:                     NewPoolCache(),
 		SlippageTolerance:         slippageTolerance,
 		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
+		spread:                    spread,
 	}, nil
 }
 
@@ -395,6 +404,7 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 		Status:                    p.status,
 		SlippageTolerance:         p.SlippageTolerance.String(),
 		MinimumPriceChangeTrigger: p.MinimumPriceChangeTrigger.String(),
+		Spread:                    p.spread.String(),
 	}
 }
 
@@ -1051,6 +1061,9 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 			// calculate the spread from the fair price
 
 			fairPriceD := fairPrice.ToDecimal()
+
+			// fp - fp * s => fp (1 - s)
+			// fp + fp * s => fp (1 + s)
 			spreadPrice := fairPriceD.Sub(p.spread.Mul(fairPrice.ToDecimal()))
 			fmt.Println("buy spread price", p.spread.Mul(fairPrice.ToDecimal()), spreadPrice)
 			spreadPriceU, _ := num.UintFromDecimal(spreadPrice)
