@@ -36,6 +36,10 @@ func checkCancelAMM(cmd *commandspb.CancelAMM) Errors {
 		errs.AddForProperty("cancel_amm.market_id", ErrShouldBeAValidVegaID)
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("cancel_amm.vault_id", ErrInvalidVaultID)
+	}
+
 	if cmd.Method == commandspb.CancelAMM_METHOD_UNSPECIFIED {
 		errs.AddForProperty("cancel_amm.method", ErrIsRequired)
 	}

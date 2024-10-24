@@ -130,6 +130,9 @@ type Engine struct {
 	// we'll use it only once after an upgrade
 	// to make sure asset are being created
 	ensuredAssetAccounts bool
+
+	// public keys for vault owners (the party component of the vault account id)
+	vaultOwners map[string]struct{}
 }
 
 // New instantiates a new collateral engine.
@@ -154,6 +157,7 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		partyAssetCache:         map[string]map[string]*num.Uint{},
 		partyMarketCache:        map[string]map[string]*num.Uint{},
 		earmarkedBalance:        map[string]*num.Uint{},
+		vaultOwners:             map[string]struct{}{},
 	}
 }
 
@@ -1945,69 +1949,6 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 	}
 
 	return response, closed, toPenalise, nil
-}
-
-// RollbackMarginUpdateOnOrder moves funds from the margin to the general account.
-func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.LedgerMovement, error) {
-	margin, err := e.GetAccountByID(e.accountID(marketID, transfer.Owner, assetID, types.AccountTypeMargin))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the margin party account",
-			logging.String("owner-id", transfer.Owner),
-			logging.String("market-id", marketID),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	general, err := e.GetAccountByID(e.accountID(noMarket, transfer.Owner, assetID, types.AccountTypeGeneral))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the general party account",
-			logging.String("owner-id", transfer.Owner),
-			logging.String("market-id", marketID),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-
-	req := &types.TransferRequest{
-		FromAccount: []*types.Account{
-			margin,
-		},
-		ToAccount: []*types.Account{
-			general,
-		},
-		Amount:    transfer.Amount.Amount.Clone(),
-		MinAmount: num.UintZero(),
-		Asset:     assetID,
-		Type:      transfer.Type,
-	}
-	// @TODO we should be able to clone the min amount regardless
-	if transfer.MinAmount != nil {
-		req.MinAmount.Set(transfer.MinAmount)
-	}
-
-	res, err := e.getLedgerEntries(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	for _, v := range res.Entries {
-		// increment the to account
-		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
-			e.log.Error(
-				"Failed to increment balance for account",
-				logging.String("asset", v.ToAccount.AssetID),
-				logging.String("market", v.ToAccount.MarketID),
-				logging.String("owner", v.ToAccount.Owner),
-				logging.String("type", v.ToAccount.Type.String()),
-				logging.BigUint("amount", v.Amount),
-				logging.Error(err),
-			)
-		}
-	}
-
-	return res, nil
 }
 
 func (e *Engine) TransferFunds(
@@ -4374,7 +4315,7 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 }
 
 func (e *Engine) clearPartyMarginAccount(ctx context.Context, party, asset string, acc *types.Account, transferType types.TransferType) (*types.LedgerMovement, error) {
-	// preevent returning empty ledger movements
+	// prevent returning empty ledger movements
 	if acc.Balance.IsZero() {
 		return nil, nil
 	}
@@ -5315,4 +5256,142 @@ func (e *Engine) UnearmarkForAutomatedPurchase(asset string, accountType types.A
 	}
 	e.state.updateEarmarked(e.earmarkedBalance)
 	return nil
+}
+
+func (e *Engine) CreateVaultAccount(ctx context.Context, vaultPartyID, asset string) (string, error) {
+	vaultID, err := e.CreatePartyGeneralAccount(ctx, vaultPartyID, asset)
+	if err != nil {
+		return "", err
+	}
+	e.vaultOwners[vaultPartyID] = struct{}{}
+	e.state.updateVaultOwners(e.vaultOwners)
+	return vaultID, nil
+}
+
+func (e *Engine) CloseVaultAccount(ctx context.Context, vaultPartyID string) error {
+	if _, ok := e.vaultOwners[vaultPartyID]; !ok {
+		return fmt.Errorf("vault not found")
+	}
+	partyAccounts, ok := e.partiesAccs[vaultPartyID]
+	if !ok {
+		return fmt.Errorf("vault accounts not found")
+	}
+	for _, acc := range partyAccounts {
+		e.removeAccount(acc.ID)
+	}
+	delete(e.vaultOwners, vaultPartyID)
+	e.state.updateVaultOwners(e.vaultOwners)
+	return nil
+}
+
+func (e *Engine) GetVaultBalance(vaultPartyID, asset string) (*num.Uint, error) {
+	vaultID := e.accountID(noMarket, vaultPartyID, asset, types.AccountTypeGeneral)
+	if _, ok := e.accs[vaultID]; !ok {
+		return nil, ErrAccountDoesNotExist
+	}
+	balance := num.UintZero()
+	for _, accs := range e.partiesAccs[vaultPartyID] {
+		if accs.Asset != asset {
+			e.log.Panic("incorrect asset for vault")
+		}
+		balance.AddSum(accs.Balance)
+	}
+	return balance, nil
+}
+
+func (e *Engine) GetVaultLiquidBalance(vaultPartyID, asset string) (*num.Uint, error) {
+	vaultID := e.accountID(noMarket, vaultPartyID, asset, types.AccountTypeGeneral)
+	acc, ok := e.accs[vaultID]
+	if !ok {
+		return nil, ErrAccountDoesNotExist
+	}
+	return acc.Balance.Clone(), nil
+}
+
+func (e *Engine) WithdrawFromVault(ctx context.Context, vaultKey, asset, party string, amount *num.Uint) (*types.LedgerMovement, error) {
+	generalAccount, err := e.GetPartyGeneralAccount(party, asset)
+	if err != nil {
+		return nil, err
+	}
+
+	vaultAccount, err := e.GetPartyGeneralAccount(vaultKey, asset)
+	if err != nil {
+		return nil, err
+	}
+
+	if vaultAccount.Balance.LT(amount) {
+		return nil, ErrInsufficientFundsInAsset
+	}
+
+	req := &types.TransferRequest{
+		FromAccount: []*types.Account{
+			vaultAccount,
+		},
+		ToAccount: []*types.Account{
+			generalAccount,
+		},
+		Amount:    amount,
+		MinAmount: amount.Clone(),
+		Asset:     asset,
+		Type:      types.TransferTypeWithdrawFromVault,
+	}
+	le, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	for _, bal := range le.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return le, nil
+		}
+	}
+	return le, nil
+}
+
+func (e *Engine) DepositToVault(ctx context.Context, vaultKey, asset, party string, amount *num.Uint) (*types.LedgerMovement, error) {
+	generalAccount, err := e.GetPartyGeneralAccount(party, asset)
+	if err != nil {
+		return nil, err
+	}
+	if generalAccount.Balance.LT(amount) {
+		return nil, ErrInsufficientFundsInAsset
+	}
+
+	vaultAccount, err := e.GetPartyGeneralAccount(vaultKey, asset)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &types.TransferRequest{
+		FromAccount: []*types.Account{
+			generalAccount,
+		},
+		ToAccount: []*types.Account{
+			vaultAccount,
+		},
+		Amount:    amount,
+		MinAmount: amount.Clone(),
+		Asset:     asset,
+		Type:      types.TransferTypeDepositToVault,
+	}
+	le, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	for _, bal := range le.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return le, nil
+		}
+	}
+	return le, nil
+}
+
+func (e *Engine) IsVaultAccount(owner string) bool {
+	_, ok := e.vaultOwners[owner]
+	return ok
 }

@@ -1109,6 +1109,10 @@ enum TransferType {
   TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_PAY = 54;
   // Maker fee received into general account
   TRANSFER_TYPE_HIGH_MAKER_FEE_REBATE_RECEIVE = 55;
+  // Transfer from general account to a vault account.
+  TRANSFER_TYPE_DEPOSIT_TO_VAULT = 56;
+  // Transfer from general account to a vault account.
+  TRANSFER_TYPE_WITHDRAW_FROM_VAULT = 57;
 }
 
 // Represents a financial transfer within Vega
@@ -2128,4 +2132,76 @@ message VolumeRebateProgram {
   int64 end_of_program_timestamp = 4;
   // Number of epochs over which a referral set's running volume is evaluated.
   uint64 window_length = 5;
+}
+
+message Vault {
+  // Vault key.
+  string vault_id = 1;
+  // Public key of the owner of the vault.
+  string owner = 2;
+  // Settlement asset for the vault.
+  string asset = 3;
+  // Metadata describing the vault.
+  vega.VaultMetaData vault_metadata = 4;
+  // Fee period is the frequency for the vault's fees assessment.
+  string fee_period = 5;
+  // Management fee factor.
+  string management_fee_factor = 6;
+  // Performance fee factor.
+  string performance_fee_factor = 7;
+  // The cutoff period following the redemption date until which the redemption request is queued.
+  int64 cut_off_period_length = 8;
+  // Redemption dates configuration.
+  repeated RedemptionDate redemption_dates = 9;
+}
+
+message VaultMetaData {
+  // Name for the vault
+  string name = 1;
+  // Description of the vault
+  string description = 2;
+  // URL for the vault additional information
+  string url = 3;
+  // URL for the vault's image
+  string image_url = 4;
+}
+
+enum RedemptionType {
+  // Never valid.
+  REDEMPTION_TYPE_UNSPECIFIED = 0;
+  // Normal - use full vault balance on this date to satisfy requests
+  REDEMPTION_TYPE_NORMAL = 1;
+  // Free cash only - consider only general account on this date to satisfy redemptions
+  REDEMPTION_TYPE_FREE_CASH_ONLY = 2;
+}
+
+message RedemptionDate {
+  // Date of redemption in epoch seconds
+  int64 redemption_date = 1;
+  // Type of redemption on that date
+  RedemptionType redemption_type = 2;
+  // Maximum fraction that can be redeemed on that date
+  string max_fraction = 3;
+}
+
+enum RedeemStatus {
+  // Never valid.
+  REDEEM_STATUS_UNSPECIFIED = 0;
+  // Redeem request submitted, not started.
+  REDEEM_STATUS_PENDING = 1;
+  // Redeem request is being processed.
+  REDEEM_STATUS_LATE = 2;
+  // Redeem request is completed.
+  REDEEM_STATUS_COMPLETED = 3;
+}
+
+enum VaultStatus {
+  // Never valid.
+  VAULT_STATUS_UNSPECIFIED = 0;
+  // Vault is active.
+  VAULT_STATUS_ACTIVE = 1;
+  // Vault is in the process of  being stopped.
+  VAULT_STATUS_STOPPING = 2;
+  // Vault is stopped.
+  VAULT_STATUS_STOPPED = 3;
 }

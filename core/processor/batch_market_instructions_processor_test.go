@@ -39,6 +39,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var verifier = func(*string, string) error { return nil }
+
 func TestBatchMarketInstructionsErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	exec := mocks.NewMockExecutionEngine(ctrl)
@@ -50,13 +52,13 @@ func TestBatchMarketInstructionsErrors(t *testing.T) {
 	}
 
 	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
-
 	err := proc.ProcessBatch(
 		context.Background(),
 		&batch,
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
 		stats.Blockchain,
+		verifier,
 	)
 
 	assert.EqualError(t, err, "0 (* (order_amendment does not amend anything), order_amendment.market_id (is required), order_amendment.order_id (is required)), 1 (order_submission.market_id (is required), order_submission.side (is required), order_submission.size (must be positive), order_submission.time_in_force (is required), order_submission.type (is required))")
@@ -101,6 +103,7 @@ func TestBatchMarketInstructionsCannotSubmitMultipleAmendForSameID(t *testing.T)
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
 		stats.Blockchain,
+		verifier,
 	)
 
 	assert.Equal(t, 2, amendCnt)
@@ -215,6 +218,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
 		stats.Blockchain,
+		verifier,
 	)
 
 	assert.Equal(t, uint64(3), stats.Blockchain.TotalCancelOrder())
@@ -345,6 +349,7 @@ func TestBatchMarketInstructionsContinueFailsAllOrdersForMarketOnSwitchFailure(t
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
 		stats.Blockchain,
+		verifier,
 	)
 	errors := err.(*processor.BMIError).Errors
 	require.Equal(t, 7, len(errors))
@@ -448,6 +453,7 @@ func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
 		stats.Blockchain,
+		verifier,
 	)
 
 	assert.EqualError(t, err, "0 (cannot cancel order), 1 (cannot amend order)")
@@ -484,8 +490,8 @@ func TestBatchMarketInstructionInvalidStopOrder(t *testing.T) {
 		},
 	}
 	stopCnt := 0
-	exec.EXPECT().SubmitStopOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(ctx context.Context, stop *types.StopOrdersSubmission, party string, idgen common.IDGenerator, id1, id2 *string) ([]*types.OrderConfirmation, error) {
+	exec.EXPECT().SubmitStopOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context, stop *types.StopOrdersSubmission, fallsBelowParty, riseAboveParty string, idgen common.IDGenerator, id1, id2 *string) ([]*types.OrderConfirmation, error) {
 			stopCnt++
 			return nil, nil
 		},
@@ -497,6 +503,7 @@ func TestBatchMarketInstructionInvalidStopOrder(t *testing.T) {
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
 		stats.Blockchain,
+		verifier,
 	)
 
 	assert.EqualError(t, err, "0 (* (must have at least one of rises above or falls below))")

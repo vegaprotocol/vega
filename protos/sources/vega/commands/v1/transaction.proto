@@ -75,6 +75,16 @@ message InputData {
     AmendAMM amend_amm = 1026;
     // Command to cancel an AMM pool on a market
     CancelAMM cancel_amm = 1027;
+    // Command to create a new vault.
+    CreateVault create_vault = 1028;
+    // Command to updaate an existing vault.
+    UpdateVault update_vault = 1029;
+    // Command to deposit funds to a vault.
+    DepositToVault deposit_to_vault = 1030;
+    // Command to withdraw funds from a vault.
+    WithdrawFromVault withdraw_from_vault = 1031;
+    // Command to change the ownership of a vault.
+    ChangeVaultOwnership change_vault_ownership = 1032;
 
     // Validator command sent automatically to vote on that validity of an external resource.
     NodeVote node_vote = 2002;

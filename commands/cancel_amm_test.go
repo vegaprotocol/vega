@@ -26,6 +26,7 @@ import (
 )
 
 func TestCheckCancelAMM(t *testing.T) {
+	banana := "banana"
 	cases := []struct {
 		submission commandspb.CancelAMM
 		errStr     string
@@ -60,6 +61,14 @@ func TestCheckCancelAMM(t *testing.T) {
 				Method:   commandspb.CancelAMM_Method(999),
 			},
 			errStr: "cancel_amm.method (is not a valid value)",
+		},
+		{
+			submission: commandspb.CancelAMM{
+				MarketId: "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				Method:   commandspb.CancelAMM_Method(999),
+				VaultId:  &banana,
+			},
+			errStr: "cancel_amm.vault_id (is not a valid vault identifier)",
 		},
 	}
 

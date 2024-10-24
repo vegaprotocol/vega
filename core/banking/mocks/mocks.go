@@ -273,6 +273,20 @@ func (mr *MockCollateralMockRecorder) GovernanceTransferFunds(arg0, arg1, arg2, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GovernanceTransferFunds", reflect.TypeOf((*MockCollateral)(nil).GovernanceTransferFunds), arg0, arg1, arg2, arg3)
 }
 
+// IsVaultAccount mocks base method.
+func (m *MockCollateral) IsVaultAccount(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsVaultAccount", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsVaultAccount indicates an expected call of IsVaultAccount.
+func (mr *MockCollateralMockRecorder) IsVaultAccount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsVaultAccount", reflect.TypeOf((*MockCollateral)(nil).IsVaultAccount), arg0)
+}
+
 // PropagateAssetUpdate mocks base method.
 func (m *MockCollateral) PropagateAssetUpdate(arg0 context.Context, arg1 types.Asset) error {
 	m.ctrl.T.Helper()

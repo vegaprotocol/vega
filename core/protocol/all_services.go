@@ -67,6 +67,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
+	"code.vegaprotocol.io/vega/core/vault"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/core/volumediscount"
@@ -176,6 +177,8 @@ type allServices struct {
 	l2Clients     *ethclient.L2Clients
 	l2Verifiers   *ethverifier.L2Verifiers
 	l2CallEngines *L2EthCallEngines
+
+	vaultService *vault.VaultService
 }
 
 func newServices(
@@ -233,7 +236,8 @@ func newServices(
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 	svcs.epochService.NotifyOnEpoch(svcs.collateral.OnEpochEvent, svcs.collateral.OnEpochRestore)
 	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
-
+	svcs.vaultService = vault.NewVaultService(svcs.log, svcs.collateral, svcs.timeService, svcs.broker)
+	svcs.timeService.NotifyOnTick(svcs.vaultService.OnTick)
 	svcs.netParams = netparams.New(svcs.log, svcs.conf.NetworkParameters, svcs.broker)
 
 	svcs.primaryMultisig = erc20multisig.NewERC20MultisigTopology(svcs.conf.ERC20MultiSig, svcs.log, nil, svcs.broker, svcs.primaryEthClient, svcs.primaryEthConfirmations, svcs.netParams, "primary")
@@ -346,7 +350,7 @@ func newServices(
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
 		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.volumeRebate, svcs.banking, svcs.partiesEngine,
-		svcs.txCache,
+		svcs.txCache, svcs.vaultService,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
@@ -394,7 +398,7 @@ func newServices(
 
 	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets, svcs.partiesEngine, svcs.timeService, svcs.stakingAccounts)
 	svcs.timeService.NotifyOnTick(svcs.vesting.OnTick)
-	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
+	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak, svcs.vaultService)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
 	svcs.epochService.NotifyOnEpoch(svcs.vesting.OnEpochEvent, svcs.vesting.OnEpochRestore)
@@ -473,6 +477,7 @@ func newServices(
 		svcs.partiesEngine,
 		svcs.forwarderHeartbeat,
 		svcs.volumeRebate,
+		svcs.vaultService,
 	)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW)
@@ -674,8 +679,8 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 	watchers := []netparams.WatchParam{
 		{
-			Param:   netparams.RewardAsset,
-			Watcher: svcs.banking.OnStakingAsset,
+			Param:   netparams.MinimumNoticePeriod,
+			Watcher: svcs.vaultService.OnMinimumNoticePeriodChanged,
 		},
 		{
 			Param:   netparams.RewardAsset,

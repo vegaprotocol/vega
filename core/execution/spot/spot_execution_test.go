@@ -232,30 +232,30 @@ func TestMarketWithAllowedSellers(t *testing.T) {
 	t.Run("allowed seller can post sell stop orders", func(t *testing.T) {
 		idgen := idgeneration.New(crypto.RandomHash())
 		order1 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideSell, types.SideBuy, "party1", 1, 300)
-		_, err := tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order1, "party1", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		_, err := tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order1, "party1", "party1", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
 		require.NoError(t, err)
 
 		order2 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideSell, types.SideBuy, "party2", 1, 300)
-		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order2, "party2", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order2, "party2", "party2", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
 		require.NoError(t, err)
 
 		order3 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideBuy, types.SideSell, "party1", 1, 300)
-		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order3, "party1", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order3, "party1", "party1", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
 		require.NoError(t, err)
 
 		order4 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideBuy, types.SideSell, "party2", 1, 300)
-		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order4, "party2", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order4, "party2", "party2", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
 		require.NoError(t, err)
 	})
 
 	t.Run("non allowed seller cannot post sell stop orders", func(t *testing.T) {
 		idgen := idgeneration.New(crypto.RandomHash())
 		order1 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideSell, types.SideBuy, "party3", 1, 300)
-		_, err := tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order1, "party3", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		_, err := tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order1, "party3", "party3", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
 		require.EqualError(t, err, "sell order not allowed")
 
 		order2 := getStopOrderSubmission(tm, now, crypto.RandomHash(), types.SideBuy, types.SideSell, "party3", 1, 300)
-		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order2, "party3", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
+		_, err = tm.market.SubmitStopOrdersWithIDGeneratorAndOrderIDs(ctx, order2, "party3", "party3", idgen, ptr.From(idgen.NextID()), ptr.From(idgen.NextID()))
 		require.EqualError(t, err, "sell order not allowed")
 	})
 }
