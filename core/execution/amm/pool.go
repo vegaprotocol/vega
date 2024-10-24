@@ -703,12 +703,26 @@ func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
 
 	// the remainiing volume that trade past the best price needs to be the average execution price
 	remaining := volume - v
-	price := p.priceForVolumeAtPosition(remaining, side, p.getPosition(), p.FairPrice())
+
+	pos := p.getPosition()
+	switch side {
+	case types.SideSell:
+		pos += int64(v)
+	case types.SideBuy:
+		pos -= int64(v)
+	}
+
+	// pretend we're at price best price,, and shifting the rest
+	fmt.Println("fairprice", p.FairPrice(), p.getPosition(), "bestPrice", bestPrice, "new pos", pos)
+	price := p.priceForVolumeAtPosition(remaining, side, pos, bestPrice)
 
 	fmt.Println("partial aep", price)
 
 	aepBest := num.UintZero().Mul(bestPrice, num.NewUint(v))
 	aepRemaining := num.UintZero().Mul(price, num.NewUint(remaining))
+
+	retD := num.UintZero().Add(aepBest, aepRemaining).ToDecimal().Div(num.DecimalFromInt64(int64(volume)))
+	fmt.Println("retD", retD)
 	ret := num.UintZero().Div(num.UintZero().Add(aepBest, aepRemaining), num.NewUint(volume))
 	fmt.Println("ret", ret)
 	fmt.Println()

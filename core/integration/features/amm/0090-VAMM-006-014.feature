@@ -104,12 +104,12 @@ Feature: Ensure the vAMM positions follow the market correctly
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 118   | 245  | vamm1-id | true   |
+      | party4 | 116   | 245  | vamm1-id | true   |
     And the network moves ahead "1" blocks
     # Check best offer/bid as this scenario matches 0090-VAMM-027: if other traders trade to move the market mid price to 140 quotes with a mid price of 140 (volume quotes above 140 should be sells, volume quotes below 140 should be buys).
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 118        | TRADING_MODE_CONTINUOUS | 140       | 140              | 141              | 139            |
+      | 116        | TRADING_MODE_CONTINUOUS | 140       | 140              | 141              | 139            |
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 245    | 0              | 0            |        |
@@ -144,7 +144,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 122   | 291  | vamm1-id | true   |
+      | party4 | 121   | 291  | vamm1-id | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
       | 100        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
@@ -167,13 +167,13 @@ Feature: Ensure the vAMM positions follow the market correctly
     # Notional value therefore is 317 * 122
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 122        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
+      | 121        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
     
     # vAMM receives fees, but loses out in the MTM settlement
     And the following transfers should happen:
        | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
-       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 143    | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 74548  | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 141    | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 73938  | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -185,10 +185,10 @@ Feature: Ensure the vAMM positions follow the market correctly
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 291    | 11058          | 0            |        |
+      | party4   | 291    | 11349          | 0            |        |
       | party5   | 1      | 0              | 0            |        |
       | lp1      | -1     | 0              | 0            |        |
-      | vamm1-id | -291   | -11058         | 0            | true   |
+      | vamm1-id | -291   | -11349         | 0            | true   |
 
 
   @VAMM

@@ -218,7 +218,7 @@ Feature: vAMM rebasing when created or amended
       | vamm1 | ETH/MAR22 | 100000  | 0.05    | 100  | 95          | 0.03         | cannot remove upper bound when AMM is short |
 
 
-  @VAMM3
+  @VAMM
   Scenario: Two AMM's incoming order split pro-rata equally
 
     When the parties submit the following AMM:
