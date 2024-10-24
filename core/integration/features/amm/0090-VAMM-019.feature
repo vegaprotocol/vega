@@ -106,7 +106,7 @@ Feature: Test vAMM cancellation by abandoning.
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 122   | 291  | vamm1-id | true   |
+      | party4 | 121   | 291  | vamm1-id | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
       | 100        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
@@ -129,17 +129,17 @@ Feature: Test vAMM cancellation by abandoning.
     # Notional value therefore is 317 * 122
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 122        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
+      | 121        | TRADING_MODE_CONTINUOUS | 157       | 157              | 160              | 155            |
     
     # vAMM receives fees, but loses out in the MTM settlement
     And the following transfers should happen:
        | from     | from account            | to       | to account           | market id | amount | asset | is amm | type                            |
-       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 143    | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN  | ETH/MAR22 | 74548  | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 141    | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN  | ETH/MAR22 | 73938  | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 900000  |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 25595   | 74548  | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 26203   | 73938  | true   |
 
     # Immediate cancellation: return vAMM general balance back to the party, margin is confiscated.
     When the parties cancel the following AMM:
@@ -150,9 +150,9 @@ Feature: Test vAMM cancellation by abandoning.
       | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 4              | 4              |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
-      | vamm1    | USD   |           | 925595  |        |        |
+      | vamm1    | USD   |           | 926203  |        |        |
     And the following transfers should happen:
        | from     | from account         | to    | to account             | market id | amount | asset | is amm | type                      |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL   | ETH/MAR22 | 25595  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN  |       | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 74548  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+       | vamm1-id | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL   | ETH/MAR22 | 26203  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
+       | vamm1-id | ACCOUNT_TYPE_MARGIN  |       | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 73938  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE |
 

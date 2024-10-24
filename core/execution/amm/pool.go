@@ -699,8 +699,6 @@ func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
 		return bestPrice
 	}
 
-	fmt.Println("price for volume", bestPrice, v, "total volume", volume)
-
 	// the remainiing volume that trade past the best price needs to be the average execution price
 	remaining := volume - v
 
@@ -713,10 +711,7 @@ func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
 	}
 
 	// pretend we're at price best price,, and shifting the rest
-	fmt.Println("fairprice", p.FairPrice(), p.getPosition(), "bestPrice", bestPrice, "new pos", pos)
 	price := p.priceForVolumeAtPosition(remaining, side, pos, bestPrice)
-
-	fmt.Println("partial aep", price)
 
 	aepBest := num.UintZero().Mul(bestPrice, num.NewUint(v))
 	aepRemaining := num.UintZero().Mul(price, num.NewUint(remaining))
