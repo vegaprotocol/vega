@@ -1011,9 +1011,9 @@ func (p *Pool) virtualBalances(pos int64, fp *num.Uint, side types.Side) (num.De
 
 // BestPrice returns the AMM's quote price on the given side. If the AMM's position is fully at a boundary
 // then there is no quote price on that side and false is returned.
-func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
+func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool, bool) {
 	if p.IsPending() {
-		return nil, false
+		return nil, false, false
 	}
 
 	pos := p.getPosition()
@@ -1026,41 +1026,48 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 			cu = p.upper
 			// we're short, and want the sell quote price, if we're at the boundary there is not volume left
 			if p.closing() || num.AbsV(pos) >= cu.pv.IntPart() {
-				return nil, false
+				return nil, false, false
 			}
 		}
 
 		bestPrice := num.UintZero().Add(fairPrice, p.oneTick)
 		if !p.spread.IsZero() {
 			// calculate the spread from the fair price
-			spreadPrice := p.spread.Add(num.DecimalOne()).Mul(fairPrice.ToDecimal())
+			spreadPrice := num.DecimalOne().Add(p.spread).Mul(fairPrice.ToDecimal())
+			fmt.Println("spread price SELL", spreadPrice, "fp", fairPrice, "spread", p.spread)
 			if spreadPrice.GreaterThan(bestPrice.ToDecimal()) {
 				bestPrice, _ = num.UintFromDecimal(spreadPrice.Ceil())
 			}
 		}
 
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
-		return num.Min(p.upper.high, num.Max(np, bestPrice)), true
+		fmt.Println(np, bestPrice)
+		lowVolume := np.GT(bestPrice)
+		fmt.Println("SELL returning", num.Min(p.upper.high, num.Max(np, bestPrice)), true, lowVolume)
+		return num.Min(p.upper.high, num.Max(np, bestPrice)), true, lowVolume
 	case types.SideBuy:
 		cu := p.upper
 		if pos >= 0 {
 			cu = p.lower
 			// we're long, and want the buy quote price, if we're at the boundary there is not volume left
 			if p.closing() || pos >= cu.pv.IntPart() {
-				return nil, false
+				return nil, false, false
 			}
 		}
 
 		bestPrice := num.UintZero().Sub(fairPrice, p.oneTick)
 		if !p.spread.IsZero() {
-			spreadPrice := p.spread.Sub(num.DecimalOne()).Mul(fairPrice.ToDecimal())
+			spreadPrice := num.DecimalOne().Sub(p.spread).Mul(fairPrice.ToDecimal())
+			fmt.Println("spread", spreadPrice, fairPrice, p.spread)
 			if spreadPrice.LessThan(bestPrice.ToDecimal()) {
 				bestPrice, _ = num.UintFromDecimal(spreadPrice)
 			}
 		}
 
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
-		return num.Max(p.lower.low, num.Min(np, bestPrice)), true
+		fmt.Println(np, bestPrice)
+		lowVolume := np.LT(bestPrice)
+		return num.Max(p.lower.low, num.Min(np, bestPrice)), true, lowVolume
 	default:
 		panic("should never reach here")
 	}
@@ -1075,37 +1082,35 @@ func (p *Pool) BestPriceAndVolume(side types.Side) (*num.Uint, uint64) {
 		return p, v
 	}
 
-	price, ok := p.BestPrice(side)
+	price, ok, lowVolume := p.BestPrice(side)
 	if !ok {
 		return price, 0
 	}
 
-	// now calculate the volume
-	fp := p.FairPrice()
-	if side == types.SideBuy {
-		priceTick := num.Max(p.lower.low, num.UintZero().Sub(fp, p.oneTick))
+	fmt.Println("BEST PRICE", price, lowVolume, side)
 
-		if false && !price.GTE(priceTick) {
+	// now calculate the volume
+	//fp := p.FairPrice()
+	if side == types.SideBuy {
+		if lowVolume {
 			p.cache.setBestPrice(pos, side, p.status, price, 1)
 			return price, 1 // its low volume so 1 by construction
 		}
-		priceTick = price
 
-		volume := p.TradableVolumeForPrice(types.SideSell, priceTick)
-		p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
-		return priceTick, volume
+		volume := p.TradableVolumeForPrice(types.SideSell, price)
+		p.cache.setBestPrice(pos, side, p.status, price, volume)
+		return price, volume
 	}
 
-	priceTick := num.Min(p.upper.high, num.UintZero().Add(fp, p.oneTick))
-	if false && !price.LTE(priceTick) {
+	//priceTick := num.Min(p.upper.high, num.UintZero().Add(fp, p.oneTick))
+	if lowVolume {
 		p.cache.setBestPrice(pos, side, p.status, price, 1)
 		return price, 1 // its low volume so 1 by construction
 	}
-	priceTick = price
 
-	volume := p.TradableVolumeForPrice(types.SideBuy, priceTick)
-	p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
-	return priceTick, volume
+	volume := p.TradableVolumeForPrice(types.SideBuy, price)
+	p.cache.setBestPrice(pos, side, p.status, price, volume)
+	return price, volume
 }
 
 func (p *Pool) LiquidityFee() num.Decimal {

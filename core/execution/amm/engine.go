@@ -348,7 +348,7 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	vol := uint64(0)
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		best, ok := pool.BestPrice(types.OtherSide(side))
+		best, ok, _ := pool.BestPrice(types.OtherSide(side))
 		if !ok {
 			continue
 		}
@@ -381,7 +381,7 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	for _, p := range active {
 		p.setEphemeralPosition()
 
-		price, ok := p.BestPrice(types.OtherSide(agg.Side))
+		price, ok, _ := p.BestPrice(types.OtherSide(agg.Side))
 		if !ok {
 			continue
 		}

@@ -423,7 +423,7 @@ func testBestPrice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ensurePositionN(t, p.pos, tt.position, num.UintZero(), 2)
-			quote, ok := p.pool.BestPrice(tt.side)
+			quote, ok, _ := p.pool.BestPrice(tt.side)
 			if tt.expectedPrice == "" {
 				assert.False(t, ok)
 			} else {
