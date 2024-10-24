@@ -264,6 +264,16 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkAmendAMM(cmd.AmendAmm))
 		case *commandspb.InputData_CancelAmm:
 			errs.Merge(checkCancelAMM(cmd.CancelAmm))
+		case *commandspb.InputData_CreateVault:
+			errs.Merge(checkCreateVault(cmd.CreateVault))
+		case *commandspb.InputData_UpdateVault:
+			errs.Merge(checkUpdateVault(cmd.UpdateVault))
+		case *commandspb.InputData_DepositToVault:
+			errs.Merge(checkDepositToVault(cmd.DepositToVault))
+		case *commandspb.InputData_WithdrawFromVault:
+			errs.Merge(checkWithdrawFromVault(cmd.WithdrawFromVault))
+		case *commandspb.InputData_ChangeVaultOwnership:
+			errs.Merge(checkChangeVaultOwnership(cmd.ChangeVaultOwnership))
 		case *commandspb.InputData_DelayedTransactionsWrapper:
 			break
 		default:

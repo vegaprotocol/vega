@@ -43,6 +43,11 @@ message SubmitTransactionRequest {
     commands.v1.SubmitAMM submit_amm = 1025;
     commands.v1.AmendAMM amend_amm = 1026;
     commands.v1.CancelAMM cancel_amm = 1027;
+    commands.v1.CreateVault create_vault = 1028;
+    commands.v1.UpdateVault update_vault = 1029;
+    commands.v1.DepositToVault deposit_to_vault = 1030;
+    commands.v1.WithdrawFromVault withdraw_from_vault = 1031;
+    commands.v1.ChangeVaultOwnership change_vault_ownership = 1032;
 
     // Validator commands
     commands.v1.NodeVote node_vote = 2002;

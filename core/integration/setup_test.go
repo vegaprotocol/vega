@@ -43,6 +43,7 @@ import (
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/core/vault"
 	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/core/volumerebate"
@@ -106,6 +107,7 @@ type executionTestSetup struct {
 	rewardsEngine    *rewards.Engine
 	assetsEngine     *stubs.AssetStub
 	banking          *banking.Engine
+	vaultService     *vault.VaultService
 
 	// save party accounts state
 	markets []types.Market
@@ -203,6 +205,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.volumeRebateProgram = volumerebate.New(execsetup.broker, execsetup.marketActivityTracker)
 
 	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.marketActivityTracker, stubs.NewBridgeViewStub(), stubs.NewBridgeViewStub(), eventHeartbeat, execsetup.profilesEngine, execsetup.stakingAccount)
+	execsetup.vaultService = vault.NewVaultService(execsetup.log, execsetup.collateralEngine, execsetup.timeService, execsetup.broker)
 
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
@@ -221,6 +224,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.banking,
 			execsetup.profilesEngine,
 			&DummyDelayTarget{},
+			execsetup.vaultService,
 		),
 		execsetup.broker,
 	)
@@ -234,7 +238,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
 
 	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine, execsetup.profilesEngine, execsetup.timeService, execsetup.stakingAccount)
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak, execsetup.vaultService)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.vesting.OnEpochEvent, execsetup.vesting.OnEpochRestore)

@@ -140,6 +140,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 		e.volumeDiscountService,
 		e.volumeRebateService,
 		e.banking,
+		e.vaultService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

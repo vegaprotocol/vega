@@ -34,7 +34,7 @@ var (
 	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAverageNotionalReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward, types.AccountTypeRealisedReturnReward, types.AccountTypeEligibleEntitiesReward}
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/rewards MarketActivityTracker,Delegation,TimeService,Topology,Transfers,Teams,Vesting,ActivityStreak
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/rewards MarketActivityTracker,Delegation,TimeService,Topology,Transfers,Teams,Vesting,ActivityStreak,VaultService
 
 // Broker for sending events.
 type Broker interface {
@@ -97,6 +97,11 @@ type ActivityStreak interface {
 	GetRewardsDistributionMultiplier(party string) num.Decimal
 }
 
+type VaultService interface {
+	GetVaultOwner(vaultID string) *string
+	GetVaultShares(vaultID string) map[string]num.Decimal
+}
+
 // Engine is the reward engine handling reward payouts.
 type Engine struct {
 	log                   *logging.Logger
@@ -114,6 +119,7 @@ type Engine struct {
 	vesting               Vesting
 	transfers             Transfers
 	activityStreak        ActivityStreak
+	vaultService          VaultService
 }
 
 type globalRewardParams struct {
@@ -141,7 +147,7 @@ type payout struct {
 }
 
 // New instantiate a new rewards engine.
-func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, marketActivityTracker MarketActivityTracker, topology Topology, vesting Vesting, transfers Transfers, activityStreak ActivityStreak) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, marketActivityTracker MarketActivityTracker, topology Topology, vesting Vesting, transfers Transfers, activityStreak ActivityStreak, vaultService VaultService) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -158,6 +164,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 		vesting:               vesting,
 		transfers:             transfers,
 		activityStreak:        activityStreak,
+		vaultService:          vaultService,
 	}
 
 	// register for epoch end notifications
@@ -471,15 +478,37 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 	transfers := make([]*types.Transfer, 0, len(partyIDs))
 	for _, party := range partyIDs {
 		amt := po.partyToAmount[party]
-		transfers = append(transfers, &types.Transfer{
-			Owner: party,
-			Amount: &types.FinancialAmount{
-				Asset:  po.asset,
-				Amount: amt.Clone(),
-			},
-			Type:      types.TransferTypeRewardPayout,
-			MinAmount: amt.Clone(),
-		})
+		if e.vaultService.GetVaultOwner(party) == nil {
+			transfers = append(transfers, &types.Transfer{
+				Owner: party,
+				Amount: &types.FinancialAmount{
+					Asset:  po.asset,
+					Amount: amt.Clone(),
+				},
+				Type:      types.TransferTypeRewardPayout,
+				MinAmount: amt.Clone(),
+			})
+			continue
+		}
+		shares := e.vaultService.GetVaultShares(party)
+		keys := make([]string, 0, len(shares))
+		for k := range shares {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			share := shares[k]
+			shareAmt, _ := num.UintFromDecimal(amt.ToDecimal().Mul(share))
+			transfers = append(transfers, &types.Transfer{
+				Owner: k,
+				Amount: &types.FinancialAmount{
+					Asset:  po.asset,
+					Amount: shareAmt.Clone(),
+				},
+				Type:      types.TransferTypeRewardPayout,
+				MinAmount: shareAmt.Clone(),
+			})
+		}
 	}
 
 	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers, po.rewardType)

@@ -276,13 +276,13 @@ func NewStopOrderSubmissionFromProto(psubmission *commandspb.StopOrdersSubmissio
 }
 
 func (s *StopOrdersSubmission) IntoStopOrders(
-	party, fallsBelowID, risesAboveID string,
+	fallsBelowParty, risesAboveParty, fallsBelowID, risesAboveID string,
 	now time.Time,
 ) (fallsBelow, risesAbove *StopOrder) {
 	if s.RisesAbove != nil {
 		risesAbove = &StopOrder{
 			ID:                  risesAboveID,
-			Party:               party,
+			Party:               risesAboveParty,
 			Market:              s.RisesAbove.OrderSubmission.MarketID,
 			OrderSubmission:     s.RisesAbove.OrderSubmission,
 			OCOLinkID:           fallsBelowID,
@@ -299,7 +299,7 @@ func (s *StopOrdersSubmission) IntoStopOrders(
 	if s.FallsBelow != nil {
 		fallsBelow = &StopOrder{
 			ID:                  fallsBelowID,
-			Party:               party,
+			Party:               fallsBelowParty,
 			Market:              s.FallsBelow.OrderSubmission.MarketID,
 			OrderSubmission:     s.FallsBelow.OrderSubmission,
 			OCOLinkID:           risesAboveID,

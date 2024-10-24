@@ -41,6 +41,9 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 			"stop_orders_submission.falls_below", errs, cmd.FallsBelow, cmd.RisesAbove != nil)
 		if cmd.FallsBelow.OrderSubmission != nil {
 			market1 = cmd.FallsBelow.OrderSubmission.MarketId
+			if cmd.FallsBelow.OrderSubmission.VaultId != nil && !IsVegaID(*cmd.FallsBelow.OrderSubmission.VaultId) {
+				errs.AddForProperty("stop_orders_submission.falls_below.vault_id", ErrInvalidVaultID)
+			}
 			if cmd.FallsBelow.SizeOverrideSetting != nil {
 				if *cmd.FallsBelow.SizeOverrideSetting == types.StopOrder_SIZE_OVERRIDE_SETTING_POSITION {
 					if cmd.FallsBelow.SizeOverrideValue != nil {
@@ -66,6 +69,9 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 		checkStopOrderSetup(
 			"stop_orders_submission.rises_below", errs, cmd.RisesAbove, cmd.FallsBelow != nil)
 		if cmd.RisesAbove.OrderSubmission != nil {
+			if cmd.RisesAbove.OrderSubmission.VaultId != nil && !IsVegaID(*cmd.RisesAbove.OrderSubmission.VaultId) {
+				errs.AddForProperty("stop_orders_submission.rises_above.vault_id", ErrInvalidVaultID)
+			}
 			market2 = cmd.RisesAbove.OrderSubmission.MarketId
 			if cmd.RisesAbove.SizeOverrideSetting != nil {
 				if *cmd.RisesAbove.SizeOverrideSetting == types.StopOrder_SIZE_OVERRIDE_SETTING_POSITION {

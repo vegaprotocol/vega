@@ -260,6 +260,26 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_CancelAmm{
 			CancelAmm: tv,
 		}
+	case *commandspb.CreateVault:
+		t.evt.Transaction = &eventspb.TransactionResult_CreateVault{
+			CreateVault: tv,
+		}
+	case *commandspb.UpdateVault:
+		t.evt.Transaction = &eventspb.TransactionResult_UpdateVault{
+			UpdateVault: tv,
+		}
+	case *commandspb.DepositToVault:
+		t.evt.Transaction = &eventspb.TransactionResult_DepositToVault{
+			DepositToVault: tv,
+		}
+	case *commandspb.WithdrawFromVault:
+		t.evt.Transaction = &eventspb.TransactionResult_WithdrawFromVault{
+			WithdrawFromVault: tv,
+		}
+	case *commandspb.ChangeVaultOwnership:
+		t.evt.Transaction = &eventspb.TransactionResult_ChangeVaultOwnership{
+			ChangeVaultOwnership: tv,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported command %T", tv))
 	}

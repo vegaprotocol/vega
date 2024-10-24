@@ -97,6 +97,7 @@ var (
 	ErrMustBeAtMost250                                 = errors.New("must be at most 250")
 	ErrNoUpdatesProvided                               = errors.New("no updates provided")
 	ErrMaxPriceMustRespectTickSize                     = errors.New("must respect tick size")
+	ErrInvalidVaultID                                  = errors.New("is not a valid vault identifier")
 )
 
 type Errors map[string][]error

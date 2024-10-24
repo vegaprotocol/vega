@@ -62,7 +62,7 @@ func TestStopOrdersProtoConversion(t *testing.T) {
 	submission, err := types.NewStopOrderSubmissionFromProto(submissionProto)
 	require.NoError(t, err)
 	now := time.Date(2024, 3, 29, 10, 0, 0, 0, time.UTC)
-	fallsBelow, risesAbove := submission.IntoStopOrders("party1", "1", "2", now)
+	fallsBelow, risesAbove := submission.IntoStopOrders("party1", "party1", "1", "2", now)
 
 	fallsBelowEvent := fallsBelow.ToProtoEvent()
 	risesAboveEvent := risesAbove.ToProtoEvent()
