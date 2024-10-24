@@ -104,12 +104,12 @@ Feature: Ensure the vAMM positions follow the market correctly
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 116   | 245  | vamm1-id | true   |
+      | party4 | 117   | 245  | vamm1-id | true   |
     And the network moves ahead "1" blocks
     # Check best offer/bid as this scenario matches 0090-VAMM-027: if other traders trade to move the market mid price to 140 quotes with a mid price of 140 (volume quotes above 140 should be sells, volume quotes below 140 should be buys).
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 116        | TRADING_MODE_CONTINUOUS | 140       | 140              | 141              | 139            |
+      | 117        | TRADING_MODE_CONTINUOUS | 140       | 140              | 141              | 139            |
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 245    | 0              | 0            |        |
@@ -123,11 +123,11 @@ Feature: Ensure the vAMM positions follow the market correctly
     # see the trades that make the vAMM go long
     Then the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 95    | 350  | party4 | true   |
+      | vamm1-id | 94    | 350  | party4 | true   |
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 95         | TRADING_MODE_CONTINUOUS | 90        | 90               | # TODO why isn't this 90?
+      | 94         | TRADING_MODE_CONTINUOUS | 90        | 90               | # TODO why isn't this 90?
 	  Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | -350   | 0              | 0            |        |
@@ -204,20 +204,20 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 63        | 63               | 86               | 40             |
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 92    | 581  | party4 | true   |
+      | vamm1-id | 91    | 581  | party4 | true   |
 
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 1      | -8             | 0            |        |
-      | party2   | -1     | 8              | 0            |        |
+      | party1   | 1      | -9             | 0            |        |
+      | party2   | -1     | 9              | 0            |        |
       | party4   | -581   | 0              | 0            |        |
       | vamm1-id | 581    | 0              | 0            | true   |
     # vAMM receives fees, but loses out in the MTM settlement
     And the following transfers should happen:
       | from     | from account            | to       | to account           | market id | amount | asset | is amm | type                            |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 214    | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN  | ETH/MAR22 | 100214 | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 212    | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN  | ETH/MAR22 | 100212 | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
 
     # Now make sure we don't trade with vAMM below 85
     When the parties place the following orders:
@@ -237,8 +237,8 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party1   | 1      | -25            | 0            |        |
       | party2   | -1     | 25             | 0            |        |
       | party3   | 10     | 0              | 0            |        |
-      | party4   | -591   | 9877           | 0            |        |
-      | vamm1-id | 581    | -9877          | 0            | true   |
+      | party4   | -591   | 9296           | 0            |        |
+      | vamm1-id | 581    | -9296          | 0            | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
       | 75         | TRADING_MODE_CONTINUOUS | 63        | 63               | 86               | 40             |
@@ -387,7 +387,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party5   | -69    | 0              | 0            |        |
       | vamm1-id | 0      | 0              | 0            | true   |
 
-  @VAMM
+  @VAMM3
   Scenario: 0090-VAMM-013: If other traders trade to move the market mid price to 90 and then move the mid price back to 100 in several trades of varying size, the vAMM will have a position of 0.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -398,12 +398,12 @@ Feature: Ensure the vAMM positions follow the market correctly
     # see the trades that make the vAMM go short
     And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
-      | vamm1-id | 95    | 350  | party3 | true   |
+      | vamm1-id | 94    | 350  | party3 | true   |
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 1      | -5             | 0            |        |
-      | party2   | -1     | 5              | 0            |        |
+      | party1   | 1      | -6             | 0            |        |
+      | party2   | -1     | 6              | 0            |        |
       | party3   | -350   | 0              | 0            |        |
       | vamm1-id | 350    | 0              | 0            | true   |
     # move price back up to 100, in several trades of varying sizes
@@ -414,7 +414,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party5 | ETH/MAR22 | buy  | 130    | 100   | 1                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | ref price | mid price | static mid price | best offer price | best bid price |
-      | 95         | TRADING_MODE_CONTINUOUS | 100       | 100       | 100              | 101              | 99             |
+      | 94         | TRADING_MODE_CONTINUOUS | 100       | 100       | 100              | 101              | 99             |
     And the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
       | party1 | 91    | 99   | vamm1-id | true   |
@@ -427,10 +427,10 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party1   | 100    | 591            | 0            |        |
       | party2   | -1     | 3              | 0            |        |
-      | party3   | -350   | -700           | 0            |        |
+      | party3   | -350   | -1050          | 0            |        |
       | party4   | 121    | 363            | 0            |        |
       | party5   | 130    | 0              | 0            |        |
-      | vamm1-id | 0      | 0              | -257         | true   |
+      | vamm1-id | 0      | 0              | 93           | true   |
 
   @VAMM
   Scenario: 0090-VAMM-014: If other traders trade to move the market mid price to 90 and then in one trade move the mid price to 110 then trade to move the mid price to 120 the vAMM will have a larger (more negative) but comparable position to if they had been moved straight from 100 to 120.
