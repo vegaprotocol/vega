@@ -99,7 +99,7 @@ Feature: vAMM rebasing when created or amended
       | mark price | trading mode             | best bid price | best offer price | best bid volume | best offer volume |
       | 100        | TRADING_MODE_CONTINUOUS  | 98             | 102              | 209             | 183               |
 
-  @VAMM3
+  @VAMM
   Scenario: Incoming order at AMM best price
 
   # AMM's has a BUY at 98 so a SELL will not match because of the AMM's spread
@@ -113,6 +113,6 @@ Feature: vAMM rebasing when created or amended
 
   Then the following trades should be executed:
       | buyer     | price | size | seller    | is amm |
-      | vamm1-id  | 99    | 1    | party1    | true   |
+      | vamm1-id  | 98    | 1    | party1    | true   |
 
   

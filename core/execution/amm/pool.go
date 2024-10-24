@@ -691,12 +691,28 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l num.Decimal) num.Decimal
 
 // PriceForVolume returns the price the AMM is willing to trade at to match with the given volume of an incoming order.
 func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
-	return p.priceForVolumeAtPosition(
-		volume,
-		side,
-		p.getPosition(),
-		p.FairPrice(),
-	)
+
+	// get the volume between FP and the best price
+	bestPrice, v := p.BestPriceAndVolume(types.OtherSide(side))
+
+	if v >= volume {
+		return bestPrice
+	}
+
+	fmt.Println("price for volume", bestPrice, v, "total volume", volume)
+
+	// the remainiing volume that trade past the best price needs to be the average execution price
+	remaining := volume - v
+	price := p.priceForVolumeAtPosition(remaining, side, p.getPosition(), p.FairPrice())
+
+	fmt.Println("partial aep", price)
+
+	aepBest := num.UintZero().Mul(bestPrice, num.NewUint(v))
+	aepRemaining := num.UintZero().Mul(price, num.NewUint(remaining))
+	ret := num.UintZero().Div(num.UintZero().Add(aepBest, aepRemaining), num.NewUint(volume))
+	fmt.Println("ret", ret)
+	fmt.Println()
+	return ret
 }
 
 // priceForVolumeAtPosition returns the price the AMM is willing to trade at to match with the given volume if its position and fair-price

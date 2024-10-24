@@ -381,8 +381,8 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	for _, p := range active {
 		p.setEphemeralPosition()
 
-		price, ok, _ := p.BestPrice(types.OtherSide(agg.Side))
-		if !ok {
+		price, volume := p.BestPriceAndVolume(types.OtherSide(agg.Side))
+		if volume == 0 {
 			continue
 		}
 

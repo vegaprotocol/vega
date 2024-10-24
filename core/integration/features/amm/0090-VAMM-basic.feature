@@ -218,7 +218,7 @@ Feature: vAMM rebasing when created or amended
       | vamm1 | ETH/MAR22 | 100000  | 0.05    | 100  | 95          | 0.03         | cannot remove upper bound when AMM is short |
 
 
-  @VAMM
+  @VAMM3
   Scenario: Two AMM's incoming order split pro-rata equally
 
     When the parties submit the following AMM:
@@ -242,8 +242,8 @@ Feature: vAMM rebasing when created or amended
         | party1 | ETH/MAR22 | sell | 1000    | 10    | 2                | TYPE_LIMIT | TIF_GTC |           |
     Then the following trades should be executed:
         | buyer     | price | size | seller    | is amm |
-        | vamm1-id  | 97    | 500  | party1    | true   |
-        | vamm2-id  | 97    | 500  | party1    | true   |
+        | vamm1-id  | 98    | 500  | party1    | true   |
+        | vamm2-id  | 98    | 500  | party1    | true   |
    
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price | best bid volume | best offer volume |
