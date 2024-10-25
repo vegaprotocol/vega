@@ -346,3 +346,44 @@ Feature: vAMM with oracle driven base price
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | lower bound | upper bound | 
       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE   | 115  | 80          | 120         | 
+
+
+  @VAMM3
+  Scenario: 0090-VAMM-043 AMM amended into pending AMM cannot be set into reduce only
+   Then the parties submit the following AMM:
+      | party | market id | amount  | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000  | 0.01     | 100  | 80          | 120         | 0.03         |
+    Then the AMM pool status should be:
+      | party | market id | amount | status         | base | lower bound | upper bound | 
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE  | 100  | 80          | 120         | 
+
+
+    # give it a position
+     When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | sell | 10    | 50    | 1                | TYPE_LIMIT | TIF_GTC |           |
+
+    # the base price is 
+    Then the parties amend the following AMM:
+       | party | market id | amount  | slippage | base | lower bound | upper bound | proposed fee | data source id |
+       | vamm1 | ETH/MAR22 | 100000  | 0.05     | 0    | 200         | 300         | 0.03         | 1234           |
+    Then the AMM pool status should be:
+      | party | market id | amount | status          | base | lower bound | upper bound | 
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_PENDING  | 0    | 200         | 300         | 
+
+
+
+    # try to cancel with reduce only
+    Then the parties cancel the following AMM:
+       | party  | market id | method             | error                                                                   |
+       | vamm1  | ETH/MAR22 | METHOD_REDUCE_ONLY | pending AMM with a position cannot be cancelled with reduce-only method |
+
+    # try to cancel with immediate
+    Then the parties cancel the following AMM:
+       | party  | market id | method             |
+       | vamm1  | ETH/MAR22 | METHOD_IMMEDIATE   |
+
+    # base price update only happened because the slippage was increased in the amend that set the new oracle value
+    Then the AMM pool status should be:
+      | party | market id | amount | status            | base | lower bound | upper bound | 
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED  | 0    | 200         | 300         | 
