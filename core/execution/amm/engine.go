@@ -45,6 +45,7 @@ var (
 	ErrCommitmentTooLow          = errors.New("commitment amount too low")
 	ErrRebaseOrderDidNotTrade    = errors.New("rebase-order did not trade")
 	ErrRebaseTargetOutsideBounds = errors.New("rebase target outside bounds")
+	ErrCannotCancelPendingAMM    = errors.New("pending AMM with a position cannot be cancelled with reduce-only method")
 )
 
 const (
@@ -800,6 +801,11 @@ func (e *Engine) CancelAMM(
 	}
 
 	if cancel.Method == types.AMMCancellationMethodReduceOnly {
+		// a pending pool has no curves until a data-source sets its base, so cannot be set in reduce-only mode
+		if pool.IsPending() {
+			return nil, ErrCannotCancelPendingAMM
+		}
+
 		// pool will now only accept trades that will reduce its position
 		pool.status = types.AMMPoolStatusReduceOnly
 		e.sendUpdate(ctx, pool)
