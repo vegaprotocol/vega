@@ -49,6 +49,8 @@ func Main(ctx context.Context) error {
 		switch os.Args[1] {
 		case "tendermint", "tm", "cometbft":
 			return (&cometbftCmd{}).Execute(nil)
+		case "emit_withdrawals":
+			return (&emitWithdrawalsCmd{}).Execute(nil)
 		case "wallet":
 			return (&walletCmd{}).Execute(nil)
 		case "datanode":
@@ -84,6 +86,7 @@ func Main(ctx context.Context) error {
 		Start,
 		Node,
 		BlockExplorer,
+		EmitWithdrawals,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
