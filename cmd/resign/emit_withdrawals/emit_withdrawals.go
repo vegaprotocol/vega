@@ -71,7 +71,7 @@ var (
 
 func init() {
 	flag.StringVar(&out, "out", "rebundled.csv", "where to store the outputs rebundled signatures")
-	flag.StringVar(&home, "home", "", "path to the vega home root (required)")
+	flag.StringVar(&home, "home", "", "path to the vega home root")
 	flag.StringVar((*string)(&passphrase), "passphrase", "", "passphrase of the node wallet")
 	flag.StringVar(&bundlesPath, "bundles", "", "path to the signatures bundles (required)")
 }
@@ -148,9 +148,6 @@ func signAllBundles(s bridges.Signer, bundles [][]string) [][]string {
 func Main() {
 	flag.Parse()
 
-	if len(home) <= 0 {
-		log.Fatal("-home argument is required")
-	}
 	if len(bundlesPath) <= 0 {
 		log.Fatal("-bundles argument is required")
 	}
