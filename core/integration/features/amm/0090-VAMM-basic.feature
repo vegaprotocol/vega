@@ -305,8 +305,8 @@ Feature: vAMM rebasing when created or amended
         | party1 | ETH/MAR22 | sell | 400     | 10    | 2                | TYPE_LIMIT | TIF_GTC |           |
     Then the following trades should be executed:
         | buyer     | price | size | seller    | is amm |
-        | vamm1-id  | 99    | 200  | party1    | true   |
-        | vamm2-id  | 99    | 200  | party1    | true   |
+        | vamm1-id  | 98    | 200  | party1    | true   |
+        | vamm2-id  | 98    | 200  | party1    | true   |
    
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price | best bid volume | best offer volume |
@@ -319,10 +319,10 @@ Feature: vAMM rebasing when created or amended
         | party1 | ETH/MAR22 | buy  | 600     | 115   | 4                | TYPE_LIMIT | TIF_GTC |           |
     Then the following trades should be executed:
         | seller     | price | size | buyer    | is amm |
-        | vamm1-id   | 98    | 200  | party1   | true   |
-        | vamm2-id   | 98    | 200  | party1   | true   |
+        | vamm1-id   | 99    | 200  | party1   | true   |
+        | vamm2-id   | 99    | 200  | party1   | true   |
         | vamm1-id   | 101   | 199  | party1   | true   |
-        | vamm2-id   | 100   | 1    | party1   | true   |
+        | vamm2-id   | 102   | 1    | party1   | true   |
     
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price | best bid volume | best offer volume |
@@ -359,8 +359,8 @@ Feature: vAMM rebasing when created or amended
         | party1 | ETH/MAR22 | sell | 100     | 10    | 2                | TYPE_LIMIT | TIF_GTC |           |
     Then the following trades should be executed:
         | buyer     | price  | size | seller    | is amm |
-        | vamm1-id  | 1998   | 99   | party1    | true   |
-        | vamm2-id  | 1998   | 1    | party1    | true   |
+        | vamm1-id  | 1997   | 99   | party1    | true   |
+        | vamm2-id  | 1997   | 1    | party1    | true   |
    
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price | best bid volume | best offer volume |
@@ -374,9 +374,9 @@ Feature: vAMM rebasing when created or amended
     Then the following trades should be executed:
         | seller    | price | size | buyer     | is amm |
         | vamm1-id  | 1997  | 99   | party1    | true   |
-        | vamm2-id  | 1998  | 1    | party1    | true   |
-        | vamm1-id  | 2001  | 1    | party1    | true   |
-        | vamm2-id  | 2002  | 99   | party1    | true   |
+        | vamm2-id  | 2000  | 1    | party1    | true   |
+        | vamm1-id  | 2003  | 1    | party1    | true   |
+        | vamm2-id  | 2001  | 99   | party1    | true   |
    
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode             | best bid price | best offer price | best bid volume | best offer volume |

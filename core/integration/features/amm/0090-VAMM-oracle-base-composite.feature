@@ -64,7 +64,7 @@ Feature: vAMM with oracle driven base price
       | party1 | 100   | 1    | party2 |
 
 
-  @VAMM3
+  @VAMM
   Scenario: 0090-VAMM-038 It's possible to setup the vAMM so that it uses one of the oracles already available for the market in which it operates for its `base price`. In that case the deployment attempt should be deferred until the next value is received from the oracle.
 
    Then the parties submit the following AMM:

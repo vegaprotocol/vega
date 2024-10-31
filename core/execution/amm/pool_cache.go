@@ -21,8 +21,9 @@ import (
 )
 
 type key struct {
-	pos    int64
-	status types.AMMPoolStatus
+	pos       int64
+	status    types.AMMPoolStatus
+	inAuction bool
 }
 
 type priceVolume struct {
@@ -59,25 +60,27 @@ func (pc *poolCache) setFairPrice(pos int64, fp *num.Uint) {
 	}
 }
 
-func (pc *poolCache) getBestPrice(pos int64, side types.Side, status types.AMMPoolStatus) (*num.Uint, uint64, bool) {
+func (pc *poolCache) getBestPrice(pos int64, side types.Side, status types.AMMPoolStatus, auction bool) (*num.Uint, uint64, bool) {
 	cache := pc.sell
 	if side == types.SideBuy {
 		cache = pc.buy
 	}
 
 	if pv, ok := cache[key{
-		pos:    pos,
-		status: status,
+		pos:       pos,
+		status:    status,
+		inAuction: auction,
 	}]; ok {
 		return pv.price, pv.volume, true
 	}
 	return nil, 0, false
 }
 
-func (pc *poolCache) setBestPrice(pos int64, side types.Side, status types.AMMPoolStatus, price *num.Uint, volume uint64) {
+func (pc *poolCache) setBestPrice(pos int64, side types.Side, status types.AMMPoolStatus, auction bool, price *num.Uint, volume uint64) {
 	k := key{
-		pos:    pos,
-		status: status,
+		pos:       pos,
+		status:    status,
+		inAuction: auction,
 	}
 	cache := map[key]*priceVolume{
 		k: {

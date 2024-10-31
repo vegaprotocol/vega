@@ -647,7 +647,11 @@ func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, fake bool) ([]
 	}
 
 	// get the bounds between price levels for the given price level index
-	inner, outer := s.betweenLevels(idx, agg.Price)
+	outerMost := agg.Price
+	if agg.Type == types.OrderTypeMarket {
+		outerMost = nil
+	}
+	inner, outer := s.betweenLevels(idx, outerMost)
 
 	// submit the order to the offbook source for volume between those bounds
 	orders := s.offbook.SubmitOrder(agg, inner, outer)

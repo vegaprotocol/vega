@@ -57,44 +57,53 @@ func testFairPriceCache(t *testing.T) {
 func testBestPriceCache(t *testing.T) {
 	c := NewPoolCache()
 
-	p, v, ok := c.getBestPrice(0, types.SideBuy, types.AMMPoolStatusActive)
+	p, v, ok := c.getBestPrice(0, types.SideBuy, types.AMMPoolStatusActive, false)
 	assert.False(t, ok)
 	assert.Nil(t, p)
 	assert.Zero(t, v)
 
 	// add something to buy cache
-	c.setBestPrice(100, types.SideBuy, types.AMMPoolStatusActive, num.NewUint(123), 321)
+	c.setBestPrice(100, types.SideBuy, types.AMMPoolStatusActive, false, num.NewUint(123), 321)
 
 	// now get it back
-	p, v, ok = c.getBestPrice(100, types.SideBuy, types.AMMPoolStatusActive)
+	p, v, ok = c.getBestPrice(100, types.SideBuy, types.AMMPoolStatusActive, false)
 	assert.True(t, ok)
 	assert.Equal(t, "123", p.String())
 	assert.Equal(t, 321, int(v))
 
 	// now try to get the other side
-	p, v, ok = c.getBestPrice(100, types.SideSell, types.AMMPoolStatusActive)
+	p, v, ok = c.getBestPrice(100, types.SideSell, types.AMMPoolStatusActive, false)
 	assert.False(t, ok)
 	assert.Nil(t, p)
 	assert.Zero(t, v)
 
 	// now try to get it with a different status
-	p, v, ok = c.getBestPrice(100, types.SideBuy, types.AMMPoolStatusReduceOnly)
+	p, v, ok = c.getBestPrice(100, types.SideBuy, types.AMMPoolStatusReduceOnly, false)
 	assert.False(t, ok)
 	assert.Nil(t, p)
 	assert.Zero(t, v)
 
 	// now add one for the other side
-	c.setBestPrice(100, types.SideSell, types.AMMPoolStatusActive, num.NewUint(12300), 32100)
+	c.setBestPrice(100, types.SideSell, types.AMMPoolStatusActive, false, num.NewUint(12300), 32100)
 
 	// check we can still get the buy one
-	p, v, ok = c.getBestPrice(100, types.SideBuy, types.AMMPoolStatusActive)
+	p, v, ok = c.getBestPrice(100, types.SideBuy, types.AMMPoolStatusActive, false)
 	assert.True(t, ok)
 	assert.Equal(t, "123", p.String())
 	assert.Equal(t, 321, int(v))
 
 	// and also the sell one
-	p, v, ok = c.getBestPrice(100, types.SideSell, types.AMMPoolStatusActive)
+	p, v, ok = c.getBestPrice(100, types.SideSell, types.AMMPoolStatusActive, false)
 	assert.True(t, ok)
 	assert.Equal(t, "12300", p.String())
 	assert.Equal(t, 32100, int(v))
+
+	// now we're in auction
+	// check we can still get the buy one
+	_, _, ok = c.getBestPrice(100, types.SideBuy, types.AMMPoolStatusActive, true)
+	assert.False(t, ok)
+
+	// and also the sell one
+	_, _, ok = c.getBestPrice(100, types.SideSell, types.AMMPoolStatusActive, true)
+	assert.False(t, ok)
 }

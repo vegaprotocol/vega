@@ -105,12 +105,12 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
 
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 100   | 4    | vamm1-id | true   |
+      | party4 | 101   | 4    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 102       | 102              |
+      | 101        | TRADING_MODE_CONTINUOUS | 102       | 102              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 4      | 0              | 0            |        |
@@ -156,12 +156,12 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 100   | 4    | vamm1-id | true   |
+      | party4 | 101   | 4    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 102       | 102              |
+      | 101        | TRADING_MODE_CONTINUOUS | 102       | 102              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 4      | 0              | 0            |        |
@@ -182,7 +182,7 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
     # check that the account balances have not been updated either
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
-      | vamm1-id | USD   | ETH/MAR22 | 29162   | 840    | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 29153   | 849    | true   |
 
     # To account for a passing test caused by an event not being sent out, cancel the vAMM and check the status
     When the parties cancel the following AMM:

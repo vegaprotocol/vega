@@ -37,6 +37,7 @@ type AMMBaseCommand struct {
 	SlippageTolerance         num.Decimal
 	ProposedFee               num.Decimal
 	MinimumPriceChangeTrigger num.Decimal
+	Spread                    num.Decimal
 }
 
 type ConcentratedLiquidityParameters struct {
@@ -161,6 +162,11 @@ func NewSubmitAMMFromProto(
 		minimumPriceChangeTrigger, _ = num.DecimalFromString(*submitAMM.MinimumPriceChangeTrigger)
 	}
 
+	spread := num.DecimalZero()
+	if submitAMM.Spread != nil {
+		spread, _ = num.DecimalFromString(*submitAMM.Spread)
+	}
+
 	slippage, _ := num.DecimalFromString(submitAMM.SlippageTolerance)
 	proposedFee, _ := num.DecimalFromString(submitAMM.ProposedFee)
 	return &SubmitAMM{
@@ -170,6 +176,7 @@ func NewSubmitAMMFromProto(
 			SlippageTolerance:         slippage,
 			ProposedFee:               proposedFee,
 			MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
+			Spread:                    spread,
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{
@@ -215,7 +222,6 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 		base = s.Parameters.Base.String()
 	}
 
-	minimumPriceChangeTrigger := ptr.From(s.MinimumPriceChangeTrigger.String())
 	return &commandspb.SubmitAMM{
 		MarketId:          s.MarketID,
 		CommitmentAmount:  s.CommitmentAmount.String(),
@@ -228,7 +234,8 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 			LeverageAtUpperBound: leverageUpper,
 			LeverageAtLowerBound: leverageLower,
 		},
-		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
+		MinimumPriceChangeTrigger: ptr.From(s.MinimumPriceChangeTrigger.String()),
+		Spread:                    ptr.From(s.Spread.String()),
 	}
 }
 
@@ -271,6 +278,7 @@ func (a AmendAMM) IntoProto() *commandspb.AmendAMM {
 		ret.ConcentratedLiquidityParameters.LeverageAtUpperBound = ptr.From(a.Parameters.LeverageAtUpperBound.String())
 	}
 	ret.MinimumPriceChangeTrigger = ptr.From(a.MinimumPriceChangeTrigger.String())
+	ret.Spread = ptr.From(a.Spread.String())
 	return ret
 }
 
@@ -322,6 +330,11 @@ func NewAmendAMMFromProto(
 		minimumPriceChangeTrigger, _ = num.DecimalFromString(*amendAMM.MinimumPriceChangeTrigger)
 	}
 
+	spread := num.DecimalZero()
+	if amendAMM.Spread != nil {
+		spread, _ = num.DecimalFromString(*amendAMM.Spread)
+	}
+
 	return &AmendAMM{
 		AMMBaseCommand: AMMBaseCommand{
 			Party:                     party,
@@ -329,6 +342,7 @@ func NewAmendAMMFromProto(
 			SlippageTolerance:         slippage,
 			ProposedFee:               proposedFee,
 			MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
+			Spread:                    spread,
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{

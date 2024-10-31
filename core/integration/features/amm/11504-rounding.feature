@@ -111,13 +111,13 @@ Feature: Ensure rounding errors do not cause empty curve panic.
 
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 100   | 3    | vamm1-id | true   |
-      | party4 | 100   | 2    | vamm2-id | true   |
+      | party4 | 101   | 3    | vamm1-id | true   |
+      | party4 | 101   | 2    | vamm2-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 101       | 101              |
+      | 101        | TRADING_MODE_CONTINUOUS | 101       | 101              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 5      | 0              | 0            |        |
@@ -134,14 +134,14 @@ Feature: Ensure rounding errors do not cause empty curve panic.
       | party4 | ETH/MAR22 | buy  | 31     | 110   | 2                | TYPE_LIMIT | TIF_GTC |
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 105   | 16   | vamm1-id | true   |
-      | party4 | 104   | 15   | vamm2-id | true   |
+      | party4 | 104   | 16   | vamm1-id | true   |
+      | party4 | 103   | 15   | vamm2-id | true   |
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price |
-      | 104        | TRADING_MODE_CONTINUOUS | 108       | 108              |
+      | 103        | TRADING_MODE_CONTINUOUS | 108       | 108              |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 36     | 4              | 0            |        |
-      | vamm1-id | -19    | 4              | 0            | true   |
-      | vamm2-id | -17    | -8             | 0            | true   |
+      | party4   | 36     | -6             | 0            |        |
+      | vamm1-id | -19    | 10             | 0            | true   |
+      | vamm2-id | -17    | -4             | 0            | true   |

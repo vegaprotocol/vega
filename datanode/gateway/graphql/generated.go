@@ -211,6 +211,7 @@ type ComplexityRoot struct {
 		Parameters                func(childComplexity int) int
 		PartyId                   func(childComplexity int) int
 		ProposedFee               func(childComplexity int) int
+		Spread                    func(childComplexity int) int
 		Status                    func(childComplexity int) int
 		StatusReason              func(childComplexity int) int
 	}
@@ -4291,6 +4292,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AMM.ProposedFee(childComplexity), true
+
+	case "AMM.spread":
+		if e.complexity.AMM.Spread == nil {
+			break
+		}
+
+		return e.complexity.AMM.Spread(childComplexity), true
 
 	case "AMM.status":
 		if e.complexity.AMM.Status == nil {
@@ -22178,6 +22186,50 @@ func (ec *executionContext) fieldContext_AMM_minimumPriceChangeTrigger(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _AMM_spread(ctx context.Context, field graphql.CollectedField, obj *v1.AMM) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AMM_spread(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Spread, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AMM_spread(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AMM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AMMConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AMMConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AMMConnection_edges(ctx, field)
 	if err != nil {
@@ -22335,6 +22387,8 @@ func (ec *executionContext) fieldContext_AMMEdge_node(ctx context.Context, field
 				return ec.fieldContext_AMM_proposedFee(ctx, field)
 			case "minimumPriceChangeTrigger":
 				return ec.fieldContext_AMM_minimumPriceChangeTrigger(ctx, field)
+			case "spread":
+				return ec.fieldContext_AMM_spread(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AMM", field.Name)
 		},
@@ -115117,6 +115171,11 @@ func (ec *executionContext) _AMM(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._AMM_proposedFee(ctx, field, obj)
 		case "minimumPriceChangeTrigger":
 			out.Values[i] = ec._AMM_minimumPriceChangeTrigger(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "spread":
+			out.Values[i] = ec._AMM_spread(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

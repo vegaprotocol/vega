@@ -265,7 +265,7 @@ func testSubmitOrderAtBestPrice(t *testing.T) {
 	ensurePosition(t, tst.pos, 0, num.NewUint(0))
 	orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(2001))
 	require.Len(t, orders, 1)
-	assert.Equal(t, "2000", orders[0].Price.String())
+	assert.Equal(t, "2001", orders[0].Price.String())
 	assert.Equal(t, 11927, int(orders[0].Size))
 
 	bb, _, ba, _ := tst.engine.BestPricesAndVolumes()
@@ -360,7 +360,7 @@ func testSubmitOrderProRata(t *testing.T) {
 	orders := tst.engine.SubmitOrder(agg, num.NewUint(2010), num.NewUint(2020))
 	require.Len(t, orders, 3)
 	for _, o := range orders {
-		assert.Equal(t, "2000", o.Price.String())
+		assert.Equal(t, "2001", o.Price.String())
 		assert.Equal(t, uint64(222), o.Size)
 	}
 }
@@ -402,9 +402,9 @@ func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
 	require.Len(t, orders, 6)
 
 	// first round, three orders moving all pool's to the upper boundary of the shortest
-	assert.Equal(t, "2049", orders[0].Price.String())
-	assert.Equal(t, "2049", orders[1].Price.String())
-	assert.Equal(t, "2049", orders[2].Price.String())
+	assert.Equal(t, "2048", orders[0].Price.String())
+	assert.Equal(t, "2048", orders[1].Price.String())
+	assert.Equal(t, "2048", orders[2].Price.String())
 
 	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
 	assert.Equal(t, "2124", orders[3].Price.String())
@@ -452,9 +452,9 @@ func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
 	require.Len(t, orders, 6)
 
 	// first round, three orders moving all pool's to the upper boundary of the shortest
-	assert.Equal(t, "1949", orders[0].Price.String())
-	assert.Equal(t, "1949", orders[1].Price.String())
-	assert.Equal(t, "1949", orders[2].Price.String())
+	assert.Equal(t, "1948", orders[0].Price.String())
+	assert.Equal(t, "1948", orders[1].Price.String())
+	assert.Equal(t, "1948", orders[2].Price.String())
 
 	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
 	assert.Equal(t, "1874", orders[3].Price.String())
@@ -503,7 +503,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	expectSubaccountCreation(t, tst, party, subAccount)
 	whenAMMIsSubmitted(t, tst, submit)
 
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(10).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(8).Return(
 		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
 	)
 
@@ -514,7 +514,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	assert.Equal(t, 1192, int(avolume))
 
 	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(10).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(8).Return(
 		[]events.MarketPosition{&marketPosition{size: -222000, averageEntry: num.NewUint(0)}},
 	)
 
@@ -525,7 +525,7 @@ func TestBestPricesAndVolumeNearBound(t *testing.T) {
 	assert.Equal(t, 104, int(avolume))
 
 	// lets move its position so that the fair price is within one tick of the AMMs upper boundary
-	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(10).Return(
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(8).Return(
 		[]events.MarketPosition{&marketPosition{size: 270400, averageEntry: num.NewUint(0)}},
 	)
 
@@ -746,7 +746,7 @@ func testAMMSnapshot(t *testing.T) {
 	orders := tst.engine.SubmitOrder(agg, num.NewUint(2010), num.NewUint(2020))
 	require.Len(t, orders, 3)
 	for _, o := range orders {
-		assert.Equal(t, "2000", o.Price.String())
+		assert.Equal(t, "2001", o.Price.String())
 		assert.Equal(t, uint64(222), o.Size)
 	}
 

@@ -72,6 +72,14 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 		}
 	}
 
+	if cmd.Spread != nil {
+		if spread, err := num.DecimalFromString(*cmd.Spread); err != nil {
+			errs.AddForProperty("submit_amm.spread", ErrIsNotValid)
+		} else if spread.LessThan(num.DecimalZero()) {
+			errs.AddForProperty("submit_amm.spread", ErrMustBePositiveOrZero)
+		}
+	}
+
 	if cmd.ConcentratedLiquidityParameters == nil {
 		errs.FinalAddForProperty("submit_amm.concentrated_liquidity_parameters", ErrIsRequired)
 	} else {

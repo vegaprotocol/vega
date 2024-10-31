@@ -52,6 +52,7 @@ type AMMPool struct {
 	UpperTheoreticalPosition       num.Decimal
 	DataSourceID                   SpecID
 	MinimumPriceChangeTrigger      num.Decimal
+	Spread                         num.Decimal
 }
 
 type AMMFilterType interface {
@@ -166,6 +167,11 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		return AMMPool{}, err
 	}
 
+	spread, err := num.DecimalFromString(pool.Spread)
+	if err != nil {
+		return AMMPool{}, err
+	}
+
 	specID := SpecID("")
 	if pool.Parameters.DataSourceId != nil {
 		specID = SpecID(*pool.Parameters.DataSourceId)
@@ -193,6 +199,7 @@ func AMMPoolFromProto(pool *eventspb.AMM, vegaTime time.Time) (AMMPool, error) {
 		UpperTheoreticalPosition:       upperPv,
 		DataSourceID:                   specID,
 		MinimumPriceChangeTrigger:      minimumPriceChangeTrigger,
+		Spread:                         spread,
 	}, nil
 }
 
@@ -234,6 +241,7 @@ func (p AMMPool) ToProto() *eventspb.AMM {
 		StatusReason:              eventspb.AMM_StatusReason(p.StatusReason),
 		ProposedFee:               fee,
 		MinimumPriceChangeTrigger: p.MinimumPriceChangeTrigger.String(),
+		Spread:                    p.Spread.String(),
 		Parameters: &eventspb.AMM_ConcentratedLiquidityParameters{
 			Base:                 p.ParametersBase.String(),
 			LowerBound:           lowerBound,

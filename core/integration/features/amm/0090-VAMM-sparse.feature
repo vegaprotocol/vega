@@ -121,7 +121,7 @@ Feature: vAMM rebasing when created or amended
       | party1 | ETH/MAR22 | sell | 1      | 98    | 1                | TYPE_LIMIT | TIF_GTC |           |
   Then the following trades should be executed:
       | buyer     | price | size | seller    | is amm |
-      | vamm1-id  | 99    | 1    | party1    | true   |
+      | vamm1-id  | 98    | 1    | party1    | true   |
 
   # AMM is now quoting at 96 and 100, but we have our sell limit order at 99.
   And the market data for the market "ETH/MAR22" should be:
