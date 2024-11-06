@@ -114,12 +114,12 @@ Feature: vAMM behaviour when a market settles
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 100   | 1    | vamm1-id | true   |
+      | party4 | 101   | 1    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | supplied stake |
-      | 100        | TRADING_MODE_CONTINUOUS | 101       | 101              | 1000           |
+      | 101        | TRADING_MODE_CONTINUOUS | 101       | 101              | 1000           |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 1      | 0              | 0            |        |
@@ -136,7 +136,7 @@ Feature: vAMM behaviour when a market settles
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 0       |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 29791   | 210    | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 29788   | 213    | true   |
 
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value          |
@@ -158,8 +158,8 @@ Feature: vAMM behaviour when a market settles
     # Different scenario's involving a final settlement: break even, profit and loss.
     Examples:
       | settle price | margin | amm balance | general balance |
-      | 105          | 205    | 29997       | 29997           | # settle price < market price: +1 from fees +1 from final settlement
-      | 107          | 203    | 29995       | 29995           | # settle price > market price: +1 from fees, -1 from final settlement
-      | 104          | 206    | 29998       | 29998           | # settle price < market price: +1 from fees +2 from final settlement
-      | 106          | 204    | 29996       | 29996           | # settle price = market price: +1 from fees
-      | 108          | 202    | 29994       | 29994           | # settle price > market price: +1 from fees, -2 from final settlement
+      | 105          | 209    | 29998       | 29998           | # settle price < market price: +1 from fees +1 from final settlement
+      | 107          | 207    | 29996       | 29996           | # settle price > market price: +1 from fees, -1 from final settlement
+      | 104          | 210    | 29999       | 29999           | # settle price < market price: +1 from fees +2 from final settlement
+      | 106          | 208    | 29997       | 29997           | # settle price = market price: +1 from fees
+      | 108          | 206    | 29995       | 29995           | # settle price > market price: +1 from fees, -2 from final settlement

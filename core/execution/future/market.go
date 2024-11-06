@@ -686,12 +686,14 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 			// there was previously a intenal composite price calculator
 			if err := m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, internalCompositePriceConfig); err != nil {
 				m.internalCompositePriceCalculator.SetOraclePriceScalingFunc(m.scaleOracleData)
+				m.internalCompositePriceCalculator.NotifyOnDataSourcePropagation(m.dataSourcePropagation)
 				return err
 			}
 		} else if internalCompositePriceConfig != nil {
 			// it's a new index calculator
 			m.internalCompositePriceCalculator = common.NewCompositePriceCalculator(ctx, internalCompositePriceConfig, oracleEngine, m.timeService)
 			m.internalCompositePriceCalculator.SetOraclePriceScalingFunc(m.scaleOracleData)
+			m.internalCompositePriceCalculator.NotifyOnDataSourcePropagation(m.dataSourcePropagation)
 		}
 	}
 
@@ -1648,6 +1650,8 @@ func (m *Market) enterAuction(ctx context.Context) {
 	// Change market type to auction
 	ordersToCancel := m.matching.EnterAuction()
 
+	m.amm.EnterAuction()
+
 	// Move into auction mode to prevent pegged order repricing
 	event := m.as.AuctionStarted(ctx, m.timeService.GetTimeNow())
 
@@ -1681,6 +1685,8 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 	if err != nil {
 		m.log.Error("Error leaving auction", logging.Error(err))
 	}
+
+	m.amm.LeaveAuction()
 
 	// Process each confirmation & apply fee calculations to each trade
 	evts := make([]events.Event, 0, len(uncrossedOrders))
@@ -5578,6 +5584,7 @@ func (m *Market) dataSourcePropagation(ctx context.Context, dataSourceID string,
 				SlippageTolerance:         p.SlippageTolerance,
 				ProposedFee:               p.ProposedFee,
 				MinimumPriceChangeTrigger: p.MinimumPriceChangeTrigger,
+				Spread:                    p.Spread,
 			},
 			CommitmentAmount: nil,
 			Parameters:       params,
@@ -5618,7 +5625,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 					ctx, pool.Owner(), m.GetID(), pool.AMMParty, pool.ID,
 					pool.CommitmentAmount(), pool.Parameters,
 					types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
-					pool.ProposedFee, nil, nil, num.DecimalZero(),
+					pool.ProposedFee, nil, nil, num.DecimalZero(), num.DecimalZero(),
 				),
 			)
 			return err
@@ -5632,7 +5639,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotFillCommitment,
-				pool.ProposedFee, nil, nil, num.DecimalZero(),
+				pool.ProposedFee, nil, nil, num.DecimalZero(), num.DecimalZero(),
 			),
 		)
 		return err
@@ -5658,7 +5665,7 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 				ctx, submit.Party, m.GetID(), pool.AMMParty, pool.ID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMStatusReasonCannotRebase,
-				pool.ProposedFee, nil, nil, num.DecimalZero(),
+				pool.ProposedFee, nil, nil, num.DecimalZero(), num.DecimalZero(),
 			),
 		)
 		return err

@@ -129,13 +129,15 @@ type Pool struct {
 	ProposedFee num.Decimal
 	Parameters  *types.ConcentratedLiquidityParameters
 
-	asset                     string
-	market                    string
-	owner                     string
-	collateral                Collateral
-	position                  Position
-	priceFactor               num.Decimal
-	positionFactor            num.Decimal
+	asset          string
+	market         string
+	owner          string
+	collateral     Collateral
+	position       Position
+	priceFactor    num.Decimal
+	positionFactor num.Decimal
+
+	Spread                    num.Decimal
 	SlippageTolerance         num.Decimal
 	MinimumPriceChangeTrigger num.Decimal
 
@@ -159,6 +161,8 @@ type Pool struct {
 	oneTick              *num.Uint // one price tick
 
 	cache *poolCache
+
+	inAuction bool
 }
 
 func NewPool(
@@ -177,8 +181,6 @@ func NewPool(
 	positionFactor num.Decimal,
 	maxCalculationLevels *num.Uint,
 	allowedEmptyAMMLevels uint64,
-	slippageTolerance num.Decimal,
-	minimumPriceChangeTrigger num.Decimal,
 ) (*Pool, error) {
 	oneTick, _ := num.UintFromDecimal(priceFactor)
 	pool := &Pool{
@@ -200,8 +202,9 @@ func NewPool(
 		status:                    types.AMMPoolStatusActive,
 		maxCalculationLevels:      maxCalculationLevels,
 		cache:                     NewPoolCache(),
-		SlippageTolerance:         slippageTolerance,
-		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
+		Spread:                    submit.Spread,
+		SlippageTolerance:         submit.SlippageTolerance,
+		MinimumPriceChangeTrigger: submit.MinimumPriceChangeTrigger,
 	}
 
 	if submit.Parameters.DataSourceID != nil {
@@ -298,6 +301,14 @@ func NewPoolFromProto(
 		}
 	}
 
+	spread := num.DecimalZero()
+	if state.Spread != "" {
+		spread, err = num.DecimalFromString(state.Spread)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Pool{
 		log:         log,
 		ID:          state.Id,
@@ -327,6 +338,8 @@ func NewPoolFromProto(
 		cache:                     NewPoolCache(),
 		SlippageTolerance:         slippageTolerance,
 		MinimumPriceChangeTrigger: minimumPriceChangeTrigger,
+		Spread:                    spread,
+		inAuction:                 state.Auction,
 	}, nil
 }
 
@@ -394,6 +407,8 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 		Status:                    p.status,
 		SlippageTolerance:         p.SlippageTolerance.String(),
 		MinimumPriceChangeTrigger: p.MinimumPriceChangeTrigger.String(),
+		Spread:                    p.Spread.String(),
+		Auction:                   p.inAuction,
 	}
 }
 
@@ -468,6 +483,8 @@ func (p *Pool) Update(
 		cache:                     NewPoolCache(),
 		SlippageTolerance:         amend.SlippageTolerance,
 		MinimumPriceChangeTrigger: amend.MinimumPriceChangeTrigger,
+		Spread:                    amend.Spread,
+		inAuction:                 p.inAuction,
 	}
 
 	// data source has changed, if the old base price is within bounds we'll keep it until the update comes in
@@ -679,12 +696,52 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l num.Decimal) num.Decimal
 
 // PriceForVolume returns the price the AMM is willing to trade at to match with the given volume of an incoming order.
 func (p *Pool) PriceForVolume(volume uint64, side types.Side) *num.Uint {
-	return p.priceForVolumeAtPosition(
-		volume,
-		side,
-		p.getPosition(),
-		p.FairPrice(),
-	)
+	// get the volume between FP and the best price
+	bestPrice, v := p.BestPriceAndVolume(types.OtherSide(side))
+	if v >= volume {
+		return bestPrice
+	}
+
+	aep := num.UintZero().Mul(bestPrice, num.NewUint(v))
+
+	// the remainiing volume that trade past the best price needs to be the average execution price
+	remaining := volume - v
+
+	var posBestPrice, posAll int64
+	pos := p.getPosition()
+	switch side {
+	case types.SideSell:
+		// position at best price
+		posBestPrice = pos + int64(v)
+
+		// position after all volume
+		posAll = pos + int64(volume)
+	case types.SideBuy:
+		// position at best price
+		posBestPrice = pos - int64(v)
+
+		// position after all volume
+		posAll = pos - int64(volume)
+	}
+
+	// if the volume trades into the other curve, we have to calculate the average execution price across
+	// both curves
+	if posBestPrice*posAll < 0 {
+		// average execution price from best-price -> pool base
+		d := uint64(num.AbsV(posBestPrice))
+		price := p.priceForVolumeAtPosition(d, side, posBestPrice, bestPrice)
+		aep.Add(aep, num.UintZero().Mul(price, num.NewUint(d)))
+
+		// average execution price from pool base -> remaining volume
+		d = uint64(num.AbsV(posAll))
+		price = p.priceForVolumeAtPosition(d, side, 0, p.lower.high)
+		aep.Add(aep, num.UintZero().Mul(price, num.NewUint(d)))
+	} else {
+		price := p.priceForVolumeAtPosition(remaining, side, posBestPrice, bestPrice)
+		aep.Add(aep, num.UintZero().Mul(price, num.NewUint(remaining)))
+	}
+
+	return num.UintZero().Div(aep, num.NewUint(volume))
 }
 
 // priceForVolumeAtPosition returns the price the AMM is willing to trade at to match with the given volume if its position and fair-price
@@ -999,9 +1056,9 @@ func (p *Pool) virtualBalances(pos int64, fp *num.Uint, side types.Side) (num.De
 
 // BestPrice returns the AMM's quote price on the given side. If the AMM's position is fully at a boundary
 // then there is no quote price on that side and false is returned.
-func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
+func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool, bool) {
 	if p.IsPending() {
-		return nil, false
+		return nil, false, false
 	}
 
 	pos := p.getPosition()
@@ -1014,24 +1071,49 @@ func (p *Pool) BestPrice(side types.Side) (*num.Uint, bool) {
 			cu = p.upper
 			// we're short, and want the sell quote price, if we're at the boundary there is not volume left
 			if p.closing() || num.AbsV(pos) >= cu.pv.IntPart() {
-				return nil, false
+				return nil, false, false
+			}
+		}
+
+		bestPrice := num.UintZero().Add(fairPrice, p.oneTick)
+		if !p.inAuction && !p.Spread.IsZero() {
+			// calculate the spread from the fair price
+			spreadPrice := num.DecimalOne().Add(p.Spread).Mul(fairPrice.ToDecimal())
+			if spreadPrice.GreaterThan(bestPrice.ToDecimal()) {
+				bestPrice, _ = num.UintFromDecimal(spreadPrice.Ceil())
+				if spreadPrice.IsNegative() {
+					bestPrice = num.MaxUint()
+				}
 			}
 		}
 
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
-		return num.Min(p.upper.high, num.Max(np, fairPrice.AddSum(p.oneTick))), true
+		lowVolume := np.GT(bestPrice)
+		return num.Min(p.upper.high, num.Max(np, bestPrice)), true, lowVolume
 	case types.SideBuy:
 		cu := p.upper
 		if pos >= 0 {
 			cu = p.lower
 			// we're long, and want the buy quote price, if we're at the boundary there is not volume left
 			if p.closing() || pos >= cu.pv.IntPart() {
-				return nil, false
+				return nil, false, false
+			}
+		}
+
+		bestPrice := num.UintZero().Sub(fairPrice, p.oneTick)
+		if !p.inAuction && !p.Spread.IsZero() {
+			spreadPrice := num.DecimalOne().Sub(p.Spread).Mul(fairPrice.ToDecimal())
+			if spreadPrice.LessThan(bestPrice.ToDecimal()) {
+				bestPrice, _ = num.UintFromDecimal(spreadPrice)
+				if spreadPrice.IsNegative() {
+					bestPrice = num.UintZero()
+				}
 			}
 		}
 
 		np := cu.singleVolumePrice(p.sqrt, fairPrice, side)
-		return num.Max(p.lower.low, num.Min(np, num.UintZero().Sub(fairPrice, p.oneTick))), true
+		lowVolume := np.LT(bestPrice)
+		return num.Max(p.lower.low, num.Min(np, bestPrice)), true, lowVolume
 	default:
 		panic("should never reach here")
 	}
@@ -1042,39 +1124,35 @@ func (p *Pool) BestPriceAndVolume(side types.Side) (*num.Uint, uint64) {
 	// check cache
 	pos := p.getPosition()
 
-	if p, v, ok := p.cache.getBestPrice(pos, side, p.status); ok {
+	if p, v, ok := p.cache.getBestPrice(pos, side, p.status, p.inAuction); ok {
 		return p, v
 	}
 
-	price, ok := p.BestPrice(side)
+	price, ok, lowVolume := p.BestPrice(side)
 	if !ok {
 		return price, 0
 	}
 
 	// now calculate the volume
-	fp := p.FairPrice()
 	if side == types.SideBuy {
-		priceTick := num.Max(p.lower.low, num.UintZero().Sub(fp, p.oneTick))
-
-		if !price.GTE(priceTick) {
-			p.cache.setBestPrice(pos, side, p.status, price, 1)
+		if lowVolume {
+			p.cache.setBestPrice(pos, side, p.status, p.inAuction, price, 1)
 			return price, 1 // its low volume so 1 by construction
 		}
 
-		volume := p.TradableVolumeForPrice(types.SideSell, priceTick)
-		p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
-		return priceTick, volume
+		volume := p.TradableVolumeForPrice(types.SideSell, price)
+		p.cache.setBestPrice(pos, side, p.status, p.inAuction, price, volume)
+		return price, volume
 	}
 
-	priceTick := num.Min(p.upper.high, num.UintZero().Add(fp, p.oneTick))
-	if !price.LTE(priceTick) {
-		p.cache.setBestPrice(pos, side, p.status, price, 1)
+	if lowVolume {
+		p.cache.setBestPrice(pos, side, p.status, p.inAuction, price, 1)
 		return price, 1 // its low volume so 1 by construction
 	}
 
-	volume := p.TradableVolumeForPrice(types.SideBuy, priceTick)
-	p.cache.setBestPrice(pos, side, p.status, priceTick, volume)
-	return priceTick, volume
+	volume := p.TradableVolumeForPrice(types.SideBuy, price)
+	p.cache.setBestPrice(pos, side, p.status, p.inAuction, price, volume)
+	return price, volume
 }
 
 func (p *Pool) LiquidityFee() num.Decimal {

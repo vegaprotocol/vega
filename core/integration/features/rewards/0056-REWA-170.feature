@@ -55,16 +55,16 @@ Feature: If an AMM sub-key earns rewards, they are transferred into the sub-keys
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | ETH/MAR22 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 1      | 101   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 101   | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
     And the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 | 100   | 1    | party2 |
+      | party1 | 101   | 1    | party2 |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            |
-      | 100        | TRADING_MODE_CONTINUOUS |
+      | 101        | TRADING_MODE_CONTINUOUS |
     
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower leverage | upper leverage | proposed fee |
@@ -87,7 +87,7 @@ Feature: If an AMM sub-key earns rewards, they are transferred into the sub-keys
       | party1 | ETH/MAR22 | buy  | 1      | 0     | 1                | TYPE_MARKET | TIF_FOK |
     Then the following trades should be executed:
       | buyer  | price | size | seller                                                           | buyer maker fee |
-      | party1 | 100   | 1    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 1               |
+      | party1 | 101   | 1    | 137112507e25d3845a56c47db15d8ced0f28daa8498a0fd52648969c4b296aba | 1               |
 
     When the network moves ahead "11" blocks
     Then the current epoch is "2"

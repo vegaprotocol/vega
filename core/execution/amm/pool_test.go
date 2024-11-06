@@ -423,7 +423,7 @@ func testBestPrice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ensurePositionN(t, p.pos, tt.position, num.UintZero(), 2)
-			quote, ok := p.pool.BestPrice(tt.side)
+			quote, ok, _ := p.pool.BestPrice(tt.side)
 			if tt.expectedPrice == "" {
 				assert.False(t, ok)
 			} else {
@@ -591,8 +591,6 @@ func newBasicPoolWithSubmit(t *testing.T, submit *types.SubmitAMM) (*Pool, error
 		num.DecimalOne(),
 		num.NewUint(10000),
 		0,
-		num.DecimalZero(),
-		num.DecimalZero(),
 	)
 }
 
@@ -683,12 +681,12 @@ func TestNotebook(t *testing.T) {
 	assert.Equal(t, "1854", fairPrice.String())
 
 	// fair price is 2000 and the AMM quotes a best-buy at 1999 so incoming SELL should have a price <= 1999
-	ensurePositionN(t, p.pos, 0, lowmid.Clone(), 2)
+	ensurePositionN(t, p.pos, 0, lowmid.Clone(), -1)
 	price := p.pool.PriceForVolume(100, types.SideSell)
 	assert.Equal(t, "1984", price.String())
 
 	// fair price is 2000 and the AMM quotes a best-buy at 2001 so incoming BUY should have a price >= 2001
-	ensurePositionN(t, p.pos, 0, lowmid.Clone(), 2)
+	ensurePositionN(t, p.pos, 0, lowmid.Clone(), -1)
 	price = p.pool.PriceForVolume(100, types.SideBuy)
 	assert.Equal(t, "2014", price.String())
 }
@@ -762,8 +760,6 @@ func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, hi
 		positionFactor,
 		num.NewUint(100000),
 		allowedEmptyAMMLevels,
-		num.DecimalZero(),
-		num.DecimalZero(),
 	)
 	assert.NoError(t, err)
 
@@ -805,8 +801,6 @@ func newTestPoolWithSubmission(t *testing.T, positionFactor, priceFactor num.Dec
 		positionFactor,
 		num.NewUint(1000),
 		allowedEmptyAMMLevels,
-		num.DecimalZero(),
-		num.DecimalZero(),
 	)
 	require.NoError(t, err)
 

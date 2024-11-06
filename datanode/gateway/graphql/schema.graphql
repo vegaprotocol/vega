@@ -7832,6 +7832,8 @@ type AMM {
   proposedFee: String
   "An AMM with an oracle driven base price will only be updated if abs(new-base-price / old-base-price - 1) >= minimum_price_change_trigger"
   minimumPriceChangeTrigger: String!
+  "Factor of the fair-price that the AMM quotes as its best prices"
+  spread: String!
 }
 
 type ConcentratedLiquidityParameters {

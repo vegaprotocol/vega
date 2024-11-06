@@ -99,6 +99,7 @@ func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 		"upper leverage", // dec
 		"data source id",
 		"minimum price change trigger",
+		"spread",
 		"error",
 	})
 }
@@ -118,6 +119,7 @@ func parseAmendAMMTable(table *godog.Table) []RowWrapper {
 		"upper leverage", // dec
 		"data source id",
 		"minimum price change trigger",
+		"spread",
 		"error",
 	})
 }
@@ -149,6 +151,7 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 			SlippageTolerance:         a.slippage(),
 			ProposedFee:               a.proposedFee(),
 			MinimumPriceChangeTrigger: a.minimumPriceChangeTrigger(),
+			Spread:                    a.spread(),
 		},
 		CommitmentAmount: a.amount(),
 		Parameters: &types.ConcentratedLiquidityParameters{
@@ -170,6 +173,7 @@ func (a ammRow) toAmendment() *types.AmendAMM {
 			SlippageTolerance:         a.slippage(),
 			ProposedFee:               a.proposedFee(),
 			MinimumPriceChangeTrigger: a.minimumPriceChangeTrigger(),
+			Spread:                    a.spread(),
 		},
 	}
 	if a.r.HasColumn("amount") {
@@ -270,6 +274,13 @@ func (a ammRow) minimumPriceChangeTrigger() num.Decimal {
 		return num.DecimalZero()
 	}
 	return a.r.MustDecimal("minimum price change trigger")
+}
+
+func (a ammRow) spread() num.Decimal {
+	if !a.r.HasColumn("spread") {
+		return num.DecimalZero()
+	}
+	return a.r.MustDecimal("spread")
 }
 
 func (a ammRow) lowerLeverage() *num.Decimal {

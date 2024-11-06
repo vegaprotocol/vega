@@ -146,6 +146,8 @@ type Engine struct {
 	minCommitmentQuantum  *num.Uint
 	maxCalculationLevels  *num.Uint
 	allowedEmptyAMMLevels uint64
+
+	inAuction bool
 }
 
 func New(
@@ -211,6 +213,8 @@ func NewFromProto(
 		e.add(p)
 	}
 
+	e.inAuction = state.Auction
+
 	return e, nil
 }
 
@@ -218,6 +222,7 @@ func (e *Engine) IntoProto() *v1.AmmState {
 	state := &v1.AmmState{
 		AmmPartyIds: make([]*v1.StringMapEntry, 0, len(e.ammParties)),
 		Pools:       make([]*v1.PoolMapEntry, 0, len(e.pools)),
+		Auction:     e.inAuction,
 	}
 
 	for k, v := range e.ammParties {
@@ -235,6 +240,20 @@ func (e *Engine) IntoProto() *v1.AmmState {
 		})
 	}
 	return state
+}
+
+func (e *Engine) EnterAuction() {
+	e.inAuction = true
+	for _, p := range e.poolsCpy {
+		p.inAuction = true
+	}
+}
+
+func (e *Engine) LeaveAuction() {
+	e.inAuction = false
+	for _, p := range e.poolsCpy {
+		p.inAuction = false
+	}
 }
 
 func (e *Engine) OnMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) {
@@ -349,7 +368,7 @@ func (e *Engine) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
 	vol := uint64(0)
 	for _, pool := range e.poolsCpy {
 		// get the pool's current price
-		best, ok := pool.BestPrice(types.OtherSide(side))
+		best, ok, _ := pool.BestPrice(types.OtherSide(side))
 		if !ok {
 			continue
 		}
@@ -382,8 +401,8 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	for _, p := range active {
 		p.setEphemeralPosition()
 
-		price, ok := p.BestPrice(types.OtherSide(agg.Side))
-		if !ok {
+		price, volume := p.BestPriceAndVolume(types.OtherSide(agg.Side))
+		if volume == 0 {
 			continue
 		}
 
@@ -572,14 +591,20 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 		// we hit a discontinuity where an AMM's two curves meet if we try to trade over its base-price
 		// so we partition the inner/outer price range at the base price so that we instead trade across it
 		// in two steps.
+		var addBase bool
 		boundary := p.upper.low
-		if inner != nil && outer != nil {
-			if boundary.LT(outer) && boundary.GT(inner) {
-				bounds[boundary.String()] = boundary.Clone()
-			}
-		} else if outer == nil && boundary.GT(inner) {
-			bounds[boundary.String()] = boundary.Clone()
-		} else if inner == nil && boundary.LT(outer) {
+		switch {
+		case inner != nil && outer != nil:
+			addBase = boundary.LT(outer) && boundary.GT(inner)
+		case inner == nil && outer == nil:
+			addBase = true
+		case outer == nil && boundary.GT(inner):
+			addBase = true
+		case inner == nil && boundary.LT(outer):
+			addBase = true
+		}
+
+		if addBase {
 			bounds[boundary.String()] = boundary.Clone()
 		}
 
@@ -696,12 +721,12 @@ func (e *Engine) Create(
 		e.positionFactor,
 		e.maxCalculationLevels,
 		e.allowedEmptyAMMLevels,
-		submit.SlippageTolerance,
-		submit.MinimumPriceChangeTrigger,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	pool.inAuction = e.inAuction
 
 	// sanity check, a *new* AMM should not already have a position. If it does it means that the party
 	// previously had an AMM but it was stopped/cancelled while still holding a position which should not happen.
@@ -874,6 +899,7 @@ func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 				TheoreticalPosition: pool.upper.pv,
 			},
 			pool.MinimumPriceChangeTrigger,
+			pool.Spread,
 		),
 	)
 }

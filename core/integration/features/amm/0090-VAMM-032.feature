@@ -114,17 +114,17 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
     Then debug trades
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party4 | 100   | 1    | vamm1-id | true   |
-      | party4 | 100   | 1    | vamm1-id | true   |
+      | party4 | 101   | 1    | vamm1-id | true   |
+      | party4 | 101   | 1    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | supplied stake | target stake |
-      | 100        | TRADING_MODE_CONTINUOUS | 101       | 101              | 1000           | 119          |
+      | 102        | TRADING_MODE_CONTINUOUS | 101       | 101              | 1000           | 122          |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 2      | 0              | 0            |        |
-      | vamm1-id | -2     | 0              | 0            | true   |
+      | party4   | 2      | 1              | 0            |        |
+      | vamm1-id | -2     | -1             | 0            | true   |
     And the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower leverage | upper leverage |
       | vamm1 | ETH/MAR22 | 30000  | STATUS_ACTIVE | 100  | 85          | 150         | 4              | 4              |
@@ -137,7 +137,7 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 0       |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 29582   | 420    | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 29572   | 429    | true   |
 
     # Settlement price is ~9x mark price
     When the oracles broadcast data signed with "0xCAFECAFE":
@@ -154,11 +154,11 @@ Feature: vAMM behaviour when a market settles with distressed AMM.
       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 420    | USD   | true   | TRANSFER_TYPE_LOSS              |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1380   | USD   | true   | TRANSFER_TYPE_LOSS              |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 28204  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE       |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 429    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 429    | USD   | true   | TRANSFER_TYPE_LOSS              |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 1367   | USD   | true   | TRANSFER_TYPE_LOSS              |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 28207  | USD   | true   | TRANSFER_TYPE_AMM_RELEASE       |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
-      | vamm1    | USD   |           | 28204   |        |        |
+      | vamm1    | USD   |           | 28207   |        |        |
       | vamm1-id | USD   | ETH/MAR22 | 0       | 0      | true   |

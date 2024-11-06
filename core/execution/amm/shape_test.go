@@ -365,7 +365,7 @@ func testOrderbookSubTick(t *testing.T) {
 	ensurePositionN(t, p.pos, position, num.UintZero(), 4)
 
 	// fair-price should be 1483, and so best buy should be 1383 (fair-price minus one-tick)
-	bp, _ := p.pool.BestPrice(types.SideBuy)
+	bp, _, _ := p.pool.BestPrice(types.SideBuy)
 	require.Equal(t, "1383", bp.String())
 
 	// now pretend we are in auction and we have a sell order at 1000, so we need to expand the crossed

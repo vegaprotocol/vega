@@ -348,7 +348,7 @@ Feature: vAMM with oracle driven base price
       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE   | 115  | 80          | 120         | 
 
 
-  @VAMM3
+  @VAMM
   Scenario: 0090-VAMM-043 AMM amended into pending AMM cannot be set into reduce only
    Then the parties submit the following AMM:
       | party | market id | amount  | slippage | base | lower bound | upper bound | proposed fee |

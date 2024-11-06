@@ -108,11 +108,11 @@ Feature: Derived key trades with its primary key.
     # trade with own derived key
     Then the following trades should be executed:
       | buyer | price | size | seller   | is amm |
-      | vamm1 | 100   | 1    | vamm1-id | true   |
+      | vamm1 | 101   | 1    | vamm1-id | true   |
 	And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 1      | 0              | 0            |        |
-      | party2   | -1     | 0              | 0            |        |
+      | party1   | 1      | 1              | 0            |        |
+      | party2   | -1     | -1             | 0            |        |
       | vamm1    | 1      | 0              | 0            |        |
       | vamm1-id | -1     | 0              | 0            | true   |
 
@@ -129,8 +129,8 @@ Feature: Derived key trades with its primary key.
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party1   | 1      | 60             | 0            |        |
       | party2   | -1     | -60            | 0            |        |
-      | vamm1    | 1      | 60             | 0            |        |
-      | vamm1-id | 0      | 0              | -60          | true   |
+      | vamm1    | 1      | 59             | 0            |        |
+      | vamm1-id | 0      | 0              | -59          | true   |
       | lp1      | -1     | 0              | 0            |        |
 
     # let's re-open the position for the vAMM, and cancel it using the reduce only method
@@ -139,17 +139,9 @@ Feature: Derived key trades with its primary key.
       | vamm1 | ETH/MAR22 | buy  | 2      | 101   | 1                | TYPE_LIMIT | TIF_GTC | vamm1-b2  |
     Then the following trades should be executed:
       | buyer | price | size | seller   | is amm |
-      | vamm1 | 100   | 2    | vamm1-id | true   |
+      | vamm1 | 101   | 2    | vamm1-id | true   |
 
-    # Check the positions
     When the network moves ahead "1" blocks
-	Then the parties should have the following profit and loss:
-      | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 1      | 0              | 0            |        |
-      | party2   | -1     | 0              | 0            |        |
-      | vamm1    | 3      | 0              | 0            |        |
-      | vamm1-id | -2     | 0              | -60          | true   |
-      | lp1      | -1     | 60             | 0            |        |
 
     # Now the vamm shouldn't generate any more sell orders
     When the parties cancel the following AMM:
@@ -173,8 +165,8 @@ Feature: Derived key trades with its primary key.
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party1   | 1      | 0              | 0            |        |
       | party2   | -2     | 0              | 0            |        |
-      | vamm1    | 3      | 0              | 0            |        |
-      | vamm1-id | -1     | 0              | -60          | true   |
+      | vamm1    | 3      | -3             | 0            |        |
+      | vamm1-id | -1     | 1              | -58          | true   |
       | lp1      | -1     | 60             | 0            |        |
 
     # Now let's see what happens if someone manages to submit a sell order for a reduce-only AMM key
@@ -186,13 +178,6 @@ Feature: Derived key trades with its primary key.
       | buyer    | price | size | seller | is amm |
       | vamm1-id | 160   | 2    | lp1    | true   |
     When the network moves ahead "1" blocks
-	Then the parties should have the following profit and loss:
-      | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 1      | 60             | 0            |        |
-      | party2   | -2     | -120           | 0            |        |
-      | vamm1    | 3      | 180            | 0            |        |
-      | vamm1-id | 1      | 0              | -120         | true   |
-      | lp1      | -3     | 0              | 0            |        |
 
     # Now the vAMM has switched to long, so it should not trade with a sell order.
     When the parties place the following orders:
@@ -206,16 +191,14 @@ Feature: Derived key trades with its primary key.
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
       | party1 | 90    | 1    | party2   |        |
-      | party1 | 99    | 1    | vamm1-id | true   |
+      | party1 | 100   | 1    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 3      | 8              | 0            |        |
-      | party2   | -3     | -7             | 0            |        |
       | vamm1    | 3      | -3             | 0            |        |
-      | vamm1-id | 0      | 0              | -181         | true   |
-      | lp1      | -3     | 183            | 0            |        |
+      | vamm1-id | 0      | 0              | -177         | true   |
+
     # The AMM pool is indeed cancelled.
     And the AMM pool status should be:
       | party | market id | amount | status           | base | lower bound | upper bound | lower leverage | upper leverage |

@@ -54,6 +54,8 @@ message AMM {
   optional Curve upper_curve = 11;
   // An AMM with an oracle driven base price will only be updated if abs(new-base-price / old-base-price - 1) >= minimum_price_change_trigger.
   string minimum_price_change_trigger = 12;
+  // Factor of the fair-price that the AMM quotes as its best prices
+  string spread = 13;
 
   enum Status {
     STATUS_UNSPECIFIED = 0;

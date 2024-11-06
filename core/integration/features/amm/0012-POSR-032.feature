@@ -129,4 +129,4 @@ Feature: A network disposal order which crosses with volume implied by an vAMM s
     When the network moves ahead "5" blocks
     Then the following trades should be executed:
       | buyer   | price | size | seller   | is amm |
-      | network | 100   | 1    | vamm1-id | true   |
+      | network | 101   | 1    | vamm1-id | true   |

@@ -55,6 +55,7 @@ func NewAMMPoolEvent(
 	lowerCurve *AMMCurve,
 	upperCurve *AMMCurve,
 	minimumPriceChangeTrigger num.Decimal,
+	spread num.Decimal,
 ) *AMMPool {
 	return &AMMPool{
 		Base: newBase(ctx, AMMPoolEvent),
@@ -71,6 +72,7 @@ func NewAMMPoolEvent(
 			LowerCurve:                lowerCurve.ToProtoEvent(),
 			UpperCurve:                upperCurve.ToProtoEvent(),
 			MinimumPriceChangeTrigger: minimumPriceChangeTrigger.String(),
+			Spread:                    spread.String(),
 		},
 	}
 }

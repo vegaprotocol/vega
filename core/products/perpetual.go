@@ -729,7 +729,9 @@ func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t
 	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal, twap))
 
 	// send it out to anyone thats listening (AMM's mostly)
-	p.dataPointListener(ctx, price)
+	if p.dataPointListener != nil {
+		p.dataPointListener(ctx, price)
+	}
 }
 
 func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data) error {

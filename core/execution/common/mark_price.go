@@ -246,7 +246,9 @@ func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) f
 		}
 
 		// propagate oracle price further along the chain
-		mpc.dataPointListener(ctx, mpc.config.DataSources[oracleIndex].ID, p)
+		if mpc.dataPointListener != nil {
+			mpc.dataPointListener(ctx, mpc.config.DataSources[oracleIndex].ID, p)
+		}
 
 		mpc.priceSources[FirstOraclePriceIndex+oracleIndex] = p.Clone()
 		mpc.sourceLastUpdate[FirstOraclePriceIndex+oracleIndex] = mpc.timeService.GetTimeNow().UnixNano()
