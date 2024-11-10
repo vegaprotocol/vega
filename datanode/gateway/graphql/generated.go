@@ -150,6 +150,7 @@ type ResolverRoot interface {
 	RankingScore() RankingScoreResolver
 	RecurringGovernanceTransfer() RecurringGovernanceTransferResolver
 	RecurringTransfer() RecurringTransferResolver
+	RedemptionRequest() RedemptionRequestResolver
 	ReferralProgram() ReferralProgramResolver
 	ReferralSet() ReferralSetResolver
 	ReferralSetReferee() ReferralSetRefereeResolver
@@ -184,6 +185,8 @@ type ResolverRoot interface {
 	UpdateSpotMarket() UpdateSpotMarketResolver
 	UpdateSpotMarketConfiguration() UpdateSpotMarketConfigurationResolver
 	UpdateVolumeDiscountProgram() UpdateVolumeDiscountProgramResolver
+	Vault() VaultResolver
+	VaultState() VaultStateResolver
 	VolumeBenefitTier() VolumeBenefitTierResolver
 	VolumeDiscountProgram() VolumeDiscountProgramResolver
 	VolumeDiscountStats() VolumeDiscountStatsResolver
@@ -1985,6 +1988,11 @@ type ComplexityRoot struct {
 		Linkings              func(childComplexity int) int
 	}
 
+	PartyVaultShare struct {
+		PartyID func(childComplexity int) int
+		Share   func(childComplexity int) int
+	}
+
 	PartyVestingBalance struct {
 		Asset   func(childComplexity int) int
 		Balance func(childComplexity int) int
@@ -2360,6 +2368,8 @@ type ComplexityRoot struct {
 		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
 		Transfer                           func(childComplexity int, id string) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *v1.Transfer_Status, scope *v2.ListTransfersRequest_Scope, gameID *string, fromAccountType *vega.AccountType, toAccountType *vega.AccountType) int
+		Vaults                             func(childComplexity int, filter *VaultFilter, pagination *v2.Pagination) int
+		VaultsRedemptions                  func(childComplexity int, filter *VaultRedemptionRequestsFilter, pagination *v2.Pagination) int
 		VolumeDiscountStats                func(childComplexity int, epoch *int, partyID *string, pagination *v2.Pagination) int
 		VolumeRebateStats                  func(childComplexity int, epoch *int, partyID *string, pagination *v2.Pagination) int
 		Withdrawal                         func(childComplexity int, id string) int
@@ -2392,6 +2402,34 @@ type ComplexityRoot struct {
 		EndEpoch         func(childComplexity int) int
 		Factor           func(childComplexity int) int
 		StartEpoch       func(childComplexity int) int
+	}
+
+	RedemptionDate struct {
+		MaxFraction    func(childComplexity int) int
+		RedemptionDate func(childComplexity int) int
+		RedemptionType func(childComplexity int) int
+	}
+
+	RedemptionRequest struct {
+		Asset           func(childComplexity int) int
+		EligibilityDate func(childComplexity int) int
+		LastUpdated     func(childComplexity int) int
+		PartyId         func(childComplexity int) int
+		RemainingAmount func(childComplexity int) int
+		RequestId       func(childComplexity int) int
+		RequestedAmount func(childComplexity int) int
+		Status          func(childComplexity int) int
+		VaultId         func(childComplexity int) int
+	}
+
+	RedemptionRequestConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	RedemptionRequestEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	ReferralProgram struct {
@@ -3107,6 +3145,44 @@ type ComplexityRoot struct {
 		BenefitTiers          func(childComplexity int) int
 		EndOfProgramTimestamp func(childComplexity int) int
 		WindowLength          func(childComplexity int) int
+	}
+
+	Vault struct {
+		Asset                func(childComplexity int) int
+		CutOffPeriodLength   func(childComplexity int) int
+		FeePeriod            func(childComplexity int) int
+		ManagementFeeFactor  func(childComplexity int) int
+		Owner                func(childComplexity int) int
+		PerformanceFeeFactor func(childComplexity int) int
+		RedemptionDates      func(childComplexity int) int
+		VaultId              func(childComplexity int) int
+		VaultMetadata        func(childComplexity int) int
+	}
+
+	VaultConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	VaultEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	VaultMetaData struct {
+		Description func(childComplexity int) int
+		ImageUrl    func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Url         func(childComplexity int) int
+	}
+
+	VaultState struct {
+		InvestedAmount     func(childComplexity int) int
+		NextFeeCalc        func(childComplexity int) int
+		NextRedemptionDate func(childComplexity int) int
+		PartyShares        func(childComplexity int) int
+		Vault              func(childComplexity int) int
+		VaultStatus        func(childComplexity int) int
 	}
 
 	VolumeBenefitTier struct {
@@ -3919,6 +3995,8 @@ type QueryResolver interface {
 	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
 	PartyMarginModes(ctx context.Context, marketID *string, partyID *string, pagination *v2.Pagination) (*v2.PartyMarginModesConnection, error)
 	PartyDiscountStats(ctx context.Context, partyID string, marketIds []string) (*v2.GetPartyDiscountStatsResponse, error)
+	Vaults(ctx context.Context, filter *VaultFilter, pagination *v2.Pagination) (*v2.VaultConnection, error)
+	VaultsRedemptions(ctx context.Context, filter *VaultRedemptionRequestsFilter, pagination *v2.Pagination) (*v2.RedemptionRequestConnection, error)
 }
 type RankingScoreResolver interface {
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
@@ -3930,6 +4008,13 @@ type RecurringGovernanceTransferResolver interface {
 type RecurringTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
 	EndEpoch(ctx context.Context, obj *v1.RecurringTransfer) (*int, error)
+}
+type RedemptionRequestResolver interface {
+	Asset(ctx context.Context, obj *v1.RedemptionRequest) (*vega.Asset, error)
+	EligibilityDate(ctx context.Context, obj *v1.RedemptionRequest) (*int64, error)
+	LastUpdated(ctx context.Context, obj *v1.RedemptionRequest) (*int64, error)
+
+	Status(ctx context.Context, obj *v1.RedemptionRequest) (RedeemStatus, error)
 }
 type ReferralProgramResolver interface {
 	Version(ctx context.Context, obj *vega.ReferralProgram) (int, error)
@@ -4151,6 +4236,15 @@ type UpdateVolumeDiscountProgramResolver interface {
 	BenefitTiers(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) ([]*vega.VolumeBenefitTier, error)
 	EndOfProgramTimestamp(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int64, error)
 	WindowLength(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int, error)
+}
+type VaultResolver interface {
+	Asset(ctx context.Context, obj *vega.Vault) (*vega.Asset, error)
+
+	RedemptionDates(ctx context.Context, obj *vega.Vault) ([]*RedemptionDate, error)
+}
+type VaultStateResolver interface {
+	PartyShares(ctx context.Context, obj *v1.VaultState) ([]*PartyVaultShare, error)
+	VaultStatus(ctx context.Context, obj *v1.VaultState) (VaultStatus, error)
 }
 type VolumeBenefitTierResolver interface {
 	VolumeDiscountFactors(ctx context.Context, obj *vega.VolumeBenefitTier) (*DiscountFactors, error)
@@ -11975,6 +12069,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PartyStake.Linkings(childComplexity), true
 
+	case "PartyVaultShare.partyId":
+		if e.complexity.PartyVaultShare.PartyID == nil {
+			break
+		}
+
+		return e.complexity.PartyVaultShare.PartyID(childComplexity), true
+
+	case "PartyVaultShare.share":
+		if e.complexity.PartyVaultShare.Share == nil {
+			break
+		}
+
+		return e.complexity.PartyVaultShare.Share(childComplexity), true
+
 	case "PartyVestingBalance.asset":
 		if e.complexity.PartyVestingBalance.Asset == nil {
 			break
@@ -14144,6 +14252,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.TransfersConnection(childComplexity, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination), args["isReward"].(*bool), args["fromEpoch"].(*int), args["toEpoch"].(*int), args["status"].(*v1.Transfer_Status), args["scope"].(*v2.ListTransfersRequest_Scope), args["gameId"].(*string), args["fromAccountType"].(*vega.AccountType), args["toAccountType"].(*vega.AccountType)), true
 
+	case "Query.vaults":
+		if e.complexity.Query.Vaults == nil {
+			break
+		}
+
+		args, err := ec.field_Query_vaults_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Vaults(childComplexity, args["filter"].(*VaultFilter), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.vaultsRedemptions":
+		if e.complexity.Query.VaultsRedemptions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_vaultsRedemptions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.VaultsRedemptions(childComplexity, args["filter"].(*VaultRedemptionRequestsFilter), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.volumeDiscountStats":
 		if e.complexity.Query.VolumeDiscountStats == nil {
 			break
@@ -14303,6 +14435,118 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RecurringTransfer.StartEpoch(childComplexity), true
+
+	case "RedemptionDate.maxFraction":
+		if e.complexity.RedemptionDate.MaxFraction == nil {
+			break
+		}
+
+		return e.complexity.RedemptionDate.MaxFraction(childComplexity), true
+
+	case "RedemptionDate.redemptionDate":
+		if e.complexity.RedemptionDate.RedemptionDate == nil {
+			break
+		}
+
+		return e.complexity.RedemptionDate.RedemptionDate(childComplexity), true
+
+	case "RedemptionDate.redemptionType":
+		if e.complexity.RedemptionDate.RedemptionType == nil {
+			break
+		}
+
+		return e.complexity.RedemptionDate.RedemptionType(childComplexity), true
+
+	case "RedemptionRequest.asset":
+		if e.complexity.RedemptionRequest.Asset == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.Asset(childComplexity), true
+
+	case "RedemptionRequest.eligibilityDate":
+		if e.complexity.RedemptionRequest.EligibilityDate == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.EligibilityDate(childComplexity), true
+
+	case "RedemptionRequest.lastUpdated":
+		if e.complexity.RedemptionRequest.LastUpdated == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.LastUpdated(childComplexity), true
+
+	case "RedemptionRequest.partyId":
+		if e.complexity.RedemptionRequest.PartyId == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.PartyId(childComplexity), true
+
+	case "RedemptionRequest.remainingAmount":
+		if e.complexity.RedemptionRequest.RemainingAmount == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.RemainingAmount(childComplexity), true
+
+	case "RedemptionRequest.requestId":
+		if e.complexity.RedemptionRequest.RequestId == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.RequestId(childComplexity), true
+
+	case "RedemptionRequest.requestedAmount":
+		if e.complexity.RedemptionRequest.RequestedAmount == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.RequestedAmount(childComplexity), true
+
+	case "RedemptionRequest.status":
+		if e.complexity.RedemptionRequest.Status == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.Status(childComplexity), true
+
+	case "RedemptionRequest.vaultId":
+		if e.complexity.RedemptionRequest.VaultId == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequest.VaultId(childComplexity), true
+
+	case "RedemptionRequestConnection.edges":
+		if e.complexity.RedemptionRequestConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequestConnection.Edges(childComplexity), true
+
+	case "RedemptionRequestConnection.pageInfo":
+		if e.complexity.RedemptionRequestConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequestConnection.PageInfo(childComplexity), true
+
+	case "RedemptionRequestEdge.cursor":
+		if e.complexity.RedemptionRequestEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequestEdge.Cursor(childComplexity), true
+
+	case "RedemptionRequestEdge.node":
+		if e.complexity.RedemptionRequestEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.RedemptionRequestEdge.Node(childComplexity), true
 
 	case "ReferralProgram.benefitTiers":
 		if e.complexity.ReferralProgram.BenefitTiers == nil {
@@ -17268,6 +17512,167 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateVolumeRebateProgram.WindowLength(childComplexity), true
 
+	case "Vault.asset":
+		if e.complexity.Vault.Asset == nil {
+			break
+		}
+
+		return e.complexity.Vault.Asset(childComplexity), true
+
+	case "Vault.cutOffPeriodLength":
+		if e.complexity.Vault.CutOffPeriodLength == nil {
+			break
+		}
+
+		return e.complexity.Vault.CutOffPeriodLength(childComplexity), true
+
+	case "Vault.feePeriod":
+		if e.complexity.Vault.FeePeriod == nil {
+			break
+		}
+
+		return e.complexity.Vault.FeePeriod(childComplexity), true
+
+	case "Vault.managementFeeFactor":
+		if e.complexity.Vault.ManagementFeeFactor == nil {
+			break
+		}
+
+		return e.complexity.Vault.ManagementFeeFactor(childComplexity), true
+
+	case "Vault.owner":
+		if e.complexity.Vault.Owner == nil {
+			break
+		}
+
+		return e.complexity.Vault.Owner(childComplexity), true
+
+	case "Vault.performanceFeeFactor":
+		if e.complexity.Vault.PerformanceFeeFactor == nil {
+			break
+		}
+
+		return e.complexity.Vault.PerformanceFeeFactor(childComplexity), true
+
+	case "Vault.redemptionDates":
+		if e.complexity.Vault.RedemptionDates == nil {
+			break
+		}
+
+		return e.complexity.Vault.RedemptionDates(childComplexity), true
+
+	case "Vault.vaultId":
+		if e.complexity.Vault.VaultId == nil {
+			break
+		}
+
+		return e.complexity.Vault.VaultId(childComplexity), true
+
+	case "Vault.vaultMetaData":
+		if e.complexity.Vault.VaultMetadata == nil {
+			break
+		}
+
+		return e.complexity.Vault.VaultMetadata(childComplexity), true
+
+	case "VaultConnection.edges":
+		if e.complexity.VaultConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.VaultConnection.Edges(childComplexity), true
+
+	case "VaultConnection.pageInfo":
+		if e.complexity.VaultConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.VaultConnection.PageInfo(childComplexity), true
+
+	case "VaultEdge.cursor":
+		if e.complexity.VaultEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.VaultEdge.Cursor(childComplexity), true
+
+	case "VaultEdge.node":
+		if e.complexity.VaultEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.VaultEdge.Node(childComplexity), true
+
+	case "VaultMetaData.description":
+		if e.complexity.VaultMetaData.Description == nil {
+			break
+		}
+
+		return e.complexity.VaultMetaData.Description(childComplexity), true
+
+	case "VaultMetaData.imageUrl":
+		if e.complexity.VaultMetaData.ImageUrl == nil {
+			break
+		}
+
+		return e.complexity.VaultMetaData.ImageUrl(childComplexity), true
+
+	case "VaultMetaData.name":
+		if e.complexity.VaultMetaData.Name == nil {
+			break
+		}
+
+		return e.complexity.VaultMetaData.Name(childComplexity), true
+
+	case "VaultMetaData.url":
+		if e.complexity.VaultMetaData.Url == nil {
+			break
+		}
+
+		return e.complexity.VaultMetaData.Url(childComplexity), true
+
+	case "VaultState.investedAmount":
+		if e.complexity.VaultState.InvestedAmount == nil {
+			break
+		}
+
+		return e.complexity.VaultState.InvestedAmount(childComplexity), true
+
+	case "VaultState.nextFeeCalc":
+		if e.complexity.VaultState.NextFeeCalc == nil {
+			break
+		}
+
+		return e.complexity.VaultState.NextFeeCalc(childComplexity), true
+
+	case "VaultState.nextRedemptionDate":
+		if e.complexity.VaultState.NextRedemptionDate == nil {
+			break
+		}
+
+		return e.complexity.VaultState.NextRedemptionDate(childComplexity), true
+
+	case "VaultState.partyShares":
+		if e.complexity.VaultState.PartyShares == nil {
+			break
+		}
+
+		return e.complexity.VaultState.PartyShares(childComplexity), true
+
+	case "VaultState.vault":
+		if e.complexity.VaultState.Vault == nil {
+			break
+		}
+
+		return e.complexity.VaultState.Vault(childComplexity), true
+
+	case "VaultState.vaultStatus":
+		if e.complexity.VaultState.VaultStatus == nil {
+			break
+		}
+
+		return e.complexity.VaultState.VaultStatus(childComplexity), true
+
 	case "VolumeBenefitTier.minimumRunningNotionalTakerVolume":
 		if e.complexity.VolumeBenefitTier.MinimumRunningNotionalTakerVolume == nil {
 			break
@@ -17733,6 +18138,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputStopOrderFilter,
 		ec.unmarshalInputTradesFilter,
 		ec.unmarshalInputTradesSubscriptionFilter,
+		ec.unmarshalInputVaultFilter,
+		ec.unmarshalInputVaultRedemptionRequestsFilter,
 	)
 	first := true
 
@@ -21205,6 +21612,54 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 		}
 	}
 	args["toAccountType"] = arg10
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_vaultsRedemptions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *VaultRedemptionRequestsFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOVaultRedemptionRequestsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVaultRedemptionRequestsFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_vaults_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *VaultFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOVaultFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVaultFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -73940,6 +74395,94 @@ func (ec *executionContext) fieldContext_PartyStake_linkings(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _PartyVaultShare_partyId(ctx context.Context, field graphql.CollectedField, obj *PartyVaultShare) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVaultShare_partyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVaultShare_partyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVaultShare",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyVaultShare_share(ctx context.Context, field graphql.CollectedField, obj *PartyVaultShare) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVaultShare_share(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Share, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVaultShare_share(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVaultShare",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PartyVestingBalance_asset(ctx context.Context, field graphql.CollectedField, obj *v1.PartyVestingBalance) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PartyVestingBalance_asset(ctx, field)
 	if err != nil {
@@ -87630,6 +88173,122 @@ func (ec *executionContext) fieldContext_Query_partyDiscountStats(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_vaults(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_vaults(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Vaults(rctx, fc.Args["filter"].(*VaultFilter), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.VaultConnection)
+	fc.Result = res
+	return ec.marshalOVaultConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVaultConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_vaults(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_VaultConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_VaultConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VaultConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_vaults_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_vaultsRedemptions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_vaultsRedemptions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().VaultsRedemptions(rctx, fc.Args["filter"].(*VaultRedemptionRequestsFilter), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.RedemptionRequestConnection)
+	fc.Result = res
+	return ec.marshalORedemptionRequestConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRedemptionRequestConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_vaultsRedemptions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_RedemptionRequestConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_RedemptionRequestConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RedemptionRequestConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_vaultsRedemptions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -88515,6 +89174,760 @@ func (ec *executionContext) fieldContext_RecurringTransfer_dispatchStrategy(ctx 
 				return ec.fieldContext_DispatchStrategy_targetNotionalVolume(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DispatchStrategy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionDate_redemptionDate(ctx context.Context, field graphql.CollectedField, obj *RedemptionDate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionDate_redemptionDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RedemptionDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionDate_redemptionDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionDate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionDate_redemptionType(ctx context.Context, field graphql.CollectedField, obj *RedemptionDate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionDate_redemptionType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RedemptionType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(RedemptionType)
+	fc.Result = res
+	return ec.marshalNRedemptionType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedemptionType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionDate_redemptionType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionDate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RedemptionType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionDate_maxFraction(ctx context.Context, field graphql.CollectedField, obj *RedemptionDate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionDate_maxFraction(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxFraction, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionDate_maxFraction(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionDate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_requestId(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_requestId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_requestId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_vaultId(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_vaultId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VaultId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_vaultId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_partyId(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_partyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_partyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_asset(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_asset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RedemptionRequest().Asset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_asset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_eligibilityDate(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_eligibilityDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RedemptionRequest().EligibilityDate(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_eligibilityDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_lastUpdated(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_lastUpdated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RedemptionRequest().LastUpdated(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_lastUpdated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_requestedAmount(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_requestedAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestedAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_requestedAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_remainingAmount(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_remainingAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RemainingAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_remainingAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequest_status(ctx context.Context, field graphql.CollectedField, obj *v1.RedemptionRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequest_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RedemptionRequest().Status(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(RedeemStatus)
+	fc.Result = res
+	return ec.marshalNRedeemStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequest_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RedeemStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequestConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.RedemptionRequestConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequestConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.RedemptionRequestEdge)
+	fc.Result = res
+	return ec.marshalORedemptionRequestEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRedemptionRequestEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequestConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequestConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_RedemptionRequestEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_RedemptionRequestEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RedemptionRequestEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequestConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.RedemptionRequestConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequestConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequestConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequestConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequestEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.RedemptionRequestEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequestEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v1.RedemptionRequest)
+	fc.Result = res
+	return ec.marshalORedemptionRequest2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐRedemptionRequest(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequestEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequestEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "requestId":
+				return ec.fieldContext_RedemptionRequest_requestId(ctx, field)
+			case "vaultId":
+				return ec.fieldContext_RedemptionRequest_vaultId(ctx, field)
+			case "partyId":
+				return ec.fieldContext_RedemptionRequest_partyId(ctx, field)
+			case "asset":
+				return ec.fieldContext_RedemptionRequest_asset(ctx, field)
+			case "eligibilityDate":
+				return ec.fieldContext_RedemptionRequest_eligibilityDate(ctx, field)
+			case "lastUpdated":
+				return ec.fieldContext_RedemptionRequest_lastUpdated(ctx, field)
+			case "requestedAmount":
+				return ec.fieldContext_RedemptionRequest_requestedAmount(ctx, field)
+			case "remainingAmount":
+				return ec.fieldContext_RedemptionRequest_remainingAmount(ctx, field)
+			case "status":
+				return ec.fieldContext_RedemptionRequest_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RedemptionRequest", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RedemptionRequestEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.RedemptionRequestEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RedemptionRequestEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RedemptionRequestEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RedemptionRequestEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -108961,6 +110374,1088 @@ func (ec *executionContext) fieldContext_UpdateVolumeRebateProgram_windowLength(
 	return fc, nil
 }
 
+func (ec *executionContext) _Vault_vaultId(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_vaultId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VaultId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_vaultId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_owner(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_owner(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Owner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_owner(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_asset(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_asset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Vault().Asset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_asset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_vaultMetaData(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_vaultMetaData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VaultMetadata, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.VaultMetaData)
+	fc.Result = res
+	return ec.marshalOVaultMetaData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVaultMetaData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_vaultMetaData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_VaultMetaData_name(ctx, field)
+			case "description":
+				return ec.fieldContext_VaultMetaData_description(ctx, field)
+			case "url":
+				return ec.fieldContext_VaultMetaData_url(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_VaultMetaData_imageUrl(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VaultMetaData", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_feePeriod(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_feePeriod(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FeePeriod, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_feePeriod(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_managementFeeFactor(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_managementFeeFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManagementFeeFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_managementFeeFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_performanceFeeFactor(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_performanceFeeFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PerformanceFeeFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_performanceFeeFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_cutOffPeriodLength(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_cutOffPeriodLength(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CutOffPeriodLength, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_cutOffPeriodLength(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vault_redemptionDates(ctx context.Context, field graphql.CollectedField, obj *vega.Vault) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Vault_redemptionDates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Vault().RedemptionDates(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*RedemptionDate)
+	fc.Result = res
+	return ec.marshalNRedemptionDate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedemptionDateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Vault_redemptionDates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vault",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "redemptionDate":
+				return ec.fieldContext_RedemptionDate_redemptionDate(ctx, field)
+			case "redemptionType":
+				return ec.fieldContext_RedemptionDate_redemptionType(ctx, field)
+			case "maxFraction":
+				return ec.fieldContext_RedemptionDate_maxFraction(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RedemptionDate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.VaultConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.VaultEdge)
+	fc.Result = res
+	return ec.marshalOVaultEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVaultEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_VaultEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_VaultEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VaultEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.VaultConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.VaultEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v1.VaultState)
+	fc.Result = res
+	return ec.marshalOVaultState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐVaultState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "vault":
+				return ec.fieldContext_VaultState_vault(ctx, field)
+			case "partyShares":
+				return ec.fieldContext_VaultState_partyShares(ctx, field)
+			case "vaultStatus":
+				return ec.fieldContext_VaultState_vaultStatus(ctx, field)
+			case "investedAmount":
+				return ec.fieldContext_VaultState_investedAmount(ctx, field)
+			case "nextFeeCalc":
+				return ec.fieldContext_VaultState_nextFeeCalc(ctx, field)
+			case "nextRedemptionDate":
+				return ec.fieldContext_VaultState_nextRedemptionDate(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VaultState", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.VaultEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultMetaData_name(ctx context.Context, field graphql.CollectedField, obj *vega.VaultMetaData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultMetaData_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultMetaData_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultMetaData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultMetaData_description(ctx context.Context, field graphql.CollectedField, obj *vega.VaultMetaData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultMetaData_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultMetaData_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultMetaData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultMetaData_url(ctx context.Context, field graphql.CollectedField, obj *vega.VaultMetaData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultMetaData_url(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Url, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultMetaData_url(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultMetaData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultMetaData_imageUrl(ctx context.Context, field graphql.CollectedField, obj *vega.VaultMetaData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultMetaData_imageUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImageUrl, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultMetaData_imageUrl(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultMetaData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultState_vault(ctx context.Context, field graphql.CollectedField, obj *v1.VaultState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultState_vault(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Vault, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Vault)
+	fc.Result = res
+	return ec.marshalNVault2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVault(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultState_vault(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "vaultId":
+				return ec.fieldContext_Vault_vaultId(ctx, field)
+			case "owner":
+				return ec.fieldContext_Vault_owner(ctx, field)
+			case "asset":
+				return ec.fieldContext_Vault_asset(ctx, field)
+			case "vaultMetaData":
+				return ec.fieldContext_Vault_vaultMetaData(ctx, field)
+			case "feePeriod":
+				return ec.fieldContext_Vault_feePeriod(ctx, field)
+			case "managementFeeFactor":
+				return ec.fieldContext_Vault_managementFeeFactor(ctx, field)
+			case "performanceFeeFactor":
+				return ec.fieldContext_Vault_performanceFeeFactor(ctx, field)
+			case "cutOffPeriodLength":
+				return ec.fieldContext_Vault_cutOffPeriodLength(ctx, field)
+			case "redemptionDates":
+				return ec.fieldContext_Vault_redemptionDates(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Vault", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultState_partyShares(ctx context.Context, field graphql.CollectedField, obj *v1.VaultState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultState_partyShares(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.VaultState().PartyShares(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*PartyVaultShare)
+	fc.Result = res
+	return ec.marshalOPartyVaultShare2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPartyVaultShareᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultState_partyShares(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultState",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "partyId":
+				return ec.fieldContext_PartyVaultShare_partyId(ctx, field)
+			case "share":
+				return ec.fieldContext_PartyVaultShare_share(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PartyVaultShare", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultState_vaultStatus(ctx context.Context, field graphql.CollectedField, obj *v1.VaultState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultState_vaultStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.VaultState().VaultStatus(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(VaultStatus)
+	fc.Result = res
+	return ec.marshalNVaultStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVaultStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultState_vaultStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultState",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type VaultStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultState_investedAmount(ctx context.Context, field graphql.CollectedField, obj *v1.VaultState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultState_investedAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InvestedAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultState_investedAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultState_nextFeeCalc(ctx context.Context, field graphql.CollectedField, obj *v1.VaultState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultState_nextFeeCalc(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NextFeeCalc, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultState_nextFeeCalc(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VaultState_nextRedemptionDate(ctx context.Context, field graphql.CollectedField, obj *v1.VaultState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VaultState_nextRedemptionDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NextRedemptionDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VaultState_nextRedemptionDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VaultState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _VolumeBenefitTier_minimumRunningNotionalTakerVolume(ctx context.Context, field graphql.CollectedField, obj *vega.VolumeBenefitTier) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VolumeBenefitTier_minimumRunningNotionalTakerVolume(ctx, field)
 	if err != nil {
@@ -114500,6 +116995,95 @@ func (ec *executionContext) unmarshalInputTradesSubscriptionFilter(ctx context.C
 				return it, err
 			}
 			it.MarketIds = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputVaultFilter(ctx context.Context, obj interface{}) (VaultFilter, error) {
+	var it VaultFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"assets", "vaultIds", "liveOnly"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "assets":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assets"))
+			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Assets = data
+		case "vaultIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vaultIds"))
+			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VaultIds = data
+		case "liveOnly":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liveOnly"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LiveOnly = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputVaultRedemptionRequestsFilter(ctx context.Context, obj interface{}) (VaultRedemptionRequestsFilter, error) {
+	var it VaultRedemptionRequestsFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"partyIds", "assets", "vaultIds", "statuses"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "partyIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyIds"))
+			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PartyIds = data
+		case "assets":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assets"))
+			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Assets = data
+		case "vaultIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vaultIds"))
+			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VaultIds = data
+		case "statuses":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statuses"))
+			data, err := ec.unmarshalORedeemStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatusᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Statuses = data
 		}
 	}
 
@@ -136727,6 +139311,50 @@ func (ec *executionContext) _PartyStake(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var partyVaultShareImplementors = []string{"PartyVaultShare"}
+
+func (ec *executionContext) _PartyVaultShare(ctx context.Context, sel ast.SelectionSet, obj *PartyVaultShare) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, partyVaultShareImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PartyVaultShare")
+		case "partyId":
+			out.Values[i] = ec._PartyVaultShare_partyId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "share":
+			out.Values[i] = ec._PartyVaultShare_share(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var partyVestingBalanceImplementors = []string{"PartyVestingBalance"}
 
 func (ec *executionContext) _PartyVestingBalance(ctx context.Context, sel ast.SelectionSet, obj *v1.PartyVestingBalance) graphql.Marshaler {
@@ -141991,6 +144619,44 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "vaults":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_vaults(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "vaultsRedemptions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_vaultsRedemptions(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -142355,6 +145021,328 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 			}
 		case "dispatchStrategy":
 			out.Values[i] = ec._RecurringTransfer_dispatchStrategy(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var redemptionDateImplementors = []string{"RedemptionDate"}
+
+func (ec *executionContext) _RedemptionDate(ctx context.Context, sel ast.SelectionSet, obj *RedemptionDate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, redemptionDateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RedemptionDate")
+		case "redemptionDate":
+			out.Values[i] = ec._RedemptionDate_redemptionDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "redemptionType":
+			out.Values[i] = ec._RedemptionDate_redemptionType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxFraction":
+			out.Values[i] = ec._RedemptionDate_maxFraction(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var redemptionRequestImplementors = []string{"RedemptionRequest"}
+
+func (ec *executionContext) _RedemptionRequest(ctx context.Context, sel ast.SelectionSet, obj *v1.RedemptionRequest) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, redemptionRequestImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RedemptionRequest")
+		case "requestId":
+			out.Values[i] = ec._RedemptionRequest_requestId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "vaultId":
+			out.Values[i] = ec._RedemptionRequest_vaultId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "partyId":
+			out.Values[i] = ec._RedemptionRequest_partyId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "asset":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RedemptionRequest_asset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "eligibilityDate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RedemptionRequest_eligibilityDate(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "lastUpdated":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RedemptionRequest_lastUpdated(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "requestedAmount":
+			out.Values[i] = ec._RedemptionRequest_requestedAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "remainingAmount":
+			out.Values[i] = ec._RedemptionRequest_remainingAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "status":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RedemptionRequest_status(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var redemptionRequestConnectionImplementors = []string{"RedemptionRequestConnection"}
+
+func (ec *executionContext) _RedemptionRequestConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.RedemptionRequestConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, redemptionRequestConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RedemptionRequestConnection")
+		case "edges":
+			out.Values[i] = ec._RedemptionRequestConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._RedemptionRequestConnection_pageInfo(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var redemptionRequestEdgeImplementors = []string{"RedemptionRequestEdge"}
+
+func (ec *executionContext) _RedemptionRequestEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.RedemptionRequestEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, redemptionRequestEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RedemptionRequestEdge")
+		case "node":
+			out.Values[i] = ec._RedemptionRequestEdge_node(ctx, field, obj)
+		case "cursor":
+			out.Values[i] = ec._RedemptionRequestEdge_cursor(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -151242,6 +154230,379 @@ func (ec *executionContext) _UpdateVolumeRebateProgram(ctx context.Context, sel 
 	return out
 }
 
+var vaultImplementors = []string{"Vault"}
+
+func (ec *executionContext) _Vault(ctx context.Context, sel ast.SelectionSet, obj *vega.Vault) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vaultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Vault")
+		case "vaultId":
+			out.Values[i] = ec._Vault_vaultId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "owner":
+			out.Values[i] = ec._Vault_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "asset":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Vault_asset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "vaultMetaData":
+			out.Values[i] = ec._Vault_vaultMetaData(ctx, field, obj)
+		case "feePeriod":
+			out.Values[i] = ec._Vault_feePeriod(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "managementFeeFactor":
+			out.Values[i] = ec._Vault_managementFeeFactor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "performanceFeeFactor":
+			out.Values[i] = ec._Vault_performanceFeeFactor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "cutOffPeriodLength":
+			out.Values[i] = ec._Vault_cutOffPeriodLength(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "redemptionDates":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Vault_redemptionDates(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vaultConnectionImplementors = []string{"VaultConnection"}
+
+func (ec *executionContext) _VaultConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.VaultConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vaultConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VaultConnection")
+		case "edges":
+			out.Values[i] = ec._VaultConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._VaultConnection_pageInfo(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vaultEdgeImplementors = []string{"VaultEdge"}
+
+func (ec *executionContext) _VaultEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.VaultEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vaultEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VaultEdge")
+		case "node":
+			out.Values[i] = ec._VaultEdge_node(ctx, field, obj)
+		case "cursor":
+			out.Values[i] = ec._VaultEdge_cursor(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vaultMetaDataImplementors = []string{"VaultMetaData"}
+
+func (ec *executionContext) _VaultMetaData(ctx context.Context, sel ast.SelectionSet, obj *vega.VaultMetaData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vaultMetaDataImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VaultMetaData")
+		case "name":
+			out.Values[i] = ec._VaultMetaData_name(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._VaultMetaData_description(ctx, field, obj)
+		case "url":
+			out.Values[i] = ec._VaultMetaData_url(ctx, field, obj)
+		case "imageUrl":
+			out.Values[i] = ec._VaultMetaData_imageUrl(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vaultStateImplementors = []string{"VaultState"}
+
+func (ec *executionContext) _VaultState(ctx context.Context, sel ast.SelectionSet, obj *v1.VaultState) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vaultStateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VaultState")
+		case "vault":
+			out.Values[i] = ec._VaultState_vault(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "partyShares":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._VaultState_partyShares(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "vaultStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._VaultState_vaultStatus(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "investedAmount":
+			out.Values[i] = ec._VaultState_investedAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "nextFeeCalc":
+			out.Values[i] = ec._VaultState_nextFeeCalc(ctx, field, obj)
+		case "nextRedemptionDate":
+			out.Values[i] = ec._VaultState_nextRedemptionDate(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var volumeBenefitTierImplementors = []string{"VolumeBenefitTier"}
 
 func (ec *executionContext) _VolumeBenefitTier(ctx context.Context, sel ast.SelectionSet, obj *vega.VolumeBenefitTier) graphql.Marshaler {
@@ -156216,6 +159577,16 @@ func (ec *executionContext) marshalNPartyProfileEdge2ᚖcodeᚗvegaprotocolᚗio
 	return ec._PartyProfileEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPartyVaultShare2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPartyVaultShare(ctx context.Context, sel ast.SelectionSet, v *PartyVaultShare) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PartyVaultShare(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPartyVestingBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyVestingBalance(ctx context.Context, sel ast.SelectionSet, v *v1.PartyVestingBalance) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -156713,6 +160084,90 @@ func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._RankingScore(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRedeemStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatus(ctx context.Context, v interface{}) (RedeemStatus, error) {
+	var res RedeemStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRedeemStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatus(ctx context.Context, sel ast.SelectionSet, v RedeemStatus) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNRedemptionDate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedemptionDateᚄ(ctx context.Context, sel ast.SelectionSet, v []*RedemptionDate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRedemptionDate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedemptionDate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRedemptionDate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedemptionDate(ctx context.Context, sel ast.SelectionSet, v *RedemptionDate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RedemptionDate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRedemptionRequestEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRedemptionRequestEdge(ctx context.Context, sel ast.SelectionSet, v *v2.RedemptionRequestEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RedemptionRequestEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRedemptionType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedemptionType(ctx context.Context, v interface{}) (RedemptionType, error) {
+	var res RedemptionType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRedemptionType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedemptionType(ctx context.Context, sel ast.SelectionSet, v RedemptionType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNReferralSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSet(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSet) graphql.Marshaler {
@@ -158074,6 +161529,36 @@ func (ec *executionContext) marshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋv
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNVault2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVault(ctx context.Context, sel ast.SelectionSet, v *vega.Vault) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Vault(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVaultEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVaultEdge(ctx context.Context, sel ast.SelectionSet, v *v2.VaultEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._VaultEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNVaultStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVaultStatus(ctx context.Context, v interface{}) (VaultStatus, error) {
+	var res VaultStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNVaultStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVaultStatus(ctx context.Context, sel ast.SelectionSet, v VaultStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVolumeBenefitTierᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.VolumeBenefitTier) graphql.Marshaler {
@@ -162728,6 +166213,53 @@ func (ec *executionContext) marshalOPartyMarginModesConnection2ᚖcodeᚗvegapro
 	return ec._PartyMarginModesConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOPartyVaultShare2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPartyVaultShareᚄ(ctx context.Context, sel ast.SelectionSet, v []*PartyVaultShare) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPartyVaultShare2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPartyVaultShare(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOPartyVestingBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyVestingBalanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.PartyVestingBalance) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -163608,6 +167140,134 @@ func (ec *executionContext) marshalORankTable2ᚖcodeᚗvegaprotocolᚗioᚋvega
 		return graphql.Null
 	}
 	return ec._RankTable(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORedeemStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatusᚄ(ctx context.Context, v interface{}) ([]RedeemStatus, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]RedeemStatus, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRedeemStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatus(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalORedeemStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []RedeemStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRedeemStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRedeemStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalORedemptionRequest2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐRedemptionRequest(ctx context.Context, sel ast.SelectionSet, v *v1.RedemptionRequest) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RedemptionRequest(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORedemptionRequestConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRedemptionRequestConnection(ctx context.Context, sel ast.SelectionSet, v *v2.RedemptionRequestConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RedemptionRequestConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORedemptionRequestEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRedemptionRequestEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.RedemptionRequestEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRedemptionRequestEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRedemptionRequestEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOReferralSetEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetEdge(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSetEdge) graphql.Marshaler {
@@ -165009,6 +168669,90 @@ func (ec *executionContext) marshalOTransferType2ᚕcodeᚗvegaprotocolᚗioᚋv
 	wg.Wait()
 
 	return ret
+}
+
+func (ec *executionContext) marshalOVaultConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVaultConnection(ctx context.Context, sel ast.SelectionSet, v *v2.VaultConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._VaultConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOVaultEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVaultEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.VaultEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNVaultEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVaultEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOVaultFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVaultFilter(ctx context.Context, v interface{}) (*VaultFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputVaultFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOVaultMetaData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVaultMetaData(ctx context.Context, sel ast.SelectionSet, v *vega.VaultMetaData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._VaultMetaData(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOVaultRedemptionRequestsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVaultRedemptionRequestsFilter(ctx context.Context, v interface{}) (*VaultRedemptionRequestsFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputVaultRedemptionRequestsFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOVaultState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐVaultState(ctx context.Context, sel ast.SelectionSet, v *v1.VaultState) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._VaultState(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOVolumeDiscountProgram2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVolumeDiscountProgram(ctx context.Context, sel ast.SelectionSet, v *v2.VolumeDiscountProgram) graphql.Marshaler {

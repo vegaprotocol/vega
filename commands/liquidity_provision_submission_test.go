@@ -32,6 +32,7 @@ func TestNilLiquidityProvisionSubmissionFails(t *testing.T) {
 }
 
 func TestLiquidityProvisionSubmission(t *testing.T) {
+	banana := "banana"
 	cases := []struct {
 		lp        commandspb.LiquidityProvisionSubmission
 		errString string
@@ -67,7 +68,15 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 			},
 			errString: "liquidity_provision_submission.market_id (is required)",
 		},
-
+		{
+			lp: commandspb.LiquidityProvisionSubmission{
+				CommitmentAmount: "100",
+				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+				Fee:              "0.1",
+				VaultId:          &banana,
+			},
+			errString: "liquidity_provision_submission.vault_id (is not a valid vault identifier)",
+		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
 				CommitmentAmount: "100",

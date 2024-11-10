@@ -62,6 +62,14 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of stop orders that match the given filters
 	ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error)
+	// List vaults
+	//
+	// Get a list of vaults given the filters
+	ListVaults(ctx context.Context, in *ListVaultsRequest, opts ...grpc.CallOption) (*ListVaultsResponse, error)
+	// List vault redemption requests
+	//
+	// Get a list of vault redemption requests given the filters
+	ListVaultRedemptionRequests(ctx context.Context, in *ListVaultsRedemptionRequestsRequest, opts ...grpc.CallOption) (*ListVaultRedemptionRequestsResponse, error)
 	// List game team scores
 	//
 	// Get a list of team scores for the given filters
@@ -790,6 +798,24 @@ func (c *tradingDataServiceClient) GetStopOrder(ctx context.Context, in *GetStop
 func (c *tradingDataServiceClient) ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error) {
 	out := new(ListStopOrdersResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListStopOrders", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListVaults(ctx context.Context, in *ListVaultsRequest, opts ...grpc.CallOption) (*ListVaultsResponse, error) {
+	out := new(ListVaultsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListVaults", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListVaultRedemptionRequests(ctx context.Context, in *ListVaultsRedemptionRequestsRequest, opts ...grpc.CallOption) (*ListVaultRedemptionRequestsResponse, error) {
+	out := new(ListVaultRedemptionRequestsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListVaultRedemptionRequests", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2257,6 +2283,14 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of stop orders that match the given filters
 	ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error)
+	// List vaults
+	//
+	// Get a list of vaults given the filters
+	ListVaults(context.Context, *ListVaultsRequest) (*ListVaultsResponse, error)
+	// List vault redemption requests
+	//
+	// Get a list of vault redemption requests given the filters
+	ListVaultRedemptionRequests(context.Context, *ListVaultsRedemptionRequestsRequest) (*ListVaultRedemptionRequestsResponse, error)
 	// List game team scores
 	//
 	// Get a list of team scores for the given filters
@@ -2888,6 +2922,12 @@ func (UnimplementedTradingDataServiceServer) GetStopOrder(context.Context, *GetS
 func (UnimplementedTradingDataServiceServer) ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListStopOrders not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListVaults(context.Context, *ListVaultsRequest) (*ListVaultsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListVaults not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListVaultRedemptionRequests(context.Context, *ListVaultsRedemptionRequestsRequest) (*ListVaultRedemptionRequestsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListVaultRedemptionRequests not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListGameTeamScores(context.Context, *ListGameTeamScoresRequest) (*ListGameTeamScoresResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListGameTeamScores not implemented")
 }
@@ -3422,6 +3462,42 @@ func _TradingDataService_ListStopOrders_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListStopOrders(ctx, req.(*ListStopOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListVaults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVaultsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListVaults(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListVaults",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListVaults(ctx, req.(*ListVaultsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListVaultRedemptionRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVaultsRedemptionRequestsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListVaultRedemptionRequests(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListVaultRedemptionRequests",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListVaultRedemptionRequests(ctx, req.(*ListVaultsRedemptionRequestsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5652,6 +5728,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListStopOrders",
 			Handler:    _TradingDataService_ListStopOrders_Handler,
+		},
+		{
+			MethodName: "ListVaults",
+			Handler:    _TradingDataService_ListVaults_Handler,
+		},
+		{
+			MethodName: "ListVaultRedemptionRequests",
+			Handler:    _TradingDataService_ListVaultRedemptionRequests_Handler,
 		},
 		{
 			MethodName: "ListGameTeamScores",

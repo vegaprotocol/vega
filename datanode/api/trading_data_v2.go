@@ -139,6 +139,8 @@ type TradingDataServiceV2 struct {
 	gameScoreService              *service.GameScore
 	AMMPoolService                AMMService
 	partyDiscountStats            PartyStatsSvc
+	vaultService                  *service.Vault
+	vaultRedemptionService        *service.VaultRedemptions
 }
 
 func (t *TradingDataServiceV2) SetLogger(l *logging.Logger) {
@@ -179,6 +181,76 @@ func (t *TradingDataServiceV2) GetPartyVestingStats(
 	}
 
 	return res, nil
+}
+
+func (t *TradingDataServiceV2) ListVaults(ctx context.Context, req *v2.ListVaultsRequest) (*v2.ListVaultsResponse, error) {
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+	vaults, pageInfo, err := t.vaultService.ListVaultsWithCursor(ctx, req.VaultIds, req.AssetIds, *req.LiveOnly, pagination)
+	if err != nil {
+		return nil, err
+	}
+	edges := make([]*v2.VaultEdge, 0, len(vaults))
+	for _, vault := range vaults {
+		vaultEvent := &v1.VaultState{
+			Vault:              vault.Vault,
+			InvestedAmount:     vault.InvestedAmount.String(),
+			Status:             vega.VaultStatus(vault.Status),
+			NextFeeCalc:        vault.NextFeeCalc.UnixNano(),
+			NextRedemptionDate: vault.NextFeeCalc.UnixNano(),
+			PartyShares:        make([]*v1.VaultShareHolder, 0, len(vault.PartyShares)),
+		}
+		for _, ps := range vault.PartyShares {
+			vaultEvent.PartyShares = append(vaultEvent.PartyShares, &v1.VaultShareHolder{Party: ps.PartyID.String(), Share: ps.Share.String()})
+		}
+		edges = append(edges, &v2.VaultEdge{
+			Node:   vaultEvent,
+			Cursor: vault.Cursor().Encode(),
+		})
+	}
+	return &v2.ListVaultsResponse{
+		Vaults: &v2.VaultConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListVaultRedemptionRequests(ctx context.Context, req *v2.ListVaultsRedemptionRequestsRequest) (*v2.ListVaultRedemptionRequestsResponse, error) {
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+	redemptionRequests, pageInfo, err := t.vaultRedemptionService.ListRedemptionRequestsWithCursor(ctx, req.VaultIds, req.PartyIds, req.AssetIds, req.Statuses, pagination)
+	if err != nil {
+		return nil, err
+	}
+	edges := make([]*v2.RedemptionRequestEdge, 0, len(redemptionRequests))
+	for _, rr := range redemptionRequests {
+		event := &v1.RedemptionRequest{
+			RequestId:       rr.RequestID.String(),
+			VaultId:         rr.VaultID.String(),
+			PartyId:         rr.PartyID.String(),
+			Asset:           rr.Asset.String(),
+			Date:            rr.EligibilityDate.UnixNano(),
+			LastUpdate:      rr.LastUpdated.UnixNano(),
+			RequestedAmount: rr.RequestedAmount.String(),
+			RemainingAmount: rr.RemainingAmount.String(),
+			Status:          vega.RedeemStatus(rr.Status),
+		}
+		edges = append(edges, &v2.RedemptionRequestEdge{
+			Node:   event,
+			Cursor: rr.Cursor().Encode(),
+		})
+	}
+	return &v2.ListVaultRedemptionRequestsResponse{
+		VaultRedemptionRequests: &v2.RedemptionRequestConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
 }
 
 func (t *TradingDataServiceV2) GetVestingBalancesSummary(

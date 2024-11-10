@@ -107,6 +107,16 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckAmendAMM(cmd.AmendAmm)
 	case *walletpb.SubmitTransactionRequest_CancelAmm:
 		cmdErr = commands.CheckCancelAMM(cmd.CancelAmm)
+	case *walletpb.SubmitTransactionRequest_CreateVault:
+		cmdErr = commands.CheckCreateVault(cmd.CreateVault)
+	case *walletpb.SubmitTransactionRequest_UpdateVault:
+		cmdErr = commands.CheckUpdateVault(cmd.UpdateVault)
+	case *walletpb.SubmitTransactionRequest_ChangeVaultOwnership:
+		cmdErr = commands.CheckChangeVaultOwnership(cmd.ChangeVaultOwnership)
+	case *walletpb.SubmitTransactionRequest_DepositToVault:
+		cmdErr = commands.CheckDepositToVault(cmd.DepositToVault)
+	case *walletpb.SubmitTransactionRequest_WithdrawFromVault:
+		cmdErr = commands.CheckWithdrawFromVault(cmd.WithdrawFromVault)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -269,6 +279,26 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_CancelAmm:
 		data.Command = &commandspb.InputData_CancelAmm{
 			CancelAmm: req.GetCancelAmm(),
+		}
+	case *walletpb.SubmitTransactionRequest_CreateVault:
+		data.Command = &commandspb.InputData_CreateVault{
+			CreateVault: req.GetCreateVault(),
+		}
+	case *walletpb.SubmitTransactionRequest_UpdateVault:
+		data.Command = &commandspb.InputData_UpdateVault{
+			UpdateVault: req.GetUpdateVault(),
+		}
+	case *walletpb.SubmitTransactionRequest_ChangeVaultOwnership:
+		data.Command = &commandspb.InputData_ChangeVaultOwnership{
+			ChangeVaultOwnership: req.GetChangeVaultOwnership(),
+		}
+	case *walletpb.SubmitTransactionRequest_DepositToVault:
+		data.Command = &commandspb.InputData_DepositToVault{
+			DepositToVault: req.GetDepositToVault(),
+		}
+	case *walletpb.SubmitTransactionRequest_WithdrawFromVault:
+		data.Command = &commandspb.InputData_WithdrawFromVault{
+			WithdrawFromVault: req.GetWithdrawFromVault(),
 		}
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))

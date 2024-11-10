@@ -346,6 +346,8 @@ func defaultNetParams() map[string]value {
 		RewardsActivityStreakBenefitTiers:          NewJSON(&proto.ActivityStreakBenefitTiers{}, types.CheckUntypedActivityStreakBenefitTier).Mutable(true).MustUpdate(`{"tiers": []}`),
 		RewardsActivityStreakMinQuantumOpenVolume:  NewUint().Mutable(true).MustUpdate("500"),
 		RewardsActivityStreakMinQuantumTradeVolume: NewUint().Mutable(true).MustUpdate("2500"),
+
+		MinimumNoticePeriod: NewUint(UintGTE(num.UintOne())).Mutable(true).MustUpdate("1"),
 	}
 
 	// add additional cross net param rules

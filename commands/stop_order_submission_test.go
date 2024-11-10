@@ -28,6 +28,8 @@ import (
 )
 
 func TestCheckStopOrdersStubmission(t *testing.T) {
+	vault1ID := "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca"
+	vault2ID := "f9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca"
 	cases := []struct {
 		submission commandspb.StopOrdersSubmission
 		errStr     string
@@ -237,6 +239,43 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 				},
 			},
 			errStr: "* (market ID for falls below and rises above must be the same)",
+		},
+		{
+			submission: commandspb.StopOrdersSubmission{
+				RisesAbove: &commandspb.StopOrderSetup{
+					OrderSubmission: &commandspb.OrderSubmission{
+						MarketId:    "f9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+						VaultId:     &vault1ID,
+						Side:        vega.Side_SIDE_BUY,
+						Size:        100,
+						TimeInForce: vega.Order_TIME_IN_FORCE_IOC,
+						Type:        vega.Order_TYPE_MARKET,
+						ReduceOnly:  true,
+					},
+					ExpiresAt:      ptr.From(int64(1000)),
+					ExpiryStrategy: ptr.From(vega.StopOrder_EXPIRY_STRATEGY_CANCELS),
+					Trigger: &commandspb.StopOrderSetup_TrailingPercentOffset{
+						TrailingPercentOffset: "0.1",
+					},
+				},
+				FallsBelow: &commandspb.StopOrderSetup{
+					OrderSubmission: &commandspb.OrderSubmission{
+						MarketId:    "f9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+						VaultId:     &vault2ID,
+						Side:        vega.Side_SIDE_BUY,
+						Size:        100,
+						TimeInForce: vega.Order_TIME_IN_FORCE_IOC,
+						Type:        vega.Order_TYPE_MARKET,
+						ReduceOnly:  true,
+					},
+					ExpiresAt:      ptr.From(int64(1000)),
+					ExpiryStrategy: ptr.From(vega.StopOrder_EXPIRY_STRATEGY_CANCELS),
+					Trigger: &commandspb.StopOrderSetup_TrailingPercentOffset{
+						TrailingPercentOffset: "0.1",
+					},
+				},
+			},
+			errStr: "* (vault ID for falls below and rises above must be the same)",
 		},
 		{
 			submission: commandspb.StopOrdersSubmission{

@@ -1138,3 +1138,57 @@ func (s *AMMStatusReason) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 type ProtoEnum interface {
 	GetEnums() map[int32]string
 }
+
+type VaultStatus vega.VaultStatus
+
+const (
+	VaultStatusUnspecified = VaultStatus(vega.VaultStatus_VAULT_STATUS_UNSPECIFIED)
+	VaultStatusActive      = VaultStatus(vega.VaultStatus_VAULT_STATUS_ACTIVE)
+	VaultStatusStopping    = VaultStatus(vega.VaultStatus_VAULT_STATUS_STOPPING)
+	VaultStatusStopped     = VaultStatus(vega.VaultStatus_VAULT_STATUS_STOPPED)
+)
+
+func (m VaultStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode, ok := vega.VaultStatus_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown vault status: %s", mode)
+	}
+	return append(buf, []byte(mode)...), nil
+}
+
+func (m *VaultStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.VaultStatus_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown vault status: %s", src)
+	}
+
+	*m = VaultStatus(val)
+	return nil
+}
+
+type RedeemStatus vega.RedeemStatus
+
+const (
+	RedeemStatusUnspecified = RedeemStatus(vega.RedeemStatus_REDEEM_STATUS_UNSPECIFIED)
+	RedeemStatusPending     = RedeemStatus(vega.RedeemStatus_REDEEM_STATUS_PENDING)
+	RedeemStatusLate        = RedeemStatus(vega.RedeemStatus_REDEEM_STATUS_LATE)
+	RedeemStatusCompleted   = RedeemStatus(vega.RedeemStatus_REDEEM_STATUS_COMPLETED)
+)
+
+func (m RedeemStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode, ok := vega.RedeemStatus_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown redeem status: %s", mode)
+	}
+	return append(buf, []byte(mode)...), nil
+}
+
+func (m *RedeemStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.RedeemStatus_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown redeem status: %s", src)
+	}
+
+	*m = RedeemStatus(val)
+	return nil
+}

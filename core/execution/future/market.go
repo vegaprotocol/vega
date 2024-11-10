@@ -2200,11 +2200,21 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	// now check for the parties position
-	if positions := m.position.GetPositionsByParty(party); len(positions) > 1 {
-		m.log.Panic("only one position expected", logging.Int("got", len(positions)))
-	} else if len(positions) < 1 {
-		rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
-		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
+	if risesAbove != nil {
+		if positions := m.position.GetPositionsByParty(party); len(positions) > 1 {
+			m.log.Panic("only one position expected", logging.Int("got", len(positions)))
+		} else if len(positions) < 1 {
+			rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
+		}
+	}
+	if fallsBelow != nil {
+		if positions := m.position.GetPositionsByParty(party); len(positions) > 1 {
+			m.log.Panic("only one position expected", logging.Int("got", len(positions)))
+		} else if len(positions) < 1 {
+			rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
+		}
 	}
 
 	fallsBelowTriggered, risesAboveTriggered := m.stopOrderWouldTriggerAtSubmission(fallsBelow),

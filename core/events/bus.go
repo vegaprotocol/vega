@@ -179,6 +179,8 @@ const (
 	VolumeRebateProgramUpdatedEvent
 	VolumeRebateStatsUpdatedEvent
 	AutomatedPurchaseAnnouncedEvent
+	VaultStateEvent
+	RedemptionRequestEvent
 )
 
 var (
@@ -287,6 +289,8 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED:           VolumeRebateProgramUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED:             VolumeRebateStatsUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED:            AutomatedPurchaseAnnouncedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VAULT_STATE:                             VaultStateEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REDEMPTION_REQUEST:                      RedemptionRequestEvent,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -386,7 +390,8 @@ var (
 		VolumeRebateProgramUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_PROGRAM_UPDATED,
 		VolumeRebateStatsUpdatedEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_REBATE_STATS_UPDATED,
 		AutomatedPurchaseAnnouncedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED,
-
+		VaultStateEvent:                          eventspb.BusEventType_BUS_EVENT_TYPE_VAULT_STATE,
+		RedemptionRequestEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_REDEMPTION_REQUEST,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -485,6 +490,8 @@ var (
 		VolumeRebateProgramUpdatedEvent:          "VolumeRebateProgramUpdatedEvent",
 		VolumeRebateStatsUpdatedEvent:            "VolumeRebateStatsUpdatedEvent",
 		AutomatedPurchaseAnnouncedEvent:          "AutomatedPurchaseAnnouncedEvent",
+		VaultStateEvent:                          "VaultStateEvent",
+		RedemptionRequestEvent:                   "RedemptionRequestEvent",
 	}
 )
 

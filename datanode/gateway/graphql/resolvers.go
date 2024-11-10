@@ -24,6 +24,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -346,6 +347,18 @@ func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
 
 func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
+}
+
+func (r *VegaResolverRoot) Vault() VaultResolver {
+	return (*vaultResolver)(r)
+}
+
+func (r *VegaResolverRoot) VaultState() VaultStateResolver {
+	return (*vaultStateResolver)(r)
+}
+
+func (r *VegaResolverRoot) RedemptionRequest() RedemptionRequestResolver {
+	return (*vaultStateResolver)(r)
 }
 
 func (r *VegaResolverRoot) EquityLikeShareWeightPerMarket() EquityLikeShareWeightPerMarketResolver {
@@ -803,6 +816,40 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+// Vaults implements QueryResolver.
+func (r *myQueryResolver) Vaults(ctx context.Context, filter *VaultFilter, pagination *v2.Pagination) (*v2.VaultConnection, error) {
+	req := &v2.ListVaultsRequest{}
+	if filter != nil {
+		req.AssetIds = filter.Assets
+		req.VaultIds = filter.VaultIds
+		req.LiveOnly = &filter.LiveOnly
+	}
+	res, err := r.r.clt2.ListVaults(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Vaults, nil
+}
+
+func (r *myQueryResolver) VaultsRedemptions(ctx context.Context, filter *VaultRedemptionRequestsFilter, pagination *v2.Pagination) (*v2.RedemptionRequestConnection, error) {
+	req := &v2.ListVaultsRedemptionRequestsRequest{}
+	if filter != nil {
+		req.VaultIds = filter.VaultIds
+		req.PartyIds = filter.PartyIds
+		req.AssetIds = filter.Assets
+		req.Statuses = make([]vega.RedeemStatus, 0, len(filter.Statuses))
+		for _, status := range filter.Statuses {
+			s, _ := marshallers.UnmarshalRedeemStatus(status)
+			req.Statuses = append(req.Statuses, s)
+		}
+	}
+	res, err := r.r.clt2.ListVaultRedemptionRequests(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.VaultRedemptionRequests, nil
+}
 
 func (r *myQueryResolver) PartyDiscountStats(ctx context.Context, partyID string, markets []string) (*v2.GetPartyDiscountStatsResponse, error) {
 	req := &v2.GetPartyDiscountStatsRequest{

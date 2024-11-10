@@ -897,3 +897,17 @@ func stringToU64(s string) uint64 {
 	i, _ := strconv.ParseUint(s, 10, 64)
 	return i
 }
+
+func (r RowWrapper) MustI32(name string) int32 {
+	value, err := I32(r.mustColumn(name))
+	panicW(name, err)
+	return value
+}
+
+func I32(rawValue string) (int32, error) {
+	parsed, err := strconv.ParseInt(rawValue, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int32(parsed), nil
+}

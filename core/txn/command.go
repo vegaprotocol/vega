@@ -96,6 +96,18 @@ const (
 	CancelAMMCommand Command = 0x66
 	// DelayedTransactionsWrapper ...
 	DelayedTransactionsWrapper Command = 0x67
+	// CreateVaultCommand ...
+	CreateVaultCommand Command = 0x68
+	// UpdateVaultCommand ...
+	UpdateVaultCommand Command = 0x69
+	// CloseVaultCommand ...
+	CloseVaultCommand Command = 0x6A
+	// DepositToVaultCommand ...
+	DepositToVaultCommand Command = 0x6B
+	// WithdrawFromVaultCommand ...
+	WithdrawFromVaultCommand Command = 0x6C
+	// ChangeVaultOwnershipCommand ...
+	ChangeVaultOwnershipCommand Command = 0x6D
 )
 
 var commandName = map[Command]string{
@@ -137,6 +149,12 @@ var commandName = map[Command]string{
 	AmendAMMCommand:                    "Amend AMM",
 	CancelAMMCommand:                   "Cancel AMM",
 	DelayedTransactionsWrapper:         "Delayed Transactions Wrapper",
+	CreateVaultCommand:                 "Create Vault",
+	UpdateVaultCommand:                 "Update Vault",
+	CloseVaultCommand:                  "Close Vault",
+	DepositToVaultCommand:              "Deposit To Vault",
+	WithdrawFromVaultCommand:           "Withdraw From Vault",
+	ChangeVaultOwnershipCommand:        "Change Vault Ownership",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

@@ -90,6 +90,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	eng.OnPrimaryEthChainIDUpdated("1", "hello")
 	eng.OnSecondaryEthChainIDUpdated("2", "hello2")
 
+	col.EXPECT().IsVaultAccount(gomock.Any()).Return(false).AnyTimes()
 	return &testEngine{
 		Engine:                eng,
 		ctrl:                  ctrl,

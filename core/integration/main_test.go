@@ -653,6 +653,38 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.DebugAMMPoolEventsForPartyMarket(execsetup.broker, execsetup.log, ptr.From(party), ptr.From(market))
 	})
 
+	// vault stuff
+	s.Step(`^the parties create the following vaults:$`, func(table *godog.Table) error {
+		return steps.PartiesCreateVault(execsetup.vaultService, table)
+	})
+	s.Step(`^the parties update the following vaults:$`, func(table *godog.Table) error {
+		return steps.PartiesUpdateVault(execsetup.vaultService, table)
+	})
+	s.Step(`^the ownership of vault "([^"]*)" is transferred from "([^"]*)" to "([^"]*)"$`, func(vault, currentOwner, newOwner string) error {
+		return steps.VaultChangeOwnership(execsetup.vaultService, vault, currentOwner, newOwner)
+	})
+	s.Step(`^the vault "([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
+		return steps.PartyShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, party, asset, balance)
+	})
+	s.Step(`^the vault "([^"]*)" should have the following share holding:$`, func(vault string, table *godog.Table) error {
+		return steps.VaultShouldHaveShareholders(execsetup.broker, vault, table)
+	})
+	s.Step(`^the vault "([^"]*)" should have "([^"]*)" as an owner$`, func(vault, owner string) error {
+		return steps.VaultShouldHaveTheOwner(execsetup.broker, vault, owner)
+	})
+	s.Step(`^the vault "([^"]*)" should have the following state:$`, func(vault string, table *godog.Table) error {
+		return steps.VaultShouldHaveFollowingState(execsetup.broker, vault, table)
+	})
+	s.Step(`^the parties deposit on the vault "([^"]*)" the following amount:$`, func(vault string, table *godog.Table) error {
+		return steps.PartiesDepositToVault(execsetup.vaultService, vault, table)
+	})
+	s.Step(`^the parties withdraw from the vault "([^"]*)" the following amount:$`, func(vault string, table *godog.Table) error {
+		return steps.PartiesWithdrawFromVault(execsetup.vaultService, vault, table)
+	})
+	s.Step(`^the redemption requests for the vault "([^"]*)" have the following state:$`, func(vault string, table *godog.Table) error {
+		return steps.RedemptionRequestsHasTheFollowingState(execsetup.broker, execsetup.vaultService, vault, table)
+	})
+
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {
 		steps.DebugAccounts(execsetup.broker, execsetup.log)

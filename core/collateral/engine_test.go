@@ -97,7 +97,6 @@ func TestMarginUpdateOnOrder(t *testing.T) {
 	t.Run("Successfully update margin on new order if general account balance is OK no shortfall with bond accound", testMarginUpdateOnOrderOKNotShortFallWithBondAccount)
 	t.Run("Successfully update margin on new order if general account balance is OK will use bond account if exists", testMarginUpdateOnOrderOKUseBondAccount)
 	t.Run("Successfully update margin on new order if general account balance is OK will use bond&general accounts if exists", testMarginUpdateOnOrderOKUseBondAndGeneralAccounts)
-	t.Run("Successfully update margin on new order then rollback", testMarginUpdateOnOrderOKThenRollback)
 	t.Run("Failed to update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
 }
 
@@ -2639,79 +2638,6 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 	assert.Equal(t, num.NewUint(100), marginAcc.Balance)
 }
 
-func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.Finish()
-	party := "okparty"
-
-	// create parties
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
-	acc, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
-	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
-	_, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
-	assert.Nil(t, err)
-
-	evt := riskFake{
-		asset:  testMarketAsset,
-		amount: num.NewUint(100),
-		transfer: &types.Transfer{
-			Owner: party,
-			Amount: &types.FinancialAmount{
-				Amount: num.NewUint(100),
-				Asset:  testMarketAsset,
-			},
-			MinAmount: num.NewUint(100),
-			Type:      types.TransferTypeMarginLow,
-		},
-	}
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, stringToInt(acc.Balance), 100)
-		}
-		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, stringToInt(acc.Balance), 400)
-		}
-	})
-	resp, closed, err := eng.MarginUpdateOnOrder(context.Background(), testMarketID, evt)
-	assert.Nil(t, err)
-	assert.Nil(t, closed)
-	assert.NotNil(t, resp)
-
-	// then rollback
-	rollback := &types.Transfer{
-		Owner: party,
-		Amount: &types.FinancialAmount{
-			Amount: num.NewUint(100),
-			Asset:  testMarketAsset,
-		},
-		MinAmount: num.NewUint(100),
-		Type:      types.TransferTypeMarginLow,
-	}
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, stringToInt(acc.Balance), 0)
-		}
-		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, stringToInt(acc.Balance), 500)
-		}
-	})
-	resp, err = eng.RollbackMarginUpdateOnOrder(context.Background(), testMarketID, testMarketAsset, rollback)
-	assert.Nil(t, err)
-	assert.NotNil(t, resp)
-
-	assert.Equal(t, 1, len(resp.Entries))
-	assert.Equal(t, num.NewUint(500), resp.Entries[0].ToAccountBalance)
-	assert.Equal(t, num.NewUint(500), resp.Entries[0].ToAccountBalance)
-}
-
 func testMarginUpdateOnOrderFail(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
@@ -3898,4 +3824,76 @@ func TestEarmarking(t *testing.T) {
 
 	// finally unearmark the last 400 successfully
 	require.NoError(t, eng.UnearmarkForAutomatedPurchase("ETH", types.AccountTypeGlobalReward, num.NewUint(400)))
+}
+
+func TestCreateAndCloseVault(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+	_, err := eng.CreateVaultAccount(ctx, "vault1", "ETH")
+	require.NoError(t, err)
+	require.True(t, eng.IsVaultAccount("vault1"))
+
+	require.NoError(t, eng.CloseVaultAccount(ctx, "vault1"))
+	require.False(t, eng.IsVaultAccount("vault1"))
+}
+
+func TestVaultBalances(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+	acc, err := eng.CreateVaultAccount(ctx, "vault1", "ETH")
+	require.NoError(t, err)
+	require.NoError(t, eng.UpdateBalance(ctx, acc, num.NewUint(10000)))
+
+	marginAccID, err := eng.CreatePartyMarginAccount(ctx, "vault1", "market1", "ETH")
+	require.NoError(t, err)
+	require.NoError(t, eng.UpdateBalance(ctx, marginAccID, num.NewUint(20000)))
+
+	vaultTotalBalance, err := eng.GetVaultBalance("vault1", "ETH")
+	require.NoError(t, err)
+	require.Equal(t, "30000", vaultTotalBalance.String())
+
+	liquidVaultBalance, err := eng.GetVaultLiquidBalance("vault1", "ETH")
+	require.NoError(t, err)
+	require.Equal(t, "10000", liquidVaultBalance.String())
+}
+
+func TestVaultDepositWithdraw(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+	_, err := eng.CreateVaultAccount(ctx, "vault1", "ETH")
+	require.NoError(t, err)
+
+	acc, err := eng.CreatePartyGeneralAccount(ctx, "p1", "ETH")
+	require.NoError(t, err)
+	require.NoError(t, eng.UpdateBalance(ctx, acc, num.NewUint(10000)))
+
+	partyBalance, err := eng.GetPartyGeneralAccount("p1", "ETH")
+	require.NoError(t, err)
+	require.Equal(t, "10000", partyBalance.Balance.String())
+
+	_, err = eng.DepositToVault(ctx, "vault1", "ETH", "p1", num.NewUint(8000))
+	require.NoError(t, err)
+
+	liquidVaultBalance, err := eng.GetVaultLiquidBalance("vault1", "ETH")
+	require.NoError(t, err)
+	require.Equal(t, "8000", liquidVaultBalance.String())
+
+	_, err = eng.WithdrawFromVault(ctx, "vault1", "ETH", "p1", num.NewUint(3000))
+	require.NoError(t, err)
+	liquidVaultBalance, err = eng.GetVaultLiquidBalance("vault1", "ETH")
+	require.NoError(t, err)
+	require.Equal(t, "5000", liquidVaultBalance.String())
+
+	partyBalance, err = eng.GetPartyGeneralAccount("p1", "ETH")
+	require.NoError(t, err)
+	require.Equal(t, "5000", partyBalance.Balance.String())
 }

@@ -207,7 +207,10 @@ func (e *exEng) ProcessBatch(ctx context.Context, party string) error {
 	batch := e.batch.bmi
 	e.batch = nil
 	bmi := processor.NewBMIProcessor(nil, e.Engine, noopValidation{})
-	if err := bmi.ProcessBatch(context.Background(), batch, party, vgcrypto.RandomHash(), stats.NewBlockchain()); err != nil {
+	dummyVerifyOwnership := func(*string, string) error {
+		return nil
+	}
+	if err := bmi.ProcessBatch(context.Background(), batch, party, vgcrypto.RandomHash(), stats.NewBlockchain(), dummyVerifyOwnership); err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, nil, "processBatch"))
 		return err
 	}

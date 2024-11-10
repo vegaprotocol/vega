@@ -60,5 +60,9 @@ func checkUpdateMarginMode(cmd *commandspb.UpdateMarginMode) Errors {
 		errs.AddForProperty("update_margin_mode.market_id", ErrIsRequired)
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("update_margin_mode.vault_id", ErrInvalidVaultID)
+	}
+
 	return errs
 }

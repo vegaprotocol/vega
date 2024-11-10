@@ -32,8 +32,10 @@
 - [11685](https://github.com/vegaprotocol/vega/issues/11685) - Automated purchase support added.
 - [11726](https://github.com/vegaprotocol/vega/issues/11726) - Combined `AMM` uncrossing orders for better performance when uncrossing the book.
 - [11711](https://github.com/vegaprotocol/vega/issues/11711) - Manage closed team membership by updating the allow list.
-- [11722](https://github.com/vegaprotocol/vega/issues/11722) - Expose active protocol automated purchase identifier in market data API.
+- [11722](https://github.com/vegaprotocol/vega/issues/11722) - Expose active protocol automated purchase identifier in market data API. 
 - [11744](https://github.com/vegaprotocol/vega/issues/11744) - Staking from collateral bridged assets.
+- [11745](https://github.com/vegaprotocol/vega/issues/11745) - Implement vault accounts 
+- [11750](https://github.com/vegaprotocol/vega/issues/11745) - Fix division by zero when vault is empty.
 
 ### 🐛 Fixes
 
@@ -45,6 +47,7 @@
 - [11699](https://github.com/vegaprotocol/vega/issues/11699) - Update factors of programs when they are updated.
 - [11724](https://github.com/vegaprotocol/vega/issues/11724) - Allow nil initial time in time trigger.
 - [11733](https://github.com/vegaprotocol/vega/issues/11733) - Fix division by zero.
+- [11753](https://github.com/vegaprotocol/vega/issues/11753) - Update the vesting engine correctly on which party is getting the reward in the case of a vault. 
 
 ## 0.78.2
 

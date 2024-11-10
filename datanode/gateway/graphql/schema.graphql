@@ -1401,6 +1401,22 @@ type Query {
     "Market IDs"
     marketIds: [ID!]
   ): PartyDiscountStats
+
+  "Get a list of vaults. If provided, the filter will be applied to the list of vaults to restrict the results."
+  vaults(
+    "Optional filter to restrict the results of the list."
+    filter: VaultFilter
+    "Optional pagination information"
+    pagination: Pagination
+  ): VaultConnection
+
+  "Get a list of vault redemption requests and their statuses. If provided, the filter will be applied to the list of redemption requests to restrict the results."
+  vaultsRedemptions(
+    "Optional filter to restrict the results of the list."
+    filter: VaultRedemptionRequestsFilter
+    "Optional pagination information"
+    pagination: Pagination
+  ): RedemptionRequestConnection
 }
 
 enum EstimatedAMMError {
@@ -8001,4 +8017,166 @@ type MarketFees {
   baseMakerFee: String!
   "The maker rebate for the party"
   userMakerRebate: String!
+}
+
+enum RedeemStatus {
+  "Redeem status is unspecificed"
+  UNSPECIFIED
+  "Redemption has been queued and is being processed"
+  PENDING
+  "Redemption has been marked as late"
+  LATE 
+  "Redemption has been completed"
+  COMPLETED
+}
+
+type RedemptionRequest {
+  "The request ID - will be the hash of the transaction requesting the withdraw from the vault"
+  requestId: ID!
+  "The vault ID"
+  vaultId: ID!
+  "The redeeming party"
+  partyId: ID!
+  "The asset being redeemed"
+  asset: Asset!
+  "The date after which the redemption request is considered (i.e. after the cutoff is applied)"
+  eligibilityDate: Timestamp
+  "Last time the redemption request has been updated"
+  lastUpdated: Timestamp
+  "The amount requested in the redemption request"
+  requestedAmount: String!
+  "The amount remaining to be redeemed from the request"
+  remainingAmount: String!
+  "The status of the redemption request"
+  status: RedeemStatus!
+}
+
+type VaultState {
+  "The vault"
+  vault: Vault! 
+  "The parties share holding in the vault"
+  partyShares: [PartyVaultShare!]
+  "The status of the vault"
+  vaultStatus: VaultStatus!
+  "The amount invested in the vault"
+  investedAmount: String!
+  "The timestamp for the next round of fee calculation for the vault"
+  nextFeeCalc: Timestamp
+  "The timestamp for the next redemption date for the vault"
+  nextRedemptionDate: Timestamp
+}
+
+enum VaultStatus {
+  "Vault state is unspecificed"
+  UNSPECIFIED
+  "Vault is active"
+  ACTIVE
+  "Vault is in the process of being stopped"
+  STOPPING
+  "Vault is stopped"
+  STOPPED
+}
+
+type PartyVaultShare {
+  "The party ID"
+  partyId: ID!
+  "The party share in the vault"
+  share: String!
+}
+
+type Vault {
+  "The vault ID"
+  vaultId: ID! 
+  "The public key of the owner of the vault"
+  owner: ID!
+  "The asset of the vault"
+  asset: Asset!
+  "The metadata for the vault"
+  vaultMetaData: VaultMetaData
+  "Fee period is the frequency for the vault's fees assessment"
+  feePeriod: String!
+  "Management fee factor"
+  managementFeeFactor: String!
+  "Performance fee factor"
+  performanceFeeFactor: String!
+  "The cutoff period following the redemption date until which the redemption request is queued"
+  cutOffPeriodLength: Int!
+  "Redemption dates configuration"
+  redemptionDates: [RedemptionDate!]!
+}
+
+enum RedemptionType {
+  "Redemption type is not specified."
+  REDEMPTION_TYPE_UNSPECIFIED
+  "Normal - use full vault balance on this date to satisfy requests"
+  REDEMPTION_TYPE_NORMAL
+  "Available funds only - consider only general account on this date to satisfy redemptions"
+  REDEMPTION_TYPE_AVAILABLE_FUNDS_ONLY
+}
+
+type RedemptionDate {
+  "Date of redemption in epoch seconds"
+  redemptionDate: Timestamp!
+  "Type of redemption on that date"
+  redemptionType: RedemptionType!
+  "Maximum fraction that can be redeemed on that date"
+  maxFraction: String!
+}
+
+type VaultMetaData {
+  "Name for the vault"
+  name: String
+  "Description of the vault"
+  description: String 
+  "URL for the vault additional information"
+  url: String
+  "URL for the vault's image"
+  imageUrl: String 
+}
+
+"Connection type for retrieving cursor-based paginated vault state information"
+type VaultConnection {
+  "The vault state edges in this connection"
+  edges: [VaultEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the vault state and cursor information returned by a VaultStateConnection"
+type VaultEdge {
+  "The vault state"
+  node: VaultState
+  "The cursor for this vault state"
+  cursor: String
+}
+
+"Filter to apply to the vault connection query"
+input VaultFilter {
+  assets: [ID!]
+  vaultIds: [ID!]
+  liveOnly: Boolean!
+}
+
+"Connection type for retrieving cursor-based paginated vault redemption request state information"
+type RedemptionRequestConnection {
+  "The vault redemption requests edges in this connection"
+  edges: [RedemptionRequestEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the vault redemption request state and cursor information returned by a RedemptionRequestConnection"
+type RedemptionRequestEdge {
+  "The vault state"
+  node: RedemptionRequest 
+  "The cursor for this vault state"
+  cursor: String
+}
+
+"Filter to apply to the vault redemption requests connection query"
+input VaultRedemptionRequestsFilter {
+  partyIds: [ID!]
+  assets: [ID!]
+  vaultIds: [ID!]
+  statuses: [RedeemStatus!]
 }

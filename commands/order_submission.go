@@ -146,6 +146,10 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 		}
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("order_submission.vault_id", ErrInvalidVaultID)
+	}
+
 	if cmd.PeggedOrder != nil {
 		if cmd.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			errs.AddForProperty("order_submission.pegged_order.reference", ErrIsRequired)

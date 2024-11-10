@@ -55,6 +55,10 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 		errs.AddForProperty("liquidity_provision_submission.reference", ErrReferenceTooLong)
 	}
 
+	if cmd.VaultId != nil && !IsVegaID(*cmd.VaultId) {
+		errs.AddForProperty("liquidity_provision_submission.vault_id", ErrInvalidVaultID)
+	}
+
 	// if the commitment amount is 0, then the command should be interpreted as
 	// a cancellation of the liquidity provision. As a result, the validation
 	// shouldn't be made on the rest of the field.

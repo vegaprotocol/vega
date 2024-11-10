@@ -365,6 +365,10 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 		return errors.New("missing asset for governance transfer")
 	}
 
+	if e.col.IsVaultAccount(transfer.Destination) {
+		return errors.New("invalid destination for governance transfer")
+	}
+
 	// check if destination market insurance account exist
 	if transfer.DestinationType == types.AccountTypeInsurance && len(transfer.Destination) > 0 {
 		_, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Destination, transfer.DestinationType)

@@ -86,6 +86,8 @@ type SQLSubscribers struct {
 	ammPoolsStore                     *sqlstore.AMMPools
 	volumeRebateStatsStore            *sqlstore.VolumeRebateStats
 	volumeRebateProgramsStore         *sqlstore.VolumeRebatePrograms
+	vaultStore                        *sqlstore.Vault
+	vaultRedemptionStore              *sqlstore.VaultRedemptions
 
 	// Services
 	candleService                       *candlesv2.Svc
@@ -146,6 +148,8 @@ type SQLSubscribers struct {
 	ammPoolsService                     *service.AMMPools
 	volumeRebateStatsService            *service.VolumeRebateStats
 	volumeRebateProgramService          *service.VolumeRebatePrograms
+	vaultService                        *service.Vault
+	vaultRedemptionService              *service.VaultRedemptions
 
 	// Subscribers
 	accountSub                      *sqlsubscribers.Account
@@ -202,6 +206,8 @@ type SQLSubscribers struct {
 	ammPoolsSub                     *sqlsubscribers.AMMPools
 	volumeRebateStatsSub            *sqlsubscribers.VolumeRebateStatsUpdated
 	volumeRebateProgramSub          *sqlsubscribers.VolumeRebateProgram
+	vaultSub                        *sqlsubscribers.Vault
+	vaultRedemptionSub              *sqlsubscribers.VaultRedemptions
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -262,6 +268,8 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.ammPoolsSub,
 		s.volumeRebateProgramSub,
 		s.volumeRebateStatsSub,
+		s.vaultSub,
+		s.vaultRedemptionSub,
 	}
 }
 
@@ -327,6 +335,8 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.ammPoolsStore = sqlstore.NewAMMPools(transactionalConnectionSource)
 	s.volumeRebateStatsStore = sqlstore.NewVolumeRebateStats(transactionalConnectionSource)
 	s.volumeRebateProgramsStore = sqlstore.NewVolumeRebatePrograms(transactionalConnectionSource)
+	s.vaultStore = sqlstore.NewVault(transactionalConnectionSource)
+	s.vaultRedemptionStore = sqlstore.NewVaultRedemptions(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, cfg service.Config, candlesConfig candlesv2.Config) error {
@@ -386,7 +396,8 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.ammPoolsService = service.NewAMMPools(s.ammPoolsStore)
 	s.volumeRebateStatsService = service.NewVolumeRebateStats(s.volumeRebateStatsStore)
 	s.volumeRebateProgramService = service.NewVolumeRebatePrograms(s.volumeRebateProgramsStore)
-
+	s.vaultService = service.NewVault(s.vaultStore, log)
+	s.vaultRedemptionService = service.NewVaultRedemptions(s.vaultRedemptionStore, log)
 	s.marketDepthService = service.NewMarketDepth(
 		cfg.MarketDepth,
 		s.orderStore,
@@ -470,4 +481,6 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.volumeRebateStatsSub = sqlsubscribers.NewVolumeRebateStatsUpdated(s.volumeRebateStatsService)
 	s.volumeRebateProgramSub = sqlsubscribers.NewVolumeRebateProgram(s.volumeRebateProgramService)
 	s.ammPoolsSub = sqlsubscribers.NewAMMPools(s.ammPoolsService, s.marketDepthService)
+	s.vaultSub = sqlsubscribers.NewVault(s.vaultStore)
+	s.vaultRedemptionSub = sqlsubscribers.NewVaultRedemptions(s.vaultRedemptionStore)
 }
