@@ -104,6 +104,8 @@ func TheFollowingTradesShouldBeExecuted(
 				(!hasBuyerTreasuryFee || buyerTreasuryFee.Equal(num.MustDecimalFromString(v.BuyerFee.TreasuryFee))) &&
 				(!hasBuyerBuyBackFee || buyerBuyBackFee.Equal(num.MustDecimalFromString(v.BuyerFee.BuyBackFee))) &&
 				(!hasBuyerHighVolumeMakerFee || buyerHighVolumeMakerFee.Equal(num.MustDecimalFromString(v.BuyerFee.HighVolumeMakerFee))) &&
+				(!hasBuyerBuyBackFee || buyerBuyBackFee.Equal(num.MustDecimalFromString(v.BuyerFee.BuyBackFee))) &&
+				(!hasBuyerTreasuryFee || buyerTreasuryFee.Equal(num.MustDecimalFromString(v.BuyerFee.TreasuryFee))) &&
 				(!hasSellerFee || sellerFee == feeToU64(v.SellerFee)) &&
 				(!hasSellerInfraFee || sellerInfraFee == stringToU64(v.SellerFee.InfrastructureFee)) &&
 				(!hasSellerMakerFee || sellerMakerFee == stringToU64(v.SellerFee.MakerFee)) &&
