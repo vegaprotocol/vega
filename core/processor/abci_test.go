@@ -859,6 +859,7 @@ func getTestApp(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *
 	pERC20 := mocks.NewMockERC20MultiSigTopology(ctrl)
 	sERC20 := mocks.NewMockERC20MultiSigTopology(ctrl)
 	cp := mocks.NewMockCheckpoint(ctrl)
+	vaultService := mocks.NewMockVaultService(ctrl)
 	var (
 		spam *mocks.MockSpamEngine
 		pow  *mocks.MockPoWEngine
@@ -1016,6 +1017,7 @@ func getTestApp(t *testing.T, cfunc func(), stop func() error, PoW, Spam bool) *
 		balance,
 		parties,
 		txCache,
+		vaultService,
 	)
 
 	// embed the app

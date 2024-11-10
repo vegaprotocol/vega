@@ -66,6 +66,7 @@ func NewMarketFromSnapshot(
 	volumeDiscountService fee.VolumeDiscountService,
 	volumeRebateService fee.VolumeRebateService,
 	banking common.Banking,
+	vaultService common.VaultService,
 ) (*Market, error) {
 	mkt := em.Market
 	if len(em.Market.ID) == 0 {
@@ -195,6 +196,7 @@ func NewMarketFromSnapshot(
 		orderHoldingTracker:           NewHoldingAccountTracker(mkt.ID, log, collateralEngine),
 		banking:                       banking,
 		allowedSellers:                allowedSellers,
+		vaultService:                  vaultService,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	for _, p := range em.Parties {

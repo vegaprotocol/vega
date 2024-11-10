@@ -770,3 +770,23 @@ func UnmarshalEstimatedAMMError(v interface{}) (v2.EstimateAMMBoundsResponse_AMM
 
 	return v2.EstimateAMMBoundsResponse_AMMError(status), nil
 }
+
+func UnmarshalRedeemStatus(v interface{}) (vega.RedeemStatus, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.RedeemStatus_REDEEM_STATUS_UNSPECIFIED, fmt.Errorf("expected redeem status to be a string")
+	}
+
+	t, ok := vega.RedeemStatus_value[s]
+	if !ok {
+		return vega.RedeemStatus_REDEEM_STATUS_UNSPECIFIED, fmt.Errorf("failed to convert RedeemStatus from GraphQL to Proto: %v", s)
+	}
+
+	return vega.RedeemStatus(t), nil
+}
+
+func MarshalRedeemStatus(t vega.RedeemStatus) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}

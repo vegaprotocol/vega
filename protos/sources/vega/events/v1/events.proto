@@ -660,6 +660,11 @@ message TransactionResult {
     commands.v1.SubmitAMM submit_amm = 131;
     commands.v1.AmendAMM amend_amm = 132;
     commands.v1.CancelAMM cancel_amm = 133;
+    commands.v1.CreateVault create_vault = 134;
+    commands.v1.UpdateVault update_vault = 135;
+    commands.v1.DepositToVault deposit_to_vault = 136;
+    commands.v1.WithdrawFromVault withdraw_from_vault = 137;
+    commands.v1.ChangeVaultOwnership change_vault_ownership = 138;
   }
 
   // extra details about the transaction processing
@@ -1557,6 +1562,12 @@ enum BusEventType {
   // Event indicating an automated purchase auction has been scheduled.
   BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED = 96;
 
+  // Event update on the state of a vault.
+  BUS_EVENT_TYPE_VAULT_STATE = 97;
+
+  // Event update on the status of a redemption request.
+  BUS_EVENT_TYPE_REDEMPTION_REQUEST = 98;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1758,6 +1769,10 @@ message BusEvent {
     VolumeRebateStatsUpdated volume_rebate_stats_updated = 193;
     // Event notifying an upcoming automated purchase of a token with the sold amount.
     AutomatedPurchaseAnnounced automated_purchase_announced = 194;
+    // Event updating on the current state of the vault.
+    VaultState vault_state = 195;
+    // Event notifying on a redemption request's status.
+    RedemptionRequest redemption_request = 196;
     // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
@@ -1830,4 +1845,49 @@ message AutomatedPurchaseAnnounced {
   string market_id = 4;
   // Amount being exchanged.
   string amount = 5;
+}
+
+// Summary of the vault state.
+message VaultState {
+  // The vault.
+  vega.Vault vault = 1;
+  // Party share holding information.
+  repeated VaultShareHolder party_shares = 2;
+  // The invested amount currently in the vault.
+  string invested_amount = 3;
+  // The status of the vault.
+  vega.VaultStatus status = 4;
+  // The next fee calculation time.
+  int64 next_fee_calc = 5;
+  // The next redemption date.
+  int64 next_redemption_date = 6;
+}
+
+// Summary of a party's vesting balances
+message VaultShareHolder {
+  // Party ID.
+  string party = 1;
+  // Share for the party in the vault.
+  string share = 2;
+}
+
+message RedemptionRequest {
+  // Request ID.
+  string request_id = 1;
+  // Vault ID.
+  string vault_id = 2;
+  // Redeeming party.
+  string party_id = 3;
+  // Vault asset.
+  string asset = 4;
+  // Date of eligibility to redemption.
+  int64 date = 5;
+  // Last date of update.
+  int64 last_update = 6;
+  // The amount requested for redemption.
+  string requested_amount = 7;
+  // The amount remaining to redeem.
+  string remaining_amount = 8;
+  // The status of the redemption request.
+  vega.RedeemStatus status = 9;
 }

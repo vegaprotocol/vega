@@ -668,6 +668,13 @@ type OrderEstimate struct {
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
 }
 
+type PartyVaultShare struct {
+	// The party ID
+	PartyID string `json:"partyId"`
+	// The party share in the vault
+	Share string `json:"share"`
+}
+
 // Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position
 type PositionEstimate struct {
 	// Margin level range estimate for the specified position
@@ -801,6 +808,15 @@ func (PubKey) IsSignerKind() {}
 
 // Queries allow a caller to read data and filter data via GraphQL.
 type Query struct {
+}
+
+type RedemptionDate struct {
+	// Date of redemption in epoch seconds
+	RedemptionDate int64 `json:"redemptionDate"`
+	// Type of redemption on that date
+	RedemptionType RedemptionType `json:"redemptionType"`
+	// Maximum fraction that can be redeemed on that date
+	MaxFraction string `json:"maxFraction"`
 }
 
 type RewardFactors struct {
@@ -1052,6 +1068,21 @@ type UpdateVolumeRebateProgram struct {
 
 func (UpdateVolumeRebateProgram) IsProposalChange() {}
 
+// Filter to apply to the vault connection query
+type VaultFilter struct {
+	Assets   []string `json:"assets,omitempty"`
+	VaultIds []string `json:"vaultIds,omitempty"`
+	LiveOnly bool     `json:"liveOnly"`
+}
+
+// Filter to apply to the vault redemption requests connection query
+type VaultRedemptionRequestsFilter struct {
+	PartyIds []string       `json:"partyIds,omitempty"`
+	Assets   []string       `json:"assets,omitempty"`
+	VaultIds []string       `json:"vaultIds,omitempty"`
+	Statuses []RedeemStatus `json:"statuses,omitempty"`
+}
+
 type VolumeRebateBenefitTier struct {
 	// The required volume fraction for a party to access this tier
 	MinimumPartyMakerVolumeFraction string `json:"minimumPartyMakerVolumeFraction"`
@@ -1297,6 +1328,101 @@ func (e MarketUpdateType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type RedeemStatus string
+
+const (
+	// Redeem status is unspecificed
+	RedeemStatusUnspecified RedeemStatus = "UNSPECIFIED"
+	// Redemption has been queued and is being processed
+	RedeemStatusPending RedeemStatus = "PENDING"
+	// Redemption has been marked as late
+	RedeemStatusLate RedeemStatus = "LATE"
+	// Redemption has been completed
+	RedeemStatusCompleted RedeemStatus = "COMPLETED"
+)
+
+var AllRedeemStatus = []RedeemStatus{
+	RedeemStatusUnspecified,
+	RedeemStatusPending,
+	RedeemStatusLate,
+	RedeemStatusCompleted,
+}
+
+func (e RedeemStatus) IsValid() bool {
+	switch e {
+	case RedeemStatusUnspecified, RedeemStatusPending, RedeemStatusLate, RedeemStatusCompleted:
+		return true
+	}
+	return false
+}
+
+func (e RedeemStatus) String() string {
+	return string(e)
+}
+
+func (e *RedeemStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RedeemStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RedeemStatus", str)
+	}
+	return nil
+}
+
+func (e RedeemStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type RedemptionType string
+
+const (
+	// Redemption type is not specified.
+	RedemptionTypeRedemptionTypeUnspecified RedemptionType = "REDEMPTION_TYPE_UNSPECIFIED"
+	// Normal - use full vault balance on this date to satisfy requests
+	RedemptionTypeRedemptionTypeNormal RedemptionType = "REDEMPTION_TYPE_NORMAL"
+	// Available funds only - consider only general account on this date to satisfy redemptions
+	RedemptionTypeRedemptionTypeAvailableFundsOnly RedemptionType = "REDEMPTION_TYPE_AVAILABLE_FUNDS_ONLY"
+)
+
+var AllRedemptionType = []RedemptionType{
+	RedemptionTypeRedemptionTypeUnspecified,
+	RedemptionTypeRedemptionTypeNormal,
+	RedemptionTypeRedemptionTypeAvailableFundsOnly,
+}
+
+func (e RedemptionType) IsValid() bool {
+	switch e {
+	case RedemptionTypeRedemptionTypeUnspecified, RedemptionTypeRedemptionTypeNormal, RedemptionTypeRedemptionTypeAvailableFundsOnly:
+		return true
+	}
+	return false
+}
+
+func (e RedemptionType) String() string {
+	return string(e)
+}
+
+func (e *RedemptionType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RedemptionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RedemptionType", str)
+	}
+	return nil
+}
+
+func (e RedemptionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Filter type for specifying the types of transfers to filter for
 type TransferDirection string
 
@@ -1338,5 +1464,54 @@ func (e *TransferDirection) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TransferDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type VaultStatus string
+
+const (
+	// Vault state is unspecificed
+	VaultStatusUnspecified VaultStatus = "UNSPECIFIED"
+	// Vault is active
+	VaultStatusActive VaultStatus = "ACTIVE"
+	// Vault is in the process of being stopped
+	VaultStatusStopping VaultStatus = "STOPPING"
+	// Vault is stopped
+	VaultStatusStopped VaultStatus = "STOPPED"
+)
+
+var AllVaultStatus = []VaultStatus{
+	VaultStatusUnspecified,
+	VaultStatusActive,
+	VaultStatusStopping,
+	VaultStatusStopped,
+}
+
+func (e VaultStatus) IsValid() bool {
+	switch e {
+	case VaultStatusUnspecified, VaultStatusActive, VaultStatusStopping, VaultStatusStopped:
+		return true
+	}
+	return false
+}
+
+func (e VaultStatus) String() string {
+	return string(e)
+}
+
+func (e *VaultStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = VaultStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid VaultStatus", str)
+	}
+	return nil
+}
+
+func (e VaultStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

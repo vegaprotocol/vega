@@ -561,6 +561,7 @@ type CollateralAccounts struct {
 	Accounts            []*Account
 	Earmarked           map[string]*num.Uint
 	NextBalanceSnapshot time.Time
+	VaultOwners         map[string]struct{}
 }
 
 type CollateralAssets struct {
@@ -904,6 +905,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadEVMFwdHeartbeatsFromProto(dt)
 	case *snapshot.Payload_VolumeRebateProgram:
 		ret.Data = PayloadVolumeRebateProgramFromProto(dt)
+	case *snapshot.Payload_Vaults:
+		ret.Data = PayloadVaultFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1102,6 +1105,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_EvmFwdHeartbeats:
 		ret.Data = dt
 	case *snapshot.Payload_VolumeRebateProgram:
+		ret.Data = dt
+	case *snapshot.Payload_Vaults:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -2152,6 +2157,10 @@ func CollateralAccountsFromProto(ca *snapshot.CollateralAccounts) *CollateralAcc
 	for _, earmarked := range ca.EarmarkedBalances {
 		ret.Earmarked[earmarked.AccountId], _ = num.UintFromString(earmarked.EarmarkedBalance, 10)
 	}
+	ret.VaultOwners = make(map[string]struct{}, len(ca.VaultOwner))
+	for _, vo := range ca.VaultOwner {
+		ret.VaultOwners[vo] = struct{}{}
+	}
 	return &ret
 }
 
@@ -2169,10 +2178,16 @@ func (c CollateralAccounts) IntoProto() *snapshot.CollateralAccounts {
 		return earmarked[i].AccountId < earmarked[j].AccountId
 	})
 
+	vaultOwners := make([]string, 0, len(c.VaultOwners))
+	for vo := range c.VaultOwners {
+		vaultOwners = append(vaultOwners, vo)
+	}
+	sort.Strings(vaultOwners)
 	return &snapshot.CollateralAccounts{
 		Accounts:            accs.IntoProto(),
 		NextBalanceSnapshot: c.NextBalanceSnapshot.UnixNano(),
 		EarmarkedBalances:   earmarked,
+		VaultOwner:          vaultOwners,
 	}
 }
 
@@ -4408,5 +4423,37 @@ func (p *PayloadEVMFwdHeartbeats) plToProto() interface{} {
 func PayloadEVMFwdHeartbeatsFromProto(pl *snapshot.Payload_EvmFwdHeartbeats) *PayloadEVMFwdHeartbeats {
 	return &PayloadEVMFwdHeartbeats{
 		EVMFwdHeartbeats: pl.EvmFwdHeartbeats,
+	}
+}
+
+type PayloadVault struct {
+	VaultState []*snapshot.VaultState
+}
+
+func (p *PayloadVault) Key() string {
+	return "vault"
+}
+
+func (*PayloadVault) Namespace() SnapshotNamespace {
+	return VaultSnapshot
+}
+
+func (p *PayloadVault) IntoProto() *snapshot.Payload_Vaults {
+	return &snapshot.Payload_Vaults{
+		Vaults: &snapshot.Vault{
+			VaultState: p.VaultState,
+		},
+	}
+}
+
+func (*PayloadVault) isPayload() {}
+
+func (p *PayloadVault) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadVaultFromProto(vaultsPayload *snapshot.Payload_Vaults) *PayloadVault {
+	return &PayloadVault{
+		VaultState: vaultsPayload.Vaults.VaultState,
 	}
 }

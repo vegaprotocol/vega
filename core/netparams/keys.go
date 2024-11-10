@@ -297,6 +297,8 @@ const (
 
 	MarketAMMMinCommitmentQuantum = "market.amm.minCommitmentQuantum"
 	MarketAMMMaxCalculationLevels = "market.liquidity.maxAmmCalculationLevels"
+
+	MinimumNoticePeriod = "vault.minimum.notice.period"
 )
 
 var Deprecated = map[string]struct{}{
@@ -309,6 +311,7 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	MinimumNoticePeriod:                                            {},
 	NetworkWideAuctionDuration:                                     {},
 	RewardsUpdateFrequency:                                         {},
 	SpamProtectionMaxUpdatePartyProfile:                            {},

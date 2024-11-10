@@ -205,6 +205,57 @@ func (b *BrokerStub) GetPAPVolumeSnapshot() []events.AutomatedPurchaseAnnounced 
 	return ret
 }
 
+func (b *BrokerStub) GetVaultState(vaultID string) *eventspb.VaultState {
+	vaultEvents := b.GetVaultEvents()
+
+	if len(vaultEvents) == 0 {
+		return nil
+	}
+
+	for _, ve := range vaultEvents {
+		if ve.StreamMessage().GetVaultState().Vault.VaultId == vaultID {
+			return ve.StreamMessage().GetVaultState()
+		}
+	}
+	return nil
+}
+
+func (b *BrokerStub) GetVaultEvents() []events.VaultEvent {
+	batch := b.GetBatch(events.VaultStateEvent)
+
+	if len(batch) == 0 {
+		return nil
+	}
+	b.mu.Lock()
+	ret := make([]events.VaultEvent, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.VaultEvent:
+			ret = append(ret, *et)
+		}
+	}
+	b.mu.Unlock()
+	return ret
+}
+
+func (b *BrokerStub) GetRedemptionRequestEvents() []events.RedemptionEvent {
+	batch := b.GetBatch(events.RedemptionRequestEvent)
+
+	if len(batch) == 0 {
+		return nil
+	}
+	b.mu.Lock()
+	ret := make([]events.RedemptionEvent, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.RedemptionEvent:
+			ret = append(ret, *et)
+		}
+	}
+	b.mu.Unlock()
+	return ret
+}
+
 // GetLedgerMovements returns ledger movements, `mutable` argument specifies if these should be all the scenario events or events that can be cleared by the user.
 func (b *BrokerStub) GetLedgerMovements(mutable bool) []events.LedgerMovements {
 	batch := b.GetBatch(events.LedgerMovementsEvent)

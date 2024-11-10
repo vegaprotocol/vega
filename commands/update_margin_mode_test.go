@@ -28,7 +28,7 @@ import (
 
 func TestUpdateMarginMode(t *testing.T) {
 	positiveMarginFactor := "123"
-	invalidNumderMarginFactor := "banana"
+	banana := "banana"
 	invalidDecimalMarginFactor := "1.2.3"
 	negativeMarginFactor := "-0.2"
 	zeroMarginFactor := "0"
@@ -77,7 +77,7 @@ func TestUpdateMarginMode(t *testing.T) {
 			"cross margin mode with invalid number as margin factor 1",
 			&commandspb.UpdateMarginMode{
 				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
-				MarginFactor: &invalidNumderMarginFactor,
+				MarginFactor: &banana,
 			},
 			"update_margin_mode.margin_factor",
 			commands.ErrIsNotValidNumber,
@@ -127,6 +127,17 @@ func TestUpdateMarginMode(t *testing.T) {
 			},
 			"update_margin_mode.market_id",
 			commands.ErrIsRequired,
+		},
+		{
+			"invalid vault ID",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarginFactor: &validMarginFactor1,
+				MarketId:     "123",
+				VaultId:      &banana,
+			},
+			"update_margin_mode.vault_id",
+			commands.ErrInvalidVaultID,
 		},
 		{
 			"valid cross margin update",

@@ -103,6 +103,20 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
   }
 
+  // List vaults
+  //
+  // Get a list of vaults given the filters
+  rpc ListVaults(ListVaultsRequest) returns (ListVaultsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Vaults"};
+  }
+
+   // List vault redemption requests
+  //
+  // Get a list of vault redemption requests given the filters
+  rpc ListVaultRedemptionRequests(ListVaultsRedemptionRequestsRequest) returns (ListVaultRedemptionRequestsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Vaults"};
+  }
+
   // List game team scores
   //
   // Get a list of team scores for the given filters
@@ -5030,6 +5044,70 @@ message GetTimeWeightedNotionalPositionResponse {
   // Time weighted notional position for the party and asset.
   TimeWeightedNotionalPosition time_weighted_notional_position = 1;
 }
+
+message ListVaultsRedemptionRequestsRequest {
+  // Vault IDs to filter by.
+  repeated string vault_ids = 1;
+  // Party IDs to filter by.
+  repeated string party_ids = 2;
+  // Asset IDs to filter by.
+  repeated string asset_ids = 3;
+  // Redeem status to filter by.
+  repeated vega.RedeemStatus statuses = 4;
+  // Pagination controls.
+  optional Pagination pagination = 5;
+}
+
+message ListVaultRedemptionRequestsResponse {
+  // Page of vault redemption requests data and corresponding page information.
+  RedemptionRequestConnection vault_redemption_requests = 1;
+}
+
+// Request for vaults.
+message ListVaultsRequest {
+  // Vault IDs to filter by.
+  repeated string vault_ids = 1;
+  // Asset IDs to filter by.
+  repeated string asset_ids = 2;
+  // If true return only the unstopped vaults.
+  optional bool live_only = 3;
+  // Pagination controls.
+  optional Pagination pagination = 4;
+}
+
+message ListVaultsResponse {
+  // Page of vault data and corresponding page information.
+  VaultConnection vaults = 1;
+}
+
+message VaultConnection {
+  // Page of vault data and the corresponding cursors.
+  repeated VaultEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message VaultEdge {
+  // vault data.
+  vega.events.v1.VaultState node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+message RedemptionRequestConnection {
+  // Page of vault redemption request data and the corresponding cursors.
+  repeated RedemptionRequestEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message RedemptionRequestEdge {
+  // Vault data.
+  vega.events.v1.RedemptionRequest node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
 
 message ListAMMsRequest {
   // AMM ID to filter for. If party ID or market ID is provided, the ID filter is ignored.

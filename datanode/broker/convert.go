@@ -210,6 +210,10 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.VolumeRebateStatsUpdatedEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_AUTOMATED_PURCHASE_ANNOUNCED:
 		return events.AutomatedPurchaseAnnouncedFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VAULT_STATE:
+		return events.VaultEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REDEMPTION_REQUEST:
+		return events.RedemptionEventFromStream(ctx, be)
 	}
 
 	return nil

@@ -27,6 +27,7 @@ import (
 )
 
 func TestCheckAmendAMM(t *testing.T) {
+	banana := "banana"
 	cases := []struct {
 		submission commandspb.AmendAMM
 		errStr     string
@@ -269,6 +270,14 @@ func TestCheckAmendAMM(t *testing.T) {
 				SlippageTolerance: "0.09",
 			},
 			errStr: "* (no updates provided)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				SlippageTolerance: "0.09",
+				VaultId:           &banana,
+			},
+			errStr: "amend_amm.vault_id (is not a valid vault identifier)",
 		},
 		{
 			submission: commandspb.AmendAMM{

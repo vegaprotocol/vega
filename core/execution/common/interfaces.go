@@ -34,7 +34,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking,Parties,DelayTransactionsTarget
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking,Parties,DelayTransactionsTarget,VaultService
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks_amm/mocks.go -package mocks_amm code.vegaprotocol.io/vega/core/execution/common AMMPool,AMM
 
@@ -158,7 +158,6 @@ type Collateral interface {
 	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error)
 	GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error)
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
-	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.LedgerMovement, error)
 	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
 	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer, factor *num.Uint, useGeneralAccountForMarginSearch func(string) bool) ([]*types.LedgerMovement, error)
@@ -434,4 +433,9 @@ type Teams interface {
 
 type DelayTransactionsTarget interface {
 	MarketDelayRequiredUpdated(marketID string, required bool)
+}
+
+type VaultService interface {
+	GetVaultOwner(vaultID string) *string
+	GetVaultShares(vaultID string) map[string]num.Decimal
 }

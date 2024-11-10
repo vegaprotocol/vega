@@ -74,6 +74,7 @@ var (
 	ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow      = errors.New("must have at least one of rises above or falls below")
 	ErrMustHaveAStopOrderTrigger                       = errors.New("must have a stop order trigger")
 	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame     = errors.New("market ID for falls below and rises above must be the same")
+	ErrFallsBelowAndRiseAboveVaultIDMustBeTheSame      = errors.New("vault ID for falls below and rises above must be the same")
 	ErrTrailingPercentOffsetMinimalIncrementNotReached = errors.New("trailing percent offset minimal increment must be >= 0.001")
 	ErrMustBeEmpty                                     = errors.New("must be empty")
 	ErrMustBeGTEClampLowerBound                        = errors.New("must be greater than or equal to clamp lower bound")
@@ -97,6 +98,7 @@ var (
 	ErrMustBeAtMost250                                 = errors.New("must be at most 250")
 	ErrNoUpdatesProvided                               = errors.New("no updates provided")
 	ErrMaxPriceMustRespectTickSize                     = errors.New("must respect tick size")
+	ErrInvalidVaultID                                  = errors.New("is not a valid vault identifier")
 )
 
 type Errors map[string][]error

@@ -848,3 +848,20 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetPartyDiscountStatsResponse
   MarketFees:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketFees
+  VaultEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VaultEdge
+  VaultConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VaultConnection
+  VaultState:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.VaultState
+  Vault:
+    model: code.vegaprotocol.io/vega/protos/vega.Vault
+  VaultMetaData:
+    model: code.vegaprotocol.io/vega/protos/vega.VaultMetaData
+  RedemptionRequestEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.RedemptionRequestEdge
+  RedemptionRequestConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.RedemptionRequestConnection
+  RedemptionRequest:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RedemptionRequest
+  

@@ -2460,6 +2460,46 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListTransfers(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransfers", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListTransfers), varargs...)
 }
 
+// ListVaultRedemptionRequests mocks base method.
+func (m *MockTradingDataServiceClientV2) ListVaultRedemptionRequests(arg0 context.Context, arg1 *v2.ListVaultsRedemptionRequestsRequest, arg2 ...grpc.CallOption) (*v2.ListVaultRedemptionRequestsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListVaultRedemptionRequests", varargs...)
+	ret0, _ := ret[0].(*v2.ListVaultRedemptionRequestsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListVaultRedemptionRequests indicates an expected call of ListVaultRedemptionRequests.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListVaultRedemptionRequests(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVaultRedemptionRequests", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListVaultRedemptionRequests), varargs...)
+}
+
+// ListVaults mocks base method.
+func (m *MockTradingDataServiceClientV2) ListVaults(arg0 context.Context, arg1 *v2.ListVaultsRequest, arg2 ...grpc.CallOption) (*v2.ListVaultsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListVaults", varargs...)
+	ret0, _ := ret[0].(*v2.ListVaultsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListVaults indicates an expected call of ListVaults.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListVaults(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVaults", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListVaults), varargs...)
+}
+
 // ListVotes mocks base method.
 func (m *MockTradingDataServiceClientV2) ListVotes(arg0 context.Context, arg1 *v2.ListVotesRequest, arg2 ...grpc.CallOption) (*v2.ListVotesResponse, error) {
 	m.ctrl.T.Helper()

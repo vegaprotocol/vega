@@ -224,6 +224,8 @@ type GRPCServer struct {
 	ammPoolService                      *service.AMMPools
 	volumeRebateStatsService            *service.VolumeRebateStats
 	volumeRebateProgramService          *service.VolumeRebatePrograms
+	vaultService                        *service.Vault
+	vaultRedemptionService              *service.VaultRedemptions
 
 	eventObserver *eventObserver
 
@@ -298,6 +300,8 @@ func NewGRPCServer(
 	ammPoolService *service.AMMPools,
 	volumeRebateStatsService *service.VolumeRebateStats,
 	volumeRebateProgramsService *service.VolumeRebatePrograms,
+	vaultService *service.Vault,
+	vaultRedemptionService *service.VaultRedemptions,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -371,6 +375,8 @@ func NewGRPCServer(
 		ammPoolService:                      ammPoolService,
 		volumeRebateStatsService:            volumeRebateStatsService,
 		volumeRebateProgramService:          volumeRebateProgramsService,
+		vaultService:                        vaultService,
+		vaultRedemptionService:              vaultRedemptionService,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -623,6 +629,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		volumeRebateStatsService:      g.volumeRebateStatsService,
 		volumeRebateProgramService:    g.volumeRebateProgramService,
 		partyDiscountStats:            partyDiscountStats,
+		vaultService:                  g.vaultService,
+		vaultRedemptionService:        g.vaultRedemptionService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

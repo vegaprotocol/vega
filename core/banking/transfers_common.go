@@ -87,6 +87,13 @@ func (e *Engine) CheckTransfer(t *types.TransferBase) error {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
 
+	if e.col.IsVaultAccount(t.From) {
+		return fmt.Errorf("could not transfer funds from vault account")
+	}
+	if e.col.IsVaultAccount(t.To) {
+		return fmt.Errorf("could not transfer funds to vault account")
+	}
+
 	if err = t.IsValid(); err != nil {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
