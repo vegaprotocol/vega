@@ -1178,7 +1178,7 @@ func (e *Engine) GetInfraFeeAccountIDs() []string {
 	return accountIDs
 }
 
-// GetPendingTransferAccount return the pending transfers account for the asset.
+// GetPendingTransfersAccount return the pending transfers account for the asset.
 func (e *Engine) GetPendingTransfersAccount(asset string) *types.Account {
 	acc, err := e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypePendingTransfers))
 	if err != nil {
