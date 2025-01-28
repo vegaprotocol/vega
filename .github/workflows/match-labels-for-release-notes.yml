@@ -1,0 +1,158 @@
+---
+
+
+name: "Match labels for auto-gen release notes"
+
+"on":
+  pull_request_target:
+    branches: [develop, master]
+    types: [opened, closed]
+
+# Configure the project specific variables
+env:
+  ORGANIZATION: vegaprotocol
+  PROJECT_NUMBER: 106
+  PR_URL: ${{ github.event.pull_request.html_url }}
+  PR_ID: ${{ github.event.pull_request.node_id }}
+  GH_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
+  USER: ${{ github.actor }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  label-match:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+
+      - name: "Get linked issue url"
+        id: get-linked-issue
+        run: |
+          gh api graphql -f query='
+            query($pr_url: URI!) {
+              resource(url: $pr_url) {
+                ... on PullRequest {
+                  closingIssuesReferences(last: 1) {
+                    nodes {
+                      id
+                      url
+                    }
+                  }
+                }
+              }
+            }'  -f pr_url=$PR_URL > data.json
+          echo 'LINKED_ISSUE_URL='$(jq -r '.data.resource.closingIssuesReferences.nodes[] | .url' data.json) >> $GITHUB_ENV
+
+      - name: "Check issue for applicable labels"
+        id: get-issue-labels
+        if: |
+          env.LINKED_ISSUE_URL != ''
+        run: |
+          gh api graphql -f query='
+            query($issue_url: URI!) {
+              resource(url: $issue_url) {
+                ... on Issue {
+                  labels(last: 10) {
+                    nodes {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }' -f issue_url=$LINKED_ISSUE_URL > data.json
+          echo 'BUG='$(jq '.data.resource.labels.nodes[] | select(.name== "bug") | .id' data.json) >> $GITHUB_ENV
+          echo 'BREAKING='$(jq '.data.resource.labels.nodes[] | select(.name== "breaking-change") | .id' data.json) >> $GITHUB_ENV
+          echo 'DEPRECATE='$(jq '.data.resource.labels.nodes[] | select(.name== "deprecation") | .id' data.json) >> $GITHUB_ENV
+          echo 'VULNERABILITY='$(jq '.data.resource.labels.nodes[] | select(.name== "vulnerability") | .id' data.json) >> $GITHUB_ENV
+          echo 'SECURITY='$(jq '.data.resource.labels.nodes[] | select(.name== "security") | .id' data.json) >> $GITHUB_ENV
+          echo 'ENHANCE='$(jq '.data.resource.labels.nodes[] | select(.name== "enhancement") | .id' data.json) >> $GITHUB_ENV
+          echo 'FEATURE='$(jq '.data.resource.labels.nodes[] | select(.name== "feature") | .id' data.json) >> $GITHUB_ENV
+
+      - run: env
+
+      - name: "Add bug label"
+        id: add-bug-label
+        if: |
+          env.BUG != ''
+        run: |
+          gh api graphql -f query='
+            mutation($user:String!, $pr:ID!, $label:[ID!]!) {
+              addLabelsToLabelable(input: {clientMutationId: $user, labelableId: $pr, labelIds: $label}) {
+                clientMutationId
+              }
+            }' -f label=$BUG -f pr=$PR_ID -f user=$USER
+
+      - name: "Add breaking change label"
+        id: add-breaking-label
+        if: |
+          env.BREAKING != ''
+        run: |
+          gh api graphql -f query='
+            mutation($user:String!, $pr:ID!, $label:[ID!]!) {
+              addLabelsToLabelable(input: {clientMutationId: $user, labelableId: $pr, labelIds: $label}) {
+                clientMutationId
+              }
+            }' -f label=$BREAKING -f pr=$PR_ID -f user=$USER
+
+      - name: "Add deprecation label"
+        id: add-deprecation-label
+        if: |
+          env.DEPRECATE != ''
+        run: |
+          gh api graphql -f query='
+            mutation($user:String!, $pr:ID!, $label:[ID!]!) {
+              addLabelsToLabelable(input: {clientMutationId: $user, labelableId: $pr, labelIds: $label}) {
+                clientMutationId
+              }
+            }' -f label=$DEPRECATE -f pr=$PR_ID -f user=$USER
+
+      - name: "Add vulnerability label"
+        id: add-vulnerability-label
+        if: |
+          env.VULNERABILITY != ''
+        run: |
+          gh api graphql -f query='
+            mutation($user:String!, $pr:ID!, $label:[ID!]!) {
+              addLabelsToLabelable(input: {clientMutationId: $user, labelableId: $pr, labelIds: $label}) {
+                clientMutationId
+              }
+            }' -f label=$VULNERABILITY -f pr=$PR_ID -f user=$USER
+
+      - name: "Add security label"
+        id: add-security-label
+        if: |
+          env.SECURITY != ''
+        run: |
+          gh api graphql -f query='
+            mutation($user:String!, $pr:ID!, $label:[ID!]!) {
+              addLabelsToLabelable(input: {clientMutationId: $user, labelableId: $pr, labelIds: $label}) {
+                clientMutationId
+              }
+            }' -f label=$SECURITY -f pr=$PR_ID -f user=$USER
+
+      - name: "Add enhancement label"
+        id: add-enhancement-label
+        if: |
+          env.ENHANCE != ''
+        run: |
+          gh api graphql -f query='
+            mutation($user:String!, $pr:ID!, $label:[ID!]!) {
+              addLabelsToLabelable(input: {clientMutationId: $user, labelableId: $pr, labelIds: $label}) {
+                clientMutationId
+              }
+            }' -f label=$ENHANCE -f pr=$PR_ID -f user=$USER
+
+      - name: "Add feature label"
+        id: add-feature-label
+        if: |
+          env.FEATURE != ''
+        run: |
+          gh api graphql -f query='
+            mutation($user:String!, $pr:ID!, $label:[ID!]!) {
+              addLabelsToLabelable(input: {clientMutationId: $user, labelableId: $pr, labelIds: $label}) {
+                clientMutationId
+              }
+            }' -f label=$FEATURE -f pr=$PR_ID -f user=$USER
